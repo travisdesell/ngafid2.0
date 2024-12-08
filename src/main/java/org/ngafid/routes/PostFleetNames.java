@@ -30,20 +30,19 @@ public class PostFleetNames implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             ArrayList<String> names = new ArrayList<String>();
-            Connection connection = Database.getConnection();
 
-            PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
-            ResultSet resultSet = query.executeQuery();
-
-            while (resultSet.next()) {
-                names.add(resultSet.getString(1));
+            try (PreparedStatement query = connection
+                    .prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
+                    ResultSet resultSet = query.executeQuery()) {
+                while (resultSet.next()) {
+                    names.add(resultSet.getString(1));
+                }
+                return gson.toJson(names);
             }
-            return gson.toJson(names);
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
     }
 }
-

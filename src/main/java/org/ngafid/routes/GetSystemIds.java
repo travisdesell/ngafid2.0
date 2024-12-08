@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -31,7 +30,6 @@ import org.ngafid.flights.Tails;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 import org.ngafid.events.EventStatistics;
 
@@ -78,12 +76,9 @@ public class GetSystemIds implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
-
 
             ArrayList<Tail> tailInfo = Tails.getAll(connection, fleetId);
 
@@ -97,10 +92,9 @@ public class GetSystemIds implements Route {
 
             long startTime = System.currentTimeMillis();
             scopes.put("system_ids_js",
-                    "var systemIds = JSON.parse('" + gson.toJson(tailInfo) + "');\n"
-                    );
+                    "var systemIds = JSON.parse('" + gson.toJson(tailInfo) + "');\n");
             long endTime = System.currentTimeMillis();
-            LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
+            LOG.info("converting event statistics to JSON took " + (endTime - startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

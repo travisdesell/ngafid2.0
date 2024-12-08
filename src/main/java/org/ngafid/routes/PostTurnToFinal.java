@@ -20,6 +20,7 @@ import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -44,34 +45,35 @@ public class PostTurnToFinal implements Route {
         System.out.println(endDate);
 
         final Session session = request.session();
-        User user = session.attribute("user");
 
         List<JsonElement> _ttfs = new ArrayList<>();
-
-        // TODO: Update this limit when caching of TTF objects is implemented.
-        List<Flight> flights =
-                Flight.getFlightsWithinDateRangeFromAirport(Database.getConnection(), startDate, endDate, airportIataCode, 10000);
         Set<String> iataCodes = new HashSet<>();
+        try (Connection connection = Database.getConnection()) {
 
-        for (Flight flight : flights) {
-            try {
-                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(Database.getConnection(), flight, airportIataCode)) {
-                    JsonElement jsonElement = ttf.jsonify();
-                    if (jsonElement != null) {
-                        _ttfs.add(jsonElement);
-                        iataCodes.add(ttf.airportIataCode);
+            // TODO: Update this limit when caching of TTF objects is implemented.
+            List<Flight> flights = Flight.getFlightsWithinDateRangeFromAirport(connection, startDate,
+                    endDate, airportIataCode, 10000);
+
+            for (Flight flight : flights) {
+                try {
+                    for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight,
+                            airportIataCode)) {
+                        JsonElement jsonElement = ttf.jsonify();
+                        if (jsonElement != null) {
+                            _ttfs.add(jsonElement);
+                            iataCodes.add(ttf.airportIataCode);
+                        }
                     }
+                } catch (SQLIntegrityConstraintViolationException e) {
+                    e.printStackTrace();
+                    return gson.toJson(new ErrorResponse(e));
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    LOG.severe(e.toString());
+                    return gson.toJson(new ErrorResponse(e));
                 }
-            } catch (SQLIntegrityConstraintViolationException e) {
-                e.printStackTrace();
-                return gson.toJson(new ErrorResponse(e));
-            } catch (SQLException e) {
-                e.printStackTrace();
-                LOG.severe(e.toString());
-                return gson.toJson(new ErrorResponse(e));
             }
         }
-
 
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
         iataCodesList.addAll(iataCodes);
@@ -79,7 +81,6 @@ public class PostTurnToFinal implements Route {
         for (Airport ap : Airports.getAirports(iataCodesList).values()) {
             System.out.println("long = " + ap.longitude + ", lat = " + ap.latitude);
         }
-
 
         Map<String, JsonElement> airports = Airports.getAirports(iataCodesList)
                 .entrySet()
@@ -89,8 +90,7 @@ public class PostTurnToFinal implements Route {
         response.type("application/json");
         response.status(200);
         return gson.toJson(Map.of(
-            "airports", airports,
-            "ttfs", _ttfs
-        ));
+                "airports", airports,
+                "ttfs", _ttfs));
     }
 }

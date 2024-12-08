@@ -48,35 +48,29 @@ public class PostUpdatePassword implements Route {
         LOG.info("newPassword: '" + newPassword + "'");
         LOG.info("confirmPassword: '" + confirmPassword + "'");
 
-        Connection connection = Database.getConnection();
-        User user = (User)request.session().attribute("user");
-        //1. make sure currentPassword authenticates against what's in the database
-        try {
+        User user = (User) request.session().attribute("user");
+        // 1. make sure currentPassword authenticates against what's in the database
+        try (Connection connection = Database.getConnection()) {
             if (!user.validate(connection, currentPassword)) {
-                return gson.toJson(new ErrorResponse("Could not update password.", "The current password was not correct."));
+                return gson.toJson(
+                        new ErrorResponse("Could not update password.", "The current password was not correct."));
             }
-        } catch (SQLException e) {
-            LOG.severe(e.toString());
-            e.printStackTrace();
-            return gson.toJson(new ErrorResponse(e));
-        }
 
-        //2. make sure the new password and confirm password are the same
-        if (!newPassword.equals(confirmPassword)) {
-            return gson.toJson(new ErrorResponse("Could not update password.", "The server received different new and confirmation passwords."));
-        }
+            // 2. make sure the new password and confirm password are the same
+            if (!newPassword.equals(confirmPassword)) {
+                return gson.toJson(new ErrorResponse("Could not update password.",
+                        "The server received different new and confirmation passwords."));
+            }
 
-        //3. make sure the new password is different from the old password
-        if (currentPassword.equals(newPassword)) {
-            return gson.toJson(new ErrorResponse("Could not update password.", "The current password was the same as the new password."));
-        }
-
-        try {
+            // 3. make sure the new password is different from the old password
+            if (currentPassword.equals(newPassword)) {
+                return gson.toJson(new ErrorResponse("Could not update password.",
+                        "The current password was the same as the new password."));
+            }
 
             user.updatePassword(connection, newPassword);
 
             return gson.toJson(new UpdatedPassword(user));
-
         } catch (SQLException e) {
             LOG.severe(e.toString());
             e.printStackTrace();
@@ -84,4 +78,3 @@ public class PostUpdatePassword implements Route {
         }
     }
 }
-

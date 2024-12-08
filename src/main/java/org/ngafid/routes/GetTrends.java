@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -13,7 +12,6 @@ import java.util.HashMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -45,8 +43,6 @@ import org.ngafid.flights.Upload;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
-
 
 public class GetTrends implements Route {
     private static final Logger LOG = Logger.getLogger(GetTrends.class.getName());
@@ -91,11 +87,9 @@ public class GetTrends implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -106,14 +100,13 @@ public class GetTrends implements Route {
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo =
-                    "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
-                        "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" +
-                        "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
+                    "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" +
+                    "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
+            LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

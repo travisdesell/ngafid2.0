@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -33,7 +32,6 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
-
 public class GetAirSyncUploads implements Route {
     private static final Logger LOG = Logger.getLogger(GetAirSyncUploads.class.getName());
     private Gson gson;
@@ -52,9 +50,7 @@ public class GetAirSyncUploads implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "airsync_uploads.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -66,7 +62,7 @@ public class GetAirSyncUploads implements Route {
             User user = session.attribute("user");
             AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, user.getFleetId());
 
-            //default page values
+            // default page values
             int currentPage = 0;
             int pageSize = 10;
 
@@ -74,9 +70,9 @@ public class GetAirSyncUploads implements Route {
             if (fleet.getOverride(connection))
                 timestamp = "Pending";
             int totalUploads = AirSyncImport.getNumUploads(connection, fleet.getId(), null);
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleet.getId(), " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> uploads = AirSyncImport.getUploads(connection, fleet.getId(),
+                    " LIMIT " + (currentPage * pageSize) + "," + pageSize);
             int numberPages = totalUploads / pageSize;
-
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");

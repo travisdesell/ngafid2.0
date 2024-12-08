@@ -14,15 +14,16 @@ import static org.ngafid.events.EventStatistics.updateMonthlyTotalFlights;
 public class UpdateMonthlyFlightsCache implements Route {
     private static final Logger LOG = Logger.getLogger(UpdateMonthlyFlightsCache.class.getName());
     private Gson gson;
+
     public UpdateMonthlyFlightsCache(Gson gson) {
         this.gson = gson;
         LOG.info("put " + this.getClass().getName() + " initialized");
     }
-    
+
     @Override
     public Object handle(Request request, Response response) {
-        try {
-            updateMonthlyTotalFlights(Database.getConnection(), Integer.parseInt(request.queryParams("fleetId")));
+        try (Connection connection = Database.getConnection()) {
+            updateMonthlyTotalFlights(connection, Integer.parseInt(request.queryParams("fleetId")));
             response.status(200);
             return gson.toJson(request.queryParams("fleetId"));
         } catch (Exception e) {

@@ -28,7 +28,8 @@ public class FleetAccess {
     private int fleetId = -1;
 
     /**
-     * User's access type to the fleet. Can be "MANAGER", "UPLOAD", "VIEW", "WAITING", or "DENIED"
+     * User's access type to the fleet. Can be "MANAGER", "UPLOAD", "VIEW",
+     * "WAITING", or "DENIED"
      */
     String accessType;
 
@@ -94,6 +95,12 @@ public class FleetAccess {
     private FleetAccess() {
     }
 
+    private FleetAccess(int fleetId, int userId, String accessType) {
+        this.fleetId = fleetId;
+        this.userId = userId;
+        this.accessType = accessType;
+    }
+
     /**
      * Creates a FleetAccess object from a result set
      *
@@ -106,39 +113,41 @@ public class FleetAccess {
     }
 
     /**
-     * Gets all entries of a user's fleet access from the database given a user id. Currently a user should only have access to one fleet however this may change in the future.
+     * Gets all entries of a user's fleet access from the database given a user id.
+     * Currently a user should only have access to one fleet however this may change
+     * in the future.
      *
      * @param connection The database connection.
-     * @param userId The id of the user.
+     * @param userId     The id of the user.
      *
      * @exception SQLException If there was a query/database problem.
      *
-     * @return An array list of all fleet access entries in the database. Can be empty if there are none.
+     * @return An array list of all fleet access entries in the database. Can be
+     *         empty if there are none.
      */
 
     public static ArrayList<FleetAccess> get(Connection connection, int userId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = ?");
-        query.setInt(1, userId);
+        try (PreparedStatement query = connection
+                .prepareStatement("SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = " + userId);
+                ResultSet resultSet = query.executeQuery()) {
+            LOG.info(query.toString());
 
-        LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
+            ArrayList<FleetAccess> allAccess = new ArrayList<FleetAccess>();
 
-        ArrayList<FleetAccess> allAccess = new ArrayList<FleetAccess>();
+            while (resultSet.next()) {
+                allAccess.add(new FleetAccess(resultSet));
+            }
 
-        while (resultSet.next()) {
-            allAccess.add(new FleetAccess(resultSet));
+            return allAccess;
         }
-
-        return allAccess;
     }
-
 
     /**
      * Gets a user's fleet access from the database given a user id and fleet id.
      *
      * @param connection The database connection.
-     * @param userId The id of the user.
-     * @param fleetId The id of the fleet.
+     * @param userId     The id of the user.
+     * @param fleetId    The id of the fleet.
      *
      * @exception SQLException If there was a query/database problem.
      *
@@ -146,84 +155,74 @@ public class FleetAccess {
      */
 
     public static FleetAccess get(Connection connection, int userId, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT type FROM fleet_access WHERE user_id = ? AND fleet_id = ?");
-        query.setInt(1, userId);
-        query.setInt(2, fleetId);
+        try (PreparedStatement query = connection
+                .prepareStatement(
+                        "SELECT type FROM fleet_access WHERE user_id = " + userId + " AND fleet_id = " + fleetId);
+                ResultSet resultSet = query.executeQuery()) {
+            LOG.info(query.toString());
 
-        LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
+            if (!resultSet.next())
+                return null;
 
-        if (!resultSet.next()) return null;
-
-        FleetAccess fleetAccess = new FleetAccess();
-        fleetAccess.userId = userId;
-        fleetAccess.fleetId = fleetId;
-        fleetAccess.accessType = resultSet.getString(1);
-
-        return fleetAccess;
+            return new FleetAccess(fleetId, userId, resultSet.getString(1));
+        }
     }
-
 
     /**
      * Creates a new fleet access entry in the database.
      *
      * @param connection The database connection.
-     * @param userId The id of the user getting access.
-     * @param fleetId The id of the fleet the user has access to.
-     * @param accessType the type of access the user has, specified by {@link #accessType}
+     * @param userId     The id of the user getting access.
+     * @param fleetId    The id of the fleet the user has access to.
+     * @param accessType the type of access the user has, specified by
+     *                   {@link #accessType}
      *
-     * @exception SQLException If there was a query/database problem.
-     * @exception AccountException If the user already has access to this fleet in the database.
+     * @exception SQLException     If there was a query/database problem.
+     * @exception AccountException If the user already has access to this fleet in
+     *                             the database.
      *
      * @return A fleet access object if it was successfully created in the database.
      */
 
-    public static FleetAccess create(Connection connection, int userId, int fleetId, String accessType) throws SQLException, AccountException {
-        //check and see if the fleet access already exists in the database, if it does then throw an exception
-        PreparedStatement query = connection.prepareStatement("SELECT type FROM fleet_access WHERE user_id = ? AND fleet_id = ?");
-        query.setInt(1, userId);
-        query.setInt(2, fleetId);
-
-        LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
-
-        if (resultSet.next()) {
-            throw new AccountException("Fleet Access Creation Error", "Could not create fleet access '" + accessType + "' for user " + userId + " on fleet " + fleetId + ", beacuse user already has access to that fleet in the database.");
+    public static FleetAccess create(Connection connection, int userId, int fleetId, String accessType)
+            throws SQLException, AccountException {
+        if (FleetAccess.get(connection, userId, fleetId) != null) {
+            throw new AccountException("Fleet Access Creation Error",
+                    "Could not create fleet access '" + accessType + "' for user " + userId + " on fleet " + fleetId
+                            + ", beacuse user already has access to that fleet in the database.");
         }
 
-        query = connection.prepareStatement("INSERT INTO fleet_access SET user_id = ?, fleet_id = ?, type = ?");
-        query.setInt(1, userId);
-        query.setInt(2, fleetId);
-        query.setString(3, accessType);
+        try (PreparedStatement query = connection
+                .prepareStatement("INSERT INTO fleet_access SET user_id = ?, fleet_id = ?, type = ?")) {
+            query.setInt(1, userId);
+            query.setInt(2, fleetId);
+            query.setString(3, accessType);
 
-        LOG.info(query.toString());
-        query.executeUpdate();
+            LOG.info(query.toString());
+            query.executeUpdate();
 
-        FleetAccess fleetAccess = new FleetAccess();
-        fleetAccess.userId = userId;
-        fleetAccess.fleetId = fleetId;
-        fleetAccess.accessType = accessType;
-
-        return fleetAccess;
+            return new FleetAccess(fleetId, userId, accessType);
+        }
     }
 
     /**
      * Updates the access type of a user for the specified fleet.
      *
      * @param connection is the mysql database connection
-     * @param userId is the id of the user with access to the fleet
-     * @param fleetId is the fleet id
+     * @param userId     is the id of the user with access to the fleet
+     * @param fleetId    is the fleet id
      * @param accessType is the new access type
      */
 
     public static void update(Connection connection, int userId, int fleetId, String accessType) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("UPDATE fleet_access SET type = ? WHERE user_id = ? AND fleet_id = ?");
-        query.setString(1, accessType);
-        query.setInt(2, userId);
-        query.setInt(3, fleetId);
+        try (PreparedStatement query = connection
+                .prepareStatement("UPDATE fleet_access SET type = ? WHERE user_id = ? AND fleet_id = ?")) {
+            query.setString(1, accessType);
+            query.setInt(2, userId);
+            query.setInt(3, fleetId);
 
-        LOG.info(query.toString());
-        query.executeUpdate();
+            LOG.info(query.toString());
+            query.executeUpdate();
+        }
     }
 }
-

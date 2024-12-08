@@ -53,19 +53,17 @@ public class PostUpdateTail implements Route {
 
         LOG.info("systemId: '" + systemId + "', tail: '" + tail + "'");
 
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            //check to see if the user has upload access for this fleet.
+            // check to see if the user has upload access for this fleet.
             if (!user.hasUploadAccess(fleetId)) {
                 LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
                 Spark.halt(401, "User did not have access to view imports for this fleet.");
                 return null;
-            }   
+            }
 
             Tails.updateTail(connection, fleetId, systemId, tail);
 
@@ -78,4 +76,3 @@ public class PostUpdateTail implements Route {
         }
     }
 }
-

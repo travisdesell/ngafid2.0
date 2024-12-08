@@ -55,11 +55,9 @@ public class PostEvents implements Route {
 
         boolean eventDefinitionsLoaded = Boolean.parseBoolean(request.queryParams("eventDefinitionsLoaded"));
 
-        try {
-            Connection connection = Database.getConnection();
-
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+        try (Connection connection = Database.getConnection()) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
@@ -73,12 +71,12 @@ public class PostEvents implements Route {
 
             EventInfo eventInfo = new EventInfo(events, definitions);
 
-            //System.out.println(gson.toJson(uploadDetails));
+            // System.out.println(gson.toJson(uploadDetails));
             String output = gson.toJson(eventInfo);
-            //need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN","null");
+            // need to convert NaNs to null so they can be parsed by JSON
+            output = output.replaceAll("NaN", "null");
 
-            //LOG.info(output);
+            // LOG.info(output);
 
             return output;
         } catch (SQLException e) {
@@ -87,5 +85,3 @@ public class PostEvents implements Route {
         }
     }
 }
-
-

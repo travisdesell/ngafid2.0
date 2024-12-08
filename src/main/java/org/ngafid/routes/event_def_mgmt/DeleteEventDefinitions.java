@@ -34,15 +34,13 @@ public class DeleteEventDefinitions implements Route {
             return gson.toJson(new ErrorResponse("Not Admin", "No permissions to delete event definitions."));
         }
 
-
-        Connection connection = Database.getConnection();
-
         String query = "DELETE FROM event_definitions WHERE id=?";
         System.out.println("query: " + request.body());
         for (String params : request.queryParams()) {
             LOG.info("PARAM: " + params + " = " + request.queryParams(params));
         }
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
+        try (Connection connection = Database.getConnection();
+                PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, Integer.parseInt(request.queryParams("eventDefinitionID")));
             LOG.info(statement.toString());
 

@@ -92,11 +92,11 @@ public final class WebServer {
         }
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
-            LOG.info(message);
-            sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
-        }));
+        // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
+        //     LOG.info(message);
+        //     sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
+        // }));
     }
 
     /**
@@ -121,6 +121,10 @@ public final class WebServer {
         // response to Ajax requests.
 
         LOG.info("NGAFID WebServer is initializing.");
+
+        if (System.getenv().containsKey("SERVER_ADDRESS")) {
+            Spark.ipAddress(System.getenv("SERVER_ADDRESS"));
+        }
 
         // Get the port for the NGAFID webserver to listen on
         int port = Integer.parseInt(System.getenv("NGAFID_PORT"));

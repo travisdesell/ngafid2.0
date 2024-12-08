@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 import org.apache.commons.cli.*;
 import org.ngafid.Database;
@@ -20,7 +20,7 @@ public class HeadingTrackDiff implements Calculation {
     private Flight flight;
     private static final Logger LOG = Logger.getLogger(HeadingTrackDiff.class.getName());
 
-    public HeadingTrackDiff(Flight flight, Connection connection) throws SQLException {
+    public HeadingTrackDiff(Flight flight, Connection connection) throws IOException, SQLException {
         this.flight = flight;
 
         this.hdg = DoubleTimeSeries.getDoubleTimeSeries(connection, this.flight.getId(), HDG);
@@ -47,20 +47,22 @@ public class HeadingTrackDiff implements Calculation {
 
     public boolean existsInDB(Connection connection) throws SQLException {
         String sql = "SELECT EXISTS (SELECT id FROM double_series WHERE name_id IN (SELECT id FROM double_series_names WHERE name = ?) AND flight_id = ?)";
-        PreparedStatement query = connection.prepareStatement(sql);
+        try (PreparedStatement query = connection.prepareStatement(sql)) {
 
-        query.setString(1, HDG_TRK_DIFF);
-        query.setInt(2, this.flight.getId());
+            query.setString(1, HDG_TRK_DIFF);
+            query.setInt(2, this.flight.getId());
 
-        ResultSet resultSet = query.executeQuery();
-        if (resultSet.next()) {
-            return resultSet.getBoolean(1);
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBoolean(1);
+                }
+            }
+
+            return false;
         }
-
-        return false;
     }
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         Options options = new Options();
 
         Option flightIds = new Option("f", "fleet_ids", true, "list of fleet ids to calculate for");
@@ -82,26 +84,24 @@ public class HeadingTrackDiff implements Calculation {
             System.exit(1);
         }
 
-        Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
+            String[] fleetIdStrs = cmd.getOptionValues('f');
 
-        String [] fleetIdStrs = cmd.getOptionValues('f');
-
-        if (fleetIdStrs == null || fleetIdStrs.length <= 0) {
-            fleets = Fleet.getAllFleets(connection);
-        }
-
-        try {
+            if (fleetIdStrs == null || fleetIdStrs.length <= 0) {
+                fleets = Fleet.getAllFleets(connection);
+            }
             for (Fleet fleet : fleets) {
                 LOG.info("Calculating hdg/trk diff for fleet: " + fleet.getName());
                 int fleetId = fleet.getId();
-                // This may be slow for large fleets like UND 
+                // This may be slow for large fleets like UND
                 List<Flight> flights = Flight.getFlights(connection, fleetId);
 
                 for (Flight flight : flights) {
                     List<String> missingParams = flight.checkCalculationParameters(HDG_TRK_DEPENDENCIES);
                     if (missingParams.isEmpty()) {
                         HeadingTrackDiff calculation = new HeadingTrackDiff(flight, connection);
-                        CalculatedDoubleTimeSeries hdgTrakDiff = new CalculatedDoubleTimeSeries(connection, HDG_TRK_DIFF, "degrees", true, flight);
+                        CalculatedDoubleTimeSeries hdgTrakDiff = new CalculatedDoubleTimeSeries(connection,
+                                HDG_TRK_DIFF, "degrees", true, flight);
                         if (!calculation.existsInDB(connection)) {
                             hdgTrakDiff.create(calculation);
                             hdgTrakDiff.updateDatabase(connection, flight.getId());
@@ -109,7 +109,7 @@ public class HeadingTrackDiff implements Calculation {
                             LOG.info("Already calculated for flight " + flight.toString());
                         }
                     } else {
-                        //Cant be calculated. 
+                        // Cant be calculated.
                         LOG.severe("Skipping flight " + flight.toString());
                         LOG.severe("Missing columns: " + missingParams.toString());
                     }
@@ -118,7 +118,7 @@ public class HeadingTrackDiff implements Calculation {
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } 
+        }
 
         LOG.info("All done!");
         System.exit(0);

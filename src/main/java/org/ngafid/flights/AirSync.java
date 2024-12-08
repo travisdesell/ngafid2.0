@@ -23,21 +23,17 @@ import org.ngafid.accounts.Fleet;
  * as many other methods may be used by the daemon
  */
 public class AirSync {
-    //Used for debugging
-    static PrintStream logFile;
-
     // How long the daemon will wait before making another request
     private static final long DEFAULT_WAIT_TIME = 10000;
-    private static Connection connection = Database.getConnection();
 
     private static final Logger LOG = Logger.getLogger(AirSync.class.getName());
 
     /**
      * Gracefully handles an exception from the AirSync API
      *
-     * @param e the exception caught
-     * @param authentication the authentication used at the time. We can use this 
-     * to request a new one if its simply outdated.
+     * @param e              the exception caught
+     * @param authentication the authentication used at the time. We can use this
+     *                       to request a new one if its simply outdated.
      */
     public static void handleAirSyncAPIException(Exception e, AirSyncAuth authentication) {
         String message = e.getMessage();
@@ -45,9 +41,9 @@ public class AirSync {
         LOG.severe("Caught " + message + " when making AirSync request!");
 
         if (message.contains("HTTP response code: 40")) {
-            LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
+            LOG.severe(
+                    "Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
             authentication.requestAuthorization();
-            //logFile.println("Got exception at time " + LocalDateTime.now().toString() + ": " + e.getMessage());
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
@@ -57,7 +53,8 @@ public class AirSync {
     }
 
     /**
-     * Sends a notification to NGAFID admins that this daemon has crashed gracefully.
+     * Sends a notification to NGAFID admins that this daemon has crashed
+     * gracefully.
      *
      * @param message the message that needs to be sent
      */
@@ -66,7 +63,8 @@ public class AirSync {
         ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
-        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message, EmailType.AIRSYNC_DAEMON_CRASH, connection);
+        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message,
+                EmailType.AIRSYNC_DAEMON_CRASH);
     }
 
     /**
@@ -78,8 +76,9 @@ public class AirSync {
         System.err.println("FATAL: Exiting due to error " + e.getMessage() + "!");
         e.printStackTrace();
 
-        //TODO: format this as html!
-        StringBuilder sb = new StringBuilder("The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
+        // TODO: format this as html!
+        StringBuilder sb = new StringBuilder(
+                "The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
         sb.append("Exception caught: " + e.getMessage() + "\n");
         sb.append("Stack trace:\n");
         sb.append(ExceptionUtils.getStackTrace(e));
@@ -92,27 +91,74 @@ public class AirSync {
         System.exit(1);
     }
 
+    static void cli(String[] args) throws IOException, SQLException {
+        switch (args[0]) {
+            case "reset-all":
+                System.out
+                        .println("Do you really want to delete all airsync uploads and associated flights? (y/n)");
+                int c = System.in.read();
+                if (c == 'y') {
+                    try (Connection connection = Database.getConnection();
+                            PreparedStatement query = connection.prepareStatement(
+                                    "SELECT " + Upload.DEFAULT_COLUMNS
+                                            + " FROM uploads WHERE kind = 'AIRSYNC'");
+                            ResultSet results = query.executeQuery()) {
+                        while (results.next()) {
+                            Upload upload = new Upload(results);
+                            upload.reset(connection);
+                        }
+                    }
+                }
+
+                return;
+
+            case "remove-all":
+                break;
+        }
+    }
+
     /**
-     * This daemon's entry point. 
+     * This daemon's entry point.
      * This is where the logic for how the daemon operates will be defined.
      *
      * @param args command line args
      */
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         LOG.info("AirSync daemon started");
 
-        try {
-            LocalDateTime now = LocalDateTime.now();
-            String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-" + now.getHour() + now.getMinute() + now.getSecond();
+        if (args.length != 0) {
+            try {
+                cli(args);
+            } catch (IOException | SQLException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
 
-            //logFile = new PrintStream(new File("/var/log/ngafid/airsync_" + timeStamp + ".log"));
-            //logFile.println("Starting AirSync daemon error log at: " + now.toString());
-
-            while (true) {
-                AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
+        while (true) {
+            try (Connection connection = Database.getConnection()) {
+                // When an airsync upload is created in placed into the `uploads` table, it will have the 'UPLOADING'
+                // state.
+                // These uploads will never get processed if they're state is not set to 'UPLOADED'.
+                //
+                // If the airsync daemmon crashes for some reason, we may end up with such a scenario. So we set any
+                // airsync
+                // uploads with
+                // UPLOADING to have state UPLOADED.
+                try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT " + Upload.DEFAULT_COLUMNS
+                                + " FROM uploads WHERE kind = 'AIRSYNC' AND status = 'UPLOADING'");
+                        ResultSet results = query.executeQuery()) {
+                    while (results.next()) {
+                        Upload upload = new Upload(results);
+                        upload.complete(connection);
+                    }
+                }
+                AirSyncFleet[] airSyncFleets = AirSyncFleet.getAll(connection);
 
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
-                    LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
+                    LOG.severe(
+                            "This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
                     System.exit(1);
                 }
 
@@ -133,14 +179,11 @@ public class AirSync {
                 long waitTime = 30000;
                 LOG.info("Sleeping for " + waitTime / 1000 + "s.");
                 Thread.sleep(waitTime);
+            } catch (InterruptedException | SQLException | IOException e) {
+                LOG.severe("Encountered the following error: ");
+                e.printStackTrace();
+                continue;
             }
-        } catch (IOException e) {
-            String message = e.getMessage();
-            LOG.info("Got exception: " + e.getMessage());
-            if (message.contains("HTTP response code: 40"))
-                LOG.info("HINT: Your bearer token is either expired, or you are rate limited");
-        } catch (Exception e) {
-            crashGracefully(e);
         }
     }
 }

@@ -48,7 +48,6 @@ public class GetNgafidCesium implements Route {
         ArrayList<Double> flightGeoAglCruise;
         ArrayList<Double> flightGeoInfoAgl;
 
-
         ArrayList<String> flightTaxiingTimes;
         ArrayList<String> flightTakeOffTimes;
         ArrayList<String> flightClimbTimes;
@@ -59,11 +58,11 @@ public class GetNgafidCesium implements Route {
         String airframeType;
 
         public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff,
-                              ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise,
-                              ArrayList<Double> flightGeoInfoAgl, ArrayList<String> flightTaxiingTimes,
-                              ArrayList<String> flightTakeOffTimes, ArrayList<String> flightClimbTimes,
-                              ArrayList<String> flightCruiseTimes, ArrayList<String> flightAglTimes,
-                              String airframeType) {
+                ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise,
+                ArrayList<Double> flightGeoInfoAgl, ArrayList<String> flightTaxiingTimes,
+                ArrayList<String> flightTakeOffTimes, ArrayList<String> flightClimbTimes,
+                ArrayList<String> flightCruiseTimes, ArrayList<String> flightAglTimes,
+                String airframeType) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -111,9 +110,7 @@ public class GetNgafidCesium implements Route {
             return null;
         }
 
-        try {
-
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             Flight flight = Flight.getFlight(connection, flightId);
 
             String[] flightIdsAll = request.queryParamsValues("flight_id");
@@ -121,7 +118,7 @@ public class GetNgafidCesium implements Route {
 
             Flight otherFlight = null;
             if (otherFlightId != null) {
-                otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
+                otherFlight = flight.getFlight(connection, Integer.parseInt(otherFlightId));
 
             }
 
@@ -135,20 +132,27 @@ public class GetNgafidCesium implements Route {
             Map<String, Object> flights = new HashMap<String, Object>();
 
             for (String flightIdNew : flightIdsAll) {
-                Flight incomingFlight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightIdNew));
+                Flight incomingFlight = Flight.getFlight(connection, Integer.parseInt(flightIdNew));
                 int flightIdNewInteger = Integer.parseInt(flightIdNew);
 
                 String airframeType = incomingFlight.getAirframeType();
 
-                DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltMSL");
-                DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
-                DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
-                DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
+                DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
+                        "AltMSL");
+                DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
+                        "Latitude");
+                DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
+                        "Longitude");
+                DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
+                        "AltAGL");
                 DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
-                DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
+                DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
+                        "GndSpd");
 
-                StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
-                StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
+                StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger,
+                        "Lcl Date");
+                StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger,
+                        "Lcl Time");
 
                 ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
                 ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
@@ -172,14 +176,16 @@ public class GetNgafidCesium implements Route {
                 // Calculate the taxiing phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         initCounter++;
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
                         flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
+                                && groundSpeed.get(i) < 80) {
                             break;
                         }
                     }
@@ -188,8 +194,10 @@ public class GetNgafidCesium implements Route {
                 // Calculate the takeoff-init phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
+                                && groundSpeed.get(i) < 80) {
 
                             if (takeoffCounter <= 15) {
                                 flightGeoAglTakeOff.add(longitude.get(i));
@@ -211,8 +219,10 @@ public class GetNgafidCesium implements Route {
                 // Calculate the climb phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
+                                && groundSpeed.get(i) <= 80) {
 
                             if (countPostTakeoff >= 15) {
                                 flightGeoAglClimb.add(longitude.get(i));
@@ -231,11 +241,12 @@ public class GetNgafidCesium implements Route {
                 }
 
                 // Calculate the cruise to final phase
-                int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) -9;
+                int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) - 9;
                 sizePreClimb = preClimb / 3;
 
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
 
                         if (countPostCruise >= sizePreClimb) {
                             flightGeoAglCruise.add(longitude.get(i));
@@ -250,7 +261,8 @@ public class GetNgafidCesium implements Route {
                 // Calculate the full phase
                 // I am avoiding NaN here as well!
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
@@ -259,11 +271,15 @@ public class GetNgafidCesium implements Route {
                 }
 
                 if (incomingFlight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
+                            + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: "
+                            + fleetId);
                     Spark.halt(401, "User did not have access to this flight.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb,
+                        flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes,
+                        flightCruiseTimes, flightAglTimes, airframeType);
 
                 flights.put(flightIdNew, cr);
 
@@ -293,4 +309,3 @@ public class GetNgafidCesium implements Route {
         return "";
     }
 }
-

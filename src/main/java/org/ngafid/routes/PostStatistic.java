@@ -44,25 +44,24 @@ public class PostStatistic implements Route {
         }
 
         public static Map<String, StatFunction<Object>> function_map = Map.ofEntries(
-            Map.entry("flightTime", StatFetcher::flightTime),
-            Map.entry("yearFlightTime", StatFetcher::yearFlightTime),
-            Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
-            
-            Map.entry("numberFlights", StatFetcher::numberFlights),
-            Map.entry("numberAircraft", StatFetcher::numberAircraft),
-            Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights),
-            Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights),
-            Map.entry("totalEvents", StatFetcher::totalEvents),
-            Map.entry("yearEvents", StatFetcher::yearEvents),
-            Map.entry("monthEvents", StatFetcher::monthEvents),
-            Map.entry("numberFleets", StatFetcher::numberFleets),
-            Map.entry("numberUsers", StatFetcher::numberUsers),
-            Map.entry("uploads", StatFetcher::uploads),
-            Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported),
-            Map.entry("uploadsWithError", StatFetcher::uploadsWithError),
-            Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning),
-            Map.entry("flightsWithError", StatFetcher::flightsWithError)
-        );
+                Map.entry("flightTime", StatFetcher::flightTime),
+                Map.entry("yearFlightTime", StatFetcher::yearFlightTime),
+                Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+
+                Map.entry("numberFlights", StatFetcher::numberFlights),
+                Map.entry("numberAircraft", StatFetcher::numberAircraft),
+                Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights),
+                Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights),
+                Map.entry("totalEvents", StatFetcher::totalEvents),
+                Map.entry("yearEvents", StatFetcher::yearEvents),
+                Map.entry("monthEvents", StatFetcher::monthEvents),
+                Map.entry("numberFleets", StatFetcher::numberFleets),
+                Map.entry("numberUsers", StatFetcher::numberUsers),
+                Map.entry("uploads", StatFetcher::uploads),
+                Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported),
+                Map.entry("uploadsWithError", StatFetcher::uploadsWithError),
+                Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning),
+                Map.entry("flightsWithError", StatFetcher::flightsWithError));
 
         final Connection connection;
         final User user;
@@ -73,7 +72,7 @@ public class PostStatistic implements Route {
             this.connection = connection;
             this.user = user;
 
-            if (aggregate) { 
+            if (aggregate) {
                 this.fleetId = -1;
             } else {
                 this.fleetId = user.getFleetId();
@@ -82,35 +81,98 @@ public class PostStatistic implements Route {
             this.aggregate = aggregate;
         }
 
-        boolean aggregate() { return this.fleetId > 0; }
+        boolean aggregate() {
+            return this.fleetId > 0;
+        }
 
-        LocalDate thirtyDaysAgo() { return LocalDate.now().minusDays(30); }
-        LocalDate firstOfMonth() { return LocalDate.now().with(TemporalAdjusters.firstDayOfMonth()); }
-        LocalDate firstOfYear() { return LocalDate.now().with(TemporalAdjusters.firstDayOfYear()); }
-        
-        String lastThirtyDaysQuery() { return "start_time >= '" + thirtyDaysAgo().toString() + "'"; }
-        String yearQuery() { return "start_time >= '" + firstOfYear().toString() + "'"; }
-        
-        Long flightTime() throws SQLException { return Flight.getTotalFlightTime(connection, fleetId, null); }
-        Long yearFlightTime() throws SQLException { return Flight.getTotalFlightTime(connection, yearQuery(), fleetId); }
-        Long monthFlightTime() throws SQLException { return Flight.getTotalFlightTime(connection, lastThirtyDaysQuery(), fleetId); }
+        LocalDate thirtyDaysAgo() {
+            return LocalDate.now().minusDays(30);
+        }
 
-        Integer numberFlights() throws SQLException { return Flight.getNumFlights(connection, fleetId); }
-        Integer numberAircraft() throws SQLException { return Tails.getNumberTails(connection, fleetId); }
-        Integer yearNumberFlights() throws SQLException { return Flight.getNumFlights(connection, yearQuery(), fleetId); }
-        Integer monthNumberFlights() throws SQLException { return Flight.getNumFlights(connection, lastThirtyDaysQuery(), fleetId); }
-        Integer totalEvents() throws SQLException { return EventStatistics.getEventCount(connection, fleetId, null, null); }
-        Integer yearEvents() throws SQLException { return EventStatistics.getEventCount(connection, fleetId, firstOfYear(), null); }
-        Integer monthEvents() throws SQLException { return EventStatistics.getEventCount(connection, fleetId, firstOfMonth(), null); }
-        Integer numberFleets() throws SQLException { return aggregate ? Fleet.getNumberFleets(connection) : null; }
-        Integer numberUsers() throws SQLException { return User.getNumberUsers(connection, fleetId); }
-        Integer uploads() throws SQLException { return Upload.getNumUploads(connection, fleetId, ""); }
-        Integer uploadsNotImported() throws SQLException { return Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'"); }
-        Integer uploadsWithError() throws SQLException { return Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'"); }
-        Integer flightsWithWarning() throws SQLException { return FlightWarning.getCount(connection, fleetId); }
-        Integer flightsWithError() throws SQLException { return FlightError.getCount(connection, fleetId); }
+        LocalDate firstOfMonth() {
+            return LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        }
+
+        LocalDate firstOfYear() {
+            return LocalDate.now().with(TemporalAdjusters.firstDayOfYear());
+        }
+
+        String lastThirtyDaysQuery() {
+            return "start_time >= '" + thirtyDaysAgo().toString() + "'";
+        }
+
+        String yearQuery() {
+            return "start_time >= '" + firstOfYear().toString() + "'";
+        }
+
+        Long flightTime() throws SQLException {
+            return Flight.getTotalFlightTime(connection, fleetId, null);
+        }
+
+        Long yearFlightTime() throws SQLException {
+            return Flight.getTotalFlightTime(connection, yearQuery(), fleetId);
+        }
+
+        Long monthFlightTime() throws SQLException {
+            return Flight.getTotalFlightTime(connection, lastThirtyDaysQuery(), fleetId);
+        }
+
+        Integer numberFlights() throws SQLException {
+            return Flight.getNumFlights(connection, fleetId);
+        }
+
+        Integer numberAircraft() throws SQLException {
+            return Tails.getNumberTails(connection, fleetId);
+        }
+
+        Integer yearNumberFlights() throws SQLException {
+            return Flight.getNumFlights(connection, yearQuery(), fleetId);
+        }
+
+        Integer monthNumberFlights() throws SQLException {
+            return Flight.getNumFlights(connection, lastThirtyDaysQuery(), fleetId);
+        }
+
+        Integer totalEvents() throws SQLException {
+            return EventStatistics.getEventCount(connection, fleetId, null, null);
+        }
+
+        Integer yearEvents() throws SQLException {
+            return EventStatistics.getEventCount(connection, fleetId, firstOfYear(), null);
+        }
+
+        Integer monthEvents() throws SQLException {
+            return EventStatistics.getEventCount(connection, fleetId, firstOfMonth(), null);
+        }
+
+        Integer numberFleets() throws SQLException {
+            return aggregate ? Fleet.getNumberFleets(connection) : null;
+        }
+
+        Integer numberUsers() throws SQLException {
+            return User.getNumberUsers(connection, fleetId);
+        }
+
+        Integer uploads() throws SQLException {
+            return Upload.getNumUploads(connection, fleetId, "");
+        }
+
+        Integer uploadsNotImported() throws SQLException {
+            return Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'");
+        }
+
+        Integer uploadsWithError() throws SQLException {
+            return Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'");
+        }
+
+        Integer flightsWithWarning() throws SQLException {
+            return FlightWarning.getCount(connection, fleetId);
+        }
+
+        Integer flightsWithError() throws SQLException {
+            return FlightError.getCount(connection, fleetId);
+        }
     }
-
 
     public PostStatistic(Gson gson, boolean aggregate) {
         this.gson = gson;
@@ -131,13 +193,11 @@ public class PostStatistic implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             StatFetcher fetcher = new StatFetcher(connection, user, aggregate);
-            
+
             String[] stats;
-            
+
             if (request.splat().length > 0) {
                 stats = request.splat();
             } else {
@@ -150,7 +210,7 @@ public class PostStatistic implements Route {
                 LOG.info("Computing " + stats[i]);
                 statistics.put(stats[i], StatFetcher.function_map.get(stats[i]).execute(fetcher));
             }
-            
+
             return gson.toJson(statistics);
 
         } catch (SQLException e) {
@@ -158,6 +218,5 @@ public class PostStatistic implements Route {
             return gson.toJson(new ErrorResponse(e));
         }
 
-        
     }
 }

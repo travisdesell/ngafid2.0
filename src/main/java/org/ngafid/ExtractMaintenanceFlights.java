@@ -16,7 +16,6 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Instant;
@@ -39,7 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 
-
 import org.ngafid.WebServer;
 
 import org.ngafid.common.TimeUtils;
@@ -57,8 +55,6 @@ import org.ngafid.maintenance.MaintenanceRecord;
 import org.ngafid.maintenance.AircraftTimeline;
 
 public class ExtractMaintenanceFlights {
-    private static Connection connection = Database.getConnection();
-
     private static HashMap<Integer, MaintenanceRecord> recordsByWorkorder = new HashMap<>();
     private static HashMap<String, ArrayList<MaintenanceRecord>> recordsByLabel = new HashMap<>();
     private static HashMap<String, ArrayList<MaintenanceRecord>> recordsByTailNumber = new HashMap<>();
@@ -69,8 +65,9 @@ public class ExtractMaintenanceFlights {
     private static HashMap<String, String> labelToCluster = new HashMap<>();
     private static HashMap<String, Integer> clusterCounts = new HashMap<>();
 
+    public static void main(String[] arguments) throws SQLException {
+        Connection connection = Database.getConnection();
 
-    public static void main(String[] arguments) {
         String output_directory = arguments[0];
         String targetCluster = arguments[1];
 
@@ -78,7 +75,7 @@ public class ExtractMaintenanceFlights {
 
         System.out.println("allClusters are:");
         for (int i = 0; i < allClusters.length; i++) {
-            allClusters[i] = arguments[i+2];
+            allClusters[i] = arguments[i + 2];
             System.out.println("\t'" + allClusters[i] + "'");
         }
 
@@ -99,12 +96,13 @@ public class ExtractMaintenanceFlights {
                 boolean first = true;
                 MaintenanceRecord previous = null;
                 while (line != null) {
-                    //System.out.println(line);
+                    // System.out.println(line);
                     lineCount++;
 
                     MaintenanceRecord record = new MaintenanceRecord(line);
                     if (first) {
-                        clusterName = allClusters[i].substring(allClusters[i].lastIndexOf("/") + 1, allClusters[i].lastIndexOf("."));
+                        clusterName = allClusters[i].substring(allClusters[i].lastIndexOf("/") + 1,
+                                allClusters[i].lastIndexOf("."));
                         clusterToLabel.put(clusterName, record.getLabel());
                         labelToCluster.put(record.getLabel(), clusterName);
                         clusterCounts.put(clusterName, 0);
@@ -113,30 +111,31 @@ public class ExtractMaintenanceFlights {
 
                     MaintenanceRecord existingRecord = recordsByWorkorder.get(record.getWorkorderNumber());
                     if (existingRecord == null) {
-                        //this is a record we have not yet seen before
+                        // this is a record we have not yet seen before
                         recordsByWorkorder.put(record.getWorkorderNumber(), record);
 
-                        if ((record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") || record.getAirframe().equals("SEMI"))) {
-                            //only add tail numbers from C172, PA28 or PA44
+                        if ((record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH")
+                                || record.getAirframe().equals("SEMI"))) {
+                            // only add tail numbers from C172, PA28 or PA44
                             tailNumbers.add(record.getTailNumber());
                         }
 
                         airframes.add(record.getAirframe());
 
-                        //add it to the list of records by tails
+                        // add it to the list of records by tails
                         ArrayList<MaintenanceRecord> tailSet = recordsByTailNumber.get(record.getTailNumber());
                         if (tailSet == null) {
                             tailSet = new ArrayList<MaintenanceRecord>();
                             recordsByTailNumber.put(record.getTailNumber(), tailSet);
-                        } 
+                        }
                         tailSet.add(record);
 
-                        //add it to the list of reords by labels
+                        // add it to the list of reords by labels
                         ArrayList<MaintenanceRecord> labelList = recordsByLabel.get(record.getLabel());
                         if (labelList == null) {
                             labelList = new ArrayList<MaintenanceRecord>();
                             recordsByLabel.put(record.getLabel(), labelList);
-                        } 
+                        }
                         labelList.add(record);
 
                         allRecords.add(record);
@@ -144,7 +143,7 @@ public class ExtractMaintenanceFlights {
                         existingRecord.combine(record);
                     }
 
-                    //System.out.println("\t" + record.toString());
+                    // System.out.println("\t" + record.toString());
 
                     clusterRecords.add(record);
                     clusterCounts.put(clusterName, clusterCounts.get(clusterName) + 1);
@@ -161,9 +160,9 @@ public class ExtractMaintenanceFlights {
             }
         }
 
-        //System.out.println("\n\n\n");
+        // System.out.println("\n\n\n");
         for (MaintenanceRecord record : allRecords) {
-            //System.out.println(record.toString());
+            // System.out.println(record.toString());
         }
 
         System.out.println("\n\n\n");
@@ -176,10 +175,11 @@ public class ExtractMaintenanceFlights {
 
         System.out.println("cluster to label:");
         for (Map.Entry<String, String> kvPair : clusterToLabel.entrySet()) {
-            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue() + "' -- count: " + clusterCounts.get(kvPair.getKey()));
+            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue() + "' -- count: "
+                    + clusterCounts.get(kvPair.getKey()));
         }
 
-        //System.out.println("\t" + clusterToLabel);
+        // System.out.println("\t" + clusterToLabel);
 
         System.out.println("unique airframes: ");
         System.out.println("\t" + airframes);
@@ -192,33 +192,34 @@ public class ExtractMaintenanceFlights {
 
         HashSet<String> targetTails = new HashSet<>();
         for (MaintenanceRecord record : targetRecords) {
-            //C172 is Cessna 172
-            //ARCH is PA28 (Piper Archer)
-            //SEMI IS PA44 (Piper Seminole) 
-            if (!(record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") || record.getAirframe().equals("SEMI"))) {
-                //skip the others
+            // C172 is Cessna 172
+            // ARCH is PA28 (Piper Archer)
+            // SEMI IS PA44 (Piper Seminole)
+            if (!(record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH")
+                    || record.getAirframe().equals("SEMI"))) {
+                // skip the others
                 continue;
             }
 
-            //System.out.println(record.toString());
+            // System.out.println(record.toString());
             targetTails.add(record.getTailNumber());
         }
         LocalDate startDate = targetRecords.get(0).getOpenDate().minusDays(10);
-        LocalDate endDate = targetRecords.get(targetRecords.size() -1 ).getCloseDate().plusDays(10);
+        LocalDate endDate = targetRecords.get(targetRecords.size() - 1).getCloseDate().plusDays(10);
         System.out.println("earliest date for label: " + startDate);
         System.out.println("latest date for label: " + endDate);
         System.out.println("label present for tails: " + targetTails);
 
         try {
-            //for each tail
-            //1. get all flights between start and end date
+            // for each tail
+            // 1. get all flights between start and end date
 
             ArrayList<String> tailsWithoutFlights = new ArrayList<String>();
-            HashMap<String,Integer> tailFlightCounts = new HashMap<>();
-            HashMap<String,Integer> tailSystemIdCounts = new HashMap<>();
+            HashMap<String, Integer> tailFlightCounts = new HashMap<>();
+            HashMap<String, Integer> tailSystemIdCounts = new HashMap<>();
 
             for (String tailNumber : targetTails) {
-            //for (String tailNumber : tailNumbers) {
+                // for (String tailNumber : tailNumbers) {
 
                 System.out.println("\n\nNEW TAIL: '" + tailNumber + "'");
                 System.out.println("records for tail: '" + tailNumber + "'");
@@ -226,13 +227,14 @@ public class ExtractMaintenanceFlights {
                 Collections.sort(tailRecords);
 
                 for (MaintenanceRecord record : tailRecords) {
-                    System.out.println("\t" + record.getOpenDate() + " to " + record.getCloseDate() + " for " + record.getLabel() + ", airframe: " + record.getAirframe());
+                    System.out.println("\t" + record.getOpenDate() + " to " + record.getCloseDate() + " for "
+                            + record.getLabel() + ", airframe: " + record.getAirframe());
                 }
                 System.out.println("tail: '" + tailNumber + "' had " + tailRecords.size() + " events.");
                 System.out.println();
 
-
-                PreparedStatement tailStmt = connection.prepareStatement("SELECT system_id FROM tails WHERE tail = ? and fleet_id = ?");
+                PreparedStatement tailStmt = connection
+                        .prepareStatement("SELECT system_id FROM tails WHERE tail = ? and fleet_id = ?");
                 tailStmt.setString(1, tailNumber);
                 int fleetId = 1; // UND
                 tailStmt.setInt(2, fleetId);
@@ -248,14 +250,16 @@ public class ExtractMaintenanceFlights {
                     String systemId = tailSet.getString(1);
                     System.out.println("\tsystem id '" + systemId + "' flights:");
 
-                    PreparedStatement stmt = connection.prepareStatement("SELECT id, start_time, end_time, airframe_id FROM flights WHERE system_id = ? AND start_time > ? AND end_time < ? ORDER BY start_time");
+                    PreparedStatement stmt = connection.prepareStatement(
+                            "SELECT id, start_time, end_time, airframe_id FROM flights WHERE system_id = ? AND start_time > ? AND end_time < ? ORDER BY start_time");
                     stmt.setString(1, systemId);
                     stmt.setString(2, startDate.toString());
                     stmt.setString(3, endDate.toString());
 
                     System.out.println(stmt.toString());
 
-                    //if there was a flight processed entry for this flight it was already processed
+                    // if there was a flight processed entry for this flight it was already
+                    // processed
                     ResultSet resultSet = stmt.executeQuery();
                     while (resultSet.next()) {
                         int flightId = resultSet.getInt(1);
@@ -263,13 +267,15 @@ public class ExtractMaintenanceFlights {
                         String flightEndTime = resultSet.getString(3);
                         int airframeId = resultSet.getInt(4);
 
-                        //System.out.println("\t\tid: " + flightId + ", " + flightStartTime + " to " + flightEndTime + ", airframe id: " + airframeId);
+                        // System.out.println("\t\tid: " + flightId + ", " + flightStartTime + " to " +
+                        // flightEndTime + ", airframe id: " + airframeId);
 
-                        //convert the start time (which is in GMT) to CST
+                        // convert the start time (which is in GMT) to CST
                         flightStartTime = TimeUtils.convertToOffset(flightStartTime, "+00:00", "-06:00");
                         flightEndTime = TimeUtils.convertToOffset(flightEndTime, "+00:00", "-06:00");
 
-                        //System.out.println("\t\tid: " + flightId + ", " + flightStartTime + " to " + flightEndTime + ", airframe id: " + airframeId);
+                        // System.out.println("\t\tid: " + flightId + ", " + flightStartTime + " to " +
+                        // flightEndTime + ", airframe id: " + airframeId);
                         timeline.add(new AircraftTimeline(flightId, flightStartTime, flightEndTime));
                         count++;
                     }
@@ -277,7 +283,7 @@ public class ExtractMaintenanceFlights {
                     systemIdCount++;
                     resultSet.close();
                     stmt.close();
-                    //break;
+                    // break;
                 }
 
                 int currentRecord = 0;
@@ -287,8 +293,8 @@ public class ExtractMaintenanceFlights {
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);
 
-                    //System.err.println("current aircraft: " + ac);
-                    //System.err.println("starting with record: " + record);
+                    // System.err.println("current aircraft: " + ac);
+                    // System.err.println("starting with record: " + record);
                     while (record != null && ac.getEndTime().compareTo(record.getOpenDate()) > 0) {
                         previousRecord = record;
                         currentRecord++;
@@ -297,73 +303,87 @@ public class ExtractMaintenanceFlights {
                             break;
                         }
                         record = tailRecords.get(currentRecord);
-                        //System.out.println("\t\tmoved to record: " + record);
+                        // System.out.println("\t\tmoved to record: " + record);
                     }
-                    //System.out.println("moved to record: " + record);
+                    // System.out.println("moved to record: " + record);
 
                     while (record == null || ac.getEndTime().compareTo(record.getCloseDate()) <= 0) {
                         long daysToNext = -1;
-                        if (record != null) daysToNext = Math.max(0, ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate()));
+                        if (record != null)
+                            daysToNext = Math.max(0, ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate()));
 
                         if (daysToNext == 0) {
-                            //this is the day an event occurred so the previous is the current record as well
+                            // this is the day an event occurred so the previous is the current record as
+                            // well
                             previousRecord = record;
                         }
 
                         long daysSincePrev = -1;
-                        if (previousRecord != null) daysSincePrev = Math.max(0, ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
+                        if (previousRecord != null)
+                            daysSincePrev = Math.max(0,
+                                    ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
 
                         if (previousRecord != null) {
-                            //System.out.print("previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + ") ");
+                            // System.out.print("previous record close " + previousRecord.getCloseDate() + "
+                            // (" + daysSincePrev + ") ");
                             ac.setPreviousEvent(previousRecord, daysSincePrev);
                         } else {
                             ac.setPreviousEvent(null, -1);
                         }
 
                         if (record != null) {
-                            //System.out.print(" next record open " + record.getOpenDate() + " (" + daysToNext + ") ");
+                            // System.out.print(" next record open " + record.getOpenDate() + " (" +
+                            // daysToNext + ") ");
                             ac.setNextEvent(record, daysToNext);
                         } else {
                             ac.setNextEvent(null, -1);
                         }
-                        //System.out.print(" " + ac.toString());
-                        //System.out.println();
+                        // System.out.print(" " + ac.toString());
+                        // System.out.println();
 
                         currentAircraft++;
-                        if (currentAircraft >= timeline.size()) break;
+                        if (currentAircraft >= timeline.size())
+                            break;
                         ac = timeline.get(currentAircraft);
                     }
 
                     if (record != null) {
-                        //step back so the last AC can be processed
+                        // step back so the last AC can be processed
                         currentAircraft--;
                     }
 
                     /*
-                    if (record != null) {
-                        long daysToNext = ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate());
-                        if (daysToNext == 0) {
-                            //this is the day an event occurred so the previous is the current record as well
-                            previousRecord = record;
-                        }
-
-                        long daysSincePrev = -1;
-                        if (previousRecord != null) daysSincePrev = Math.max(0, ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
-
-                        ac.setPreviousEvent(previousRecord, daysSincePrev);
-                        ac.setNextEvent(record, daysToNext);
-                        System.out.println("\t\t" + ac.toString() + ", previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + "), next record open " + record.getOpenDate() + " (" + daysToNext + ")");
-
-                    } else {
-                        long daysSincePrev = ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime());
-                        System.out.println("\t\t" + ac.toString() + ", previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + "), no next record");
-                        ac.setPreviousEvent(previousRecord, daysSincePrev);
-                        ac.setNextEvent(null, -1);
-                    }
-                    */
+                     * if (record != null) {
+                     * long daysToNext = ChronoUnit.DAYS.between(ac.getEndTime(),
+                     * record.getOpenDate());
+                     * if (daysToNext == 0) {
+                     * //this is the day an event occurred so the previous is the current record as
+                     * well
+                     * previousRecord = record;
+                     * }
+                     * 
+                     * long daysSincePrev = -1;
+                     * if (previousRecord != null) daysSincePrev = Math.max(0,
+                     * ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
+                     * 
+                     * ac.setPreviousEvent(previousRecord, daysSincePrev);
+                     * ac.setNextEvent(record, daysToNext);
+                     * System.out.println("\t\t" + ac.toString() + ", previous record close " +
+                     * previousRecord.getCloseDate() + " (" + daysSincePrev + "), next record open "
+                     * + record.getOpenDate() + " (" + daysToNext + ")");
+                     * 
+                     * } else {
+                     * long daysSincePrev = ChronoUnit.DAYS.between(previousRecord.getCloseDate(),
+                     * ac.getStartTime());
+                     * System.out.println("\t\t" + ac.toString() + ", previous record close " +
+                     * previousRecord.getCloseDate() + " (" + daysSincePrev + "), no next record");
+                     * ac.setPreviousEvent(previousRecord, daysSincePrev);
+                     * ac.setNextEvent(null, -1);
+                     * }
+                     */
                 }
 
-                //setting flights to next/flights since prev
+                // setting flights to next/flights since prev
                 int NUMBER_EXTRACTIONS = 5;
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);
@@ -374,13 +394,17 @@ public class ExtractMaintenanceFlights {
                         while ((currentAircraft - i) >= 0 && (i - 1) < NUMBER_EXTRACTIONS) {
                             AircraftTimeline a = timeline.get(currentAircraft - i);
                             if (a.getDaysToNext() == 0) {
-                                //System.out.println("setting timeline[" + (currentAircraft - i) + " flightsToNext to: 0 because days since previous is: " + a.getDaysToNext());
-                                a.setFlightsToNext(-1); //-1 means the flight occurred day of the event, or outside of the range
+                                // System.out.println("setting timeline[" + (currentAircraft - i) + "
+                                // flightsToNext to: 0 because days since previous is: " + a.getDaysToNext());
+                                a.setFlightsToNext(-1); // -1 means the flight occurred day of the event, or outside of
+                                                        // the range
                                 i++;
                                 continue;
                             }
 
-                            //System.out.println("setting timeline[" + (currentAircraft - i) + " flightsToNext to: " + flightCount + " because days since previous is: " + a.getDaysToNext());
+                            // System.out.println("setting timeline[" + (currentAircraft - i) + "
+                            // flightsToNext to: " + flightCount + " because days since previous is: " +
+                            // a.getDaysToNext());
                             a.setFlightsToNext(flightCount);
                             i++;
                             flightCount++;
@@ -392,13 +416,18 @@ public class ExtractMaintenanceFlights {
                         while ((currentAircraft + i) < timeline.size() && (i - 1) < NUMBER_EXTRACTIONS) {
                             AircraftTimeline a = timeline.get(currentAircraft + i);
                             if (a.getDaysSincePrevious() == 0) {
-                                //System.out.println("setting timeline[" + (currentAircraft + i) + " flightsSincePrevious to: 0 because days since previous is: " + a.getDaysSincePrevious());
-                                a.setFlightsSincePrevious(-1); //-1 means the flight occurred day of the event, or outside of the range
+                                // System.out.println("setting timeline[" + (currentAircraft + i) + "
+                                // flightsSincePrevious to: 0 because days since previous is: " +
+                                // a.getDaysSincePrevious());
+                                a.setFlightsSincePrevious(-1); // -1 means the flight occurred day of the event, or
+                                                               // outside of the range
                                 i++;
                                 continue;
                             }
 
-                            //System.out.println("setting timeline[" + (currentAircraft + i) + " flightsSincePrevious to: " + flightCount + " because days since previous is: " + a.getDaysSincePrevious());
+                            // System.out.println("setting timeline[" + (currentAircraft + i) + "
+                            // flightsSincePrevious to: " + flightCount + " because days since previous is:
+                            // " + a.getDaysSincePrevious());
                             a.setFlightsSincePrevious(flightCount);
                             i++;
                             flightCount++;
@@ -409,9 +438,11 @@ public class ExtractMaintenanceFlights {
                 System.err.println("\n\nflightsToNext, flightsSincePrev set, now exporting files:");
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);
-                    //System.out.println(ac + " -- NEXT " + ac.getNextEvent() + " -- PREV " + ac.getPreviousEvent());
+                    // System.out.println(ac + " -- NEXT " + ac.getNextEvent() + " -- PREV " +
+                    // ac.getPreviousEvent());
 
-                    if (ac.getDaysSincePrevious() == 0 || ac.getDaysToNext() == 0 || ac.getFlightsSincePrevious() != -1 || ac.getFlightsToNext() != -1) {
+                    if (ac.getDaysSincePrevious() == 0 || ac.getDaysToNext() == 0 || ac.getFlightsSincePrevious() != -1
+                            || ac.getFlightsToNext() != -1) {
 
                         Flight flight = Flight.getFlight(connection, ac.getFlightId());
 
@@ -420,7 +451,7 @@ public class ExtractMaintenanceFlights {
                         MaintenanceRecord event = null;
                         if (ac.getDaysSincePrevious() == 0) {
                             event = ac.getPreviousEvent();
-                            when =  "_day_of";
+                            when = "_day_of";
                         } else if (ac.getFlightsSincePrevious() != -1) {
                             event = ac.getPreviousEvent();
                             when = "_after_" + ac.getFlightsSincePrevious();
@@ -433,26 +464,30 @@ public class ExtractMaintenanceFlights {
                         }
 
                         if (event == null) {
-                            System.err.println("ERROR: event is null! currentAircraft: " + currentAircraft + ", timeline.size(): " + timeline.size());
+                            System.err.println("ERROR: event is null! currentAircraft: " + currentAircraft
+                                    + ", timeline.size(): " + timeline.size());
                         }
-                        if (labelToCluster == null) System.err.println("ERROR: labelToCluster is null!");
+                        if (labelToCluster == null)
+                            System.err.println("ERROR: labelToCluster is null!");
 
                         String eventCluster = labelToCluster.get(event.getLabel());
 
-                        if (!eventCluster.equals(targetCluster)) continue;
-                        //System.out.println(ac.toString());
+                        if (!eventCluster.equals(targetCluster))
+                            continue;
+                        // System.out.println(ac.toString());
 
-                        //System.out.println(" -- Event: '" + event.getLabel() + "', open '" + event.getOpenDate() + ", close '" + event.getCloseDate() + "'");
+                        // System.out.println(" -- Event: '" + event.getLabel() + "', open '" +
+                        // event.getOpenDate() + ", close '" + event.getCloseDate() + "'");
 
                         String airframeType = flight.getAirframeType();
-                        if (airframeType.equals("Cessna 172S") || airframeType.equals("Cessna 172R") || airframeType.equals("Cessna 172T")) {
+                        if (airframeType.equals("Cessna 172S") || airframeType.equals("Cessna 172R")
+                                || airframeType.equals("Cessna 172T")) {
                             airframeType = "C172";
                         } else if (airframeType.equals("PA-28-181")) {
                             airframeType = "PA28";
                         } else if (airframeType.equals("PA-44-180")) {
                             airframeType = "PA44";
                         }
-
 
                         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy_MM_dd");
 
@@ -463,23 +498,30 @@ public class ExtractMaintenanceFlights {
                             directory.mkdir();
                         }
 
-                        String recordFile = output_directory + "/" + eventCluster + "/open_" + event.getOpenDate().format(fmt) + "_close_" + event.getCloseDate().format(fmt) + "_record.txt";
+                        String recordFile = output_directory + "/" + eventCluster + "/open_"
+                                + event.getOpenDate().format(fmt) + "_close_" + event.getCloseDate().format(fmt)
+                                + "_record.txt";
                         BufferedWriter bw = new BufferedWriter(new FileWriter(new File(recordFile).getAbsoluteFile()));
                         bw.write(event.toJSON());
                         bw.close();
 
-                        outfile += "/open_" + event.getOpenDate().format(fmt) + "_close_" + event.getCloseDate().format(fmt) + "_flight_" + airframeType + "_" + flight.getTailNumber() + when + "_" + flight.getId() + ".csv";
+                        outfile += "/open_" + event.getOpenDate().format(fmt) + "_close_"
+                                + event.getCloseDate().format(fmt) + "_flight_" + airframeType + "_"
+                                + flight.getTailNumber() + when + "_" + flight.getId() + ".csv";
                         System.out.println(outfile);
 
-                        String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + flight.getUploaderId() + "/";
+                        String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + flight.getUploaderId()
+                                + "/";
 
-                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile)), false);
+                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile)),
+                                false);
                         csvWriter.writeToFile();
 
-                        if (ac.getFlightsSincePrevious() == 4) System.out.println();
+                        if (ac.getFlightsSincePrevious() == 4)
+                            System.out.println();
                     }
                 }
- 
+
                 tailSystemIdCounts.put(tailNumber, systemIdCount);
                 tailFlightCounts.put(tailNumber, count);
 
@@ -489,16 +531,16 @@ public class ExtractMaintenanceFlights {
                 if (count == 0) {
                     tailsWithoutFlights.add(tailNumber);
                 }
-                //return;
+                // return;
             }
             System.out.println("all tail numbers (" + tailNumbers.size() + "): " + tailNumbers);
             System.out.println("tails without flights (" + tailsWithoutFlights.size() + "): " + tailsWithoutFlights);
 
             System.out.println("flight counts per tail:");
             for (Map.Entry<String, Integer> kvPair : tailFlightCounts.entrySet()) {
-                System.out.println("\t'" + kvPair.getKey() + "' -> " + kvPair.getValue() + " (" + tailSystemIdCounts.get(kvPair.getKey()) + ")");
+                System.out.println("\t'" + kvPair.getKey() + "' -> " + kvPair.getValue() + " ("
+                        + tailSystemIdCounts.get(kvPair.getKey()) + ")");
             }
-
 
         } catch (SQLException e) {
             System.err.println("SQLException: " + e);

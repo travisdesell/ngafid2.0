@@ -46,10 +46,8 @@ public class PostAssociateTag implements Route {
         int flightId = Integer.parseInt(request.queryParams("id"));
         int tagId = Integer.parseInt(request.queryParams("tag_id"));
 
-        try {
-            Connection connection = Database.getConnection();
-
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+        try (Connection connection = Database.getConnection()) {
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }

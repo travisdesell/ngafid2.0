@@ -33,7 +33,6 @@ public class PostAirSyncImports implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -43,23 +42,22 @@ public class PostAirSyncImports implements Route {
 
         int fleetId = user.getFleetId();
 
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasUploadAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
             Spark.halt(401, "User did not have access to upload flights for this fleet.");
             return null;
         }
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             int currentPage = Integer.parseInt(request.queryParams("currentPage"));
             int pageSize = Integer.parseInt(request.queryParams("pageSize"));
-
-            Connection connection = Database.getConnection();
 
             int totalImports = AirSyncImport.getNumImports(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
 
-            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId,
+                    " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             return gson.toJson(new PaginationResponse<AirSyncImportResponse>(imports, numberPages));
         } catch (SQLException e) {

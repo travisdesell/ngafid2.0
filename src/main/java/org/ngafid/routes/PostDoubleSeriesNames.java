@@ -33,15 +33,16 @@ public class PostDoubleSeriesNames implements Route {
     private class DoubleSeriesNames {
         ArrayList<String> names = new ArrayList<String>();
 
-        public DoubleSeriesNames(int flightId) throws SQLException {
-            Connection connection = Database.getConnection();
+        public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+                query.setInt(1, flightId);
 
-            PreparedStatement query = connection.prepareStatement("SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name");
-            query.setInt(1, flightId);
-            ResultSet resultSet = query.executeQuery();
-
-            while (resultSet.next()) {
-                names.add(resultSet.getString(1));
+                try (ResultSet resultSet = query.executeQuery()) {
+                    while (resultSet.next()) {
+                        names.add(resultSet.getString(1));
+                    }
+                }
             }
         }
     }
@@ -55,17 +56,17 @@ public class PostDoubleSeriesNames implements Route {
 
         int flightId = Integer.parseInt(request.queryParams("flightId"));
 
-        try {
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+        try (Connection connection = Database.getConnection()) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            DoubleSeriesNames doubleSeriesNames = new DoubleSeriesNames(flightId);
+            DoubleSeriesNames doubleSeriesNames = new DoubleSeriesNames(connection, flightId);
 
-            //System.out.println(gson.toJson(doubleSeriesNames));
-            //LOG.info(gson.toJson(doubleSeriesNames));
+            // System.out.println(gson.toJson(doubleSeriesNames));
+            // LOG.info(gson.toJson(doubleSeriesNames));
 
             return gson.toJson(doubleSeriesNames);
         } catch (SQLException e) {
@@ -74,4 +75,3 @@ public class PostDoubleSeriesNames implements Route {
         }
     }
 }
-

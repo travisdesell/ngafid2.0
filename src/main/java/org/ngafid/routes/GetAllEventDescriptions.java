@@ -11,6 +11,7 @@ import spark.Request;
 import spark.Response;
 import spark.Route;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
@@ -33,36 +34,40 @@ public class GetAllEventDescriptions implements Route {
         String expectedName = request.queryParams("eventName");
         LOG.info("expectedName: " + expectedName);
 
-        String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " +
+        String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe "
+                +
                 "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id";
         LOG.info("query: " + query);
 
-        PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);
-        LOG.info("preparedStatement: " + preparedStatement);
+        try (Connection connection = Database.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            LOG.info("preparedStatement: " + preparedStatement);
 
-        ResultSet resultSet = preparedStatement.executeQuery();
-        LOG.info("resultSet: " + resultSet);
-        Map<String, Map<String, String>> definitions = new TreeMap<>();
-        Map<Integer, String> airframeNames = new HashMap<>();
+            ResultSet resultSet = preparedStatement.executeQuery();
+            LOG.info("resultSet: " + resultSet);
+            Map<String, Map<String, String>> definitions = new TreeMap<>();
+            Map<Integer, String> airframeNames = new HashMap<>();
 
-        while (resultSet.next()) {
-            EventDefinition eventDefinition = new EventDefinition(resultSet);
-            LOG.info("eventDefinition: " + eventDefinition);
+            while (resultSet.next()) {
+                EventDefinition eventDefinition = new EventDefinition(resultSet);
+                LOG.info("eventDefinition: " + eventDefinition);
 
-            String text = eventDefinition.toHumanReadable();
-            LOG.info("text: " + text);
+                String text = eventDefinition.toHumanReadable();
+                LOG.info("text: " + text);
 
-            if (!definitions.containsKey(eventDefinition.getName())) {
-                definitions.put(eventDefinition.getName(), new HashMap<>());
+                if (!definitions.containsKey(eventDefinition.getName())) {
+                    definitions.put(eventDefinition.getName(), new HashMap<>());
+                }
+
+                if (!airframeNames.containsKey(eventDefinition.getAirframeNameId())) {
+                    airframeNames.put(eventDefinition.getAirframeNameId(), resultSet.getString(11));
+                }
+
+                definitions.get(eventDefinition.getName()).put(airframeNames.get(eventDefinition.getAirframeNameId()),
+                        eventDefinition.toHumanReadable());
             }
 
-            if (!airframeNames.containsKey(eventDefinition.getAirframeNameId())) {
-                airframeNames.put(eventDefinition.getAirframeNameId(), resultSet.getString(11));
-            }
-
-            definitions.get(eventDefinition.getName()).put(airframeNames.get(eventDefinition.getAirframeNameId()), eventDefinition.toHumanReadable());
+            return gson.toJson(definitions);
         }
-
-        return gson.toJson(definitions);
     }
 }

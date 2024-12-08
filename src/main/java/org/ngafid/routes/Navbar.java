@@ -28,42 +28,41 @@ public class Navbar {
             waitingUserCount = user.getWaitingUserCount();
         }
 
-
-        try {
+        try (Connection connection = Database.getConnection()) {
             int fleetId = -1;
 
             if ((fleetId = user.getFleetId()) > 0) {
-                Connection connection = Database.getConnection();
-
                 String sql = "SELECT EXISTS(SELECT fleet_id FROM airsync_fleet_info WHERE fleet_id = ?)";
-                PreparedStatement query = connection.prepareStatement(sql);
+                try (PreparedStatement query = connection.prepareStatement(sql)) {
 
-                query.setInt(1, fleetId);
+                    query.setInt(1, fleetId);
 
-                ResultSet resultSet = query.executeQuery();
+                    try (ResultSet resultSet = query.executeQuery()) {
 
-                if (resultSet.next()) {
-                    airSyncEnabled = resultSet.getBoolean(1);
-                }
+                        if (resultSet.next()) {
+                            airSyncEnabled = resultSet.getBoolean(1);
+                        }
 
-                if (user != null) {
-                    modifyTailsAccess = user.hasUploadAccess(fleetId);
-                    hasUploadAccess = user.hasUploadAccess(fleetId);
-                    unconfirmedTailsCount = user.getUnconfirmedTailsCount(connection);
+                        if (user != null) {
+                            modifyTailsAccess = user.hasUploadAccess(fleetId);
+                            hasUploadAccess = user.hasUploadAccess(fleetId);
+                            unconfirmedTailsCount = user.getUnconfirmedTailsCount(connection);
+                        }
+                    }
                 }
             }
         } catch (SQLException e) {
-            //don't do anything so the navbar still displays even if there is an issue with the database
+            // don't do anything so the navbar still displays even if there is an issue with
+            // the database
         }
 
-        return  "var admin = " + user.isAdmin() + ";" 
-            +   "var aggregateView = " + user.hasAggregateView() + ";" 
-            +   "var fleetManager = " + fleetManager + ";"
-            +   "var waitingUserCount = " + waitingUserCount + ";"
-            +   "var modifyTailsAccess = " + modifyTailsAccess + ";" 
-            +   "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";" 
-            +   "var airSyncEnabled = " + airSyncEnabled + ";"
-            +   "var isUploader = " + hasUploadAccess + ";";
-
+        return "var admin = " + user.isAdmin() + ";"
+                + "var aggregateView = " + user.hasAggregateView() + ";"
+                + "var fleetManager = " + fleetManager + ";"
+                + "var waitingUserCount = " + waitingUserCount + ";"
+                + "var modifyTailsAccess = " + modifyTailsAccess + ";"
+                + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
+                + "var airSyncEnabled = " + airSyncEnabled + ";"
+                + "var uploader = " + hasUploadAccess + ";";
     }
 }

@@ -26,7 +26,6 @@ public class PostMonthlyEventCounts implements Route {
         LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -39,8 +38,7 @@ public class PostMonthlyEventCounts implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
             Map<String, Map<String, EventStatistics.MonthlyEventCounts>> map;
 
@@ -51,18 +49,20 @@ public class PostMonthlyEventCounts implements Route {
                     return null;
                 }
 
-                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
+                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate),
+                        LocalDate.parse(endDate));
             } else {
 
                 int fleetId = user.getFleetId();
-                //check to see if the user has upload access for this fleet.
+                // check to see if the user has upload access for this fleet.
                 if (!user.hasViewAccess(fleetId)) {
                     LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
                     Spark.halt(401, "User did not have access to view imports for this fleet.");
                     return null;
                 }
-              
-                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+
+                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate),
+                        LocalDate.parse(endDate));
             }
 
             if (eventName == null) {
@@ -77,4 +77,3 @@ public class PostMonthlyEventCounts implements Route {
         }
     }
 }
-

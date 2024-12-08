@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
-
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -38,7 +37,6 @@ public class PostEventCounts implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -50,7 +48,7 @@ public class PostEventCounts implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have access to view events for this fleet.");
             Spark.halt(401, "User did not have access to view events for this fleet.");
@@ -63,13 +61,12 @@ public class PostEventCounts implements Route {
             return null;
         }
 
-        try {
-            Connection connection = Database.getConnection();
-            
+        try (Connection connection = Database.getConnection()) {
             if (aggregate)
                 fleetId = -1;
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
+                    fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             return gson.toJson(eventCountsMap);
 
         } catch (SQLException e) {

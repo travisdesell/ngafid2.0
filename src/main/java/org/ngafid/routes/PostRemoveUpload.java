@@ -53,14 +53,13 @@ public class PostRemoveUpload implements Route {
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
+
     @Override
     public Object handle(Request request, Response response) {
-        try {
+        try (Connection connection = Database.getConnection()) {
             LOG.info("handling " + this.getClass().getName() + " route!");
             final Session session = request.session();
             User user = session.attribute("user");
-
-            Connection connection = Database.getConnection();
 
             int uploaderId = user.getId();
 
@@ -69,7 +68,7 @@ public class PostRemoveUpload implements Route {
 
             Upload upload = Upload.getUploadById(connection, uploadId, md5Hash);
 
-            //check to see if the user has upload access for this fleet.
+            // check to see if the user has upload access for this fleet.
             if (!user.hasUploadAccess(upload.getFleetId())) {
                 LOG.severe("INVALID ACCESS: user did not have upload or manager access this fleet.");
                 Spark.halt(401, "User did not have access to delete this upload.");
@@ -84,9 +83,9 @@ public class PostRemoveUpload implements Route {
 
             ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, uploadId);
 
-            //get all flights, delete:
-            //flight warning
-            //flgiht error
+            // get all flights, delete:
+            // flight warning
+            // flgiht error
             //
             for (Flight flight : flights) {
                 flight.remove(connection);
@@ -107,6 +106,3 @@ public class PostRemoveUpload implements Route {
     }
 
 }
-
-
-

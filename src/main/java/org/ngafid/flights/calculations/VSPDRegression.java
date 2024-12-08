@@ -1,11 +1,13 @@
 package org.ngafid.flights.calculations;
 
 import org.ngafid.flights.*;
+import org.ngafid.flights.DoubleTimeSeries.TimeStepCalculation;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 /**
  * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression 
@@ -13,7 +15,7 @@ import static org.ngafid.flights.calculations.Parameters.*;
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
  */
 
-public class VSPDRegression implements Calculation {
+public class VSPDRegression implements TimeStepCalculation, Calculation {
     private final DoubleTimeSeries altB;
     private final DoubleTimeSeries altBLag;
     private final DoubleTimeSeries altBLead;
@@ -25,10 +27,14 @@ public class VSPDRegression implements Calculation {
      *
      * @param flight the {@link Flight} to perform a regression on
      */
-    public VSPDRegression(Connection connection, Flight flight) throws SQLException, IOException {
-        this.altB = flight.getDoubleTimeSeries(ALT_B);
-        this.altBLag = altB.lag(connection, VSI_LAG_DIFF);
-        this.altBLead = altB.lead(connection, VSI_LAG_DIFF);
+    public VSPDRegression(DoubleTimeSeries altB) {
+        this.altB = altB;
+        this.altBLag = altB.lag(VSI_LAG_DIFF);
+        this.altBLead = altB.lead(VSI_LAG_DIFF);
+    }
+
+    public double compute(int index) {
+        return calculate(index);
     }
 
     /**

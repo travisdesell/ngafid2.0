@@ -1,6 +1,6 @@
 package org.ngafid.events;
 
-
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +47,7 @@ public class Event {
     private RateOfClosure rateOfClosure;
 
     private List<EventMetaData> metaDataList;
+
     /**
      * This fixes a date time string to be in the format MYSQL expects.
      *
@@ -129,17 +130,18 @@ public class Event {
     /**
      * Creates an event directly from all its fields
      *
-     * @param id is the id of the event in the database
-     * @param fleetId is the id of the fleet
-     * @param flightId is the id of the flight of this event
-     * @param startLine is the line the event starts in the data file of the flight
-     * @param endLine is the line the event ends in the data file of the flight
-     * @param startTime is the time the event starts in the data file of the flight
-     * @param endTime is the time the event ends in the data file of the flight
-     * @param severity is the severity rating for the event
+     * @param id            is the id of the event in the database
+     * @param fleetId       is the id of the fleet
+     * @param flightId      is the id of the flight of this event
+     * @param startLine     is the line the event starts in the data file of the flight
+     * @param endLine       is the line the event ends in the data file of the flight
+     * @param startTime     is the time the event starts in the data file of the flight
+     * @param endTime       is the time the event ends in the data file of the flight
+     * @param severity      is the severity rating for the event
      * @param otherFlightId is the other flight id (for proximity events)
      */
-    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId) {
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime,
+            String endTime, double severity, Integer otherFlightId) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
@@ -152,7 +154,8 @@ public class Event {
         this.otherFlightId = otherFlightId;
     }
 
-    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId, String systemId, String tail, String tagName) {
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime,
+            String endTime, double severity, Integer otherFlightId, String systemId, String tail, String tagName) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
@@ -186,8 +189,10 @@ public class Event {
     }
 
     public String toString() {
-        String readable =  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + ", severity: " + severity;
-        if (otherFlightId != null) readable += ", other flight: " + otherFlightId;
+        String readable = "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime
+                + ", severity: " + severity;
+        if (otherFlightId != null)
+            readable += ", other flight: " + otherFlightId;
         readable += "]";
 
         return readable;
@@ -241,23 +246,28 @@ public class Event {
         this.metaDataList.add(metaData);
     }
 
-    public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId) throws SQLException {
+    public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId)
+            throws SQLException {
         if (this.getStartTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId, this.getStartTime(), this.getSeverity(), this.getDuration());
+            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId,
+                    this.getStartTime(), this.getSeverity(), this.getDuration());
         } else if (this.getEndTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId, this.getEndTime(), this.getSeverity(), this.getDuration());
+            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId,
+                    this.getEndTime(), this.getSeverity(), this.getDuration());
         } else {
             System.out.println("WARNING: could not update event statistics for event: " + this);
             System.out.println("WARNING: event start and end time were both null.");
         }
     }
 
-    public void updateDatabase(Connection connection, int fleetId, int flightId, int eventDefinitionId) {
+    public void updateDatabase(Connection connection, int fleetId, int flightId, int eventDefinitionId)
+            throws IOException, SQLException {
         this.flightId = flightId;
         this.eventDefinitionId = eventDefinitionId;
 
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                Statement.RETURN_GENERATED_KEYS)) {
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, flightId);
             preparedStatement.setInt(3, eventDefinitionId);
@@ -287,33 +297,21 @@ public class Event {
             System.err.println(preparedStatement);
 
             preparedStatement.executeUpdate();
-            ResultSet resultSet = preparedStatement.getGeneratedKeys();
-            if (resultSet.next()) {
-                int eventId = resultSet.getInt(1);
-                if (this.rateOfClosure != null) {
-                    this.rateOfClosure.updateDatabase(connection, eventId);
-                }
 
-                if (this.metaDataList != null && this.metaDataList.size() > 0 ) {
-                    for (EventMetaData metaData : this.metaDataList) {
-                        metaData.updateDatabase(connection, eventId);
+            try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+                if (resultSet.next()) {
+                    int eventId = resultSet.getInt(1);
+                    if (this.rateOfClosure != null) {
+                        this.rateOfClosure.updateDatabase(connection, eventId);
+                    }
+
+                    if (this.metaDataList != null && this.metaDataList.size() > 0) {
+                        for (EventMetaData metaData : this.metaDataList) {
+                            metaData.updateDatabase(connection, eventId);
+                        }
                     }
                 }
             }
-            preparedStatement.close();
-        } catch (SQLException e) {
-            System.err.println("ERROR commiting event do database.");
-            System.err.println("fleetId: " + fleetId);
-            System.err.println("flightId: " + flightId);
-            System.err.println("eventDefinitionId: " + eventDefinitionId);
-            System.err.println("startLine: " + startLine);
-            System.err.println("endLine: " + endLine);
-            System.err.println("startTime: " + startTime);
-            System.err.println("endTime: " + endTime);
-            System.err.println("severity: " + severity);
-
-            e.printStackTrace();
-            System.exit(1);
         }
     }
 
@@ -321,50 +319,51 @@ public class Event {
      * Gets all of the event from the database for a given flight.
      *
      * @param connection is the connection to the database.
-     * @param flightId the id of the flight for the event list.
+     * @param flightId   the id of the flight for the event list.
      *
      * @return an array list of all events in the database for the given flight id.
      */
     public static ArrayList<Event> getAll(Connection connection, int flightId) throws SQLException {
-        String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE flight_id = ? ORDER BY start_time";
+        String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE flight_id = "
+                + flightId + " ORDER BY start_time";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, flightId);
-        LOG.info(preparedStatement.toString());
-        ResultSet resultSet = preparedStatement.executeQuery();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            LOG.info(preparedStatement.toString());
 
-        ArrayList<Event> allEvents = new ArrayList<Event>();
-        while (resultSet.next()) {
-            allEvents.add(new Event(resultSet));
+            ArrayList<Event> allEvents = new ArrayList<Event>();
+            while (resultSet.next())
+                allEvents.add(new Event(resultSet));
+
+            return allEvents;
         }
-        resultSet.close();
-        preparedStatement.close();
-
-        return allEvents;
     }
 
     /**
      * Gets all of the event from the database for a given flight.
      *
      * @param connection is the connection to the database.
-     * @param fleetId the fleet to get events for
-     * @param eventName the name of the event to get events for
-     * @param startTime is the earliest time to start getting events (it will get events from the beginning of time if it is null)
-     * @param endTime is the latest time to getting events (it will get events until the current date if it is null)
+     * @param fleetId    the fleet to get events for
+     * @param eventName  the name of the event to get events for
+     * @param startTime  is the earliest time to start getting events (it will get events from the beginning of time if
+     *                   it is null)
+     * @param endTime    is the latest time to getting events (it will get events until the current date if it is null)
      *
-     * @return a hashmap where every entry relates to an airframe name for this fleet, containing a vector of all specified events for that airframe between the specified start and end dates (if provided)
+     * @return a hashmap where every entry relates to an airframe name for this fleet, containing a vector of all
+     *         specified events for that airframe between the specified start and end dates (if provided)
      */
-    public static HashMap<String, ArrayList<Event>> getEvents(Connection connection, int fleetId, String eventName, LocalDate startTime, LocalDate endTime, String tagName) throws SQLException {
-        //get list of airframes for this fleet so we can set up the hashmap of arraylists for events by airframe
+    public static HashMap<String, ArrayList<Event>> getEvents(Connection connection, int fleetId, String eventName,
+            LocalDate startTime, LocalDate endTime, String tagName) throws SQLException {
+        // get list of airframes for this fleet so we can set up the hashmap of arraylists for events by airframe
         ArrayList<String> fleetAirframes = Airframes.getAll(connection, fleetId);
         HashMap<Integer, String> airframeIds = new HashMap<Integer, String>();
 
-        //create the hashmap to be returned by this method
+        // create the hashmap to be returned by this method
         HashMap<String, ArrayList<Event>> eventsByAirframe = new HashMap<String, ArrayList<Event>>();
 
-        //get a map of the airframe ids to airframe names
+        // get a map of the airframe ids to airframe names
         for (String airframe : fleetAirframes) {
-            airframeIds.put(Airframes.getNameId(connection, airframe), airframe);
+            airframeIds.put(new Airframes.Airframe(connection, airframe).getId(), airframe);
 
             eventsByAirframe.put(airframe, new ArrayList<Event>());
         }
@@ -378,17 +377,16 @@ public class Event {
         LOG.info(preparedStatement.toString());
         ResultSet resultSet = preparedStatement.executeQuery();
 
-
         while (resultSet.next()) {
             int definitionId = resultSet.getInt(1);
             LOG.info("getting events for definition id: " + definitionId);
 
-            //could use this but it won't grab the airframeId because it's not in the events table so
-            //doing it the longer way below is quicker
-            //ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
+            // could use this but it won't grab the airframeId because it's not in the events table so
+            // doing it the longer way below is quicker
+            // ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
 
             String eventsQuery = "";
-            if(Objects.equals(tagName, "All Tags")) {
+            if (Objects.equals(tagName, "All Tags")) {
                 eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail FROM events, flights, tails WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND events.event_definition_id = ? AND events.fleet_id = ?";
             } else if (!Objects.equals(tagName, "All Tags")) {
                 eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail, flight_tags.name FROM events, flights, tails, flight_tag_map, flight_tags WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND flights.id = flight_tag_map.flight_id AND events.fleet_id = flight_tags.fleet_id AND flight_tag_map.tag_id = flight_tags.id AND events.event_definition_id = ? AND events.fleet_id = ?";
@@ -401,7 +399,7 @@ public class Event {
                 eventsQuery += " AND events.end_time <= ?";
             }
 
-            if(!Objects.equals(tagName, "All Tags")){
+            if (!Objects.equals(tagName, "All Tags")) {
                 eventsQuery += " AND flight_tags.name = ?";
             }
 
@@ -446,7 +444,7 @@ public class Event {
                 String systemId = eventSet.getString(10);
                 String tail = eventSet.getString(11);
                 String tag = "";
-                if(!Objects.equals(tagName, "All Tags")){
+                if (!Objects.equals(tagName, "All Tags")) {
                     tag = eventSet.getString(12);
                 }
 
@@ -454,15 +452,16 @@ public class Event {
                     otherFlightId = null;
                 }
 
-                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail, tag);
+                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime,
+                        eventEndTime, severity, otherFlightId, systemId, tail, tag);
                 System.out.println("event: " + event.toString());
 
                 int airframeId = eventSet.getInt(9);
                 String airframe = airframeIds.get(airframeId);
 
-                //add the airframe to 
+                // add the airframe to
                 eventsByAirframe.get(airframe).add(event);
-                }
+            }
 
             eventSet.close();
             eventsStatement.close();
@@ -473,12 +472,8 @@ public class Event {
 
         return eventsByAirframe;
     }
+
     public void setRateOfClosure(RateOfClosure rateOfClosure) {
         this.rateOfClosure = rateOfClosure;
     }
 }
-
-
-
-
-
