@@ -40,7 +40,7 @@ public class GetImportsV2 implements Route {
         
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
 
             final Session session = request.session();
             User user = session.attribute("user");
@@ -49,8 +49,6 @@ public class GetImportsV2 implements Route {
             //default page values
             int currentPage = 0;
             int pageSize = 10;
-
-            Connection connection = Database.getConnection();
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;

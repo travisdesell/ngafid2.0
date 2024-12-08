@@ -63,9 +63,7 @@ public class GetAirframeInfo implements Route {
 
         //LOG.info("systemId" + systemIds);
         
-        try  {
-
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             
             airframeInfos = Airframes.getIdToNameMap(connection);
 

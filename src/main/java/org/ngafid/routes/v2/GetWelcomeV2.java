@@ -89,11 +89,11 @@ public class GetWelcomeV2 implements Route {
         User user = request.session().attribute("user");
         int fleetId = user.getFleetId();
 
-        try  {
+        try(Connection connection = Database.getConnection())  {
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
             HashMap<String, Object> fleetInfo = new HashMap<String, Object>();
-            Connection connection = Database.getConnection();
+            
 
             if (messages != null) {
                 scopes.put("messages", messages);
