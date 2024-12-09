@@ -223,32 +223,6 @@ public class Tails {
     }
 
     /**
-     * Gets an ArrayList of all the tails in the database, creating a Tail object for each.
-     *
-     * @param connection is a connection to the database
-     *
-     * @return an array list of Tail for each tail in this fleet
-     */
-    public static ArrayList<Tail> getAll(Connection connection) throws SQLException {
-        ArrayList<Tail> tails = new ArrayList<>();
-
-        String queryString = "SELECT * FROM tails ORDER BY tail";
-        PreparedStatement query = connection.prepareStatement(queryString);
-
-        //LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
-
-        while (resultSet.next()) {
-            //tail existed in the database, return the id
-            tails.add(new Tail(resultSet));
-        }
-        resultSet.close();
-        query.close();
-
-        return tails;
-    }
-
-    /**
      * Gets a List of all the tail numbers that are AirSync equipped in the database for the given fleet, as Strings
      *
      * @param connection is a connection to the database

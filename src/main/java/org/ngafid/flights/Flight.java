@@ -451,7 +451,7 @@ public class Flight {
      * @param queryString is the what gets put into the WHERE clause of the query
      * @return the number of flights for the fleet, given the specified queryString
      */
-    private static int getNumFlights(Connection connection, String queryString) throws SQLException {
+    public static int getNumFlights(Connection connection, String queryString) throws SQLException {
         String fullQueryString = "SELECT count(id) FROM flights WHERE (" + queryString + ")";
         LOG.info("getting number of flights with query string: '" + fullQueryString + "'");
 
