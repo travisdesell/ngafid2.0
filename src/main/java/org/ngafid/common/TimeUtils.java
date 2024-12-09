@@ -1,5 +1,4 @@
 package org.ngafid.common;
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -7,22 +6,20 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
+import java.util.*;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.StringTimeSeries;
+import us.dustinj.timezonemap.TimeZoneMap;
+import java.time.ZoneId;
 import org.ngafid.flights.FatalFlightFileException;
 
 public class TimeUtils {
-
     /**
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
-     *
-     * @param the LocalDateTime value which will be updated
-     * @param the bad offset
-     * @return the fixed offset
+     * @param ldt
+     * @param offset
+     * @return Specific offset
      */
     public static String updateBadOffset(LocalDateTime ldt, String offset) {
         // weird input data
@@ -117,10 +114,14 @@ public class TimeUtils {
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
             String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
-
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime,
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String originalDateTime = originalDate.trim() + " " + originalTime.trim();
+        DateTimeFormatter formatter = findCorrectFormatter(originalDateTime);
+        if (formatter == null) {
+            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + originalDateTime, originalDateTime, 0);
+        }
+
+        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
         // fix bad offset values
         originalOffset = updateBadOffset(ldt, originalOffset);
@@ -178,7 +179,11 @@ public class TimeUtils {
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
+            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss"),
+            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"));
+
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws FatalFlightFileException {
@@ -258,5 +263,98 @@ public class TimeUtils {
         cal.setTime(date);
         cal.add(Calendar.MILLISECOND, milliseconds);
         return cal.getTime();
+    }
+
+    /**
+     * Calculates local date, local time, and UTC offset for each entry based on given UTC dates, times, latitudes, and longitudes.
+     * @param map          map object (created once per upload for efficiency.
+     * @param utcDates     time series of UTC dates as strings (e.g., "yyyy-MM-dd")
+     * @param utcTimes     time series of UTC times as strings (e.g., "HH:mm:ss")
+     * @param latitudes    time series of latitude strings
+     * @param longitudes   time series of longitude strings
+     * @return a LocalDateTimeResult containing lists of local dates, times, and UTC offsets.
+     */
+    public static LocalDateTimeResult calculateLocalDateTimeFromTimeSeries(
+            TimeZoneMap map,
+            StringTimeSeries utcDates,
+            StringTimeSeries utcTimes,
+            DoubleTimeSeries latitudes,
+            DoubleTimeSeries longitudes) {
+
+        // Prepare lists for the results.
+        ArrayList<String> localDates = new ArrayList<>(utcDates.size());
+        ArrayList<String> localTimes = new ArrayList<>(utcDates.size());
+        ArrayList<String> utcOffsets = new ArrayList<>(utcDates.size());
+
+        String dateTimeString = utcDates.get(0).trim() + " " + utcTimes.get(0).trim();
+        DateTimeFormatter formatter = findCorrectFormatter(dateTimeString);
+        if (formatter == null) {
+            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + dateTimeString, dateTimeString, 0);
+        }
+
+        // Iterate over each index and calculate the corresponding local date, time, and offset.
+        for (int i = 0; i < utcDates.size(); i++) {
+            String dateTime = utcDates.get(i).trim() + " " + utcTimes.get(i).trim();
+            LocalDateTime utcDateTime = LocalDateTime.parse(dateTime, formatter);
+
+            double latitude = latitudes.get(i);
+            double longitude = longitudes.get(i);
+
+            String zoneIdStr = null;
+            try {
+                zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
+            } catch (Exception e) {
+                throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
+            }
+
+            ZoneId zoneId = ZoneId.of(zoneIdStr);
+            ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
+
+            localDates.add(localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            utcOffsets.add(localZonedDateTime.getOffset().getId());
+        }
+        return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
+    }
+
+    /**
+     * Finds the correct DateTimeFormatter by trying to parse a date/time string.
+     * @param dateTimeString
+     * @return specific DateTimeFormatter
+     */
+    public static DateTimeFormatter findCorrectFormatter(String dateTimeString) {
+        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
+            try {
+                LocalDateTime.parse(dateTimeString, formatter);
+                return formatter;
+            } catch (DateTimeParseException e) {
+                // Continue trying other formatters
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Store the results of the date-time calculation.
+     */
+    public static class LocalDateTimeResult {
+        private final ArrayList<String> localDates;
+        private final ArrayList<String> localTimes;
+        private final ArrayList<String> utcOffsets;
+
+        public LocalDateTimeResult(ArrayList<String> localDates, ArrayList<String> localTimes, ArrayList<String> utcOffsets) {
+            this.localDates = localDates;
+            this.localTimes = localTimes;
+            this.utcOffsets = utcOffsets;
+        }
+        public ArrayList<String> getLocalDates() {
+            return localDates;
+        }
+        public ArrayList<String> getLocalTimes() {
+            return localTimes;
+        }
+        public ArrayList<String> getUtcOffsets() {
+            return utcOffsets;
+        }
     }
 }

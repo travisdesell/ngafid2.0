@@ -61,7 +61,7 @@ class EmailSettingsTableUser extends React.Component {
                 console.log('Error updating email preferences:', errorThrown);
                 this.setState({ disableFetching: false });
             }
-        
+
         });
 
     }
@@ -87,7 +87,7 @@ class EmailSettingsTableUser extends React.Component {
 
                 let emailTypesIn = response.emailTypesKeys;
                 let emailTypesUserIn = response.emailTypesUser;
-    
+
                 //Filter out email types marked as HIDDEN or FORCED
                 emailTypesIn = emailTypesIn.filter(
                     type => (
@@ -95,27 +95,27 @@ class EmailSettingsTableUser extends React.Component {
                         && (type.includes("FORCED") !== true)
                     )
                 );
-            
+
                 if (this.props.isAdmin) {   //For admins...
-            
+
                     //...sort the ADMIN email types to the end of the list
                     let emailTypesAdmin = emailTypesIn.filter(
                         type => (type.includes("ADMIN") === true)
                     );
-            
+
                     emailTypesIn = emailTypesIn.filter(
                         type => (type.includes("ADMIN") !== true)
                     );
-            
+
                     emailTypesIn = emailTypesIn.concat(emailTypesAdmin);
-            
+
                 } else {    //For non-admins
-            
+
                     //...filter out the ADMIN email types
                     emailTypesIn = emailTypesIn.filter(
                         type => (type.includes("ADMIN") !== true)
                     );
-            
+
                 }
 
                 this.setState({
@@ -134,7 +134,7 @@ class EmailSettingsTableUser extends React.Component {
     }
 
     handleCheckboxChange = (type) => {
-    
+
         this.setState(
             prevState => {
 
@@ -157,7 +157,7 @@ class EmailSettingsTableUser extends React.Component {
 
     };
 
-    render() { 
+    render() {
 
         return (
             <table style={{
@@ -169,21 +169,21 @@ class EmailSettingsTableUser extends React.Component {
                 borderSpacing: "16px 16px",
             }}>
                 <thead>
-                    <tr>
+                <tr>
                     {
                         this.state.emailTypes.map((type, index) => (
                             <th key={index} style={{textAlign:"center"}}>
-                            {
-                                type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                            }
+                                {
+                                    type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                                }
                             </th>
                         ))
                     }
-                    </tr>
+                </tr>
                 </thead>
 
                 <tbody>
-                    <tr>
+                <tr>
                     {
                         this.state.emailTypes.map((type, typeIndex) => (
                             <td key={typeIndex} style={{ textAlign: "center" }}>
@@ -191,20 +191,20 @@ class EmailSettingsTableUser extends React.Component {
                                     type="checkbox"
                                     checked={
                                         (this.state.settings && this.state.settings[type])
-                                        ? this.state.settings[type]
-                                        : false
+                                            ? this.state.settings[type]
+                                            : false
                                     }
                                     onChange={
                                         this.state.disableFetching
-                                        ? () => undefined
-                                        : () => this.handleCheckboxChange(type)
+                                            ? () => undefined
+                                            : () => this.handleCheckboxChange(type)
                                     }
                                     style={{ scale: "2.00" }}
                                 />
                             </td>
                         ))
                     }
-                    </tr>
+                </tr>
                 </tbody>
 
             </table>
@@ -219,7 +219,7 @@ class EmailSettingsTableUser extends React.Component {
 
 /*
 ----------------------------------------
-            MANAGER SETTINGS            
+            MANAGER SETTINGS
 ----------------------------------------
 */
 
@@ -339,15 +339,15 @@ class EmailSettingsTableManager extends React.Component {
 
             success: (response) => {
                 console.log('Preferences updated successfully!'/*, response*/);
-                this.setState({ disableFetching: false });  
+                this.setState({ disableFetching: false });
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error updating preferences:', errorThrown);
-                this.setState({ disableFetching: false });  
+                this.setState({ disableFetching: false });
             }
 
         });
-    
+
     }
 
     //Fetch user email preferences
@@ -455,7 +455,7 @@ class EmailSettingsTableManager extends React.Component {
         });
 
     }
-   
+
     handleCheckboxChange = (userTarget, type) => {
 
         this.setState(
@@ -482,7 +482,7 @@ class EmailSettingsTableManager extends React.Component {
                 //Deliver updated preferences
                 this.updateUserEmailPreferences(userTarget, this.state.fleetUsers);
             }
-        
+
         );
 
     };
@@ -495,64 +495,85 @@ class EmailSettingsTableManager extends React.Component {
 
         return (
             <table style={{
-            width:"100%",
-            borderCollapse: "collapse",
+                width: "100%",
+                borderCollapse: "collapse",
             }}>
                 <thead>
-                    <tr>
-                        <th style={{padding:"0 12px"}}>Email</th>
-                        {
-                            this.state.emailTypes.map((type, index) => (
-                                <th key={index}>
-                                    <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}>
-                                        <ToggleButtonColumnManager
-                                            disableFetching={this.state.disableFetching}
-                                            updateUserEmailPreferences={this.updateUserEmailPreferences}
-                                            fleetUsers={this.state.fleetUsers}
-                                            refreshFleetUsers = {this.refreshFleetUsers}
-                                            emailTypes={this.state.emailTypes}
-                                            emailTypeIndex={index}
-                                        />
-                                        {
-                                            type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                                        }
-                                    </div>
-                                </th>
-                            ))
-                        }
-                    </tr>
+                <tr>
+                    <th style={{padding: "0 12px"}}>Email</th>
+                    {
+                        this.state.emailTypes.map((type, index) => (
+                            <th key={index}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: "20px 0px",
+                                    margin: "-7px",
+                                    gap: "8px",
+                                    width: "95%"
+                                }}>
+                                    <ToggleButtonColumnManager
+                                        disableFetching={this.state.disableFetching}
+                                        updateUserEmailPreferences={this.updateUserEmailPreferences}
+                                        fleetUsers={this.state.fleetUsers}
+                                        refreshFleetUsers={this.refreshFleetUsers}
+                                        emailTypes={this.state.emailTypes}
+                                        emailTypeIndex={index}
+                                    />
+                                    {
+                                        type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                                    }
+                                </div>
+                            </th>
+                        ))
+                    }
+                </tr>
                 </thead>
 
                 <tbody>
-                <tr style={{border:"solid", borderColor:"#00004411", borderWidth: "2px 0px"}}>
-                </tr>
+                <tr style={{border: "solid", borderColor: "#00004411", borderWidth: "2px 0px"}}></tr>
                 {
-                    this.state.fleetUsers.map((userCurrent, settingIndex) => (
-                        <tr key={settingIndex} style={{border:"solid", borderColor:"#00004411", borderWidth: "1px 0px", backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000009'}}>
-                            <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
-                            {
-                                this.state.emailTypes.map((type, typeIndex) => (
-                                    <td key={typeIndex}>
-                                        <input
-                                            type="checkbox"
-                                            checked={
-                                                (userCurrent.emailTypesUser && userCurrent.emailTypesUser[type])
-                                                ? userCurrent.emailTypesUser[type]
-                                                : false
-                                            }
-                                            onChange={
-                                                this.state.disableFetching
-                                                ? () => undefined
-                                                : () => this.handleCheckboxChange(userCurrent, type)
-                                            }
-                                        />
-                                    </td>
-                                ))
-                            }
-                        </tr>
-                    ))
+                    this.state.fleetUsers
+                        .filter(userCurrent => userCurrent.fleetAccess.accessType !== "DENIED") // Filter out DENIED users
+                        .map((userCurrent, settingIndex) => {
+                            const rowStyle = {
+                                backgroundColor: (settingIndex % 2 === 0) ? '#FFFFFF00' : '#00000009'
+                            };
+
+                            return (
+                                <tr key={settingIndex} style={{
+                                    ...rowStyle,
+                                    border: "solid",
+                                    borderColor: "#00004411",
+                                    borderWidth: "1px 0px"
+                                }}>
+                                    <td style={{padding: "16px 12px"}}>{userCurrent.email}</td>
+                                    {
+                                        this.state.emailTypes.map((type, typeIndex) => (
+                                            <td key={typeIndex}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={
+                                                        (userCurrent.emailTypesUser && userCurrent.emailTypesUser[type])
+                                                            ? userCurrent.emailTypesUser[type]
+                                                            : false
+                                                    }
+                                                    onChange={
+                                                        this.state.disableFetching
+                                                            ? () => undefined
+                                                            : () => this.handleCheckboxChange(userCurrent, type)
+                                                    }
+                                                    style={{scale: "2.00"}}
+                                                />
+                                            </td>
+                                        ))
+                                    }
+                                </tr>
+                            );
+                        })
                 }
                 </tbody>
+
 
             </table>
         );

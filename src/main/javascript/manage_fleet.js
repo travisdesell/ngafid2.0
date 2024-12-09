@@ -1,12 +1,9 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-
 import { EmailSettingsTableManager } from "./email_settings.js";
-
 
 class AccessCheck extends React.Component {
     constructor(props) {
@@ -99,10 +96,13 @@ class FleetUserRow extends React.Component {
                     fleetUserRow.props.decrementWaiting();
                 }
 
-                //update the fleetUser's new original access (so the update button will be disabled unless the access is changed again)
+                // Update the fleetUser's new original access level so that update button will be disabled unless the access is changed again.
                 fleetUser.fleetAccess.originalAccess = newAccess;
                 fleetUserRow.state.fleetUser = fleetUser;
                 fleetUserRow.setState(fleetUser);
+
+                // Callback to sort Users so that Denied users appear on the bottom.
+                fleetUserRow.props.onAccessChange();
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
@@ -116,6 +116,7 @@ class FleetUserRow extends React.Component {
     render() {
         let fleetUser = this.state.fleetUser;
         let accessType = fleetUser.fleetAccess.accessType;
+        const { rowStyle } = this.props;
 
         console.log("rendering " + fleetUser.email + " with access " + accessType);
 
@@ -123,7 +124,7 @@ class FleetUserRow extends React.Component {
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
 
         return (
-            <tr userid={fleetUser.id}>
+            <tr userid={fleetUser.id} style={rowStyle}>
                 <td scope="row" style={{padding: "15 12 15 12"}}>{fleetUser.email}</td>
                 <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {this.state.fleetUser.lastName}</td>
 
@@ -151,11 +152,33 @@ class ManageFleetPage extends React.Component {
 
         this.state = {
             user : this.props.user,
+            fleetUsers: [],
             waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            showDeniedUsers: false
         };
 
         console.log("constructed ManageFleetPage");
+    }
+
+    componentDidMount() {
+        this.sortAndSetUsers();
+    }
+
+    /**
+     * Initializes fleetUsers state from a correspondent prop
+     * Sorts fleetUsers putting the ones with accessType "DENIED" to the bottom of the list
+     */
+    sortAndSetUsers() {
+        const { user } = this.state;
+        if (user && user.fleet && Array.isArray(user.fleet.users)) {
+            const sortedUsers = [...user.fleet.users].sort((a, b) =>
+                a.fleetAccess.accessType === "DENIED" ? 1 : -1
+            );
+            this.setState({ fleetUsers: sortedUsers });
+        } else {
+            console.warn("User data or fleet users array is missing.");
+        }
     }
 
     setUser(user) {
@@ -224,23 +247,13 @@ class ManageFleetPage extends React.Component {
         this.sendEmail(email);
     };
 
-
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {opacity : 0.8};
-        const fgStyle = {opacity : 1.0};
+        const bgStyle = { opacity: 0.8 };
+        const fgStyle = { opacity: 1.0 };
+        const grayoutStyle = { backgroundColor: '#d3d3d3' };
 
-        let user = "";
         let fleetName = "";
-        let fleetUsers = []
-        if (typeof this.state.user != 'undefined') {
-            user = this.state.user;
-            fleetName = user.fleet.name;
-
-            if (typeof user.fleet.users != 'undefined') {
-                fleetUsers = user.fleet.users;
-            }
-        }
 
         return (
             <div>
@@ -254,11 +267,14 @@ class ManageFleetPage extends React.Component {
                 />
 
                 <div className="card-body" hidden={hidden}>
-                    <div className="row ml-1 mb-2 invite" style={bgStyle}>
-                        <p style={fgStyle}>
+                    <div className="row ml-1 mb-2 invite" style={{ ...bgStyle, display: "flex", alignItems: "center" }}>
+                        <p style={{ ...fgStyle, marginBottom: "0", marginRight: "10px" }}>
                             Invite user to {fleetName}:
                         </p>
-                        <form onSubmit={this.handleSubmit}>
+                        <form
+                            onSubmit={this.handleSubmit}
+                            style={{ display: "flex", alignItems: "center", marginRight: "10px" }}
+                        >
                             <input
                                 id="inviteEmail"
                                 type="email"
@@ -267,10 +283,30 @@ class ManageFleetPage extends React.Component {
                                 pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
                                 title="Please enter a valid email address"
                                 required
+                                style={{
+                                    marginRight: "10px",
+                                    border: "1px solid grey",
+                                    borderRadius: "5px",
+                                    padding: "5px",
+                                    backgroundColor: "transparent",
+                                    outline: "none",
+                                    transition: "border-color 0.2s ease",
+                                }}
                             />
-                            <button className="btn btn-primary ml-1" type="submit">Invite</button>
+                            <button className="btn btn-primary" type="submit">
+                                Invite
+                            </button>
                         </form>
+                        <button
+                            className="btn btn-outline-primary"
+                            onClick={() => this.setState({showDeniedUsers: !this.state.showDeniedUsers})}
+                            style={{alignSelf: "center"}}
+                        >
+                            {this.state.showDeniedUsers ? "Hide Denied Users" : "Show Denied Users"}
+                        </button>
                     </div>
+
+
                     <div className="card mb-1" style={bgStyle}>
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
@@ -279,67 +315,72 @@ class ManageFleetPage extends React.Component {
                         <div className="card-body" style={fgStyle}>
                             <table className="table">
                                 <thead>
-                                    <tr>
-                                        <th scope="col">Email</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Access Level</th>
-                                    </tr>
+                                <tr>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Access Level</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {
-                                        fleetUsers.map((fleetUser, index) => {
-                                            return (
-                                                <FleetUserRow
-                                                    key={fleetUser.id}
-                                                    fleetUser={fleetUser}
-                                                    incrementWaiting={() => {this.incrementWaiting();}}
-                                                    decrementWaiting={() => {this.decrementWaiting();}}
-                                                />
-                                            );
-
-                                        })
-                                    }
+                                {this.state.fleetUsers
+                                    .filter(userCurrent =>
+                                        this.state.showDeniedUsers || userCurrent.fleetAccess.accessType !== "DENIED"
+                                    )
+                                    .map((fleetUser, index) => {
+                                        const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayoutStyle : {};
+                                        return (
+                                            <FleetUserRow
+                                                key={fleetUser.id}
+                                                fleetUser={fleetUser}
+                                                rowStyle={rowStyle}
+                                                incrementWaiting={() => { this.incrementWaiting(); }}
+                                                decrementWaiting={() => { this.decrementWaiting(); }}
+                                                onAccessChange={() => this.sortAndSetUsers()}
+                                            />
+                                        );
+                                    })
+                                }
                                 </tbody>
                             </table>
-                            
 
-                            <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                            <h6 className="card-header" style={{ padding: "16px 12px", margin: "0px 0px" }}>
                                 Fleet Email Preferences
                             </h6>
                             <div className="form-group">
                                 <div className="d-flex">
-                                    <EmailSettingsTableManager fleetUsers={fleetUsers}></EmailSettingsTableManager>
+                                    {this.state.fleetUsers.length > 0 && (
+                                        <EmailSettingsTableManager fleetUsers={this.state.fleetUsers}></EmailSettingsTableManager>
+                                    )}
                                 </div>
                             </div>
-
                         </div>
-
                     </div>
                 </div>
                 <style jsx="true">
                     {`
                         .invite p {
-                          margin-right: 10px;
-                          margin-bottom: auto;
-                          margin-top: auto;
+                            margin-right: 10px;
+                            margin-bottom: auto;
+                            margin-top: auto;
                         }
                         .invite form {
-                          margin-bottom: auto !important;
-                          margin-top: auto !important;
+                            margin-bottom: auto !important;
+                            margin-top: auto !important;
                         }
                         .invite input {
-                          border: 1px solid grey;
-                          border-radius: 5px;
-                          padding: 5px;
-                          background-color: transparent;
-                          outline: none;
-                          transition: border-color 0.2s ease;
+                            border: 1px solid grey;
+                            border-radius: 5px;
+                            padding: 5px;
+                            background-color: transparent;
+                            outline: none;
+                            transition: border-color 0.2s ease;
                         }
                         .invite input:focus {
-                          border-color: #007bff;
+                            border-color: #007bff;
                         }
-                   `}
+                    `}
                 </style>
+
             </div>
         );
     }
