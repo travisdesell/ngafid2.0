@@ -63,7 +63,7 @@ class ErrorModal extends React.Component {
                     </button>
                 </div>
 
-                <div id='error-modal-body' className='modal-body'>
+                <div id='error-modal-body' className='modal-body' style={{whiteSpace:"pre-line"}}>
                     <h4>{this.state.title}</h4>
 
                     {this.state.message}

@@ -86,7 +86,7 @@ class Itinerary extends React.Component {
         */
 
         return (
-            <div>
+            <div className="m-1">
                 <b className={"m-0 p-1"} style={{marginBottom:"0", overflowY:"auto"}}>Itinerary:</b>
                 <div className={cellClasses} style={cellStyle}>
                     <div style={{flex: "0 0"}}>

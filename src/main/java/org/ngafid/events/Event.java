@@ -369,11 +369,24 @@ public class Event {
             eventsByAirframe.put(airframe, new ArrayList<Event>());
         }
 
-        String query = "SELECT id FROM event_definitions WHERE (fleet_id = 0 OR fleet_id = ?) AND name LIKE ? ORDER BY name";
+        String query;
+        PreparedStatement preparedStatement;
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
-        preparedStatement.setString(2, eventName);
+        if (eventName.equals("ANY Event")) {
+
+            LOG.info("[EX] Getting ALL events for fleet with ID: " + fleetId);
+
+            query = "SELECT id FROM event_definitions WHERE fleet_id = 0 OR fleet_id = ? ORDER BY name";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, fleetId);
+            
+        } else {
+            query = "SELECT id FROM event_definitions WHERE (fleet_id = 0 OR fleet_id = ?) AND name LIKE ? ORDER BY name";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setString(2, eventName);
+        }
+
 
         LOG.info(preparedStatement.toString());
         ResultSet resultSet = preparedStatement.executeQuery();
