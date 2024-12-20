@@ -165,8 +165,7 @@ public abstract class WebServer {
         // The application uses Gson to generate JSON representations of Java objects.
         // This should be used by your Ajax Routes to generate JSON for the HTTP
         // response to Ajax requests.
-//        WebServer webserver = new SparkWebServer(port, staticFiles);
         WebServer webserver = new JavalinWebServer(port, staticFiles);
-        LOG.info("NGAFID SparkWebServer initialization complete.");
+        LOG.info("NGAFID web server initialization complete.");
     }
 }

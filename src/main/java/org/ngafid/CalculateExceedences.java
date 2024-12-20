@@ -391,7 +391,6 @@ public class CalculateExceedences {
                 int airframeTypeId = new Airframes.Airframe(connection, "Fixed Wing").getId();
 
                 Instant start = Instant.now();
-
                 ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[] { 0 });
                 LOG.info("n events = " + allEvents.size());
 

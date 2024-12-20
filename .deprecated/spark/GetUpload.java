@@ -43,9 +43,10 @@ public class GetUpload implements Route {
             return "Upload not found";
         }
 
-        if (!user.hasUploadAccess(upload.getFleetId())) {
-            LOG.severe("INVALID ACCESS: user did not have upload or manager access this fleet.");
-            Spark.halt(401, "User did not have access to delete this upload.");
+        //Verify that a user has access to the download the uploaded file (requires View Access)
+        if (!user.hasViewAccess(upload.getFleetId())) {
+            LOG.severe("INVALID ACCESS: user did not have view, upload, or manager access this fleet.");
+            Spark.halt(401, "User did not have access to download the uploaded file.");
             return null;
         }
 
