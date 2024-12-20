@@ -351,14 +351,11 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static void getImports(Context ctx) {
-        final String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "imports.html";
+        final String templateFile = "imports.html";
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<String, Object>();
-
-            scopes.put("navbar_js", Navbar.getJavascript(ctx));
-
-            final User user = Objects.requireNonNull(ctx.attribute("user"));
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int fleetId = user.getFleetId();
 
             // default page values
@@ -367,14 +364,19 @@ public class ImportUploadJavalinRoutes {
 
             final int totalImports = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + ((currentPage + 1) * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
-
+            scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
 
-            StringWriter stringOut = new StringWriter();
+            for (String key : scopes.keySet()) {
+                if (scopes.get(key) == null) {
+                    LOG.severe("ERROR! key '" + key + "' was null.");
+                }
+            }
+
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
