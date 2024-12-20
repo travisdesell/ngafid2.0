@@ -9,13 +9,12 @@ import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.*;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.nio.file.Paths;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -153,8 +152,7 @@ public class ImportUploadJavalinRoutes {
             Upload upload = Upload.getUploadByUser(connection, uploaderId, md5Hash);
             if (upload == null) {
                 LOG.severe("ERROR! Upload was not in the database!");
-                ctx.result(gson.toJson(new ErrorResponse("File Upload Failure",
-                        "A system error occurred where this upload was not in the database. Please try again.")));
+                ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "A system error occurred where this upload was not in the database. Please try again.")));
                 return;
             }
 
@@ -195,8 +193,7 @@ public class ImportUploadJavalinRoutes {
 
                     if (!upload.checkSize()) {
                         LOG.severe("ERROR! Final file had incorrect number of bytes.");
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure",
-                                "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
+                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
                         return;
                     }
 
@@ -214,8 +211,7 @@ public class ImportUploadJavalinRoutes {
 
                     if (!newMd5Hash.equals(upload.getMd5Hash())) {
                         LOG.severe("ERROR! MD5 hashes do not match.");
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure",
-                                "MD5 hash mismatch. File corruption might have occurred during upload.")));
+                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
                         return;
                     }
 
@@ -429,8 +425,7 @@ public class ImportUploadJavalinRoutes {
         if (!filename.matches("^[a-zA-Z0-9_.-]*$")) {
             LOG.info("ERROR! malformed filename");
 
-            ErrorResponse errorResponse = new ErrorResponse("File Upload Failure",
-                    "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+            ErrorResponse errorResponse = new ErrorResponse("File Upload Failure", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
             ctx.json(errorResponse);
             return;
         }
@@ -442,8 +437,7 @@ public class ImportUploadJavalinRoutes {
         // 4. file does exist but with different hash -- error message
 
         try (Connection connection = Database.getConnection()) {
-            try (PreparedStatement query = connection.prepareStatement(
-                    "SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?")) {
+            try (PreparedStatement query = connection.prepareStatement("SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?")) {
                 query.setString(1, md5Hash);
                 query.setInt(2, uploaderId);
 
@@ -482,7 +476,7 @@ public class ImportUploadJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
-        app.post("/uploads/new", ImportUploadJavalinRoutes::postNewUpload);
+        app.post("/protected/new_upload", ImportUploadJavalinRoutes::postNewUpload);
         app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
         app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
 
