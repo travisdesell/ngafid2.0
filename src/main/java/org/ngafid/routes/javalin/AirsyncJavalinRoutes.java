@@ -56,8 +56,8 @@ public class AirsyncJavalinRoutes {
             scopes.put("index_js", "var currentPage = 0;");
             scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e));
         } catch (Exception e) {
@@ -95,8 +95,8 @@ public class AirsyncJavalinRoutes {
             scopes.put("lastUpdateTime_js", "var lastUpdateTime = " + gson.toJson(timestamp) + ";");
             scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(uploads) + "');");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e));
         } catch (Exception e) {

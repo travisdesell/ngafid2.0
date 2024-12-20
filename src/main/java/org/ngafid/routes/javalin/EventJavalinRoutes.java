@@ -56,13 +56,11 @@ public class EventJavalinRoutes {
             long endTime = System.currentTimeMillis();
 
             LOG.info("Event Definitions to JSON took " + (endTime - startTime) + "ms.");
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
@@ -120,7 +118,7 @@ public class EventJavalinRoutes {
     }
 
 
-    private static void putEventDefinitions(Context ctx) throws IOException {
+    private static void putEventDefinitions(Context ctx) {
         EventDefinition updatedEvent = gson.fromJson(ctx.body(), EventDefinition.class);
 
         try (Connection connection = Database.getConnection()) {
@@ -131,7 +129,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void deleteEventDefinitions(Context ctx) throws IOException {
+    private static void deleteEventDefinitions(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             LOG.severe("INVALID ACCESS: user was not logged in.");
@@ -160,7 +158,7 @@ public class EventJavalinRoutes {
         LOG.warning("getEventCounts not implemented!");
     }
 
-    private static void getEventCreator(Context ctx) throws IOException {
+    private static void getEventCreator(Context ctx) {
         final String templateFile = "create_event.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -186,14 +184,12 @@ public class EventJavalinRoutes {
 
             scopes.put("create_event_js", "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
 
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
@@ -223,8 +219,8 @@ public class EventJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("event_manager_js", "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
@@ -301,13 +297,11 @@ public class EventJavalinRoutes {
                             "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection))
                             + "');\n");
             
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 

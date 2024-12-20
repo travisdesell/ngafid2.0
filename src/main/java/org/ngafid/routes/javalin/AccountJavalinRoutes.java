@@ -26,12 +26,18 @@ public class AccountJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
     private static class LoginResponse {
-        @JsonProperty private final boolean loggedOut;
-        @JsonProperty private final boolean waiting;
-        @JsonProperty private final boolean denied;
-        @JsonProperty private final boolean loggedIn;
-        @JsonProperty private final String message;
-        @JsonProperty private final User user;
+        @JsonProperty
+        private final boolean loggedOut;
+        @JsonProperty
+        private final boolean waiting;
+        @JsonProperty
+        private final boolean denied;
+        @JsonProperty
+        private final boolean loggedIn;
+        @JsonProperty
+        private final String message;
+        @JsonProperty
+        private final User user;
 
         public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -44,11 +50,16 @@ public class AccountJavalinRoutes {
     }
 
     private static class LogoutResponse {
-        @JsonProperty private final boolean loggedOut;
-        @JsonProperty private final boolean waiting;
-        @JsonProperty private final boolean loggedIn;
-        @JsonProperty private final String message;
-        @JsonProperty private final User user;
+        @JsonProperty
+        private final boolean loggedOut;
+        @JsonProperty
+        private final boolean waiting;
+        @JsonProperty
+        private final boolean loggedIn;
+        @JsonProperty
+        private final String message;
+        @JsonProperty
+        private final User user;
 
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -60,8 +71,10 @@ public class AccountJavalinRoutes {
     }
 
     private static class ForgotPasswordResponse {
-        @JsonProperty String message;
-        @JsonProperty boolean registeredEmail;
+        @JsonProperty
+        String message;
+        @JsonProperty
+        boolean registeredEmail;
 
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;
@@ -71,8 +84,10 @@ public class AccountJavalinRoutes {
     }
 
     private static class CreatedAccount {
-        @JsonProperty private final String accountType;
-        @JsonProperty private final User user;
+        @JsonProperty
+        private final String accountType;
+        @JsonProperty
+        private final User user;
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
@@ -81,12 +96,18 @@ public class AccountJavalinRoutes {
     }
 
     private static class ResetSuccessResponse {
-        @JsonProperty private final boolean loggedOut;
-        @JsonProperty private final boolean waiting;
-        @JsonProperty private final boolean denied;
-        @JsonProperty private final boolean loggedIn;
-        @JsonProperty private final String message;
-        @JsonProperty private final User user;
+        @JsonProperty
+        private final boolean loggedOut;
+        @JsonProperty
+        private final boolean waiting;
+        @JsonProperty
+        private final boolean denied;
+        @JsonProperty
+        private final boolean loggedIn;
+        @JsonProperty
+        private final String message;
+        @JsonProperty
+        private final User user;
 
         public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -99,7 +120,8 @@ public class AccountJavalinRoutes {
     }
 
     private static class Profile {
-        @JsonProperty private final User user;
+        @JsonProperty
+        private final User user;
 
         public Profile(User user) {
             this.user = user;
@@ -154,7 +176,7 @@ public class AccountJavalinRoutes {
         ctx.json(new LogoutResponse(true, false, false, "Successfully logged out.", null));
     }
 
-    private static void getCreateAccount(Context ctx) throws IOException {
+    private static void getCreateAccount(Context ctx) {
         final String templateFile = "create_account.html";
         HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -187,35 +209,35 @@ public class AccountJavalinRoutes {
             scopes.put("fleetnames_js", fleetnamesJavascript);
             MustacheHandler.handle(templateFile, scopes);
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (IOException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         }
     }
 
-    private static void getForgotPassword(Context ctx) throws IOException {
+    private static void getForgotPassword(Context ctx) {
         final String templateFile = "forgot_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
 
         LOG.info("template file: '" + templateFile + "'");
 
-        ctx.contentType("text/html");
-        ctx.result(MustacheHandler.handle(templateFile, scopes));
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
     }
 
-    private static void getResetPassword(Context ctx) throws IOException {
+    private static void getResetPassword(Context ctx) {
         final String templateFile = "reset_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
 
         LOG.info("template file: '" + templateFile + "'");
 
-        ctx.contentType("text/html");
-        ctx.result(MustacheHandler.handle(templateFile, scopes));
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
     }
 
-    private static void getUpdatePassword(Context ctx) throws IOException {
+    private static void getUpdatePassword(Context ctx) {
         final String templateFile = "update_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
         User user = ctx.sessionAttribute("user");
@@ -225,25 +247,21 @@ public class AccountJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
         scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
 
-        ctx.contentType("text/html");
-        ctx.result(MustacheHandler.handle(templateFile, scopes));
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
     }
 
     private static void getUpdateProfile(Context ctx) {
         final String templateFile = "update_profile.html";
-        try {
-            Map<String, Object> scopes = new HashMap<>();
+        Map<String, Object> scopes = new HashMap<>();
 
-            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
-            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
-        }
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
     }
 
     private static void postForgotPassword(Context ctx) {
@@ -366,8 +384,8 @@ public class AccountJavalinRoutes {
                 scopes.put("airsync", "var airsync_timeout = -1;\n");
             }
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (Exception se) {
             se.printStackTrace();
         }
@@ -461,12 +479,7 @@ public class AccountJavalinRoutes {
 
             final String encodedFleetName = URLEncoder.encode(fleetName, StandardCharsets.UTF_8);
             final String formattedInviteLink = "https://ngafid.org/create_account?fleet_name=" + encodedFleetName + "&email=" + inviteEmail;
-            final String body = "<html><body>" +
-                    "<p>Hi,<p><br>" +
-                    "<p>A account creation invitation was sent to your account for fleet: " + fleetName + "<p>" +
-                    "<p>Please click the link below to create an account.<p>" +
-                    "<p> <a href=" + formattedInviteLink + ">Create Account</a></p><br>" +
-                    "</body></html>";
+            final String body = "<html><body>" + "<p>Hi,<p><br>" + "<p>A account creation invitation was sent to your account for fleet: " + fleetName + "<p>" + "<p>Please click the link below to create an account.<p>" + "<p> <a href=" + formattedInviteLink + ">Create Account</a></p><br>" + "</body></html>";
 
             List<String> bccRecipients = new ArrayList<>();
             try {
@@ -623,14 +636,12 @@ public class AccountJavalinRoutes {
 
         // Check if the token is valid
         try (Connection connection = Database.getConnection()) {
-            try (PreparedStatement query = connection
-                    .prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
+            try (PreparedStatement query = connection.prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
                 query.setString(1, token);
                 query.setInt(2, id);
                 try (ResultSet resultSet = query.executeQuery()) {
                     if (!resultSet.next()) {
-                        String exceptionMessage = "Provided token/id pairing was not found: (" + token + ", " + id
-                                + "), may have already expired or been used";
+                        String exceptionMessage = "Provided token/id pairing was not found: (" + token + ", " + id + "), may have already expired or been used";
                         LOG.severe(exceptionMessage);
                         throw new Exception(exceptionMessage);
                     }
@@ -638,16 +649,14 @@ public class AccountJavalinRoutes {
             }
 
             // Remove the token from the database
-            try (PreparedStatement queryTokenRemoval = connection
-                    .prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
+            try (PreparedStatement queryTokenRemoval = connection.prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
                 queryTokenRemoval.setString(1, token);
                 queryTokenRemoval.setInt(2, id);
                 queryTokenRemoval.executeUpdate();
             }
 
             // Set all non-forced email preferences to 0 in the database
-            try (PreparedStatement queryClearPreferences = connection
-                    .prepareStatement("SELECT * FROM email_preferences WHERE user_id=?")) {
+            try (PreparedStatement queryClearPreferences = connection.prepareStatement("SELECT * FROM email_preferences WHERE user_id=?")) {
                 queryClearPreferences.setInt(1, id);
                 try (ResultSet resultSet = queryClearPreferences.executeQuery()) {
                     while (resultSet.next()) {
@@ -656,9 +665,7 @@ public class AccountJavalinRoutes {
                             continue;
                         }
 
-                        try (PreparedStatement update = connection
-                                .prepareStatement(
-                                        "UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?")) {
+                        try (PreparedStatement update = connection.prepareStatement("UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?")) {
                             update.setInt(1, id);
                             update.setString(2, emailType);
                             update.executeUpdate();

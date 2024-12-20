@@ -8,7 +8,6 @@ import org.ngafid.flights.Flight;
 import org.ngafid.flights.Tail;
 import org.ngafid.flights.Tails;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
 import java.io.IOException;
@@ -41,19 +40,15 @@ public class AircraftFleetTailsJavalinRoutes {
     private static void getManageFleet(Context ctx) {
         final String templateFile = "manage_fleet.html";
 
-        try {
-            Map<String, Object> scopes = new HashMap<String, Object>();
+        Map<String, Object> scopes = new HashMap<String, Object>();
 
-            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
-            final User user = ctx.sessionAttribute("user");
-            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        final User user = ctx.sessionAttribute("user");
+        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
-        }
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
     }
 
     private static void postFleetNames(Context ctx) {
@@ -83,13 +78,11 @@ public class AircraftFleetTailsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("system_ids_js", "var systemIds = JSON.parse('" + gson.toJson(tailInfo) + "');\n");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 

@@ -151,8 +151,8 @@ public class AnalysisJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
 
         } catch (Exception e) {
             LOG.severe(e.toString());
@@ -194,14 +194,11 @@ public class AnalysisJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("ttf_js", "var airports = " + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n" + "var runways = " + gson.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
@@ -258,13 +255,11 @@ public class AnalysisJavalinRoutes {
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
@@ -452,8 +447,8 @@ public class AnalysisJavalinRoutes {
 
             // This is for webpage section
             final String templateFile = "ngafid_cesium.html";
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
 
         } catch (Exception e) {
             LOG.severe(e.toString());

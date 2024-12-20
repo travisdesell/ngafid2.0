@@ -141,7 +141,7 @@ public class DataJavalinRoutes {
             scopes.put("coords", sb.toString());
             scopes.put("description", "Flight " + flightId);
 
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.render(templateFile, scopes);
         } catch (Exception e) {
             ctx.json(new ErrorResponse(e));
         }

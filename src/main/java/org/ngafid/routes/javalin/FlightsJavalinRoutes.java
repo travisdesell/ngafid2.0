@@ -79,8 +79,8 @@ public class FlightsJavalinRoutes {
 
             scopes.put("flight_js", sb.toString());
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
@@ -171,8 +171,8 @@ public class FlightsJavalinRoutes {
             StringWriter stringOut = new StringWriter();
             startTime = System.currentTimeMillis();
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
 
             endTime = System.currentTimeMillis();
             LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
@@ -189,8 +189,8 @@ public class FlightsJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));

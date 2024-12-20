@@ -40,7 +40,7 @@ public class StartPageJavalinRoutes {
 
     private static void getWaiting(Context ctx) {
         final String templateFile = "waiting.html";
-        ctx.contentType("text/html");
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile);
     }
 
@@ -60,7 +60,6 @@ public class StartPageJavalinRoutes {
                 scopes.put("messages", messages);
             }
             ctx.header("Content-Type", "text/html; charset=UTF-8");
-
             ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());

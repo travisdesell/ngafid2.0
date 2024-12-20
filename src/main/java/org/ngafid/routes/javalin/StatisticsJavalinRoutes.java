@@ -244,7 +244,7 @@ public class StatisticsJavalinRoutes {
     }
 
 
-    private static void getAggregate(Context ctx) throws IOException {
+    private static void getAggregate(Context ctx) {
         final String templateFile = "aggregate.html";
 
         User user = ctx.sessionAttribute("user");
@@ -273,18 +273,15 @@ public class StatisticsJavalinRoutes {
 
             LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
-    private static void getAggregateTrends(Context ctx) throws IOException {
+    private static void getAggregateTrends(Context ctx) {
         final String templateFile = "aggregate_trends.html";
 
         User user = ctx.sessionAttribute("user");
@@ -316,13 +313,11 @@ public class StatisticsJavalinRoutes {
             long endTime = System.currentTimeMillis();
             LOG.info("getting aggreagte data info took " + (endTime - startTime) + "ms.");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
@@ -423,13 +418,11 @@ public class StatisticsJavalinRoutes {
                             "var airframeMap = JSON.parse('"
                             + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
 
-            ctx.contentType("text/html");
-            ctx.result(MustacheHandler.handle(templateFile, scopes));
+            ctx.header("Content-Type", "text/html; charset=UTF-8");
+            ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
     }
 
