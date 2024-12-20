@@ -48,13 +48,12 @@ public class StartPageJavalinRoutes {
         final String templateFile = "welcome.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
-        System.out.println("Fleet ID: " + fleetId);
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
             List<String> airframes = Airframes.getAll(connection, fleetId);
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("fleet_info_js", "var airframes = " + airframes + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
             LOG.info("var airframes = " + airframes + ";\n");
             if (!messages.isEmpty()) {
                 scopes.put("messages", messages);
