@@ -53,11 +53,11 @@
 
 
         <!-- Spark Java library -->
-<!--        <dependency>-->
-<!--            <groupId>com.sparkjava</groupId>-->
-<!--            <artifactId>spark-core</artifactId>-->
-<!--            <version>${spark.version}</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.sparkjava</groupId>-->
+        <!--            <artifactId>spark-core</artifactId>-->
+        <!--            <version>${spark.version}</version>-->
+        <!--        </dependency>-->
 
 
         <!-- Javalin Webserver -->
@@ -65,6 +65,12 @@
             <groupId>io.javalin</groupId>
             <artifactId>javalin-bundle</artifactId>
             <version>${javalin.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin-rendering</artifactId>
+            <version>6.4.0</version>
         </dependency>
 
         <!-- JSON utils -->
@@ -143,12 +149,12 @@
             <artifactId>junit-platform-commons</artifactId>
             <version>1.9.1</version>
             <scope>test</scope>
-            </dependency>
+        </dependency>
 
         <dependency>
-           <groupId>com.zaxxer</groupId>
-           <artifactId>HikariCP</artifactId>
-           <version>5.1.0</version>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
         </dependency>
     </dependencies>
 
@@ -194,35 +200,35 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>4.8.6.0</version>
                     <dependencies>
-                      <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
-                      <dependency>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs</artifactId>
-                        <version>4.8.6</version>
-                      </dependency>
+                        <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+                        <dependency>
+                            <groupId>com.github.spotbugs</groupId>
+                            <artifactId>spotbugs</artifactId>
+                            <version>4.8.6</version>
+                        </dependency>
                     </dependencies>
-                  </plugin>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
-                    <configuration>
-                        <source>20</source>
-                        <target>20</target>
-                        <compilerArgs>
-                            <arg>-Xlint:all</arg>
-                            <arg>-Xmaxwarns</arg>
-                            <arg>50000</arg>
-                        </compilerArgs>
-<!--                        Exclude everything under org.ngafid.routes.spark-->
-                        <excludes>
-                            <exclude>org/ngafid/routes/spark/**</exclude>
-                            <exclude>org/ngafid/webserver</exclude>
-                        </excludes>
-                    </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>20</source>
+                    <target>20</target>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                        <arg>-Xmaxwarns</arg>
+                        <arg>50000</arg>
+                    </compilerArgs>
+                    <!--                        Exclude everything under org.ngafid.routes.spark-->
+                    <excludes>
+                        <exclude>org/ngafid/routes/spark/**</exclude>
+                        <exclude>org/ngafid/webserver</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

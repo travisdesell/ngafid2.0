@@ -5,6 +5,7 @@ import io.javalin.http.staticfiles.Location;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.javalin.*;
 
 import java.util.logging.Logger;
@@ -21,7 +22,9 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void preInitialize() {
-        app = Javalin.create();
+        app = Javalin.create(config -> {
+            config.fileRenderer(new MustacheHandler());
+        });
     }
 
     @Override

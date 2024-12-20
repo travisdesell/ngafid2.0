@@ -85,6 +85,7 @@ public class StartPageJavalinRoutes {
             }
 
             ctx.html(MustacheHandler.handle(templateFile, scopes));
+
         } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
