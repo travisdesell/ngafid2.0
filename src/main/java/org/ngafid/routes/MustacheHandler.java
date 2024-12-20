@@ -12,9 +12,8 @@ import java.io.StringWriter;
 import java.util.Map;
 
 public class MustacheHandler {
-    private static final MustacheFactory mf = new DefaultMustacheFactory();
-
     public static String handle(String templateFilename, Map<String, Object> scopes) throws IOException {
+        MustacheFactory mf = new DefaultMustacheFactory();
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + templateFilename;
         JavalinLogger.info("handling mustache template: " + templateFile);
         Mustache mustache = mf.compile(templateFile);
