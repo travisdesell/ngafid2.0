@@ -167,8 +167,8 @@ public class AircraftFleetTailsJavalinRoutes {
         app.get("/protected/manage_fleet", AircraftFleetTailsJavalinRoutes::getManageFleet);
 //        app.post("/protected/fleet_names", AircraftFleetTailsJavalinRoutes::postFleetNames);
         app.get("/protected/system_ids", AircraftFleetTailsJavalinRoutes::getSystemIds);
-        app.get("/sim_acft", AircraftFleetTailsJavalinRoutes::getSimAircraft);
-        app.post("/sim_acft", AircraftFleetTailsJavalinRoutes::postSimAircraft);
-        app.post("/update_tail", AircraftFleetTailsJavalinRoutes::postUpdateTail);
+        app.get("/protected/sim_acft", AircraftFleetTailsJavalinRoutes::getSimAircraft);
+        app.post("/protected/sim_acft", AircraftFleetTailsJavalinRoutes::postSimAircraft);
+        app.post("/protected/update_tail", AircraftFleetTailsJavalinRoutes::postUpdateTail);
     }
 }
