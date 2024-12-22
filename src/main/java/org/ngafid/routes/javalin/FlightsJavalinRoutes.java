@@ -43,8 +43,6 @@ public class FlightsJavalinRoutes {
         final List<Flight> flights = new ArrayList<>();
 
         try (Connection connection = Database.getConnection()) {
-
-
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             for (String flightId : flightIds) {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));

@@ -1,6 +1,8 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -16,6 +18,8 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+
+import static org.ngafid.WebServer.gson;
 
 public class TagFilterJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());
@@ -214,14 +218,14 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postModifyFilter(Context ctx) {
-        try (Connection connection = Database.getConnection()) {
-            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final int fleetId = user.getFleetId();
-            final String currentName = Objects.requireNonNull(ctx.formParam("currentName"));
-            final String newName = Objects.requireNonNull(ctx.formParam("newName"));
-            final String filterJSON = Objects.requireNonNull(ctx.formParam("filterJSON"));
-            final String color = Objects.requireNonNull(ctx.formParam("color"));
+        final String currentName = Objects.requireNonNull(ctx.formParam("currentName"));
+        final String newName = Objects.requireNonNull(ctx.formParam("newName"));
+        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterJSON"));
+        final String color = Objects.requireNonNull(ctx.formParam("color"));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
 
+        try (Connection connection = Database.getConnection()) {
             StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color);
             ctx.json("SUCCESS");
         } catch (SQLIntegrityConstraintViolationException se) {

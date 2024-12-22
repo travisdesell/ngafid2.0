@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.accounts.User;
 
 /**
@@ -21,7 +22,12 @@ public class StoredFilter {
      * @param name   is the common name given to the stored filter by the user.
      * @param filter is the filter as a {@link String} in the form of a JSON object.
      */
-    private String name, filter, color;
+    @JsonProperty
+    private String name;
+    @JsonProperty
+    private String filter;
+    @JsonProperty
+    private String color;
 
     /**
      * Default constructor
@@ -53,6 +59,7 @@ public class StoredFilter {
                 ResultSet resultSet = query.executeQuery()) {
 
             List<StoredFilter> filters = new ArrayList<>();
+            System.out.println("Filter query " + query.toString());
 
             while (resultSet.next()) {
                 StoredFilter filterResponse = new StoredFilter(resultSet.getString(1), resultSet.getString(2),

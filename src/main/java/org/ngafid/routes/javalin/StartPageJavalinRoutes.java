@@ -76,7 +76,7 @@ public class StartPageJavalinRoutes {
 
         app.get("/protected/waiting", StartPageJavalinRoutes::getWaiting);
         app.get("/protected/welcome", ctx -> getWelcome(ctx, new ArrayList<>()));
-        app.get("/protected/*", ctx -> getWelcome(ctx, List.of(new Message("danger", "The page you attempted to access does not exist."))));
+//        app.get("/protected/*", ctx -> getWelcome(ctx, List.of(new Message("danger", "The page you attempted to access does not exist."))));
     }
 
 }

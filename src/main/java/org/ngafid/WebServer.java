@@ -93,8 +93,8 @@ public abstract class WebServer {
         }
 
         configureStaticFilesLocation();
-        configureAuthChecks();
         configureRoutes();
+        configureAuthChecks();
         configureExceptions();
     }
 
