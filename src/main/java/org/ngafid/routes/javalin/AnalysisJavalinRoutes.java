@@ -323,24 +323,25 @@ public class AnalysisJavalinRoutes {
 
     private static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String flightIdStr = Objects.requireNonNull(ctx.formParam("flight_id"));
-        final String otherFlightId = Objects.requireNonNull(ctx.formParam("other_flight_id"));
+        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
+        final String otherFlightId = ctx.queryParam("other_flight_id"); // Can be null
         final int flightId = Integer.parseInt(flightIdStr);
         final int fleetId = user.getFleetId();
 
         // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             ctx.status(401);
-            ctx.result("User did not have access to view acces for this fleet.");
+            ctx.result("User did not have access to view access for this fleet.");
             return;
         }
 
         try (Connection connection = Database.getConnection()) {
             final List<String> flightIdsAll = Objects.requireNonNull(ctx.formParams("flight_id"));
             final Flight flight = Objects.requireNonNull(Flight.getFlight(connection, flightId));
-            final Flight otherFlight = Objects.requireNonNull(Flight.getFlight(connection, Integer.parseInt(otherFlightId)));
+            final Flight otherFlight = otherFlightId != null ?
+                    Objects.requireNonNull(Flight.getFlight(connection, Integer.parseInt(otherFlightId))) : null;
 
-            if (flight.getFleetId() != fleetId || otherFlight.getFleetId() != fleetId) {
+            if (flight.getFleetId() != fleetId || (otherFlight != null && otherFlight.getFleetId() != fleetId)) {
                 ctx.status(401);
                 ctx.result("User did not have access to this flight.");
                 return;
@@ -355,7 +356,6 @@ public class AnalysisJavalinRoutes {
 
                 final String airframeType = incomingFlight.getAirframeType();
 
-                final DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltMSL");
                 final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
                 final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
                 final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
