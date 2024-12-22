@@ -35,6 +35,7 @@ public class StartPageJavalinRoutes {
             scopes.put("messages", new Message[]{message});
         }
 
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(homeTemplateFileName, scopes);
     }
 

@@ -95,13 +95,10 @@ public class JavalinWebServer extends WebServer {
 
                 LOG.info("redirecting to access_denied");
                 ctx.redirect("/access_denied");
-                ctx.status(401).result("Go Away!");
-
+                // Note a 401 status is not set since it is non-standard to redirect too and Javalin will not render the page
             } else if (!ctx.path().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
                 LOG.info("user waiting status, redirecting to waiting page!");
                 ctx.redirect("/protected/waiting");
-                ctx.status(401).result("Go Away!");
-
             } else if (previousURI != null) {
                 ctx.redirect(previousURI);
                 ctx.sessionAttribute("previous_uri", null);
