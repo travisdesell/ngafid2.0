@@ -156,7 +156,7 @@ public class AnalysisJavalinRoutes {
 
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -179,7 +179,7 @@ public class AnalysisJavalinRoutes {
             Map<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
             ctx.json(eventMap);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -198,7 +198,7 @@ public class AnalysisJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -228,7 +228,7 @@ public class AnalysisJavalinRoutes {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
 
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
@@ -259,7 +259,7 @@ public class AnalysisJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -452,7 +452,7 @@ public class AnalysisJavalinRoutes {
 
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -464,7 +464,7 @@ public class AnalysisJavalinRoutes {
                 ctx.json(gson.toJson(new RateOfClosurePlotData(rateOfClosure)));
             }
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -499,7 +499,7 @@ public class AnalysisJavalinRoutes {
             ctx.json(new FlightMetricResponse(flightMetrics, userPreferences.getDecimalPrecision()));
         } catch (Exception e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -521,7 +521,7 @@ public class AnalysisJavalinRoutes {
             ctx.json(output);
         } catch (Exception e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

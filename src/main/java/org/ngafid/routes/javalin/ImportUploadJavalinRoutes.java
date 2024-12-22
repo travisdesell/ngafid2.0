@@ -270,7 +270,7 @@ public class ImportUploadJavalinRoutes {
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (Exception e) {
             LOG.severe(e.toString());
         }
@@ -297,7 +297,7 @@ public class ImportUploadJavalinRoutes {
 
             ctx.json(new UploadsResponse(uploads, numberPages));
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -306,7 +306,7 @@ public class ImportUploadJavalinRoutes {
         try {
             ctx.json(new UploadDetails(uploadId));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -345,7 +345,7 @@ public class ImportUploadJavalinRoutes {
             Tails.removeUnused(connection);
         } catch (Exception e) {
             LOG.info(e.getMessage());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
 
     }
@@ -380,7 +380,7 @@ public class ImportUploadJavalinRoutes {
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (Exception e) {
             LOG.severe(e.toString());
         }
@@ -408,7 +408,7 @@ public class ImportUploadJavalinRoutes {
 
             ctx.json(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -472,7 +472,7 @@ public class ImportUploadJavalinRoutes {
             }
         } catch (SQLException e) {
             LOG.severe(gson.toJson(e));
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

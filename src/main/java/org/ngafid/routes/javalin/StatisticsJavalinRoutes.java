@@ -185,7 +185,7 @@ public class StatisticsJavalinRoutes {
             ctx.json(statistics);
         } catch (SQLException e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -239,7 +239,7 @@ public class StatisticsJavalinRoutes {
 
             ctx.json(new SummaryStatistics(aggregate, numberFlights, numberAircraft, yearNumberFlights, monthNumberFlights, totalEvents, yearEvents, monthEvents, numberUsers, numberFleets, uploads, uploadsNotImported, uploadsWithError, flightsWithWarning, flightsWithError, flightTime, yearFlightTime, monthFlightTime));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -277,7 +277,7 @@ public class StatisticsJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -317,7 +317,7 @@ public class StatisticsJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -352,7 +352,7 @@ public class StatisticsJavalinRoutes {
                     fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             ctx.json(eventCountsMap);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -398,7 +398,7 @@ public class StatisticsJavalinRoutes {
                 ctx.json(map.get(eventName));
             }
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -422,7 +422,7 @@ public class StatisticsJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

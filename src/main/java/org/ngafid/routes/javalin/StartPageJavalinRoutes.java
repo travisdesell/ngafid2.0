@@ -63,7 +63,7 @@ public class StartPageJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

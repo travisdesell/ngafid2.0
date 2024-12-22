@@ -62,7 +62,7 @@ public class AircraftFleetTailsJavalinRoutes {
                 ctx.json(names);
             }
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -82,7 +82,7 @@ public class AircraftFleetTailsJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -101,7 +101,7 @@ public class AircraftFleetTailsJavalinRoutes {
             List<String> paths = Flight.getSimAircraft(connection, fleetId);
             ctx.json(paths);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -133,7 +133,7 @@ public class AircraftFleetTailsJavalinRoutes {
             }
 
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -158,7 +158,7 @@ public class AircraftFleetTailsJavalinRoutes {
 
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

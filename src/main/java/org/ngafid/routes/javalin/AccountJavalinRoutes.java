@@ -160,7 +160,7 @@ public class AccountJavalinRoutes {
         } catch (SQLException e) {
             LOG.severe(e.toString());
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (AccountException e) {
             ctx.json(new LoginResponse(true, false, false, false, "Incorrect email or password.", null));
         }
@@ -201,7 +201,7 @@ public class AccountJavalinRoutes {
                     }
                 }
             } catch (SQLException e) {
-                ctx.json(new ErrorResponse(e));
+                ctx.json(new ErrorResponse(e)).status(500);
             }
 
             fleetnamesJavascript.append("];");
@@ -213,7 +213,7 @@ public class AccountJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (IOException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -319,9 +319,9 @@ public class AccountJavalinRoutes {
             }
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (AccountException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -398,7 +398,7 @@ public class AccountJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             ctx.json(User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -421,7 +421,7 @@ public class AccountJavalinRoutes {
 
             ctx.json(User.getUserPreferences(connection, userId).getFlightMetrics());
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -451,7 +451,7 @@ public class AccountJavalinRoutes {
             ctx.json(new ResetSuccessResponse(false, false, false, true, "Success!", user));
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (AccountException e) {
             ctx.json(new ResetSuccessResponse(true, false, false, false, "Incorrect email or password.", null));
         }
@@ -486,7 +486,7 @@ public class AccountJavalinRoutes {
                 SendEmail.sendEmail(recipient, bccRecipients, "NGAFID Account Creation Invite", body, EmailType.ACCOUNT_CREATION_INVITE);
             } catch (SQLException e) {
                 LOG.severe(e.toString());
-                ctx.json(new ErrorResponse(e));
+                ctx.json(new ErrorResponse(e)).status(500);
             }
 
             ctx.json(new InvitationSent());
@@ -520,7 +520,7 @@ public class AccountJavalinRoutes {
             ctx.json(new Profile(user));
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
 
     }
@@ -541,7 +541,7 @@ public class AccountJavalinRoutes {
             ctx.json(new Profile(user));
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -566,7 +566,7 @@ public class AccountJavalinRoutes {
                 user.updateFleet(connection);
                 ctx.json(new UpdateUserAccess());
             } catch (SQLException e) {
-                ctx.json(new ErrorResponse(e));
+                ctx.json(new ErrorResponse(e)).status(500);
             }
         }
 
@@ -593,7 +593,7 @@ public class AccountJavalinRoutes {
             try (Connection connection = Database.getConnection()) {
                 ctx.json(User.updateUserEmailPreferences(connection, userID, emailTypesUser));
             } catch (Exception e) {
-                ctx.json(new ErrorResponse(e));
+                ctx.json(new ErrorResponse(e)).status(500);
             }
         } else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) { // Manager Update...
             // Unpack Submission Data
@@ -620,7 +620,7 @@ public class AccountJavalinRoutes {
             try (Connection connection = Database.getConnection()) {
                 ctx.json(User.updateUserEmailPreferences(connection, fleetUserID, emailTypesUser));
             } catch (Exception e) {
-                ctx.json(new ErrorResponse(e));
+                ctx.json(new ErrorResponse(e)).status(500);
             }
         }
 
@@ -677,7 +677,7 @@ public class AccountJavalinRoutes {
             ctx.result("Successfully unsubscribed from emails...");
         } catch (Exception e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

@@ -60,7 +60,7 @@ public class EventJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -75,9 +75,9 @@ public class EventJavalinRoutes {
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
 
-            ctx.json(new EventDefinition(resultSet).toHumanReadable());
+            ctx.result(gson.toJson(new EventDefinition(resultSet).toHumanReadable()));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
 
     }
@@ -125,7 +125,7 @@ public class EventJavalinRoutes {
             updatedEvent.updateSelf(connection);
         } catch (SQLException e) {
             ctx.status(500);
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -150,7 +150,7 @@ public class EventJavalinRoutes {
             ctx.json("Successfully deleted event definition.");
         } catch (SQLException e) {
             ctx.status(500);
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -189,7 +189,7 @@ public class EventJavalinRoutes {
 
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -223,7 +223,7 @@ public class EventJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -244,7 +244,7 @@ public class EventJavalinRoutes {
             ctx.contentType("application/json");
             ctx.result("{}");
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -267,7 +267,7 @@ public class EventJavalinRoutes {
                     LocalDate.parse(startDate), LocalDate.parse(endDate));
             ctx.json(eventCountsMap);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
     
@@ -301,7 +301,7 @@ public class EventJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -323,7 +323,7 @@ public class EventJavalinRoutes {
             ctx.contentType("application/json");
             ctx.result("{}");
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -338,7 +338,7 @@ public class EventJavalinRoutes {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
         ctx.json(null);
     }
@@ -384,7 +384,7 @@ public class EventJavalinRoutes {
             ctx.result(output);
         } catch (SQLException e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -398,7 +398,7 @@ public class EventJavalinRoutes {
             ctx.json(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

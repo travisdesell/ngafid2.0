@@ -83,7 +83,7 @@ public class FlightsJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
     private static void getFlights(Context ctx) {
@@ -178,7 +178,7 @@ public class FlightsJavalinRoutes {
             LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -193,7 +193,7 @@ public class FlightsJavalinRoutes {
             ctx.render(templateFile, scopes);
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -255,7 +255,7 @@ public class FlightsJavalinRoutes {
             }
 
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

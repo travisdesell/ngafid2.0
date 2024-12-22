@@ -95,7 +95,7 @@ public class DataJavalinRoutes {
 
             ctx.result(csvWriter.getFileContents());
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -143,7 +143,7 @@ public class DataJavalinRoutes {
 
             ctx.render(templateFile, scopes);
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

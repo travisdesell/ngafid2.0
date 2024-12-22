@@ -55,7 +55,7 @@ public class TagFilterJavalinRoutes {
 
             ctx.json(Flight.createTag(fleetId, flightId, name, description, color, connection));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -85,7 +85,7 @@ public class TagFilterJavalinRoutes {
             ctx.json(Objects.requireNonNull(Flight.editTag(connection, flightTag)));
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -126,7 +126,7 @@ public class TagFilterJavalinRoutes {
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
 
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -153,7 +153,7 @@ public class TagFilterJavalinRoutes {
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
 
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -181,7 +181,7 @@ public class TagFilterJavalinRoutes {
             ctx.json(tags);
         } catch (SQLException e) {
 
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -199,7 +199,7 @@ public class TagFilterJavalinRoutes {
             ctx.json(Objects.requireNonNull(Flight.getTag(connection, tagId)));
         } catch (SQLException e) {
 
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -210,7 +210,7 @@ public class TagFilterJavalinRoutes {
             ctx.json(filters);
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -229,7 +229,7 @@ public class TagFilterJavalinRoutes {
             ctx.json("DUPLICATE_PK");
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -249,7 +249,7 @@ public class TagFilterJavalinRoutes {
             ctx.json("DUPLICATE_PK");
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -265,7 +265,7 @@ public class TagFilterJavalinRoutes {
             ctx.json(StoredFilter.getStoredFilters(connection, fleetId));
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

@@ -81,7 +81,7 @@ public class DoubleSeriesJavalinRoutes {
             ctx.json(new AllDoubleSeriesNames(connection));
         } catch (SQLException e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -110,7 +110,7 @@ public class DoubleSeriesJavalinRoutes {
             ctx.result(output);
         } catch (SQLException | IOException e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -130,7 +130,7 @@ public class DoubleSeriesJavalinRoutes {
             ctx.json(new DoubleSeriesNames(connection, flightId));
         } catch (SQLException e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

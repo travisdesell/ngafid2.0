@@ -59,7 +59,7 @@ public class AirsyncJavalinRoutes {
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (Exception e) {
             LOG.severe(e.toString());
         }
@@ -98,7 +98,7 @@ public class AirsyncJavalinRoutes {
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         } catch (Exception e) {
             LOG.severe(e.toString());
         }
@@ -133,7 +133,7 @@ public class AirsyncJavalinRoutes {
 
             ctx.json(new PaginationResponse<>(imports, numberPages));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -165,7 +165,7 @@ public class AirsyncJavalinRoutes {
 
             ctx.json(new PaginationResponse<Upload>(uploads, numberPages));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -204,7 +204,7 @@ public class AirsyncJavalinRoutes {
 
             ctx.json("OK");
         } catch (Exception e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -238,7 +238,7 @@ public class AirsyncJavalinRoutes {
             ctx.json(newTimeout);
         } catch (Exception e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
     

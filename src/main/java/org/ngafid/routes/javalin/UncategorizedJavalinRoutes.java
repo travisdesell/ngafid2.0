@@ -36,7 +36,7 @@ public class UncategorizedJavalinRoutes {
         } catch (Exception e) {
             e.printStackTrace();
             ctx.status(500);
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
@@ -46,7 +46,7 @@ public class UncategorizedJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             ctx.json(new MainContent(connection, user.getFleetId()));
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
+            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
