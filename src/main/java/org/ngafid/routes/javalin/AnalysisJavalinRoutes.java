@@ -163,7 +163,7 @@ public class AnalysisJavalinRoutes {
     private static void postSeverities(Context ctx) {
         final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
+        final String eventName = Objects.requireNonNull(ctx.formParam("eventNames"));
         final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -527,7 +527,7 @@ public class AnalysisJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
-        app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
+        app.post("/protected/all_severities", AnalysisJavalinRoutes::postSeverities);
 
         app.get("/protected/ttf", AnalysisJavalinRoutes::getTurnToFinal);
         app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
