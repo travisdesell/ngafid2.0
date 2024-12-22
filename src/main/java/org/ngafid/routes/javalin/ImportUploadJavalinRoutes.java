@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
@@ -36,7 +37,9 @@ public class ImportUploadJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
 
     private static class UploadsResponse {
+        @JsonProperty
         public List<Upload> uploads;
+        @JsonProperty
         public int numberPages;
 
         public UploadsResponse(List<Upload> uploads, int numberPages) {
@@ -46,8 +49,11 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static class UploadDetails {
+        @JsonProperty
         List<UploadError> uploadErrors;
+        @JsonProperty
         List<FlightError> flightErrors;
+        @JsonProperty
         List<FlightWarning> flightWarnings;
 
         public UploadDetails(int uploadId) throws SQLException {
@@ -60,7 +66,9 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static class ImportsResponse {
+        @JsonProperty
         public List<Upload> imports;
+        @JsonProperty
         public int numberPages;
 
         public ImportsResponse(List<Upload> imports, int numberPages) {
@@ -354,17 +362,16 @@ public class ImportUploadJavalinRoutes {
         final String templateFile = "imports.html";
 
         try (Connection connection = Database.getConnection()) {
-            Map<String, Object> scopes = new HashMap<String, Object>();
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int fleetId = user.getFleetId();
+            Map<String, Object> scopes = new HashMap<String, Object>();
 
             // default page values
-            final int pageSize = 10;
-            int currentPage = 0;
-
             final int totalImports = Upload.getNumUploads(connection, fleetId, null);
+            final int startPage = 0;
+            final int pageSize = 10;
             final int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + ((currentPage + 1) * pageSize) + "," + pageSize);
+            final List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + startPage + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
@@ -398,13 +405,14 @@ public class ImportUploadJavalinRoutes {
             return;
         }
 
+        LOG.info("Getting imports for fleet: " + fleetId);
         try (Connection connection = Database.getConnection()) {
             int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
             int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             ctx.json(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
