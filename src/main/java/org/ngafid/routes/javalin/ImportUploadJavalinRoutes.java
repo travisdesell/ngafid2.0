@@ -58,6 +58,7 @@ public class ImportUploadJavalinRoutes {
 
         public UploadDetails(int uploadId) throws SQLException {
             try (Connection connection = Database.getConnection()) {
+                // TODO(Aaron): Noticed that this can definitely be sped up. ~45 ms currently. Will update in future PR.
                 uploadErrors = UploadError.getUploadErrors(connection, uploadId);
                 flightErrors = FlightError.getFlightErrors(connection, uploadId);
                 flightWarnings = FlightWarning.getFlightWarnings(connection, uploadId);

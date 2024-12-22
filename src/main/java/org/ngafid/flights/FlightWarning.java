@@ -1,5 +1,7 @@
 package org.ngafid.flights;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -12,11 +14,17 @@ import java.util.logging.Logger;
 public class FlightWarning {
     private static final Logger LOG = Logger.getLogger(FlightWarning.class.getName());
 
+    @JsonProperty
     private int id;
+    @JsonProperty
     private int uploadId;
+    @JsonProperty
     private int flightId;
+    @JsonProperty
     private String filename;
+    @JsonProperty
     private String message;
+    @JsonProperty
     private String stackTrace;
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
