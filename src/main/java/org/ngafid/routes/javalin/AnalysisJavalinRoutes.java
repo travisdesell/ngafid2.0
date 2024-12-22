@@ -14,10 +14,8 @@ import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.*;
 import org.ngafid.flights.calculations.TurnToFinal;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -115,12 +113,7 @@ public class AnalysisJavalinRoutes {
         String endTime;
         String airframeType;
 
-        public CesiumResponse(List<Double> flightGeoAglTaxiing, List<Double> flightGeoAglTakeOff,
-                              List<Double> flightGeoAglClimb, List<Double> flightGeoAglCruise,
-                              List<Double> flightGeoInfoAgl, List<String> flightTaxiingTimes,
-                              List<String> flightTakeOffTimes, List<String> flightClimbTimes,
-                              List<String> flightCruiseTimes, List<String> flightAglTimes,
-                              String airframeType) {
+        public CesiumResponse(List<Double> flightGeoAglTaxiing, List<Double> flightGeoAglTakeOff, List<Double> flightGeoAglClimb, List<Double> flightGeoAglCruise, List<Double> flightGeoInfoAgl, List<String> flightTaxiingTimes, List<String> flightTakeOffTimes, List<String> flightClimbTimes, List<String> flightCruiseTimes, List<String> flightAglTimes, String airframeType) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -177,6 +170,50 @@ public class AnalysisJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             Map<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
+            ctx.json(eventMap);
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e)).status(500);
+        }
+    }
+
+    private static void postAllSeverities(Context ctx) {
+        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
+        final String eventNames = Objects.requireNonNull(ctx.formParam("eventNames"));
+        final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
+
+        //check to see if the user has upload access for this fleet.
+        if (!user.hasViewAccess(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
+            ctx.status(401);
+            ctx.result("User did not have access to view imports for this fleet.");
+            return;
+        }
+
+        try {
+            Connection connection = Database.getConnection();
+            String[] eventNamesArray = eventNames.split(",");
+            Map<String, Map<String, ArrayList<Event>>> eventMap = new HashMap<>();
+
+            for (String eventName : eventNamesArray) {
+                //Remove leading and trailing quotes
+                eventName = eventName.replace("\"", "");
+
+                //Remove brackets
+                eventName = eventName.replace("[", "");
+                eventName = eventName.replace("]", "");
+
+                //Remove trailing spaces
+                eventName = eventName.trim();
+
+                if (eventName.equals("ANY Event")) continue;
+
+                Map<String, ArrayList<Event>> events = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
+                eventMap.put(eventName, events);
+            }
+
             ctx.json(eventMap);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
@@ -297,22 +334,15 @@ public class AnalysisJavalinRoutes {
 
                 final String airframeType = incomingFlight.getAirframeType();
 
-                final DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "AltMSL");
-                final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "Latitude");
-                final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "Longitude");
-                final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "AltAGL");
+                final DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltMSL");
+                final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
+                final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
+                final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
                 final DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
-                final DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "GndSpd");
+                final DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
 
-                final StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger,
-                        "Lcl Date");
-                final StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger,
-                        "Lcl Time");
+                final StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
+                final StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
 
                 final List<Double> flightGeoAglTaxiing = new ArrayList<>();
                 final List<Double> flightGeoAglTakeOff = new ArrayList<>();
@@ -336,16 +366,14 @@ public class AnalysisJavalinRoutes {
                 // Calculate the taxiing phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         initCounter++;
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
                         flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
                             break;
                         }
                     }
@@ -354,10 +382,8 @@ public class AnalysisJavalinRoutes {
                 // Calculate the takeoff-init phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) < 80) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
 
                             if (takeoffCounter <= 15) {
                                 flightGeoAglTakeOff.add(longitude.get(i));
@@ -379,10 +405,8 @@ public class AnalysisJavalinRoutes {
                 // Calculate the climb phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) <= 80) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
 
                             if (countPostTakeoff >= 15) {
                                 flightGeoAglClimb.add(longitude.get(i));
@@ -405,8 +429,7 @@ public class AnalysisJavalinRoutes {
                 sizePreClimb = preClimb / 3;
 
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
 
                         if (countPostCruise >= sizePreClimb) {
                             flightGeoAglCruise.add(longitude.get(i));
@@ -421,8 +444,7 @@ public class AnalysisJavalinRoutes {
                 // Calculate the full phase
                 // I am avoiding NaN here as well!
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
@@ -435,9 +457,7 @@ public class AnalysisJavalinRoutes {
                     ctx.result("User did not have access to this flight.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb,
-                        flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes,
-                        flightCruiseTimes, flightAglTimes, airframeType);
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
 
                 flights.put(flightIdNew, cr);
 
@@ -527,7 +547,8 @@ public class AnalysisJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
-        app.post("/protected/all_severities", AnalysisJavalinRoutes::postSeverities);
+        app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
+        app.post("/protected/all_severities", AnalysisJavalinRoutes::postAllSeverities);
 
         app.get("/protected/ttf", AnalysisJavalinRoutes::getTurnToFinal);
         app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
