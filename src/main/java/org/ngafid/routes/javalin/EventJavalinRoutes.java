@@ -30,6 +30,8 @@ public class EventJavalinRoutes {
 
     private static void getAllEventDefinitions(Context ctx) {
         try (Connection connection = Database.getConnection()) {
+            ctx.header("Content-Type", "application/json; charset=UTF-8");
+
             ctx.json(EventDefinition.getAll(connection));
         } catch (SQLException e) {
             LOG.severe(e.toString());
@@ -404,14 +406,14 @@ public class EventJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.get("/protected/event_definitions", EventJavalinRoutes::getAllEventDefinitions);
+        app.get("/protected/all_event_definitions", EventJavalinRoutes::getAllEventDefinitions);
 
-        app.get("/protected/manage_event_definitions", EventJavalinRoutes::getEventDefinition);
-        app.put("/protected/manage_event_definitions", EventJavalinRoutes::putEventDefinitions);
-        app.delete("/protected/manage_event_definitions", EventJavalinRoutes::deleteEventDefinitions);
+        app.get("/protected/event_definitions", EventJavalinRoutes::getEventDefinition);
+        app.put("/protected/event_definitions", EventJavalinRoutes::putEventDefinitions);
+        app.delete("/protected/event_definitions", EventJavalinRoutes::deleteEventDefinitions);
 
         app.get("/protected/event_description", EventJavalinRoutes::getEventDescription);
-        app.get("/protected/event_descriptions", EventJavalinRoutes::getAllEventDescriptions);
+        app.get("/protected/get_all_event_descriptions", EventJavalinRoutes::getAllEventDescriptions);
         app.get("/protected/event_counts", EventJavalinRoutes::getEventCounts);
 
         app.get("/protected/create_event", EventJavalinRoutes::getEventCreator);
