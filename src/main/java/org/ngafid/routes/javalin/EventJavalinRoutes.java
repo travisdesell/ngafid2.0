@@ -75,6 +75,7 @@ public class EventJavalinRoutes {
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
 
+            ctx.contentType("application/json");
             ctx.result(gson.toJson(new EventDefinition(resultSet).toHumanReadable()));
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);

@@ -9,10 +9,8 @@ import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.flights.*;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -27,12 +25,12 @@ import static org.ngafid.WebServer.gson;
 public class StatisticsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
-     static class StatFetcher {
+    static class StatFetcher {
         public interface StatFunction<T> {
             T execute(StatFetcher f) throws SQLException;
         }
 
-         static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+        static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
 
                 Map.entry("numberFlights", StatFetcher::numberFlights), Map.entry("numberAircraft", StatFetcher::numberAircraft), Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights), Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights), Map.entry("totalEvents", StatFetcher::totalEvents), Map.entry("yearEvents", StatFetcher::yearEvents), Map.entry("monthEvents", StatFetcher::monthEvents), Map.entry("numberFleets", StatFetcher::numberFleets), Map.entry("numberUsers", StatFetcher::numberUsers), Map.entry("uploads", StatFetcher::uploads), Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported), Map.entry("uploadsWithError", StatFetcher::uploadsWithError), Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning), Map.entry("flightsWithError", StatFetcher::flightsWithError));
 
@@ -162,7 +160,7 @@ public class StatisticsJavalinRoutes {
                              long flightTime, long yearFlightTime, long monthFlightTime) {
     }
 
-     private static void postStatistic(Context ctx, boolean aggregate) {
+    private static void postStatistic(Context ctx, boolean aggregate) {
         final User user = ctx.sessionAttribute("user");
 
         try (Connection connection = Database.getConnection()) {
@@ -170,13 +168,14 @@ public class StatisticsJavalinRoutes {
             StatFetcher fetcher = new StatFetcher(connection, user, aggregate);
             String[] stats;
 
-            ctx.pathParam("splat");
-            if (!ctx.pathParam("splat").isEmpty()) {
-                stats = ctx.pathParam("splat").split("/");
+            String fullPath = ctx.path();
+            String wildcardPath = fullPath.replaceFirst("^/protected/statistics/", "");
+
+            if (!wildcardPath.isEmpty()) {
+                stats = wildcardPath.split("/");
             } else {
                 stats = gson.fromJson(ctx.body(), String[].class);
             }
-
 
             for (String stat : stats) {
                 statistics.put(stat, StatFetcher.function_map.get(stat).execute(fetcher));
@@ -189,7 +188,7 @@ public class StatisticsJavalinRoutes {
         }
     }
 
-     private static void postSummaryStatistics(Context ctx, boolean aggregate) {
+    private static void postSummaryStatistics(Context ctx, boolean aggregate) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = aggregate ? -1 : user.getFleetId();
 
@@ -305,9 +304,7 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
-                    "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" +
-                    "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
@@ -348,8 +345,7 @@ public class StatisticsJavalinRoutes {
                 fleetId = -1;
             }
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
-                    fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             ctx.json(eventCountsMap);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
@@ -375,8 +371,7 @@ public class StatisticsJavalinRoutes {
                     return;
                 }
 
-                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate),
-                        LocalDate.parse(endDate));
+                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
             } else {
 
                 int fleetId = user.getFleetId();
@@ -388,8 +383,7 @@ public class StatisticsJavalinRoutes {
                     return;
                 }
 
-                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate),
-                        LocalDate.parse(endDate));
+                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
             if (eventName == null) {
@@ -414,9 +408,7 @@ public class StatisticsJavalinRoutes {
 
             scopes.put("events_js",
                     // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
-                            "var airframeMap = JSON.parse('"
-                            + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
+                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
