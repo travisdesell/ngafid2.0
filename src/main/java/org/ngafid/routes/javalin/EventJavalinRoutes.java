@@ -67,7 +67,7 @@ public class EventJavalinRoutes {
     }
 
     private static void getEventDescription(Context ctx) {
-        final String expectedName = Objects.requireNonNull(ctx.formParam("eventName"));
+        final String expectedName = Objects.requireNonNull(ctx.queryParam("eventName"));
         final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = "
                 + "\"" + expectedName + "\"";
 
@@ -79,6 +79,7 @@ public class EventJavalinRoutes {
 
             ctx.contentType("application/json");
             ctx.result(gson.toJson(new EventDefinition(resultSet).toHumanReadable()));
+            LOG.info(new EventDefinition(resultSet).toHumanReadable());
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -412,7 +413,7 @@ public class EventJavalinRoutes {
         app.put("/protected/event_definitions", EventJavalinRoutes::putEventDefinitions);
         app.delete("/protected/event_definitions", EventJavalinRoutes::deleteEventDefinitions);
 
-        app.get("/protected/event_description", EventJavalinRoutes::getEventDescription);
+        app.get("/protected/get_event_description", EventJavalinRoutes::getEventDescription);
         app.get("/protected/get_all_event_descriptions", EventJavalinRoutes::getAllEventDescriptions);
         app.get("/protected/event_counts", EventJavalinRoutes::getEventCounts);
 
