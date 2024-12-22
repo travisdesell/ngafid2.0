@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -20,7 +21,9 @@ public class TagFilterJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());
 
     private static class RemoveTagResponse {
+        @JsonProperty
         private final boolean allTagsCleared;
+        @JsonProperty
         private final FlightTag tag;
 
         public RemoveTagResponse() {
@@ -35,17 +38,12 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postCreateTag(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            ctx.json(new ErrorResponse("error", "User not logged in."));
-            return;
-        }
-
-        String name = ctx.formParam("name");
-        String description = ctx.formParam("description");
-        String color = ctx.formParam("color");
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
-        int fleetId = user.getFleetId();
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final String name = Objects.requireNonNull(ctx.formParam("name"));
+        final String description = Objects.requireNonNull(ctx.formParam("description"));
+        final String color = Objects.requireNonNull(ctx.formParam("color"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
+        final int fleetId = user.getFleetId();
 
         try (Connection connection = Database.getConnection()) {
 
@@ -60,15 +58,12 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postEditTag(Context ctx) {
-        String name = ctx.formParam("name");
-        String description = ctx.formParam("description");
-        String color = ctx.formParam("color");
-        int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            ctx.json(new ErrorResponse("error", "User not logged in."));
-            return;
-        }
+        final String name = Objects.requireNonNull(ctx.formParam("name"));
+        final String description = Objects.requireNonNull(ctx.formParam("description"));
+        final String color = Objects.requireNonNull(ctx.formParam("color"));
+        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
 
         try (Connection connection = Database.getConnection()) {
             FlightTag flightTag = new FlightTag(tagId, user.getFleetId(), name, description, color);
@@ -90,14 +85,9 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postRemoveTag(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            ctx.json(new ErrorResponse("error", "User not logged in."));
-            return;
-        }
-
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
-        int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
+        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
         boolean isPermanent = Boolean.parseBoolean(ctx.formParam("permanent"));
         boolean allTags = Boolean.parseBoolean(ctx.formParam("all"));
 
@@ -131,12 +121,7 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postTags(Context ctx) {
-        final User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            ctx.json(new ErrorResponse("error", "User not logged in."));
-            return;
-        }
-
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
         System.out.println("TAGGED FLTID: " + flightId);
 
@@ -158,14 +143,9 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postUnassociatedTags(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            ctx.json(new ErrorResponse("error", "User not logged in."));
-            return;
-        }
-
-        int fleetId = user.getFleetId();
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
 
         try (Connection connection = Database.getConnection()) {
 

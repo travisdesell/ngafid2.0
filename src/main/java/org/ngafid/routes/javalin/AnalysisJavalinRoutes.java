@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.JsonElement;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -29,7 +30,9 @@ public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
 
     private static class Coordinates {
+        @JsonProperty
         int nanOffset = -1;
+        @JsonProperty
         List<double[]> coordinates = new ArrayList<>();
 
         public Coordinates(Connection connection, int flightId, String name) throws Exception {
@@ -49,8 +52,9 @@ public class AnalysisJavalinRoutes {
     }
 
     private static class RateOfClosurePlotData {
-
+        @JsonProperty
         int[] x;
+        @JsonProperty
         double[] y;
 
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
@@ -63,7 +67,9 @@ public class AnalysisJavalinRoutes {
     }
 
     private static class FlightMetric {
+        @JsonProperty
         String value;
+        @JsonProperty
         String name;
 
         public FlightMetric(double value, String name) {
@@ -83,7 +89,9 @@ public class AnalysisJavalinRoutes {
     }
 
     private static class FlightMetricResponse {
+        @JsonProperty
         List<FlightMetric> values;
+        @JsonProperty
         int precision;
 
         public FlightMetricResponse(List<FlightMetric> values, int precision) {
@@ -98,19 +106,32 @@ public class AnalysisJavalinRoutes {
     }
 
     private static class CesiumResponse {
+        @JsonProperty
         List<Double> flightGeoAglTaxiing;
+        @JsonProperty
         List<Double> flightGeoAglTakeOff;
+        @JsonProperty
         List<Double> flightGeoAglClimb;
+        @JsonProperty
         List<Double> flightGeoAglCruise;
+        @JsonProperty
         List<Double> flightGeoInfoAgl;
 
+        @JsonProperty
         List<String> flightTaxiingTimes;
+        @JsonProperty
         List<String> flightTakeOffTimes;
+        @JsonProperty
         List<String> flightClimbTimes;
+        @JsonProperty
         List<String> flightCruiseTimes;
+        @JsonProperty
         List<String> flightAglTimes;
+        @JsonProperty
         String startTime;
+        @JsonProperty
         String endTime;
+        @JsonProperty
         String airframeType;
 
         public CesiumResponse(List<Double> flightGeoAglTaxiing, List<Double> flightGeoAglTakeOff, List<Double> flightGeoAglClimb, List<Double> flightGeoAglCruise, List<Double> flightGeoInfoAgl, List<String> flightTaxiingTimes, List<String> flightTakeOffTimes, List<String> flightClimbTimes, List<String> flightCruiseTimes, List<String> flightAglTimes, String airframeType) {

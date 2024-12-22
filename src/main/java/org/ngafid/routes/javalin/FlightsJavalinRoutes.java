@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -8,10 +9,8 @@ import org.ngafid.events.EventDefinition;
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.*;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,10 +20,12 @@ import java.util.logging.Logger;
 import static org.ngafid.WebServer.gson;
 
 public class FlightsJavalinRoutes {
-    private static Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
+    private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 
     private static class FlightsResponse {
+        @JsonProperty
         public List<Flight> flights;
+        @JsonProperty
         public int numberPages;
 
         public FlightsResponse(List<Flight> flights, int numberPages) {
@@ -35,29 +36,21 @@ public class FlightsJavalinRoutes {
 
     private static void getFlight(Context ctx) {
         final String templateFile = "flight.html";
+        final Map<String, Object> scopes = new HashMap<String, Object>();
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
+        final List<String> flightIds = Objects.requireNonNull(ctx.formParams("flight_id"));
+        final List<Flight> flights = new ArrayList<>();
 
         try (Connection connection = Database.getConnection()) {
-            Map<String, Object> scopes = new HashMap<String, Object>();
+
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-
-            User user = ctx.sessionAttribute("user");
-            if (user == null) {
-                ctx.json(new ErrorResponse("error", "User not logged in."));
-                return;
-            }
-            int fleetId = user.getFleetId();
-
-            List<String> flightIds = ctx.formParams("flight_id");
-            List<Flight> flights = new ArrayList<>();
-
             for (String flightId : flightIds) {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
                 if (flight != null && flight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
-                            + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: "
-                            + fleetId);
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
                     ctx.status(401);
                     ctx.json("User did not have access to this flight.");
                 }
@@ -70,8 +63,7 @@ public class FlightsJavalinRoutes {
 
             sb.append("var flights = [");
             for (Flight flight : flights) {
-                if (!first)
-                    sb.append(", ");
+                if (!first) sb.append(", ");
                 first = false;
                 sb.append(gson.toJson(flight));
             }
@@ -86,24 +78,18 @@ public class FlightsJavalinRoutes {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
+
     private static void getFlights(Context ctx) {
         final String templateFile = "flights.html";
+        final Map<String, Object> scopes = new HashMap<>();
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
 
         try (Connection connection = Database.getConnection()) {
-            Map<String, Object> scopes = new HashMap<String, Object>();
-
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-
-            final User user = ctx.sessionAttribute("user");
-            if (user == null) {
-                ctx.json(new ErrorResponse("error", "User not logged in."));
-                return;
-            }
-            final int fleetId = user.getFleetId();
 
             long startTime;
             long endTime;
-
             StringBuilder sb = new StringBuilder();
 
             sb.append("var airframes = JSON.parse('");
@@ -184,9 +170,9 @@ public class FlightsJavalinRoutes {
 
     private static void getFlightDisplay(Context ctx) {
         final String templateFile = "flight_display.html";
+        final Map<String, Object> scopes = new HashMap<>();
 
         try {
-            Map<String, Object> scopes = new HashMap<>();
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
@@ -198,15 +184,10 @@ public class FlightsJavalinRoutes {
     }
 
     private static void postFlights(Context ctx) {
-        final String filterJSON = ctx.formParam("filterQuery");
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
         final Filter filter = gson.fromJson(filterJSON, Filter.class);
-        final User user = ctx.attribute("user");
-        if (user == null) {
-            ctx.json(new ErrorResponse("error", "User not logged in."));
-            return;
-        }
         final int fleetId = user.getFleetId();
-
 
         // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
