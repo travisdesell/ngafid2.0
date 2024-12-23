@@ -25,4 +25,5 @@ jobs:
           VALIDATE_JSX: true
           VALIDATE_PHP: true
           IGNORE_GITIGNORED_FILES: true
-          JAVA_FILE_NAME: .github/linters/checkstyle.xml
+          LINTER_RULES_PATH: .github/linters
+          JAVA_FILE_NAME: checkstyle.xml
