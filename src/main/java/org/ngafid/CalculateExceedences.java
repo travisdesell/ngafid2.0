@@ -27,16 +27,19 @@ import java.util.logging.*;
 public class CalculateExceedences {
     private static final Logger LOG = Logger.getLogger(CalculateExceedences.class.getName());
 
-    static String timeSeriesName = "Lcl Time";
-    static String dateSeriesName = "Lcl Date";
+    private static final String timeSeriesName = "Lcl Time";
+    private static final String dateSeriesName = "Lcl Date";
 
-    private Filter filter;
-    private Conditional conditional;
-    private int startBuffer;
-    private int stopBuffer;
+    private final Conditional conditional;
+    private final int startBuffer;
+    private final int stopBuffer;
 
+    /**
+     * Constructor
+     * @param eventDefinition the event definition to calculate exceedences for
+     */
     public CalculateExceedences(EventDefinition eventDefinition) {
-        this.filter = eventDefinition.getFilter();
+        Filter filter = eventDefinition.getFilter();
         this.conditional = new Conditional(filter);
         this.startBuffer = eventDefinition.getStartBuffer();
         this.stopBuffer = eventDefinition.getStopBuffer();
@@ -60,13 +63,14 @@ public class CalculateExceedences {
         // LOG.info("minMaxRPM1: " + minMaxRPM1);
         // LOG.info("minMaxRPM2: " + minMaxRPM2);
 
+        final int RPM_THRESHOLD = 800;
         if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
-                || (minMaxRPM2 == null && minMaxRPM1 != null && minMaxRPM1.second() < 800) // RPM2 is null, RPM1 is
+                || (minMaxRPM2 == null && minMaxRPM1 != null && minMaxRPM1.second() < RPM_THRESHOLD) // RPM2 is null, RPM1 is
                                                                                            // < 800
-                || (minMaxRPM1 == null && minMaxRPM2 != null && minMaxRPM2.second() < 800) // RPM1 is null, RPM2 is
+                || (minMaxRPM1 == null && minMaxRPM2 != null && minMaxRPM2.second() < RPM_THRESHOLD) // RPM1 is null, RPM2 is
                                                                                            // < 800
-                || (minMaxRPM1 != null && minMaxRPM1.second() < 800)
-                        && (minMaxRPM2 != null && minMaxRPM2.second() < 800)) { // RPM1 and RPM2 < 800
+                || (minMaxRPM1 != null && minMaxRPM1.second() < RPM_THRESHOLD)
+                        && (minMaxRPM2 != null && minMaxRPM2.second() < RPM_THRESHOLD)) { // RPM1 and RPM2 < 800
             // couldn't calculate exceedences for this flight because the engines never
             // kicked on (it didn't fly)
             LOG.info("engines never turned on, setting flight_processed.had_error = 1");
@@ -120,7 +124,7 @@ public class CalculateExceedences {
             conditional.set(columnName, minMax);
         }
 
-        LOG.info("Post-set conditional: " + conditional.toString());
+        LOG.info("Post-set conditional: " + conditional);
         boolean result = conditional.evaluate();
         LOG.info("overall result: " + result);
 
@@ -209,10 +213,7 @@ public class CalculateExceedences {
                         System.err.println("Stop count (" + stopCount + ") reached the stop buffer (" + stopBuffer
                                 + "), new event created!");
 
-                        if (startCount < startBuffer) {
-                            // we didn't have enough triggers to reach the start count so don't create
-                            // the event
-                        } else {
+                        if (startCount >= startBuffer) {
                             // we had enough triggers to reach the start count so create the event
                             Event event = new Event(startTime, endTime, startLine, endLine, severity);
                             eventList.add(event);
@@ -294,7 +295,7 @@ public class CalculateExceedences {
                 minDuration = currentDuration;
         }
 
-        if (eventList.size() > 0) {
+        if (!eventList.isEmpty()) {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0")) {
                 stmt.setInt(1, fleetId);
@@ -342,9 +343,8 @@ public class CalculateExceedences {
 
         int airframeTypeId = new Airframes.Airframe(connection, "Fixed Wing").getId();
 
-        for (int i = 0; i < allEvents.size(); i++) {
+        for (EventDefinition currentDefinition : allEvents) {
             // process events for this event type
-            EventDefinition currentDefinition = allEvents.get(i);
             LOG.info("\t" + currentDefinition.toString());
 
             CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
@@ -364,14 +364,14 @@ public class CalculateExceedences {
                                 + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
             }
 
-            for (int j = 0; j < flights.size(); j++) {
-                if (!flights.get(j).insertCompleted()) {
+            for (Flight flight : flights) {
+                if (!flight.insertCompleted()) {
                     // this flight is currently being inserted to
                     // the database by ProcessFlights
                     continue;
                 }
 
-                currentCalculator.processFlight(connection, flights.get(j), currentDefinition, uploadProcessedEmail);
+                currentCalculator.processFlight(connection, flight, currentDefinition, uploadProcessedEmail);
             }
         }
 
@@ -396,9 +396,8 @@ public class CalculateExceedences {
                 LOG.info("n events = " + allEvents.size());
 
                 int flightsProcessed = 0;
-                for (int i = 0; i < allEvents.size(); i++) {
+                for (EventDefinition currentDefinition : allEvents) {
                     // process events for this event type
-                    EventDefinition currentDefinition = allEvents.get(i);
                     LOG.info("\t" + currentDefinition.toString());
 
                     CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
@@ -416,14 +415,14 @@ public class CalculateExceedences {
                                 + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
                     }
 
-                    for (int j = 0; j < flights.size(); j++) {
-                        if (!flights.get(j).insertCompleted()) {
+                    for (Flight flight : flights) {
+                        if (!flight.insertCompleted()) {
                             // this flight is currently being inserted to
                             // the database by ProcessFlights
                             continue;
                         }
                         flightsProcessed += 1;
-                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition, null);
+                        currentCalculator.processFlight(connection, flight, currentDefinition, null);
                     }
                 }
 
@@ -436,7 +435,7 @@ public class CalculateExceedences {
                     if (flightsProcessed == 0)
                         Thread.sleep(3000);
                 } catch (Exception e) {
-                    System.err.println(e);
+                    LOG.severe(e.toString());
                     e.printStackTrace();
                 }
 
