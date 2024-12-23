@@ -7,13 +7,13 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$update_2022_02_17 = false;
+$update_2022_02_17 = true;
 $update_turn_to_final = false;
 $update_visited_airports = false;
 $update_uploads_for_raise = false;
 $update_rate_of_closure = false;
 $create_airsync = false;
-$create_event_metadata = true;
+$create_event_metadata = false;
 //need to drop and reload these tables for 2020_05_16 changes
 
 /*
@@ -84,7 +84,7 @@ if ($drop_tables) {
     return;
 }
 
-if (!$update_2022_02_17) {
+if ($update_2022_02_17) {
 
     $query = "CREATE TABLE `fleet` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -718,5 +718,4 @@ if ($create_event_metadata) {
     query_ngafid_db($query);
 
 }
-
 ?>

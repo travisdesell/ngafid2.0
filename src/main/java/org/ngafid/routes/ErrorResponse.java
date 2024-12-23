@@ -1,12 +1,12 @@
 package org.ngafid.routes;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.accounts.AccountException;
 
 public class ErrorResponse {
+    @JsonProperty
     private String errorTitle;
+    @JsonProperty
     private String errorMessage;
 
     public ErrorResponse(String errorTitle, String errorMessage) {

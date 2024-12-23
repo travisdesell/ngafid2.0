@@ -88,7 +88,7 @@ class SystemIdsPage extends React.Component {
         return (
             <div style={{marginTop:"4", padding:"0 0 0 0"}}>
                 <div className="col-sm-12" style={{padding:"0 0 0 0"}}>
-                    <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                    <div className="card mb-1 m-1">
                         <h5 className="card-header">
                             {name}
                         </h5>
@@ -96,14 +96,18 @@ class SystemIdsPage extends React.Component {
                         <div className="card-body">
                             <div className="form-row align-items-center justify-content-center">
                                 <div className="col-sm-5 my-1" style={{margin:"0"}}>
-                                    <label style={{marginBottom:"0"}}>System Id</label>
+                                    <label style={{marginBottom:"0"}}>System ID</label>
                                 </div>
                                 <div className="col-sm-6 my-1" style={{margin:"0"}}>
                                     <label style={{marginBottom:"0"}}>Tail Number</label>
                                 </div>
+                                {
+                                (!type)
+                                &&
                                 <div className="col-sm-1 my-1" style={{margin:"0"}}>
                                     <label style={{marginBottom:"0"}}>Submit </label>
                                 </div>
+                                }
                             </div>
 
                             <hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
@@ -122,11 +126,18 @@ class SystemIdsPage extends React.Component {
                                                         <label className="sr-only" htmlFor={systemId.systemId + "-tail-number-form"}>Tail Number</label>
                                                         <input type="text" className="form-control" id={systemId.systemId + "-tail-number-form"} placeholder={systemId.originalTail} onChange={() => this.validateTail(systemId)}></input>
                                                     </div>
+
+                                                    {
+                                                    (systemId.modified)
+                                                    &&
                                                     <div className="col-sm-1 my-1">
-                                                        <button type="button" className={"btn " + (systemId.modified ? "btn-outline-primary" : "btn-outline-secondary")} style={{height:"36", padding:"3 8 3 8", marginRight:"5"}} disabled={!systemId.modified} onClick={() => {this.updateSystemId(systemId)}}>
-                                                            <i className='fa fa-check'></i>
+                                                        <button type="button" className={"btn btn-primary" + (systemId.modified ? "btn-outline-primary" : "btn-outline-secondary")} style={{width:"36", height:"36", backgroundColor:"var(--c_confirm)", color:"white"}} onClick={() => {this.updateSystemId(systemId)}}>
+                                                            <div className="d-flex justify-content-center">
+                                                                <i className='fa fa-check' style={{textAlign:"center"}}/>
+                                                            </div>
                                                         </button>
                                                     </div>
+                                                    }
                                                 </div>
                                             </form>
                                         );
@@ -146,23 +157,29 @@ class SystemIdsPage extends React.Component {
     render() {
         //console.log(systemIds);
 
-        let unconfirmedHtml = this.getSystemIdsPage("Unconfirmed System Ids", false);
-        let confirmedHtml = this.getSystemIdsPage("Confirmed System Ids", true);
+        let unconfirmedHtml = this.getSystemIdsPage("Unconfirmed System IDs", false);
+        let confirmedHtml = this.getSystemIdsPage("Confirmed System IDs", true);
 
         return (
-            <div>
-                <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-lg-6" style={{paddingRight:"0"}}>
-                            {unconfirmedHtml}
-                        </div>
-                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                            {confirmedHtml}
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div style={{overflowY:"scroll", flex:"1 1 auto"}}>
+                    <div className="container-fluid">
+                        <div className="row">
+                            <div className="col-lg-6" style={{paddingRight:"0"}}>
+                                {unconfirmedHtml}
+                            </div>
+                            <div className="col-lg-6" style={{paddingLeft:"0"}}>
+                                {confirmedHtml}
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         );
     }

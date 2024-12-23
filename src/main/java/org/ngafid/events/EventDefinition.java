@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.*;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -29,17 +30,29 @@ public class EventDefinition {
     public static final int MIN_ABS_SEVERITY = 3;
     public static final int MAX_ABS_SEVERITY = 4;
 
+    @JsonProperty
     private int id = 0;
+    @JsonProperty
     private int fleetId;
+    @JsonProperty
     private String name;
+    @JsonProperty
     private int startBuffer;
+    @JsonProperty
     private int stopBuffer;
+    @JsonProperty
     private int airframeNameId;
+    @JsonProperty
     private Filter filter;
+    @JsonProperty
     private TreeSet<String> columnNames;
+    @JsonProperty
     private TreeSet<String> severityColumnNames;
+    @JsonProperty
     private String severityType;
+    @JsonProperty
     private int[] severityColumnIds;
+    @JsonProperty
     private int severityTypeId;
 
     /**

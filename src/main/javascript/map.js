@@ -108,9 +108,9 @@ var content = document.getElementById('popup-content');
 var closer = document.getElementById('popup-closer');
 let overlays;
 var overlay;
-if (container == null)
+if (container == null) {
     overlays = [];
-else {
+} else {
     overlay = new Overlay({
         element: container,
         autoPan: true,

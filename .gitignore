@@ -14,4 +14,4 @@ db/db_info.php
 db/db_info
 email_info.txt
 package-lock.json
-data/archive/*
+data/*

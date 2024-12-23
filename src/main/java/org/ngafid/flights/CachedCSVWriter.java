@@ -2,7 +2,6 @@ package org.ngafid.flights;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.IOException;
 
@@ -13,8 +12,6 @@ import java.util.zip.*;
 
 import java.util.Enumeration;
 import java.util.Optional;
-
-import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
@@ -100,7 +97,7 @@ public class CachedCSVWriter extends CSVWriter {
      */
     public byte[] toBinaryData() throws IOException {
         InputStream inputStream = zipArchive.getInputStream(this.entry);
-        return IOUtils.toByteArray(inputStream);
+        return inputStream.readAllBytes();
     }
 
     /**
