@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -11,10 +12,8 @@ import org.ngafid.events.EventStatistics;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,6 +26,19 @@ import static org.ngafid.WebServer.gson;
 
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
+
+    static class EventInfo {
+        @JsonProperty
+        private final List<Event> events;
+        @JsonProperty
+        private final List<EventDefinition> definitions;
+
+        public EventInfo(List<Event> events, List<EventDefinition> definitions) {
+            this.events = events;
+            this.definitions = definitions;
+        }
+    }
+
 
     private static void getAllEventDefinitions(Context ctx) {
         try (Connection connection = Database.getConnection()) {
@@ -68,11 +80,9 @@ public class EventJavalinRoutes {
 
     private static void getEventDescription(Context ctx) {
         final String expectedName = Objects.requireNonNull(ctx.queryParam("eventName"));
-        final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = "
-                + "\"" + expectedName + "\"";
+        final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = " + "\"" + expectedName + "\"";
 
-        try (Connection connection = Database.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
@@ -242,8 +252,7 @@ public class EventJavalinRoutes {
         final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
-            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON,
-                    severityColumnNamesJSON, severityType);
+            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
 
             ctx.contentType("application/json");
             ctx.result("{}");
@@ -267,14 +276,13 @@ public class EventJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
-                    LocalDate.parse(startDate), LocalDate.parse(endDate));
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
             ctx.json(eventCountsMap);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
-    
+
     private static void getUpdateEvent(Context ctx) {
         final String templateFile = "update_event.html";
 
@@ -292,15 +300,8 @@ public class EventJavalinRoutes {
                 return;
             }
 
-            scopes.put("update_event_js",
-                    "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                            "var doubleTimeSeriesNames = JSON.parse('"
-                            + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                            "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection))
-                            + "');\n" +
-                            "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection))
-                            + "');\n");
-            
+            scopes.put("update_event_js", "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
@@ -321,8 +322,7 @@ public class EventJavalinRoutes {
         final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
-            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe,
-                    filterJSON, severityColumnNamesJSON, severityType);
+            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
 
             ctx.contentType("application/json");
             ctx.result("{}");
@@ -344,20 +344,10 @@ public class EventJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
-        ctx.json(null);
+        ctx.json("{}");
     }
 
     private static void postEvents(Context ctx) {
-        class EventInfo {
-            private final List<Event> events;
-            private final List<EventDefinition> definitions;
-
-            public EventInfo(List<Event> events, List<EventDefinition> definitions) {
-                this.events = events;
-                this.definitions = definitions;
-            }
-        }
-        
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
         final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("eventDefinitionsLoaded")));
@@ -380,12 +370,10 @@ public class EventJavalinRoutes {
 
             EventInfo eventInfo = new EventInfo(events, definitions);
 
-            // System.out.println(gson.toJson(uploadDetails));
             String output = gson.toJson(eventInfo);
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replaceAll("NaN", "null");
-            ctx.contentType("application/json");
-            ctx.result(output);
+            ctx.json(output);
         } catch (SQLException e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);

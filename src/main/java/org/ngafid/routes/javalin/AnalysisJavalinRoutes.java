@@ -35,7 +35,7 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         List<double[]> coordinates = new ArrayList<>();
 
-        public Coordinates(Connection connection, int flightId, String name) throws Exception {
+        public Coordinates(Connection connection, int flightId) throws Exception {
             final DoubleTimeSeries latitudes = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
             final DoubleTimeSeries longitudes = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 
@@ -546,7 +546,6 @@ public class AnalysisJavalinRoutes {
 
     private static void postCoordinates(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String name = Objects.requireNonNull(ctx.formParam("seriesName"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
 
         try (Connection connection = Database.getConnection()) {
@@ -556,7 +555,7 @@ public class AnalysisJavalinRoutes {
                 ctx.result("User did not have access to this flight.");
             }
 
-            final Coordinates coordinates = new Coordinates(connection, flightId, name);
+            final Coordinates coordinates = new Coordinates(connection, flightId);
             final String output = gson.toJson(coordinates).replaceAll("NaN", "null");
 
             ctx.json(output);
