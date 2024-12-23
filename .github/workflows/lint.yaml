@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Lint
-        uses: github/super-linter@v4
+        uses: github/super-linter@v7
 
         env:
           VALIDATE_ALL_CODEBASE: true
@@ -25,3 +25,4 @@ jobs:
           VALIDATE_JSX: true
           VALIDATE_PHP: true
           IGNORE_GITIGNORED_FILES: true
+          JAVA_FILE_NAME: .github/linters/checkstyle.xml
