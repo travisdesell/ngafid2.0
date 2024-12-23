@@ -21,8 +21,8 @@ public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());
 
     private static void getCSV(Context ctx) {
-        final String flightIdStr = Objects.requireNonNull(ctx.formParam("flight_id"));
-        final boolean generated = Boolean.parseBoolean(ctx.formParam("generated"));
+        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
+        final boolean generated = Boolean.parseBoolean(ctx.queryParam("generated"));
         final int flightId = Integer.parseInt(flightIdStr);
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -100,7 +100,7 @@ public class DataJavalinRoutes {
     }
 
     private static void getKML(Context ctx) {
-        final String flightIdStr = Objects.requireNonNull(ctx.formParam("flight_id"));
+        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final int flightId = Integer.parseInt(flightIdStr);
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -148,10 +148,10 @@ public class DataJavalinRoutes {
     }
 
     private static void getXPlane(Context ctx) {
-        final String flightIdStr = Objects.requireNonNull(ctx.formParam("flight_id"));
-        final String aircraftPath = Objects.requireNonNull(ctx.formParam("acft_path"));
-        int version = Integer.parseInt(Objects.requireNonNull(ctx.formParam("version")));
-        boolean useMSL = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("use_msl")));
+        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
+        final String aircraftPath = Objects.requireNonNull(ctx.queryParam("acft_path"));
+        int version = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("version")));
+        boolean useMSL = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("use_msl")));
 
         LOG.info("MSL will be used: " + useMSL);
         LOG.info("Generating an X-Plane " + version + " FDR file for flight #" + flightIdStr + " with path for .acf: " + aircraftPath);
