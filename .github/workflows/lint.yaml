@@ -2,7 +2,7 @@ name: Lint
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, josh/refactor]
 
 jobs:
   lint:
@@ -25,3 +25,5 @@ jobs:
           VALIDATE_JSX: true
           VALIDATE_PHP: true
           IGNORE_GITIGNORED_FILES: true
+          LINTER_RULES_PATH: .github/linters
+          JAVA_FILE_NAME: checkstyle.xml
