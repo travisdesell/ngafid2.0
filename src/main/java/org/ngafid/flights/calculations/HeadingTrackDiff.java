@@ -16,8 +16,9 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.flights.*;
 
 public class HeadingTrackDiff implements Calculation {
-    private DoubleTimeSeries hdg, trk;
-    private Flight flight;
+    private final DoubleTimeSeries hdg;
+    private final DoubleTimeSeries trk;
+    private final Flight flight;
     private static final Logger LOG = Logger.getLogger(HeadingTrackDiff.class.getName());
 
     public HeadingTrackDiff(Flight flight, Connection connection) throws IOException, SQLException {
