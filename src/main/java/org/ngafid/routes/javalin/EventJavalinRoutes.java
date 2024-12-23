@@ -332,19 +332,18 @@ public class EventJavalinRoutes {
     }
 
     private static void postEventMetaData(Context ctx) {
-        LOG.info("handling rate of closure route");
         int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
         try (Connection connection = Database.getConnection()) {
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
             if (!metaDataList.isEmpty()) {
-                ctx.json(metaDataList);
+                ctx.json(gson.toJson(metaDataList));
                 return;
             }
         } catch (Exception e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
-        ctx.json("{}");
+        ctx.json(gson.toJson(null));
     }
 
     private static void postEvents(Context ctx) {
