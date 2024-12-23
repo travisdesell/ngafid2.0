@@ -394,7 +394,7 @@ public class EventJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.get("/protected/all_event_definitions", EventJavalinRoutes::getAllEventDefinitions);
+        app.get("/protected/manage_event_definitions", EventJavalinRoutes::getAllEventDefinitions);
 
         app.get("/protected/event_definitions", EventJavalinRoutes::getEventDefinition);
         app.put("/protected/event_definitions", EventJavalinRoutes::putEventDefinitions);
