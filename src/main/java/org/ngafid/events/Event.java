@@ -91,6 +91,20 @@ public class Event {
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
     }
+    
+    public Event(String startTime, String endTime, int startLine, int endLine, double severity, int flightId, int otherFlightId) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.severity = severity;
+        this.flightId = flightId;
+        this.otherFlightId = otherFlightId;
+
+        this.startTime = fixTime(startTime);
+        this.endTime = fixTime(endTime);
+        this.metaDataList = new ArrayList<>();
+    }
 
     public Event(String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId) {
         this.startTime = startTime;
