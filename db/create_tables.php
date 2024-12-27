@@ -12,6 +12,7 @@ $update_turn_to_final = false;
 $update_visited_airports = false;
 $update_uploads_for_raise = false;
 $update_rate_of_closure = false;
+$update_rate_of_closure_cascade_delete = true;
 $create_airsync = false;
 $create_event_metadata = false;
 //need to drop and reload these tables for 2020_05_16 changes
@@ -689,6 +690,9 @@ if (!$update_turn_to_final) {
 }
 
 if (!$update_rate_of_closure) {
+
+    echo "Creating 'rate_of_closure' table...\n";
+
     $query = "CREATE TABLE `rate_of_closure` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `event_id` INT(11) NOT NULL,
@@ -696,10 +700,41 @@ if (!$update_rate_of_closure) {
         `data` MEDIUMBLOB,
         
         PRIMARY KEY(`id`),
-        FOREIGN KEY(`event_id`) REFERENCES events(`id`)
+        FOREIGN KEY(`event_id`) REFERENCES events(`id`) ON DELETE CASCADE   -- Source Event deleted => Delete rate of closure
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
+}
+
+if ($update_rate_of_closure_cascade_delete) {
+    
+    /*
+
+        Alters existing 'rate_of_closure' table to have a foreign
+        key constraint with Cascading Delete on 'event_id'.
+
+
+        Used to prevent an error when deleting uploads after
+        fixing the duplicate Proximity events issue:
+        
+            SQLIntegrityConstraintViolationException
+
+            Cannot delete or update a parent row: a foreign key constraint fails
+            (`ngafid`.`rate_of_closure`, CONSTRAINT `rate_of_closure_ibfk_1`
+            FOREIGNKEY (`event_id`) REFERENCES `events` (`id`))
+
+    */
+
+    echo "Updating 'rate_of_closure' table foreign key constraint...\n";
+
+    //Drop existing foreign key constraint
+    $query = "ALTER TABLE `rate_of_closure` DROP FOREIGN KEY `rate_of_closure_ibfk_1`";
+    query_ngafid_db($query);
+
+    //Add new foreign key constraint with Cascading Delete
+    $query = "ALTER TABLE `rate_of_closure` ADD FOREIGN KEY(`event_id`) REFERENCES events(`id`) ON DELETE CASCADE";
+    query_ngafid_db($query);
+
 }
 
 if (!$update_visited_airports) {
