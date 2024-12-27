@@ -20,8 +20,6 @@ import org.ngafid.events.EventMetaData;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.airports.Airports;
 
-//import com.mysql.cj.log.Log;
-
 
 public class CalculateProximity {
 
@@ -63,7 +61,7 @@ public class CalculateProximity {
         double otherFlightLatitude, double otherFlightLongitude, double otherFlightAltitude
         ) {
 
-        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,      otherFlightLatitude, otherFlightLongitude);
+        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
         double altDiffFt = Math.abs(flightAltitude - otherFlightAltitude);
 
         double distanceFt = Math.sqrt((lateralDistance * lateralDistance) + (altDiffFt * altDiffFt));
@@ -71,9 +69,9 @@ public class CalculateProximity {
         
     }
 
-    public static double calculateLateralDistance(double flightLatitude, double flightLongitude,    double otherFlightLatitude, double otherFlightLongitude) {
-       
-        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,      otherFlightLatitude, otherFlightLongitude);
+    public static double calculateLateralDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude, double otherFlightLongitude) {
+        
+        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
         return lateralDistance;
 
     }
@@ -703,9 +701,9 @@ public class CalculateProximity {
         double avgTimeMatchedFlights = ((double)timeMatchFlights / (double) count);
         double avgLocationMatchedFlights = ((double)locMatchFlights / (double)count);       
 
-        LOG.info("calculated " + count + " proximity evaluations in " + elapsed_seconds + " seconds, averaged: " + average_seconds + " seconds per flight");
-        LOG.info("avg time matched flights: " + avgTimeMatchedFlights + ", avg loc matched flights: " + avgLocationMatchedFlights);        
-        LOG.info("proximity events found:"  + eventsFound);
+        LOG.info("Calculated " + count + " Proximity evaluations in " + elapsed_seconds + " seconds, averaged: " + average_seconds + " seconds per flight");
+        LOG.info("Average time-matched flights: " + avgTimeMatchedFlights + ", Average location-matched flights: " + avgLocationMatchedFlights);        
+        LOG.info("Proximity events found:"  + eventsFound);
 
         uploadProcessedEmail.setProximityElapsedTime(elapsed_seconds, average_seconds, avgTimeMatchedFlights, avgLocationMatchedFlights);
 
@@ -741,9 +739,9 @@ public class CalculateProximity {
                 double elapsed_seconds = (double)Duration.between(start, end).toMillis() / 1000.0;
                 double average_seconds = ((double) elapsed_seconds) / (double)count;
 
-                LOG.info("calculated " + count + " adjacency evaluations in " + elapsed_seconds + " seconds, averaged: " + average_seconds + " seconds per flight");
-                LOG.info("avg time matched flights: " + ((double)timeMatchFlights / (double) count) + ", avg loc matched flights: " + ((double)locMatchFlights / (double)count));
-                LOG.info("evnets found:"  + eventsFound);
+                LOG.info("Calculated " + count + " adjacency evaluations in " + elapsed_seconds + " seconds, averaged: " + average_seconds + " seconds per flight");
+                LOG.info("Average time-matched flights: " + ((double)timeMatchFlights / (double) count) + ", Average location-matched flights: " + ((double)locMatchFlights / (double)count));
+                LOG.info("Events found:"  + eventsFound);
                 
                 /*
                     System.exit(1);
