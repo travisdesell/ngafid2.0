@@ -29,6 +29,7 @@ public class CalculateExceedences {
 
     private static final String timeSeriesName = "Lcl Time";
     private static final String dateSeriesName = "Lcl Date";
+    private static ArrayList<EventDefinition> allEvents = null;
 
     private final Conditional conditional;
     private final int startBuffer;
@@ -65,9 +66,9 @@ public class CalculateExceedences {
 
         final int RPM_THRESHOLD = 800;
         if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
-                || (minMaxRPM2 == null && minMaxRPM1 != null && minMaxRPM1.second() < RPM_THRESHOLD) // RPM2 is null, RPM1 is
+                || (minMaxRPM2 == null && minMaxRPM1.second() < RPM_THRESHOLD) // RPM2 is null, RPM1 is
                                                                                            // < 800
-                || (minMaxRPM1 == null && minMaxRPM2 != null && minMaxRPM2.second() < RPM_THRESHOLD) // RPM1 is null, RPM2 is
+                || (minMaxRPM1 == null && minMaxRPM2.second() < RPM_THRESHOLD) // RPM1 is null, RPM2 is
                                                                                            // < 800
                 || (minMaxRPM1 != null && minMaxRPM1.second() < RPM_THRESHOLD)
                         && (minMaxRPM2 != null && minMaxRPM2.second() < RPM_THRESHOLD)) { // RPM1 and RPM2 < 800
@@ -75,13 +76,14 @@ public class CalculateExceedences {
             // kicked on (it didn't fly)
             LOG.info("engines never turned on, setting flight_processed.had_error = 1");
 
-            if (uploadProcessedEmail != null)
+            if (uploadProcessedEmail != null) {
                 uploadProcessedEmail.addExceedenceError(flightFilename,
                         "could not calculate exceedences for flight " + flightId + ", '" + flightFilename
                                 + "' - engines never turned on");
+            }
 
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
+            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET " +
+                            "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, eventDefinition.getId());
@@ -104,13 +106,14 @@ public class CalculateExceedences {
                 LOG.info("minMax was null, setting flight_processed.had_error = 1");
                 // couldn't calculate this exceedence because at least one of the columns was
                 // missing
-                if (uploadProcessedEmail != null)
+                if (uploadProcessedEmail != null) {
                     uploadProcessedEmail.addExceedenceError(flightFilename,
                             "could not calculate '" + eventDefinition.getName() + "' for flight " + flightId + ", '"
                                     + flightFilename + "' - " + columnName + " was missing");
+                }
 
-                try (PreparedStatement stmt = connection.prepareStatement(
-                        "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
+                try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET " +
+                        "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
                     stmt.setInt(1, fleetId);
                     stmt.setInt(2, flightId);
                     stmt.setInt(3, eventDefinition.getId());
@@ -130,8 +133,8 @@ public class CalculateExceedences {
 
         if (!result) {
             // this flight could not have caused one of these events
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0")) {
+            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET " +
+                    "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, eventDefinition.getId());
@@ -156,8 +159,8 @@ public class CalculateExceedences {
                         "could not calculate exceedences for flight " + flightId + ", '" + flightFilename
                                 + "' - date or time was missing");
 
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
+            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET " +
+                    "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, eventDefinition.getId());
@@ -261,10 +264,11 @@ public class CalculateExceedences {
             Event event = eventList.get(i);
             LOG.info("Event : [line: " + event.getStartLine() + " to " + event.getEndLine() + ", time: "
                     + event.getStartTime() + " to " + event.getEndTime() + "]");
-            if (uploadProcessedEmail != null)
+            if (uploadProcessedEmail != null) {
                 uploadProcessedEmail.addExceedence(flightFilename,
                         "flight " + flightId + ", '" + flightFilename + "' - '" + eventDefinition.getName()
                                 + "' from " + event.getStartTime() + " to " + event.getEndTime());
+            }
         }
 
         // Step 2: export the pitch events to the database
@@ -285,19 +289,28 @@ public class CalculateExceedences {
             sumDuration += currentDuration;
             sumSeverity += currentSeverity;
 
-            if (currentSeverity > maxSeverity)
+            if (currentSeverity > maxSeverity) {
                 maxSeverity = currentSeverity;
-            if (currentSeverity < minSeverity)
+            }
+
+            if (currentSeverity < minSeverity) {
                 minSeverity = currentSeverity;
-            if (currentDuration > maxDuration)
+            }
+
+            if (currentDuration > maxDuration) {
                 maxDuration = currentDuration;
-            if (currentDuration < minDuration)
+            }
+
+            if (currentDuration < minDuration) {
                 minDuration = currentDuration;
+            }
         }
 
         if (!eventList.isEmpty()) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0")) {
+            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET " +
+                    "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, " +
+                    "min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, " +
+                    "had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, eventDefinition.getId());
@@ -316,8 +329,8 @@ public class CalculateExceedences {
                     flight.getStartDateTime());
 
         } else {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0")) {
+            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET " +
+                    "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, eventDefinition.getId());
@@ -328,11 +341,16 @@ public class CalculateExceedences {
             EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, eventDefinition.getId(),
                     flight.getStartDateTime());
         }
-
     }
 
-    private static ArrayList<EventDefinition> allEvents = null;
-
+    /**
+     * Calculate exceedences for all events
+     * @param connection the database connection
+     * @param uploadId the upload id to calculate exceedences for
+     * @param uploadProcessedEmail the email object to send notifications to
+     * @throws IOException IO exception
+     * @throws SQLException SQL exception
+     */
     public static void calculateExceedences(Connection connection, int uploadId,
             UploadProcessedEmail uploadProcessedEmail) throws IOException, SQLException {
         Instant start = Instant.now();
@@ -376,12 +394,13 @@ public class CalculateExceedences {
         }
 
         Instant end = Instant.now();
-        long elapsed_millis = Duration.between(start, end).toMillis();
-        double elapsed_seconds = ((double) elapsed_millis) / 1000;
-        LOG.info("finished in " + elapsed_seconds);
+        long elapsedMillis = Duration.between(start, end).toMillis();
+        double elapsedSeconds = ((double) elapsedMillis) / 1000;
+        LOG.info("finished in " + elapsedSeconds);
 
-        if (uploadProcessedEmail != null)
-            uploadProcessedEmail.setExceedencesElapsedTime(elapsed_seconds);
+        if (uploadProcessedEmail != null) {
+            uploadProcessedEmail.setExceedencesElapsedTime(elapsedSeconds);
+        }
     }
 
     public static void main(String[] arguments) {
@@ -392,7 +411,7 @@ public class CalculateExceedences {
 
                 Instant start = Instant.now();
 
-                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[] { 0 });
+                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 LOG.info("n events = " + allEvents.size());
 
                 int flightsProcessed = 0;
@@ -427,13 +446,14 @@ public class CalculateExceedences {
                 }
 
                 Instant end = Instant.now();
-                long elapsed_millis = Duration.between(start, end).toMillis();
-                double elapsed_seconds = ((double) elapsed_millis) / 1000;
-                LOG.info("finished in " + elapsed_seconds + ", processed " + flightsProcessed);
+                long elapsedMillis = Duration.between(start, end).toMillis();
+                double elapsedSeconds = ((double) elapsedMillis) / 1000;
+                LOG.info("finished in " + elapsedSeconds + ", processed " + flightsProcessed);
 
                 try {
-                    if (flightsProcessed == 0)
+                    if (flightsProcessed == 0) {
                         Thread.sleep(3000);
+                    }
                 } catch (Exception e) {
                     LOG.severe(e.toString());
                     e.printStackTrace();
