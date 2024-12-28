@@ -7,7 +7,6 @@ import java.sql.SQLException;
 
 import java.nio.file.NoSuchFileException;
 
-import org.ngafid.flights.Flight;
 import org.ngafid.terrain.TerrainCache;
 import org.ngafid.flights.DoubleTimeSeries;
 import static org.ngafid.flights.Parameters.*;

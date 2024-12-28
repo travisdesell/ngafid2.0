@@ -10,8 +10,6 @@
  */
 package org.ngafid.flights;
 
-import java.util.Set;
-
 public interface Parameters {
     /**
      * JSON-specific parameters

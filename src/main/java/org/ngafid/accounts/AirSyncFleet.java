@@ -8,12 +8,10 @@ import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.net.URL;
 import java.nio.file.FileSystem;
@@ -23,11 +21,9 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
-import org.ngafid.flights.AirSync;
 import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
-import org.ngafid.flights.MalformedFlightFileException;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;

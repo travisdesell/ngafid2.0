@@ -18,13 +18,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import org.ngafid.Database;
 import org.ngafid.flights.Flight;
 import org.ngafid.filters.Filter;
 

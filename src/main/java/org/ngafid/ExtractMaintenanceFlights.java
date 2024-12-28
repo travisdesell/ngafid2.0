@@ -5,32 +5,19 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.Instant;
-import java.time.Period;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.time.temporal.TemporalAmount;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,19 +25,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 
-import org.ngafid.WebServer;
-
 import org.ngafid.common.TimeUtils;
 
 import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.CachedCSVWriter;
-import org.ngafid.flights.FlightAlreadyExistsException;
-import org.ngafid.flights.FatalFlightFileException;
-
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.UploadError;
-
 import org.ngafid.maintenance.MaintenanceRecord;
 import org.ngafid.maintenance.AircraftTimeline;
 

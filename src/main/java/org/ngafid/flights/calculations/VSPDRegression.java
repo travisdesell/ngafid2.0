@@ -3,10 +3,6 @@ package org.ngafid.flights.calculations;
 import org.ngafid.flights.*;
 import org.ngafid.flights.DoubleTimeSeries.TimeStepCalculation;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import static org.ngafid.flights.Parameters.*;
 
 /**

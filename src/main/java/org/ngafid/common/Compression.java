@@ -2,7 +2,6 @@ package org.ngafid.common;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.logging.Logger;

@@ -7,13 +7,10 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.zip.*;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import org.ngafid.CalculateExceedences;
 import org.ngafid.Database;
-import org.ngafid.UploadException;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.AirSyncFleet;

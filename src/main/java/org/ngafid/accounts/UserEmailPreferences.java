@@ -1,23 +1,9 @@
 package org.ngafid.accounts;
 
 import java.util.HashMap;
-import java.util.Map;
-
-import org.ngafid.Database;
-import org.ngafid.accounts.EmailType;
-
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
-import java.util.HashMap;
-
 import java.util.logging.Logger;
-
-import static org.ngafid.flights.Parameters.*;
-
-
 
 public class UserEmailPreferences {
 

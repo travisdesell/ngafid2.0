@@ -1,7 +1,5 @@
 package org.ngafid.events;
 
-import org.ngafid.Database;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,7 +10,6 @@ import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;

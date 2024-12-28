@@ -1,22 +1,17 @@
 package org.ngafid.flights;
 
 import java.io.*;
-import java.net.URL;
 import java.time.*;
 import java.util.*;
 import java.sql.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import org.codehaus.plexus.util.ExceptionUtils;
 import org.ngafid.Database;
 import org.ngafid.SendEmail;
 import org.ngafid.accounts.EmailType;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.AirSyncAuth;
 import org.ngafid.accounts.AirSyncFleet;
-import org.ngafid.accounts.Fleet;
 
 /**
  * This class contains code for controlling the AirSync daemon, as well

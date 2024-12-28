@@ -3,15 +3,8 @@ package org.ngafid;
 import java.io.*;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.lang.Thread;
-import java.lang.Runnable;
 
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -20,7 +13,6 @@ import com.zaxxer.hikari.HikariDataSource;
 public class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
-    private static boolean connectionInitiated;
     private static String dbHost = null, dbName = null, dbUser = null, dbPassword = null;
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());

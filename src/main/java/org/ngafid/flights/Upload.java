@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Month;
 
@@ -28,8 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
-
-import org.ngafid.flights.Flight;
 
 public class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());

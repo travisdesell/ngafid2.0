@@ -1,23 +1,15 @@
 package org.ngafid;
 
-import java.io.InputStream;
 import java.io.IOException;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.LinkedHashSet;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.ngafid.flights.*;
 import org.ngafid.flights.calculations.TurnToFinal;

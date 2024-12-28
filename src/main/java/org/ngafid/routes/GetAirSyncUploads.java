@@ -1,11 +1,8 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -21,7 +18,6 @@ import spark.Response;
 import spark.Session;
 
 import org.ngafid.Database;
-import org.ngafid.common.*;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.User;

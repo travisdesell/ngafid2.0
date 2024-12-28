@@ -3,16 +3,13 @@ package org.ngafid;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.IOException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.ngafid.Database;
 import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.UserEmailPreferences;
 
@@ -21,7 +18,6 @@ import java.util.logging.Logger;
 
 import javax.mail.*;
 import javax.mail.internet.*;
-import javax.activation.*;
 
 public class SendEmail {
 

@@ -2,7 +2,6 @@ package org.ngafid.flights;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.IOException;
 

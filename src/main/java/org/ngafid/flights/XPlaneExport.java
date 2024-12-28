@@ -1,7 +1,6 @@
 package org.ngafid.flights;
 
 import org.ngafid.Database;
-import org.ngafid.flights.DoubleTimeSeries;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;

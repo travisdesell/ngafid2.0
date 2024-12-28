@@ -1,17 +1,13 @@
 package org.ngafid.flights.process;
 
-import java.time.*;
 import java.util.Set;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.logging.Logger;
-import java.time.format.DateTimeFormatter;
 
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
-import org.ngafid.common.*;
-import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.FatalFlightFileException;

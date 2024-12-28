@@ -1,39 +1,19 @@
 package org.ngafid;
 
-import org.ngafid.Database;
-import org.ngafid.events.Event;
-import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.time.Duration;
-import java.time.Instant;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.TreeSet;
-
-import org.ngafid.events.EventDefinition;
-import org.ngafid.events.EventStatistics;
-
-import org.ngafid.filters.Conditional;
-import org.ngafid.filters.Filter;
-import org.ngafid.filters.Pair;
-
-import org.ngafid.airports.Airports;
 
 public class FixFlightTimes {
 

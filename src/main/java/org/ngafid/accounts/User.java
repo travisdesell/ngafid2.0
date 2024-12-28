@@ -11,11 +11,8 @@ import java.util.Map;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.ngafid.SendEmail;
-import org.ngafid.accounts.EmailType;
-import org.ngafid.filters.Filter;
 import org.ngafid.flights.Tails;
 
-import com.google.gson.Gson;
 
 public class User {
     private static final Logger LOG = Logger.getLogger(User.class.getName());

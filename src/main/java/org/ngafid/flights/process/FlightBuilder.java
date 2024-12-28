@@ -10,12 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import org.ngafid.flights.*;
 import static org.ngafid.flights.process.ProcessStep.required;
-import org.ngafid.flights.process.*;
 
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic meta
