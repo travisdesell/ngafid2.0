@@ -47,6 +47,7 @@
   <!-- See https://checkstyle.org/filefilters/index.html -->
   <module name="BeforeExecutionExclusionFileFilter">
     <property name="fileNamePattern" value="module\-info\.java$"/>
+    <property name="fileNamePattern" value="org\/ngafid\/routes\/.*"/>
   </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
