@@ -6,6 +6,9 @@ import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
 import org.ngafid.common.Compression;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.Itinerary;
 
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
@@ -16,9 +19,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.ngafid.flights.*;
-
-import static org.ngafid.flights.Parameters.*; //eliminates the need to use Parameters.<PARAM>
+import static org.ngafid.flights.Parameters.*;
 
 public class TurnToFinal implements Serializable {
     // NGAFIDTTF0000L
@@ -32,36 +33,42 @@ public class TurnToFinal implements Serializable {
     private static final double CENTER_LINE_DEVIATION_TOLERANCE_IN_MILES = 0.1;
 
     // List of (lat, long) coords (in that order) representing a turn to final
-    private final double[] latitude, longitude, altitude, roll, stallProbability, locProbability, altMSL,
-            distanceFromRunway;
-    private double runwayAltitude;
-    private double maxRoll;
+    private final double[] latitude;
+    private final double[] longitude;
+    private final double[] altitude;
+    private final double[] roll;
+    private final double[] stallProbability;
+    private final double[] locProbability;
+    private final double[] altMSL;
+    private final double[] distanceFromRunway;
+    private final double runwayAltitude;
+    private final double maxRoll;
     private final Runway runway;
     private final String flightId;
 
-    public final String airportIataCode;
-    public final String flightStartDate;
+    private final String airportIataCode;
+    private final String flightStartDate;
 
-    private int nTimesteps;
+    private final int nTimesteps;
 
-    private ArrayList<Integer> locExceedences;
-    private ArrayList<Integer> centerLineExceedences;
-    private ArrayList<Double> selfDefinedGlidePathDeviations;
+    private final ArrayList<Integer> locExceedences;
+    private final ArrayList<Integer> centerLineExceedences;
+    private final ArrayList<Double> selfDefinedGlidePathDeviations;
 
     private double selfDefinedGlideAngle;
 
     /**
      * The timeseries arrays passed here should start from the 400 ft above the runway point, and end when the aircraft
      * touches the runway.
-     * 
-     * @param altitude
-     * @param roll
-     * @param lat
-     * @param lon
+     *
+     * @param altitude  the altitude of the aircraft
+     * @param roll      the roll of the aircraft
+     * @param lat       the latitude of the aircraft
+     * @param lon       the longitude of the aircraft
      */
-    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, String flightStartDate,
-            double runwayAltitude, double[] altitude, double[] altMSL, double[] roll,
-            double[] lat, double[] lon, double[] stallProbability, double[] locProbability) {
+    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode,
+                       String flightStartDate, double runwayAltitude, double[] altitude, double[] altMSL,
+                       double[] roll, double[] lat, double[] lon, double[] stallProbability, double[] locProbability) {
         this.flightId = flightId;
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
@@ -104,20 +111,20 @@ public class TurnToFinal implements Serializable {
         this.distanceFromRunway = new double[this.latitude.length];
         int last = this.longitude.length;
         for (int i = 0; i < last - 1; i++)
-            this.distanceFromRunway[i] = Airports.calculateDistanceInFeet(latitude[i], longitude[i], latitude[last - 1],
-                    longitude[last - 1]);
+            this.distanceFromRunway[i] = Airports.calculateDistanceInFeet(latitude[i], longitude[i],
+                    latitude[last - 1], longitude[last - 1]);
 
     }
 
     private double[] getExtendedRunwayCenterLine() {
-        final double LEN = 2.0;
+        final double length = 2.0;
         double dlat = runway.lat1 - runway.lat2;
         double dlon = runway.lon1 - runway.lon2;
-        double lat1 = runway.lat1 + LEN * dlat;
-        double lon1 = runway.lon1 + LEN * dlon;
-        double lat2 = runway.lat2 - LEN * dlat;
-        double lon2 = runway.lon2 - LEN * dlon;
-        return new double[] { lat1, lon1, lat2, lon2 };
+        double lat1 = runway.lat1 + length * dlat;
+        double lon1 = runway.lon1 + length * dlon;
+        double lat2 = runway.lat2 - length * dlat;
+        double lon2 = runway.lon2 - length * dlon;
+        return new double[]{lat1, lon1, lat2, lon2};
     }
 
     private void calculateCenterLineExceedences() {
@@ -133,16 +140,13 @@ public class TurnToFinal implements Serializable {
             double plat = this.latitude[i];
             double plon = this.longitude[i];
             double minDistance = Airports.shortestDistanceBetweenLineAndPointFt(plat, plon, lat1, lon1, lat2, lon2);
-            if (minDistance > tolerance)
-                this.centerLineExceedences.add(i);
+            if (minDistance > tolerance) this.centerLineExceedences.add(i);
         }
     }
 
     private void calculateLocExceedences() {
         for (int i = 0; i < this.roll.length; i++) {
-            if (this.altitude[i] - this.runwayAltitude < 400 &&
-                    Math.abs(this.roll[i]) > 30)
-                this.locExceedences.add(i);
+            if (this.altitude[i] - this.runwayAltitude < 400 && Math.abs(this.roll[i]) > 30) this.locExceedences.add(i);
         }
     }
 
@@ -172,7 +176,7 @@ public class TurnToFinal implements Serializable {
         // the glide path
         // and deviations from it. B + C is the altitude of the aircraft when it / is closest to the runway. B can be
         // considered the origin,
-        // and the line BC is the distance between the lat / lon coordinates at the beginning of the turn to final.
+        // and the line bc is the distance between the lat / lon coordinates at the beginning of the turn to final.
 
         final int last = altMSL.length - 1;
         final double altA = altMSL[0];
@@ -180,17 +184,17 @@ public class TurnToFinal implements Serializable {
         final double altB = altC;
 
         // This is all in terms of feet
-        final double BC = Airports.calculateDistanceInFeet(latitude[0], longitude[0], latitude[last], longitude[last]);
-        final double AB = altA - altB;
-        selfDefinedGlideAngle = Math.toDegrees(Math.tanh(AB / BC));
+        final double bc = Airports.calculateDistanceInFeet(latitude[0], longitude[0], latitude[last], longitude[last]);
+        final double ab = altA - altB;
+        selfDefinedGlideAngle = Math.toDegrees(Math.tanh(ab / bc));
 
         // Feet of descent per foot traveled towards the runway.
-        final double expDescent = AB / BC;
+        final double expDescent = ab / bc;
         for (int i = 0; i < altMSL.length; i++) {
             double lat = latitude[i];
             double lon = longitude[i];
-            double EC = Airports.calculateDistanceInFeet(lat, lon, latitude[last], longitude[last]);
-            double expAlt = altB + expDescent * EC;
+            double ec = Airports.calculateDistanceInFeet(lat, lon, latitude[last], longitude[last]);
+            double expAlt = altB + expDescent * ec;
             double actualAlt = altMSL[i];
             double deviation = expAlt - actualAlt;
             selfDefinedGlidePathDeviations.add(deviation);
@@ -201,10 +205,10 @@ public class TurnToFinal implements Serializable {
 
     public double[] getPosition(int timestep) {
         assert timestep < this.nTimesteps;
-        return new double[] { latitude[timestep], longitude[timestep] };
+        return new double[]{latitude[timestep], longitude[timestep]};
     }
 
-    public static void cacheTurnToFinal(Connection connection, int flight_id, ArrayList<TurnToFinal> ttfs)
+    public static void cacheTurnToFinal(Connection connection, int flightId, ArrayList<TurnToFinal> ttfs)
             throws SQLException, IOException {
         if (ttfs == null) {
             LOG.info("CANNOT INSERT NULL TTF");
@@ -217,7 +221,7 @@ public class TurnToFinal implements Serializable {
 
         try (PreparedStatement preparedStatement = connection
                 .prepareStatement("INSERT INTO turn_to_final (flight_id, version, data) VALUES (?, ?, ?)")) {
-            preparedStatement.setInt(1, flight_id);
+            preparedStatement.setInt(1, flightId);
             preparedStatement.setLong(2, TurnToFinal.serialVersionUID);
             preparedStatement.setBlob(3, blob);
 
@@ -228,8 +232,9 @@ public class TurnToFinal implements Serializable {
     }
 
     public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight)
-            throws SQLException, IOException, ClassNotFoundException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?")) {
+            throws SQLException, IOException {
+        try (PreparedStatement query =
+                     connection.prepareStatement("SELECT * FROM turn_to_final WHERE flightId = ?")) {
             query.setInt(1, flight.getId());
             LOG.info(query.toString());
 
@@ -248,7 +253,7 @@ public class TurnToFinal implements Serializable {
             if (version != TurnToFinal.serialVersionUID) {
                 LOG.info("TTF VERSION OUTDATED");
                 try (PreparedStatement deleteQuery = connection
-                        .prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?")) {
+                        .prepareStatement("DELETE FROM turn_to_final WHERE flightId = ?")) {
                     query.setInt(1, flight.getId());
                     deleteQuery.executeUpdate();
                 }
@@ -259,8 +264,7 @@ public class TurnToFinal implements Serializable {
                 Object o = Compression.inflateTTFObject(values.getBytes(1, (int) values.length()));
                 assert o instanceof ArrayList;
 
-                @SuppressWarnings("unchecked")
-                ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
+                @SuppressWarnings("unchecked") ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
                 return ttfs;
             } catch (ClassNotFoundException ce) {
                 LOG.info("Serialization error: ");
@@ -268,8 +272,8 @@ public class TurnToFinal implements Serializable {
 
                 LOG.info("Deleting problematic ttf row.");
 
-                try (PreparedStatement delQuery = connection
-                        .prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?")) {
+                try (PreparedStatement delQuery = connection.prepareStatement("DELETE FROM turn_to_final WHERE " +
+                        "flightId = ?")) {
                     delQuery.setInt(1, flight.getId());
                     LOG.info(delQuery.toString());
                     delQuery.execute();
@@ -312,8 +316,7 @@ public class TurnToFinal implements Serializable {
 
         for (Itinerary it : itineraries) {
             int to = it.getMinAltitudeIndex();
-            if (!it.wasApproach())
-                continue;
+            if (!it.wasApproach()) continue;
 
             int from = to;
 
@@ -321,7 +324,7 @@ public class TurnToFinal implements Serializable {
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[to];
 
-            for (;;) {
+            for (; ; ) {
                 if (to < 0) {
                     to = 0;
                     break;
@@ -334,7 +337,7 @@ public class TurnToFinal implements Serializable {
             }
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
-            for (;;) {
+            for (; ; ) {
                 if (from < 0) {
                     // We never found a point in time where there is a turn to final
                     // We assume all aircraft that perform a turn to final will reach 400 feet above the runway
@@ -348,8 +351,7 @@ public class TurnToFinal implements Serializable {
                 from -= 1;
             }
 
-            if (to == from)
-                continue;
+            if (to == from) continue;
 
             double min = Double.POSITIVE_INFINITY;
             double max = Double.NEGATIVE_INFINITY;
@@ -358,25 +360,18 @@ public class TurnToFinal implements Serializable {
                 max = Math.max(max, altitude[i]);
             }
 
-            if (max - min < 60 || Double.isNaN(max - min))
-                continue;
-            if (min > 100 || Double.isNaN(min))
-                continue;
+            if (max - min < 60 || Double.isNaN(max - min)) continue;
+            if (min > 100 || Double.isNaN(min)) continue;
 
             double[] stallProbabilityArray = null, locProbabilityArray = null;
-            if (stallProbability != null)
-                stallProbabilityArray = stallProbability.sliceCopy(from, to);
-            if (locProbability != null)
-                locProbabilityArray = locProbability.sliceCopy(from, to);
+            if (stallProbability != null) stallProbabilityArray = stallProbability.sliceCopy(from, to);
+            if (locProbability != null) locProbabilityArray = locProbability.sliceCopy(from, to);
 
-            TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
-                    flight.getAirframeType(), runway, airport.getIataCode(), flight.getStartDateTime(), runwayAltitude,
-                    altTimeSeries.sliceCopy(from, to),
-                    altMSLTimeSeries.sliceCopy(from, to),
-                    rollTimeSeries.sliceCopy(from, to),
-                    latTimeSeries.sliceCopy(from, to),
-                    lonTimeSeries.sliceCopy(from, to),
-                    stallProbabilityArray, locProbabilityArray);
+            TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId), flight.getAirframeType(), runway,
+                    airport.getIataCode(), flight.getStartDateTime(), runwayAltitude, altTimeSeries.sliceCopy(from,
+                    to), altMSLTimeSeries.sliceCopy(from, to), rollTimeSeries.sliceCopy(from, to),
+                    latTimeSeries.sliceCopy(from, to), lonTimeSeries.sliceCopy(from, to), stallProbabilityArray,
+                    locProbabilityArray);
             ttfs.add(ttf);
             // ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
         }
@@ -387,23 +382,21 @@ public class TurnToFinal implements Serializable {
 
     /**
      * Returns an array list of all of the turn to finals for the given flight that occur at the specified airport
-     * 
+     *
      * @param connection      database connection
      * @param flight          the flight for which the turn to finals should be analyzed
      * @param airportIataCode the IATA code for the airport. If this is null, all of the TTFs will be returned.
-     * @return
+     * @return an array list of all of the turn to finals for the given flight that occur at the specified airport
      * @throws SQLException
      */
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode)
             throws SQLException, IOException, ClassNotFoundException {
-        ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
+        List<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
 
-        if (turnToFinals == null)
-            return new ArrayList<>();
+        if (turnToFinals == null) return new ArrayList<>();
 
-        return turnToFinals.stream()
-                .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
-                .collect(Collectors.toCollection(ArrayList::new));
+        return turnToFinals.stream().filter(ttf -> airportIataCode == null
+                || ttf.airportIataCode.equals(airportIataCode)).collect(Collectors.toCollection(ArrayList::new));
     }
 
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId, String airportIataCode)
@@ -419,27 +412,25 @@ public class TurnToFinal implements Serializable {
     public JsonElement jsonify() {
         Gson gson = new Gson();
         try {
-            return gson.toJsonTree(Map.ofEntries(
-                    Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
+            return gson.toJsonTree(Map.ofEntries(Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
                     Map.entry(PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences),
                     Map.entry(PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle),
-                    Map.entry(PARAM_JSON_LATITUDE, this.latitude),
-                    Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
-                    Map.entry(ALT_MSL, this.altMSL),
-                    Map.entry("AltAGL", this.altitude),
-                    Map.entry("distanceFromRunway", this.distanceFromRunway),
-                    Map.entry("flightId", this.flightId),
-                    Map.entry("runway", this.runway),
-                    Map.entry("airportIataCode", this.airportIataCode),
-                    Map.entry("flightStartDate", this.flightStartDate),
-                    Map.entry("maxRoll", this.maxRoll),
-                    Map.entry("selfDefinedGlidePathDeviations", this.selfDefinedGlidePathDeviations),
-                    Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
-                    Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false)));
+                    Map.entry(PARAM_JSON_LATITUDE, this.latitude), Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
+                    Map.entry(ALT_MSL, this.altMSL), Map.entry("AltAGL", this.altitude), Map.entry(
+                            "distanceFromRunway", this.distanceFromRunway), Map.entry("flightId", this.flightId),
+                    Map.entry("runway", this.runway), Map.entry("airportIataCode", this.airportIataCode), Map.entry(
+                            "flightStartDate", this.flightStartDate), Map.entry("maxRoll", this.maxRoll), Map.entry(
+                            "selfDefinedGlidePathDeviations", this.selfDefinedGlidePathDeviations),
+                    Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false)
+                    , Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false)));
         } catch (IllegalArgumentException _iae) {
             // This means there were nans in some of the arrays which means we can't necissarily analyze it and it
             // won't parse on the front end since nan is not included in the JSON spec for some reason
             return null;
         }
+    }
+
+    public String getAirportIataCode() {
+        return airportIataCode;
     }
 }

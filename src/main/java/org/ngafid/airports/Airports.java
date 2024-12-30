@@ -226,8 +226,7 @@ public class Airports {
 
             if (hashedAirports != null) {
                 // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
-                for (int j = 0; j < hashedAirports.size(); j++) {
-                    Airport airport = hashedAirports.get(j);
+                for (Airport airport : hashedAirports) {
                     double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.getLatitude(),
                             airport.getLongitude());
                     // LOG.info("\t\t" + airport + ", distanceFt: " + distanceFt);

@@ -61,7 +61,7 @@ public class PostTurnToFinal implements Route {
                         JsonElement jsonElement = ttf.jsonify();
                         if (jsonElement != null) {
                             _ttfs.add(jsonElement);
-                            iataCodes.add(ttf.airportIataCode);
+                            iataCodes.add(ttf.getAirportIataCode());
                         }
                     }
                 } catch (SQLIntegrityConstraintViolationException e) {
