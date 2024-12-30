@@ -1,5 +1,6 @@
 /**
- * This interface contains useful constants and values for the {@link LossOfControlCalculation} and {@link StallCalculation}
+ * This interface contains useful constants and values for the {@link LossOfControlCalculation} and
+ * {@link StallCalculation}
  *
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
@@ -17,7 +18,8 @@ public interface CalculationParameters {
      * Critical Values
      *
      * @param AOA_CRIT this is the critical angle of attack that can be changes based on the FDM's guidelines
-     * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on certain guidelines
+     * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based
+     *                    on certain guidelines
      */
     double AOA_CRIT = 15;
     double PROSPIN_LIM = 4;

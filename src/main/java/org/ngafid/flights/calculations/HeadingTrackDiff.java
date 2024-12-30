@@ -103,7 +103,8 @@ public class HeadingTrackDiff implements Calculation {
                     List<String> missingParams = flight.checkCalculationParameters(HDG_TRK_DEPENDENCIES);
                     if (missingParams.isEmpty()) {
                         HeadingTrackDiff calculation = new HeadingTrackDiff(flight, connection);
-                        CalculatedDoubleTimeSeries hdgTrakDiff = new CalculatedDoubleTimeSeries(connection, HDG_TRK_DIFF, "degrees", true, flight);
+                        CalculatedDoubleTimeSeries hdgTrakDiff =
+                                new CalculatedDoubleTimeSeries(connection, HDG_TRK_DIFF, "degrees", true, flight);
                         if (!calculation.existsInDB(connection)) {
                             hdgTrakDiff.create(calculation);
                             hdgTrakDiff.updateDatabase(connection, flight.getId());

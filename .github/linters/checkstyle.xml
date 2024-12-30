@@ -185,7 +185,7 @@
 <!--    <module name="DesignForExtension"/>-->
     <module name="FinalClass"/>
     <module name="HideUtilityClassConstructor"/>
-    <module name="InterfaceIsType"/>
+<!--    <module name="InterfaceIsType"/>-->
     <module name="VisibilityModifier">
       <property name="protectedAllowed" value="true"/>
       <property name="allowPublicImmutableFields" value="true"/>
