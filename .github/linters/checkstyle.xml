@@ -203,6 +203,9 @@
       <property name="optional" value="true"/>
     </module>
 
+<!--    Disable checks around code -->
+    <module name="SuppressionCommentFilter"/>
+
   </module>
 
 </module>
