@@ -6,9 +6,6 @@
 package org.ngafid.common;
 
 import java.lang.String;
-import java.awt.Color;
-
-import org.ngafid.flights.Flight;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

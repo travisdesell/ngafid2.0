@@ -2,8 +2,6 @@ package org.ngafid;
 
 import org.apache.maven.cli.MavenCli;
 
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
