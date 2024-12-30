@@ -15,16 +15,16 @@ public interface Parameters {
      * JSON-specific parameters
      * EXC = Exceedences
      */
-    public static final String PARAM_JSON_LOSS_OF_CONTROL_EXC = "locExceedences";
-    public static final String PARAM_JSON_CENTER_LINE_EXC = "centerLineExceedences";
-    public static final String PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE = "selfDefinedGlideAngle";
-    public static final String PARAM_JSON_OPTIMAL_DESCENT_WARN = "optimalDescentWarnings";
-    public static final String PARAM_JSON_OPTIMAL_DESCENT_EXC = "optimalDescentExceedences";
-    public static final String PARAM_JSON_LATITUDE = "lat";
-    public static final String PARAM_JSON_LONGITUDE = "lon";
+    String PARAM_JSON_LOSS_OF_CONTROL_EXC = "locExceedences";
+    String PARAM_JSON_CENTER_LINE_EXC = "centerLineExceedences";
+    String PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE = "selfDefinedGlideAngle";
+    String PARAM_JSON_OPTIMAL_DESCENT_WARN = "optimalDescentWarnings";
+    String PARAM_JSON_OPTIMAL_DESCENT_EXC = "optimalDescentExceedences";
+    String PARAM_JSON_LATITUDE = "lat";
+    String PARAM_JSON_LONGITUDE = "lon";
 
-    public static final double STD_PRESS_INHG = 29.92;
-    public static final double COMP_CONV = Math.PI / 180.0;
+    double STD_PRESS_INHG = 29.92;
+    double COMP_CONV = Math.PI / 180.0;
 
     /**
      * Critical Values
@@ -33,24 +33,24 @@ public interface Parameters {
      * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on
      *                    certain guidelines
      */
-    public static final double AOA_CRIT = 15;
-    public static final double PROSPIN_LIM = 4;
+    double AOA_CRIT = 15;
+    double PROSPIN_LIM = 4;
 
-    public static final int YAW_RATE_LAG = 1;
-    public static final int VSI_LAG_DIFF = 1;
+    int YAW_RATE_LAG = 1;
+    int VSI_LAG_DIFF = 1;
 
     /**
      * {@link DoubleTimeSeries} constants, column names
      */
-    public static final String LAT = "Latitude";
-    public static final String LON = "Longitude";
-    public static final String LAG_SUFFIX = "_lag";
-    public static final String LEAD_SUFFIX = "_lead";
-    public static final String HDG = "HDG";
-    public static final String TRK = "TRK";
-    public static final String NORM_AC = "NormAc";
-    public static final String LAT_AC = "LatAc";
-    public static final String IAS = "IAS";
+    String LAT = "Latitude";
+    String LON = "Longitude";
+    String LAG_SUFFIX = "_lag";
+    String LEAD_SUFFIX = "_lead";
+    String HDG = "HDG";
+    String TRK = "TRK";
+    String NORM_AC = "NormAc";
+    String LAT_AC = "LatAc";
+    String IAS = "IAS";
 
     /*
      * How fast the aircraft is moving vertically.
@@ -58,45 +58,45 @@ public interface Parameters {
      * the sign of the number. If it is > 0, then the aircraft is ascending; likewise a negative value means
      * the aircraft is descending.
      */
-    public static final String VSPD = "VSpd";
-    public static final String DENSITY_RATIO = "DensityRatio";
-    public static final String OAT = "OAT";
-    public static final String BARO_A = "BaroA";
-    public static final String PITCH = "Pitch";
-    public static final String ROLL = "Roll";
-    public static final String ALT_AGL = "AltAGL";
-    public static final String ALT_MSL = "AltMSL";
-    public static final String ALT_MSL_LAG_DIFF = "AltMSL Lag Diff";
-    public static final String ALT_B = "AltB";
-    public static final String AOA_SIMPLE = "AOASimple";
-    public static final String E1_RPM = "E1 RPM";
-    public static final String TAS_FTMIN = "True Airspeed(ft/min)";
-    public static final String STALL_PROB = "Stall Index";
-    public static final String SPIN = "Spin Event(s)";
-    public static final String LOCI = "LOC-I Index";
-    public static final String PRO_SPIN_FORCE = "Coordination Index";
-    public static final String YAW_RATE = "Yaw Rate";
-    public static final String VSPD_CALCULATED = "VSpd Calculated";
-    public static final String CAS = "CAS";
-    public static final String GND_SPD = "GndSpd";
-    public static final String WIND_SPEED = "WndSpd";
-    public static final String WIND_DIRECTION = "WndDr";
-    public static final String TOTAL_FUEL = "Total Fuel";
-    public static final String LCL_DATE = "Lcl Date";
-    public static final String LCL_TIME = "Lcl Time";
-    public static final String UTC_OFFSET = "UTCOfst";
-    public static final String LATITUDE = "Latitude";
-    public static final String LONGITUDE = "Longitude";
-    public static final String STALL_PROBABILITY = "PStall";
-    public static final String LOSS_OF_CONTROL_PROBABILITY = "PLOCI";
-    public static final String HDG_TRK_DIFF = "HDG TRK Diff";
-    public static final String FUEL_QTY_LEFT = "FQtyL";
-    public static final String FUEL_QTY_RIGHT = "FQtyR";
+    String VSPD = "VSpd";
+    String DENSITY_RATIO = "DensityRatio";
+    String OAT = "OAT";
+    String BARO_A = "BaroA";
+    String PITCH = "Pitch";
+    String ROLL = "Roll";
+    String ALT_AGL = "AltAGL";
+    String ALT_MSL = "AltMSL";
+    String ALT_MSL_LAG_DIFF = "AltMSL Lag Diff";
+    String ALT_B = "AltB";
+    String AOA_SIMPLE = "AOASimple";
+    String E1_RPM = "E1 RPM";
+    String TAS_FTMIN = "True Airspeed(ft/min)";
+    String STALL_PROB = "Stall Index";
+    String SPIN = "Spin Event(s)";
+    String LOCI = "LOC-I Index";
+    String PRO_SPIN_FORCE = "Coordination Index";
+    String YAW_RATE = "Yaw Rate";
+    String VSPD_CALCULATED = "VSpd Calculated";
+    String CAS = "CAS";
+    String GND_SPD = "GndSpd";
+    String WIND_SPEED = "WndSpd";
+    String WIND_DIRECTION = "WndDr";
+    String TOTAL_FUEL = "Total Fuel";
+    String LCL_DATE = "Lcl Date";
+    String LCL_TIME = "Lcl Time";
+    String UTC_OFFSET = "UTCOfst";
+    String LATITUDE = "Latitude";
+    String LONGITUDE = "Longitude";
+    String STALL_PROBABILITY = "PStall";
+    String LOSS_OF_CONTROL_PROBABILITY = "PLOCI";
+    String HDG_TRK_DIFF = "HDG TRK Diff";
+    String FUEL_QTY_LEFT = "FQtyL";
+    String FUEL_QTY_RIGHT = "FQtyR";
 
-    public static final String NEAREST_RUNWAY = "NearestRunway";
-    public static final String RUNWAY_DISTANCE = "RunwayDistance";
-    public static final String NEAREST_AIRPORT = "NearestAirport";
-    public static final String AIRPORT_DISTANCE = "AirportDistance";
+    String NEAREST_RUNWAY = "NearestRunway";
+    String RUNWAY_DISTANCE = "RunwayDistance";
+    String NEAREST_AIRPORT = "NearestAirport";
+    String AIRPORT_DISTANCE = "AirportDistance";
 
     /**
      * Units
@@ -128,7 +128,7 @@ public interface Parameters {
     /**
      * {@link Airframes} id's
      */
-    public static final int C172SP_ID = 1;
+    int C172SP_ID = 1;
 
     /**
      * Strings that represent the parameters used in the Stall Index calculation
@@ -136,28 +136,28 @@ public interface Parameters {
      * @param ALT_B is used as the time reference
      * @param VSPD  not needed for cases where VSpd is drived from AltB
      */
-    public static final String[] STALL_DEPENDENCIES = { PITCH, /* VSPD, */ IAS, BARO_A, OAT, ALT_B };
+    String[] STALL_DEPENDENCIES = { PITCH, /* VSPD, */ IAS, BARO_A, OAT, ALT_B };
 
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      */
-    public static final String[] LOCI_DEPENDENCIES = { HDG, ROLL, TAS_FTMIN };
+    String[] LOCI_DEPENDENCIES = { HDG, ROLL, TAS_FTMIN };
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
-    public static final String[] SPIN_DEPENDENCIES = { IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL };
+    String[] SPIN_DEPENDENCIES = { IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL };
 
     // Params required for HDG TRK diff
-    public static final String[] HDG_TRK_DEPENDENCIES = { HDG, TRK };
+    String[] HDG_TRK_DEPENDENCIES = { HDG, TRK };
 
     // Used to determine average fuel
-    public static final String[] AVG_FUEL_DEPENDENCIES = { TOTAL_FUEL };
+    String[] AVG_FUEL_DEPENDENCIES = { TOTAL_FUEL };
 
-    public static final String[] EVENT_RECOGNITION_COLUMNS = { TOTAL_FUEL };
+    String[] EVENT_RECOGNITION_COLUMNS = { TOTAL_FUEL };
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
-    public static final String[] uiMetrics = { ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL };
-    public static final String[] defaultMetrics = { ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM };
+    String[] uiMetrics = { ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL };
+    String[] defaultMetrics = { ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM };
 
 }
