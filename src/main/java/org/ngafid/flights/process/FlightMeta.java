@@ -27,111 +27,111 @@ public final class FlightMeta {
         return fleetId;
     }
 
-    public void setFleetId(int newFleetId) {
-        this.fleetId = newFleetId;
+    public void setFleetId(int fleetId) {
+        this.fleetId = fleetId;
     }
 
     public int getUploaderId() {
         return uploaderId;
     }
 
-    public void setUploaderId(int newUploaderId) {
-        this.uploaderId = newUploaderId;
+    public void setUploaderId(int uploaderId) {
+        this.uploaderId = uploaderId;
     }
 
     public int getUploadId() {
         return uploadId;
     }
 
-    public void setUploadId(int newUploadId) {
-        this.uploadId = newUploadId;
+    public void setUploadId(int uploadId) {
+        this.uploadId = uploadId;
     }
 
     public int getProcessingStatus() {
         return processingStatus;
     }
 
-    public void setProcessingStatus(int newProcessingStatus) {
-        this.processingStatus = newProcessingStatus;
+    public void setProcessingStatus(int processingStatus) {
+        this.processingStatus = processingStatus;
     }
 
     public String getStartDateTime() {
         return startDateTime;
     }
 
-    public void setStartDateTime(String newStartDateTime) {
-        this.startDateTime = newStartDateTime;
+    public void setStartDateTime(String startDateTime) {
+        this.startDateTime = startDateTime;
     }
 
     public String getEndDateTime() {
         return endDateTime;
     }
 
-    public void setEndDateTime(String newEndDateTime) {
-        this.endDateTime = newEndDateTime;
+    public void setEndDateTime(String endDateTime) {
+        this.endDateTime = endDateTime;
     }
 
     public String getMd5Hash() {
         return md5Hash;
     }
 
-    public void setMd5Hash(String newMd5Hash) {
-        this.md5Hash = newMd5Hash;
+    public void setMd5Hash(String md5Hash) {
+        this.md5Hash = md5Hash;
     }
 
     public Airframes.AirframeType getAirframeType() {
         return airframeType;
     }
 
-    public void setAirframeType(String newAirframeType) {
-        this.airframeType = new Airframes.AirframeType(newAirframeType);
+    public void setAirframeType(String airframeType) {
+        this.airframeType = new Airframes.AirframeType(airframeType);
     }
 
-    public void setAirframeType(Airframes.AirframeType newAirframeType) {
-        this.airframeType = newAirframeType;
+    public void setAirframeType(Airframes.AirframeType airframeType) {
+        this.airframeType = airframeType;
     }
 
     public Airframes.Airframe getAirframe() {
         return airframe;
     }
 
-    public void setAirframe(String newAirframe) {
-        this.airframe = new Airframes.Airframe(newAirframe);
+    public void setAirframe(String airframe) {
+        this.airframe = new Airframes.Airframe(airframe);
     }
 
-    public void setAirframe(Airframes.Airframe newAirframe) {
-        this.airframe = newAirframe;
+    public void setAirframe(Airframes.Airframe airframe) {
+        this.airframe = airframe;
     }
 
     public String getSystemId() {
         return systemId;
     }
 
-    public void setSystemId(String newSystemId) {
-        this.systemId = newSystemId;
+    public void setSystemId(String systemId) {
+        this.systemId = systemId;
     }
 
     public String getFilename() {
         return filename;
     }
 
-    public void setFilename(String newFilename) {
-        this.filename = newFilename;
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
     public String getCalculated() {
         return calculated;
     }
 
-    public void setCalculated(String newCalculated) {
-        this.calculated = newCalculated;
+    public void setCalculated(String calculated) {
+        this.calculated = calculated;
     }
 
     public String getSuggestedTailNumber() {
         return suggestedTailNumber;
     }
 
-    public void setSuggestedTailNumber(String newSuggestedTailNumber) {
-        this.suggestedTailNumber = newSuggestedTailNumber;
+    public void setSuggestedTailNumber(String suggestedTailNumber) {
+        this.suggestedTailNumber = suggestedTailNumber;
     }
 }
