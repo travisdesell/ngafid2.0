@@ -7,131 +7,131 @@ import org.ngafid.flights.Airframes;
  **/
 public final class FlightMeta {
 
-    public int fleetId = -1,
-            uploaderId = -1,
-            uploadId = -1,
-            processingStatus = 0;
+    private int fleetId = -1;
+    private int uploaderId = -1;
+    private int uploadId = -1;
+    public int processingStatus = 0;
 
-    public String startDateTime,
-            endDateTime,
-            md5Hash,
-            systemId,
-            filename,
-            calculated,
-            suggestedTailNumber;
+    private String startDateTime;
+    private String endDateTime;
+    private String md5Hash;
+    private String systemId;
+    private String filename;
+    private String calculated;
+    private String suggestedTailNumber;
 
-    public Airframes.Airframe airframe = null;
-    public Airframes.AirframeType airframeType = null;
+    private Airframes.Airframe airframe = null;
+    private Airframes.AirframeType airframeType = null;
 
     public int getFleetId() {
         return fleetId;
     }
 
-    public void setFleetId(int fleetId) {
-        this.fleetId = fleetId;
+    public void setFleetId(int newFleetId) {
+        this.fleetId = newFleetId;
     }
 
     public int getUploaderId() {
         return uploaderId;
     }
 
-    public void setUploaderId(int uploaderId) {
-        this.uploaderId = uploaderId;
+    public void setUploaderId(int newUploaderId) {
+        this.uploaderId = newUploaderId;
     }
 
     public int getUploadId() {
         return uploadId;
     }
 
-    public void setUploadId(int uploadId) {
-        this.uploadId = uploadId;
+    public void setUploadId(int newUploadId) {
+        this.uploadId = newUploadId;
     }
 
     public int getProcessingStatus() {
         return processingStatus;
     }
 
-    public void setProcessingStatus(int processingStatus) {
-        this.processingStatus = processingStatus;
+    public void setProcessingStatus(int newProcessingStatus) {
+        this.processingStatus = newProcessingStatus;
     }
 
     public String getStartDateTime() {
         return startDateTime;
     }
 
-    public void setStartDateTime(String startDateTime) {
-        this.startDateTime = startDateTime;
+    public void setStartDateTime(String newStartDateTime) {
+        this.startDateTime = newStartDateTime;
     }
 
     public String getEndDateTime() {
         return endDateTime;
     }
 
-    public void setEndDateTime(String endDateTime) {
-        this.endDateTime = endDateTime;
+    public void setEndDateTime(String newEndDateTime) {
+        this.endDateTime = newEndDateTime;
     }
 
     public String getMd5Hash() {
         return md5Hash;
     }
 
-    public void setMd5Hash(String md5Hash) {
-        this.md5Hash = md5Hash;
+    public void setMd5Hash(String newMd5Hash) {
+        this.md5Hash = newMd5Hash;
     }
 
     public Airframes.AirframeType getAirframeType() {
         return airframeType;
     }
 
-    public void setAirframeType(String airframeType) {
-        this.airframeType = new Airframes.AirframeType(airframeType);
+    public void setAirframeType(String newAirframeType) {
+        this.airframeType = new Airframes.AirframeType(newAirframeType);
     }
 
-    public void setAirframeType(Airframes.AirframeType airframeType) {
-        this.airframeType = airframeType;
+    public void setAirframeType(Airframes.AirframeType newAirframeType) {
+        this.airframeType = newAirframeType;
     }
 
     public Airframes.Airframe getAirframe() {
         return airframe;
     }
 
-    public void setAirframe(String airframe) {
-        this.airframe = new Airframes.Airframe(airframe);
+    public void setAirframe(String newAirframe) {
+        this.airframe = new Airframes.Airframe(newAirframe);
     }
 
-    public void setAirframe(Airframes.Airframe airframe) {
-        this.airframe = airframe;
+    public void setAirframe(Airframes.Airframe newAirframe) {
+        this.airframe = newAirframe;
     }
 
     public String getSystemId() {
         return systemId;
     }
 
-    public void setSystemId(String systemId) {
-        this.systemId = systemId;
+    public void setSystemId(String newSystemId) {
+        this.systemId = newSystemId;
     }
 
     public String getFilename() {
         return filename;
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
+    public void setFilename(String newFilename) {
+        this.filename = newFilename;
     }
 
     public String getCalculated() {
         return calculated;
     }
 
-    public void setCalculated(String calculated) {
-        this.calculated = calculated;
+    public void setCalculated(String newCalculated) {
+        this.calculated = newCalculated;
     }
 
     public String getSuggestedTailNumber() {
         return suggestedTailNumber;
     }
 
-    public void setSuggestedTailNumber(String suggestedTailNumber) {
-        this.suggestedTailNumber = suggestedTailNumber;
+    public void setSuggestedTailNumber(String newSuggestedTailNumber) {
+        this.suggestedTailNumber = newSuggestedTailNumber;
     }
 }
