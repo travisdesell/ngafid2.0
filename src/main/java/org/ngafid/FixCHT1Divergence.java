@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 public final class FixCHT1Divergence {
     private FixCHT1Divergence() {
@@ -23,17 +24,17 @@ public final class FixCHT1Divergence {
             int total = 0;
             boolean found = true;
             while (found) {
-                ArrayList<Flight> flights = Flight.getFlights(connection, "(airframe_id = 2 OR airframe_id = 10) AND NOT (processing_status & " + Flight.CHT_DIVERGENCE_CALCULATED + ")", 100);
+                List<Flight> flights = Flight.getFlights(connection, "(airframe_id = 2 OR airframe_id = 10) " +
+                        "AND NOT (processing_status & " + Flight.CHT_DIVERGENCE_CALCULATED + ")", 100);
 
                 System.out.println("found " + flights.size() + " flights with CHT divergence not processed");
-                found = flights.size() > 0;
+                found = !flights.isEmpty();
 
                 int count = 0;
                 for (Flight flight : flights) {
                     int flightId = flight.getId();
                     System.out.println("fixing flight id: " + flightId);
 
-                    DoubleTimeSeries divergenceSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 CHT Divergence");
                     if (flight.getDoubleTimeSeries(connection, "E1 CHT Divergence") != null) {
                         System.out.println("had CHT1 divergence!");
                     } else {
@@ -56,7 +57,10 @@ public final class FixCHT1Divergence {
                         }
                     }
 
-                    PreparedStatement ps = connection.prepareStatement("UPDATE flights SET processing_status = processing_status | ? WHERE id = ?");
+                    PreparedStatement ps = connection.prepareStatement(
+                            "UPDATE flights SET processing_status = processing_status | ? WHERE id = ?"
+                    );
+
                     ps.setLong(1, Flight.CHT_DIVERGENCE_CALCULATED);
                     ps.setInt(2, flightId);
                     System.out.println(ps);
