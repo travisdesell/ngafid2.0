@@ -22,7 +22,7 @@ import static org.ngafid.flights.Parameters.*;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-public final class DoubleTimeSeries {
+public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
