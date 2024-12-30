@@ -373,27 +373,27 @@ public class EventStatistics {
     private static class EventRow {
         String rowName;
 
-        int flightsWithoutError;
-        int flightsWithEvent;
-        int totalEvents;
-        double avgEvents;
-        double avgDuration;
-        double minDuration;
-        double maxDuration;
-        double avgSeverity;
-        double minSeverity;
-        double maxSeverity;
+        private int flightsWithoutError;
+        private int flightsWithEvent;
+        private int totalEvents;
+        private double avgEvents;
+        private double avgDuration;
+        private double minDuration;
+        private double maxDuration;
+        private double avgSeverity;
+        private double minSeverity;
+        private double maxSeverity;
 
-        int aggFlightsWithoutError;
-        int aggFlightsWithEvent;
-        int aggTotalEvents;
-        double aggAvgEvents;
-        double aggAvgDuration;
-        double aggMinDuration;
-        double aggMaxDuration;
-        double aggAvgSeverity;
-        double aggMinSeverity;
-        double aggMaxSeverity;
+        private int aggFlightsWithoutError;
+        private int aggFlightsWithEvent;
+        private int aggTotalEvents;
+        private double aggAvgEvents;
+        private double aggAvgDuration;
+        private double aggMinDuration;
+        private double aggMaxDuration;
+        private double aggAvgSeverity;
+        private double aggMinSeverity;
+        private double aggMaxSeverity;
 
         public EventRow(String rowName) {
             this.rowName = rowName;
@@ -405,7 +405,7 @@ public class EventStatistics {
 
             String query = "SELECT SUM(flights_with_event), SUM(total_flights), SUM(total_events), MIN(min_duration), SUM(sum_duration), MAX(max_duration), MIN(min_severity), SUM(sum_severity), MAX(max_severity) FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
 
-            if (!extraQuery.equals("")) {
+            if (!extraQuery.isEmpty()) {
                 query += " AND " + extraQuery;
             }
 
@@ -523,6 +523,90 @@ public class EventStatistics {
                 }
             }
         }
+
+        public String getRowName() {
+            return rowName;
+        }
+
+        public int getFlightsWithoutError() {
+            return flightsWithoutError;
+        }
+
+        public int getFlightsWithEvent() {
+            return flightsWithEvent;
+        }
+
+        public int getTotalEvents() {
+            return totalEvents;
+        }
+
+        public double getAvgEvents() {
+            return avgEvents;
+        }
+
+        public double getAvgDuration() {
+            return avgDuration;
+        }
+
+        public double getMinDuration() {
+            return minDuration;
+        }
+
+        public double getMaxDuration() {
+            return maxDuration;
+        }
+
+        public double getAvgSeverity() {
+            return avgSeverity;
+        }
+
+        public double getMinSeverity() {
+            return minSeverity;
+        }
+
+        public double getMaxSeverity() {
+            return maxSeverity;
+        }
+
+        public int getAggFlightsWithoutError() {
+            return aggFlightsWithoutError;
+        }
+
+        public int getAggFlightsWithEvent() {
+            return aggFlightsWithEvent;
+        }
+
+        public int getAggTotalEvents() {
+            return aggTotalEvents;
+        }
+
+        public double getAggAvgEvents() {
+            return aggAvgEvents;
+        }
+
+        public double getAggAvgDuration() {
+            return aggAvgDuration;
+        }
+
+        public double getAggMinDuration() {
+            return aggMinDuration;
+        }
+
+        public double getAggMaxDuration() {
+            return aggMaxDuration;
+        }
+
+        public double getAggAvgSeverity() {
+            return aggAvgSeverity;
+        }
+
+        public double getAggMinSeverity() {
+            return aggMinSeverity;
+        }
+
+        public double getAggMaxSeverity() {
+            return aggMaxSeverity;
+        }
     }
 
     private static class AirframeStatistics {
@@ -534,7 +618,7 @@ public class EventStatistics {
 
         String humanReadable;
 
-        ArrayList<EventRow> monthStats = new ArrayList<EventRow>();
+        List<EventRow> monthStats = new ArrayList<EventRow>();
 
         AirframeStatistics(Connection connection, EventDefinition eventDefinition, int fleetId) throws SQLException {
             this.eventId = eventDefinition.getId();
@@ -599,7 +683,7 @@ public class EventStatistics {
 
             monthStats.add(EventRow.getStatistics(connection, "Month to Date", fleetId, eventId,
                     "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?",
-                    new int[] { currentYear, currentMonth }));
+                    new int[] {currentYear, currentMonth }));
 
             int previousMonth = currentMonth - 1;
             int tempYear = currentYear;
@@ -610,21 +694,21 @@ public class EventStatistics {
 
             monthStats.add(EventRow.getStatistics(connection, "Previous Month", fleetId, eventId,
                     "YEAR(month_first_day) = ? AND MONTH(month_first_day) = ?",
-                    new int[] { currentYear, currentMonth }));
+                    new int[] {currentYear, currentMonth }));
 
             monthStats.add(EventRow.getStatistics(connection, "Year to Date", fleetId, eventId,
-                    "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?", new int[] { currentYear, 1 }));
+                    "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?", new int[] {currentYear, 1 }));
 
             monthStats.add(EventRow.getStatistics(connection, "Previous Year", fleetId, eventId,
-                    "YEAR(month_first_day) = ?", new int[] { currentYear - 1 }));
+                    "YEAR(month_first_day) = ?", new int[] {currentYear - 1 }));
 
             monthStats.add(EventRow.getStatistics(connection, "Overall", fleetId, eventId, "", new int[] {}));
         }
     }
 
-    int airframeNameId;
-    String airframeName;
-    ArrayList<AirframeStatistics> events;
+    private int airframeNameId;
+    private String airframeName;
+    private ArrayList<AirframeStatistics> events;
 
     public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId)
             throws SQLException {
@@ -633,7 +717,7 @@ public class EventStatistics {
         events = new ArrayList<>();
 
         ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection,
-                "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[] { airframeNameId, fleetId });
+                "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[] {airframeNameId, fleetId });
 
         events = new ArrayList<>();
         for (int i = 0; i < eventDefinitions.size(); i++) {

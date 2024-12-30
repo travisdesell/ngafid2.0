@@ -27,8 +27,8 @@ import java.util.logging.*;
 public class CalculateExceedences {
     private static final Logger LOG = Logger.getLogger(CalculateExceedences.class.getName());
 
-    private static final String timeSeriesName = "Lcl Time";
-    private static final String dateSeriesName = "Lcl Date";
+    private static final String TIME_SERIES_NAME = "Lcl Time";
+    private static final String DATE_SERIES_NAME = "Lcl Date";
     private static ArrayList<EventDefinition> allEvents = null;
 
     private final Conditional conditional;
@@ -64,14 +64,14 @@ public class CalculateExceedences {
         // LOG.info("minMaxRPM1: " + minMaxRPM1);
         // LOG.info("minMaxRPM2: " + minMaxRPM2);
 
-        final int RPM_THRESHOLD = 800;
+        final int rpmThreshold = 800;
         if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
-                || (minMaxRPM2 == null && minMaxRPM1.second() < RPM_THRESHOLD) // RPM2 is null, RPM1 is
+                || (minMaxRPM2 == null && minMaxRPM1.second() < rpmThreshold) // RPM2 is null, RPM1 is
                                                                                            // < 800
-                || (minMaxRPM1 == null && minMaxRPM2.second() < RPM_THRESHOLD) // RPM1 is null, RPM2 is
+                || (minMaxRPM1 == null && minMaxRPM2.second() < rpmThreshold) // RPM1 is null, RPM2 is
                                                                                            // < 800
-                || (minMaxRPM1 != null && minMaxRPM1.second() < RPM_THRESHOLD)
-                        && (minMaxRPM2 != null && minMaxRPM2.second() < RPM_THRESHOLD)) { // RPM1 and RPM2 < 800
+                || (minMaxRPM1 != null && minMaxRPM1.second() < rpmThreshold)
+                        && (minMaxRPM2 != null && minMaxRPM2.second() < rpmThreshold)) { // RPM1 and RPM2 < 800
             // couldn't calculate exceedences for this flight because the engines never
             // kicked on (it didn't fly)
             LOG.info("engines never turned on, setting flight_processed.had_error = 1");
@@ -147,8 +147,8 @@ public class CalculateExceedences {
             return;
         }
 
-        StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
-        StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
+        StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, TIME_SERIES_NAME);
+        StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, DATE_SERIES_NAME);
 
         if (timeSeries == null || dateSeries == null) {
             // couldn't calculate this exceedence because the date or time column was

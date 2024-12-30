@@ -64,17 +64,17 @@ public class Conditional {
     /**
      * Sets the value for the parameter in this conditional and all of its children
      *
-     * @param parameterName the name of the parameter to be set
-     * @param parameterValue the value of the parameter being set
+     * @param paramNameToBeSet the name of the parameter to be set
+     * @param newParamValue the value of the parameter being set
      */
-    public void set(String parameterName, double parameterValue) {
+    public void set(String paramNameToBeSet, double newParamValue) {
         if (type.equals("RULE")) {
-            if (this.parameterName.equals(parameterName)) {
-                this.parameterValue = parameterValue;
+            if (this.parameterName.equals(paramNameToBeSet)) {
+                this.parameterValue = newParamValue;
             }
         } else if (type.equals("GROUP")) {
             for (Conditional child : children) {
-                child.set(parameterName, parameterValue);
+                child.set(paramNameToBeSet, newParamValue);
             }
         } else {
             LOG.severe("Could not set a conditional with an unknown rule type: '" + this.type + "'");
@@ -85,12 +85,12 @@ public class Conditional {
     /**
      * Sets the value for the parameter in this conditional and all of its children
      *
-     * @param parameterName the name of the parameter to be set
-     * @param parameterValue the value of the parameter being set
+     * @param paramNameToBeSet the name of the parameter to be set
+     * @param minMax the min and max values of the parameter being set
      */
-    public void set(String parameterName, Pair<Double,Double> minMax) {
+    public void set(String paramNameToBeSet, Pair<Double,Double> minMax) {
         if (type.equals("RULE")) {
-            if (this.parameterName.equals(parameterName)) {
+            if (this.parameterName.equals(paramNameToBeSet)) {
                 if (condition.equals("<=") || condition.equals("<")) {
                     this.parameterValue = minMax.first(); //set to min
                 } else {
@@ -99,7 +99,7 @@ public class Conditional {
             }
         } else if (type.equals("GROUP")) {
             for (Conditional child : children) {
-                child.set(parameterName, minMax);
+                child.set(paramNameToBeSet, minMax);
             }
         } else {
             LOG.severe("Could not set a conditional with an unknown rule type: '" + this.type + "'");

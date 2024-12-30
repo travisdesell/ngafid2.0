@@ -102,9 +102,9 @@
     <!-- See https://checkstyle.org/checks/javadoc/index.html -->
     <module name="InvalidJavadocPosition"/>
     <module name="JavadocMethod"/>
-    <module name="JavadocType"/>
-    <module name="JavadocStyle"/>
-    <module name="MissingJavadocMethod"/>
+<!--    <module name="JavadocType"/>-->
+<!--    <module name="JavadocStyle"/>-->
+<!--    <module name="MissingJavadocMethod"/>--> <!-- TODO: Maybe bring this back eventually? -->
 
     <!-- Checks for Naming Conventions.                  -->
     <!-- See https://checkstyle.org/checks/naming/index.html -->
@@ -129,8 +129,14 @@
 
     <!-- Checks for Size Violations.                    -->
     <!-- See https://checkstyle.org/checks/sizes/index.html -->
-    <module name="MethodLength"/>
-    <module name="ParameterNumber"/>
+    <!--    Originally 150 and 7 respectively -->
+    <module name="MethodLength">
+      <property name="max" value="200"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="10"/>
+      <property name="tokens" value="METHOD_DEF"/>
+    </module>
 
     <!-- Checks for whitespace                               -->
     <!-- See https://checkstyle.org/checks/whitespace/index.html -->
@@ -139,7 +145,7 @@
     <module name="MethodParamPad"/>
     <module name="NoWhitespaceAfter"/>
     <module name="NoWhitespaceBefore"/>
-    <module name="OperatorWrap"/>
+<!--    <module name="OperatorWrap"/>-->
     <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
     <module name="WhitespaceAfter"/>

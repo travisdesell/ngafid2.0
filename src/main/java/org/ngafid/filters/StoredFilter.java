@@ -17,11 +17,9 @@ import org.ngafid.accounts.User;
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
 public class StoredFilter {
-    /**
-     * @param name   is the common name given to the stored filter by the user.
-     * @param filter is the filter as a {@link String} in the form of a JSON object.
-     */
-    private String name, filter, color;
+    private final String name; // Common name given by the user
+    private final String filter; // Filter as a String in JSON form
+    private final String color; // Color of the filter in hex
 
     /**
      * Default constructor
