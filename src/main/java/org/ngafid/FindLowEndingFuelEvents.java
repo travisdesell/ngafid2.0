@@ -18,10 +18,14 @@ import java.util.logging.Logger;
 import static org.ngafid.events.CustomEvent.*;
 import static org.ngafid.flights.Parameters.*;
 
-public class FindLowEndingFuelEvents {
+public final class FindLowEndingFuelEvents {
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
-    private static Map<Integer, EventDefinition> eventDefs = new HashMap<>();
-    private static Map<Integer, Double> thresholds = new HashMap<>();
+    private static final Map<Integer, EventDefinition> eventDefs = new HashMap<>();
+    private static final Map<Integer, Double> thresholds = new HashMap<>();
+
+    private FindLowEndingFuelEvents() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static void findLowEndFuelEventsInUpload(Connection connection, Upload upload)
             throws FatalFlightFileException, IOException, MalformedFlightFileException, ParseException, SQLException {
@@ -81,8 +85,9 @@ public class FindLowEndingFuelEvents {
             fuelSum += fuel.get(i);
             fuelValues++;
 
-            if (currentTime.equals(" "))
+            if (currentTime.equals(" ")) {
                 continue;
+            }
 
             LOG.info("DATE = " + currentTime);
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
@@ -114,7 +119,8 @@ public class FindLowEndingFuelEvents {
     }
 
     static void setFlightProcessed(Connection connection, Flight flight, int count) throws IOException, SQLException {
-        String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
+        String queryString = "INSERT INTO flight_processed SET " +
+                "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(queryString)) {
             stmt.setInt(1, flight.getFleetId());

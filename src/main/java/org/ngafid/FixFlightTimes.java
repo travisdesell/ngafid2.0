@@ -15,7 +15,10 @@ import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
 
-public class FixFlightTimes {
+public final class FixFlightTimes {
+    private FixFlightTimes() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static OffsetDateTime convertToOffset(String originalTime, String originalOffset, String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + "
@@ -97,10 +100,14 @@ public class FixFlightTimes {
                 // same but
                 // if the last column was cut off it might not be the case
                 int minSize = dateSize;
-                if (minSize < timeSize)
+
+                if (minSize < timeSize) {
                     minSize = timeSize;
-                if (minSize < offsetSize)
+                }
+
+                if (minSize < offsetSize) {
                     minSize = offsetSize;
+                }
 
                 // find the first non-null time entry
                 int start = 0;

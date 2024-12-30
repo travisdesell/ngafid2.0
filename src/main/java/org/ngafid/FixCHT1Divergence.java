@@ -11,7 +11,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-public class FixCHT1Divergence {
+public final class FixCHT1Divergence {
+    private FixCHT1Divergence() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static void main(String[] arguments) {
         try {
@@ -20,10 +23,7 @@ public class FixCHT1Divergence {
             int total = 0;
             boolean found = true;
             while (found) {
-                ArrayList<Flight> flights = Flight.getFlights(connection,
-                        "(airframe_id = 2 OR airframe_id = 10) AND NOT (processing_status & "
-                                + Flight.CHT_DIVERGENCE_CALCULATED + ")",
-                        100);
+                ArrayList<Flight> flights = Flight.getFlights(connection, "(airframe_id = 2 OR airframe_id = 10) AND NOT (processing_status & " + Flight.CHT_DIVERGENCE_CALCULATED + ")", 100);
 
                 System.out.println("found " + flights.size() + " flights with CHT divergence not processed");
                 found = flights.size() > 0;
@@ -33,8 +33,7 @@ public class FixCHT1Divergence {
                     int flightId = flight.getId();
                     System.out.println("fixing flight id: " + flightId);
 
-                    DoubleTimeSeries divergenceSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId,
-                            "E1 CHT Divergence");
+                    DoubleTimeSeries divergenceSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 CHT Divergence");
                     if (flight.getDoubleTimeSeries(connection, "E1 CHT Divergence") != null) {
                         System.out.println("had CHT1 divergence!");
                     } else {
@@ -46,7 +45,7 @@ public class FixCHT1Divergence {
                         flight.getDoubleTimeSeries(connection, "E1 CHT4");
 
                         try {
-                            String chtNames[] = { "E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4" };
+                            String[] chtNames = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
                             flight.calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                             DoubleTimeSeries chtDivergence = flight.getDoubleTimeSeries("E1 CHT Divergence");
                             chtDivergence.updateDatabase(connection, flightId);
@@ -57,11 +56,10 @@ public class FixCHT1Divergence {
                         }
                     }
 
-                    PreparedStatement ps = connection.prepareStatement(
-                            "UPDATE flights SET processing_status = processing_status | ? WHERE id = ?");
+                    PreparedStatement ps = connection.prepareStatement("UPDATE flights SET processing_status = processing_status | ? WHERE id = ?");
                     ps.setLong(1, Flight.CHT_DIVERGENCE_CALCULATED);
                     ps.setInt(2, flightId);
-                    System.out.println(ps.toString());
+                    System.out.println(ps);
                     ps.executeUpdate();
                     ps.close();
 

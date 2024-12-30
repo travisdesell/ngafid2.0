@@ -15,7 +15,10 @@ import org.apache.commons.cli.ParseException;
 
 import org.ngafid.flights.Flight;
 
-public class ExtractFlights {
+public final class ExtractFlights {
+    private ExtractFlights() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static void main(String[] arguments) throws Exception {
         Connection connection = Database.getConnection();

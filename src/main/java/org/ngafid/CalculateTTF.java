@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.ngafid.flights.*;
 import org.ngafid.flights.calculations.TurnToFinal;
 
-public class CalculateTTF {
+public final class CalculateTTF {
     private CalculateTTF() {
         throw new UnsupportedOperationException("Utility class not meant to be instantiated");
     }
@@ -98,8 +98,9 @@ public class CalculateTTF {
 
                     dropOldTTF(connection, flights);
 
-                    for (Flight f : flights)
+                    for (Flight f : flights) {
                         TurnToFinal.calculateFlightTurnToFinals(connection, f);
+                    }
 
                     flightsProcessed = flights.size();
 

@@ -7,10 +7,8 @@ import java.util.logging.Logger;
 
 import org.ngafid.flights.Upload;
 
-public class ClearUpload {
-    private static final Connection connection = null;
+public final class ClearUpload {
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
-    private static final String ERROR_STATUS_STR = "ERROR";
 
     private ClearUpload() {
         throw new IllegalStateException("Utility class");

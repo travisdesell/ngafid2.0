@@ -17,7 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-public class ExtractMaintenanceFlights {
+public final class ExtractMaintenanceFlights {
     private static final HashMap<Integer, MaintenanceRecord> recordsByWorkorder = new HashMap<>();
     private static final HashMap<String, ArrayList<MaintenanceRecord>> recordsByLabel = new HashMap<>();
     private static final HashMap<String, ArrayList<MaintenanceRecord>> recordsByTailNumber = new HashMap<>();
