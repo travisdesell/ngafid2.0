@@ -23,7 +23,7 @@ public class EventMetaData {
 
         private final String name;
 
-        private EventMetaDataKey(String s) {
+        EventMetaDataKey(String s) {
             name = s;
         }
 

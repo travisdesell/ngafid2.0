@@ -23,7 +23,7 @@ public class SendEmail {
 
     private static String password;
     private static String username;
-    private static ArrayList<String> adminEmails;
+    private static final ArrayList<String> adminEmails;
     private static boolean emailEnabled = true;
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
@@ -135,7 +135,7 @@ public class SendEmail {
         String username;
         String password;
 
-        public SMTPAuthenticator(String username, String password) {
+        SMTPAuthenticator(String username, String password) {
             this.username = username;
             this.password = password;
             System.out.println("Created authenticator with username: '" + this.username + "' and password: '"

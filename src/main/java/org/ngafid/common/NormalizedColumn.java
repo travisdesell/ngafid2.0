@@ -21,15 +21,15 @@ public abstract class NormalizedColumn<T> {
     return "id";
   }
 
-  private final String getNameQuery() {
+  private String getNameQuery() {
     return "SELECT " + getNameColumn() + " FROM " + getTableName() + " WHERE " + getIdColumn() + " = ?";
   }
 
-  private final String getIdQuery() {
+  private String getIdQuery() {
     return "SELECT " + getIdColumn() + " FROM " + getTableName() + " WHERE " + getNameColumn() + " = ?";
   }
 
-  private final String getInsertionQuery() {
+  private String getInsertionQuery() {
     return "INSERT IGNORE INTO " + getTableName() + " SET " + getNameColumn() + " = ?";
   }
 

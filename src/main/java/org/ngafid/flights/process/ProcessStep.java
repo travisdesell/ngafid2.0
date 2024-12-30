@@ -90,7 +90,7 @@ public abstract class ProcessStep {
     }
 
     protected interface ConnectionFunctor<T> {
-        public T compute(Connection connection) throws SQLException;
+        T compute(Connection connection) throws SQLException;
     }
 
     // This interface must be used to access the connection so that we can guarantee that only one

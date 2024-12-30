@@ -3,20 +3,16 @@ package org.ngafid.accounts;
 import java.net.*;
 import java.sql.*;
 import javax.net.ssl.HttpsURLConnection;
-import java.nio.charset.StandardCharsets;
 
 import org.ngafid.WebServer;
-import org.ngafid.accounts.AirSyncAuth.AccessToken;
 import org.ngafid.flights.AirSync;
 import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.gson.reflect.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -29,13 +25,13 @@ import java.io.InputStream;
  * Represents an Aircraft that is AirSync compatibile
  */
 public class AirSyncAircraft {
-    private int id;
-    private String tailNumber;
+    private final int id;
+    private final String tailNumber;
     private AirSyncFleet fleet;
-    private static final Gson gson = WebServer.gson;
+    private static final Gson GSON = WebServer.gson;
 
     // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
-    private static LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
+    private static final LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
 
     private static final String TIMESTAMP_UPLOADED = "";
 
@@ -104,7 +100,8 @@ public class AirSyncAircraft {
      *         import time
      */
     public Optional<LocalDateTime> getLastImportTime(Connection connection) throws SQLException {
-        String sql = "SELECT MAX(start_time) FROM uploads AS u JOIN airsync_imports AS imp ON imp.fleet_id = u.fleet_id WHERE imp.tail = ? AND imp.fleet_id = ?";
+        String sql = "SELECT MAX(start_time) FROM uploads AS u " +
+                "JOIN airsync_imports AS imp ON imp.fleet_id = u.fleet_id WHERE imp.tail = ? AND imp.fleet_id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
 
             query.setString(1, this.tailNumber);
@@ -131,7 +128,7 @@ public class AirSyncAircraft {
      *
      * @return a {@link List} of AirSyncImports
      *
-     * @throws an exception if there is a network or dbms issue
+     * @throws IOException an exception if there is a network or dbms issue
      */
     private List<AirSyncImport> getImportsHTTPS(HttpsURLConnection netConnection, AirSyncAuth authentication)
             throws IOException {
@@ -153,7 +150,7 @@ public class AirSyncAircraft {
 
         Type target = new TypeToken<List<AirSyncImport>>() {
         }.getType();
-        List<AirSyncImport> page = gson.fromJson(resp, target);
+        List<AirSyncImport> page = GSON.fromJson(resp, target);
 
         // initialize the imports
         for (AirSyncImport i : page)
@@ -163,27 +160,15 @@ public class AirSyncAircraft {
     }
 
     static class AirSyncAircraftAccountInfo {
-        public String account_token, name;
-
-        public AirSyncAircraftAccountInfo() {
-        }
+        public String accountToken;
+        public String name;
     }
 
     public String getAirSyncFleetName() {
         try {
-            AirSyncAuth authentication = fleet.getAuth();
-            HttpsURLConnection netConnection = (HttpsURLConnection) new URL(
-                    AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft/accounts").openConnection();
-            netConnection.setRequestMethod("GET");
-            netConnection.setDoOutput(true);
-            netConnection.setRequestProperty("Authorization", authentication.bearerString());
+            byte[] respRaw = getBytes();
 
-            byte[] respRaw;
-            try (InputStream is = netConnection.getInputStream()) {
-                respRaw = is.readAllBytes();
-            }
-
-            List<AirSyncAircraftAccountInfo> info = gson.fromJson(new String(respRaw),
+            List<AirSyncAircraftAccountInfo> info = GSON.fromJson(new String(respRaw),
                     new TypeToken<List<AirSyncAircraftAccountInfo>>() {
                     }.getType());
 
@@ -197,6 +182,21 @@ public class AirSyncAircraft {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    private byte[] getBytes() throws IOException {
+        AirSyncAuth authentication = fleet.getAuth();
+        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(
+                AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft/accounts").openConnection();
+        netConnection.setRequestMethod("GET");
+        netConnection.setDoOutput(true);
+        netConnection.setRequestProperty("Authorization", authentication.bearerString());
+
+        byte[] respRaw;
+        try (InputStream is = netConnection.getInputStream()) {
+            respRaw = is.readAllBytes();
+        }
+        return respRaw;
     }
 
     /**

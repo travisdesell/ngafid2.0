@@ -57,7 +57,7 @@ public class DependencyGraph {
         // A list of exceptions that could be created during the execution of this process step.
         ArrayList<Exception> exceptions = new ArrayList<>();
 
-        public DependencyNode(ProcessStep step) {
+        DependencyNode(ProcessStep step) {
             this.step = step;
         }
 
@@ -118,10 +118,10 @@ public class DependencyGraph {
      * Dummy step meant to act as a root node in DAG. This is done by adding all of the columns included in the file as
      * output columns, so all other steps will depend on this.
      **/
-    class DummyStep extends ProcessStep {
+    static class DummyStep extends ProcessStep {
         Set<String> outputColumns = new HashSet<>();
 
-        public DummyStep(FlightBuilder builder) {
+        DummyStep(FlightBuilder builder) {
             // We can pass in null rather than a connection object
             super(null, builder);
             outputColumns.addAll(builder.getDoubleTimeSeriesKeySet());

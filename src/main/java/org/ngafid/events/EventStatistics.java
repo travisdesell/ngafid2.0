@@ -395,7 +395,7 @@ public class EventStatistics {
         private double aggMinSeverity;
         private double aggMaxSeverity;
 
-        public EventRow(String rowName) {
+        EventRow(String rowName) {
             this.rowName = rowName;
         }
 

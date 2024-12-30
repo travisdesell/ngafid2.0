@@ -150,7 +150,7 @@ public class FlightBuilder {
         return addTimeSeries(timeSeries.getName(), timeSeries);
     }
 
-    private final <T> T getSeries(String name, Map<String, T> map) {
+    private <T> T getSeries(String name, Map<String, T> map) {
         T value = map.get(name);
         if (value != null)
             return value;
@@ -168,7 +168,7 @@ public class FlightBuilder {
         return null;
     }
 
-    private final <T> Set<String> getKeySet(Map<String, T> map) {
+    private <T> Set<String> getKeySet(Map<String, T> map) {
         var set = new HashSet<>(map.keySet());
 
         for (Map.Entry<String, Set<String>> alias : getAliases().entrySet()) {

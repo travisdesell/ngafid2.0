@@ -1,10 +1,10 @@
 /**
- *
  * An interface to help keep better track of what flight parameters actually do.
  * In the future, this may be a good place to store meta information about parameters, e.g.:
  * - Parameters that share the same name
  * - Parameters that are not always available
  * - Relationships between parameters
+ *
  * @author <a href = mailto:josh@mail.rit.edu>Josh Karns</a>
  * @author <a href = mailto:apl@mail.rit.edu>Aidan LaBella</a>
  */
@@ -57,8 +57,7 @@ public interface Parameters {
      * This is called velocity instead of speed because the number actually has a direction associated with it,
      * the sign of the number. If it is > 0, then the aircraft is ascending; likewise a negative value means
      * the aircraft is descending.
-     */
-    String VSPD = "VSpd";
+     */ String VSPD = "VSpd";
     String DENSITY_RATIO = "DensityRatio";
     String OAT = "OAT";
     String BARO_A = "BaroA";
@@ -114,9 +113,9 @@ public interface Parameters {
         INDEX("index"),
         RATIO("ratio");
 
-        private String value;
+        private final String value;
 
-        private Unit(String name) {
+        Unit(String name) {
             value = name;
         }
 
@@ -136,28 +135,28 @@ public interface Parameters {
      * @param ALT_B is used as the time reference
      * @param VSPD  not needed for cases where VSpd is drived from AltB
      */
-    String[] STALL_DEPENDENCIES = { PITCH, /* VSPD, */ IAS, BARO_A, OAT, ALT_B };
+    String[] STALL_DEPENDENCIES = {PITCH, /* VSPD, */ IAS, BARO_A, OAT, ALT_B};
 
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      */
-    String[] LOCI_DEPENDENCIES = { HDG, ROLL, TAS_FTMIN };
+    String[] LOCI_DEPENDENCIES = {HDG, ROLL, TAS_FTMIN};
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
-    String[] SPIN_DEPENDENCIES = { IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL };
+    String[] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};
 
     // Params required for HDG TRK diff
-    String[] HDG_TRK_DEPENDENCIES = { HDG, TRK };
+    String[] HDG_TRK_DEPENDENCIES = {HDG, TRK};
 
     // Used to determine average fuel
-    String[] AVG_FUEL_DEPENDENCIES = { TOTAL_FUEL };
+    String[] AVG_FUEL_DEPENDENCIES = {TOTAL_FUEL};
 
-    String[] EVENT_RECOGNITION_COLUMNS = { TOTAL_FUEL };
+    String[] EVENT_RECOGNITION_COLUMNS = {TOTAL_FUEL};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
-    String[] uiMetrics = { ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL };
-    String[] defaultMetrics = { ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM };
+    String[] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
+    String[] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
 
 }

@@ -18,7 +18,7 @@ public class UploadProcessedEmail {
 
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
-    private static enum FlightStatus {
+    private enum FlightStatus {
         OK, ERROR, WARNING
     }
 
@@ -44,11 +44,11 @@ public class UploadProcessedEmail {
 
         TreeSet<String> ttfErrorMessages = new TreeSet<String>();
 
-        public FlightInfo(String filename) {
+        FlightInfo(String filename) {
             this.filename = filename;
         }
 
-        public FlightInfo(String filename, int id, int length) {
+        FlightInfo(String filename, int id, int length) {
             this.filename = filename;
             this.id = id;
             this.length = length;

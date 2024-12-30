@@ -12,11 +12,11 @@ import org.ngafid.flights.calculations.TurnToFinal;
 public class Compression {
 
     private static class TTFFixObjectInputStream extends ObjectInputStream {
-        public TTFFixObjectInputStream() throws IOException {
+        TTFFixObjectInputStream() throws IOException {
             super();
         }
 
-        public TTFFixObjectInputStream(InputStream in) throws IOException {
+        TTFFixObjectInputStream(InputStream in) throws IOException {
             super(in);
         }
 
