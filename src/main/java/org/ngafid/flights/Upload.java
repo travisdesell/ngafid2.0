@@ -30,7 +30,12 @@ import javax.xml.bind.DatatypeConverter;
 public final class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
 
-    protected static final String DEFAULT_COLUMNS = "id, parent_id, fleet_id, uploader_id, filename, identifier, kind, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights ";
+    protected static final String DEFAULT_COLUMNS =
+            "id, parent_id, fleet_id, uploader_id, filename, " +
+            "identifier, kind, number_chunks, uploaded_chunks, " +
+            "chunk_status, md5_hash, size_bytes, bytes_uploaded, " +
+            "status, start_time, end_time, n_valid_flights, " +
+            "n_warning_flights, n_error_flights ";
 
     public enum Kind {
         FILE,
@@ -281,7 +286,7 @@ public final class Upload {
      *
      * @param connection a connection to the database
      * @param uploadId the id of the upload entry in the database
-     * 
+     *
      * @throws SQLException on a database error
      */
     public static Upload getUploadById(Connection connection, int uploadId) throws SQLException {
@@ -360,11 +365,16 @@ public final class Upload {
      * @return the upload object
      * @throws SQLException on a database error
      */
+    // Disable checkstyle for 13 parameters > 10 limit
+    //CHECKSTYLE:OFF
     public static Upload createUpload(Connection connection, int uploaderId, int fleetId, Integer parentId,
             String filename, String identifier, Kind kind, long size, int numberChunks, String md5hash,
             int uploadedChunks, String chunkStatus, String uploadStatus) throws SQLException {
+    //CHECKSTYLE:OFF
         try (PreparedStatement query = connection.prepareStatement(
-                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
+                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, " +
+                        "identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, " +
+                        "uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
             query.setInt(1, uploaderId);
             query.setInt(2, fleetId);
 
@@ -400,7 +410,9 @@ public final class Upload {
                     Upload upload = new Upload(resultSet);
                     return upload;
                 } else {
+                    //CHECKSTYLE:OFF
                     // TODO: maybe need to throw an exception
+                    //CHECKSTYLE:ON
                     return null;
                 }
             }
@@ -571,6 +583,8 @@ public final class Upload {
 
     /**
      * Returns the folder which will contain the zip file corresponding to this upload.
+     *
+     * @return the folder which will contain the zip file corresponding to this upload
      */
     public String getArchiveDirectory() {
         switch (kind) {

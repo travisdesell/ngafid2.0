@@ -31,7 +31,7 @@ public class UserPreferences {
 
 
     public static UserPreferences defaultPreferences(int userId) {
-        return new UserPreferences(userId, 1, defaultMetrics);
+        return new UserPreferences(userId, 1, DEFAULT_METRICS);
     }
 
     public int getDecimalPrecision() {

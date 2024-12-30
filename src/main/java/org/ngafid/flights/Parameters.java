@@ -100,7 +100,7 @@ public interface Parameters {
     /**
      * Units
      */
-    public enum Unit {
+    enum Unit {
         FT("ft"),
         FT_AGL("ft agl"),
         FT_MSL("ft msl"),
@@ -156,7 +156,7 @@ public interface Parameters {
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
-    String[] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
-    String[] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
+    String[] UI_METRICS = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
+    String[] DEFAULT_METRICS = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
 
 }
