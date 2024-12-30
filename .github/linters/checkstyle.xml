@@ -185,7 +185,8 @@
 
     <!-- Checks for class design                         -->
     <!-- See https://checkstyle.org/checks/design/index.html -->
-    <module name="DesignForExtension"/>
+<!--    TODO: Might be good to bring back eventually -->
+<!--    <module name="DesignForExtension"/>-->
     <module name="FinalClass"/>
     <module name="HideUtilityClassConstructor"/>
     <module name="InterfaceIsType"/>
