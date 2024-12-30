@@ -196,7 +196,7 @@ public class FlightTimeLocation {
                 "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
-            stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
+            stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
 
             // if there was a flight processed entry for this flight it was already processed
             try (ResultSet resultSet = stmt.executeQuery()) {
@@ -232,8 +232,8 @@ public class FlightTimeLocation {
 
     public void updateWithEvent(Connection connection, Event event, String startDateTime)
             throws IOException, SQLException {
-        event.updateDatabase(connection, fleetId, flightId, CalculateProximity.adjacencyEventDefinitionId);
-        event.updateStatistics(connection, fleetId, airframeNameId, CalculateProximity.adjacencyEventDefinitionId);
+        event.updateDatabase(connection, fleetId, flightId, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
+        event.updateStatistics(connection, fleetId, airframeNameId, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
 
         double severity = event.getSeverity();
         double duration = event.getDuration();
@@ -242,7 +242,7 @@ public class FlightTimeLocation {
                 "UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), max_severity = GREATEST(max_severity, ?) WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
-            stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
+            stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
             stmt.setDouble(4, duration);
             stmt.setDouble(5, duration);
             stmt.setDouble(6, duration);
@@ -253,6 +253,6 @@ public class FlightTimeLocation {
         }
 
         EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId,
-                CalculateProximity.adjacencyEventDefinitionId, startDateTime);
+                CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID, startDateTime);
     }
 }

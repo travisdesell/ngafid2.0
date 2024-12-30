@@ -20,20 +20,24 @@ import org.ngafid.airports.Airports;
 import java.util.List;
 import java.util.logging.*;
 
-public class CalculateProximity {
+public final class CalculateProximity {
     private static final Logger LOG = Logger.getLogger(CalculateProximity.class.getName());
+
+    private CalculateProximity() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     // Proximity events (and potentially other complicated event calculations) will
     // have negative IDs so they
     // can be excluded from the regular event calculation process
-    public static final int adjacencyEventDefinitionId = -1;
+    public static final int ADJACENCY_EVENT_DEFINITION_ID = -1;
 
     // use this to get a representation of a flight's current time, position and
     // altitude
 
-    public static long timeMatchFlights = 0;
-    public static long locMatchFlights = 0;
-    public static long eventsFound = 0;
+    private static long timeMatchFlights = 0;
+    private static long locMatchFlights = 0;
+    private static long eventsFound = 0;
 
     public static double calculateDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude,
             double otherFlightLongitude, double flightAltitude, double otherFlightAltitude) {
@@ -172,7 +176,7 @@ public class CalculateProximity {
                 "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
-            stmt.setInt(3, adjacencyEventDefinitionId);
+            stmt.setInt(3, ADJACENCY_EVENT_DEFINITION_ID);
             // LOG.info(stmt.toString());
             stmt.executeUpdate();
         }
@@ -191,13 +195,13 @@ public class CalculateProximity {
         double minDuration = Double.MAX_VALUE;
         double maxDuration = -Double.MAX_VALUE;
         for (Event event : eventList) {
-            event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
+            event.updateDatabase(connection, fleetId, flightId, ADJACENCY_EVENT_DEFINITION_ID);
             if (event.getStartTime() != null) {
                 EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId,
-                        adjacencyEventDefinitionId, event.getStartTime(), event.getSeverity(), event.getDuration());
+                        ADJACENCY_EVENT_DEFINITION_ID, event.getStartTime(), event.getSeverity(), event.getDuration());
             } else if (event.getEndTime() != null) {
                 EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId,
-                        adjacencyEventDefinitionId, event.getEndTime(), event.getSeverity(), event.getDuration());
+                        ADJACENCY_EVENT_DEFINITION_ID, event.getEndTime(), event.getSeverity(), event.getDuration());
             } else {
                 LOG.info("WARNING: could not update event statistics for event: " + event);
                 LOG.info("WARNING: event start and end time were both null.");
@@ -208,14 +212,21 @@ public class CalculateProximity {
             sumDuration += currentDuration;
             sumSeverity += currentSeverity;
 
-            if (currentSeverity > maxSeverity)
+            if (currentSeverity > maxSeverity) {
                 maxSeverity = currentSeverity;
-            if (currentSeverity < minSeverity)
+            }
+
+            if (currentSeverity < minSeverity) {
                 minSeverity = currentSeverity;
-            if (currentDuration > maxDuration)
+            }
+
+            if (currentDuration > maxDuration) {
                 maxDuration = currentDuration;
-            if (currentDuration < minDuration)
+            }
+
+            if (currentDuration < minDuration) {
                 minDuration = currentDuration;
+            }
         }
 
         if (!eventList.isEmpty()) {
@@ -223,7 +234,7 @@ public class CalculateProximity {
                     "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
-                stmt.setInt(3, adjacencyEventDefinitionId);
+                stmt.setInt(3, ADJACENCY_EVENT_DEFINITION_ID);
                 stmt.setInt(4, eventList.size());
                 stmt.setDouble(5, sumDuration);
                 stmt.setDouble(6, minDuration);
@@ -235,7 +246,7 @@ public class CalculateProximity {
                 stmt.executeUpdate();
             }
 
-            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, adjacencyEventDefinitionId,
+            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, ADJACENCY_EVENT_DEFINITION_ID,
                     flight.getStartDateTime());
 
         } else {
@@ -243,13 +254,13 @@ public class CalculateProximity {
                     "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
-                stmt.setInt(3, adjacencyEventDefinitionId);
+                stmt.setInt(3, ADJACENCY_EVENT_DEFINITION_ID);
                 // LOG.info(stmt.toString());
                 stmt.executeUpdate();
             }
 
             EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId,
-                    adjacencyEventDefinitionId, flight.getStartDateTime());
+                    ADJACENCY_EVENT_DEFINITION_ID, flight.getStartDateTime());
         }
     }
 
@@ -511,7 +522,7 @@ public class CalculateProximity {
         ArrayList<Flight> flights = Flight.getFlights(connection,
                 "upload_id = " + uploadId
                         + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = "
-                        + adjacencyEventDefinitionId + " AND flight_processed.flight_id = flights.id)");
+                        + ADJACENCY_EVENT_DEFINITION_ID + " AND flight_processed.flight_id = flights.id)");
 
         int count = 0;
         for (Flight flight : flights) {
@@ -549,7 +560,7 @@ public class CalculateProximity {
 
                 ArrayList<Flight> flights = Flight.getFlights(connection,
                         "NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = "
-                                + adjacencyEventDefinitionId + " AND flight_processed.flight_id = flights.id)",
+                                + ADJACENCY_EVENT_DEFINITION_ID + " AND flight_processed.flight_id = flights.id)",
                         flightsPerQuery);
 
                 int count = 0;
