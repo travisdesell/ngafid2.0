@@ -1,27 +1,15 @@
 package org.ngafid.terrain;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-
-import javax.imageio.ImageIO;
-
-import java.io.IOException;
-
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.NoSuchFileException;
 
 
 public class TerrainCache {
 
-    static SRTMTile[][] tiles = new SRTMTile[180][360];
-
+    private static final SRTMTile[][] TILES = new SRTMTile[180][360];
     public static final String TERRAIN_DIRECTORY;
 
     static {
-       // TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
+        // TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
         if (System.getenv("TERRAIN_DIRECTORY") == null) {
             System.err.println("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -32,7 +20,11 @@ public class TerrainCache {
         TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
         //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
     }
-    
+
+    private TerrainCache() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
 
     //each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
     //the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
@@ -40,7 +32,7 @@ public class TerrainCache {
     public static String getDirectoryFromLatLon(int latitude, int longitude) {
         String directory = "";
         if (latitude < 0) {
-            directory  += 'S';
+            directory += 'S';
             latitude *= -1;
         }
 
@@ -52,7 +44,7 @@ public class TerrainCache {
         // System.out.println("iLatitude: " + ilatitude + ", iLongitude: " + ilongitude);
 
         //note that ascii 65 == 'A'
-        directory += Character.toString((char)(65 + ilatitude)) + ilongitude;
+        directory += Character.toString((char) (65 + ilatitude)) + ilongitude;
 
         return directory;
     }
@@ -67,17 +59,16 @@ public class TerrainCache {
         int ilatitude = Math.abs(latitude);
         int ilongitude = Math.abs(longitude);
 
-        String strLongitude = Integer.toString(ilongitude);
-        while (strLongitude.length() < 3) strLongitude = "0" + strLongitude;
+        StringBuilder strLongitude = new StringBuilder(Integer.toString(ilongitude));
+        while (strLongitude.length() < 3) strLongitude.insert(0, "0");
 
-        String file = ns + ilatitude + ew + strLongitude + ".hgt";
-        return file;
+        return ns + ilatitude + ew + strLongitude + ".hgt";
     }
 
     public static int getAltitudeFt(double msl, double latitude, double longitude) throws NoSuchFileException {
         //cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
-        int latIndex = -((int)Math.ceil(latitude) - 91);
-        int lonIndex = (int)Math.floor(longitude) + 180;
+        int latIndex = -((int) Math.ceil(latitude) - 91);
+        int lonIndex = (int) Math.floor(longitude) + 180;
 
         //System.out.println("lat_index: " + latIndex + ", lon_index: " + lonIndex);
 
@@ -89,19 +80,19 @@ public class TerrainCache {
             System.exit(1);
         }
 
-        SRTMTile tile = tiles[latIndex][lonIndex];
+        SRTMTile tile = TILES[latIndex][lonIndex];
 
         if (tile == null) {
             // System.out.println("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
             tile = new SRTMTile(90 - latIndex, lonIndex - 180);
-            tiles[latIndex][lonIndex] = tile;
+            TILES[latIndex][lonIndex] = tile;
         }
 
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
 
         //System.out.println("msl: " + msl + ", terrain: " + altitudeFt + ", agl: " + Math.max(0.0, msl - altitudeFt));
         //return (int)altitudeFt;
-        return (int)Math.max(0, msl - altitudeFt);
+        return (int) Math.max(0, msl - altitudeFt);
 
     }
 
