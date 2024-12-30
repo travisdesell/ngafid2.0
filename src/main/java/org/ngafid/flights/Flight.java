@@ -370,7 +370,7 @@ public class Flight {
      * the total number of flights in the NGAFID
      *
      * @param connection is the database connection
-     * @param is         the filter to select the flights, can be null.
+     * @param filter     the filter to select the flights, can be null.
      * @return the number of flights, given the specified filter (or no filter if
      *         the filter is null).
      */
@@ -385,7 +385,7 @@ public class Flight {
      *
      * @param connection is the database connection
      * @param fleetId    is the id of the fleet, <= 0 will select for all fleets
-     * @param is         the filter to select the flights, can be null.
+     * @param filter     the filter to select the flights, can be null.
      * @return the number of flights for the fleet, given the specified filter (or
      *         no filter if the filter is null).
      */
@@ -478,7 +478,7 @@ public class Flight {
      * Gets the total number flight seconds NGAFID.
      *
      * @param connection is the database connection
-     * @param is         the filter to select the flights, can be null.
+     * @param filter     the filter to select the flights, can be null.
      * @return the number of flight hours for the fleet, given the specified filter
      *         (or no filter if the filter is null).
      */
@@ -494,7 +494,7 @@ public class Flight {
      * @param connection is the database connection
      * @param fleetId    is the id of the fleet, if <= 0 it will be for the entire
      *                   NGAFID
-     * @param is         the filter to select the flights, can be null.
+     * @param filter     the filter to select the flights, can be null.
      * @return the number of flight hours for the fleet, given the specified filter
      *         (or no filter if the filter is null).
      */
@@ -1974,7 +1974,7 @@ public class Flight {
 
                 // System.out.println(latitude + ", " + longitude + ", null, null, null, null");
             } else {
-                nearestAirportTS.add(airport.iataCode);
+                nearestAirportTS.add(airport.getIataCode());
                 airportDistanceTS.add(airportDistance.get());
 
                 MutableDouble runwayDistance = new MutableDouble();

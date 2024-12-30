@@ -370,7 +370,7 @@ public class TurnToFinal implements Serializable {
                 locProbabilityArray = locProbability.sliceCopy(from, to);
 
             TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
-                    flight.getAirframeType(), runway, airport.iataCode, flight.getStartDateTime(), runwayAltitude,
+                    flight.getAirframeType(), runway, airport.getIataCode(), flight.getStartDateTime(), runwayAltitude,
                     altTimeSeries.sliceCopy(from, to),
                     altMSLTimeSeries.sliceCopy(from, to),
                     rollTimeSeries.sliceCopy(from, to),

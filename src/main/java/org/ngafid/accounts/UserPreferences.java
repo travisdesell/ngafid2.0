@@ -5,15 +5,17 @@ import java.util.List;
 import static org.ngafid.flights.Parameters.*;
 
 public class UserPreferences {
-    private int userId, decimalPrecision;
-    private List<String> flightMetrics;
+    private final List<String> flightMetrics;
+    private final int userId;
+    private int decimalPrecision;
 
     /**
      * Constructor
      *
      * @param userId the users id
      * @param decimalPrecision the precision to display for all metrics in the UI
-     * @param metrics a comma separated list of parameters the user wishes to see when they analyze flight data UI-side
+     * @param flightMetrics a comma separated list of parameters the user wishes
+     *                      to see when they analyze flight data UI-side
      */
     public UserPreferences(int userId, int decimalPrecision, List<String> flightMetrics) {
         this.userId = userId;
@@ -21,7 +23,7 @@ public class UserPreferences {
         this.flightMetrics = flightMetrics;
     }
 
-    public UserPreferences(int userId, int decimalPrecision, String [] metrics) {
+    public UserPreferences(int userId, int decimalPrecision, String[] metrics) {
         this.userId = userId;
         this.decimalPrecision = decimalPrecision;
         this.flightMetrics = List.of(metrics);
@@ -40,11 +42,11 @@ public class UserPreferences {
         return this.flightMetrics;
     }
     
-    public boolean update(int decimalPrecision) {
+    public boolean update(int newDecimalPrecision) {
         boolean wasUpdated = false;
 
-        if (decimalPrecision != this.decimalPrecision) {
-            this.decimalPrecision = decimalPrecision;
+        if (newDecimalPrecision != this.decimalPrecision) {
+            this.decimalPrecision = newDecimalPrecision;
             wasUpdated = true;
         }
 

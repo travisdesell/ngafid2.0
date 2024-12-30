@@ -151,7 +151,7 @@ public class Itinerary {
             for (Runway rw : airport.getRunways())
                 if (rw.hasCoordinates)
                     rws.add(rw);
-            runways.put(airport.iataCode, rws);
+            runways.put(airport.getIataCode(), rws);
         }
 
         return runways;

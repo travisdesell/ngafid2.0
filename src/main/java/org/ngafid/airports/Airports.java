@@ -77,11 +77,8 @@ public class Airports {
 
                 Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
 
-                ArrayList<Airport> hashedAirports = geoHashToAirport.get(airport.geoHash);
-                if (hashedAirports == null) {
-                    hashedAirports = new ArrayList<Airport>();
-                    geoHashToAirport.put(airport.geoHash, hashedAirports);
-                }
+                ArrayList<Airport> hashedAirports = geoHashToAirport.computeIfAbsent
+                        (airport.getGeoHash(), k -> new ArrayList<>());
                 hashedAirports.add(airport);
 
                 if (siteNumberToAirport.get(siteNumber) != null) {
@@ -90,8 +87,8 @@ public class Airports {
                     System.exit(1);
 
                 }
-                siteNumberToAirport.put(airport.siteNumber, airport);
-                iataToAirport.put(airport.iataCode, airport);
+                siteNumberToAirport.put(airport.getSiteNumber(), airport);
+                iataToAirport.put(airport.getIataCode(), airport);
 
                 if (hashedAirports.size() > maxHashSize)
                     maxHashSize = hashedAirports.size();
@@ -231,8 +228,8 @@ public class Airports {
                 // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
                 for (int j = 0; j < hashedAirports.size(); j++) {
                     Airport airport = hashedAirports.get(j);
-                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude,
-                            airport.longitude);
+                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.getLatitude(),
+                            airport.getLongitude());
                     // LOG.info("\t\t" + airport + ", distanceFt: " + distanceFt);
 
                     if (distanceFt < minDistance) {

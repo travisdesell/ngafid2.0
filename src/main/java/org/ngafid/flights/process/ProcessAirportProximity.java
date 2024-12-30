@@ -75,7 +75,7 @@ public class ProcessAirportProximity extends ProcessStep {
                 nearestRunwayTS.add("");
                 runwayDistanceTS.add(Double.NaN);
             } else {
-                nearestAirportTS.add(airport.iataCode);
+                nearestAirportTS.add(airport.getIataCode());
                 airportDistanceTS.add(airportDistance.get());
 
                 MutableDouble runwayDistance = new MutableDouble();

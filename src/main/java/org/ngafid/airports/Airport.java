@@ -8,14 +8,14 @@ import com.google.gson.JsonElement;
 import org.ngafid.common.MutableDouble;
 
 public class Airport {
-    public final String iataCode;
-    public final String siteNumber;
-    public final String type;
+    private final String iataCode;
+    private final String siteNumber;
+    private final String type;
 
-    public final double latitude;
-    public final double longitude;
+    private final double latitude;
+    private final double longitude;
 
-    public final String geoHash;
+    private final String geoHash;
 
     private HashMap<String, Runway> runways;
 
@@ -72,7 +72,7 @@ public class Airport {
     }
 
     public boolean hasRunways() {
-        return runways.size() > 0;
+        return !runways.isEmpty();
     }
 
     public JsonElement jsonify(Gson gson) {
@@ -81,5 +81,25 @@ public class Airport {
         JsonElement je = gson.toJsonTree(this);
         this.runways = runways;
         return je;
+    }
+
+    public String getIataCode() {
+        return iataCode;
+    }
+
+    public String getGeoHash() {
+        return geoHash;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public String getSiteNumber() {
+        return siteNumber;
     }
 }
