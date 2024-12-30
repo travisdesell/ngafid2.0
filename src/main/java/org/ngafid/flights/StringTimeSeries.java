@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-public class StringTimeSeries {
+public final class StringTimeSeries {
 
     public static class StringSeriesName extends NormalizedColumn<StringSeriesName> {
         public StringSeriesName(String name) {
