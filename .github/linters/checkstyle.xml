@@ -47,10 +47,6 @@
   <!-- See https://checkstyle.org/filefilters/index.html -->
   <module name="BeforeExecutionExclusionFileFilter">
     <property name="fileNamePattern" value="module\-info\.java$"/>
-<!--    TODO: Remove once new routes are merged -->
-    <property name="fileNamePattern" value="^Get.*$"/>
-    <property name="fileNamePattern" value="^Post.*$"/>
-    <property name="fileNamePattern" value="^Update.*$"/>
   </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
