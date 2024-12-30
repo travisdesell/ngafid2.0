@@ -3,7 +3,6 @@ package org.ngafid.proximity;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import org.ngafid.Database;
 import org.ngafid.events.EventMetaData;
@@ -13,15 +12,19 @@ import org.ngafid.flights.DoubleTimeSeries;
  * CalculateProximityEventMetaData
  */
 public class CalculateProximityEventMetaData {
+    private CalculateProximityEventMetaData() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     public static void main(String[] args) {
 
         try (Connection connection = Database.getConnection()) {
 
             String queryString = "SELECT e.flight_id as flight_id, e.other_flight_id as otherFlightId," +
-                    " e.start_line as startLine, e.end_line as endLine, e.id as eventId, e.severity as severity FROM events AS e "
-                    +
-                    " WHERE e.event_definition_id = -1 AND e.severity > 0 AND e.id NOT IN (SELECT event_id FROM event_metadata)";
+                    " e.start_line as startLine, e.end_line as endLine, " +
+                    "e.id as eventId, e.severity as severity FROM events AS e " +
+                    " WHERE e.event_definition_id = -1 AND e.severity > 0 " +
+                    "AND e.id NOT IN (SELECT event_id FROM event_metadata)";
 
             PreparedStatement statement = connection.prepareStatement(queryString);
             ResultSet resultSet = statement.executeQuery();
@@ -69,17 +72,17 @@ public class CalculateProximityEventMetaData {
                     DoubleTimeSeries otherIndicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection,
                             otherFlightId, "IAS");
 
-                    double latitude[] = latitudeSeries.innerArray();
-                    double longitude[] = longitudeSeries.innerArray();
-                    double altMSL[] = altMSLSeries.innerArray();
-                    double altAGL[] = altAglSeries.innerArray();
-                    double indicatedAirSpeed[] = indicatedAirspeedSeries.innerArray();
+                    double[] latitude = latitudeSeries.innerArray();
+                    double[] longitude = longitudeSeries.innerArray();
+                    double[] altMSL = altMSLSeries.innerArray();
+                    double[] altAGL = altAglSeries.innerArray();
+                    double[] indicatedAirSpeed = indicatedAirspeedSeries.innerArray();
 
-                    double otherLatitude[] = otherLatitudeSeries.innerArray();
-                    double otherLongitude[] = otherLongitudeSeries.innerArray();
-                    double otherAltMSL[] = otherAltMSLSeries.innerArray();
-                    double otherAltAgl[] = otherAltAglSeries.innerArray();
-                    double otherIndicatedAirSpeed[] = otherIndicatedAirspeedSeries.innerArray();
+                    double[] otherLatitude = otherLatitudeSeries.innerArray();
+                    double[] otherLongitude = otherLongitudeSeries.innerArray();
+                    double[] otherAltMSL = otherAltMSLSeries.innerArray();
+                    double[] otherAltAgl = otherAltAglSeries.innerArray();
+                    double[] otherIndicatedAirSpeed = otherIndicatedAirspeedSeries.innerArray();
 
                     double lateralDistance = CalculateProximity.calculateLateralDistance(latitude[startLine],
                             longitude[startLine], otherLatitude[otherStartLine], otherLongitude[otherEndLine]);
