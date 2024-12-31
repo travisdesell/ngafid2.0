@@ -14,8 +14,8 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
 public class ProcessAltAGL extends ProcessStep {
-    private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);
-    private static Set<String> OUTPUT_COLUMNS = Set.of(ALT_AGL);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);
+    private static final Set<String> OUTPUT_COLUMNS = Set.of(ALT_AGL);
 
     public ProcessAltAGL(Connection connection, FlightBuilder builder) {
         super(connection, builder);

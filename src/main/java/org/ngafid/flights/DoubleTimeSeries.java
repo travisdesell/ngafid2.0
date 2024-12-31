@@ -24,7 +24,8 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
-    private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
+    private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, " +
+            "ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
     public static class DoubleSeriesName extends NormalizedColumn<DoubleSeriesName> {
         public DoubleSeriesName(String name) {
@@ -220,7 +221,8 @@ public class DoubleTimeSeries {
     }
 
     public static Pair<Double, Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
-        String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
+        String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN " +
+                "double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, flightId);
@@ -265,7 +267,8 @@ public class DoubleTimeSeries {
     public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId)
             throws SQLException, IOException {
         try (PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
-                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on " +
+                "dsn.id = ds.name_id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
             query.setInt(1, flightId);
 
             ArrayList<DoubleTimeSeries> allSeries = new ArrayList<DoubleTimeSeries>();
@@ -294,7 +297,8 @@ public class DoubleTimeSeries {
     public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name)
             throws IOException, SQLException {
         try (PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
-                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?")) {
+                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = " +
+                "ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?")) {
             query.setInt(1, flightId);
             query.setString(2, name);
 
@@ -352,7 +356,7 @@ public class DoubleTimeSeries {
 
     /**
      * Gets the minimum value of the DoubleTimeSeries.
-     * 
+     *
      * @return the minimum value of the DoubleTimeSeries
      */
     public double getMin() {
@@ -361,7 +365,7 @@ public class DoubleTimeSeries {
 
     /**
      * Gets the maximum value of the DoubleTimeSeries.
-     * 
+     *
      * @return the maximum value of the DoubleTimeSeries
      */
     public double getMax() {
@@ -370,7 +374,7 @@ public class DoubleTimeSeries {
 
     /**
      * Gets the average value of the DoubleTimeSeries.
-     * 
+     *
      * @return the average value of the DoubleTimeSeries
      */
     public double getAvg() {
@@ -450,15 +454,16 @@ public class DoubleTimeSeries {
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement(
-                "INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                "INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, " +
+                        "min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     }
 
-    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)
+    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightIdAdded)
             throws SQLException, IOException {
         setTypeId(connection);
         setNameId(connection);
 
-        preparedStatement.setInt(1, flightId);
+        preparedStatement.setInt(1, flightIdAdded);
         preparedStatement.setInt(2, name.getId());
         preparedStatement.setInt(3, dataType.getId());
 
@@ -499,7 +504,8 @@ public class DoubleTimeSeries {
         setNameId(connection);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(
-                "INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO double_series (flight_id, name_id, data_type_id, length, " +
+                        "valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             this.addBatch(connection, preparedStatement, flightId);
             preparedStatement.executeBatch();
         }
@@ -528,16 +534,16 @@ public class DoubleTimeSeries {
 
     /**
      * Lags a timeseries N indicies
+     *
+     * @param connection the connection to the database
+     * @param n          the number of indicies to lag
+     * @return the lagged timeseries
      */
     public DoubleTimeSeries lag(Connection connection, int n) throws IOException, SQLException {
         Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(connection, this.flightId,
                 this.name.getName(), n);
 
-        if (existingSeries.isPresent()) {
-            return existingSeries.get();
-        } else {
-            return lag(n);
-        }
+        return existingSeries.orElseGet(() -> lag(n));
     }
 
     public DoubleTimeSeries lag(int n) {

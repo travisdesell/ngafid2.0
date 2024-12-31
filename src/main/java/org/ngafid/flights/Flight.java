@@ -1738,7 +1738,8 @@ public class Flight {
 
                 hasAGL = false;
                 throw new MalformedFlightFileException(
-                        "Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
+                        "Could not calculate AGL for this flight as it had latitudes/longitudes " +
+                                "outside of the United States.");
             }
 
         }
@@ -2000,8 +2001,7 @@ public class Flight {
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             // first check and see if the airframe and tail number already exist in the
-            // database for this
-            // flight
+            // database for this flight
             airframe = new Airframes.Airframe(connection, airframe.getName());
             airframeType = new Airframes.AirframeType(connection, airframeType.getName());
             Airframes.setAirframeFleet(connection, airframe.getId(), fleetId);
