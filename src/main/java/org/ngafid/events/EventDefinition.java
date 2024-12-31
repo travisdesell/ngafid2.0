@@ -22,7 +22,8 @@ public class EventDefinition {
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
-    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type";
+    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, " +
+            "condition_json, column_names, severity_column_names, severity_type";
 
     public static final int MIN_SEVERITY = 1;
     public static final int MAX_SEVERITY = 2;
@@ -487,8 +488,17 @@ public class EventDefinition {
 
     /**
      * Updates an existing event definition into the database.
-     *
      * @param connection is the connection to the database.
+     * @param fleetId the fleet id
+     * @param eventId the event id
+     * @param name the name
+     * @param startBuffer the start buffer
+     * @param stopBuffer the stop buffer
+     * @param airframe the airframe
+     * @param filterJson the filter json
+     * @param severityColumnNamesJson the severity column names json of the event definition
+     * @param severityType the severity type
+     * @throws SQLException if there is an error with the SQL query
      */
     public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
             int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson, String severityType)
@@ -508,6 +518,21 @@ public class EventDefinition {
      *
      * @param connection is the connection to the database.
      */
+
+    /**
+     * Updates an existing event definition into the database.
+     * @param connection is the connection to the database.
+     * @param fleetId the fleet id
+     * @param eventId the event id
+     * @param name the name
+     * @param startBuffer the start buffer
+     * @param stopBuffer the stop buffer
+     * @param airframeNameID the airframe id
+     * @param filterJson the filter json
+     * @param severityColumnNamesJson the severity column names json
+     * @param severityType the severity type
+     * @throws SQLException if there is an error with the SQL query
+     */
     public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
             int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson, String severityType)
             throws SQLException {
@@ -520,7 +545,9 @@ public class EventDefinition {
             columnNamesJson = severityColumnNamesJson;
         }
 
-        String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
+        String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, " +
+                "airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? " +
+                "WHERE id = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
@@ -542,8 +569,8 @@ public class EventDefinition {
     /**
      * Have an event definition update itself in the database.
      * 
-     * @param connection
-     * @throws SQLException
+     * @param connection is the connection to the database.
+     * @throws SQLException if there is an error with the SQL query
      */
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
@@ -563,7 +590,9 @@ public class EventDefinition {
         TreeSet<String> columnNames = filter.getColumnNames();
 
         if (airframe.equals("All Airframes")) {
-            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
+            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, " +
+                    "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?," +
+                    " severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, fleetId);
@@ -581,7 +610,9 @@ public class EventDefinition {
             }
         } else {
             int airframeNameId = new Airframes.Airframe(connection, airframe).getId();
-            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
+            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, " +
+                    "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?," +
+                    " severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, fleetId);
@@ -605,6 +636,12 @@ public class EventDefinition {
      * This is meant for special events (those that have a negative ID).
      *
      * @param connection is the connection to the database.
+     * @param id the id of the event definition
+     * @param name the name of the event definition
+     * @param startBuffer the start buffer
+     * @param stopBuffer the stop buffer
+     * @param airframeId the airframe id
+     * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(Connection connection, int id, String name, int startBuffer, int stopBuffer,
             int airframeId) throws SQLException {
@@ -613,7 +650,9 @@ public class EventDefinition {
             System.exit(0);
         }
 
-        String query = "INSERT INTO event_definitions SET fleet_id = ?, flight_id = 0, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?, id = ?";
+        String query = "INSERT INTO event_definitions SET fleet_id = ?, flight_id = 0, name = ?, " +
+                "start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?," +
+                "severity_column_names = ?, severity_type = ?, id = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, 0);
@@ -643,7 +682,8 @@ public class EventDefinition {
      */
     public static ArrayList<EventDefinition> getAll(Connection connection, String extraQuery, Object[] extraParameters)
             throws SQLException {
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE "
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json," +
+                " column_names, severity_column_names, severity_type FROM event_definitions WHERE "
                 + extraQuery;
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -680,7 +720,8 @@ public class EventDefinition {
      * @return an array list of all event definitions in the database.
      */
     public static ArrayList<EventDefinition> getAll(Connection connection) throws SQLException {
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, " +
+                "column_names, severity_column_names, severity_type FROM event_definitions";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query);
                 ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -705,7 +746,8 @@ public class EventDefinition {
      */
     public static ArrayList<String> getUniqueNames(Connection connection, int fleetId) throws SQLException {
         // add all the generic event names
-        String query = "SELECT DISTINCT(name) FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?)";
+        String query = "SELECT DISTINCT(name) FROM event_definitions WHERE (event_definitions.fleet_id = 0 " +
+                "OR event_definitions.fleet_id = ?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
@@ -758,7 +800,8 @@ public class EventDefinition {
         // add all the generic event names
         ArrayList<String> allNames = new ArrayList<>();
 
-        String query = "SELECT name FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?) AND event_definitions.airframe_id = 0";
+        String query = "SELECT name FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR " +
+                "event_definitions.fleet_id = ?) AND event_definitions.airframe_id = 0";
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
 
@@ -771,7 +814,8 @@ public class EventDefinition {
         }
 
         // add all the event names with the airframe they are for
-        query = "SELECT name, airframe FROM event_definitions, airframes WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?) AND airframes.id = event_definitions.airframe_id";
+        query = "SELECT name, airframe FROM event_definitions, airframes WHERE (event_definitions.fleet_id = 0 OR " +
+                "event_definitions.fleet_id = ?) AND airframes.id = event_definitions.airframe_id";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
