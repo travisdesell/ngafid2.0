@@ -1,23 +1,25 @@
 package org.ngafid.accounts;
 
-import java.util.*;
-import java.util.logging.Logger;
-
 import org.ngafid.Database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
 
 public enum EmailType {
 
     // -------------------------------------------------------------------------------------------------------------
 
     /*
-     * 
+     *
      * USAGE:
-     * 
+     *
      * 1. Ensure that you have generated the 'email_preferences' table with 'php
      * db/create_tables.php'
      * 2. Add email types here! (Try to keep the constants and string values the
@@ -25,7 +27,7 @@ public enum EmailType {
      * 3. Then generate your new types with 'sh run/generate_email_types.sh'
      * 4. [Optional] If you have outdated types to remove, instead use 'sh
      * run/generate_email_types_and_remove.sh'
-     * 
+     *
      */
     UPLOAD_PROCESS_START("upload_process_start"),
     IMPORT_PROCESSED_RECEIPT("import_processed_receipt"),
@@ -35,7 +37,7 @@ public enum EmailType {
      * Admin email types, only visible to admins.
      * Types containing the string 'ADMIN' (case-sensitive) will not be displayed to
      * non-admin users.
-     * 
+     *
      * Because the email types will default to true anyways, never try to use the
      * values of these
      * to detect whether or not a user is an admin.
@@ -55,7 +57,7 @@ public enum EmailType {
 
     /*
      * Default value of the removal flag for old email types.
-     * 
+     *
      * Use 'sh run/generate_email_types_and_remove.sh' to temporarily override this
      * value
      * rather than changing it here.
@@ -68,13 +70,13 @@ public enum EmailType {
 
     // Track the most recent/up-to-date keys for the email types fetched from the
     // database
-    private final static HashSet<String> emailTypeKeysRecent = new HashSet<>();
+    private static final HashSet<String> EMAIL_TYPE_KEYS_RECENT = new HashSet<>();
 
     // Store number of email types
-    private final static int emailTypeCount = values().length;
-    private final static int emailTypeNonForcedCount;
+    private static final int EMAIL_TYPE_COUNT = values().length;
+    private static final int EMAIL_TYPE_NON_FORCED_COUNT;
 
-    private static Logger LOG = Logger.getLogger(EmailType.class.getName());
+    private static final Logger LOG = Logger.getLogger(EmailType.class.getName());
 
     static {
 
@@ -84,10 +86,10 @@ public enum EmailType {
                 emailTypeNonForcedCounter++;
             }
         }
-        emailTypeNonForcedCount = emailTypeNonForcedCounter;
+        EMAIL_TYPE_NON_FORCED_COUNT = emailTypeNonForcedCounter;
 
         LOG.info("EmailType class loaded...");
-        LOG.info("Detected " + emailTypeCount + " email types");
+        LOG.info("Detected " + EMAIL_TYPE_COUNT + " email types");
     }
 
     EmailType(String type) {
@@ -100,11 +102,11 @@ public enum EmailType {
     }
 
     public static int getEmailTypeCount() {
-        return emailTypeCount;
+        return EMAIL_TYPE_COUNT;
     }
 
     public static int getEmailTypeCountNonForced() {
-        return emailTypeNonForcedCount;
+        return EMAIL_TYPE_NON_FORCED_COUNT;
     }
 
     public static EmailType[] getAllTypes() {
@@ -117,8 +119,8 @@ public enum EmailType {
         if (doRefresh)
             refreshEmailTypeKeysRecent();
 
-        String[] keysOut = new String[emailTypeKeysRecent.size()];
-        return emailTypeKeysRecent.toArray(keysOut);
+        String[] keysOut = new String[EMAIL_TYPE_KEYS_RECENT.size()];
+        return EMAIL_TYPE_KEYS_RECENT.toArray(keysOut);
     }
 
     public static boolean isForced(EmailType emailType) {
@@ -137,7 +139,7 @@ public enum EmailType {
          */
 
         // Clear the recent email type keys
-        emailTypeKeysRecent.clear();
+        EMAIL_TYPE_KEYS_RECENT.clear();
 
         // Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
@@ -167,7 +169,7 @@ public enum EmailType {
             }
 
             String emailTypeKey = emailType.getType();
-            emailTypeKeysRecent.add(emailTypeKey);
+            EMAIL_TYPE_KEYS_RECENT.add(emailTypeKey);
             emailTypeQueries.add("SELECT id, '" + emailTypeKey + "' FROM user");
 
             LOG.info("Email Type: " + emailTypeKey + " marked for database insertion...");
@@ -180,7 +182,7 @@ public enum EmailType {
 
         try (
                 Connection connection = Database.getConnection();
-                PreparedStatement statement = connection.prepareStatement(query.toString())) {
+                PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.executeUpdate();
             LOG.info("Email Type generation query executed successfully");
@@ -200,7 +202,7 @@ public enum EmailType {
          */
 
         // Clear the recent email type keys
-        emailTypeKeysRecent.clear();
+        EMAIL_TYPE_KEYS_RECENT.clear();
 
         // Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
@@ -229,7 +231,7 @@ public enum EmailType {
             }
 
             String emailTypeKey = emailType.getType();
-            emailTypeKeysRecent.add(emailTypeKey);
+            EMAIL_TYPE_KEYS_RECENT.add(emailTypeKey);
             emailTypeQueries.add("SELECT '" + userIDTarget + "', '" + emailTypeKey + "' FROM user");
 
             LOG.info("Email Type: " + emailTypeKey + " marked for database insertion...");
@@ -241,7 +243,7 @@ public enum EmailType {
                 + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)";
 
         try (
-                PreparedStatement statement = connection.prepareStatement(query.toString())) {
+                PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.executeUpdate();
             LOG.info("Email Type generation query executed successfully");
@@ -285,7 +287,6 @@ public enum EmailType {
 
             e.printStackTrace();
             LOG.severe("Error removing old Email Types: " + e.getMessage());
-            return;
 
         }
 
@@ -294,7 +295,7 @@ public enum EmailType {
     private static void refreshEmailTypeKeysRecent() {
 
         // Clear the recent email type keys
-        emailTypeKeysRecent.clear();
+        EMAIL_TYPE_KEYS_RECENT.clear();
 
         // Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
@@ -309,7 +310,7 @@ public enum EmailType {
 
         // Record all email types currently in the database
         for (EmailType emailType : EmailType.values()) {
-            emailTypeKeysRecent.add(emailType.getType());
+            EMAIL_TYPE_KEYS_RECENT.add(emailType.getType());
         }
 
     }
