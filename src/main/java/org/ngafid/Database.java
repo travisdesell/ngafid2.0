@@ -10,7 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class Database {
+public final class Database {
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
     private static HikariDataSource CONNECTION_POOL = null;
@@ -22,6 +22,10 @@ public class Database {
 
     static {
         initializeConnectionPool();
+    }
+
+    private Database() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     /**

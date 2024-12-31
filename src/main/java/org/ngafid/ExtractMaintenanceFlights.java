@@ -69,7 +69,8 @@ public final class ExtractMaintenanceFlights {
                         // this is a record we have not yet seen before
                         RECORDS_BY_WORKORDER.put(record.getWorkorderNumber(), record);
 
-                        if ((record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") || record.getAirframe().equals("SEMI"))) {
+                        if ((record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") ||
+                                record.getAirframe().equals("SEMI"))) {
                             // only add tail numbers from C172, PA28 or PA44
                             TAIL_NUMBERS.add(record.getTailNumber());
                         }

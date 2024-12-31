@@ -20,8 +20,8 @@ import static org.ngafid.flights.Parameters.*;
 
 public final class FindLowEndingFuelEvents {
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
-    private static final Map<Integer, EventDefinition> eventDefs = new HashMap<>();
-    private static final Map<Integer, Double> thresholds = new HashMap<>();
+    private static final Map<Integer, EventDefinition> EVENT_DEFS = new HashMap<>();
+    private static final Map<Integer, Double> THRESHOLDS = new HashMap<>();
 
     private FindLowEndingFuelEvents() {
         throw new UnsupportedOperationException("Utility class not meant to be instantiated");
@@ -47,21 +47,21 @@ public final class FindLowEndingFuelEvents {
             throws IOException, SQLException, FatalFlightFileException, MalformedFlightFileException {
         int airframeNameID = flight.getAirframeNameId();
 
-        if (!eventDefs.containsKey(airframeNameID)) {
+        if (!EVENT_DEFS.containsKey(airframeNameID)) {
             EventDefinition lowEndEventDef = getLowEndFuelDefinition(flight.getAirframeNameId());
 
             if (lowEndEventDef == null) {
                 return;
             }
 
-            eventDefs.put(airframeNameID, lowEndEventDef);
-            thresholds.put(airframeNameID, getThresholdValueFromText(eventDefs.get(airframeNameID).toHumanReadable()));
+            EVENT_DEFS.put(airframeNameID, lowEndEventDef);
+            THRESHOLDS.put(airframeNameID, getThresholdValueFromText(EVENT_DEFS.get(airframeNameID).toHumanReadable()));
         }
 
         LOG.info("Processing flight " + flight.getId());
 
-        EventDefinition eventDef = eventDefs.get(airframeNameID);
-        double threshold = thresholds.get(airframeNameID);
+        EventDefinition eventDef = EVENT_DEFS.get(airframeNameID);
+        double threshold = THRESHOLDS.get(airframeNameID);
 
         flight.checkCalculationParameters(TOTAL_FUEL, AVG_FUEL_DEPENDENCIES);
 
