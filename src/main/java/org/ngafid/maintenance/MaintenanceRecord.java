@@ -84,15 +84,10 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         if (actionATACode != other.actionATACode) mismatches.add("actionATACode");
         if (!originalAction.equals(other.originalAction)) mismatches.add("originalAction");
 
-        if (mismatches.size() == 0) {
-            //System.out.println("Not combining due to identical row.");
-
-        } else if (mismatches.contains("workorderNumber")) {
-            System.err.println("Cannot combine two records with different workorder numbers: " + workorderNumber + " vs " + other.workorderNumber);
+        if (mismatches.contains("workorderNumber")) {
+            System.err.println("Cannot combine two records with different workorder numbers: "
+                    + workorderNumber + " vs " + other.workorderNumber);
             System.exit(1);
-
-        } else {
-            //System.out.println("Two records mismatched on: " + String.join(",", mismatches));
         }
 
         combinedRecords.add(other);

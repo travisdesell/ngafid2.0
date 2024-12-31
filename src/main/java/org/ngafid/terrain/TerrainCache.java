@@ -3,7 +3,7 @@ package org.ngafid.terrain;
 import java.nio.file.NoSuchFileException;
 
 
-public class TerrainCache {
+public final class TerrainCache {
 
     private static final SRTMTile[][] TILES = new SRTMTile[180][360];
     public static final String TERRAIN_DIRECTORY;

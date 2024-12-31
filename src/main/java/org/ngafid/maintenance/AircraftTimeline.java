@@ -62,14 +62,14 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     }
 
 
-    public void setPreviousEvent(MaintenanceRecord record, long daysSincePrevious) {
+    public void setPreviousEvent(MaintenanceRecord record, long newDaysSincePreviousValue) {
         previousEvent = record;
-        this.daysSincePrevious = daysSincePrevious;
+        this.daysSincePrevious = newDaysSincePreviousValue;
     }
 
-    public void setNextEvent(MaintenanceRecord record, long daysToNext) {
+    public void setNextEvent(MaintenanceRecord record, long newDaysToNextValue) {
         nextEvent = record;
-        this.daysToNext = daysToNext;
+        this.daysToNext = newDaysToNextValue;
     }
 
     public void setFlightsSincePrevious(int flightsSincePrevious) {

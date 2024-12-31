@@ -11,7 +11,7 @@ import org.ngafid.flights.DoubleTimeSeries;
 /**
  * CalculateProximityEventMetaData
  */
-public class CalculateProximityEventMetaData {
+public final class CalculateProximityEventMetaData {
     private CalculateProximityEventMetaData() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }

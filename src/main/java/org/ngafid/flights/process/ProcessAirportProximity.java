@@ -5,18 +5,16 @@ import java.util.Collections;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.ngafid.airports.*;
-import org.ngafid.common.MutableDouble;
 import org.ngafid.flights.*;
 
 import static org.ngafid.flights.Parameters.*;
 
 public class ProcessAirportProximity extends ProcessStep {
-    private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);
-    private static Set<String> OUTPUT_COLUMNS = Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE,
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);
+    private static final Set<String> OUTPUT_COLUMNS = Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE,
             NEAREST_AIRPORT);
-    private final static double MAX_AIRPORT_DISTANCE_FT = 10000;
-    private final static double MAX_RUNWAY_DISTANCE_FT = 100;
+    private static final double MAX_AIRPORT_DISTANCE_FT = 10000;
+    private static final double MAX_RUNWAY_DISTANCE_FT = 100;
 
     public ProcessAirportProximity(Connection connection, FlightBuilder builder) {
         super(connection, builder);

@@ -10,7 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class CalculateRateOfClosure {
+public final class CalculateRateOfClosure {
     private CalculateRateOfClosure() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }

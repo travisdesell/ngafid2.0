@@ -95,7 +95,7 @@ public abstract class ProcessStep {
 
     // This interface must be used to access the connection so that we can guarantee that only one
     // thread is using it at any given time.
-    final public <T> T withConnection(ConnectionFunctor<T> functor) throws SQLException {
+    public final <T> T withConnection(ConnectionFunctor<T> functor) throws SQLException {
         T value = null;
 
         synchronized (connection) {

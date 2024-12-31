@@ -16,10 +16,11 @@ import org.ngafid.flights.MalformedFlightFileException;
 public class ProcessItinerary extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessItinerary.class.getName());
 
-    private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE,
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE,
             RUNWAY_DISTANCE, GND_SPD, E1_RPM);
-    private static Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
-    private static Set<String> OUTPUT_COLUMNS = Set.of("_itinerary"); // This is a fake column; never actually created.
+    private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
+    // This is a fake column; never actually created.
+    private static final Set<String> OUTPUT_COLUMNS = Set.of("_itinerary");
 
     public ProcessItinerary(Connection connection, FlightBuilder builder) {
         super(connection, builder);
@@ -106,9 +107,9 @@ public class ProcessItinerary extends ProcessStep {
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // setting and determining itinerary type
-        int itinerary_size = itinerary.size();
-        for (int i = 0; i < itinerary_size; i++) {
-            itinerary.get(i).determineType();
+        int itinerarySize = itinerary.size();
+        for (Itinerary value : itinerary) {
+            value.determineType();
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

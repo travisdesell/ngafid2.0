@@ -16,7 +16,7 @@ import org.ngafid.flights.FatalFlightFileException;
 public class ProcessLOCI extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessLOCI.class.getName());
 
-    public static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
 
     public ProcessLOCI(Connection connection, FlightBuilder builder) {
         super(connection, builder);

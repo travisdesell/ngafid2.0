@@ -202,7 +202,8 @@ public final class FlightTimeLocation {
 
     public boolean alreadyProcessed(Connection connection) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
+                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND " +
+                        "flight_id = ? AND event_definition_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
             stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);

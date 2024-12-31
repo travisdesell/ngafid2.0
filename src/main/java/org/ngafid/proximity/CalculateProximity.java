@@ -173,7 +173,8 @@ public final class CalculateProximity {
 
     public static void processFlightWithError(Connection connection, int fleetId, int flightId) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
+                "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?," +
+                        " count = 0, had_error = 1")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
             stmt.setInt(3, ADJACENCY_EVENT_DEFINITION_ID);
@@ -231,7 +232,9 @@ public final class CalculateProximity {
 
         if (!eventList.isEmpty()) {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0")) {
+                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, " +
+                            "count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, " +
+                            "min_severity = ?, max_severity = ?, had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, ADJACENCY_EVENT_DEFINITION_ID);
@@ -251,7 +254,8 @@ public final class CalculateProximity {
 
         } else {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0")) {
+                    "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, " +
+                            "count = 0, had_error = 0")) {
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
                 stmt.setInt(3, ADJACENCY_EVENT_DEFINITION_ID);
@@ -463,7 +467,9 @@ public final class CalculateProximity {
 
                 // if there was an event still going when one flight ended, create it and add it to the list
                 if (startTime != null) {
-                    createEventForFlight(flightId, flightInfo, eventList, startTime, endTime, otherStartTime, otherEndTime, startLine, endLine, otherStartLine, otherEndLine, severity, lateralDistance, verticalDistance, otherFlight, otherInfo);
+                    createEventForFlight(flightId, flightInfo, eventList, startTime, endTime,
+                            otherStartTime, otherEndTime, startLine, endLine, otherStartLine, otherEndLine,
+                            severity, lateralDistance, verticalDistance, otherFlight, otherInfo);
                 }
             } // end the loop processing a particular flight
         } // end the loop processing all flights
@@ -483,6 +489,8 @@ public final class CalculateProximity {
         exportEventsAndStatistics(connection, eventList, flight);
     }
 
+    // Disabling parameters check here
+    //CHECKSTYLE:OFF
     private static void createEventForFlight(int flightId, FlightTimeLocation flightInfo, List<Event> eventList,
                                              String startTime, String endTime,
                                              String otherStartTime, String otherEndTime,
@@ -490,6 +498,7 @@ public final class CalculateProximity {
                                              int otherStartLine, int otherEndLine,
                                              double severity, double lateralDistance, double verticalDistance,
                                              Flight otherFlight, FlightTimeLocation otherInfo) {
+    //CHECKSTYLE:ON
         Event event = new Event(startTime, endTime, startLine, endLine, severity,
                 otherFlight.getId());
         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine,

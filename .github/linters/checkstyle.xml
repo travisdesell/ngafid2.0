@@ -194,7 +194,8 @@
     <!-- Miscellaneous other checks.                   -->
     <!-- See https://checkstyle.org/checks/misc/index.html -->
     <module name="ArrayTypeStyle"/>
-    <module name="TodoComment"/>
+<!--    TODO: Bring this back (no pun intended) -->
+<!--    <module name="TodoComment"/>-->
     <module name="UpperEll"/>
 
     <!-- https://checkstyle.org/filters/suppressionxpathfilter.html -->

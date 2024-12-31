@@ -64,7 +64,8 @@ public class ProcessAltAGL extends ProcessStep {
                 altitudeAGLTS.add(altitudeAGL);
             } catch (NoSuchFileException e) {
                 throw new MalformedFlightFileException(
-                        "Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
+                        "Could not calculate AGL for this flight as it had " +
+                                "latitudes/longitudes outside of the United States.");
             }
         }
 
