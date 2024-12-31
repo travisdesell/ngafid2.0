@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.logging.Logger;
 
+import static org.ngafid.flights.Flight.calculateLOCI;
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
 import org.ngafid.flights.DoubleTimeSeries;
