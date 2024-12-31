@@ -48,7 +48,7 @@ public class Airport {
     }
 
     public void addRunway(Runway runway) {
-        runways.put(runway.name, runway);
+        runways.put(runway.getName(), runway);
     }
 
     public Runway getNearestRunwayWithin(double lat, double lon, double maxDistanceFt,
@@ -57,7 +57,7 @@ public class Airport {
 
         double minDistance = maxDistanceFt;
         for (Runway runway : runways.values()) {
-            if (!runway.hasCoordinates) continue;
+            if (!runway.isHasCoordinates()) continue;
 
             double distanceFt = runway.getDistanceFt(lat, lon);
             //System.err.println("distance between " + lat + ", " + lon + " and " + iataCode + " runway "

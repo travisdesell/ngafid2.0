@@ -1848,7 +1848,7 @@ public class Flight {
                     // System.out.println(latitude + ", " + longitude + ", " + airport.iataCode + ",
                     // " + airportDistance.get() + ", " + null + ", " + null);
                 } else {
-                    nearestRunwayTS.add(runway.name);
+                    nearestRunwayTS.add(runway.getName());
                     runwayDistanceTS.add(runwayDistance.getValue());
                     // System.out.println(latitude + ", " + longitude + ", " + airport.iataCode + ",
                     // " + airportDistance.get() + ", " + runway.name + ", " +

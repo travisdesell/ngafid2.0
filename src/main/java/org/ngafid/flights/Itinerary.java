@@ -135,7 +135,7 @@ public class Itinerary {
             }
 
             for (Runway rw : airport.getRunways())
-                if (rw.hasCoordinates)
+                if (rw.isHasCoordinates())
                     rws.add(rw);
             runways.put(airport.getIataCode(), rws);
         }

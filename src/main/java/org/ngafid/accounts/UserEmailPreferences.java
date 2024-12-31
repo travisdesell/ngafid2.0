@@ -8,9 +8,9 @@ import java.util.logging.Logger;
 public class UserEmailPreferences {
 
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
-    private static final HashMap<Integer, User> users = new HashMap<>();
-    private static final HashMap<String, Integer> userIDs = new HashMap<>();
-    private static final HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<>();
+    private static final HashMap<Integer, User> USERS = new HashMap<>();
+    private static final HashMap<String, Integer> USER_IDS = new HashMap<>();
+    private static final HashMap<String, HashMap<String, Boolean>> EMAIL_TYPES_USERS = new HashMap<>();
     private final int userId;
     private final HashMap<String, Boolean> emailTypesUser;
     private final String[] emailTypesKeys;
@@ -37,32 +37,32 @@ public class UserEmailPreferences {
         String userEmail = user.getEmail();
 
         //user email --> userId
-        userIDs.put(userEmail, userID);
+        USER_IDS.put(userEmail, userID);
 
         //userId --> User
-        users.put(userID, user);
+        USERS.put(userID, user);
 
-        emailTypesUsers.put(user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser());
+        EMAIL_TYPES_USERS.put(user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser());
 
     }
 
     public static User getUser(int userId) {
-        return users.get(userId);
+        return USERS.get(userId);
     }
 
     public static int getUserIDFromEmail(String userEmail) {
-        return userIDs.get(userEmail);
+        return USER_IDS.get(userEmail);
     }
 
     public static boolean getEmailTypeUserState(String email, EmailType emailType) {
 
         //Email does not exist in the map, default to true
-        if (!emailTypesUsers.containsKey(email)) {
+        if (!EMAIL_TYPES_USERS.containsKey(email)) {
             LOG.info("User's email does not exist in the map, defaulting to true");
             return true;
         }
 
-        HashMap<String, Boolean> emailTypesTarget = emailTypesUsers.get(email);
+        HashMap<String, Boolean> emailTypesTarget = EMAIL_TYPES_USERS.get(email);
 
         String emailTypeValue = emailType.getType();
 

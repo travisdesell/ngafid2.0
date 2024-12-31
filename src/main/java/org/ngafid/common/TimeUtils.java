@@ -69,6 +69,8 @@ public final class TimeUtils {
                 ldt = ldt.minusHours(5);
                 offset = "-18:00";
             }
+            default -> {
+            }
         }
 
         return offset;

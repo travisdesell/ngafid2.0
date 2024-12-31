@@ -118,12 +118,12 @@ public class TurnToFinal implements Serializable {
 
     private double[] getExtendedRunwayCenterLine() {
         final double length = 2.0;
-        double dlat = runway.lat1 - runway.lat2;
-        double dlon = runway.lon1 - runway.lon2;
-        double lat1 = runway.lat1 + length * dlat;
-        double lon1 = runway.lon1 + length * dlon;
-        double lat2 = runway.lat2 - length * dlat;
-        double lon2 = runway.lon2 - length * dlon;
+        double dlat = runway.getLat1() - runway.getLat2();
+        double dlon = runway.getLon1() - runway.getLon2();
+        double lat1 = runway.getLat1() + length * dlat;
+        double lon1 = runway.getLon1() + length * dlon;
+        double lat2 = runway.getLat2() - length * dlat;
+        double lon2 = runway.getLon2() - length * dlon;
         return new double[]{lat1, lon1, lat2, lon2};
     }
 

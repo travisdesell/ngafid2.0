@@ -7,7 +7,7 @@ public interface AirSyncEndpoints {
     int PAGE_SIZE = 25;
 
 
-    //NOTE: DEV endpoints 
+    //NOTE: DEV endpoints
     //comment this block out and uncomment the below for prod endpoints
 
     // Use this to swap to sandbox / dev api

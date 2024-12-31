@@ -18,7 +18,7 @@ public class User {
     private static final Logger LOG = Logger.getLogger(User.class.getName());
 
     /**
-     * The following variables hold all the user informatino that is stored in the
+     * The following variables hold all the user information that is stored in the
      * 'user'
      * table in the mysql database.
      */
@@ -204,6 +204,7 @@ public class User {
      * Return the number of users in the NGAFID
      *
      * @param connection A connection to the mysql database.
+     * @param fleetId The fleet ID of all the users.
      *
      * @exception SQLException if there was a problem with the query or database.
      *
@@ -238,10 +239,11 @@ public class User {
             """;
 
     /**
-     * Get a user from the database based on the users id.
+     * Get a user from the database based on the user's id.
      *
      * @param connection A connection to the mysql database.
      * @param userId     The user's id.
+     * @param fleetId The fleet ID of the user
      *
      * @exception SQLException if there was a problem with the SQL query.
      *
@@ -271,9 +273,8 @@ public class User {
      *
      * @param connection A connection to the mysql database
      * @param userId     the userId to query for
-     * @param gson       is a Gson object to convert to JSON
      *
-     * @return an instane of {@link UserPreferences} with all the user's preferences
+     * @return an instance of {@link UserPreferences} with all the user's preferences
      *         and settings
      */
     public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
@@ -341,7 +342,7 @@ public class User {
      *
      * @param connection      A connection to the mysql database
      * @param userId          the userId to update for
-     * @param userPreferences the {@link UserPreferences} instance to store
+     * @param metricName      the metric name to add
      */
     public static void addUserPreferenceMetric(Connection connection, int userId, String metricName)
             throws SQLException {
@@ -360,7 +361,7 @@ public class User {
      *
      * @param connection      A connection to the mysql database
      * @param userId          the userId to update for
-     * @param userPreferences the {@link UserPreferences} instance to store
+     * @param metricName      the metric name to remove
      */
     public static void removeUserPreferenceMetric(Connection connection, int userId, String metricName)
             throws SQLException {
@@ -379,7 +380,7 @@ public class User {
      *
      * @param connection A connection to the mysql database
      * @param userId     the userId to update for
-     * @param precision  the new decimal precision value to store
+     * @param decimalPrecision  the new decimal precision value to store
      */
     public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId,
             int decimalPrecision) throws SQLException {
@@ -400,9 +401,8 @@ public class User {
      *
      * @param connection A connection to the mysql database
      * @param userId     the userId to query for
-     * @param gson       is a Gson object to convert to JSON
      *
-     * @return an instane of {@link UserPreferences} with all the user's preferences
+     * @return an instance of {@link UserPreferences} with all the user's preferences
      *         and settings
      */
     public static UserEmailPreferences getUserEmailPreferences(Connection connection, int userId) throws SQLException {
@@ -488,8 +488,8 @@ public class User {
      * passphrase for this user
      *
      * @param connection A connection to the mysql database.
-     * @param the        user's email address
-     * @param a          generated passphrase for the password reset
+     * @param emailAddress user's email address
+     * @param passphrase   generated passphrase for the password reset
      *
      * @return true if the password hashes correctly to the user's password token.
      */
@@ -501,10 +501,7 @@ public class User {
             query.setString(2, passphrase);
 
             try (ResultSet resultSet = query.executeQuery()) {
-                if (!resultSet.next())
-                    return false;
-                else
-                    return true;
+                return resultSet.next();
             }
         }
     }
@@ -564,14 +561,14 @@ public class User {
             }
         }
 
-        // for now it should be just one user per fleet
+        // for now, it should be just one user per fleet
         ArrayList<FleetAccess> allFleets = FleetAccess.get(connection, user.getId());
 
         if (allFleets.size() > 1) {
             LOG.severe("ERROR: user had access to multiple fleets (" + allFleets.size()
                     + "), this should never happen (yet)!.");
             throw new AccountException("Fleet Error", "User is associated with multiple fleets");
-        } else if (allFleets.size() == 0) {
+        } else if (allFleets.isEmpty()) {
             LOG.severe("ERROR: user did not have access to ANY fleet. This should never happen.");
             return null;
         }
@@ -676,7 +673,6 @@ public class User {
      *
      * @param connection   A connection to the mysql database.
      * @param emailAddress The user's email address.
-     * @param password     The user's first name (optional, may be null).
      *
      * @exception SQLException if there was a problem with the SQL query or the user
      *                         already exists in the database.
@@ -751,7 +747,7 @@ public class User {
      * @exception AccountException if there was an error getting the id of the new
      *                             user row created in the database.
      *
-     * @return A user object if it was sucessfully created and added to the
+     * @return A user object if it was successfully created and added to the
      *         database.
      */
     private static User create(Connection connection, String email, String password, String firstName, String lastName,
@@ -829,7 +825,7 @@ public class User {
      * @exception AccountException if the user or fleet already existed in the
      *                             database.
      *
-     * @return A user object if it was sucessfully created and added to the
+     * @return A user object if it was successfully created and added to the
      *         database.
      */
     public static User createNewFleetUser(Connection connection, String email, String password, String firstName,
@@ -895,7 +891,7 @@ public class User {
      * @exception AccountException if the user already exists in the database or if
      *                             the fleet does not exist in the database.
      *
-     * @return A user object if it was sucessfully created and added to the
+     * @return A user object if it was successfully created and added to the
      *         database.
      */
     public static User createExistingFleetUser(Connection connection, String email, String password, String firstName,
@@ -941,8 +937,8 @@ public class User {
         boolean useDigits = true;
         String resetPhrase = RandomStringUtils.random(resetPhraseLength, useLetters, useDigits);
         updateResetPhrase(connection, email, resetPhrase);
-        String resetPassswordURL = "https://ngafid.org/reset_password?resetPhrase=" + resetPhrase;
-        System.out.println("Reset Password URl : " + resetPassswordURL);
+        String resetPasswordUrl = "https://ngafid.org/reset_password?resetPhrase=" + resetPhrase;
+        System.out.println("Reset Password URl : " + resetPasswordUrl);
         ArrayList<String> recipients = new ArrayList<>();
         recipients.add(email);
         StringBuilder body = new StringBuilder();
@@ -950,7 +946,7 @@ public class User {
         body.append("<p>Hi,<p><br>");
         body.append("<p>A password reset was requested for your account<p>");
         body.append("<p>Please click the below link to change your password.<p>");
-        body.append("<p> Password Reset Link : <a href=" + resetPassswordURL + ">Reset Password</a></p><br>");
+        body.append("<p> Password Reset Link : <a href=").append(resetPasswordUrl).append(">Reset Password</a></p><br>");
         body.append("</body></html>");
         ArrayList<String> bccRecipients = new ArrayList<>();
         SendEmail.sendEmail(recipients, bccRecipients, "NGAFID Password Reset Information", body.toString(),

@@ -6,6 +6,9 @@
 
 package org.ngafid;
 
+import org.ngafid.filters.Filter;
+import org.ngafid.flights.Flight;
+
 import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -16,14 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-
-import org.ngafid.flights.Flight;
-import org.ngafid.filters.Filter;
+import java.util.*;
 
 public class RunLOCICalculations {
     static Connection connection = null;
@@ -34,12 +30,13 @@ public class RunLOCICalculations {
      * @return an {@link Iterator} with the flight ids that need to be calculated
      */
     public static Iterator<Integer> getUncalculatedFlightIds() {
-        String sqlQuery = "SELECT id FROM flights WHERE id NOT IN (SELECT flight_id FROM calculations) " +
-                " AND fleet_id = (SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'IMPORTED'))";
+        String sqlQuery = "SELECT id FROM flights WHERE id NOT IN (SELECT flight_id FROM calculations) " + " AND " +
+                "fleet_id = (SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads" +
+                ".fleet_id AND uploads.status = 'IMPORTED'))";
         List<Integer> nums = null;
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-                ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery); ResultSet resultSet =
+                preparedStatement.executeQuery()) {
 
             nums = new ArrayList<>();
             while (resultSet.next()) {
@@ -65,21 +62,18 @@ public class RunLOCICalculations {
         System.err.println("fleet_id: the id of the fleet to calculate flights for");
         System.err.println("Options: ");
         System.err.println("-f [directory root]");
-        System.err.println(
-                "\tPrint calculations to file(s) where the argument is the root directory in which the files will be created in.\n"
-                        +
-                        "\tFilenames will be in the format: flight_N.out, where N is the flight number");
+        System.err.println("\tPrint calculations to file(s) where the argument is the root directory in which the " +
+                "files will be created in.\n" + "\tFilenames will be in the format: flight_N.out, where N is the " +
+                "flight number");
         System.err.println("-n [flight number(s)]");
-        System.err.println(
-                "\tOnly calculate LOC-I for the flight numbers specified. If specifiying more than one flight, delimit flight numbers by commas with no spaces\n"
-                        +
-                        "\ti.e 10,5,3,65,2");
+        System.err.println("\tOnly calculate LOC-I for the flight numbers specified. If specifiying more than one " +
+                "flight, delimit flight numbers by commas with no spaces\n" + "\ti.e 10,5,3,65,2");
         System.exit(0);
     }
 
     /**
      * Processes argumrnts from the command line
-     * 
+     *
      * @param args       the command line arguments
      * @param path       the instance of the {@link Optional} where the path of the
      *                   file out will reside
@@ -87,7 +81,7 @@ public class RunLOCICalculations {
      *                   flight numbers will reside
      */
     public static Optional<Iterator<Integer>> processArgs(String[] args, Optional<Path> path,
-            Optional<Iterator<Integer>> flightNums) {
+                                                          Optional<Iterator<Integer>> flightNums) {
         for (int i = 1; i < args.length; i++) {
             if (args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
                 displayHelp();
@@ -99,10 +93,10 @@ public class RunLOCICalculations {
                 }
                 path = Optional.of(FileSystems.getDefault().getPath(args[i + 1]));
                 if (!Files.exists(path.get())) {
-                    System.err.println("Non-existent filepath: " + path.get().toString() + ", exiting!");
+                    System.err.println("Non-existent filepath: " + path.get() + ", exiting!");
                     System.exit(1);
                 } else if (!new File(path.get().toUri()).isDirectory()) {
-                    System.err.println("Filepath: " + path.get().toString() + " is not a directory, exiting!");
+                    System.err.println("Filepath: " + path.get() + " is not a directory, exiting!");
                     System.exit(1);
                 }
             } else if (args[i].equals("-n")) {
