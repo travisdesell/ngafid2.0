@@ -1,14 +1,13 @@
 package org.ngafid.filters;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-
-import java.time.LocalDateTime;
-import java.time.OffsetTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 
 
 public class Filter {
@@ -49,7 +48,6 @@ public class Filter {
      * Helper function for get column names. Appends non-duplicate column names to the input parameter.
      *
      * @param columnNames holds all the column names found
-     * 
      */
     public void getColumnNamesHelper(Filter filter, TreeSet<String> columnNames) {
         LOG.info("getting column filter for " + filter.type);
@@ -72,7 +70,6 @@ public class Filter {
      * Gets the first input of each rule without duplicates, for use by EventDefinitions.
      *
      * @return a hash set of strings for each column name, without duplicates
-     * 
      */
     public TreeSet<String> getColumnNames() {
         TreeSet<String> columnNames = new TreeSet<String>();
@@ -99,11 +96,10 @@ public class Filter {
      * to make sure the formulated mysql query wont be hijacked
      *
      * @param operator the operator string passed from the query filter
-     *
      * @return the passed string if valid, null otherwise
      */
     public String checkOperator(String op) {
-        if (op.equals(">=") || op.equals(">") || op.equals("=") || op.equals("<") || op.equals ("<=")) {
+        if (op.equals(">=") || op.equals(">") || op.equals("=") || op.equals("<") || op.equals("<=")) {
             return op;
         }
         return null;
@@ -114,7 +110,6 @@ public class Filter {
      * to make sure the formulated mysql query wont be hijacked
      *
      * @param operator the operator string passed from the query filter
-     *
      * @return the passed string if valid, null otherwise
      */
     public String checkSeriesOp(String op) {
@@ -129,7 +124,6 @@ public class Filter {
      * not have one so it works for a mysql query.
      *
      * @param value the hour, minute or second value
-     *
      * @return the 0 padded time value string
      */
     public String timePad(String value) {
@@ -145,15 +139,16 @@ public class Filter {
      *
      * @param the date time in yyyy-MM-dd hh:mm:ss
      * @param the time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
-     *
      * @return the date time in yyyy-MM-dd hh:mm:ss converted to GMT
      */
     public static String getOffsetDateTime(String datetime, String longOffset) {
-        String offset = longOffset.substring(4,10);
+        String offset = longOffset.substring(4, 10);
         System.out.println("datetime is: " + datetime);
         System.out.println("time zone offset is: " + offset);
-        OffsetDateTime odt = LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atOffset(ZoneOffset.of(offset));
-        String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        OffsetDateTime odt =
+                LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atOffset(ZoneOffset.of(offset));
+        String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("yyyy" +
+                "-MM-dd HH:mm:ss"));
         System.out.println("gmt date time is: " + gmtTime);
 
         return gmtTime;
@@ -165,15 +160,15 @@ public class Filter {
      *
      * @param the time in hh:mm:ss
      * @param the time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
-     *
      * @return the date time in hh:mm:ss converted to GMT
      */
     public static String getOffsetTime(String time, String longOffset) {
-        String offset = longOffset.substring(4,10);
+        String offset = longOffset.substring(4, 10);
         System.out.println("time is: " + time);
         System.out.println("time  zone offset is: " + offset);
         OffsetTime ot = OffsetTime.parse(time + offset);
-        String gmtTime = ot.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        String gmtTime = ot.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("HH:mm" +
+                ":ss"));
         System.out.println("gmt time is: " + gmtTime);
 
         return gmtTime;
@@ -184,10 +179,9 @@ public class Filter {
      * Recursively returns a mysql query represented by this rule, updates the parameters
      * argument with parameters that need to be filled in by this query.
      *
-     * @param fleetId the id of the fleet for this query
+     * @param fleetId    the id of the fleet for this query
      * @param parameters will be updated with what inputs this rule needs
-     *
-     * @return A string mysql query of this rule 
+     * @return A string mysql query of this rule
      */
     public String getRuleQuery(int fleetId, ArrayList<Object> parameters) {
         String eventName;
@@ -214,13 +208,13 @@ public class Filter {
                 } else {
                     return "flights.fleet_id = ? AND flights.system_id != ?";
                 }
-            
+
             case "Flight ID":
                 condition = checkOperator(inputs.get(1));
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
-                return "flights.fleet_id = ? AND flights.id " + condition + " ?" ;
-                
+                return "flights.fleet_id = ? AND flights.id " + condition + " ?";
+
 
             case "Tail Number":
                 parameters.add(fleetId);
@@ -262,29 +256,35 @@ public class Filter {
             case "Parameter":
                 parameters.add(inputs.get(2));
                 parameters.add(inputs.get(4));
-                return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND double_series.name_id = (SELECT id FROM double_series_names WHERE name = ?) AND double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
+                return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND " +
+                        "double_series.name_id = (SELECT id FROM double_series_names WHERE name = ?) AND " +
+                        "double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
 
             case "Airport":
                 String iataCode1 = inputs.get(1).substring(0, 3);
                 parameters.add(iataCode1);
 
                 if (inputs.get(2).equals("visited")) {
-                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary.airport = ?)";
+                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
+                            ".airport = ?)";
                 } else {
-                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary.airport = ?)";
+                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
+                            ".airport = ?)";
                 }
 
             case "Runway":
                 String iataRunway = inputs.get(1);
                 String iataCode2 = iataRunway.substring(0, 3);
-                String runway = iataRunway.substring(6, iataRunway.length());
+                String runway = iataRunway.substring(6);
                 parameters.add(iataCode2);
                 parameters.add(runway);
 
                 if (inputs.get(2).equals("visited")) {
-                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary.airport = ? AND itinerary.runway = ?)";
+                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
+                            ".airport = ? AND itinerary.runway = ?)";
                 } else {
-                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary.airport = ? AND itinerary.runway = ?)";
+                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
+                            ".airport = ? AND itinerary.runway = ?)";
                 }
 
             case "Event Count":
@@ -296,7 +296,10 @@ public class Filter {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed.flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = 0) AND flight_processed.count " + condition + " ?)";
+                    return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed" +
+                            ".flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions " +
+                            "WHERE event_definitions.name = ? AND event_definitions.airframe_id = 0) AND " +
+                            "flight_processed.count " + condition + " ?)";
                 } else {
                     String airframeName = eventName.substring(seperatorIndex + 3);
                     eventName = eventName.substring(0, seperatorIndex);
@@ -305,7 +308,10 @@ public class Filter {
                     parameters.add(airframeName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed.flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND flight_processed.count " + condition + " ?)";
+                    return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed" +
+                            ".flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions " +
+                            "WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM " +
+                            "airframes WHERE airframe = ?)) AND flight_processed.count " + condition + " ?)";
                 }
 
             case "Event Severity":
@@ -317,7 +323,9 @@ public class Filter {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = 0) AND events.severity " + condition + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
+                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
+                            "? AND event_definitions.airframe_id = 0) AND events.severity " + condition + " ?)";
                 } else {
                     String airframeName = eventName.substring(seperatorIndex + 3);
                     eventName = eventName.substring(0, seperatorIndex);
@@ -326,7 +334,10 @@ public class Filter {
                     parameters.add(airframeName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND events.severity " + condition + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
+                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
+                            "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
+                            " events.severity " + condition + " ?)";
                 }
 
             case "Event Duration":
@@ -338,7 +349,10 @@ public class Filter {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = 0) AND ((events.end_line - events.start_line) + 1) " + condition + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
+                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
+                            "? AND event_definitions.airframe_id = 0) AND ((events.end_line - events.start_line) + 1)" +
+                            " " + condition + " ?)";
                 } else {
                     String airframeName = eventName.substring(seperatorIndex + 3);
                     eventName = eventName.substring(0, seperatorIndex);
@@ -347,18 +361,23 @@ public class Filter {
                     parameters.add(airframeName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND ((events.end_line - events.start_line) + 1) " + condition + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
+                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
+                            "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
+                            " ((events.end_line - events.start_line) + 1) " + condition + " ?)";
                 }
 
             case "Tag":
                 parameters.add(fleetId);
                 parameters.add(inputs.get(1)); //we can ignore index 0, it is for the UI only
-				String det = inputs.get(2);
-				if(det.substring(0,6).equals("Is Not")){
-					return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
-				}else{
-					return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
-				}
+                String det = inputs.get(2);
+                if (det.startsWith("Is Not")) {
+                    return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM " +
+                            "flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+                } else {
+                    return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags " +
+                            "WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+                }
 
             default:
                 return "";
@@ -369,9 +388,8 @@ public class Filter {
      * Recursively returns a mysql query represented by this filter, updates the parameters
      * argument with parameters that need to be filled in by this query.
      *
-     * @param fleetId the id of the fleet for this query
+     * @param fleetId    the id of the fleet for this query
      * @param parameters will be updated with what inputs this query needs
-     *
      * @return A string mysql query of this filter
      */
     public String toQueryString(int fleetId, ArrayList<Object> parameters) {
@@ -403,7 +421,7 @@ public class Filter {
     public String toHumanReadable() {
         // Catch custom event definition JSON, which uses
         // text instead of type for its value
-        if(text != null) {
+        if (text != null) {
             return text;
         }
 
@@ -411,7 +429,7 @@ public class Filter {
             String string = "";
             for (int i = 0; i < inputs.size(); i++) {
                 if (i > 0) string += " ";
-                string +=  inputs.get(i);
+                string += inputs.get(i);
             }
 
             return string;
@@ -467,12 +485,11 @@ public class Filter {
      * Used for comparing two filters for equality
      */
     @Override
-    public boolean equals(Object e){
-        if(e instanceof Filter){
-            Filter t = (Filter)e;
+    public boolean equals(Object e) {
+        if (e instanceof Filter t) {
             return t.hashCode() == super.hashCode();
-        }else{
-            return false; 
+        } else {
+            return false;
         }
     }
 }
