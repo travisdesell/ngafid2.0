@@ -19,7 +19,7 @@ public final class Tails {
     }
 
     private static class FleetInstance {
-        int fleetId;
+        private final int fleetId;
 
         private final Map<String, String> idMap = new HashMap<>(); // tail to systemId
         private final Map<String, String> tailMap = new HashMap<>(); // systemId to tail

@@ -22,7 +22,8 @@ public class FlightWarning {
         return connection.prepareStatement("INSERT INTO flight_warnings (flight_id, message_id) VALUES (?, ?)");
     }
 
-    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightIdToAdd) throws SQLException {
+    public void addBatch(Connection connection, PreparedStatement preparedStatement,
+                         int flightIdToAdd) throws SQLException {
         preparedStatement.setInt(1, flightIdToAdd);
         preparedStatement.setInt(2, ErrorMessage.getMessageId(connection, message));
         preparedStatement.addBatch();

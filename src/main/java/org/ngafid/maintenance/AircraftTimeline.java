@@ -2,15 +2,14 @@ package org.ngafid.maintenance;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
 import java.util.logging.Logger;
 
 public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private static final Logger LOG = Logger.getLogger(AircraftTimeline.class.getName());
 
-    private int flightId;
-    private LocalDate startTime;
-    private LocalDate endTime;
+    private final int flightId;
+    private final LocalDate startTime;
+    private final LocalDate endTime;
 
     private MaintenanceRecord previousEvent = null;
     private long daysSincePrevious = 0;
@@ -20,7 +19,7 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private long daysToNext = 0;
     private long flightsToNext = -1;
 
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     //private ArrayList<AircraftTimeline> combinedRecords = new ArrayList<AircraftTimeline>();
 
@@ -95,13 +94,13 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
 
     public String toString() {
         return "[Aircraft Timeline - flightId: '" + flightId
-            + "', startTime: '" + startTime 
-            + "', endTime: '" + endTime
-            + "', daysToNext: " + daysToNext
-            + ", flightsToNext: " + flightsToNext
-            + ", daysSincePrevious: " + daysSincePrevious
-            + ", flightsSincePrevious: " + flightsSincePrevious
-           + "]";
+                + "', startTime: '" + startTime
+                + "', endTime: '" + endTime
+                + "', daysToNext: " + daysToNext
+                + ", flightsToNext: " + flightsToNext
+                + ", daysSincePrevious: " + daysSincePrevious
+                + ", flightsSincePrevious: " + flightsSincePrevious
+                + "]";
     }
 }
 

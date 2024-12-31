@@ -7,8 +7,10 @@
 
 package org.ngafid.flights.calculations;
 
+//CHECKSTYLE:OFF
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
+//CHECKSTYLE:ON
 
 public interface CalculationParameters {
     double STD_PRESS_INHG = 29.92;

@@ -13,48 +13,62 @@ import java.util.List;
 
 import org.ngafid.flights.FatalFlightFileException;
 
-public class TimeUtils {
+public final class TimeUtils {
+    private TimeUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     /**
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
      *
-     * @param the LocalDateTime value which will be updated
-     * @param the bad offset
+     * @param ldt the LocalDateTime value which will be updated
+     * @param offset the bad offset
      * @return the fixed offset
      */
     public static String updateBadOffset(LocalDateTime ldt, String offset) {
         // weird input data
-        if (offset.equals("+19:00")) {
-            ldt = ldt.plusHours(1);
-            offset = "+18:00";
-        } else if (offset.equals("+20:00")) {
-            ldt = ldt.plusHours(2);
-            offset = "+18:00";
-        } else if (offset.equals("+21:00")) {
-            ldt = ldt.plusHours(3);
-            offset = "+18:00";
-        } else if (offset.equals("+22:00")) {
-            ldt = ldt.plusHours(4);
-            offset = "+18:00";
-        } else if (offset.equals("+23:00")) {
-            ldt = ldt.plusHours(5);
-            offset = "+18:00";
-        } else if (offset.equals("-19:00")) {
-            ldt = ldt.minusHours(1);
-            offset = "-18:00";
-        } else if (offset.equals("-20:00")) {
-            ldt = ldt.minusHours(2);
-            offset = "-18:00";
-        } else if (offset.equals("-21:00")) {
-            ldt = ldt.minusHours(3);
-            offset = "-18:00";
-        } else if (offset.equals("-22:00")) {
-            ldt = ldt.minusHours(4);
-            offset = "-18:00";
-        } else if (offset.equals("-23:00")) {
-            ldt = ldt.minusHours(5);
-            offset = "-18:00";
+        switch (offset) {
+            case "+19:00" -> {
+                ldt = ldt.plusHours(1);
+                offset = "+18:00";
+            }
+            case "+20:00" -> {
+                ldt = ldt.plusHours(2);
+                offset = "+18:00";
+            }
+            case "+21:00" -> {
+                ldt = ldt.plusHours(3);
+                offset = "+18:00";
+            }
+            case "+22:00" -> {
+                ldt = ldt.plusHours(4);
+                offset = "+18:00";
+            }
+            case "+23:00" -> {
+                ldt = ldt.plusHours(5);
+                offset = "+18:00";
+            }
+            case "-19:00" -> {
+                ldt = ldt.minusHours(1);
+                offset = "-18:00";
+            }
+            case "-20:00" -> {
+                ldt = ldt.minusHours(2);
+                offset = "-18:00";
+            }
+            case "-21:00" -> {
+                ldt = ldt.minusHours(3);
+                offset = "-18:00";
+            }
+            case "-22:00" -> {
+                ldt = ldt.minusHours(4);
+                offset = "-18:00";
+            }
+            case "-23:00" -> {
+                ldt = ldt.minusHours(5);
+                offset = "-18:00";
+            }
         }
 
         return offset;

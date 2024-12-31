@@ -47,7 +47,9 @@ public final class CalculateProximityEventMetaData {
                 DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId,
                         "IAS");
 
-                String otherEventQueryString = "select e.id as id, e.start_line as otherStartLine, e.end_line as otherEndLine from events as e where e.severity = ? and e.event_definition_id = -1 and e.flight_id = ? and e.other_flight_id = ?";
+                String otherEventQueryString = "select e.id as id, e.start_line as otherStartLine, e.end_line as " +
+                        "otherEndLine from events as e where e.severity = ? and " +
+                        "e.event_definition_id = -1 and e.flight_id = ? and e.other_flight_id = ?";
                 PreparedStatement otherStatement = connection.prepareStatement(otherEventQueryString);
 
                 otherStatement.setDouble(1, severity);

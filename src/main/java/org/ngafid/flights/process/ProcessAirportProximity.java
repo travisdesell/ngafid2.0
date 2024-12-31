@@ -52,7 +52,8 @@ public class ProcessAirportProximity extends ProcessStep {
         StringTimeSeries nearestRunwayTS = new StringTimeSeries(NEAREST_RUNWAY, "IATA Code", sizeHint);
         DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries(RUNWAY_DISTANCE, "ft", sizeHint);
 
-        Flight.getNearbyLandingAreas(latitudeTS, longitudeTS, altitudeAGLTS, nearestAirportTS, airportDistanceTS, nearestRunwayTS, runwayDistanceTS, MAX_AIRPORT_DISTANCE_FT, MAX_RUNWAY_DISTANCE_FT);
+        Flight.getNearbyLandingAreas(latitudeTS, longitudeTS, altitudeAGLTS, nearestAirportTS,
+                airportDistanceTS, nearestRunwayTS, runwayDistanceTS, MAX_AIRPORT_DISTANCE_FT, MAX_RUNWAY_DISTANCE_FT);
 
         builder.addTimeSeries(NEAREST_RUNWAY, nearestRunwayTS);
         builder.addTimeSeries(NEAREST_AIRPORT, nearestAirportTS);

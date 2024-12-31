@@ -19,10 +19,10 @@ public final class FlightMeta {
     public String filename;
     public String calculated;
     public String suggestedTailNumber;
-    //CHECKSTYLE:ON
 
     public Airframes.Airframe airframe = null;
     public Airframes.AirframeType airframeType = null;
+    //CHECKSTYLE:ON
 
     public int getFleetId() {
         return fleetId;
