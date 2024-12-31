@@ -9,7 +9,10 @@ import java.util.zip.*;
 
 import org.ngafid.flights.calculations.TurnToFinal;
 
-public class Compression {
+public final class Compression {
+    private Compression() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     private static class TTFFixObjectInputStream extends ObjectInputStream {
         TTFFixObjectInputStream() throws IOException {
@@ -88,8 +91,10 @@ public class Compression {
         byte[] inflated = inflate(bytes);
 
         // Deserialize
-        // Use the custom TTFFixObjectInputStream which will properly recognize the outdated reference to the turn to final class
-        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        // Use the custom TTFFixObjectInputStream which will properly recognize
+        // the outdated reference to the turn to final class
+        // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated));
         Object o = inputStream.readObject();
         inputStream.close();
 

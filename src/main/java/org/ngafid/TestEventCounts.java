@@ -7,7 +7,10 @@ import java.util.*;
 
 import org.ngafid.events.EventStatistics;
 
-public class TestEventCounts {
+public final class TestEventCounts {
+    private TestEventCounts() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     public static void main(String[] arguments) {
         try (Connection connection = Database.getConnection()) {

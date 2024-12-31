@@ -234,7 +234,7 @@ public class Airports {
                     if (distanceFt < minDistance) {
                         nearestAirport = airport;
                         minDistance = distanceFt;
-                        airportDistance.set(minDistance);
+                        airportDistance.setValue(minDistance);
                     }
                 }
             }

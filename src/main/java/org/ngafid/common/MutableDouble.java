@@ -12,11 +12,11 @@ public class MutableDouble {
         this.value = value;
     }
 
-    public void set(double value) {
+    public void setValue(double value) {
         this.value = value;
     }
 
-    public double get() {
+    public double getValue() {
         return value;
     }
 }

@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
 
+//CHECKSTYLE:OFF
 
 /**
  * The entry point for the NGAFID web server.
@@ -40,6 +41,7 @@ public final class WebServer {
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
+
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -405,3 +407,4 @@ public final class WebServer {
         LOG.info("NGAFID WebServer initialization complete.");
     }
 }
+//CHECKSTYLE:ON

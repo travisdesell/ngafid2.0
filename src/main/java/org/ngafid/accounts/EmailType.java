@@ -52,8 +52,7 @@ public enum EmailType {
      * purposes.
      */
     ACCOUNT_CREATION_INVITE("FORCED_account_creation_invite"),
-    PASSWORD_RESET("FORCED_password_reset"),
-    ;
+    PASSWORD_RESET("FORCED_password_reset");
 
     /*
      * Default value of the removal flag for old email types.

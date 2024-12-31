@@ -2,7 +2,7 @@ package org.ngafid.accounts;
 
 import java.util.List;
 
-import static org.ngafid.flights.Parameters.*;
+import static org.ngafid.flights.Parameters.DEFAULT_METRICS;
 
 public class UserPreferences {
     private final List<String> flightMetrics;
@@ -12,10 +12,10 @@ public class UserPreferences {
     /**
      * Constructor
      *
-     * @param userId the users id
+     * @param userId           the users id
      * @param decimalPrecision the precision to display for all metrics in the UI
-     * @param flightMetrics a comma separated list of parameters the user wishes
-     *                      to see when they analyze flight data UI-side
+     * @param flightMetrics    a comma separated list of parameters the user wishes
+     *                         to see when they analyze flight data UI-side
      */
     public UserPreferences(int userId, int decimalPrecision, List<String> flightMetrics) {
         this.userId = userId;
@@ -41,7 +41,7 @@ public class UserPreferences {
     public List<String> getFlightMetrics() {
         return this.flightMetrics;
     }
-    
+
     public boolean update(int newDecimalPrecision) {
         boolean wasUpdated = false;
 

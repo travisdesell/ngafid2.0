@@ -1,27 +1,25 @@
 package org.ngafid.accounts;
 
-import java.util.HashMap;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 public class UserEmailPreferences {
 
-    private int userId;
-    private HashMap<String, Boolean> emailTypesUser;
-    private String[] emailTypesKeys;
-
-    private static HashMap<Integer, User> users = new HashMap<>();
-    private static HashMap<String, Integer> userIDs = new HashMap<>();
-    private static HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<>();
-
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
+    private static final HashMap<Integer, User> users = new HashMap<>();
+    private static final HashMap<String, Integer> userIDs = new HashMap<>();
+    private static final HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<>();
+    private final int userId;
+    private final HashMap<String, Boolean> emailTypesUser;
+    private final String[] emailTypesKeys;
 
 
     public UserEmailPreferences(int userId, HashMap<String, Boolean> emailTypesUser) {
         this.userId = userId;
         this.emailTypesUser = emailTypesUser;
-        
+
         String[] keysRecent = EmailType.getEmailTypeKeysRecent(true);
         /*
         LOG.info("[EX] Email Type Keys: ");
@@ -44,7 +42,7 @@ public class UserEmailPreferences {
         //userId --> User
         users.put(userID, user);
 
-        emailTypesUsers.put( user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser() );
+        emailTypesUsers.put(user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser());
 
     }
 
@@ -54,10 +52,6 @@ public class UserEmailPreferences {
 
     public static int getUserIDFromEmail(String userEmail) {
         return userIDs.get(userEmail);
-    }
-
-    public HashMap<String, Boolean> getEmailTypesUser() {
-        return emailTypesUser;
     }
 
     public static boolean getEmailTypeUserState(String email, EmailType emailType) {
@@ -80,6 +74,10 @@ public class UserEmailPreferences {
 
         return emailTypesTarget.get(emailTypeValue);
 
+    }
+
+    public HashMap<String, Boolean> getEmailTypesUser() {
+        return emailTypesUser;
     }
 
 }

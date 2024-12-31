@@ -20,8 +20,10 @@ public class FlightTag {
     /**
      * Creates an instance of a tag
      * @param hash the id in SQL
+     * @param fleetId the id of the fleet this tag belongs to
      * @param name the user specified name
      * @param description the user specified description of the tag
+     * @param color the user specified color for the tag
      */
     public FlightTag(int hash, int fleetId, String name, String description, String color) {
         this.hashId = hash;

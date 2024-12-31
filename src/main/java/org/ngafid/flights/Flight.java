@@ -1837,7 +1837,7 @@ public class Flight {
                 // System.out.println(latitude + ", " + longitude + ", null, null, null, null");
             } else {
                 nearestAirportTS.add(airport.getIataCode());
-                airportDistanceTS.add(airportDistance.get());
+                airportDistanceTS.add(airportDistance.getValue());
 
                 MutableDouble runwayDistance = new MutableDouble();
                 Runway runway = airport.getNearestRunwayWithin(latitude, longitude, maxRunwayDistanceFt,
@@ -1849,7 +1849,7 @@ public class Flight {
                     // " + airportDistance.get() + ", " + null + ", " + null);
                 } else {
                     nearestRunwayTS.add(runway.name);
-                    runwayDistanceTS.add(runwayDistance.get());
+                    runwayDistanceTS.add(runwayDistance.getValue());
                     // System.out.println(latitude + ", " + longitude + ", " + airport.iataCode + ",
                     // " + airportDistance.get() + ", " + runway.name + ", " +
                     // runwayDistance.get());
