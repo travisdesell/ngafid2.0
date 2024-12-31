@@ -53,16 +53,7 @@ public class ProcessLOCI extends ProcessStep {
         DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", length,
                 (int index) -> {
                     double laggedHdg = hdgLagged.get(index);
-                    double yawRate = Double.isNaN(laggedHdg) ? 0
-                            : 180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
-
-                    double yawComp = yawRate * COMP_CONV;
-                    double vrComp = ((tas.get(index) / 60) * yawComp);
-                    double rollComp = roll.get(index) * COMP_CONV;
-                    double ctComp = Math.sin(rollComp) * 32.2;
-                    double value = Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
-
-                    return value;
+                    return calculateLOCI(hdg, index, roll, tas, laggedHdg);
                 });
         DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", length,
                 index -> {

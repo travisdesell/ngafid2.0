@@ -121,7 +121,7 @@ public class FlightBuilder {
         dg.compute();
 
         try {
-            return new Flight(connection, meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
+            return new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new FlightProcessingException(e);
