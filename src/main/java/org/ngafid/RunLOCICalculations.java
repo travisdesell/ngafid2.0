@@ -125,7 +125,11 @@ public final class RunLOCICalculations {
                     Iterator<Integer> it = Arrays.stream(nums).iterator();
                     flightNums = Optional.of(it);
                 }
-                default -> {}
+                default -> {
+                    System.err.println("Invalid option: " + args[i]);
+                    displayHelp();
+                    System.exit(1);
+                }
             }
         }
         return flightNums;

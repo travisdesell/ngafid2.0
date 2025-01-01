@@ -52,7 +52,7 @@ public class EventStatistics {
 
     private static final String MONTHLY_EVENT_COUNT_QUERY_GROUP_BY = EVENT_COUNT_BASE_QUERY_GROUP_BY + """
                           , YEAR(e.start_time),
-                            MONTH(e.start_time)            
+                            MONTH(e.start_time)
             """;
     private final int airframeNameId;
     private final String airframeName;
@@ -139,7 +139,8 @@ public class EventStatistics {
 
     public static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(Connection connection, int fleetId,
                                                                                      LocalDate startDateNullable,
-                                                                                     LocalDate endDateNullable) throws SQLException {
+                                                                                     LocalDate endDateNullable)
+                                                                                     throws SQLException {
         final LocalDate startDate = startDateNullable == null ? LocalDate.of(0, 1, 1) : startDateNullable;
         final LocalDate endDate = endDateNullable == null ? LocalDate.now() : endDateNullable;
 
@@ -968,10 +969,10 @@ public class EventStatistics {
     }
 
     public static class MonthlyEventCountsBuilder extends EventCountsWithAggregateBuilder<MonthlyEventCounts> {
-        final String airframeName;
-        final String eventName;
+        private final String airframeName;
+        private final String eventName;
 
-        final List<String> dates;
+        private final List<String> dates;
 
         public MonthlyEventCountsBuilder(String airframeName, String eventName, LocalDate startDate,
                                          LocalDate endDate) {
@@ -1021,7 +1022,7 @@ public class EventStatistics {
     }
 
     public static class EventCountsBuilder extends EventCountsWithAggregateBuilder<EventCounts> {
-        public final String airframeName;
+        private final String airframeName;
 
         public EventCountsBuilder(String airframeName) {
             this.airframeName = airframeName;
