@@ -61,12 +61,20 @@ public class TurnToFinal implements Serializable {
      * The timeseries arrays passed here should start from the 400 ft above the runway point, and end when the aircraft
      * touches the runway.
      *
-     * @param altitude  the altitude of the aircraft
-     * @param roll      the roll of the aircraft
-     * @param lat       the latitude of the aircraft
-     * @param lon       the longitude of the aircraft
+     * @param flightId flight id
+     * @param runway runway object
+     * @param airportIataCode airport IATA code
+     * @param flightStartDate flight start date
+     * @param runwayAltitude runway altitude
+     * @param altitude altitude of the aircraft
+     * @param altMSL altitude MSL
+     * @param roll roll of the aircraft
+     * @param lat latitude of the aircraft
+     * @param lon longitude of the aircraft
+     * @param stallProbability stall probability
+     * @param locProbability loss of control probability
      */
-    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode,
+    public TurnToFinal(String flightId, Runway runway, String airportIataCode,
                        String flightStartDate, double runwayAltitude, double[] altitude, double[] altMSL,
                        double[] roll, double[] lat, double[] lon, double[] stallProbability, double[] locProbability) {
         this.flightId = flightId;
@@ -146,7 +154,9 @@ public class TurnToFinal implements Serializable {
 
     private void calculateLocExceedences() {
         for (int i = 0; i < this.roll.length; i++) {
-            if (this.altitude[i] - this.runwayAltitude < 400 && Math.abs(this.roll[i]) > 30) this.locExceedences.add(i);
+            if (this.altitude[i] - this.runwayAltitude < 400 && Math.abs(this.roll[i]) > 30) {
+                this.locExceedences.add(i);
+            }
         }
     }
 
@@ -367,7 +377,7 @@ public class TurnToFinal implements Serializable {
             if (stallProbability != null) stallProbabilityArray = stallProbability.sliceCopy(from, to);
             if (locProbability != null) locProbabilityArray = locProbability.sliceCopy(from, to);
 
-            TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId), flight.getAirframeType(), runway,
+            TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId), runway,
                     airport.getIataCode(), flight.getStartDateTime(), runwayAltitude, altTimeSeries.sliceCopy(from,
                     to), altMSLTimeSeries.sliceCopy(from, to), rollTimeSeries.sliceCopy(from, to),
                     latTimeSeries.sliceCopy(from, to), lonTimeSeries.sliceCopy(from, to), stallProbabilityArray,
