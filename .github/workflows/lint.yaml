@@ -29,3 +29,4 @@ jobs:
           JAVA_FILE_NAME: checkstyle.xml
           # TODO: Remove once Javalin PR is merged
           FILTER_REGEX_EXCLUDE: "(org/ngafid/routes|cesium/Build)/*"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
