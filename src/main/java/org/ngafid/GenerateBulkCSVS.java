@@ -167,7 +167,8 @@ public class GenerateBulkCSVS {
         int lwr = -1;
         int upr = -1;
         int fleetId = -1;
-        Optional<String> lDate = Optional.empty(), uDate = Optional.empty();
+        Optional<String> lDate = Optional.empty();
+        Optional<String> uDate = Optional.empty();
 
         Optional<List<String>> aircraftNames = Optional.empty();
 

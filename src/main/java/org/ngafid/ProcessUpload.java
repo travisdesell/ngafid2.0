@@ -28,10 +28,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
-public class ProcessUpload {
+public final class ProcessUpload {
     private static final String ERROR_STATUS_STR = "ERROR";
     private static boolean batchedDB = true;
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
+
+    private ProcessUpload() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     public static void sendMonthlyFlightsUpdate(int fleetID) {
         try {
@@ -404,7 +408,7 @@ public class ProcessUpload {
             }
         }
 
-        // ingestion was successfull
+        // ingestion was successful
         return true;
     }
 

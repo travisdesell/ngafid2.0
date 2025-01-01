@@ -125,6 +125,7 @@ public final class RunLOCICalculations {
                     Iterator<Integer> it = Arrays.stream(nums).iterator();
                     flightNums = Optional.of(it);
                 }
+                default -> {}
             }
         }
         return flightNums;

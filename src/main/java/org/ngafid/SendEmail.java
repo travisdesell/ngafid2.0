@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class SendEmail {
+public final class SendEmail {
 
     private static final ArrayList<String> ADMIN_EMAILS;
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
@@ -28,6 +28,10 @@ public class SendEmail {
     private static String username;
     private static boolean emailEnabled = true;
     // before trying to free old tokens
+
+    private SendEmail() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     static {
 
@@ -191,6 +195,7 @@ public class SendEmail {
      *
      * @param subject - subject of the email
      * @param body    - body of the email
+     * @param emailType - type of email to send
      */
     public static void sendAdminEmails(String subject, String body, EmailType emailType) {
 

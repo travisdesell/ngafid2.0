@@ -18,7 +18,7 @@ public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
 
     // Fleet ID - Airframe - Month - Total Flights
-    private static final Map<Integer, Map<String, Map<String, Integer>>> monthlyTotalFlightsMap = new HashMap<>();
+    private static final Map<Integer, Map<String, Map<String, Integer>>> MONTHLY_TOTAL_FLIGHTS_MAP = new HashMap<>();
 
     private static final String EVENT_COUNT_BASE_QUERY_PARAMS = """
                      SELECT COUNT(DISTINCT e.id) AS
@@ -52,8 +52,7 @@ public class EventStatistics {
 
     private static final String MONTHLY_EVENT_COUNT_QUERY_GROUP_BY = EVENT_COUNT_BASE_QUERY_GROUP_BY + """
                           , YEAR(e.start_time),
-                            MONTH(e.start_time)
-            
+                            MONTH(e.start_time)            
             """;
     private final int airframeNameId;
     private final String airframeName;
@@ -139,7 +138,8 @@ public class EventStatistics {
     }
 
     public static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(Connection connection, int fleetId,
-                                         LocalDate startDateNullable, LocalDate endDateNullable) throws SQLException {
+                                                                                     LocalDate startDateNullable,
+                                                                                     LocalDate endDateNullable) throws SQLException {
         final LocalDate startDate = startDateNullable == null ? LocalDate.of(0, 1, 1) : startDateNullable;
         final LocalDate endDate = endDateNullable == null ? LocalDate.now() : endDateNullable;
 
@@ -205,6 +205,7 @@ public class EventStatistics {
      * @param connection is the connection to the database
      * @param startDate  is the earliest date to count flights from
      * @param endDate    is the latest date to count flights from
+     * @return Flight counts
      **/
     public static FlightCounts getFlightCounts(Connection connection, LocalDate startDate, LocalDate endDate)
             throws SQLException {
@@ -254,10 +255,10 @@ public class EventStatistics {
                 newMonthlyTotalFlightsMap.get(airframe).put(month, flights);
             }
 
-            if (!monthlyTotalFlightsMap.containsKey(fleetId)) {
-                monthlyTotalFlightsMap.put(fleetId, newMonthlyTotalFlightsMap);
+            if (!MONTHLY_TOTAL_FLIGHTS_MAP.containsKey(fleetId)) {
+                MONTHLY_TOTAL_FLIGHTS_MAP.put(fleetId, newMonthlyTotalFlightsMap);
             } else {
-                monthlyTotalFlightsMap.get(fleetId).putAll(newMonthlyTotalFlightsMap);
+                MONTHLY_TOTAL_FLIGHTS_MAP.get(fleetId).putAll(newMonthlyTotalFlightsMap);
             }
 
         }
@@ -268,7 +269,8 @@ public class EventStatistics {
     }
 
     public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId,
-                                             String startDateTime, double severity, double duration) throws SQLException {
+                                             String startDateTime, double severity, double duration)
+                                            throws SQLException {
         if (startDateTime.length() < 8) {
             LOG.severe("could not update event statistics because startDateTime was improperly formatted!");
             System.exit(1);
@@ -517,7 +519,7 @@ public class EventStatistics {
     }
 
     private static class EventRow {
-        String rowName;
+        private final String rowName;
 
         private int flightsWithoutError;
         private int flightsWithEvent;
@@ -764,8 +766,8 @@ public class EventStatistics {
         private final int totalFlights;
         private final int processedFlights;
         private final String humanReadable;
-        List<EventRow> monthStats = new ArrayList<EventRow>();
         private final int eventId;
+        private final List<EventRow> monthStats = new ArrayList<EventRow>();
 
         AirframeStatistics(Connection connection, EventDefinition eventDefinition, int fleetId) throws SQLException {
             this.eventId = eventDefinition.getId();
@@ -880,7 +882,7 @@ public class EventStatistics {
         }
     }
 
-    public static abstract class EventCountsWithAggregateBuilder<T extends EventCountsWithAggregate> {
+    public abstract static class EventCountsWithAggregateBuilder<T extends EventCountsWithAggregate> {
         protected final Map<String, Integer> flightsWithEventMap = new HashMap<>();
         protected final Map<String, Integer> totalFlightsMap = new HashMap<>();
         protected final Map<String, Integer> totalEventsMap = new HashMap<>();
@@ -888,8 +890,7 @@ public class EventStatistics {
         protected final Map<String, Integer> aggregateFlightsWithEventMap = new HashMap<>();
         protected final Map<String, Integer> aggregateTotalFlightsMap = new HashMap<>();
         protected final Map<String, Integer> aggregateTotalEventsMap = new HashMap<>();
-
-        TreeSet<String> keys = new TreeSet<>();
+        protected final TreeSet<String> keys = new TreeSet<>();
 
         public static int[] linearize(List<String> keys, Map<String, Integer> map) {
             int[] out = new int[keys.size()];
@@ -922,15 +923,13 @@ public class EventStatistics {
     }
 
     public static class EventCountsWithAggregate {
-        //CHECKSTYLE:OFF
-        public final int[] flightsWithEventCounts;
-        public final int[] totalFlightsCounts;
-        public final int[] totalEventsCounts;
+        private final int[] flightsWithEventCounts;
+        private final int[] totalFlightsCounts;
+        private final int[] totalEventsCounts;
 
-        public final int[] aggregateFlightsWithEventCounts;
-        public final int[] aggregateTotalFlightsCounts;
-        public final int[] aggregateTotalEventsCounts;
-        //CHECKSTYLE:ON
+        private final int[] aggregateFlightsWithEventCounts;
+        private final int[] aggregateTotalFlightsCounts;
+        private final int[] aggregateTotalEventsCounts;
 
         public EventCountsWithAggregate(int[] flightsWithEventCounts, int[] totalFlightsCounts,
                                         int[] totalEventsCounts, int[] aggregateFlightsWithEventCounts,
@@ -946,8 +945,9 @@ public class EventStatistics {
     }
 
     public static class MonthlyEventCounts extends EventCountsWithAggregate {
-        public final String airframeName, eventName;
-        public final List<String> dates;
+        private final String airframeName;
+        private final String eventName;
+        private final List<String> dates;
 
         public MonthlyEventCounts(
                 String airframeName, String eventName, List<String> dates,
@@ -997,8 +997,8 @@ public class EventStatistics {
     }
 
     public static class EventCounts extends EventCountsWithAggregate {
-        public final String airframeName;
-        public final List<String> names;
+        private final String airframeName;
+        private final List<String> names;
 
         public EventCounts(
                 String airframeName, List<String> names,
@@ -1026,6 +1026,8 @@ public class EventStatistics {
 
         /**
          * Place Map values into lists and dead store eliminate maps
+         *
+         * @return EventCounts
          */
         public EventCounts build() {
             ArrayList<String> sortedKeys = new ArrayList<>(keys);
