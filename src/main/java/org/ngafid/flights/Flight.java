@@ -399,21 +399,19 @@ public class Flight {
         return switch (orderingParameter) {
             case "tail_number" ->
                     getFlightsSortedByTails(connection, fleetId, filter, currentPage, pageSize, isAscending);
-            case "itinerary" ->
-                    getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
-                            "itinerary", isAscending);
+            case "itinerary" -> getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
+                    "itinerary", isAscending);
             case "flight_tags" ->
                     getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
                             "flight_tag_map", isAscending);
             case "events" ->
-                    getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize, "events"
-                            , isAscending);
+                    getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
+                            "events", isAscending);
             case "airports_visited" ->
                     getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
-            default ->
-                    Flight.getFlights(connection, fleetId, filter,
-                            " ORDER BY " + orderingParameter + " " + (isAscending ? "ASC" : "DESC") + " LIMIT " +
-                                    (currentPage * pageSize) + "," + pageSize);
+            default -> Flight.getFlights(connection, fleetId, filter,
+                    " ORDER BY " + orderingParameter + " " + (isAscending ? "ASC" : "DESC") + " LIMIT " +
+                            (currentPage * pageSize) + "," + pageSize);
         };
     }
 
@@ -509,6 +507,7 @@ public class Flight {
      * @param fleetId     the fleet id
      * @param filter      the filter used to query flights
      * @param constraints the additional query constraints appended to the query
+     * @return an {@link ArrayList} of flights
      */
     private static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter,
                                                 String constraints) throws SQLException {
@@ -526,7 +525,7 @@ public class Flight {
     }
 
     private static ArrayList<Flight> getFlightsFromQueryString(Connection connection, int fleetId,
-                                                               ArrayList<Object> parameters, String queryString) throws SQLException {
+                                                ArrayList<Object> parameters, String queryString) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
             setQueryParameters(parameters, query);
@@ -582,7 +581,7 @@ public class Flight {
             throws SQLException {
         String queryString =
                 "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " +
-                fleetId + " LIMIT " + lowerId + ", " + (upperId - lowerId);
+                        fleetId + " LIMIT " + lowerId + ", " + (upperId - lowerId);
 
         LOG.info(queryString);
 
@@ -719,6 +718,7 @@ public class Flight {
      * flight
      *
      * @param ids        the array of int ids
+     * @param idName     the name of the id column in the database
      * @param complement a flag to indicate if the string is used to query for tags
      *                   that are not associated with this flight
      * @return a String that is usable in a SQL query
@@ -734,7 +734,6 @@ public class Flight {
             }
             sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName + " = "));
         }
-
         return sb.toString();
     }
 
@@ -751,10 +750,8 @@ public class Flight {
         if (tagIds.isEmpty()) {
             return null;
         }
-
         String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds,
                 false);
-
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
                 query.executeQuery()) {
             List<FlightTag> tags = new ArrayList<>();
@@ -762,7 +759,6 @@ public class Flight {
             while (resultSet.next()) {
                 tags.add(new FlightTag(resultSet));
             }
-
             return tags;
         }
     }
@@ -778,15 +774,12 @@ public class Flight {
     public static List<FlightTag> getAllTags(Connection connection, int fleetId) throws SQLException {
         String queryString =
                 "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE fleet_id = " + fleetId;
-
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
                 query.executeQuery()) {
             List<FlightTag> tags = new ArrayList<>();
-
             while (resultSet.next()) {
                 tags.add(new FlightTag(resultSet));
             }
-
             return tags;
         }
     }
@@ -816,6 +809,7 @@ public class Flight {
      * Returns a list of all the tag names in the database for a fleet
      *
      * @param connection the connection to the database
+     * @param fleetId the fleet ID
      * @return a List with strings containing the tag names
      * @throws SQLException if there is an error with the database query
      */
@@ -857,7 +851,8 @@ public class Flight {
      * @return a List of FlightTags
      * @throws SQLException if there is an error with the database query
      */
-    public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId, int fleetId) throws SQLException {
+    public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId,
+                                                      int fleetId) throws SQLException {
         Set<Integer> tagIds = getTagIds(connection, flightId);
         if (tagIds.isEmpty()) {
             return getAllTags(connection, fleetId);
@@ -872,7 +867,6 @@ public class Flight {
             while (resultSet.next()) {
                 tags.add(new FlightTag(resultSet));
             }
-
             return tags;
         }
     }
@@ -1186,7 +1180,9 @@ public class Flight {
             stringTSPreparedStatement.executeBatch();
         }
 
-        try (PreparedStatement itineraryPreparedStatement = Itinerary.createPreparedStatement(connection); PreparedStatement airportPreparedStatement = Itinerary.createAirportPreparedStatement(connection); PreparedStatement runwayPreparedStatement = Itinerary.createRunwayPreparedStatement(connection)) {
+        try (PreparedStatement itineraryPreparedStatement = Itinerary.createPreparedStatement(connection);
+             PreparedStatement airportPreparedStatement = Itinerary.createAirportPreparedStatement(connection);
+             PreparedStatement runwayPreparedStatement = Itinerary.createRunwayPreparedStatement(connection)) {
             for (Flight flight : flights) {
                 if (flight.itinerary != null) {
                     for (int i = 0; i < flight.itinerary.size(); i++)
@@ -1221,9 +1217,10 @@ public class Flight {
 
     private static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, " +
-                "airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, " +
-                "has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (?," +
-                " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(?), UNIX_TIMESTAMP(?))",
+                        "airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, " +
+                        "has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) " +
+                        "VALUES (?," +
+                        " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(?), UNIX_TIMESTAMP(?))",
                 Statement.RETURN_GENERATED_KEYS);
     }
 
@@ -1519,7 +1516,7 @@ public class Flight {
     /**
      * Runs the Loss of Control/Stall Index calculations
      *
-     * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
+     * @param connection the database connection
      */
     public void runLOCICalculations(Connection connection) throws MalformedFlightFileException, SQLException,
             IOException {
@@ -1550,8 +1547,8 @@ public class Flight {
             checkCalculationParameters(LOCI, LOCI_DEPENDENCIES);
             DoubleTimeSeries hdg = getDoubleTimeSeries(HDG);
             DoubleTimeSeries hdgLagged = hdg.lag(connection, YAW_RATE_LAG);
-            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(connection, PRO_SPIN_FORCE, "index"
-                    , true, this);
+            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(connection, PRO_SPIN_FORCE, "index",
+                    true, this);
             coordIndex.create(index -> {
                 DoubleTimeSeries roll = getDoubleTimeSeries(ROLL);
                 DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
@@ -1570,7 +1567,7 @@ public class Flight {
 
     private CalculatedDoubleTimeSeries getCalculatedDoubleTimeSeries(Connection connection,
                                                                      CalculatedDoubleTimeSeries vspdCalculated)
-                                                                     throws SQLException, IOException {
+            throws SQLException, IOException {
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio",
                 false, this);
         densityRatio.create(index -> {
@@ -1596,7 +1593,7 @@ public class Flight {
     private CalculatedDoubleTimeSeries getCalculatedDoubleTimeSeries(Connection connection,
                                                                      CalculatedDoubleTimeSeries vspdCalculated,
                                                                      CalculatedDoubleTimeSeries densityRatio)
-                                                                     throws SQLException, IOException {
+            throws SQLException, IOException {
         CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(connection, TAS_FTMIN, "ft/min", false,
                 this);
         tasFtMin.create(index -> {
@@ -1691,7 +1688,8 @@ public class Flight {
             fuelQuantities[i] = doubleTimeSeries.get(fuelColumnNames[i]);
 
             if (fuelQuantities[i] == null) {
-                throw new MalformedFlightFileException("Cannot calculate 'Total Fuel' as fuel parameter '" + fuelColumnNames[i] + "' was missing.");
+                throw new MalformedFlightFileException("Cannot calculate 'Total Fuel' as fuel parameter '"
+                        + fuelColumnNames[i] + "' was missing.");
             }
         }
 
@@ -1890,11 +1888,11 @@ public class Flight {
         preparedStatement.addBatch();
     }
 
-    public void updateDatabase(Connection connection, int uploadId, int uploaderId, int fltId) throws IOException,
-            SQLException {
+    public void updateDatabase(Connection connection, int newUploadId, int newUploaderId, int fltId)
+            throws IOException, SQLException {
         this.fleetId = fltId;
-        this.uploaderId = uploaderId;
-        this.uploadId = uploadId;
+        this.uploaderId = newUploaderId;
+        this.uploadId = newUploadId;
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             // first check and see if the airframe and tail number already exist in the
@@ -1981,7 +1979,8 @@ public class Flight {
             afterFirst = false;
             for (DoubleTimeSeries timeSeries : series) {
                 String name = timeSeries.getName();
-                if (name.equals("AirportDistance") || name.equals("RunwayDistance") || timeSeries.getMin() == timeSeries.getMax())
+                if (name.equals("AirportDistance") || name.equals("RunwayDistance") ||
+                        timeSeries.getMin() == timeSeries.getMax())
                     continue;
                 if (afterFirst) printWriter.print(",");
                 printWriter.print(timeSeries.get(i));
@@ -1989,7 +1988,6 @@ public class Flight {
             }
             printWriter.println();
         }
-
         printWriter.close();
     }
 }
