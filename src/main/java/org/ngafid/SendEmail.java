@@ -45,7 +45,7 @@ public class SendEmail {
             System.exit(1);
         }
 
-        String NGAFID_EMAIL_INFO = System.getenv("NGAFID_EMAIL_INFO");
+        String ngafidEmailInfo = System.getenv("NGAFID_EMAIL_INFO");
 
         if (System.getenv("NGAFID_ADMIN_EMAILS") == null) {
             System.err.println("ERROR: 'NGAFID_ADMIN_EMAILS' environment variable not specified at runtime.");
@@ -55,8 +55,8 @@ public class SendEmail {
             System.exit(1);
         }
 
-        String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
-        ADMIN_EMAILS = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
+        String ngafidAdminEmails = System.getenv("NGAFID_ADMIN_EMAILS");
+        ADMIN_EMAILS = new ArrayList<String>(Arrays.asList(ngafidAdminEmails.split(";")));
         System.out.println("import emails will always also be sent to the following admin emails:");
         for (String adminEmail : ADMIN_EMAILS) {
             System.out.println("\t'" + adminEmail + "'");
@@ -64,7 +64,7 @@ public class SendEmail {
 
         try {
 
-            File file = new File(NGAFID_EMAIL_INFO);
+            File file = new File(ngafidEmailInfo);
             BufferedReader bufferedReader = null;
 
             // Email info file does not exit...
@@ -81,23 +81,23 @@ public class SendEmail {
 
                     pw.close();
                 } catch (IOException ie) {
-                    LOG.severe("ERROR: Could not write default information to email file: " + NGAFID_EMAIL_INFO);
+                    LOG.severe("ERROR: Could not write default information to email file: " + ngafidEmailInfo);
                 }
 
-                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + NGAFID_EMAIL_INFO +
+                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + ngafidEmailInfo +
                         ".");
 
             } else { // Email info file does exist...
 
                 // ...Read the file
-                bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
+                bufferedReader = new BufferedReader(new FileReader(ngafidEmailInfo));
 
                 username = bufferedReader.readLine();
                 // System.out.println("read username: '" + username + "'");
 
                 if (username != null && username.startsWith("#")) {
                     LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login" +
-                            " information to " + NGAFID_EMAIL_INFO);
+                            " information to " + ngafidEmailInfo);
                 } else {
                     password = bufferedReader.readLine();
                     // System.out.println("read password: '" + password + "'");
@@ -110,7 +110,7 @@ public class SendEmail {
             }
 
         } catch (IOException e) {
-            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + NGAFID_EMAIL_INFO + "'");
+            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + ngafidEmailInfo + "'");
             e.printStackTrace();
             System.exit(1);
         }
@@ -383,8 +383,8 @@ public class SendEmail {
 
     private static class SMTPAuthenticator extends javax.mail.Authenticator {
 
-        String username;
-        String password;
+        private final String username;
+        private final String password;
 
         SMTPAuthenticator(String username, String password) {
             this.username = username;

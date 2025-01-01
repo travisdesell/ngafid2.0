@@ -21,8 +21,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
-public class RunLOCICalculations {
-    static Connection connection = null;
+public final class RunLOCICalculations {
+    private static Connection connection = null;
+
+    private RunLOCICalculations() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     /**
      * Gets an {@link Iterator} of flight ids that have not been calculated yet
@@ -79,43 +83,48 @@ public class RunLOCICalculations {
      *                   file out will reside
      * @param flightNums the instance of the {@link Optional} where the set of
      *                   flight numbers will reside
+     * @return the {@link Optional} instance of the {@link Iterator} of flight
      */
     public static Optional<Iterator<Integer>> processArgs(String[] args, Optional<Path> path,
                                                           Optional<Iterator<Integer>> flightNums) {
         for (int i = 1; i < args.length; i++) {
-            if (args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
-                displayHelp();
-                System.exit(0);
-            } else if (args[i].equals("-f")) {
-                if (i == args.length - 1) {
-                    System.err.println("No arguments specified for -f option! Exiting!");
-                    System.exit(1);
+            switch (args[i]) {
+                case "-h", "--help", "-help" -> {
+                    displayHelp();
+                    System.exit(0);
                 }
-                path = Optional.of(FileSystems.getDefault().getPath(args[i + 1]));
-                if (!Files.exists(path.get())) {
-                    System.err.println("Non-existent filepath: " + path.get() + ", exiting!");
-                    System.exit(1);
-                } else if (!new File(path.get().toUri()).isDirectory()) {
-                    System.err.println("Filepath: " + path.get() + " is not a directory, exiting!");
-                    System.exit(1);
+                case "-f" -> {
+                    if (i == args.length - 1) {
+                        System.err.println("No arguments specified for -f option! Exiting!");
+                        System.exit(1);
+                    }
+                    path = Optional.of(FileSystems.getDefault().getPath(args[i + 1]));
+                    if (!Files.exists(path.get())) {
+                        System.err.println("Non-existent filepath: " + path.get() + ", exiting!");
+                        System.exit(1);
+                    } else if (!new File(path.get().toUri()).isDirectory()) {
+                        System.err.println("Filepath: " + path.get() + " is not a directory, exiting!");
+                        System.exit(1);
+                    }
                 }
-            } else if (args[i].equals("-n")) {
-                if (i == args.length - 1) {
-                    System.err.println("No arguments specified for -n option! Exiting!");
-                    System.exit(1);
-                }
-                String numbers = args[i + 1];
+                case "-n" -> {
+                    if (i == args.length - 1) {
+                        System.err.println("No arguments specified for -n option! Exiting!");
+                        System.exit(1);
+                    }
+                    String numbers = args[i + 1];
 
-                String[] numsAsStrings = numbers.split(",");
-                int[] nums = new int[numsAsStrings.length];
+                    String[] numsAsStrings = numbers.split(",");
+                    int[] nums = new int[numsAsStrings.length];
 
-                for (int j = 0; j < nums.length; j++) {
-                    nums[j] = Integer.parseInt(numsAsStrings[j]);
+                    for (int j = 0; j < nums.length; j++) {
+                        nums[j] = Integer.parseInt(numsAsStrings[j]);
+                    }
+
+                    System.out.println(Arrays.toString(nums));
+                    Iterator<Integer> it = Arrays.stream(nums).iterator();
+                    flightNums = Optional.of(it);
                 }
-
-                System.out.println(Arrays.toString(nums));
-                Iterator<Integer> it = Arrays.stream(nums).iterator();
-                flightNums = Optional.of(it);
             }
         }
         return flightNums;
@@ -142,9 +151,9 @@ public class RunLOCICalculations {
         }
 
         Instant end = Instant.now();
-        long elapsed_millis = Duration.between(start, end).toMillis();
-        double elapsed_seconds = ((double) elapsed_millis) / 1000;
-        System.out.println("calculations took: " + elapsed_seconds);
+        long elapsedMillis = Duration.between(start, end).toMillis();
+        double elapsedSeconds = ((double) elapsedMillis) / 1000;
+        System.out.println("calculations took: " + elapsedSeconds);
     }
 
     /**

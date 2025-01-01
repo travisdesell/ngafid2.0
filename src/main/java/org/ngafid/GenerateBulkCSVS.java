@@ -25,17 +25,18 @@ import java.util.zip.ZipOutputStream;
 
 public class GenerateBulkCSVS {
     private final String outDirectoryRoot;
-    private String uploadDirectoryRoot;
     private final int fleetId;
+    private final boolean useZip;
+    private String uploadDirectoryRoot;
     private List<Flight> flights;
     private Optional<List<String>> aircraftNames;
-    private final boolean useZip;
 
     /**
      * Constructor
      *
      * @param outDirectoryRoot the root directory of the output file(s)
      * @param query            the WHERE clause of the query we will use
+     * @param fleetId          the fleet id
      * @param useZip           indicated if all files will be exported in a zip file
      */
     public GenerateBulkCSVS(String outDirectoryRoot, String query, int fleetId, boolean useZip) {
@@ -57,13 +58,14 @@ public class GenerateBulkCSVS {
      * Constructor
      *
      * @param outDirectoryRoot the root directory of the output file(s)
+     * @param aircraftNames    optional list of aircraft names to filter by
      * @param fleetId          the fleet id
      * @param useZip           indicated if all files will be exported in a zip file
      * @param flightLower      the lower bound of the flightid
      * @param flightUpper      the upper bound of the flightid
      */
     public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames, int fleetId,
-							boolean useZip, int flightLower, int flightUpper) {
+                            boolean useZip, int flightLower, int flightUpper) {
         this.outDirectoryRoot = outDirectoryRoot;
         this.aircraftNames = aircraftNames;
         this.fleetId = fleetId;
@@ -92,14 +94,14 @@ public class GenerateBulkCSVS {
      * Constructor
      *
      * @param outDirectoryRoot the root directory of the output file(s)
-	 * @param aircraftNames    the names of the aircraft to filter by
-	 * @param fleetId 		   the fleet id
+     * @param aircraftNames    the names of the aircraft to filter by
+     * @param fleetId          the fleet id
      * @param useZip           indicated if all files will be exported in a zip file
      * @param startDate        the start date to use
      * @param endDate          the end tdate to use
      */
-    public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames, int fleetId,
-							boolean useZip, String startDate, String endDate) throws SQLException {
+    public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames,
+                            int fleetId, boolean useZip, String startDate, String endDate) {
 
         this.outDirectoryRoot = outDirectoryRoot;
         this.fleetId = fleetId;
@@ -143,9 +145,9 @@ public class GenerateBulkCSVS {
      * Info function for command line usage
      */
     public static void usage() {
-        System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) [-d date range YYYY-MM-DD " +
-				"to YYYY-MM-DD]\n" + "[-z (enable zip arciving)] [-r range lwr upr (flight numbers)] [-a Aircraft " +
-				"Name]");
+        System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) " +
+                "[-d date range YYYY-MM-DD to YYYY-MM-DD]\n" + "[-z (enable zip archiving)] " +
+                "[-r range lwr upr (flight numbers)] [-a Aircraft Name]");
     }
 
     /**
@@ -160,8 +162,10 @@ public class GenerateBulkCSVS {
         }
         System.err.println("cmd args: " + Arrays.toString(args));
 
-        String dir = null, query = null;
-        int lwr = -1, upr = -1;
+        String dir = null;
+        String query = null;
+        int lwr = -1;
+        int upr = -1;
         int fleetId = -1;
         Optional<String> lDate = Optional.empty(), uDate = Optional.empty();
 
@@ -235,7 +239,7 @@ public class GenerateBulkCSVS {
 
                     List<String> names = new ArrayList<>();
                     while (j < args.length && ((notEnd = !args[j].startsWith("-")) | (isNextAircraftPresent =
-							args[j].startsWith(",")))) {
+                            args[j].startsWith(",")))) {
                         if (isNextAircraftPresent) {
                             String acftStr = sb.toString();
                             int strLen = acftStr.length();
@@ -283,7 +287,7 @@ public class GenerateBulkCSVS {
             System.exit(1);
         }
 
-        if (!dir.substring(dir.length() - 1).equals("/")) {
+        if (!dir.endsWith("/")) {
             System.out.println(dir);
             dir += "/";
             System.out.println("corrected unix path to: " + dir);
@@ -368,8 +372,9 @@ public class GenerateBulkCSVS {
         if (this.useZip) {
             try {
                 FileOutputStream fos =
-						new FileOutputStream(this.outDirectoryRoot + "/flights_" +
-								this.flights.get(0).getId() + "_" + this.flights.get(this.flights.size() - 1).getId());
+                        new FileOutputStream(this.outDirectoryRoot + "/flights_" +
+                                this.flights.get(0).getId() + "_" +
+                                this.flights.get(this.flights.size() - 1).getId());
                 zipOut = new ZipOutputStream(fos);
             } catch (IOException ie) {
                 ie.printStackTrace();
@@ -384,7 +389,7 @@ public class GenerateBulkCSVS {
 
                 File file = new File(this.outDirectoryRoot + "flight_" + flight.getId() + ".csv");
                 CachedCSVWriter csvWriter = new CachedCSVWriter(this.uploadDirectoryRoot, flight, Optional.of(file),
-						false);
+                        false);
 
                 if (!this.useZip) {
                     csvWriter.writeToFile();
@@ -408,8 +413,8 @@ public class GenerateBulkCSVS {
         }
 
         File file =
-				new File(this.outDirectoryRoot + "flights_" + flights.get(0).getId() +
-						"_" + flights.get(flights.size() - 1).getId() + ".zip");
+                new File(this.outDirectoryRoot + "flights_" + flights.get(0).getId() +
+                        "_" + flights.get(flights.size() - 1).getId() + ".zip");
 
         try {
             if (!file.exists()) {
@@ -424,10 +429,10 @@ public class GenerateBulkCSVS {
                 try {
                     int uploaderId = flight.getUploaderId();
                     this.uploadDirectoryRoot =
-							WebServer.NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" + uploaderId + "/";
+                            WebServer.NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" + uploaderId + "/";
 
                     CachedCSVWriter csvWriter = new CachedCSVWriter(this.uploadDirectoryRoot, flight,
-							Optional.empty(), false);
+                            Optional.empty(), false);
                     ZipEntry zipEntry = csvWriter.getFlightEntry();
 
                     zipOut.putNextEntry(zipEntry);

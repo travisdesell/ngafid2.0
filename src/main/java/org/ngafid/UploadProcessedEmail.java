@@ -198,22 +198,22 @@ public class UploadProcessedEmail {
          * This is a helper class so we don't keep all loaded flights in memory.
          */
 
-        int id;
-        int length;
-        String filename;
+        private int id;
+        private int length;
+        private final String filename;
 
-        FlightStatus status = FlightStatus.OK;
+        private FlightStatus status = FlightStatus.OK;
 
-        TreeSet<String> errorMessages = new TreeSet<String>();
-        TreeSet<String> warningMessages = new TreeSet<String>();
+        private final TreeSet<String> errorMessages = new TreeSet<String>();
+        private final TreeSet<String> warningMessages = new TreeSet<String>();
 
-        TreeSet<String> exceedenceMessages = new TreeSet<String>();
-        TreeSet<String> exceedenceErrorMessages = new TreeSet<String>();
+        private final TreeSet<String> exceedenceMessages = new TreeSet<String>();
+        private final TreeSet<String> exceedenceErrorMessages = new TreeSet<String>();
 
-        TreeSet<String> proximityMessages = new TreeSet<String>();
-        TreeSet<String> proximityErrorMessages = new TreeSet<String>();
+        private final TreeSet<String> proximityMessages = new TreeSet<String>();
+        private final TreeSet<String> proximityErrorMessages = new TreeSet<String>();
 
-        TreeSet<String> ttfErrorMessages = new TreeSet<String>();
+        private final TreeSet<String> ttfErrorMessages = new TreeSet<String>();
 
         FlightInfo(String filename) {
             this.filename = filename;

@@ -30,8 +30,7 @@ import java.util.zip.ZipFile;
 
 public class ProcessUpload {
     private static final String ERROR_STATUS_STR = "ERROR";
-    static int poolSize = 1;
-    static boolean batchedDB = true;
+    private static boolean batchedDB = true;
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
     public static void sendMonthlyFlightsUpdate(int fleetID) {
@@ -78,8 +77,6 @@ public class ProcessUpload {
      * does not complete and this results in flights being in the database with a
      * non-existant
      * upload. This can cause the upload process to crash.
-     *
-     * @param connection is the connection to the database
      */
     public static void removeNoUploadFlights() {
         try (Connection connection = Database.getConnection()) {
@@ -87,7 +84,8 @@ public class ProcessUpload {
                     "WHERE uploads.id = flights.upload_id)");
 
             for (Flight flight : noUploadFlights) {
-                LOG.info("flight had no related upload. flight id: " + flight.getId() + ", uplaod id: " + flight.getUploadId());
+                LOG.info("flight had no related upload. flight id: " + flight.getId()
+                        + ", upload id: " + flight.getUploadId());
                 flight.remove(connection);
             }
 
@@ -141,9 +139,9 @@ public class ProcessUpload {
             }
 
             Instant end = Instant.now();
-            double elapsed_millis = (double) Duration.between(start, end).toMillis();
-            double elapsed_seconds = elapsed_millis / 1000;
-            LOG.info("finished in " + elapsed_seconds);
+            double elapsedMillis = (double) Duration.between(start, end).toMillis();
+            double elapsedSeconds = elapsedMillis / 1000;
+            LOG.info("finished in " + elapsedSeconds);
 
             try {
                 Thread.sleep(10000);
@@ -349,10 +347,10 @@ public class ProcessUpload {
             return false;
         } else {
             Instant end = Instant.now();
-            double elapsed_millis = (double) Duration.between(start, end).toMillis();
-            double elapsed_seconds = elapsed_millis / 1000;
-            LOG.info("email in " + elapsed_seconds);
-            uploadProcessedEmail.setImportElapsedTime(elapsed_seconds);
+            double elapsedMillis = (double) Duration.between(start, end).toMillis();
+            double elapsedSeconds = elapsedMillis / 1000;
+            LOG.info("email in " + elapsedSeconds);
+            uploadProcessedEmail.setImportElapsedTime(elapsedSeconds);
 
             LOG.info("valid flights: " + validFlights);
             LOG.info("warning flights: " + warningFlights);
@@ -415,11 +413,12 @@ public class ProcessUpload {
          * This is a helper class so we don't keep all loaded flights in memory.
          */
 
+        //CHECKSTYLE:OFF
         int id;
         int length;
         String filename;
         List<MalformedFlightFileException> exceptions;
-
+        //CHECKSTYLE:ON
         public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
             this.id = id;
             this.length = length;
