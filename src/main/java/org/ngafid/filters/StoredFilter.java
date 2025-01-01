@@ -1,14 +1,13 @@
 package org.ngafid.filters;
 
+import org.ngafid.accounts.User;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import org.ngafid.accounts.User;
 
 /**
  * This class contains data pertaining to a {@link User}'s stored {@link Filter} that they wish to apply in future
@@ -16,7 +15,7 @@ import org.ngafid.accounts.User;
  *
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
-public class StoredFilter {
+public final class StoredFilter {
     private final String name; // Common name given by the user
     private final String filter; // Filter as a String in JSON form
     private final String color; // Color of the filter in hex
@@ -40,15 +39,12 @@ public class StoredFilter {
      *
      * @param connection is the SQL database connection
      * @param fleetId    is the id of the fleet that the filter belongs to
-     *
      * @return an {@link List} with {@link StoredFilter} instances, a collection of all that belong to the user.
-     *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static List<StoredFilter> getStoredFilters(Connection connection, int fleetId) throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement("SELECT name, filter_json, color FROM stored_filters WHERE fleet_id = " + fleetId);
-                ResultSet resultSet = query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement("SELECT name, filter_json, color FROM " +
+                "stored_filters WHERE fleet_id = " + fleetId); ResultSet resultSet = query.executeQuery()) {
 
             List<StoredFilter> filters = new ArrayList<>();
 
@@ -67,16 +63,16 @@ public class StoredFilter {
      *
      * @param connection is the SQL database connection
      * @param fleetId    is the id of the fleet that the filter belongs to
+     * @param filterJSON is the filter in JSON form
+     * @param name       is the common name given by the user
      * @param color      is the color of this filter in hex
-     * 
      * @return a {@link StoredFilter} instance containing the data upon successful insertion into the db
-     *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static StoredFilter storeFilter(Connection connection, int fleetId, String filterJSON, String name,
-            String color) throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement("INSERT INTO stored_filters (filter_json, name, fleet_id, color) VALUES (?,?,?,?)")) {
+                                           String color) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement("INSERT INTO stored_filters (filter_json, name, " +
+                "fleet_id, color) VALUES (?,?,?,?)")) {
             query.setString(1, filterJSON);
             query.setString(2, name);
             query.setInt(3, fleetId);
@@ -94,12 +90,11 @@ public class StoredFilter {
      * @param connection is the SQL database connection
      * @param fleetId    is the id of the fleet that the filter belongs to
      * @param name       is the name of the filter to be removed
-     *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static void removeFilter(Connection connection, int fleetId, String name) throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement("DELETE FROM stored_filters WHERE fleet_id = ? AND name = ?")) {
+        try (PreparedStatement query = connection.prepareStatement("DELETE FROM stored_filters WHERE fleet_id = ? AND" +
+                " name = ?")) {
             query.setInt(1, fleetId);
             query.setString(2, name);
             query.executeUpdate();
@@ -112,14 +107,12 @@ public class StoredFilter {
      * @param connection is the SQL database connection
      * @param fleetId    is the id of the fleet that the filter belongs to
      * @param name       is the name of the filter to be removed
-     *
      * @return a boolean representing the presence of the filter in the database
-     *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static boolean filterExists(Connection connection, int fleetId, String name) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement(
-                "SELECT EXISTS(SELECT name, fleet_id FROM stored_filters WHERE fleet_id = ? AND name = ?)")) {
+        try (PreparedStatement query = connection.prepareStatement("SELECT EXISTS(SELECT name, fleet_id FROM " +
+                "stored_filters WHERE fleet_id = ? AND name = ?)")) {
             query.setInt(1, fleetId);
             query.setString(2, name);
 
@@ -143,13 +136,12 @@ public class StoredFilter {
      * @param currentName is the name of the filter that already exists
      * @param newName     is the new name to be given to the {@link StoredFilter}
      * @param color       is the color of this filter in hex
-     *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static void modifyFilter(Connection connection, int fleetId, String filterJSON, String currentName,
-            String newName, String color) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement(
-                "UPDATE stored_filters SET fleet_id = ?, name = ?, filter_json = ?, color = ? WHERE name = ? AND fleet_id = ?")) {
+                                    String newName, String color) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement("UPDATE stored_filters SET fleet_id = ?, name = ?," +
+                " filter_json = ?, color = ? WHERE name = ? AND fleet_id = ?")) {
             query.setInt(1, fleetId);
             query.setString(2, newName);
             query.setString(3, filterJSON);

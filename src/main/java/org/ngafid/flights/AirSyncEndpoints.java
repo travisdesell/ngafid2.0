@@ -6,7 +6,6 @@ public interface AirSyncEndpoints {
     // (although memory usage should be fairly small here anyways).
     int PAGE_SIZE = 25;
 
-
     //NOTE: DEV endpoints
     //comment this block out and uncomment the below for prod endpoints
 

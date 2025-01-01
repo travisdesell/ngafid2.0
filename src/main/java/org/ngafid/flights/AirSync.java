@@ -17,11 +17,15 @@ import org.ngafid.accounts.AirSyncFleet;
  * This class contains code for controlling the AirSync daemon, as well
  * as many other methods may be used by the daemon
  */
-public class AirSync {
+public final class AirSync {
     // How long the daemon will wait before making another request
     private static final long DEFAULT_WAIT_TIME = 10000;
 
     private static final Logger LOG = Logger.getLogger(AirSync.class.getName());
+
+    private AirSync() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     /**
      * Gracefully handles an exception from the AirSync API
@@ -37,7 +41,8 @@ public class AirSync {
 
         if (message.contains("HTTP response code: 40")) {
             LOG.severe(
-                    "Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
+                    "Bearer token is no longer valid (someone may have requested one elsewhere, " +
+                            "or this daemon is running somewhere else!).");
             authentication.requestAuthorization();
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
@@ -54,8 +59,8 @@ public class AirSync {
      * @param message the message that needs to be sent
      */
     public static void sendAdminCrashNotification(String message) throws SQLException {
-        String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
-        ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
+        String ngafidAdminEmails = System.getenv("NGAFID_ADMIN_EMAILS");
+        ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(ngafidAdminEmails.split(";")));
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
         SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message,
@@ -74,7 +79,7 @@ public class AirSync {
         // TODO: format this as html!
         StringBuilder sb = new StringBuilder(
                 "The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
-        sb.append("Exception caught: " + e.getMessage() + "\n");
+        sb.append("Exception caught: ").append(e.getMessage()).append("\n");
         sb.append("Stack trace:\n");
         sb.append(ExceptionUtils.getStackTrace(e));
 
@@ -105,10 +110,9 @@ public class AirSync {
                     }
                 }
 
-                return;
-
             case "remove-all":
                 break;
+            default:
         }
     }
 
@@ -153,7 +157,8 @@ public class AirSync {
 
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
                     LOG.severe(
-                            "This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
+                            "This instance of the NGAFID does not have any AirSync fleets configured." +
+                                    " Please check the database and try again");
                     System.exit(1);
                 }
 

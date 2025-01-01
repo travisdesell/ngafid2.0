@@ -16,8 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.events.CustomEvent.HIGH_ALTITUDE_SPIN;
-import static org.ngafid.events.CustomEvent.LOW_ALTITUDE_SPIN;
+import static org.ngafid.events.CustomEvent.*;
 import static org.ngafid.flights.Parameters.*;
 
 /**
@@ -41,8 +40,8 @@ public final class FindSpinEvents {
             String whereClause = "upload_id = " + upload.getId() +
                     " AND insert_completed = 1 AND NOT EXISTS " +
                     "(SELECT flight_id FROM flight_processed WHERE " +
-                    "(event_definition_id = " + LOW_ALTITUDE_SPIN.getId() +
-                    " OR event_definition_id = " + HIGH_ALTITUDE_SPIN.getId() + ")" +
+                    "(event_definition_id = " + getLowAltitudeSpin().getId() +
+                    " OR event_definition_id = " + getHighAltitudeSpin().getId() + ")" +
                     " AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
@@ -160,10 +159,10 @@ public final class FindSpinEvents {
                     if (endSpinSeconds >= STOP_DELAY || currentEvent == null) {
                         if (currentEvent != null) {
                             if (altCstrViolated) {
-                                currentEvent.setDefinition(LOW_ALTITUDE_SPIN);
+                                currentEvent.setDefinition(getLowAltitudeSpin());
                                 lowAltitudeSpins.add(currentEvent);
                             } else {
-                                currentEvent.setDefinition(HIGH_ALTITUDE_SPIN);
+                                currentEvent.setDefinition(getHighAltitudeSpin());
                                 highAltitudeSpins.add(currentEvent);
                             }
                         }
@@ -195,22 +194,22 @@ public final class FindSpinEvents {
         String flightStartDateTime = flight.getStartDateTime();
         if (!highAltitudeSpins.isEmpty()) {
             EventStatistics.updateFlightsWithEvent(connection, fleetId,
-                    airframeNameId, HIGH_ALTITUDE_SPIN.getId(), flightStartDateTime);
+                    airframeNameId, getHighAltitudeSpin().getId(), flightStartDateTime);
         } else {
             EventStatistics.updateFlightsWithoutEvent(connection, fleetId,
-                    airframeNameId, HIGH_ALTITUDE_SPIN.getId(), flightStartDateTime);
+                    airframeNameId, getHighAltitudeSpin().getId(), flightStartDateTime);
         }
 
         if (!lowAltitudeSpins.isEmpty()) {
             EventStatistics.updateFlightsWithEvent(connection, fleetId,
-                    airframeNameId, LOW_ALTITUDE_SPIN.getId(), flightStartDateTime);
+                    airframeNameId, getLowAltitudeSpin().getId(), flightStartDateTime);
         } else {
             EventStatistics.updateFlightsWithoutEvent(connection, fleetId,
-                    airframeNameId, LOW_ALTITUDE_SPIN.getId(), flightStartDateTime);
+                    airframeNameId, getLowAltitudeSpin().getId(), flightStartDateTime);
         }
 
-        setFlightProcessed(connection, flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());
-        setFlightProcessed(connection, flight, LOW_ALTITUDE_SPIN.getId(), hadError, lowAltitudeSpins.size());
+        setFlightProcessed(connection, flight, getHighAltitudeSpin().getId(), hadError, highAltitudeSpins.size());
+        setFlightProcessed(connection, flight, getLowAltitudeSpin().getId(), hadError, lowAltitudeSpins.size());
     }
 
     /**

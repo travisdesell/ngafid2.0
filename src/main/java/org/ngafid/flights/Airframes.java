@@ -15,8 +15,12 @@ import java.util.logging.Logger;
 
 import org.ngafid.common.NormalizedColumn;
 
-public class Airframes {
+public final class Airframes {
     private static final Logger LOG = Logger.getLogger(Airframes.class.getName());
+
+    private Airframes() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     /**
      * {@link Airframes} names
@@ -82,8 +86,9 @@ public class Airframes {
             AIRFRAME_BEECHCRAFT_A36_G36,
             AIRFRAME_BEECHCRAFT_G58));
 
-    public static Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
-
+    //CHECKSTYLE:OFF
+    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
+    //CHECKSTYLE:ON
     public record AliasKey(String name, int fleetId) {
     }
 
@@ -91,6 +96,7 @@ public class Airframes {
         return new AliasKey(name, -1);
     }
 
+    //CHECKSTYLE:OFF
     public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
             Map.entry(defaultAlias("Unknown Aircraft"), ""),
             Map.entry(defaultAlias("Garmin Flight Display"), ""),
@@ -99,7 +105,7 @@ public class Airframes {
             Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
             Map.entry(defaultAlias("Robinson R44"), "R44"),
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
-
+    //CHECKSTYLE:ON
     public static class Airframe extends NormalizedColumn<Airframe> {
 
         @Override
@@ -167,7 +173,8 @@ public class Airframes {
     public static ArrayList<String> getAll(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> airframes = new ArrayList<>();
 
-        String queryString = "SELECT airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+        String queryString = "SELECT airframe FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
 
@@ -238,7 +245,8 @@ public class Airframes {
     public static HashMap<Integer, String> getIdToNameMap(Connection connection, int fleetId) throws SQLException {
         HashMap<Integer, String> idToNameMap = new HashMap<Integer, String>();
 
-        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = "
+        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = "
                 + fleetId + " ORDER BY airframe";
 
         try (PreparedStatement query = connection.prepareStatement(queryString);

@@ -1,12 +1,20 @@
 package org.ngafid.flights;
 
-import java.sql.*;
-import java.util.*;
-import org.ngafid.*;
+import org.ngafid.Database;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 
 public class AirSyncImportResponse {
-    public int id, uploadId, flightId, fleetId;
-    public String tail, status, timeReceived;
+    private int id;
+    private int uploadId;
+    private int flightId;
+    private int fleetId;
+    public String tail;
+    private String status;
+    private String timeReceived;
     public List<FlightWarning> warnings;
 
     // String sql = "SELECT a.id, a.time_received, a.upload_id, f.status,

@@ -47,6 +47,7 @@ public class Filter {
     /**
      * Helper function for get column names. Appends non-duplicate column names to the input parameter.
      *
+     * @param filter     the filter to get the column names from
      * @param columnNames holds all the column names found
      */
     public void getColumnNamesHelper(Filter filter, TreeSet<String> columnNames) {
@@ -80,7 +81,7 @@ public class Filter {
     /**
      * Adds a filter to a GROUP filter
      *
-     * @param condition the condition for the filter group
+     * @param filter the filter to add to the group
      */
     public void addFilter(Filter filter) {
         if (filters != null) {
@@ -95,7 +96,7 @@ public class Filter {
      * Check to see of the passed string is &lt;=, &lt;, =, &gt; or &gt;=
      * to make sure the formulated mysql query wont be hijacked
      *
-     * @param operator the operator string passed from the query filter
+     * @param op the operator string passed from the query filter
      * @return the passed string if valid, null otherwise
      */
     public String checkOperator(String op) {
@@ -109,7 +110,7 @@ public class Filter {
      * Check to see of the passed string is 'min', 'avg', or 'max'
      * to make sure the formulated mysql query wont be hijacked
      *
-     * @param operator the operator string passed from the query filter
+     * @param op the operator string passed from the query filter
      * @return the passed string if valid, null otherwise
      */
     public String checkSeriesOp(String op) {
@@ -127,7 +128,7 @@ public class Filter {
      * @return the 0 padded time value string
      */
     public String timePad(String value) {
-        if (value.length() == 0) return "00";
+        if (value.isEmpty()) return "00";
         else if (value.length() == 1) return "0" + value;
         else return value;
     }
@@ -137,8 +138,8 @@ public class Filter {
      * Converts a datetime and long form time zone offset (from the filter select) to
      * a time in GMT.
      *
-     * @param the date time in yyyy-MM-dd hh:mm:ss
-     * @param the time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
+     * @param datetime date time in yyyy-MM-dd hh:mm:ss
+     * @param longOffset time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
      * @return the date time in yyyy-MM-dd hh:mm:ss converted to GMT
      */
     public static String getOffsetDateTime(String datetime, String longOffset) {
@@ -158,8 +159,8 @@ public class Filter {
      * Converts a time and long form time zone offset (from the filter select) to
      * a time in GMT.
      *
-     * @param the time in hh:mm:ss
-     * @param the time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
+     * @param time time in hh:mm:ss
+     * @param longOffset time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
      * @return the date time in hh:mm:ss converted to GMT
      */
     public static String getOffsetTime(String time, String longOffset) {
@@ -185,7 +186,7 @@ public class Filter {
      */
     public String getRuleQuery(int fleetId, ArrayList<Object> parameters) {
         String eventName;
-        String condition;
+        String cond;
 
         int seperatorIndex;
 
@@ -210,10 +211,10 @@ public class Filter {
                 }
 
             case "Flight ID":
-                condition = checkOperator(inputs.get(1));
+                cond = checkOperator(inputs.get(1));
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
-                return "flights.fleet_id = ? AND flights.id " + condition + " ?";
+                return "flights.fleet_id = ? AND flights.id " + cond + " ?";
 
 
             case "Tail Number":
@@ -245,11 +246,7 @@ public class Filter {
                 parameters.add(inputs.get(2));
                 return "DATE(flights.end_time) " + checkOperator(inputs.get(1)) + " ?";
 
-            case "Start Time":
-                parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
-                return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
-
-            case "End Time":
+            case "Start Time", "End Time":
                 parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
                 return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
 
@@ -289,7 +286,7 @@ public class Filter {
 
             case "Event Count":
                 eventName = inputs.get(1);
-                condition = checkOperator(inputs.get(2));
+                cond = checkOperator(inputs.get(2));
 
                 seperatorIndex = eventName.indexOf(" - ");
                 if (seperatorIndex < 0) {
@@ -299,7 +296,7 @@ public class Filter {
                     return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed" +
                             ".flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions " +
                             "WHERE event_definitions.name = ? AND event_definitions.airframe_id = 0) AND " +
-                            "flight_processed.count " + condition + " ?)";
+                            "flight_processed.count " + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(seperatorIndex + 3);
                     eventName = eventName.substring(0, seperatorIndex);
@@ -311,12 +308,12 @@ public class Filter {
                     return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed" +
                             ".flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions " +
                             "WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM " +
-                            "airframes WHERE airframe = ?)) AND flight_processed.count " + condition + " ?)";
+                            "airframes WHERE airframe = ?)) AND flight_processed.count " + cond + " ?)";
                 }
 
             case "Event Severity":
                 eventName = inputs.get(1);
-                condition = checkOperator(inputs.get(2));
+                cond = checkOperator(inputs.get(2));
 
                 seperatorIndex = eventName.indexOf(" - ");
                 if (seperatorIndex < 0) {
@@ -325,7 +322,7 @@ public class Filter {
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
                             ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
-                            "? AND event_definitions.airframe_id = 0) AND events.severity " + condition + " ?)";
+                            "? AND event_definitions.airframe_id = 0) AND events.severity " + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(seperatorIndex + 3);
                     eventName = eventName.substring(0, seperatorIndex);
@@ -337,12 +334,12 @@ public class Filter {
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
                             ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
                             "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
-                            " events.severity " + condition + " ?)";
+                            " events.severity " + cond + " ?)";
                 }
 
             case "Event Duration":
                 eventName = inputs.get(1);
-                condition = checkOperator(inputs.get(2));
+                cond = checkOperator(inputs.get(2));
 
                 seperatorIndex = eventName.indexOf(" - ");
                 if (seperatorIndex < 0) {
@@ -352,7 +349,7 @@ public class Filter {
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
                             ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
                             "? AND event_definitions.airframe_id = 0) AND ((events.end_line - events.start_line) + 1)" +
-                            " " + condition + " ?)";
+                            " " + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(seperatorIndex + 3);
                     eventName = eventName.substring(0, seperatorIndex);
@@ -364,7 +361,7 @@ public class Filter {
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
                             ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
                             "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
-                            " ((events.end_line - events.start_line) + 1) " + condition + " ?)";
+                            " ((events.end_line - events.start_line) + 1) " + cond + " ?)";
                 }
 
             case "Tag":
@@ -397,10 +394,10 @@ public class Filter {
             return "(" + getRuleQuery(fleetId, parameters) + ")";
 
         } else if (type.equals("GROUP")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string += " " + condition + " ";
-                string += filters.get(i).toQueryString(fleetId, parameters);
+                if (i > 0) string.append(" ").append(condition).append(" ");
+                string.append(filters.get(i).toQueryString(fleetId, parameters));
             }
 
             return "(" + string + ")";
@@ -426,19 +423,19 @@ public class Filter {
         }
 
         if (type.equals("RULE")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < inputs.size(); i++) {
-                if (i > 0) string += " ";
-                string += inputs.get(i);
+                if (i > 0) string.append(" ");
+                string.append(inputs.get(i));
             }
 
-            return string;
+            return string.toString();
 
         } else if (type.equals("GROUP")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string += " " + condition + " ";
-                string += filters.get(i).toHumanReadable();
+                if (i > 0) string.append(" ").append(condition).append(" ");
+                string.append(filters.get(i).toHumanReadable());
             }
 
             return "(" + string + ")";
@@ -453,7 +450,7 @@ public class Filter {
     /**
      * Recursively returns a string representation of this filter and all it's children
      *
-     * @return A string represntation of this filter
+     * @return A string representation of this filter
      */
     public String toString() {
         if (type.equals("RULE")) {
@@ -491,5 +488,10 @@ public class Filter {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }
