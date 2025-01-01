@@ -28,4 +28,4 @@ jobs:
           LINTER_RULES_PATH: .github/linters
           JAVA_FILE_NAME: checkstyle.xml
           # TODO: Remove once Javalin PR is merged
-          FILTER_REGEX_EXCLUDE: "org/ngafid/routes/*"
+          FILTER_REGEX_EXCLUDE: "(org/ngafid/routes|cesium/build)/*"
