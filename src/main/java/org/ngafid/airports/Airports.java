@@ -14,10 +14,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public final class Airports {
-    public static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
-    public static final String AIRPORTS_FILE;
-    public static final String RUNWAYS_FILE;
-    public static final double FT_PER_KM = 3280.84;
+    private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
+    private static final String AIRPORTS_FILE;
+    private static final String RUNWAYS_FILE;
+    private static final double FT_PER_KM = 3280.84;
     private static final Logger LOG = Logger.getLogger(Airports.class.getName());
     private static final HashMap<String, ArrayList<Airport>> GEO_HASH_TO_AIRPORT;
     private static final HashMap<String, Airport> SITE_NUMBER_TO_AIRPORT;

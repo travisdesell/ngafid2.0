@@ -57,7 +57,7 @@ public final class CalculateTTF {
         double elapsedMillis = (double) Duration.between(start, end).toMillis();
         double elapsedSeconds = Math.round(elapsedMillis) / 1000;
         System.err.println("calculated TTF for " + total + " flight(s) in " + elapsedSeconds + "s");
-        uploadProcessedEmail.setTTFElapsedTime(elapsedSeconds);
+        uploadProcessedEmail.setTtfElapsedTime(elapsedSeconds);
     }
 
     /**
