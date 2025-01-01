@@ -6,16 +6,18 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import java.util.HashMap;
-import java.util.logging.Logger;
+import java.util.Map;
 
-public class ErrorMessage {
-    private static final Logger LOG = Logger.getLogger(ErrorMessage.class.getName());
+public final class ErrorMessage {
+    private static final Map<String, Integer> ID_MAP = new HashMap<>();
+    private static final Map<Integer, String> MESSAGE_MAP = new HashMap<>();
 
-    static HashMap<String, Integer> idMap = new HashMap<>();
-    static HashMap<Integer, String> messageMap = new HashMap<>();
+    private ErrorMessage() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     public static int getMessageId(Connection connection, String message) throws SQLException {
-        Integer id = idMap.get(message);
+        Integer id = ID_MAP.get(message);
 
         if (id != null) {
             return id;
@@ -30,7 +32,7 @@ public class ErrorMessage {
                     if (resultSet.next()) {
                         // message existed in the database, return the id
                         int messageId = resultSet.getInt(1);
-                        idMap.put(message, messageId);
+                        ID_MAP.put(message, messageId);
                         return messageId;
                     }
                 }
@@ -49,7 +51,7 @@ public class ErrorMessage {
     }
 
     public static String getMessage(Connection connection, int messageId) throws SQLException {
-        String message = messageMap.get(messageId);
+        String message = MESSAGE_MAP.get(messageId);
 
         if (message != null) {
             return message;
@@ -63,7 +65,7 @@ public class ErrorMessage {
                 if (resultSet.next()) {
                     // message existed in the database, return the id
                     message = resultSet.getString(1);
-                    messageMap.put(messageId, message);
+                    MESSAGE_MAP.put(messageId, message);
                     return message;
                 }
             }

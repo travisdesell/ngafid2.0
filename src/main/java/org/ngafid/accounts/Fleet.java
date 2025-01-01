@@ -1,20 +1,18 @@
 package org.ngafid.accounts;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
-
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 public class Fleet {
     private static final Logger LOG = Logger.getLogger(Fleet.class.getName());
-
+    private final String name;
+    /**
+     * A list of all users who have access (or are requesting access) to this fleet.
+     */
+    private ArrayList<User> users;
     private int id = -1;
-    String name;
 
     public Fleet(int id, String name) {
         this.id = id;
@@ -22,12 +20,151 @@ public class Fleet {
     }
 
     /**
-     * A list of all users who have access (or are requesting access) to this fleet.
+     * Return the number of fleets in the NGAFID
+     *
+     * @param connection A connection to the mysql database.
+     * @return the number of fleets in the NGAFID
+     * @throws SQLException if there was a problem with the query or database.
      */
-    ArrayList<User> users;
+    public static int getNumberFleets(Connection connection) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM fleet");
+             ResultSet resultSet = query.executeQuery()) {
+            LOG.info(query.toString());
+
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    /**
+     * Gets a fleet from the database given a fleet id.
+     *
+     * @param connection The database connection.
+     * @param id         The id of the fleet
+     * @return The fleet if it exists in the database, null otherwise
+     * @throws SQLException If there was a query/database problem.
+     */
+    public static Fleet get(Connection connection, int id) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet WHERE id = " + id);
+             ResultSet resultSet = query.executeQuery()) {
+            LOG.info(query.toString());
+
+            if (!resultSet.next())
+                return null;
+
+            return new Fleet(id, resultSet.getString(1));
+        }
+    }
+
+    /**
+     * Gets a fleet from the database given a fleet id.
+     *
+     * @param connection The database connection.
+     * @param name       The name of the fleet
+     * @return The fleet if it exists in the database, null otherwise
+     * @throws SQLException If there was a query/database problem.
+     */
+    public static Fleet get(Connection connection, String name) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement("SELECT id FROM fleet WHERE fleet_name = ?")) {
+            query.setString(1, name);
+
+            LOG.info(query.toString());
+            try (ResultSet resultSet = query.executeQuery()) {
+
+                if (!resultSet.next())
+                    return null;
+
+                return new Fleet(resultSet.getInt(1), name);
+            }
+        }
+    }
+
+    /**
+     * Gets all the fleets in this database
+     *
+     * @param connection the database connection
+     * @return a {@link List} of all the Fleets
+     */
+    public static List<Fleet> getAllFleets(Connection connection) throws SQLException {
+        String queryString = "SELECT id FROM fleet";
+
+        try (PreparedStatement ps = connection.prepareStatement(queryString); ResultSet rs = ps.executeQuery()) {
+            List<Fleet> fleets = new ArrayList<>();
+
+            while (rs.next()) {
+                fleets.add(get(connection, rs.getInt(1)));
+            }
+
+            return fleets;
+        }
+    }
+
+    /**
+     * Checks to see a fleet with the supplied name already exists in the database.
+     *
+     * @param connection A connection to the mysql database.
+     * @param name       The name of the fleet.
+     * @return true if the fleet exists in the database, false otherwise.
+     * @throws SQLException is thrown if there is a problem with the query or
+     *                      database.
+     */
+    public static boolean exists(Connection connection, String name) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement("SELECT id FROM fleet WHERE fleet_name = ?")) {
+            query.setString(1, name);
+
+            LOG.info(query.toString());
+            try (ResultSet resultSet = query.executeQuery()) {
+                return resultSet.next();
+            }
+        }
+    }
+
+    /**
+     * Creates a new fleet in the database. The {@link #exists(Connection, String)}
+     * method should be called prior to this method.
+     *
+     * @param connection The database connection.
+     * @param name       The name of the fleet.
+     * @return A fleet object if it was successfully created in the database.
+     * @throws SQLException     If there was a query/database problem or the
+     *                          fleet does not exist in the database.
+     * @throws AccountException If there was an error getting the id of the new
+     *                          fleet from the database.
+     */
+    public static Fleet create(Connection connection, String name) throws SQLException, AccountException {
+        // check and see if the fleet already exists in the database, if it does then
+        // throw an exception
+        try (
+                PreparedStatement query = connection.prepareStatement("INSERT INTO fleet SET fleet_name = ?",
+                        Statement.RETURN_GENERATED_KEYS)) {
+            query.setString(1, name);
+            query.executeUpdate();
+
+            LOG.info(query.toString());
+
+            try (ResultSet resultSet = query.getGeneratedKeys()) {
+                Fleet fleet = null;
+
+                if (resultSet.next()) {
+                    fleet = new Fleet(resultSet.getInt(1), name);
+                } else {
+                    LOG.severe("Database Error: Could not get id of new fleet from database after insert.");
+                    throw new AccountException("Database Error",
+                            "Could not get id of new fleet from database after insert.");
+                }
+
+                return fleet;
+            }
+        }
+    }
 
     /**
      * The id of the fleet in the database.
+     *
+     * @return the id of the fleet.
      */
     public int getId() {
         return id;
@@ -38,29 +175,6 @@ public class Fleet {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Return the number of fleets in the NGAFID
-     *
-     * @param connection A connection to the mysql database.
-     *
-     * @exception SQLException if there was a problem with the query or database.
-     *
-     * @return the number of fleets in the NGAFID
-     */
-    public static int getNumberFleets(Connection connection) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM fleet");
-                ResultSet resultSet = query.executeQuery()) {
-            LOG.info(query.toString());
-
-            if (resultSet.next()) {
-                int numberFleets = resultSet.getInt(1);
-                return numberFleets;
-            } else {
-                return 0;
-            }
-        }
     }
 
     /**
@@ -78,7 +192,7 @@ public class Fleet {
 
     /**
      * Populates the list of users with access to this fleet
-     * 
+     *
      * @param connection  is a connection to the mysql database.
      * @param populatorId is the id of the user whose populating the list of user
      *                    for this fleet. we should not add this user to the list
@@ -108,60 +222,11 @@ public class Fleet {
     }
 
     /**
-     * Gets a fleet from the database given a fleet id.
-     *
-     * @param connection The database connection.
-     * @param id         The id of the fleet
-     *
-     * @exception SQLException If there was a query/database problem.
-     *
-     * @return The fleet if it exists in the database, null otherwise
-     */
-    public static Fleet get(Connection connection, int id) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet WHERE id = " + id);
-                ResultSet resultSet = query.executeQuery()) {
-            LOG.info(query.toString());
-
-            if (!resultSet.next())
-                return null;
-
-            return new Fleet(id, resultSet.getString(1));
-        }
-    }
-
-    /**
-     * Gets a fleet from the database given a fleet id.
-     *
-     * @param connection The database connection.
-     * @param name       The name of the fleet
-     *
-     * @exception SQLException If there was a query/database problem.
-     *
-     * @return The fleet if it exists in the database, null otherwise
-     */
-    public static Fleet get(Connection connection, String name) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT id FROM fleet WHERE fleet_name = ?")) {
-            query.setString(1, name);
-
-            LOG.info(query.toString());
-            try (ResultSet resultSet = query.executeQuery()) {
-
-                if (!resultSet.next())
-                    return null;
-
-                return new Fleet(resultSet.getInt(1), name);
-            }
-        }
-    }
-
-    /**
      * Used to determine if AirSync-specific features apply to this fleet.
      *
      * @param connection the DBMS connection
-     *
      * @return true if there is a tuple in the `airsync_fleet_info` table,
-     *         this indicates that the fleet is AirSync-ready
-     *
+     * this indicates that the fleet is AirSync-ready
      * @throws SQLException if there are DBMS issues
      */
     public boolean hasAirsync(Connection connection) throws SQLException {
@@ -170,98 +235,10 @@ public class Fleet {
             query.setInt(1, this.id);
 
             try (ResultSet rs = query.executeQuery()) {
-                if (rs.next()) {
-                    return true;
-                }
-
-                return false;
+                return rs.next();
             }
         }
 
-    }
-
-    /**
-     * Gets all the fleets in this database
-     *
-     * @param connection the database connection
-     *
-     * @return a {@link List} of all the Fleets
-     */
-    public static List<Fleet> getAllFleets(Connection connection) throws SQLException {
-        String queryString = "SELECT id FROM fleet";
-
-        try (PreparedStatement ps = connection.prepareStatement(queryString); ResultSet rs = ps.executeQuery()) {
-            List<Fleet> fleets = new ArrayList<>();
-
-            while (rs.next()) {
-                fleets.add(get(connection, rs.getInt(1)));
-            }
-
-            return fleets;
-        }
-    }
-
-    /**
-     * Checks to see a fleet with the supplied name already exists in the database.
-     *
-     * @param connection A connection to the mysql database.
-     * @param name       The name of the fleet.
-     *
-     * @exception SQLException is thrown if there is a problem with the query or
-     *                         database.
-     *
-     * @return true if the fleet exists in the database, false otherwise.
-     */
-    public static boolean exists(Connection connection, String name) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT id FROM fleet WHERE fleet_name = ?")) {
-            query.setString(1, name);
-
-            LOG.info(query.toString());
-            try (ResultSet resultSet = query.executeQuery()) {
-                return resultSet.next();
-            }
-        }
-    }
-
-    /**
-     * Creates a new fleet in the database. The {@link #exists(Connection, String)}
-     * method should be called prior to this method.
-     *
-     * @param connection The database connection.
-     * @param name       The name of the fleet.
-     *
-     * @exception SQLException     If there was a query/database problem or the
-     *                             fleet does not exist in the database.
-     * @exception AccountException If there was an error getting the id of the new
-     *                             fleet from the database.
-     *
-     * @return A fleet object if it was successfully created in the database.
-     */
-    public static Fleet create(Connection connection, String name) throws SQLException, AccountException {
-        // check and see if the fleet already exists in the database, if it does then
-        // throw an exception
-        try (
-                PreparedStatement query = connection.prepareStatement("INSERT INTO fleet SET fleet_name = ?",
-                        Statement.RETURN_GENERATED_KEYS)) {
-            query.setString(1, name);
-            query.executeUpdate();
-
-            LOG.info(query.toString());
-
-            try (ResultSet resultSet = query.getGeneratedKeys()) {
-                Fleet fleet = null;
-
-                if (resultSet.next()) {
-                    fleet = new Fleet(resultSet.getInt(1), name);
-                } else {
-                    LOG.severe("Database Error: Could not get id of new fleet from database after insert.");
-                    throw new AccountException("Database Error",
-                            "Could not get id of new fleet from database after insert.");
-                }
-
-                return fleet;
-            }
-        }
     }
 
     public String toString() {

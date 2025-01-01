@@ -1,34 +1,15 @@
 package org.ngafid.maintenance;
 
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
-
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
 import java.util.logging.Logger;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-
-
-import org.ngafid.flights.Airframes;
-import org.ngafid.filters.Filter;
 
 public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private static final Logger LOG = Logger.getLogger(AircraftTimeline.class.getName());
 
-    private int flightId;
-    private LocalDate startTime;
-    private LocalDate endTime;
+    private final int flightId;
+    private final LocalDate startTime;
+    private final LocalDate endTime;
 
     private MaintenanceRecord previousEvent = null;
     private long daysSincePrevious = 0;
@@ -38,7 +19,7 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private long daysToNext = 0;
     private long flightsToNext = -1;
 
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     //private ArrayList<AircraftTimeline> combinedRecords = new ArrayList<AircraftTimeline>();
 
@@ -80,14 +61,14 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     }
 
 
-    public void setPreviousEvent(MaintenanceRecord record, long daysSincePrevious) {
+    public void setPreviousEvent(MaintenanceRecord record, long newDaysSincePreviousValue) {
         previousEvent = record;
-        this.daysSincePrevious = daysSincePrevious;
+        this.daysSincePrevious = newDaysSincePreviousValue;
     }
 
-    public void setNextEvent(MaintenanceRecord record, long daysToNext) {
+    public void setNextEvent(MaintenanceRecord record, long newDaysToNextValue) {
         nextEvent = record;
-        this.daysToNext = daysToNext;
+        this.daysToNext = newDaysToNextValue;
     }
 
     public void setFlightsSincePrevious(int flightsSincePrevious) {
@@ -113,13 +94,13 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
 
     public String toString() {
         return "[Aircraft Timeline - flightId: '" + flightId
-            + "', startTime: '" + startTime 
-            + "', endTime: '" + endTime
-            + "', daysToNext: " + daysToNext
-            + ", flightsToNext: " + flightsToNext
-            + ", daysSincePrevious: " + daysSincePrevious
-            + ", flightsSincePrevious: " + flightsSincePrevious
-           + "]";
+                + "', startTime: '" + startTime
+                + "', endTime: '" + endTime
+                + "', daysToNext: " + daysToNext
+                + ", flightsToNext: " + flightsToNext
+                + ", daysSincePrevious: " + daysSincePrevious
+                + ", flightsSincePrevious: " + flightsSincePrevious
+                + "]";
     }
 }
 

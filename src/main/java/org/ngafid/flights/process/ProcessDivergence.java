@@ -120,7 +120,7 @@ public class ProcessDivergence extends ProcessStep {
 
     private void calculateDivergence(List<String> columnNames, String varianceColumnName)
             throws MalformedFlightFileException, SQLException {
-        DoubleTimeSeries columns[] = new DoubleTimeSeries[columnNames.size()];
+        DoubleTimeSeries[] columns = new DoubleTimeSeries[columnNames.size()];
         for (int i = 0; i < columns.length; i++) {
             columns[i] = builder.getDoubleTimeSeries(columnNames.get(i));
 

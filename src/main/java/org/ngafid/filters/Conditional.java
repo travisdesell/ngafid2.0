@@ -1,7 +1,6 @@
 package org.ngafid.filters;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -25,12 +24,12 @@ public class Conditional {
 
     private double value;
 
-    private ArrayList<Conditional> children = new ArrayList<Conditional>();
+    private final ArrayList<Conditional> children = new ArrayList<Conditional>();
 
     /**
      * Creates a conditional from a filter
      *
-     * @param inputs a list of inputs for the rule, e.g., "Pitch" "&gt;" "15.33"
+     * @param filter the filter to create the conditional from
      */
     public Conditional(Filter filter) {
         if (filter.type.equals("RULE")) {
@@ -65,17 +64,17 @@ public class Conditional {
     /**
      * Sets the value for the parameter in this conditional and all of its children
      *
-     * @param parameterName the name of the parameter to be set
-     * @param parameterValue the value of the parameter being set
+     * @param paramNameToBeSet the name of the parameter to be set
+     * @param newParamValue    the value of the parameter being set
      */
-    public void set(String parameterName, double parameterValue) {
+    public void set(String paramNameToBeSet, double newParamValue) {
         if (type.equals("RULE")) {
-            if (this.parameterName.equals(parameterName)) {
-                this.parameterValue = parameterValue;
+            if (this.parameterName.equals(paramNameToBeSet)) {
+                this.parameterValue = newParamValue;
             }
         } else if (type.equals("GROUP")) {
             for (Conditional child : children) {
-                child.set(parameterName, parameterValue);
+                child.set(paramNameToBeSet, newParamValue);
             }
         } else {
             LOG.severe("Could not set a conditional with an unknown rule type: '" + this.type + "'");
@@ -86,21 +85,21 @@ public class Conditional {
     /**
      * Sets the value for the parameter in this conditional and all of its children
      *
-     * @param parameterName the name of the parameter to be set
-     * @param parameterValue the value of the parameter being set
+     * @param paramNameToBeSet the name of the parameter to be set
+     * @param minMax           the min and max values of the parameter being set
      */
-    public void set(String parameterName, Pair<Double,Double> minMax) {
+    public void set(String paramNameToBeSet, Pair<Double, Double> minMax) {
         if (type.equals("RULE")) {
-            if (this.parameterName.equals(parameterName)) {
+            if (this.parameterName.equals(paramNameToBeSet)) {
                 if (condition.equals("<=") || condition.equals("<")) {
                     this.parameterValue = minMax.first(); //set to min
                 } else {
                     this.parameterValue = minMax.second(); //set to max
-                } 
+                }
             }
         } else if (type.equals("GROUP")) {
             for (Conditional child : children) {
-                child.set(parameterName, minMax);
+                child.set(paramNameToBeSet, minMax);
             }
         } else {
             LOG.severe("Could not set a conditional with an unknown rule type: '" + this.type + "'");
@@ -110,7 +109,7 @@ public class Conditional {
 
 
     /**
-     *  Resets all the parameter values to NaN (unset).
+     * Resets all the parameter values to NaN (unset).
      */
     public void reset() {
     }
@@ -128,10 +127,14 @@ public class Conditional {
             }
 
             switch (condition) {
-                case "<=" : return parameterValue <= value;
-                case "<" : return parameterValue < value;
-                case ">" : return parameterValue > value;
-                case ">=" : return parameterValue >= value;
+                case "<=":
+                    return parameterValue <= value;
+                case "<":
+                    return parameterValue < value;
+                case ">":
+                    return parameterValue > value;
+                case ">=":
+                    return parameterValue >= value;
 
                 default:
                     LOG.severe("Could not set a conditional with an unknown rule type: '" + this.type + "'");
@@ -157,7 +160,8 @@ public class Conditional {
                 return false;
 
             } else {
-                LOG.severe("Could not evaluate a conditional on a group with an unknown condition type: '" + this.condition + "'");
+                LOG.severe("Could not evaluate a conditional on a group " +
+                        "with an unknown condition type: '" + this.condition + "'");
                 System.exit(1);
             }
 
@@ -171,45 +175,38 @@ public class Conditional {
 
     /**
      * Generate java source code from this conditional.
-     * @return
+     *
+     * @return the java source code
      */
     public String codeGen() {
         HashSet<String> parameters = new HashSet<>();
         StringBuilder conditionSB = new StringBuilder();
         this.codeGen(conditionSB, parameters);
-        String condition = conditionSB.toString();
+        String conditionStr = conditionSB.toString();
 
         StringBuilder classSB = new StringBuilder();
 
-        classSB.append(
-            "import java.util.List;\n" +
-            "import java.util.HashMap;\n\n" +
-            "public class CompiledCondition" + this.hashCode() + " {\n\n" +
-            "    private int length = -1;\n");
+        classSB.append("import java.util.List;\n" + "import java.util.HashMap;\n\n" + "public class " +
+                "CompiledCondition" + this.hashCode() + " {\n\n" + "    private int length = -1;\n");
 
         for (String parameter : parameters) {
-            classSB.append(
-            "    private double[] " + parameter + " = null;\n");
+            classSB.append("    private double[] " + parameter + " = null;\n");
         }
         classSB.append("\n");
-        classSB.append(
-            "    public CompiledCondition(int length, HashMap<String, double[]> parameterMap) {\n" +
-            "        this.length = length;");
+        classSB.append("    public CompiledCondition(int length, HashMap<String, double[]> parameterMap) {\n" + "    " +
+                "    this.length = length;");
         for (String parameter : parameters) {
-            classSB.append(
-            "        this." + parameter + "Series = parameterMap.get(\"" + parameter + "\");\n");
+            classSB.append("        this." + parameter + "Series = parameterMap.get(\"" + parameter + "\");\n");
         }
         classSB.append("}\n\n");
 
-        classSB.append(
-            "    public boolean evaluate(int timeStep) {\n");
+        classSB.append("    public boolean evaluate(int timeStep) {\n");
 
         for (String parameter : parameters) {
-            classSB.append(
-            "        double " + parameter + " = this." + parameter + "Series[timeStep];\n");
+            classSB.append("        double " + parameter + " = this." + parameter + "Series[timeStep];\n");
         }
 
-        return condition.toString();
+        return conditionStr;
     }
 
     private void codeGen(StringBuilder sb, HashSet<String> parameters) {
@@ -217,12 +214,12 @@ public class Conditional {
             parameters.add(parameterName);
 
             sb.append("(");
-                // This is just an inlined NaN test
-                // https://stackoverflow.com/questions/18442503/java-isnan-how-it-works
-                sb.append("!(" + parameterName + " != " + parameterName + ")" );
-                sb.append(" && ");
-                // Hex string so we don't lose precision by rouding. toString may round a float to make it pretty
-                sb.append(parameterName + " " + condition + " " + Double.toHexString(this.value));
+            // This is just an inlined NaN test
+            // https://stackoverflow.com/questions/18442503/java-isnan-how-it-works
+            sb.append("!(" + parameterName + " != " + parameterName + ")");
+            sb.append(" && ");
+            // Hex string so we don't lose precision by rouding. toString may round a float to make it pretty
+            sb.append(parameterName + " " + condition + " " + Double.toHexString(this.value));
             sb.append(")");
         } else if (type.equals("GROUP")) {
             sb.append("(");

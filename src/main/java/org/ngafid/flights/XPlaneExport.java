@@ -1,7 +1,6 @@
 package org.ngafid.flights;
 
 import org.ngafid.Database;
-import org.ngafid.flights.DoubleTimeSeries;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -25,7 +24,7 @@ import static org.ngafid.flights.XPlaneParameters.*;
 
 /**
  * A Class that creates X-Plane FDR files for X-Plane
- * 
+ *
  * @author <a href = apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
 

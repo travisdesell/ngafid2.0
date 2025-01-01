@@ -1,102 +1,91 @@
 package org.ngafid.flights.process;
 
+import org.ngafid.flights.*;
+
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-import org.ngafid.flights.*;
 import static org.ngafid.flights.process.ProcessStep.required;
-import org.ngafid.flights.process.*;
 
 /**
- * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic meta
- * information like the type of aircraft, the start and end time of the flight, etc. The actual flight data is stored in
- * the `doubleTimeSeries` and `stringTimeSeries` fields.
+ * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic
+ * meta information like the type of aircraft, the start and end time of the flight, etc. The actual flight data is
+ * stored in the `doubleTimeSeries` and `stringTimeSeries` fields.
  *
  * @author Joshua Karns (josh@karns.dev)
  */
 public class FlightBuilder {
 
+    // The only thing we require, by default, is a start and end time.
+    // TODO: Determine if this is the exact behavior we want.
+    private static final List<ProcessStep.Factory> PROCESS_STEPS = List.of(required(ProcessStartEndTime::new),
+            ProcessAirportProximity::new, ProcessLaggedAltMSL::new, ProcessStallIndex::new, ProcessTotalFuel::new,
+            ProcessDivergence::new, ProcessLOCI::new, ProcessItinerary::new, ProcessAltAGL::new);
+    //CHECKSTYLE:OFF
+    // Flight meta data - see FlightMeta definition for details.
+    public final FlightMeta meta;
+    // A list of non-fatal exceptions: issues with the data that don't prevent us from ingesting the data.
+    public final ArrayList<MalformedFlightFileException> exceptions = new ArrayList<>();
     /**
-     * Contains the double time series' for this flight. This object can safely be read and written to concurrently, but
-     * you are still responsible for ensuring things are not overwritten.
+     * Contains the double time series' for this flight. This object can safely be read and written to concurrently,
+     * but you are still responsible for ensuring things are not overwritten.
      */
     private final ConcurrentHashMap<String, DoubleTimeSeries> doubleTimeSeries;
     /**
      * Same as `doubleTimeSeries`, but for String series.
      */
     private final ConcurrentHashMap<String, StringTimeSeries> stringTimeSeries;
-
+    //CHECKSTYLE:ON
     // A list of airports this aircraft visited.
     private ArrayList<Itinerary> itinerary = null;
 
-    // Flight meta data - see FlightMeta definition for details.
-    public final FlightMeta meta;
-
-    // A list of non-fatal exceptions: issues with the data that don't prevent us from ingesting the data.
-    public final ArrayList<MalformedFlightFileException> exceptions = new ArrayList<>();
-
     /**
      * Only constructor for FlightBuilder. Copies the entries in the time series maps.
+     *
+     * @param meta             The metadata for the flight
+     * @param doubleTimeSeries The double time series for the flight
+     * @param stringTimeSeries The string time series for the flight
      */
-    public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-            Map<String, StringTimeSeries> stringTimeSeries) {
+    public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String,
+            StringTimeSeries> stringTimeSeries) {
         this.doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
         this.stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
         this.meta = meta;
     }
 
-    // The only thing we require, by default, is a start and end time.
-    // TODO: Determine if this is the exact behavior we want.
-    private static final List<ProcessStep.Factory> processSteps = List.of(
-            required(ProcessStartEndTime::new),
-            ProcessAirportProximity::new,
-            ProcessLaggedAltMSL::new,
-            ProcessStallIndex::new,
-            ProcessTotalFuel::new,
-            ProcessDivergence::new,
-            ProcessLOCI::new,
-            ProcessItinerary::new,
-            ProcessAltAGL::new);
-
     /**
      * Gathers processing steps together which do not overwrite any existing time series.
      *
-     * @returns A list of processing steps
+     * @param connection The connection to the database
+     * @return A list of processing steps
      */
     protected List<ProcessStep> gatherSteps(Connection connection) {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
-        return processSteps.stream().map(factory -> factory.create(connection, this))
-                .filter(step -> step.getOutputColumns()
-                        .stream()
-                        .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x)))
+        return PROCESS_STEPS.stream().map(factory -> factory.create(connection, this))
+                .filter(step -> step.getOutputColumns().stream()
+                .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x)))
                 .collect(Collectors.toList());
     }
 
     /**
      * Construct and execute the dependency graph formed by the process steps. This method should only be executed
      * within some sort of `Executor` to enable concurrent flight processing.
-     *
+     * <p>
      * All recoverable exceptions / flight processing issues will be caught and stored in this flight builder, otherwise
      * this will raise a FlightProcessingException which indicates an irrecoverable issue.
      *
-     * @returns A flight object
+     * @param connection The connection to the database
+     * @return A flight object
      * @throws FlightProcessingException if an irrecoverable processing issue is encountered
      */
     public Flight build(Connection connection) throws FlightProcessingException {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
-        FlightProcessingException[] exception = new FlightProcessingException[] { null };
+        FlightProcessingException[] exception = new FlightProcessingException[]{null};
 
         // We can do this:
         // (1) in serial
@@ -123,7 +112,7 @@ public class FlightBuilder {
         dg.compute();
 
         try {
-            return new Flight(connection, meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
+            return new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new FlightProcessingException(e);
@@ -141,7 +130,9 @@ public class FlightBuilder {
     /**
      * Adds an entry to `doubleTimeSeries`, mapping the supplied name to the supplied time series.
      *
-     * @returns this flight builder
+     * @param name       The name of the time series
+     * @param timeSeries The time series to add
+     * @return this flight builder
      */
     public FlightBuilder addTimeSeries(String name, DoubleTimeSeries timeSeries) {
         doubleTimeSeries.put(name, timeSeries);
@@ -152,25 +143,22 @@ public class FlightBuilder {
         return addTimeSeries(timeSeries.getName(), timeSeries);
     }
 
-    private final <T> T getSeries(String name, Map<String, T> map) {
+    private <T> T getSeries(String name, Map<String, T> map) {
         T value = map.get(name);
-        if (value != null)
-            return value;
+        if (value != null) return value;
 
         var aliases = getAliases().get(name);
-        if (aliases == null)
-            return null;
+        if (aliases == null) return null;
 
         for (var alias : aliases) {
             value = map.get(alias);
-            if (value != null)
-                return value;
+            if (value != null) return value;
         }
 
         return null;
     }
 
-    private final <T> Set<String> getKeySet(Map<String, T> map) {
+    private <T> Set<String> getKeySet(Map<String, T> map) {
         var set = new HashSet<>(map.keySet());
 
         for (Map.Entry<String, Set<String>> alias : getAliases().entrySet()) {
@@ -187,7 +175,8 @@ public class FlightBuilder {
     /**
      * Fetches a double series with the supplied name.
      *
-     * @returns null if there is no time series with that name
+     * @param name The name of the time series
+     * @return null if there is no time series with that name
      */
     public final DoubleTimeSeries getDoubleTimeSeries(String name) {
         return getSeries(name, doubleTimeSeries);
@@ -195,6 +184,8 @@ public class FlightBuilder {
 
     /**
      * Returns the key set of `this.doubleTimeSeries`
+     *
+     * @return the key set of `this.doubleTimeSeries`
      */
     public final Set<String> getDoubleTimeSeriesKeySet() {
         return getKeySet(doubleTimeSeries);
@@ -203,7 +194,9 @@ public class FlightBuilder {
     /**
      * Adds an entry to `stringTimeSeries`, mapping the supplied name to the supplied time series.
      *
-     * @returns this flight builder
+     * @param name       The name of the time series
+     * @param timeSeries The time series to add
+     * @return this flight builder
      */
     public final FlightBuilder addTimeSeries(String name, StringTimeSeries timeSeries) {
         stringTimeSeries.put(name, timeSeries);
@@ -217,7 +210,8 @@ public class FlightBuilder {
     /**
      * Fetches a string series with the supplied name.
      *
-     * @returns null if there is no time series with that name
+     * @param name The name of the time series
+     * @return null if there is no time series with that name
      */
     public final StringTimeSeries getStringTimeSeries(String name) {
         return getSeries(name, stringTimeSeries);
@@ -225,6 +219,8 @@ public class FlightBuilder {
 
     /**
      * Returns the key set of `this.stringTimeSeries`
+     *
+     * @return the key set of `this.stringTimeSeries`
      */
     public final Set<String> getStringTimeSeriesKeySet() {
         return getKeySet(stringTimeSeries);
@@ -234,7 +230,8 @@ public class FlightBuilder {
      * Sets the `startDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
      * `meta` object.
      *
-     * @returns this flight builder
+     * @param startDateTime The start date time
+     * @return this flight builder
      */
     public synchronized FlightBuilder setStartDateTime(String startDateTime) {
         this.meta.startDateTime = startDateTime;
@@ -245,7 +242,8 @@ public class FlightBuilder {
      * Sets the `endDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
      * `meta` object.
      *
-     * @returns this flight builder
+     * @param endDateTime The end date time
+     * @return this flight builder
      */
     public synchronized FlightBuilder setEndDateTime(String endDateTime) {
         this.meta.endDateTime = endDateTime;
@@ -255,10 +253,11 @@ public class FlightBuilder {
     /**
      * Synchronized method to set the itinerary.
      *
-     * @returns this flight builder
+     * @param newItinerary The itinerary
+     * @return this flight builder
      */
-    public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> itinerary) {
-        this.itinerary = itinerary;
+    public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> newItinerary) {
+        this.itinerary = newItinerary;
         return this;
     }
 
@@ -266,7 +265,8 @@ public class FlightBuilder {
      * Masks in the supplied bits into the `processingStatus` field of `meta.` This is sychronized to avoid race
      * conditions.
      *
-     * @returns this flight builder
+     * @param processingStatus The bits to mask in
+     * @return this flight builder
      */
     public synchronized FlightBuilder updateProcessingStatus(int processingStatus) {
         this.meta.processingStatus |= processingStatus;

@@ -1,0 +1,13 @@
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/suppressions_1_3.dtd">
+
+<!-- <suppressions> -->
+    <!-- Ignore the org.ngafid.routes package -->
+    <!-- <suppress checks="." files="org[\\/]nagid[\\/]routes[\\/]"/> -->
+<!-- </suppressions> -->
+
+<fileset dir="src">
+  <include name="**/*.java"/>
+  <exclude name="com/ngafid/routes/*.java"/>
+</fileset>

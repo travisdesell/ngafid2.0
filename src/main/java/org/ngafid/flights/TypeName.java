@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import org.ngafid.common.NormalizedColumn;
 
-public class TypeName extends NormalizedColumn<TypeName> {
+public final class TypeName extends NormalizedColumn<TypeName> {
 
     public TypeName(String name) {
         super(name);

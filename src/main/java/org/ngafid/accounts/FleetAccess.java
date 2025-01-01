@@ -31,7 +31,7 @@ public class FleetAccess {
      * User's access type to the fleet. Can be "MANAGER", "UPLOAD", "VIEW",
      * "WAITING", or "DENIED"
      */
-    String accessType;
+    private String accessType;
 
     /**
      * @return the user's id.
@@ -104,7 +104,7 @@ public class FleetAccess {
     /**
      * Creates a FleetAccess object from a result set
      *
-     * @param A ResultSet object from a database query
+     * @param resultSet ResultSet object from a database query
      */
     public FleetAccess(ResultSet resultSet) throws SQLException {
         this.userId = resultSet.getInt(1);

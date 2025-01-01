@@ -1,22 +1,23 @@
 package org.ngafid;
 
-import java.util.*;
-
-import java.io.*;
-
-import org.ngafid.*;
 import org.ngafid.accounts.Fleet;
+import org.ngafid.events.CustomEvent;
+import org.ngafid.events.EventStatistics;
 import org.ngafid.flights.*;
 import org.ngafid.flights.calculations.CalculatedDoubleTimeSeries;
 import org.ngafid.flights.calculations.VSPDRegression;
-import org.ngafid.events.*;
 
-import java.sql.*;
-
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.events.CustomEvent.*;
+import static org.ngafid.flights.Parameters.*;
 
 /**
  * A Custom Exceedence calculation to find spin events.
@@ -24,16 +25,24 @@ import static org.ngafid.events.CustomEvent.*;
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
 
-public class FindSpinEvents {
-    static final Logger LOG = Logger.getLogger(FindSpinEvents.class.getName());
+public final class FindSpinEvents {
+    private static final Logger LOG = Logger.getLogger(FindSpinEvents.class.getName());
+    private static final int STOP_DELAY = 1;
+    private static final double ALT_CONSTRAINT = 4000.d;
+    private static final double AC_NORMAL = 0.1d;
+
+    private FindSpinEvents() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static void findSpinEventsInUpload(Connection connection, Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
-                    "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_ALTITUDE_SPIN.getId()
-                    +
-                    " OR event_definition_id = " + HIGH_ALTITUDE_SPIN.getId() +
-                    ") AND flight_processed.flight_id = flights.id)";
+            String whereClause = "upload_id = " + upload.getId() +
+                    " AND insert_completed = 1 AND NOT EXISTS " +
+                    "(SELECT flight_id FROM flight_processed WHERE " +
+                    "(event_definition_id = " + getLowAltitudeSpin().getId() +
+                    " OR event_definition_id = " + getHighAltitudeSpin().getId() + ")" +
+                    " AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
             System.out.println("Finding spin events for " + flights.size() + " flights.");
@@ -59,10 +68,6 @@ public class FindSpinEvents {
         List<CustomEvent> highAltitudeSpins = new ArrayList<>();
 
         int hadError = 0;
-
-        final int STOP_DELAY = 1;
-        final double ALT_CONSTRAINT = 4000.d;
-        final double AC_NORMAL = 0.1d;
 
         DoubleTimeSeries ias = flight.getDoubleTimeSeries(IAS);
         DoubleTimeSeries dVSI = flight.getDoubleTimeSeries(VSPD_CALCULATED);
@@ -92,7 +97,8 @@ public class FindSpinEvents {
 
         double maxNormAc = 0.d;
 
-        int lowAirspeedIndex = -1, maxNormAcIndex = -1, endSpinSeconds = 0;
+        int lowAirspeedIndex = -1;
+        int endSpinSeconds = 0;
 
         CustomEvent currentEvent = null;
 
@@ -116,7 +122,6 @@ public class FindSpinEvents {
                     // check for severity
                     if (normAcRel > maxNormAc) {
                         maxNormAc = normAcRel;
-                        maxNormAcIndex = i;
                     }
 
                     if (instAlt < ALT_CONSTRAINT) {
@@ -127,11 +132,10 @@ public class FindSpinEvents {
                         LOG.info("Spin start found!");
 
                         if (!spinStartFound) {
-                            String startTime = dateSeries.get(lowAirspeedIndex) + " "
-                                    + timeSeries.get(lowAirspeedIndex);
-                            String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
+                            String start = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
+                            String end = dateSeries.get(i) + " " + timeSeries.get(i);
 
-                            currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight);
+                            currentEvent = new CustomEvent(start, end, lowAirspeedIndex, i, maxNormAc, flight);
 
                             spinStartFound = true;
                         }
@@ -155,10 +159,10 @@ public class FindSpinEvents {
                     if (endSpinSeconds >= STOP_DELAY || currentEvent == null) {
                         if (currentEvent != null) {
                             if (altCstrViolated) {
-                                currentEvent.setDefinition(LOW_ALTITUDE_SPIN);
+                                currentEvent.setDefinition(getLowAltitudeSpin());
                                 lowAltitudeSpins.add(currentEvent);
                             } else {
-                                currentEvent.setDefinition(HIGH_ALTITUDE_SPIN);
+                                currentEvent.setDefinition(getHighAltitudeSpin());
                                 highAltitudeSpins.add(currentEvent);
                             }
                         }
@@ -168,7 +172,6 @@ public class FindSpinEvents {
                         altCstrViolated = false;
 
                         lowAirspeedIndex = -1;
-                        maxNormAcIndex = -1;
                         endSpinSeconds = 0;
                         maxNormAc = 0.d;
                     }
@@ -176,7 +179,8 @@ public class FindSpinEvents {
             }
         }
 
-        int airframeNameId = flight.getAirframeNameId(), fleetId = flight.getFleetId();
+        int airframeNameId = flight.getAirframeNameId();
+        int fleetId = flight.getFleetId();
         for (CustomEvent event : lowAltitudeSpins) {
             event.updateDatabase(connection);
             event.updateStatistics(connection, fleetId, airframeNameId, event.getDefinition().getId());
@@ -189,29 +193,30 @@ public class FindSpinEvents {
 
         String flightStartDateTime = flight.getStartDateTime();
         if (!highAltitudeSpins.isEmpty()) {
-            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, HIGH_ALTITUDE_SPIN.getId(),
-                    flightStartDateTime);
+            EventStatistics.updateFlightsWithEvent(connection, fleetId,
+                    airframeNameId, getHighAltitudeSpin().getId(), flightStartDateTime);
         } else {
-            EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, HIGH_ALTITUDE_SPIN.getId(),
-                    flightStartDateTime);
+            EventStatistics.updateFlightsWithoutEvent(connection, fleetId,
+                    airframeNameId, getHighAltitudeSpin().getId(), flightStartDateTime);
         }
 
         if (!lowAltitudeSpins.isEmpty()) {
-            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, LOW_ALTITUDE_SPIN.getId(),
-                    flightStartDateTime);
+            EventStatistics.updateFlightsWithEvent(connection, fleetId,
+                    airframeNameId, getLowAltitudeSpin().getId(), flightStartDateTime);
         } else {
-            EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, LOW_ALTITUDE_SPIN.getId(),
-                    flightStartDateTime);
+            EventStatistics.updateFlightsWithoutEvent(connection, fleetId,
+                    airframeNameId, getLowAltitudeSpin().getId(), flightStartDateTime);
         }
 
-        setFlightProcessed(connection, flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());
-        setFlightProcessed(connection, flight, LOW_ALTITUDE_SPIN.getId(), hadError, lowAltitudeSpins.size());
+        setFlightProcessed(connection, flight, getHighAltitudeSpin().getId(), hadError, highAltitudeSpins.size());
+        setFlightProcessed(connection, flight, getLowAltitudeSpin().getId(), hadError, lowAltitudeSpins.size());
     }
 
     /**
      * Calculates the derived vertical speed if it has not already been calculateds
      * and caches it in the db.
      *
+     * @param connection the database connection
      * @param flight the Flight to calculate dVSI for
      */
     static void calculateVSPDDerived(Connection connection, Flight flight)
@@ -221,21 +226,22 @@ public class FindSpinEvents {
 
         if (dts == null) {
             flight.checkCalculationParameters(VSPD_CALCULATED, ALT_B);
-            CalculatedDoubleTimeSeries dVSI = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min",
-                    true, flight);
+            CalculatedDoubleTimeSeries dVSI =
+                    new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, flight);
             dVSI.create(new VSPDRegression(flight.getDoubleTimeSeries(ALT_B)));
             dVSI.updateDatabase(connection, flightId);
         }
     }
 
-    static void setFlightProcessed(Connection connection, Flight flight, int eventDefinitonId, int hadError, int count)
+    static void setFlightProcessed(Connection connection, Flight flight, int eventDefId, int hadError, int count)
             throws SQLException {
-        String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
+        String queryString = "INSERT INTO flight_processed " +
+                "SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, flight.getFleetId());
             query.setInt(2, flight.getId());
-            query.setInt(3, eventDefinitonId);
+            query.setInt(3, eventDefId);
             query.setInt(4, count);
             query.setInt(5, hadError);
 
@@ -244,7 +250,9 @@ public class FindSpinEvents {
     }
 
     /**
-     * Used for testing purposes only
+     * Main method. Used for testing purposes only
+     * @param args command line arguments
+     * @throws SQLException SQL Exception
      */
     public static void main(String[] args) throws SQLException {
         List<Fleet> fleets = null;
@@ -253,7 +261,7 @@ public class FindSpinEvents {
         if (args.length == 1) {
             int fleetId = Integer.parseInt(args[0]);
             try {
-                fleets = List.of(Fleet.get(connection, fleetId));
+                fleets = List.of(Objects.requireNonNull(Fleet.get(connection, fleetId)));
             } catch (SQLException se) {
                 se.printStackTrace();
             }
@@ -261,10 +269,11 @@ public class FindSpinEvents {
             fleets = Fleet.getAllFleets(connection);
 
             // Print to the console in yellow...
-            System.err.println(
-                    "\u001B[33mCAUTION: PROCESSING SPIN EVENTS FOR ALL FLEETS: THIS MAY TAKE SOME TIME... \u001B[0m");
+            System.err.println("\u001B[33mCAUTION: PROCESSING SPIN EVENTS FOR ALL FLEETS: " +
+                    "THIS MAY TAKE SOME TIME... \u001B[0m");
         }
 
+        assert fleets != null;
         for (Fleet fleet : fleets) {
             int fleetId = fleet.getId();
 

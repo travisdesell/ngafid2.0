@@ -1,42 +1,25 @@
 package org.ngafid.maintenance;
 
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
-
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
-import java.util.logging.Logger;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-
-
-import org.ngafid.flights.Airframes;
+import java.util.logging.Logger;
 
 public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private static final Logger LOG = Logger.getLogger(MaintenanceRecord.class.getName());
 
-    private int workorderNumber;
-    private LocalDate openDate;
-    private LocalDate closeDate;
-    private String tailNumber;
-    private String airframe;
-    private int problemATACode;
-    private String label;
-    private String cleanedProblem;
-    private String originalProblem;
-    private LocalDate actionDate;
-    private int actionATACode;
-    private String originalAction;
+    private final int workorderNumber;
+    private final LocalDate openDate;
+    private final LocalDate closeDate;
+    private final String tailNumber;
+    private final String airframe;
+    private final int problemATACode;
+    private final String label;
+    private final String cleanedProblem;
+    private final String originalProblem;
+    private final LocalDate actionDate;
+    private final int actionATACode;
+    private final String originalAction;
 
     public int getWorkorderNumber() {
         return workorderNumber;
@@ -62,9 +45,9 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         return closeDate;
     }
 
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy");
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy");
 
-    private ArrayList<MaintenanceRecord> combinedRecords = new ArrayList<MaintenanceRecord>();
+    private final ArrayList<MaintenanceRecord> combinedRecords = new ArrayList<MaintenanceRecord>();
 
 
     public MaintenanceRecord(String line) {
@@ -99,15 +82,10 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         if (actionATACode != other.actionATACode) mismatches.add("actionATACode");
         if (!originalAction.equals(other.originalAction)) mismatches.add("originalAction");
 
-        if (mismatches.size() == 0) {
-            //System.out.println("Not combining due to identical row.");
-
-        } else if (mismatches.contains("workorderNumber")) {
-            System.err.println("Cannot combine two records with different workorder numbers: " + workorderNumber + " vs " + other.workorderNumber);
+        if (mismatches.contains("workorderNumber")) {
+            System.err.println("Cannot combine two records with different workorder numbers: "
+                    + workorderNumber + " vs " + other.workorderNumber);
             System.exit(1);
-
-        } else {
-            //System.out.println("Two records mismatched on: " + String.join(",", mismatches));
         }
 
         combinedRecords.add(other);
@@ -119,35 +97,35 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     public String toJSON() {
         return "{\n"
-            + "\t\"workorderNumber\" : \"" + workorderNumber + "\",\n"
-            + "\t\"openDate\" : \"" + openDate + "\",\n"
-            + "\t\"closeDate\" : \"" + closeDate + "\",\n"
-            + "\t\"tailNumber\" : \"" + tailNumber + "\",\n"
-            + "\t\"airframe\" : \"" + airframe + "\",\n"
-            + "\t\"problemATACode\" : \"" + problemATACode + "\",\n"
-            + "\t\"label\" : \"" + label + "\",\n"
-            + "\t\"cleanedProblem\" : \"" + cleanedProblem + "\",\n"
-            + "\t\"originalProblem\" : \"" + originalProblem + "\",\n"
-            + "\t\"actionDate\" : \"" + actionDate + "\",\n"
-            + "\t\"actionATACode\" : \"" + actionATACode + "\",\n"
-            + "\t\"originalAction\" : \"" + originalAction + "\"\n"
-            + "}";
+                + "\t\"workorderNumber\" : \"" + workorderNumber + "\",\n"
+                + "\t\"openDate\" : \"" + openDate + "\",\n"
+                + "\t\"closeDate\" : \"" + closeDate + "\",\n"
+                + "\t\"tailNumber\" : \"" + tailNumber + "\",\n"
+                + "\t\"airframe\" : \"" + airframe + "\",\n"
+                + "\t\"problemATACode\" : \"" + problemATACode + "\",\n"
+                + "\t\"label\" : \"" + label + "\",\n"
+                + "\t\"cleanedProblem\" : \"" + cleanedProblem + "\",\n"
+                + "\t\"originalProblem\" : \"" + originalProblem + "\",\n"
+                + "\t\"actionDate\" : \"" + actionDate + "\",\n"
+                + "\t\"actionATACode\" : \"" + actionATACode + "\",\n"
+                + "\t\"originalAction\" : \"" + originalAction + "\"\n"
+                + "}";
     }
 
     public String toString() {
         return "[Maintenance Record - WO#: '" + workorderNumber
-            + "', openDate: '" + openDate 
-            + "', closeDate: '" + closeDate
-            + "', tailNumber: '" + tailNumber
-            + "', airframe: '" + airframe
-            + "', problemATACode: '" + problemATACode
-            + "', label: '" + label
-            + "', cleanedProblem: '" + cleanedProblem
-            + "', originalProblem: '" + originalProblem
-            + "', actionDate: '" + actionDate
-            + "', actionATACode: '" + actionATACode
-            + "', originalAction: '" + originalAction
-            + "']";
+                + "', openDate: '" + openDate
+                + "', closeDate: '" + closeDate
+                + "', tailNumber: '" + tailNumber
+                + "', airframe: '" + airframe
+                + "', problemATACode: '" + problemATACode
+                + "', label: '" + label
+                + "', cleanedProblem: '" + cleanedProblem
+                + "', originalProblem: '" + originalProblem
+                + "', actionDate: '" + actionDate
+                + "', actionATACode: '" + actionATACode
+                + "', originalAction: '" + originalAction
+                + "']";
     }
 }
 

@@ -1,54 +1,82 @@
 package org.ngafid.flights;
 
-import java.util.*;
+import org.ngafid.airports.Airport;
+import org.ngafid.airports.Airports;
+import org.ngafid.airports.Runway;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import org.ngafid.airports.Airport;
-import org.ngafid.airports.Airports;
-import org.ngafid.airports.Runway;
-
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class Itinerary {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
-
+    private static final String GO_AROUND = "go_around";
+    private static final String TOUCH_AND_GO = "touch_and_go";
+    private static final String TAKEOFF = "takeoff";
+    private static final String LANDING = "landing";
+    private double minAirportDistance = Double.MAX_VALUE;
+    private double minRunwayDistance = Double.MAX_VALUE;
     private int order = -1;
-    private String airport;
+    private final String airport;
     private String runway;
-    private HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
-
-    int minAltitudeIndex = -1;
-    double minAltitude = Double.MAX_VALUE;
-    public int startOfApproach = -1;
-    public int endOfApproach = -1;
-    public int startOfTakeoff = -1;
-    public int endOfTakeoff = -1;
-    public int finalIndex;
-    public int takeoffCounter = 0;
-
-    public static final String GO_AROUND = "go_around";
-    public static final String TOUCH_AND_GO = "touch_and_go";
-    public static final String TAKEOFF = "takeoff";
-    public static final String LANDING = "landing";
+    private final HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
+    private int minAltitudeIndex = -1;
+    private double minAltitude = Double.MAX_VALUE;
+    private int startOfApproach = -1;
+    private int endOfApproach = -1;
+    private int startOfTakeoff = -1;
+    private int endOfTakeoff = -1;
+    private int finalIndex;
+    private int takeoffCounter = 0;
     private String type = GO_AROUND; // go_around is the default -> will be updated or set if otherwise
-    double minAirportDistance = Double.MAX_VALUE;
-    double minRunwayDistance = Double.MAX_VALUE;
 
-    public String getAirport() {
-        return airport;
+    public Itinerary(ResultSet resultSet) throws SQLException {
+        order = resultSet.getInt(1);
+        minAltitudeIndex = resultSet.getInt(2);
+        minAltitude = resultSet.getDouble(3);
+        airport = resultSet.getString(4);
+        runway = resultSet.getString(5);
+        minAirportDistance = resultSet.getDouble(6);
+        minRunwayDistance = resultSet.getDouble(7);
+        startOfApproach = resultSet.getInt(8);
+        endOfApproach = resultSet.getInt(9);
+        startOfTakeoff = resultSet.getInt(10);
+        endOfTakeoff = resultSet.getInt(11);
+        type = resultSet.getString(12);
     }
 
-    public String getRunway() {
-        return runway;
+    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance,
+                     double runwayDistance, double groundSpeed, double rpm) {
+        this.airport = airport;
+        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed, rpm);
+    }
+
+    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance,
+                     double runwayDistance, double groundSpeed) {
+        this.airport = airport;
+        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed);
+    }
+
+    public Itinerary(int startTakeoff, int endTakeoff, int startApproach, int endApproach, String airport,
+                     String runway) {
+        this.startOfTakeoff = startTakeoff;
+        this.endOfTakeoff = endTakeoff;
+        this.startOfApproach = startApproach;
+        this.endOfApproach = endApproach;
+        this.airport = airport;
+        this.runway = runway;
     }
 
     public static ArrayList<Itinerary> getItinerary(Connection connection, int flightId) throws SQLException {
-        String queryString = "SELECT `order`, min_altitude_index, min_altitude, airport, runway, min_airport_distance, min_runway_distance, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type FROM itinerary WHERE flight_id = ? ORDER BY `order`";
+        String queryString = "SELECT `order`, min_altitude_index, min_altitude, airport, runway, " +
+                "min_airport_distance, min_runway_distance, start_of_approach, end_of_approach, " +
+                "start_of_takeoff, end_of_takeoff, type FROM itinerary WHERE flight_id = ? ORDER BY `order`";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, flightId);
 
@@ -63,19 +91,8 @@ public class Itinerary {
         }
     }
 
-    public static ArrayList<String> getAllAirports(Connection connection, int fleetId) throws SQLException {
-        ArrayList<String> airports = new ArrayList<>();
-
-        /*
-         * String queryString =
-         * "select distinct(airport) from itinerary where exists (select id from flights where flights.id = itinerary.flight_id AND flights.fleet_id = ?) ORDER BY airport"
-         * ;
-         * PreparedStatement query = connection.prepareStatement(queryString);
-         * query.setInt(1, fleetId);
-         * 
-         * LOG.info(query.toString());
-         * ResultSet resultSet = query.executeQuery();
-         */
+    public static List<String> getAllAirports(Connection connection, int fleetId) throws SQLException {
+        List<String> airports = new ArrayList<>();
 
         String queryString = "SELECT airport FROM visited_airports WHERE fleet_id = ? ORDER BY airport";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
@@ -87,15 +104,11 @@ public class Itinerary {
                     // airport existed in the database, return the id
                     String airport = resultSet.getString(1);
                     // This is a fix for bugs caused by an empty IATA airport code being in the database. Not sure how
-                    // that
-                    // got
-                    // there exactly.
-                    if (airport.equals(""))
-                        continue;
+                    // that got there exactly.
+                    if (airport.isEmpty()) continue;
                     airports.add(airport);
                 }
                 LOG.info("airports.length: " + airports.size());
-
                 return airports;
             }
         }
@@ -125,18 +138,16 @@ public class Itinerary {
     /**
      * Gets all runways that have coordinates (lat / long) available. It is returned in a map, where they key is the
      * airport iataCode and the values are the runways to that airport.
-     * 
+     *
      * @param connection database connection
      * @param fleetId    the fleetId for which we should be gathering airports from (we get all runways from all
-     *                   airports
-     *                   in this fleet
-     * @return
+     *                   airports in this fleet
+     * @return a map of airport iataCodes to a list of runways that have coordinates
      * @throws SQLException
      */
     public static Map<String, List<Runway>> getAllRunwaysWithCoordinates(Connection connection, int fleetId)
             throws SQLException {
-        ArrayList<String> airports = getAllAirports(connection, fleetId);
-
+        List<String> airports = getAllAirports(connection, fleetId);
         Map<String, List<Runway>> runways = new HashMap<>(1024);
 
         for (String iataCode : airports) {
@@ -149,37 +160,38 @@ public class Itinerary {
             }
 
             for (Runway rw : airport.getRunways())
-                if (rw.hasCoordinates)
-                    rws.add(rw);
-            runways.put(airport.iataCode, rws);
+                if (rw.isHasCoordinates()) rws.add(rw);
+            runways.put(airport.getIataCode(), rws);
         }
 
         return runways;
     }
 
-    public Itinerary(ResultSet resultSet) throws SQLException {
-        order = resultSet.getInt(1);
-        minAltitudeIndex = resultSet.getInt(2);
-        minAltitude = resultSet.getDouble(3);
-        airport = resultSet.getString(4);
-        runway = resultSet.getString(5);
-        minAirportDistance = resultSet.getDouble(6);
-        minRunwayDistance = resultSet.getDouble(7);
-        startOfApproach = resultSet.getInt(8);
-        endOfApproach = resultSet.getInt(9);
-        startOfTakeoff = resultSet.getInt(10);
-        endOfTakeoff = resultSet.getInt(11);
-        type = resultSet.getString(12);
+    public static PreparedStatement createAirportPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT IGNORE INTO visited_airports SET fleet_id = ?, airport = ?");
     }
 
-    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance,
-            double runwayDistance, double groundSpeed, double rpm) {
-        this.airport = airport;
-        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed, rpm);
+    public static PreparedStatement createRunwayPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT IGNORE INTO visited_runways SET fleet_id = ?, runway = ?");
     }
 
-    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance,
-            double groundSpeed, double rpm) {
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, " +
+                "min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, " +
+                "end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+                + " ?)");
+    }
+
+    public String getAirport() {
+        return airport;
+    }
+
+    public String getRunway() {
+        return runway;
+    }
+
+    public void update(String rWay, int index, double altitudeAGL, double airportDistance, double runwayDistance,
+                       double groundSpeed, double rpm) {
         // track finalIndex
         finalIndex = index;
 
@@ -225,45 +237,20 @@ public class Itinerary {
         }
 
         if (!Double.isNaN(airportDistance)) {
-            if (minAirportDistance > airportDistance)
-                minAirportDistance = airportDistance;
+            if (minAirportDistance > airportDistance) minAirportDistance = airportDistance;
         }
 
         if (!Double.isNaN(runwayDistance)) {
-            if (minRunwayDistance > runwayDistance)
-                minRunwayDistance = runwayDistance;
+            if (minRunwayDistance > runwayDistance) minRunwayDistance = runwayDistance;
         }
 
-        if (runway == null || runway.equals(""))
-            return;
+        if (rWay == null || rWay.isEmpty()) return;
 
-        Integer count = runwayCounts.get(runway);
-
-        if (count == null) {
-            runwayCounts.put(runway, 1);
-        } else {
-            runwayCounts.put(runway, count + 1);
-        }
+        runwayCounts.merge(rWay, 1, Integer::sum);
     }
 
-    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance,
-            double runwayDistance, double groundSpeed) {
-        this.airport = airport;
-        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed);
-    }
-
-    public Itinerary(int startTakeoff, int endTakeoff, int startApproach, int endApproach, String airport,
-            String runway) {
-        this.startOfTakeoff = startTakeoff;
-        this.endOfTakeoff = endTakeoff;
-        this.startOfApproach = startApproach;
-        this.endOfApproach = endApproach;
-        this.airport = airport;
-        this.runway = runway;
-    }
-
-    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance,
-            double groundSpeed) {
+    public void update(String runwayUpdated, int index, double altitudeAGL, double airportDistance,
+                       double runwayDistance, double groundSpeed) {
         // track finalIndex
         finalIndex = index;
 
@@ -309,24 +296,21 @@ public class Itinerary {
         }
 
         if (!Double.isNaN(airportDistance)) {
-            if (minAirportDistance > airportDistance)
-                minAirportDistance = airportDistance;
+            if (minAirportDistance > airportDistance) minAirportDistance = airportDistance;
         }
 
         if (!Double.isNaN(runwayDistance)) {
-            if (minRunwayDistance > runwayDistance)
-                minRunwayDistance = runwayDistance;
+            if (minRunwayDistance > runwayDistance) minRunwayDistance = runwayDistance;
         }
 
-        if (runway == null || runway.equals(""))
-            return;
+        if (runwayUpdated == null || runwayUpdated.equals("")) return;
 
-        Integer count = runwayCounts.get(runway);
+        Integer count = runwayCounts.get(runwayUpdated);
 
         if (count == null) {
-            runwayCounts.put(runway, 1);
+            runwayCounts.put(runwayUpdated, 1);
         } else {
-            runwayCounts.put(runway, count + 1);
+            runwayCounts.put(runwayUpdated, count + 1);
         }
     }
 
@@ -356,30 +340,14 @@ public class Itinerary {
             // is most likely a very small airport, we can use
             // a metric of being within 1000 ft and below 200 ft
             //
-            if (minAirportDistance <= 1000 && minAltitude <= 200) {
-                return true;
-            } else {
-                return false;
-            }
+            return minAirportDistance <= 1000 && minAltitude <= 200;
         }
     }
 
-    public static PreparedStatement createAirportPreparedStatement(Connection connection) throws SQLException {
-        return connection.prepareStatement("INSERT IGNORE INTO visited_airports SET fleet_id = ?, airport = ?");
-    }
-
-    public static PreparedStatement createRunwayPreparedStatement(Connection connection) throws SQLException {
-        return connection.prepareStatement("INSERT IGNORE INTO visited_runways SET fleet_id = ?, runway = ?");
-    }
-
-    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-        return connection.prepareStatement(
-                "INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    }
-
     public void addBatch(PreparedStatement itineraryStatement, PreparedStatement airportStatement,
-            PreparedStatement runwayStatement, int fleetId, int flightId, int order) throws SQLException {
-        this.order = order;
+                         PreparedStatement runwayStatement, int fleetId, int flightId, int orderToSet)
+            throws SQLException {
+        this.order = orderToSet;
 
         airportStatement.setInt(1, fleetId);
         airportStatement.setString(2, airport);
@@ -390,7 +358,7 @@ public class Itinerary {
         runwayStatement.addBatch();
 
         itineraryStatement.setInt(1, flightId);
-        itineraryStatement.setInt(2, order);
+        itineraryStatement.setInt(2, orderToSet);
         itineraryStatement.setInt(3, minAltitudeIndex);
         itineraryStatement.setDouble(4, minAltitude);
         itineraryStatement.setDouble(5, minAirportDistance);
@@ -405,13 +373,13 @@ public class Itinerary {
         itineraryStatement.addBatch();
     }
 
-    public void updateDatabase(Connection connection, int fleetId, int flightId, int order) throws SQLException {
+    public void updateDatabase(Connection connection, int fleetId, int flightId, int orderToAdd) throws SQLException {
         // insert new visited airports and runways -- will ignore if it already exists
-        try (PreparedStatement statement = createPreparedStatement(connection);
-                PreparedStatement airportStatement = createAirportPreparedStatement(connection);
-                PreparedStatement runwayStatement = createRunwayPreparedStatement(connection)) {
+        try (PreparedStatement statement = createPreparedStatement(connection); PreparedStatement airportStatement =
+                createAirportPreparedStatement(connection); PreparedStatement runwayStatement =
+                createRunwayPreparedStatement(connection)) {
 
-            this.addBatch(statement, airportStatement, runwayStatement, fleetId, flightId, order);
+            this.addBatch(statement, airportStatement, runwayStatement, fleetId, flightId, orderToAdd);
 
             statement.executeBatch();
             airportStatement.executeBatch();
@@ -419,9 +387,9 @@ public class Itinerary {
         }
     }
 
-    public String toString() { // TODO: add new columns to toString?
-        return airport + "(" + runway + ") -- altitude: " + minAltitude + ", airport distance: " + minAirportDistance
-                + ", runway distance: " + minRunwayDistance;
+    public String toString() {
+        return airport + "(" + runway + ") -- altitude: " + minAltitude + ", airport distance: " +
+                minAirportDistance + ", runway distance: " + minRunwayDistance;
     }
 
     // Simple setter for type variable (might want some defensive checks given use of strings)***
@@ -445,7 +413,7 @@ public class Itinerary {
 
         if (startOfTakeoff != -1 && (endOfApproach == -1 || approachTime < 10)) {
             type = TAKEOFF;
-        } else if (endOfTakeoff == -1 && (endOfApproach != -1 || startOfTakeoff > endOfTakeoff)) {
+        } else if (endOfTakeoff == -1 && endOfApproach != -1) {
             type = LANDING;
         } else if (runwayTime >= 5) {
             type = TOUCH_AND_GO;

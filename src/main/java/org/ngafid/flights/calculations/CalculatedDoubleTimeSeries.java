@@ -18,12 +18,14 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     /**
      * Default Constructor
      *
+     * @param connection the connection to the database
      * @param name the new name of the time series
-     * @param dataType the dataType of the new timeseries, represented by a {@link String}
+     * @param dataType the dataType of the new time series, represented by a {@link String}
      * @param cache indicates if the new series should be stored in the database after all analysis is complete
-     * @param flight the flight instance the timeseries is being calcualted for
+     * @param flight the flight instance the time series is being calculated for
      */
-    public CalculatedDoubleTimeSeries(Connection connection, String name, String dataType, boolean cache, Flight flight) throws SQLException {
+    public CalculatedDoubleTimeSeries(Connection connection, String name,
+                                      String dataType, boolean cache, Flight flight) throws SQLException {
         super(connection, name, dataType);
         this.flight = flight;
         this.cache = cache;

@@ -1,17 +1,17 @@
 package org.ngafid.flights.process;
 
+import org.ngafid.flights.Flight;
+
 import java.io.InputStream;
 import java.sql.Connection;
-import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import org.ngafid.flights.Flight;
+import java.util.stream.Stream;
 
 public abstract class FlightFileProcessor {
 
-    private static Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
+    private static final Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
 
     interface Factory {
         FlightFileProcessor create(Connection connection, InputStream is, String filename, Pipeline pipeline)
@@ -31,11 +31,11 @@ public abstract class FlightFileProcessor {
     }
 
     // If an exception occurs, it will be stored here.
-    FlightProcessingException parseException = null;
+    private FlightProcessingException parseException = null;
 
     /**
      * Parses the file for flight data to be processed
-     * 
+     *
      * @return A stream of FlightBuilders
      * @throws FlightProcessingException
      */

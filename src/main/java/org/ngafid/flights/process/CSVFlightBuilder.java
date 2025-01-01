@@ -17,7 +17,7 @@ public class CSVFlightBuilder extends FlightBuilder {
         super(meta, doubleTimeSeries, stringTimeSeries);
     }
 
-    private static final List<ProcessStep.Factory> processSteps = List.of();
+    private static final List<ProcessStep.Factory> PROCESS_STEPS = List.of();
 
     // This can be overridden.
     protected List<ProcessStep> gatherSteps(Connection connection) {
@@ -25,7 +25,7 @@ public class CSVFlightBuilder extends FlightBuilder {
         // The order doesn't matter; the DependencyGraph will resolve
         // the order in the event that there are dependencies.
         List<ProcessStep> steps = super.gatherSteps(connection);
-        processSteps.stream().map(factory -> factory.create(connection, this)).forEach(steps::add);
+        PROCESS_STEPS.stream().map(factory -> factory.create(connection, this)).forEach(steps::add);
         return steps;
     }
 }

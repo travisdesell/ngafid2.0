@@ -8,17 +8,22 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
-public class Tails {
+public final class Tails {
     private static final Logger LOG = Logger.getLogger(Tails.class.getName());
 
-    private static class FleetInstance {
-        int fleetId;
+    private Tails() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
-        HashMap<String, String> idMap = new HashMap<>(); // tail to systemId
-        HashMap<String, String> tailMap = new HashMap<>(); // systemId to tail
-        HashMap<String, Boolean> confirmedMap = new HashMap<>(); // systemId to tailConfirmed
+    private static class FleetInstance {
+        private final int fleetId;
+
+        private final Map<String, String> idMap = new HashMap<>(); // tail to systemId
+        private final Map<String, String> tailMap = new HashMap<>(); // systemId to tail
+        private final Map<String, Boolean> confirmedMap = new HashMap<>(); // systemId to tailConfirmed
 
         FleetInstance(int fleetId) {
             this.fleetId = fleetId;
@@ -150,25 +155,27 @@ public class Tails {
 
     public static String getId(Connection connection, int fleetId, String tail) throws SQLException {
         FleetInstance fleet = fleetMaps.get(fleetId);
-        if (fleet == null)
+        if (fleet == null) {
             fleet = new FleetInstance(fleetId);
+        }
 
-        String systemId = fleet.getId(connection, tail);
-        return systemId;
+        return fleet.getId(connection, tail);
     }
 
     public static String getTail(Connection connection, int fleetId, String systemId) throws SQLException {
         FleetInstance fleet = fleetMaps.get(fleetId);
-        if (fleet == null)
+        if (fleet == null) {
             fleet = new FleetInstance(fleetId);
+        }
 
         return fleet.getTail(connection, systemId);
     }
 
     public static Boolean getConfirmed(Connection connection, int fleetId, String systemId) throws SQLException {
         FleetInstance fleet = fleetMaps.get(fleetId);
-        if (fleet == null)
+        if (fleet == null) {
             fleet = new FleetInstance(fleetId);
+        }
 
         return fleet.getConfirmed(connection, systemId);
     }
@@ -331,7 +338,9 @@ public class Tails {
     }
 
     public static void removeUnused(Connection connection) throws SQLException {
-        String queryString = "DELETE FROM tails WHERE NOT EXISTS (SELECT id FROM flights WHERE flights.system_id = tails.system_id AND flights.fleet_id = tails.fleet_id);";
+        String queryString = "DELETE FROM tails WHERE NOT EXISTS " +
+                "(SELECT id FROM flights WHERE flights.system_id = tails.system_id " +
+                "AND flights.fleet_id = tails.fleet_id);";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.executeUpdate();
         }

@@ -1,5 +1,11 @@
 package org.ngafid.flights.calculations;
 
+import org.apache.commons.cli.*;
+import org.ngafid.Database;
+import org.ngafid.accounts.Fleet;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,14 +16,10 @@ import java.util.logging.Logger;
 
 import static org.ngafid.flights.Parameters.*;
 
-import org.apache.commons.cli.*;
-import org.ngafid.Database;
-import org.ngafid.accounts.Fleet;
-import org.ngafid.flights.*;
-
 public class HeadingTrackDiff implements Calculation {
-    private DoubleTimeSeries hdg, trk;
-    private Flight flight;
+    private final DoubleTimeSeries hdg;
+    private final DoubleTimeSeries trk;
+    private final Flight flight;
     private static final Logger LOG = Logger.getLogger(HeadingTrackDiff.class.getName());
 
     public HeadingTrackDiff(Flight flight, Connection connection) throws IOException, SQLException {
@@ -46,7 +48,8 @@ public class HeadingTrackDiff implements Calculation {
     }
 
     public boolean existsInDB(Connection connection) throws SQLException {
-        String sql = "SELECT EXISTS (SELECT id FROM double_series WHERE name_id IN (SELECT id FROM double_series_names WHERE name = ?) AND flight_id = ?)";
+        String sql = "SELECT EXISTS (SELECT id FROM double_series WHERE name_id IN " +
+                "(SELECT id FROM double_series_names WHERE name = ?) AND flight_id = ?)";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
 
             query.setString(1, HDG_TRK_DIFF);
@@ -100,18 +103,18 @@ public class HeadingTrackDiff implements Calculation {
                     List<String> missingParams = flight.checkCalculationParameters(HDG_TRK_DEPENDENCIES);
                     if (missingParams.isEmpty()) {
                         HeadingTrackDiff calculation = new HeadingTrackDiff(flight, connection);
-                        CalculatedDoubleTimeSeries hdgTrakDiff = new CalculatedDoubleTimeSeries(connection,
-                                HDG_TRK_DIFF, "degrees", true, flight);
+                        CalculatedDoubleTimeSeries hdgTrakDiff =
+                                new CalculatedDoubleTimeSeries(connection, HDG_TRK_DIFF, "degrees", true, flight);
                         if (!calculation.existsInDB(connection)) {
                             hdgTrakDiff.create(calculation);
                             hdgTrakDiff.updateDatabase(connection, flight.getId());
                         } else {
-                            LOG.info("Already calculated for flight " + flight.toString());
+                            LOG.info("Already calculated for flight " + flight);
                         }
                     } else {
                         // Cant be calculated.
-                        LOG.severe("Skipping flight " + flight.toString());
-                        LOG.severe("Missing columns: " + missingParams.toString());
+                        LOG.severe("Skipping flight " + flight);
+                        LOG.severe("Missing columns: " + missingParams);
                     }
                 }
             }

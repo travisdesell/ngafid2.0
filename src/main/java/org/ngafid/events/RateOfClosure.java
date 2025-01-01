@@ -35,15 +35,15 @@ public class RateOfClosure {
 
     public RateOfClosure(ResultSet resultSet) throws SQLException, IOException {
         Blob values = resultSet.getBlob(1);
-        int size = resultSet.getInt(2);
+        int sizeResult = resultSet.getInt(2);
         byte[] bytes = values.getBytes(1, (int) values.length());
         values.free();
-        this.rateOfClosureArray = Compression.inflateDoubleArray(bytes, size);
+        this.rateOfClosureArray = Compression.inflateDoubleArray(bytes, sizeResult);
         this.size = this.rateOfClosureArray.length;
     }
 
     public void updateDatabase(Connection connection, int eventId) throws IOException, SQLException {
-        byte blobBytes[] = Compression.compressDoubleArray(this.rateOfClosureArray);
+        byte[] blobBytes = Compression.compressDoubleArray(this.rateOfClosureArray);
         Blob rateOfClosureBlob = new SerialBlob(blobBytes);
 
         try (PreparedStatement preparedStatement = connection
