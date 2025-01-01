@@ -276,8 +276,8 @@ public class Event {
                     otherFlightId = null;
                 }
 
-                Event event = new Event(eventId, fleetIdToGetEventsFor, flightId, definitionId, startLine, endLine, eventStartTime,
-                        eventEndTime, severity, otherFlightId, systemId, tail, tag);
+                Event event = new Event(eventId, fleetIdToGetEventsFor, flightId, definitionId, startLine,
+                        endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail, tag);
                 System.out.println("event: " + event);
 
                 int airframeId = eventSet.getInt(9);
@@ -301,6 +301,7 @@ public class Event {
      * This fixes a date time string to be in the format MYSQL expects.
      *
      * @param dateTime is a string of a date time
+     * @return a string of the date time in the format MYSQL expects
      */
     public String fixTime(String dateTime) {
         if (dateTime.contains("/")) {

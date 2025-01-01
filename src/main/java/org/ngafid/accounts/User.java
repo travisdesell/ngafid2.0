@@ -387,6 +387,7 @@ public final class User {
      * @param connection A connection to the database
      * @param userId     the userId to update for
      * @param decimalPrecision  the new decimal precision value to store
+     * @return an instance of {@link UserPreferences} with all the user's preferences
      */
     public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId,
             int decimalPrecision) throws SQLException {
@@ -461,6 +462,7 @@ public final class User {
      * @param connection       A connection to the database
      * @param userId           the userId to update for
      * @param emailPreferences the {@link UserEmailPreferences} instance to store
+     * @return an instance of {@link UserEmailPreferences} with all the user's email
      */
     public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId,
             Map<String, Boolean> emailPreferences) throws SQLException {
@@ -779,8 +781,9 @@ public final class User {
         user.zipCode = zipCode;
 
         try (PreparedStatement query = connection.prepareStatement(
-                "INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?, registration_time = NOW()",
-                Statement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?," +
+                   " country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?," +
+                   " registration_time = NOW()", Statement.RETURN_GENERATED_KEYS)) {
             query.setString(1, user.email);
             query.setString(2, passwordToken);
             query.setString(3, user.firstName);
@@ -907,9 +910,11 @@ public final class User {
      * @return A user object if it was successfully created and added to the
      *         database.
      */
+    //CHECKSTYLE:OFF
     public static User createExistingFleetUser(Connection connection, String email, String password, String firstName,
             String lastName, String country, String state, String city, String address, String phoneNumber,
             String zipCode, String fleetName) throws SQLException, AccountException {
+    //CHECKSTYLE:ON
         // TODO: double check all the passed in strings with regexes to make sure
         // they're valid
         // validateUserInformation(email, password, firstName, lastName, country, state,
