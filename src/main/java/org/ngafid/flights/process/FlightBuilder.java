@@ -21,7 +21,7 @@ public class FlightBuilder {
 
     // The only thing we require, by default, is a start and end time.
     // TODO: Determine if this is the exact behavior we want.
-    private static final List<ProcessStep.Factory> processSteps = List.of(required(ProcessStartEndTime::new),
+    private static final List<ProcessStep.Factory> PROCESS_STEPS = List.of(required(ProcessStartEndTime::new),
             ProcessAirportProximity::new, ProcessLaggedAltMSL::new, ProcessStallIndex::new, ProcessTotalFuel::new,
             ProcessDivergence::new, ProcessLOCI::new, ProcessItinerary::new, ProcessAltAGL::new);
     //CHECKSTYLE:OFF
@@ -62,7 +62,7 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
-        return processSteps.stream().map(factory -> factory.create(connection, this))
+        return PROCESS_STEPS.stream().map(factory -> factory.create(connection, this))
                 .filter(step -> step.getOutputColumns().stream()
                 .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x)))
                 .collect(Collectors.toList());
