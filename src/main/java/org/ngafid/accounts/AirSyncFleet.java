@@ -136,8 +136,7 @@ public class AirSyncFleet extends Fleet {
         try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet = query.executeQuery()) {
 
             if (resultSet.next()) {
-                AirSyncFleet fleet = new AirSyncFleet(resultSet);
-                return fleet;
+                return new AirSyncFleet(resultSet);
             }
 
             return null;
@@ -165,8 +164,8 @@ public class AirSyncFleet extends Fleet {
 
         if (fleets == null || fleets.length != asFleetCount) {
             sql = "SELECT fl.id, fl.fleet_name, sync.airsync_fleet_name, sync.api_key, sync.api_secret, sync" +
-                    ".last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync" +
-                    ".fleet_id = fl.id";
+                    ".last_upload_time, sync.timeout FROM fleet AS fl " +
+                    "INNER JOIN airsync_fleet_info AS sync ON sync" + ".fleet_id = fl.id";
             try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet =
                     query.executeQuery()) {
                 fleets = new AirSyncFleet[asFleetCount];
@@ -261,7 +260,9 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if there is a DBMS issue
      */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
-        return (Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection));
+        return (Duration.between(
+                getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection)
+        );
     }
 
     /**
@@ -448,10 +449,12 @@ public class AirSyncFleet extends Fleet {
         private static final int DOWNLOAD_BATCH_SIZE = 32;
         private static final int ARCHIVE_MAX_SIZE = 128;
 
+        //CHECKSTYLE:OFF
         Upload upload = null;
         FileSystem zipFile = null;
         List<AirSyncAircraft> aircraft;
         private int filesAdded = 0;
+        //CHECKSTYLE:ON
 
         AirSyncFleetUpdater() throws IOException {
             aircraft = getAircraft();
@@ -509,7 +512,7 @@ public class AirSyncFleet extends Fleet {
                     }
                 });
 
-                if (allImports.size() == 0) return;
+                if (allImports.isEmpty()) return;
             }
 
             for (var chunk : Lists.partition(allImports, 32)) {
@@ -523,9 +526,9 @@ public class AirSyncFleet extends Fleet {
                         }
                         return null;
                     }
-                }).collect(Collectors.toList());
+                }).toList();
 
-                if (errors.size() != 0) throw errors.get(0);
+                if (!errors.isEmpty()) throw errors.get(0);
 
                 try (Connection connection = Database.getConnection()) {
                     for (int i = 0; i < chunk.size(); i++) {

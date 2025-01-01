@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 /**
  * Represents an Aircraft that is AirSync compatibile
  */
-public class AirSyncAircraft {
+public final class AirSyncAircraft {
     private static final Gson GSON = WebServer.gson;
     // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
     private static final LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
@@ -47,10 +47,10 @@ public class AirSyncAircraft {
     /**
      * Sets a reference to the fleet which this aircraft belongs to
      *
-     * @param fleet the AirSyncFleet that is responsible for this aircraft
+     * @param airsyncFleet the AirSyncFleet that is responsible for this aircraft
      */
-    public void initialize(AirSyncFleet fleet) {
-        this.fleet = fleet;
+    public void initialize(AirSyncFleet airsyncFleet) {
+        this.fleet = airsyncFleet;
     }
 
     /**
@@ -189,11 +189,11 @@ public class AirSyncAircraft {
      * Gets ALL imports for this Aircraft
      *
      * @param connection the database connection
-     * @param fleet      the fleet this aircraft belongs to
+     * @param airSyncFleet      the fleet this aircraft belongs to
      * @return a {@link List} of AirSyncImports
      */
-    public List<AirSyncImport> getImports(Connection connection, AirSyncFleet fleet) throws IOException {
-        AirSyncAuth authentication = fleet.getAuth();
+    public List<AirSyncImport> getImports(Connection connection, AirSyncFleet airSyncFleet) throws IOException {
+        AirSyncAuth authentication = airSyncFleet.getAuth();
         List<AirSyncImport> imports = new LinkedList<>();
 
         boolean continueIteration = true;
@@ -201,7 +201,7 @@ public class AirSyncAircraft {
         int nPage = 0;
         while (continueIteration) {
             HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++).openConnection();
-            List<AirSyncImport> page = getImportsHTTPS(netConnection, fleet.getAuth());
+            List<AirSyncImport> page = getImportsHTTPS(netConnection, airSyncFleet.getAuth());
 
             continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
             imports.addAll(page);
@@ -214,13 +214,13 @@ public class AirSyncAircraft {
      * Gets a List of imports after a certian date
      *
      * @param connection     the database connection
-     * @param fleet          the AirSyncFleet that these imports belong to
+     * @param airSyncFleet          the AirSyncFleet that these imports belong to
      * @param lastImportTime the last import time recorded in the database
      * @return a {@link List} of AirSyncImports
      */
-    public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet fleet,
+    public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet airSyncFleet,
                                                    LocalDateTime lastImportTime) throws IOException {
-        AirSyncAuth authentication = fleet.getAuth();
+        AirSyncAuth authentication = airSyncFleet.getAuth();
         List<AirSyncImport> imports = new LinkedList<>();
 
         boolean continueIteration = true;
@@ -242,21 +242,22 @@ public class AirSyncAircraft {
         return imports;
     }
 
-    public List<AirSyncImport> getImportsForUpdate(Connection connection, AirSyncFleet fleet) throws IOException,
-            SQLException {
+    public List<AirSyncImport> getImportsForUpdate(Connection connection, AirSyncFleet airSyncFleet)
+            throws IOException, SQLException {
         var lastImportTime = getLastImportTime(connection);
         if (lastImportTime.isPresent()) {
             // We must make the interval exclusive when asking the server for flights
             LocalDateTime importTime = lastImportTime.get().plusSeconds(1);
-            return getImportsAfterDate(connection, fleet, importTime);
+            return getImportsAfterDate(connection, airSyncFleet, importTime);
         } else {
-            return getImports(connection, fleet);
+            return getImports(connection, airSyncFleet);
         }
     }
 
+    //CHECKSTYLE:OFF
     static class AirSyncAircraftAccountInfo {
         public String accountToken;
         public String name;
     }
-
+    //CHECKSTYLE:ON
 }
