@@ -942,6 +942,10 @@ public class EventStatistics {
             this.aggregateTotalFlightsCounts = aggregateTotalFlightsCounts;
             this.aggregateTotalEventsCounts = aggregateTotalEventsCounts;
         }
+
+        public int[] getAggregateFlightsWithEventCounts() {
+            return aggregateFlightsWithEventCounts;
+        }
     }
 
     public static class MonthlyEventCounts extends EventCountsWithAggregate {
@@ -993,7 +997,6 @@ public class EventStatistics {
                     linearize(aggregateFlightsWithEventMap), linearize(aggregateTotalFlightsMap),
                     linearize(aggregateTotalEventsMap));
         }
-
     }
 
     public static class EventCounts extends EventCountsWithAggregate {
@@ -1010,6 +1013,10 @@ public class EventStatistics {
 
             this.names = names;
             this.airframeName = airframeName;
+        }
+
+        public List<String> getNames() {
+            return names;
         }
     }
 

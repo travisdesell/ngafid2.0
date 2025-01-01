@@ -17,11 +17,11 @@ public final class TestEventCounts {
             Map<String, EventStatistics.EventCounts> counts = EventStatistics.getEventCounts(connection,
                     null, null);
             for (Map.Entry<String, EventStatistics.EventCounts> entry : counts.entrySet()) {
-                List<String> names = entry.getValue().names;
+                List<String> names = entry.getValue().getNames();
 
                 for (int i = 0; i < names.size(); i++) {
                     System.out.println("" + entry.getKey() + " : " + names.get(i) + " : "
-                            + entry.getValue().aggregateFlightsWithEventCounts[i]);
+                            + entry.getValue().getAggregateFlightsWithEventCounts()[i]);
                 }
             }
 
