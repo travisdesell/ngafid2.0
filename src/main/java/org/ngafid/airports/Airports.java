@@ -13,15 +13,19 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Airports {
-    public final static double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
+public final class Airports {
+    public static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
     public static final double FT_PER_KM = 3280.84;
     private static final Logger LOG = Logger.getLogger(Airports.class.getName());
-    private static final HashMap<String, ArrayList<Airport>> geoHashToAirport;
-    private static final HashMap<String, Airport> siteNumberToAirport;
-    private static final HashMap<String, Airport> iataToAirport;
+    private static final HashMap<String, ArrayList<Airport>> GEO_HASH_TO_AIRPORT;
+    private static final HashMap<String, Airport> SITE_NUMBER_TO_AIRPORT;
+    private static final HashMap<String, Airport> IATA_TO_AIRPORT;
+
+    private Airports() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     static {
         // AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
@@ -48,9 +52,9 @@ public class Airports {
         RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
         // RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
 
-        geoHashToAirport = new HashMap<String, ArrayList<Airport>>();
-        siteNumberToAirport = new HashMap<String, Airport>();
-        iataToAirport = new HashMap<String, Airport>();
+        GEO_HASH_TO_AIRPORT = new HashMap<String, ArrayList<Airport>>();
+        SITE_NUMBER_TO_AIRPORT = new HashMap<String, Airport>();
+        IATA_TO_AIRPORT = new HashMap<String, Airport>();
 
         int maxHashSize = 0;
         int numberAirports = 0;
@@ -71,18 +75,18 @@ public class Airports {
 
                 Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
 
-                ArrayList<Airport> hashedAirports = geoHashToAirport.computeIfAbsent(airport.getGeoHash(),
+                ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.computeIfAbsent(airport.getGeoHash(),
                         k -> new ArrayList<>());
                 hashedAirports.add(airport);
 
-                if (siteNumberToAirport.get(siteNumber) != null) {
+                if (SITE_NUMBER_TO_AIRPORT.get(siteNumber) != null) {
                     System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as"
-                            + " " + siteNumberToAirport.get(siteNumber));
+                            + " " + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
                     System.exit(1);
 
                 }
-                siteNumberToAirport.put(airport.getSiteNumber(), airport);
-                iataToAirport.put(airport.getIataCode(), airport);
+                SITE_NUMBER_TO_AIRPORT.put(airport.getSiteNumber(), airport);
+                IATA_TO_AIRPORT.put(airport.getIataCode(), airport);
 
                 if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
                 // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
@@ -113,7 +117,7 @@ public class Airports {
                     System.exit(1);
                 }
 
-                Airport airport = siteNumberToAirport.get(siteNumber);
+                Airport airport = SITE_NUMBER_TO_AIRPORT.get(siteNumber);
 
                 if (airport == null) {
                     System.err.println("ERROR: parsed runway for unknown airport, site number: " + siteNumber);
@@ -130,7 +134,7 @@ public class Airports {
         }
 
         LOG.info("Read " + numberAirports + " airports.");
-        LOG.info("airports HashMap size: " + geoHashToAirport.size());
+        LOG.info("airports HashMap size: " + GEO_HASH_TO_AIRPORT.size());
         LOG.info("max airport ArrayList: " + maxHashSize);
     }
 
@@ -146,13 +150,21 @@ public class Airports {
     }
 
     public static Airport getAirport(String iataCode) {
-        return iataToAirport.get(iataCode);
+        return IATA_TO_AIRPORT.get(iataCode);
     }
 
     /**
+     * Calculate the shortest distance between a point and a line segment
      * Modified from:
      * https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-     **/
+     * @param plat Point latitude
+     * @param plon Point longitude
+     * @param lat1 Latitude of the first point of the line segment
+     * @param lon1 Longitude of the first point of the line segment
+     * @param lat2 Latitude of the second point of the line segment
+     * @param lon2 Longitude of the second point of the line segment
+     * @return the shortest distance between the point and the line segment
+     */
     public static double shortestDistanceBetweenLineAndPointFt(double plat, double plon, double lat1,
                                                                double lon1, double lat2, double lon2) {
         double a = plon - lon1;
@@ -214,7 +226,7 @@ public class Airports {
         Airport nearestAirport = null;
 
         for (String geoHash : geoHashes) {
-            ArrayList<Airport> hashedAirports = geoHashToAirport.get(geoHash);
+            ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.get(geoHash);
 
             if (hashedAirports != null) {
                 // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
@@ -245,7 +257,7 @@ public class Airports {
 
     public static boolean hasRunwayInfo(String iataCode) {
         System.out.println("checking to see if airport '" + iataCode + "' has runway info");
-        Airport ap = iataToAirport.get(iataCode);
+        Airport ap = IATA_TO_AIRPORT.get(iataCode);
         return ap != null && ap.hasRunways();
     }
 
