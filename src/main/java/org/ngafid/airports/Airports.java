@@ -173,14 +173,15 @@ public final class Airports {
         double d = lat2 - lat1;
 
         double dot = a * c + b * d;
-        double len_sq = c * c + d * d;
+        double lenSq = c * c + d * d;
         double param = -1;
 
-        if (len_sq != 0) {
-            param = dot / len_sq;
+        if (lenSq != 0) {
+            param = dot / lenSq;
         }
 
-        double xx, yy;
+        double xx;
+        double yy;
         if (param < 0) {
             xx = lon1;
             yy = lat1;
@@ -197,7 +198,7 @@ public final class Airports {
         return Airports.calculateDistanceInFeet(plat, plon, plat + dy, plon + dx);
     }
 
-    public final static double calculateDistanceInKilometer(double lat1, double lon1, double lat2, double lon2) {
+    public static double calculateDistanceInKilometer(double lat1, double lon1, double lat2, double lon2) {
         double latDistance = Math.toRadians(lat1 - lat2);
         double lngDistance = Math.toRadians(lon1 - lon2);
 

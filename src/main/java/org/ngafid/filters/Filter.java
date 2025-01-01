@@ -147,7 +147,8 @@ public class Filter {
         System.out.println("datetime is: " + datetime);
         System.out.println("time zone offset is: " + offset);
         OffsetDateTime odt =
-                LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atOffset(ZoneOffset.of(offset));
+                LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        .atOffset(ZoneOffset.of(offset));
         String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("yyyy" +
                 "-MM-dd HH:mm:ss"));
         System.out.println("gmt date time is: " + gmtTime);

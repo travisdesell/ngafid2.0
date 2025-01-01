@@ -1,7 +1,8 @@
 package org.ngafid.filters;
 
+//CHECKSTYLE:OFF
 import org.ngafid.accounts.User;
-
+//CHECKSTYLE:ON
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
