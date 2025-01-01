@@ -347,7 +347,7 @@ public class TurnToFinal implements Serializable {
             }
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
-            for (; ; ) {
+            while (true) {
                 if (from < 0) {
                     // We never found a point in time where there is a turn to final
                     // We assume all aircraft that perform a turn to final will reach 400 feet above the runway

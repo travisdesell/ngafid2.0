@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
-    public double severity;
+    private double severity;
     private int id;
     private int fleetId;
     private int flightId;
@@ -88,6 +88,7 @@ public class Event {
      * @param id            is the id of the event in the database
      * @param fleetId       is the id of the fleet
      * @param flightId      is the id of the flight of this event
+     * @param eventDefId    is the id of the event definition of this event
      * @param startLine     is the line the event starts in the data file of the flight
      * @param endLine       is the line the event ends in the data file of the flight
      * @param startTime     is the time the event starts in the data file of the flight
@@ -95,12 +96,12 @@ public class Event {
      * @param severity      is the severity rating for the event
      * @param otherFlightId is the other flight id (for proximity events)
      */
-    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine,
+    public Event(int id, int fleetId, int flightId, int eventDefId, int startLine, int endLine,
                  String startTime, String endTime, double severity, Integer otherFlightId) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
-        this.eventDefinitionId = eventDefinitionId;
+        this.eventDefinitionId = eventDefId;
         this.startLine = startLine;
         this.endLine = endLine;
         this.startTime = startTime;
@@ -159,11 +160,12 @@ public class Event {
      * @param startTime  is the earliest time to start getting events (it will get events from the beginning of time if
      *                   it is null)
      * @param endTime    is the latest time to getting events (it will get events until the current date if it is null)
+     * @param tagName    is the name of the tag to get events for
      * @return a hashmap where every entry relates to an airframe name for this fleet, containing a vector of all
      * specified events for that airframe between the specified start and end dates (if provided)
      */
-    public static HashMap<String, ArrayList<Event>> getEvents(Connection connection, int fleetIdToGetEventsFor, String eventName,
-                                                              LocalDate startTime, LocalDate endTime, String tagName)
+    public static HashMap<String, ArrayList<Event>> getEvents(Connection connection, int fleetIdToGetEventsFor,
+                                    String eventName, LocalDate startTime, LocalDate endTime, String tagName)
             throws SQLException {
         // get list of airframes for this fleet so we can set up the hashmap of arraylists for events by airframe
         ArrayList<String> fleetAirframes = Airframes.getAll(connection, fleetIdToGetEventsFor);
@@ -402,12 +404,13 @@ public class Event {
         this.metaDataList.add(metaData);
     }
 
-    public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefId) throws SQLException {
+    public void updateStatistics(Connection connection, int fltId, int airframeNameId, int eventDefId)
+            throws SQLException {
         if (this.getStartTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefId,
+            EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
                     this.getStartTime(), this.getSeverity(), this.getDuration());
         } else if (this.getEndTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefId,
+            EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
                     this.getEndTime(), this.getSeverity(), this.getDuration());
         } else {
             System.out.println("WARNING: could not update event statistics for event: " + this);

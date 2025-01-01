@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class EventDefinition {
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
     public static final int MIN_SEVERITY = 1;
     public static final int MAX_SEVERITY = 2;
     public static final int MIN_ABS_SEVERITY = 3;
@@ -83,7 +83,7 @@ public class EventDefinition {
         this.airframeNameId = resultSet.getInt(6);
         if (id >= 0) {
             try {
-                this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
+                this.filter = GSON.fromJson(resultSet.getString(7), Filter.class);
             } catch (Exception e) {
                 System.err.println("Error with filter: " + e);
                 System.err.println(resultSet.getString(7));
@@ -93,15 +93,15 @@ public class EventDefinition {
             }
         } else {
             try {
-                this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
+                this.filter = GSON.fromJson(resultSet.getString(7), Filter.class);
             } catch (NullPointerException e) {
                 this.filter = null;
             }
         }
 
-        this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>() {
+        this.columnNames = GSON.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>() {
         }.getType());
-        this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {
+        this.severityColumnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {
         }.getType());
         this.severityType = resultSet.getString(10);
 
@@ -149,7 +149,7 @@ public class EventDefinition {
         return getEventDefinitionFromDB(connection, query);
     }
 
-    public static List<EventDefinition> getEventDefinitions(Connection connection, String eventName) throws SQLException {
+    public static List<EventDefinition> getEventDefs(Connection connection, String eventName) throws SQLException {
         if (NAME_TO_EVENT_DEFINITIONS.containsKey(eventName)) return NAME_TO_EVENT_DEFINITIONS.get(eventName);
 
         List<EventDefinition> definitions = new ArrayList<>();
@@ -255,11 +255,11 @@ public class EventDefinition {
     public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
                               int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson,
                               String severityType) throws SQLException {
-        Filter filter = gson.fromJson(filterJson, Filter.class);
+        Filter filter = GSON.fromJson(filterJson, Filter.class);
         String columnNamesJson;
 
         if (eventId > 0) {
-            columnNamesJson = gson.toJson(filter.getColumnNames());
+            columnNamesJson = GSON.toJson(filter.getColumnNames());
         } else {
             columnNamesJson = severityColumnNamesJson;
         }
@@ -287,13 +287,21 @@ public class EventDefinition {
 
     /**
      * Inserts this event definition into the database.
-     *
      * @param connection is the connection to the database.
+     * @param fleetId is the fleet id for the event definitions
+     * @param name is the name of the event definition
+     * @param startBuffer is the start buffer
+     * @param stopBuffer is the stop buffer
+     * @param airframe is the airframe
+     * @param filterJson is the filter json
+     * @param severityColumnNamesJson is the severity column names json
+     * @param severityType is the severity type
+     * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(Connection connection, int fleetId, String name, int startBuffer, int stopBuffer,
                               String airframe, String filterJson, String severityColumnNamesJson,
                               String severityType) throws SQLException {
-        Filter filter = gson.fromJson(filterJson, Filter.class);
+        Filter filter = GSON.fromJson(filterJson, Filter.class);
         TreeSet<String> columnNames = filter.getColumnNames();
 
         if (airframe.equals("All Airframes")) {
@@ -308,7 +316,7 @@ public class EventDefinition {
                 preparedStatement.setInt(4, stopBuffer);
                 preparedStatement.setInt(5, 0);
                 preparedStatement.setString(6, filterJson);
-                preparedStatement.setString(7, gson.toJson(columnNames));
+                preparedStatement.setString(7, GSON.toJson(columnNames));
                 preparedStatement.setString(8, severityColumnNamesJson);
                 preparedStatement.setString(9, severityType);
 
@@ -328,7 +336,7 @@ public class EventDefinition {
                 preparedStatement.setInt(4, stopBuffer);
                 preparedStatement.setInt(5, airframeNameId);
                 preparedStatement.setString(6, filterJson);
-                preparedStatement.setString(7, gson.toJson(columnNames));
+                preparedStatement.setString(7, GSON.toJson(columnNames));
                 preparedStatement.setString(8, severityColumnNamesJson);
                 preparedStatement.setString(9, severityType);
 
@@ -804,8 +812,8 @@ public class EventDefinition {
      */
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
-        update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, gson.toJson(filter),
-                gson.toJson(severityColumnNames), severityType);
+        update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, GSON.toJson(filter),
+                GSON.toJson(severityColumnNames), severityType);
     }
 
     /**
@@ -842,8 +850,8 @@ public class EventDefinition {
     public String toString() {
         return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer
                 + ", airframeNameId: " + airframeNameId +
-                ", condition: " + gson.toJson(filter) + ", column_names : " + gson.toJson(columnNames)
-                + ", severity_column_names: " + gson.toJson(severityColumnNames) + ", severity_type: " + severityType
+                ", condition: " + GSON.toJson(filter) + ", column_names : " + GSON.toJson(columnNames)
+                + ", severity_column_names: " + GSON.toJson(severityColumnNames) + ", severity_type: " + severityType
                 + "]";
     }
 

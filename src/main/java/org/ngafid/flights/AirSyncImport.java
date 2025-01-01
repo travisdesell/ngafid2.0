@@ -36,8 +36,16 @@ public final class AirSyncImport {
     private int uploadId;
     private int aircraftId;
     private byte[] data;
-    private String origin, destination, timeStart, timeEnd, md5Hash, fileUrl, timestampUploaded;
-    private LocalDateTime localDateTimeStart, localDateTimeEnd, localDateTimeUpload;
+    private String origin;
+    private String destination;
+    private String timeStart;
+    private String timeEnd;
+    private String md5Hash;
+    private String fileUrl;
+    private String timestampUploaded;
+    private LocalDateTime localDateTimeStart;
+    private LocalDateTime localDateTimeEnd;
+    private LocalDateTime localDateTimeUpload;
     private AirSyncAircraft aircraft;
     private AirSyncFleet fleet;
 
@@ -186,6 +194,7 @@ public final class AirSyncImport {
      * @param connection the DBMS connection
      * @param fleetId    the fleet id
      * @param condition  the extra SQL conditions
+     * @return a list of AirSyncImportResponses
      * @throws SQLException if there is an issue with the DBMS
      */
     public static List<AirSyncImportResponse> getImports(Connection connection,
@@ -215,6 +224,7 @@ public final class AirSyncImport {
      * @param connection the DBMS connection
      * @param fleetId    the fleet id
      * @param condition  the extra SQL conditions
+     * @return an int with the number of imports
      * @throws SQLException if there is an issue with the DBMS
      */
     public static int getNumImports(Connection connection, int fleetId, String condition) throws SQLException {
@@ -241,13 +251,13 @@ public final class AirSyncImport {
      * It is up to the programmer to ensure this method is called each time a JSON
      * AirSyncImport class is instantiated.
      *
-     * @param fleet    a reference to the fleet that this upload is for
-     * @param acft a reference to the aircraft this import is from
+     * @param initFleet    a reference to the fleet that this upload is for
+     * @param initAircraft a reference to the aircraft this import is from
      *                   {@link AirSyncAircraft}
      */
-    public void init(AirSyncFleet fleet, AirSyncAircraft acft) {
-        this.fleet = fleet;
-        this.aircraft = acft;
+    public void init(AirSyncFleet initFleet, AirSyncAircraft initAircraft) {
+        this.fleet = initFleet;
+        this.aircraft = initAircraft;
 
         // This does not include timezones yet
         // TODO: Add time zone support!

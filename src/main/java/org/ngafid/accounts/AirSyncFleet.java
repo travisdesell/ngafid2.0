@@ -30,7 +30,7 @@ public class AirSyncFleet extends Fleet {
     // 1 Day
     private static final int DEFAULT_TIMEOUT = 1440;
     private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
-    private static final Gson gson = WebServer.gson;
+    private static final Gson GSON = WebServer.gson;
     private static AirSyncFleet[] fleets = null;
     private final AirSyncAuth authCreds;
     private final String airsyncFleetName;
@@ -81,11 +81,11 @@ public class AirSyncFleet extends Fleet {
             this.lastQueryTime = timestamp.toLocalDateTime();
         }
 
-        int timeout = resultSet.getInt(7);
-        if (timeout <= 0) {
+        int timeoutResult = resultSet.getInt(7);
+        if (timeoutResult <= 0) {
             this.timeout = DEFAULT_TIMEOUT;
         } else {
-            this.timeout = timeout;
+            this.timeout = timeoutResult;
         }
     }
 
@@ -217,7 +217,6 @@ public class AirSyncFleet extends Fleet {
             try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet =
                     query.executeQuery()) {
 
-                LocalDateTime lastQueryTime = null;
                 if (resultSet.next()) {
                     this.lastQueryTime = resultSet.getTimestamp(1).toLocalDateTime();
                 }
@@ -240,10 +239,10 @@ public class AirSyncFleet extends Fleet {
             try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet =
                     query.executeQuery()) {
                 if (resultSet.next()) {
-                    int timeout = resultSet.getInt(1);
+                    int timeoutResult = resultSet.getInt(1);
 
-                    if (timeout > 0) {
-                        this.timeout = timeout;
+                    if (timeoutResult > 0) {
+                        this.timeout = timeoutResult;
                     }
                 }
             }
@@ -257,6 +256,7 @@ public class AirSyncFleet extends Fleet {
      * ago than the timeout specified?
      *
      * @param connection the DBMS connection
+     * @return true if the fleet is out of date, false otherwise
      * @throws SQLException if there is a DBMS issue
      */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
@@ -270,6 +270,7 @@ public class AirSyncFleet extends Fleet {
      *
      * @param connection the DBMS connection
      * @param user       the User that is making the request
+     * @param newTimeout the new timeout as a string
      * @throws SQLException if the DBMS has an issue
      */
     public void updateTimeout(Connection connection, User user, String newTimeout) throws SQLException {
@@ -376,12 +377,12 @@ public class AirSyncFleet extends Fleet {
             }.getType();
             System.out.println(resp);
 
-            List<AirSyncAircraft> aircraft = gson.fromJson(resp, target);
-            for (AirSyncAircraft a : aircraft)
+            List<AirSyncAircraft> aircrafts = GSON.fromJson(resp, target);
+            for (AirSyncAircraft a : aircrafts)
                 a.initialize(this);
 
             this.aircraft =
-                    aircraft.stream().filter(a -> a.getAirSyncFleetName()
+                    aircrafts.stream().filter(a -> a.getAirSyncFleetName()
                             .equals(airsyncFleetName)).collect(Collectors.toList());
         }
 
@@ -477,14 +478,14 @@ public class AirSyncFleet extends Fleet {
         }
 
         void addFileToUpload(Connection connection, AirSyncImport imp, byte[] data) throws IOException, SQLException {
-            var upload = getUpload(connection);
-            imp.setUploadId(upload.id);
+            var uploadResult = getUpload(connection);
+            imp.setUploadId(uploadResult.id);
             Files.write(getZipFile().getPath("/" + imp.getFilename()), data);
             filesAdded += 1;
 
             if (filesAdded >= 128) {
-                upload.complete(connection);
-                upload = Upload.createAirsyncUpload(connection, getId());
+                uploadResult.complete(connection);
+                uploadResult = Upload.createAirsyncUpload(connection, getId());
                 zipFile.close();
                 zipFile = null;
                 getZipFile();
@@ -502,10 +503,10 @@ public class AirSyncFleet extends Fleet {
             }
         }
 
-        void updateAircraft(AirSyncAircraft aircraft) throws IOException, SQLException {
+        void updateAircraft(AirSyncAircraft ac) throws IOException, SQLException {
             List<AirSyncImport> allImports;
             try (Connection connection = Database.getConnection()) {
-                allImports = aircraft.getImportsForUpdate(connection, AirSyncFleet.this);
+                allImports = ac.getImportsForUpdate(connection, AirSyncFleet.this);
                 allImports.sort(new Comparator<AirSyncImport>() {
                     public int compare(AirSyncImport left, AirSyncImport right) {
                         return left.getUploadTime().compareTo(right.getUploadTime());
