@@ -134,7 +134,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * Gets the flight information from the first line of the file
      *
      * @param reader BufferedReader for reading the first line
-     * @return
+     * @return The first line of the file
      * @throws FatalFlightFileException
      * @throws IOException
      */

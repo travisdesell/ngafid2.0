@@ -34,6 +34,9 @@ public class DependencyGraph {
      * Create nodes for each step and create a mapping from output column name
      * to the node that outputs that column. This should be a unique mapping, as
      * we don't want two steps generating the same output column.
+     *
+     * @param builder The builder object that contains the data source.
+     * @param steps   The list of process steps to create nodes for.
      **/
     public DependencyGraph(FlightBuilder builder, List<ProcessStep> steps) throws FlightProcessingException {
         this.taskMap = new ConcurrentHashMap<>(steps.size() * 2);
@@ -65,6 +68,9 @@ public class DependencyGraph {
     /**
      * Add a process step node to the set of nodes and verify there are no other nodes that have the same output
      * column(s).
+     *
+     * @param step The process step to add to the graph.
+     * @return The node that was created.
      */
     private DependencyNode registerStep(ProcessStep step) throws FatalFlightFileException {
         DependencyNode node = new DependencyNode(step);
@@ -80,6 +86,8 @@ public class DependencyGraph {
 
     /**
      * Create the edges. An edge exists from step X to step Y if step X has an output column that step Y relies upon.
+     *
+     * @param node The node to create edges for.
      **/
     private void createEdges(DependencyNode node) throws FatalFlightFileException {
         for (String column : node.step.getRequiredColumns()) {
@@ -129,7 +137,11 @@ public class DependencyGraph {
                 } else if (e instanceof SQLException se) {
                     fatalExceptions.add(se);
                 } else {
-                    LOG.severe("Encountered exception of unknown type when executing dependency graph. " + "\"" + e.getMessage() + "\"" + "\n." + "This should not be possible - if this seems plausible you should add a handler for this " + "type of exception in DependencyGraph::compute.");
+                    LOG.severe("Encountered exception of unknown type when executing dependency graph. "
+                            + "\"" + e.getMessage() + "\"" + "\n." +
+                            "This should not be possible - if this seems plausible you should add a handler for this "
+                            + "type of exception in DependencyGraph::compute."
+                    );
                     e.printStackTrace();
                     System.exit(1);
                 }
@@ -186,11 +198,11 @@ public class DependencyGraph {
     }
 
     /**
-     * Dummy step meant to act as a root node in DAG. This is done by adding all of the columns included in the file as
+     * Dummy step meant to act as a root node in DAG. This is done by adding all the columns included in the file as
      * output columns, so all other steps will depend on this.
      **/
     static class DummyStep extends ProcessStep {
-        Set<String> outputColumns = new HashSet<>();
+        private final Set<String> outputColumns = new HashSet<>();
 
         DummyStep(FlightBuilder builder) {
             // We can pass in null rather than a connection object

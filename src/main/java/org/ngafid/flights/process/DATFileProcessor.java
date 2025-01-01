@@ -73,13 +73,16 @@ public class DATFileProcessor extends FlightFileProcessor {
      * Converts the DAT file to CSV and adds the converted file to the derived
      * upload in the pipeline.
      *
+     * @param pipeline    - Pipeline to add the derived file to
+     * @param inputStream - InputStream of the DAT file
+     * @param filename    - Name of the DAT file
      * @return An InputStream for the new CSV file
      * @throws NotDatFile - If the file is not a DAT file
      * @throws IOException - If there is an issue reading the file
      * @throws FileEnd - If the file ends unexpectedly
      */
-    private static InputStream convert(Pipeline pipeline, InputStream inputStream, String filename) throws NotDatFile
-            , IOException, FileEnd, SQLException {
+    private static InputStream convert(Pipeline pipeline, InputStream inputStream, String filename)
+            throws NotDatFile, IOException, FileEnd, SQLException {
         // We must extract the DAT file temporarily to do the conversion, as per the
         // library we use
         Path tempExtractedFile = Files.createTempFile("NGAFID-", "-temp");
@@ -361,6 +364,8 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param cols               - Columns of flight data
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
+     *
+     * @return A list of column names
      */
     private static ArrayList<String> processCols(String[] cols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
                                                  Map<String, StringTimeSeries> stringTimeSeriesMap) {
@@ -625,6 +630,7 @@ public class DATFileProcessor extends FlightFileProcessor {
      *
      * @param colName             - Name of column
      * @param doubleTimeSeriesMap - Map of double time series data
+     * @param stringTimeSeriesMap - Map of string time series data
      */
     private static void handleMiscDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
                                            Map<String, StringTimeSeries> stringTimeSeriesMap) {

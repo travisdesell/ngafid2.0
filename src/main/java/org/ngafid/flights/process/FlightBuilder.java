@@ -44,6 +44,10 @@ public class FlightBuilder {
 
     /**
      * Only constructor for FlightBuilder. Copies the entries in the time series maps.
+     *
+     * @param meta             The metadata for the flight
+     * @param doubleTimeSeries The double time series for the flight
+     * @param stringTimeSeries The string time series for the flight
      */
     public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String,
             StringTimeSeries> stringTimeSeries) {
@@ -180,6 +184,8 @@ public class FlightBuilder {
 
     /**
      * Returns the key set of `this.doubleTimeSeries`
+     *
+     * @return the key set of `this.doubleTimeSeries`
      */
     public final Set<String> getDoubleTimeSeriesKeySet() {
         return getKeySet(doubleTimeSeries);
@@ -247,11 +253,11 @@ public class FlightBuilder {
     /**
      * Synchronized method to set the itinerary.
      *
-     * @param itinerary The itinerary
+     * @param newItinerary The itinerary
      * @return this flight builder
      */
-    public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> itinerary) {
-        this.itinerary = itinerary;
+    public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> newItinerary) {
+        this.itinerary = newItinerary;
         return this;
     }
 

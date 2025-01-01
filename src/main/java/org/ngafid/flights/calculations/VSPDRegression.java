@@ -35,14 +35,13 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
      * @param yA      the average y value
      */
     public static void normalizeAltitudes(double[] yValues, double yA) {
-        double stdDev = stdDev(yValues, yA);
+//        double stdDev = stdDev(yValues, yA);
 
-        for (int i = 1; i < yValues.length; i++) {
-            if (Math.abs(yValues[i] - yValues[i - 1]) > (3 * stdDev)) {
-
-            }
-
-        }
+//        for (int i = 1; i < yValues.length; i++) {
+//            if (Math.abs(yValues[i] - yValues[i - 1]) > (3 * stdDev)) {
+//            }
+//        }
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**

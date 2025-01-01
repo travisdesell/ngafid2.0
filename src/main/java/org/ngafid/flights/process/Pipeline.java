@@ -199,13 +199,13 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `FlightBuilder::build` on the supplied flight builder and returns the resulting flight.
      *
-     * @param connection The database connection to use.
+     * @param conn The database connection to use.
      * @param fb The flight builder to build.
      * @return a flight object if there are no exceptions, otherwise returns `null`.
      */
-    public Flight build(Connection connection, FlightBuilder fb) {
+    public Flight build(Connection conn, FlightBuilder fb) {
         try {
-            return fb.build(connection);
+            return fb.build(conn);
         } catch (FlightProcessingException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
             e.printStackTrace();
@@ -217,17 +217,18 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `this::build` on each `FlightBuilder` in the supplied stream.
      *
-     * @param connection The database connection to use.
+     * @param conn The database connection to use.
      * @param fbs The stream of flight builders to build.
      * @return a list of `Flight` objects, having filtered out any `null` values.
      */
-    public List<Flight> build(Connection connection, Stream<FlightBuilder> fbs) {
-        return fbs.map(fb -> this.build(connection, fb)).filter(Objects::nonNull).collect(Collectors.toList());
+    public List<Flight> build(Connection conn, Stream<FlightBuilder> fbs) {
+        return fbs.map(fb -> this.build(conn, fb)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**
      * Tabulates various flight information.
      *
+     * @param flight The flight to finalize.
      * @return the finalized flight
      */
     public Flight finalize(Flight flight) {

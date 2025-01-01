@@ -334,7 +334,7 @@ public class TurnToFinal implements Serializable {
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[to];
 
-            for (; ; ) {
+            while (true) {
                 if (to < 0) {
                     to = 0;
                     break;
@@ -373,7 +373,8 @@ public class TurnToFinal implements Serializable {
             if (max - min < 60 || Double.isNaN(max - min)) continue;
             if (min > 100 || Double.isNaN(min)) continue;
 
-            double[] stallProbabilityArray = null, locProbabilityArray = null;
+            double[] stallProbabilityArray = null;
+            double[] locProbabilityArray = null;
             if (stallProbability != null) stallProbabilityArray = stallProbability.sliceCopy(from, to);
             if (locProbability != null) locProbabilityArray = locProbability.sliceCopy(from, to);
 
@@ -431,8 +432,8 @@ public class TurnToFinal implements Serializable {
                     Map.entry("runway", this.runway), Map.entry("airportIataCode", this.airportIataCode), Map.entry(
                             "flightStartDate", this.flightStartDate), Map.entry("maxRoll", this.maxRoll), Map.entry(
                             "selfDefinedGlidePathDeviations", this.selfDefinedGlidePathDeviations),
-                    Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false)
-                    , Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false)));
+                    Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
+                    Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false)));
         } catch (IllegalArgumentException _iae) {
             // This means there were nans in some of the arrays which means we can't necissarily analyze it and it
             // won't parse on the front end since nan is not included in the JSON spec for some reason
