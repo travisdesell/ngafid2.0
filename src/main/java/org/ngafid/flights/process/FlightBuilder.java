@@ -37,12 +37,14 @@ public class FlightBuilder {
     // A list of airports this aircraft visited.
     private ArrayList<Itinerary> itinerary = null;
 
+    //CHECKSTYLE:OFF
     // Flight meta data - see FlightMeta definition for details.
     public final FlightMeta meta;
 
     // A list of non-fatal exceptions: issues with the data that don't prevent us from ingesting the data.
     public final ArrayList<MalformedFlightFileException> exceptions = new ArrayList<>();
-
+    //CHECKSTYLE:ON
+    
     /**
      * Only constructor for FlightBuilder. Copies the entries in the time series maps.
      */
@@ -69,7 +71,8 @@ public class FlightBuilder {
     /**
      * Gathers processing steps together which do not overwrite any existing time series.
      *
-     * @returns A list of processing steps
+     * @param connection The connection to the database
+     * @return A list of processing steps
      */
     protected List<ProcessStep> gatherSteps(Connection connection) {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
@@ -89,7 +92,8 @@ public class FlightBuilder {
      * All recoverable exceptions / flight processing issues will be caught and stored in this flight builder, otherwise
      * this will raise a FlightProcessingException which indicates an irrecoverable issue.
      *
-     * @returns A flight object
+     * @param connection The connection to the database
+     * @return A flight object
      * @throws FlightProcessingException if an irrecoverable processing issue is encountered
      */
     public Flight build(Connection connection) throws FlightProcessingException {
@@ -139,7 +143,9 @@ public class FlightBuilder {
     /**
      * Adds an entry to `doubleTimeSeries`, mapping the supplied name to the supplied time series.
      *
-     * @returns this flight builder
+     * @param name The name of the time series
+     * @param timeSeries The time series to add
+     * @return this flight builder
      */
     public FlightBuilder addTimeSeries(String name, DoubleTimeSeries timeSeries) {
         doubleTimeSeries.put(name, timeSeries);
@@ -185,7 +191,8 @@ public class FlightBuilder {
     /**
      * Fetches a double series with the supplied name.
      *
-     * @returns null if there is no time series with that name
+     * @param name The name of the time series
+     * @return null if there is no time series with that name
      */
     public final DoubleTimeSeries getDoubleTimeSeries(String name) {
         return getSeries(name, doubleTimeSeries);
@@ -201,7 +208,9 @@ public class FlightBuilder {
     /**
      * Adds an entry to `stringTimeSeries`, mapping the supplied name to the supplied time series.
      *
-     * @returns this flight builder
+     * @param name The name of the time series
+     * @param timeSeries The time series to add
+     * @return this flight builder
      */
     public final FlightBuilder addTimeSeries(String name, StringTimeSeries timeSeries) {
         stringTimeSeries.put(name, timeSeries);
@@ -215,7 +224,8 @@ public class FlightBuilder {
     /**
      * Fetches a string series with the supplied name.
      *
-     * @returns null if there is no time series with that name
+     * @param name The name of the time series
+     * @return null if there is no time series with that name
      */
     public final StringTimeSeries getStringTimeSeries(String name) {
         return getSeries(name, stringTimeSeries);
@@ -223,6 +233,8 @@ public class FlightBuilder {
 
     /**
      * Returns the key set of `this.stringTimeSeries`
+     *
+     * @return the key set of `this.stringTimeSeries`
      */
     public final Set<String> getStringTimeSeriesKeySet() {
         return getKeySet(stringTimeSeries);
@@ -232,7 +244,8 @@ public class FlightBuilder {
      * Sets the `startDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
      * `meta` object.
      *
-     * @returns this flight builder
+     * @param startDateTime The start date time
+     * @return this flight builder
      */
     public synchronized FlightBuilder setStartDateTime(String startDateTime) {
         this.meta.startDateTime = startDateTime;
@@ -243,7 +256,8 @@ public class FlightBuilder {
      * Sets the `endDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
      * `meta` object.
      *
-     * @returns this flight builder
+     * @param endDateTime The end date time
+     * @return this flight builder
      */
     public synchronized FlightBuilder setEndDateTime(String endDateTime) {
         this.meta.endDateTime = endDateTime;
@@ -253,7 +267,8 @@ public class FlightBuilder {
     /**
      * Synchronized method to set the itinerary.
      *
-     * @returns this flight builder
+     * @param itinerary The itinerary
+     * @return this flight builder
      */
     public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> itinerary) {
         this.itinerary = itinerary;
@@ -264,7 +279,8 @@ public class FlightBuilder {
      * Masks in the supplied bits into the `processingStatus` field of `meta.` This is sychronized to avoid race
      * conditions.
      *
-     * @returns this flight builder
+     * @param processingStatus The bits to mask in
+     * @return this flight builder
      */
     public synchronized FlightBuilder updateProcessingStatus(int processingStatus) {
         this.meta.processingStatus |= processingStatus;
