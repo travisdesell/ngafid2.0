@@ -82,10 +82,9 @@ public class ProcessUpload {
 
     /**
      * Sometimes in the process of removing an upload (probably via the webpage)
-     * this operation
-     * does not complete and this results in flights being in the database with a
-     * non-existant
-     * upload. This can cause the upload process to crash.
+     * this operation does not complete and this results in flights being in the
+     * database with a non-existaet upload. This can cause the upload process to
+     * crash.
      *
      * @param connection is the connection to the database
      */
@@ -95,7 +94,7 @@ public class ProcessUpload {
                     "NOT EXISTS (SELECT * FROM uploads WHERE uploads.id = flights.upload_id)");
 
             for (Flight flight : noUploadFlights) {
-                LOG.info("flight had no related upload. flight id: " + flight.getId() + ", uplaod id: "
+                LOG.info("flight had no related upload. flight id: " + flight.getId() + ", upload id: "
                         + flight.getUploadId());
                 flight.remove(connection);
             }
@@ -119,7 +118,7 @@ public class ProcessUpload {
                     int targetFleetId = fleetSet.getInt(1);
                     LOG.info("Importing an upload from fleet: " + targetFleetId);
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
-                    if (targetFleetId == 164 || targetFleetId == 105) {
+                    if (targetFleetId == 164) {
                         System.err.println("SKIPPING 164 because we do not support this fleet type yet.");
                         continue;
                     }
@@ -285,8 +284,6 @@ public class ProcessUpload {
         Instant start = Instant.now();
 
         int uploadId = upload.getId();
-        int uploaderId = upload.getUploaderId();
-        int fleetId = upload.getFleetId();
 
         String filename = upload.getArchivePath().toString();
         LOG.info("processing: '" + filename + "'");
@@ -428,12 +425,11 @@ public class ProcessUpload {
                     | ParseException e) {
                 LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
                 status = ERROR_STATUS_STR;
-                uploadException = new Exception(
-                        e.toString() + "\nFailed computing events...");
+                uploadException = new Exception(e.toString() + "\nFailed computing events...");
             }
         }
 
-        // ingestion was successfull
+        // ingestion was successful
         return true;
     }
 }

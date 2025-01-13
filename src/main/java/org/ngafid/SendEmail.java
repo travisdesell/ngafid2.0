@@ -32,8 +32,9 @@ public class SendEmail {
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
-    private static final String baseURL = "https://ngafid.org";
-    // private static final String baseURL = "https://ngafidbeta.rit.edu";
+    private static final String baseURLFallback = "https://ngafid.org";
+    private static final String baseURLEnvironment = System.getenv("NGAFID_BASE_URL");
+    private static final String baseURL = Objects.requireNonNullElse(baseURLEnvironment, baseURLFallback);
     private static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
     private static final java.sql.Date lastTokenFree = new java.sql.Date(0);
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
@@ -44,6 +45,7 @@ public class SendEmail {
     static {
 
         String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
+        LOG.info("Email base URL: " + baseURL);
 
         if (enabled != null && enabled.toLowerCase().equals("false")) {
             LOG.info("Emailing has been disabled");
@@ -69,9 +71,9 @@ public class SendEmail {
 
         String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
         adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
-        System.out.println("import emails will always also be sent to the following admin emails:");
+        LOG.info("import emails will always also be sent to the following admin emails:");
         for (String adminEmail : adminEmails) {
-            System.out.println("\t'" + adminEmail + "'");
+            LOG.info("\t'" + adminEmail + "'");
         }
 
         try {
@@ -155,6 +157,7 @@ public class SendEmail {
         public boolean isValid() {
             System.out.println(
                     "Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
+
             return !(this.username == null || this.password == null);
         }
 
@@ -213,12 +216,10 @@ public class SendEmail {
         // Log the token's expiration date
         Calendar expirationCalendar = Calendar.getInstance();
         expirationCalendar.setTime(expirationDate);
-        String expirationDateString = expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US)
-                + " " + expirationCalendar.get(Calendar.DAY_OF_MONTH)
-                + ", " + expirationCalendar.get(Calendar.YEAR)
-                + " " + expirationCalendar.get(Calendar.HOUR_OF_DAY)
-                + ":" + expirationCalendar.get(Calendar.MINUTE)
-                + ":" + expirationCalendar.get(Calendar.SECOND);
+        String expirationDateString = expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) + " "
+                + expirationCalendar.get(Calendar.DAY_OF_MONTH) + ", " + expirationCalendar.get(Calendar.YEAR) + " "
+                + expirationCalendar.get(Calendar.HOUR_OF_DAY) + ":" + expirationCalendar.get(Calendar.MINUTE) + ":"
+                + expirationCalendar.get(Calendar.SECOND);
 
         LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at "
                 + expirationDateString + ")");
@@ -259,7 +260,7 @@ public class SendEmail {
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
         if (!emailEnabled) {
-            System.out.println("Emailing has been disabled, not sending email");
+            LOG.info("Emailing has been disabled, not sending email");
             return;
         }
 
@@ -271,10 +272,10 @@ public class SendEmail {
 
         if (auth.isValid()) {
 
-            System.out.println("emailing to " + String.join(", ", toRecipients));
-            System.out.println("BCCing to " + String.join(", ", bccRecipients));
-            System.out.println("subject: '" + subject);
-            System.out.println("body: '" + body);
+            LOG.info("emailing to " + String.join(", ", toRecipients));
+            LOG.info("BCCing to " + String.join(", ", bccRecipients));
+            LOG.info("subject: '" + subject);
+            LOG.info("body: '" + body);
 
             // Sender's email ID needs to be mentioned
             String from = "UND.ngafid@und.edu";
@@ -318,13 +319,14 @@ public class SendEmail {
                     boolean embedUnsubscribeURL = true;
                     if (EmailType.isForced(emailType)) {
 
-                        System.out.println("Delivering FORCED email type: " + emailType);
+                        LOG.info("Delivering FORCED email type: " + emailType);
                         embedUnsubscribeURL = false;
 
                     } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) { // Check whether
                                                                                                       // or not the
                                                                                                       // emailType is
-                                                                                                      // enabled for the
+                                                                                                      // enabled for
+                                                                                                      // the
                                                                                                       // user
 
                         continue;
@@ -360,7 +362,7 @@ public class SendEmail {
                     message.setRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
 
                     // Send the message to the current recipient
-                    System.out.println("sending message!");
+                    LOG.info("Sending email message!");
                     Transport.send(message);
 
                 }
@@ -383,12 +385,12 @@ public class SendEmail {
                     message.setContent(body, "text/html; charset=utf-8");
 
                     // Send the message to the current BCC recipients
-                    System.out.println("sending message (BCC)!");
+                    LOG.info("Sending email message (BCC)!");
                     Transport.send(message);
 
                 }
 
-                System.out.println("Sent messages successfully....");
+                LOG.info("Sent email messages successfully...");
 
             } catch (MessagingException mex) {
                 mex.printStackTrace();
@@ -407,13 +409,12 @@ public class SendEmail {
          * // Recipient's email ID needs to be mentioned.
          * 
          * ArrayList<String> recipients = new ArrayList<String>();
-         * recipients.add("apl1341@rit.edu");
-         * recipients.add("aidan@labellahome.org");
+         * recipients.add("apl1341@rit.edu"); recipients.add("aidan@labellahome.org");
          * 
          * ArrayList<String> bccRecipients = new ArrayList<String>();
          * 
-         * // New email system does not support having no Email Type specified,
-         * // so this won't work unless a test Email Type is added.
+         * // New email system does not support having no Email Type specified, // so
+         * this won't work unless a test Email Type is added.
          * 
          * // sendEmail(recipients, bccRecipients, "test NGAFID email",
          * "testing testing 123", EmailType.TEST_EMAIL_TYPE);

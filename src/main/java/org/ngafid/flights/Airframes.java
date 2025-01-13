@@ -19,11 +19,31 @@ import org.ngafid.common.NormalizedColumn;
 public class Airframes {
     private static final Logger LOG = Logger.getLogger(Airframes.class.getName());
 
+    /*
+     * if (airframeName.equals("Cessna 172R") || airframeName.equals("Cessna 172S")
+     * || airframeName.equals("Cessna 172T") || airframeName.equals("Cessna 182T")
+     * || airframeName.equals("Cessna T182T") ||
+     * airframeName.equals("Cessna Model 525") || airframeName.equals("Cirrus SR20")
+     * || airframeName.equals("Cirrus SR22") || airframeName.equals("Diamond DA40")
+     * || airframeName.equals("Diamond DA 40 F") ||
+     * airframeName.equals("Diamond DA40NG") ||
+     * airframeName.equals("Diamond DA42NG") || airframeName.equals("PA-28-181") ||
+     * airframeName.equals("PA-44-180") ||
+     * airframeName.equals("Piper PA-46-500TP Meridian") ||
+     * airframeName.contains("Garmin") || airframeName.equals("Quest Kodiak 100") ||
+     * airframeName.equals("Cessna 400") ||
+     * airframeName.equals("Beechcraft A36/G36") ||
+     * airframeName.equals("Beechcraft G58") ||
+     * airframeName.equals("Beechcraft C90A King Air") ||
+     * airframeName.equals("Cessna T206H")) {
+     */
+
     /**
      * {@link Airframes} names
      *
-     * TODO: In the future, we may want to consider using Set<String> reather than hardcoded strings.
-     * This would make our code more robust to varying airframe names
+     * TODO: In the future, we may want to consider using Set<String> reather than
+     * hardcoded strings. This would make our code more robust to varying airframe
+     * names
      **/
     public static final String AIRFRAME_SCAN_EAGLE = "ScanEagle";
     public static final String AIRFRAME_DJI = "DJI";
@@ -63,25 +83,11 @@ public class Airframes {
     private static HashSet<String> fleetAirframes = new HashSet<>();
 
     public static final Set<String> FIXED_WING_AIRFRAMES = Collections.unmodifiableSet(Set.<String>of(
-            AIRFRAME_CESSNA_172R,
-            AIRFRAME_CESSNA_172S,
-            AIRFRAME_CESSNA_172T,
-            AIRFRAME_CESSNA_182T,
-            AIRFRAME_CESSNA_T182T,
-            AIRFRAME_CESSNA_MODEL_525,
-            AIRFRAME_CIRRUS_SR20,
-            AIRFRAME_CIRRUS_SR22,
-            AIRFRAME_DIAMOND_DA40,
-            AIRFRAME_DIAMOND_DA_40_F,
-            AIRFRAME_DIAMOND_DA40NG,
-            AIRFRAME_DIAMOND_DA42NG,
-            AIRFRAME_PA_28_181,
-            AIRFRAME_PA_44_180,
-            AIRFRAME_PIPER_PA_46_500TP_MERIDIAN,
-            AIRFRAME_QUEST_KODIAK_100,
-            AIRFRAME_CESSNA_400,
-            AIRFRAME_BEECHCRAFT_A36_G36,
-            AIRFRAME_BEECHCRAFT_G58));
+            AIRFRAME_CESSNA_172R, AIRFRAME_CESSNA_172S, AIRFRAME_CESSNA_172T, AIRFRAME_CESSNA_182T,
+            AIRFRAME_CESSNA_T182T, AIRFRAME_CESSNA_MODEL_525, AIRFRAME_CIRRUS_SR20, AIRFRAME_CIRRUS_SR22,
+            AIRFRAME_DIAMOND_DA40, AIRFRAME_DIAMOND_DA_40_F, AIRFRAME_DIAMOND_DA40NG, AIRFRAME_DIAMOND_DA42NG,
+            AIRFRAME_PA_28_181, AIRFRAME_PA_44_180, AIRFRAME_PIPER_PA_46_500TP_MERIDIAN, AIRFRAME_QUEST_KODIAK_100,
+            AIRFRAME_CESSNA_400, AIRFRAME_BEECHCRAFT_A36_G36, AIRFRAME_BEECHCRAFT_G58));
 
     public static Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
 
@@ -93,12 +99,10 @@ public class Airframes {
     }
 
     public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
-            Map.entry(defaultAlias("Unknown Aircraft"), ""),
-            Map.entry(defaultAlias("Garmin Flight Display"), ""),
+            Map.entry(defaultAlias("Unknown Aircraft"), ""), Map.entry(defaultAlias("Garmin Flight Display"), ""),
             Map.entry(defaultAlias("Diamond DA 40"), "Diamond DA40"),
             Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
-            Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
-            Map.entry(defaultAlias("Robinson R44"), "R44"),
+            Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"), Map.entry(defaultAlias("Robinson R44"), "R44"),
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
     public static class Airframe extends NormalizedColumn<Airframe> {

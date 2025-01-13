@@ -132,7 +132,8 @@ public class Flight {
     }
 
     public void remove(Connection connection) throws SQLException {
-        // String query = "SELECT id FROM events WHERE flight_id = " + this.id + " AND event_definition_id = -1";
+        // String query = "SELECT id FROM events WHERE flight_id = " + this.id + " AND
+        // event_definition_id = -1";
 
         String clearRateOfClosure = """
                     DELETE rate_of_closure
@@ -235,8 +236,8 @@ public class Flight {
 
     /**
      * Checks references to {@link DoubleTimeSeries} for this flight and if there is
-     * not a required referenece present, throws an exception
-     * detailing which parameter is missing and for what calculation
+     * not a required referenece present, throws an exception detailing which
+     * parameter is missing and for what calculation
      *
      * @param calculationName is the name of the calculation for which the method is
      *                        checking for parameters
@@ -274,9 +275,8 @@ public class Flight {
 
     /**
      * Worth noting - if any portion of the flight occurs between startDate and
-     * endDate it will be grabbed - it doesn't
-     * have to lie entirely within startDate and endDate. endDate is inclusive, as
-     * is startDate.
+     * endDate it will be grabbed - it doesn't have to lie entirely within startDate
+     * and endDate. endDate is inclusive, as is startDate.
      * 
      * @param connection
      * @param startDate
@@ -285,8 +285,8 @@ public class Flight {
      */
     public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate)
             throws SQLException {
-        String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
-                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
+        String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate + "') OR (end_time BETWEEN '"
+                + startDate + "' AND '" + endDate + "'))";
         List<Flight> flights = getFlights(connection, extraCondition);
         return flights;
     }
@@ -301,31 +301,20 @@ public class Flight {
      * @param endDate         formatted the same as the start date.
      * @param airportIataCode
      * @return a list of flights where at least part of the flight occurs between
-     *         the startDate and the endDate.
-     *         This list could be potentially huge if the date range is large so it
-     *         may be smart to not give the users
-     *         full control over this parameter on the frontend? We'll see.
+     *         the startDate and the endDate. This list could be potentially huge if
+     *         the date range is large so it may be smart to not give the users full
+     *         control over this parameter on the frontend? We'll see.
      *
      * @throws SQLException
      */
     public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate,
             String endDate, String airportIataCode, int limit) throws SQLException {
-        String extraCondition = "    (                " +
-                "    EXISTS(          " +
-                "        SELECT       " +
-                "          id         " +
-                "        FROM         " +
-                "          itinerary  " +
-                "        WHERE        " +
-                "          itinerary.flight_id = flights.id AND " +
-                "          airport = '" + airportIataCode + "' " +
-                "    ) " +
-                "AND   " +
-                "    ( " +
-                "           (start_time BETWEEN '" + startDate + "' AND '" + endDate + "') " +
-                "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
-                "    )" +
-                " ) ";
+        String extraCondition = "    (                " + "    EXISTS(          " + "        SELECT       "
+                + "          id         " + "        FROM         " + "          itinerary  " + "        WHERE        "
+                + "          itinerary.flight_id = flights.id AND " + "          airport = '" + airportIataCode + "' "
+                + "    ) " + "AND   " + "    ( " + "           (start_time BETWEEN '" + startDate + "' AND '" + endDate
+                + "') " + "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " + "    )"
+                + " ) ";
         return getFlights(connection, extraCondition, limit);
     }
 
@@ -366,8 +355,7 @@ public class Flight {
 
     /**
      * Gets the total number of flights for the entire NGAFID with a given filter.
-     * If the filter is null it returns
-     * the total number of flights in the NGAFID
+     * If the filter is null it returns the total number of flights in the NGAFID
      *
      * @param connection is the database connection
      * @param is         the filter to select the flights, can be null.
@@ -380,8 +368,7 @@ public class Flight {
 
     /**
      * Gets the total number of flights for a given fleet and filter. If the filter
-     * is null it returns the number of flights
-     * for the fleet.
+     * is null it returns the number of flights for the fleet.
      *
      * @param connection is the database connection
      * @param fleetId    is the id of the fleet, <= 0 will select for all fleets
@@ -444,8 +431,9 @@ public class Flight {
     }
 
     /**
-     * Gets the total number of flights for a given fleet and queryString. This method is private to ensure public
-     * access doesn't get used in a way that accidentally exposes a SQL injection surface.
+     * Gets the total number of flights for a given fleet and queryString. This
+     * method is private to ensure public access doesn't get used in a way that
+     * accidentally exposes a SQL injection surface.
      *
      * @param connection  is the database connection
      * @param queryString is the what gets put into the WHERE clause of the query
@@ -488,8 +476,7 @@ public class Flight {
 
     /**
      * Gets the total number of flight hours for a given fleet and filter. If the
-     * filter is null it returns the number of flight hours
-     * for the fleet.
+     * filter is null it returns the number of flight hours for the fleet.
      *
      * @param connection is the database connection
      * @param fleetId    is the id of the fleet, if <= 0 it will be for the entire
@@ -554,8 +541,7 @@ public class Flight {
 
     /**
      * Gets the total number of flight hours for a given fleet and WHERE clause
-     * query string
-     * for the fleet.
+     * query string for the fleet.
      *
      * @param connection  is the database connection
      * @param queryString is the string to put into the query's WHERE clause
@@ -588,7 +574,8 @@ public class Flight {
                 return getFlightsSortedByTails(connection, fleetId, filter, currentPage, pageSize, isAscending);
             case "itinerary":
                 return getFlightsSortedByOccurencesInTable(connection, fleetId, filter, currentPage, pageSize,
-                        "itinerary", isAscending);
+                        "itinerary",
+                        isAscending);
             case "flight_tags":
                 return getFlightsSortedByOccurencesInTable(connection, fleetId, filter, currentPage, pageSize,
                         "flight_tag_map", isAscending);
@@ -736,8 +723,7 @@ public class Flight {
 
     /**
      * This method allows for the query using a given filter to be modified by
-     * appending a SQL constraint such as LIMIT or ORDER BY or
-     * combinations thereof
+     * appending a SQL constraint such as LIMIT or ORDER BY or combinations thereof
      *
      * @param connection  the database connection
      * @param fleetId     the fleet id
@@ -924,8 +910,7 @@ public class Flight {
 
     /**
      * Generates a unique set of tagIds whose cardinality is not greater than the
-     * total number of tags in
-     * the database
+     * total number of tags in the database
      *
      * @param connection the database connection
      * @param flightId   the flightId to get tag ids for
@@ -1167,8 +1152,8 @@ public class Flight {
     }
 
     /**
-     * Checks to see if a tag already exists in the database
-     * Tags are considered unique if they have different names
+     * Checks to see if a tag already exists in the database Tags are considered
+     * unique if they have different names
      *
      * @param connection the connection to the database
      * @param fleetId    the fleetId for the fleet
@@ -1597,9 +1582,7 @@ public class Flight {
         if (exceptions.size() > 0) {
             status = "WARNING";
             /*
-             * for (MalformedFlightFileException e : exceptions) {
-             * e.printStackTrace();
-             * }
+             * for (MalformedFlightFileException e : exceptions) { e.printStackTrace(); }
              */
         } else {
             status = "SUCCESS";
@@ -2034,7 +2017,8 @@ public class Flight {
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Flight flight : flights) {
-                // Ensure that the `id` values are set. This will grab them from the database if not.
+                // Ensure that the `id` values are set. This will grab them from the database if
+                // not.
                 flight.airframe = new Airframes.Airframe(connection, flight.airframe.getName());
                 flight.airframeType = new Airframes.AirframeType(connection, flight.airframeType.getName());
 

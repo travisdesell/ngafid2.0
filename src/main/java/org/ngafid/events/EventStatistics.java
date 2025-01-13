@@ -296,8 +296,8 @@ public class EventStatistics {
     public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId,
             String startDateTime, double severity, double duration) throws SQLException {
         if (startDateTime.length() < 8) {
-            LOG.severe("could not update event statistics because startDateTime was improperly formatted!");
-            System.exit(1);
+            LOG.severe("could not update event statistics because startDateTime '" + startDateTime + "' was improperly formatted!");
+            return;
         }
         String firstOfMonth = getFirstOfMonth(startDateTime);
 

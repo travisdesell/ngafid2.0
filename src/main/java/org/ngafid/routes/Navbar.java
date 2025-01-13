@@ -56,13 +56,10 @@ public class Navbar {
             // the database
         }
 
-        return "var admin = " + user.isAdmin() + ";"
-                + "var aggregateView = " + user.hasAggregateView() + ";"
-                + "var fleetManager = " + fleetManager + ";"
-                + "var waitingUserCount = " + waitingUserCount + ";"
-                + "var modifyTailsAccess = " + modifyTailsAccess + ";"
-                + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
-                + "var airSyncEnabled = " + airSyncEnabled + ";"
-                + "var uploader = " + hasUploadAccess + ";";
+        return "var admin = " + user.isAdmin() + ";" + "var aggregateView = " + user.hasAggregateView() + ";"
+                + "var fleetManager = " + fleetManager + ";" + "var waitingUserCount = " + waitingUserCount + ";"
+                + "var modifyTailsAccess = " + modifyTailsAccess + ";" + "var unconfirmedTailsCount = "
+                + unconfirmedTailsCount + ";" + "var airSyncEnabled = " + airSyncEnabled + ";" + "var isUploader = "
+                + hasUploadAccess + ";";
     }
 }

@@ -18,9 +18,9 @@ var paused = [];
 var chunkSize = 2 * 1024 * 1024; //2MB
 
 class Upload extends React.Component {
+
     constructor(props) {
         super(props);
-        this.isFleetManager = this.props.isFleetManager;
     }
 
     componentDidMount() {
@@ -32,11 +32,11 @@ class Upload extends React.Component {
         console.log("downloading upload");
         window.open("/protected/download_upload?uploadId=" + this.props.uploadInfo.id + "&md5Hash=" + this.props.uploadInfo.md5Hash);
         $("#loading").hide();
-
     }
 
 
     removeUpload() {
+
         $("#loading").show();
 
         var submissionData = {
@@ -74,9 +74,11 @@ class Upload extends React.Component {
             },
             async: true
         });
+
     }
 
     confirmRemoveUpload() {
+
         console.log("attempting to remove upload!");
         console.log(this.props);
 
@@ -84,9 +86,11 @@ class Upload extends React.Component {
             "Are you sure you wish to delete this upload?\n\nThis operation will remove it from the server along with all flights and other information from the database. A backup of this upload is not stored on the server and if you wish to retrieve it you will have to re-upload it.",
             () => {this.removeUpload()}
         );
+
     }
 
     render() {
+
         let uploadInfo = this.props.uploadInfo;
 
         let progressSize = uploadInfo.progressSize;
@@ -101,7 +105,7 @@ class Upload extends React.Component {
         let statusText = "";
 
         let progressBarClasses = "progress-bar";
-        let statusClasses = "p-1 pl-2 pr-2 ml-1 card bg-light";
+        let statusClasses = "p-1 pl-2 pr-2 ml-1 card";
         let status = uploadInfo.status;
         if (status == "HASHING") {
             statusText = "Hashing";
@@ -154,46 +158,86 @@ class Upload extends React.Component {
         console.log("uploadInfo:");
         console.log(uploadInfo);
 
-        //Disable Download/Delete buttons while Hashing/Uploading or if not a Fleet Manager
-        let doButtonDisplay = (this.isFleetManager && status!="HASHING" && status!="UPLOADING");
+        //Check if ALL buttons should be disabled
+        const buttonDisableStates = ["HASHING", "UPLOADING"];
+        let doButtonsDisable = buttonDisableStates.includes(status);
+
+        //Disable Delete buttons with no Upload Access
+        let hasDeleteAccess = (isUploader);
+        let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
+        let doDeleteButtonHide = (!hasDeleteAccess);
+
+        //Disable Delete buttons with no View Access
+        let hasDownloadAccess = true;
+        let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
+        let doDownloadButtonHide = (!hasDownloadAccess);
 
         return (
-            <div className="m-1">
-                <div className="d-flex flex-row">
-                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.filename}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.startTime}</div>
-                    <div className="flex-fill card progress" style={{height:"34px", padding: "0 0 0 0"}}>
+            <div className="m-2">
+                <div className="d-flex align-items-start" style={{backgroundColor: "var(--c_entry_bg)", padding: '10px', borderRadius: "10px", position:"relative", border:"1px solid var(--c_border_alt)" }}>
+        
+                    {/* LEFT ELEMENTS */}
+                    <div className="d-flex flex-row" style={{ flex: '0 0 15em', minWidth:"35%", maxWidth:"35%", position:"relative" }}>
+                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch' }}>{uploadInfo.filename}</div>
+                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch', minWidth:"35%", maxWidth:"35%" }}>{uploadInfo.startTime}</div>
+                    </div>
+
+                    {/* CENTER ELEMENTS */}
+                    <div className="flex-fill card progress" style={{height:"34px"}}>
                         <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
                     </div>
+        
+                    {/* RIGHT ELEMENTS */}
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
 
-                    <Button
-                        type="button"
-                        className={"btn btn-danger btn-sm"}
-                        style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        >
-                        <i
-                            className="fa fa-times"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
-                            >
-                        </i>
-                    </Button>
+                    {/* VERTICALLY CENTERED DELETE & DOWNLOAD BUTTONS */}
+                    <div style={{ marginTop:"auto", marginBottom:"auto" }}>
+                        {
+                            (!doDeleteButtonHide) &&
+                            <Button
+                                type="button"
+                                className={"btn btn-danger btn-sm"}
+                                style={{backgroundColor:(doDeleteButtonDisable ? '#444444' : '#DC3545'), width:"30px", height:"30px", marginLeft:"4px", padding:"2 4 4 4"}}
+                                >
+                                <i
+                                    className="fa fa-times"
+                                    aria-hidden="true"
+                                    style={{
+                                        padding: "0",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginTop: "1px"
+                                    }}
+                                    onClick={ () => (doDeleteButtonDisable ? undefined : this.confirmRemoveUpload()) }
+                                    >
+                                </i>
+                            </Button>
+                        }
 
-                    <Button
-                        type="button"
-                        className={"btn btn btn-sm"}
-                        style={{backgroundColor:(doButtonDisplay ? '#007BFF' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        >
-                        <i
-                            className="fa fa-download"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doButtonDisplay ? this.downloadUpload() : undefined) }
-                            >
-                        </i>
-                    </Button>
+                        {
+                            (!doDownloadButtonHide) &&
+                            <Button
+                                type="button"
+                                className={"btn btn btn-sm"}
+                                style={{backgroundColor:(doDownloadButtonDisable ? '#444444' : '#007BFF'), width:"30px", height:"30px", marginLeft:"4px", padding:"2 4 4 4"}}
+                                >
+                                <i
+                                    className="fa fa-download"
+                                    aria-hidden="true"
+                                    style={{
+                                        padding: "0",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginTop: "4px"
+                                    }}
+                                    onClick={ () => (doDownloadButtonDisable ? undefined : this.downloadUpload()) }
+                                    >
+                                </i>
+                            </Button>
+                        }
+                    </div>
 
                 </div>
             </div>
@@ -208,6 +252,7 @@ function getUploadeIdentifier(filename, size) {
 
 
 class UploadsPage extends React.Component {
+
     constructor(props) {
         super(props);
 
@@ -224,7 +269,7 @@ class UploadsPage extends React.Component {
 
     getMD5Hash(file, onFinish, uploadsPage) {
 
-        // console.log(`[EX] Processing MD5 Hash for File: "${file.name}" at position ${file.position}`);
+        // console.log(`Processing MD5 Hash for File: "${file.name}" at position ${file.position}`);
 
         var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
             chunkSize = 2097152,                             // Read in chunks of 2MB
@@ -250,14 +295,11 @@ class UploadsPage extends React.Component {
 
                 uploadsPage.setState(state);
 
-                }
+            }
 
             if (currentChunk < chunks) {
                 loadNext();        
-                }
-            
-            //Reset progress bar for uploading...
-            else {
+            } else {    //Reset progress bar for uploading...
 
                 let state = uploadsPage.state;
 
@@ -267,7 +309,7 @@ class UploadsPage extends React.Component {
                     state.pending_uploads[file.position].progressSize = 0;
                     state.pending_uploads[file.position].status = "UPLOADING";
 
-                    // console.log(`[EX] File with identifier "${file.identifier}" at position ${file.position} transitioning to new status... "${statusInitial}" -> "UPLOADING"`);
+                    // console.log(`File with identifier "${file.identifier}" at position ${file.position} transitioning to new status... "${statusInitial}" -> "UPLOADING"`);
                     uploadsPage.setState(state);
 
                     onFinish(spark.end());
@@ -292,7 +334,7 @@ class UploadsPage extends React.Component {
 
     startUpload(file) {
 
-        // console.log(`[EX] Starting upload of file: ${file}`);
+        // console.log(`Starting upload of file: ${file}`);
 
         //different versions of firefox have different field names
         var filename = file.webkitRelativePath || file.fileName || file.name;
@@ -323,14 +365,14 @@ class UploadsPage extends React.Component {
             xhr.open('POST', '/protected/new_upload');
             xhr.onload = function() {
                 
-                // console.log("[EX] New upload response: " + xhr.responseText);
+                // console.log("New upload response: " + xhr.responseText);
                 var response = JSON.parse(xhr.responseText);
 
                 var filename = (file.webkitRelativePath || file.fileName || file.name);
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
-                    errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
+                    errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
                     uploadsPage.removePendingUpload(file);
 
                 } else {
@@ -374,7 +416,7 @@ class UploadsPage extends React.Component {
         let alreadyExists = false;
         for (var i = 0; i < pendingUploads.length; i++) {
 
-            // console.log(`[EX] Pending Upload Identifier (${i}): ${pendingUploads[i].identifier} /// Current Upload Identifier: ${identifier}`);
+            // console.log(`Pending Upload Identifier (${i}): ${pendingUploads[i].identifier} /// Current Upload Identifier: ${identifier}`);
 
             //Testing Matching Identifiers
             if (pendingUploads[i].identifier == identifier) {
@@ -385,7 +427,7 @@ class UploadsPage extends React.Component {
                     alreadyExists = true;
                     file.position = i;
 
-                    }
+                }
 
                 //The file already exists, don't bother adding it
                 else {
@@ -393,16 +435,16 @@ class UploadsPage extends React.Component {
                     console.log("file already exists, not adding!");
                     return;
 
-                    }
-
                 }
+
+            }
             
             //Testing non-matching identifiers
             else {
                 file.position++;
-                }
-
             }
+
+        }
 
         //No copy of the file exists already, proceed with adding it
         if (alreadyExists == false) {
@@ -422,17 +464,17 @@ class UploadsPage extends React.Component {
         this.state.pending_uploads = pendingUploads;
 
         // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-        // console.log(`[EX] Updated Pending Uploads after adding new file with identifier "${file.identifier}": [${uploadStringMap}]`);
+        // console.log(`Updated Pending Uploads after adding new file with identifier "${file.identifier}": [${uploadStringMap}]`);
 
         if (this.state.numberPages == 0) {
             this.state.numberPages = 1;
             this.state.currentPage = 0;
-            }
+        }
 
         this.setState(this.state);
         this.startUpload(file);
     
-        }
+    }
 
     removePendingUpload(file) {
 
@@ -441,7 +483,7 @@ class UploadsPage extends React.Component {
             let pending_uploads = this.state.pending_uploads;
 
             // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier });
-            // console.log(`[EX] Removing a *pending* file upload! Original State: [${uploadStringMap}]`);
+            // console.log(`Removing a *pending* file upload! Original State: [${uploadStringMap}]`);
 
             pending_uploads.splice(file.position, 1);
             for (var i = 0; i < pending_uploads.length; i++) {
@@ -451,7 +493,7 @@ class UploadsPage extends React.Component {
             this.state.pending_uploads = pending_uploads;
 
             // uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier; });
-            // console.log(`[EX] Removing a *pending* file upload! New State: [${uploadStringMap}]`);
+            // console.log(`Removing a *pending* file upload! New State: [${uploadStringMap}]`);
 
             this.setState( this.state );
         }
@@ -465,7 +507,7 @@ class UploadsPage extends React.Component {
             let uploads = this.state.uploads;
 
             // let uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
-            // console.log(`[EX] Removing a file upload! Original State: [${uploadStringMap}]`);
+            // console.log(`Removing a file upload! Original State: [${uploadStringMap}]`);
 
             uploads.splice(file.position, 1);
             for (var i = 0; i < uploads.length; i++) {
@@ -476,7 +518,7 @@ class UploadsPage extends React.Component {
             this.state.uploads = uploads;
 
             // uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
-            // console.log(`[EX] Removing a file upload! New State: [${uploadStringMap}]`);
+            // console.log(`Removing a file upload! New State: [${uploadStringMap}]`);
 
             this.setState( this.state );
         }
@@ -484,10 +526,10 @@ class UploadsPage extends React.Component {
 
     updateUpload(uploadInfo) {
 
-        // console.log(`[EX] Updating Upload Info: ${uploadInfo.identifier}`);
+        // console.log(`Updating Upload Info: ${uploadInfo.identifier}`);
 
         // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-        // console.log(`[EX] Before... : ${uploadStringMap}`);
+        // console.log(`Before... : ${uploadStringMap}`);
 
 
         var file = uploadInfo.file;
@@ -507,7 +549,7 @@ class UploadsPage extends React.Component {
         this.state.pending_uploads[uploadInfo.position] = uploadInfo;
 
         //uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-        // console.log(`[EX] After... : ${uploadStringMap}`);
+        // console.log(`After... : ${uploadStringMap}`);
 
         this.setState( this.state );
 
@@ -532,7 +574,7 @@ class UploadsPage extends React.Component {
 
             var response = JSON.parse(xhr.responseText);
             if (response.errorTitle !== undefined) {
-                errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
+                errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
 
             } else {
                 var uploadInfo = response;
@@ -615,36 +657,7 @@ class UploadsPage extends React.Component {
             async: true
         });
     }
-
-    triggerInput() {
-        console.log("input triggered!");
-
-        var uploadsPage = this;
-
-        $('#upload-file-input').trigger('click');
-
-        $('#upload-file-input:not(.bound)').addClass('bound').change(function() {
-            console.log("number files selected: " + this.files.length);
-            console.log( this.files );
-
-            if (this.files.length > 0) {
-                var file = this.files[0];
-                var filename = file.webkitRelativePath || file.fileName || file.name;
-
-                const isZip = file['type'].includes("zip");
-                console.log("isZip: " + isZip);
-
-                if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                    errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
-                } else if (!isZip) {
-                    errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
-                } else {
-                    uploadsPage.addUpload(file);
-                }
-            }
-        });
-    }
-
+    
     render() {
         console.log("rendering uploads!");
 
@@ -652,95 +665,80 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
-        // Only enable the upload button for admin users
-        let doButtonDisplay = uploader;
-        
+        //Disable Upload buttons with no Upload Access
+        let doUploadButtonHide = (!isUploader);
+
         return (
 
-            <div>
-                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="p-1">
-                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
+                <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
 
-                    <div className="card mb-1 border-secondary">
-                        <div className="p-2">
+                    <div style={{flex:"0 0 auto"}}>
+                        <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                    </div>
+
+                    <div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
+
+                        <div className="p-1">
+
+                            <input id ="upload-file-input" type="file" style={hiddenStyle}/>
+                            
                             {
-                                this.state.pending_uploads.length > 0
-                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
-                                    : ""
+                                this.state.pending_uploads.map((uploadInfo, index) => {
+
+                                    // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+                                    // console.log(`Previewing all Pending Uploads: ${uploadStringMap}`);
+                                    // console.log(`Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
+
+                                    //uploadInfo.position = index;
+                                    return (
+                                        <Upload
+                                            uploadInfo={uploadInfo}
+                                            key={uploadInfo.identifier}
+                                            removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}}
+                                        />
+                                    );
+                                })
                             }
-                            <button
-                                id="upload-flights-button"
-                                className="btn btn-primary btn-sm float-right"
-                                onClick={() => (doButtonDisplay ? this.triggerInput() : undefined)}
-                                style={{backgroundColor: doButtonDisplay ? '#007BFF' : '#444444'}}
-                                >
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
+
+                            {
+                                this.state.uploads.map((uploadInfo, index) => {
+                                    uploadInfo.position = index;
+                                    return (
+                                        <Upload
+                                            uploadInfo={uploadInfo}
+                                            key={uploadInfo.identifier}
+                                            removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}}
+                                        />
+                                    );
+                                })
+                            }
+
+                            <input id ="upload-file-input" type="file" style={hiddenStyle}/>   {/* <-- Keep this here so the Upload Flights button in the Paginator works */}
+                            <div style={{ bottom:"0", width:"99%", paddingLeft: "0.5em", paddingBottom: "1.0em", paddingRight: "1.00em", position:"fixed", alignSelf:"center" }}>
+                                <Paginator
+                                    submitFilter={() => {this.submitFilter();}}
+                                    items={this.state.uploads}
+                                    itemName="uploads"
+                                    uploadsPage={this}
+                                    currentPage={this.state.currentPage}
+                                    numberPages={this.state.numberPages}
+                                    pageSize={this.state.pageSize}
+                                    updateCurrentPage={(currentPage) => {
+                                        this.state.currentPage = currentPage;
+                                    }}
+                                    updateItemsPerPage={(pageSize) => {
+                                        this.state.pageSize = pageSize;
+                                    }}
+                                    doUploadButtonHide={doUploadButtonHide}
+                                />
+                            </div>
+
                         </div>
                     </div>
 
-                    {
-                        this.state.pending_uploads.map((uploadInfo, index) => {
-
-                            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-                            // console.log(`[EX] Previewing all Pending Uploads: ${uploadStringMap}`);
-                            // console.log(`[EX] Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
-
-                            //uploadInfo.position = index;
-                            return (
-                                <Upload
-                                    isFleetManager={fleetManager}
-                                    uploadInfo={ uploadInfo }
-                                    key={ uploadInfo.identifier }
-                                    removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
-                                    />
-                            );
-                        })
-                    }
-
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.uploads}
-                        itemName="uploads"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        pageSize={this.state.pageSize}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
-                        }}
-                    />
-
-                    {
-                        this.state.uploads.map((uploadInfo, index) => {
-                            uploadInfo.position = index;
-                            return (
-                                <Upload isFleetManager={fleetManager} uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
-                            );
-                        })
-                    }
-
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.uploads}
-                        itemName="uploads"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        pageSize={this.state.pageSize}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
-                        }}
-                    />
-
                 </div>
-
             </div>
         );
     }

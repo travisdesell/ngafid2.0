@@ -254,6 +254,7 @@ public final class WebServer {
         Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
         Spark.get("/protected/severities", new GetSeverities(gson));
         Spark.post("/protected/severities", new PostSeverities(gson));
+        Spark.post("/protected/all_severities", new PostAllSeverities(gson));
 
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));

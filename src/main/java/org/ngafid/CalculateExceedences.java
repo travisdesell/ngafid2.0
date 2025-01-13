@@ -72,9 +72,8 @@ public class CalculateExceedences {
             LOG.info("engines never turned on, setting flight_processed.had_error = 1");
 
             if (uploadProcessedEmail != null)
-                uploadProcessedEmail.addExceedenceError(flightFilename,
-                        "could not calculate exceedences for flight " + flightId + ", '" + flightFilename
-                                + "' - engines never turned on");
+                uploadProcessedEmail.addExceedenceError(flightFilename, "could not calculate exceedences for flight "
+                        + flightId + ", '" + flightFilename + "' - engines never turned on");
 
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
@@ -148,9 +147,8 @@ public class CalculateExceedences {
             // missing
             LOG.info("time series or date series was missing, setting flight_processed.had_error = 1");
             if (uploadProcessedEmail != null)
-                uploadProcessedEmail.addExceedenceError(flightFilename,
-                        "could not calculate exceedences for flight " + flightId + ", '" + flightFilename
-                                + "' - date or time was missing");
+                uploadProcessedEmail.addExceedenceError(flightFilename, "could not calculate exceedences for flight "
+                        + flightId + ", '" + flightFilename + "' - date or time was missing");
 
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1")) {
@@ -262,8 +260,8 @@ public class CalculateExceedences {
                     + event.getStartTime() + " to " + event.getEndTime() + "]");
             if (uploadProcessedEmail != null)
                 uploadProcessedEmail.addExceedence(flightFilename,
-                        "flight " + flightId + ", '" + flightFilename + "' - '" + eventDefinition.getName()
-                                + "' from " + event.getStartTime() + " to " + event.getEndTime());
+                        "flight " + flightId + ", '" + flightFilename + "' - '" + eventDefinition.getName() + "' from "
+                                + event.getStartTime() + " to " + event.getEndTime());
         }
 
         // Step 2: export the pitch events to the database
@@ -391,8 +389,8 @@ public class CalculateExceedences {
                 int airframeTypeId = new Airframes.Airframe(connection, "Fixed Wing").getId();
 
                 Instant start = Instant.now();
-
-                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[] { 0 });
+                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id IN (?,?,?,?,?,?,?,?,?,?)",
+                        new Object[] { 39, 40, 41, 42, 43, 44, 45, 65, 67, 72 });
                 LOG.info("n events = " + allEvents.size());
 
                 int flightsProcessed = 0;

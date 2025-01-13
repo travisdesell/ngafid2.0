@@ -407,8 +407,7 @@ public class DoubleTimeSeries {
             if (d < min)
                 min = d;
 
-            avg = avg * ((double) validCount / (double) (validCount + 1))
-                    + (d / (double) (validCount + 1));
+            avg = avg * ((double) validCount / (double) (validCount + 1)) + (d / (double) (validCount + 1));
 
             validCount++;
         }
