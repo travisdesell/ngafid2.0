@@ -21,15 +21,17 @@ import static org.ngafid.flights.calculations.Parameters.*;
 
 public class UserEmailPreferences {
 
-    private int userId;
-    private HashMap<String, Boolean> emailTypesUser;
-    private String[] emailTypesKeys;
+
+    private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
 
     private static HashMap<Integer, User> users = new HashMap<>();
     private static HashMap<String, Integer> userIDs = new HashMap<>();
     private static HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<>();
 
-    private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
+
+    private int userId;
+    private HashMap<String, Boolean> emailTypesUser;
+    private String[] emailTypesKeys;
 
 
     public UserEmailPreferences(int userId, HashMap<String, Boolean> emailTypesUser) {
@@ -47,31 +49,30 @@ public class UserEmailPreferences {
         this.emailTypesKeys = keysRecent;
     }
 
-    public static void addUser(Connection connection, User user) throws SQLException {
+    public static void addUser(Connection connection, User userTarget) throws SQLException {
 
-        int userID = user.getId();
-        String userEmail = user.getEmail();
+        int userTargetID = userTarget.getId();
+        String userEmail = userTarget.getEmail();
 
         //user email --> userId
-        userIDs.put(userEmail, userID);
+        userIDs.put(userEmail, userTargetID);
 
         //userId --> User
-        users.put(userID, user);
+        users.put(userTargetID, userTarget);
 
-        emailTypesUsers.put( user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser() );
+        emailTypesUsers.put(
+            userTarget.getEmail(),
+            userTarget.getUserEmailPreferences(connection).getEmailTypesUser()
+        );
 
     }
 
-    public static User getUser(int userId) {
-        return users.get(userId);
+    public static User getUser(int userTargetID) {
+        return users.get(userTargetID);
     }
 
-    public static int getUserIDFromEmail(String userEmail) {
-        return userIDs.get(userEmail);
-    }
-
-    public HashMap<String, Boolean> getEmailTypesUser() {
-        return emailTypesUser;
+    public static int getUserIDFromEmail(String userTargetEmail) {
+        return userIDs.get(userTargetEmail);
     }
 
     public static boolean getEmailTypeUserState(String email, EmailType emailType) {
@@ -94,6 +95,10 @@ public class UserEmailPreferences {
 
         return emailTypesTarget.get(emailTypeValue);
 
+    }
+
+    public HashMap<String, Boolean> getEmailTypesUser() {
+        return emailTypesUser;
     }
 
 }
