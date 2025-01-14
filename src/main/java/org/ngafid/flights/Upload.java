@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Month;
 
@@ -29,12 +27,15 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.ngafid.flights.Flight;
-
-public class Upload {
+public final class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
 
-    protected static final String DEFAULT_COLUMNS = "id, parent_id, fleet_id, uploader_id, filename, identifier, kind, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights ";
+    protected static final String DEFAULT_COLUMNS =
+            "id, parent_id, fleet_id, uploader_id, filename, " +
+            "identifier, kind, number_chunks, uploaded_chunks, " +
+            "chunk_status, md5_hash, size_bytes, bytes_uploaded, " +
+            "status, start_time, end_time, n_valid_flights, " +
+            "n_warning_flights, n_error_flights ";
 
     public enum Kind {
         FILE,
@@ -42,6 +43,7 @@ public class Upload {
         DERIVED
     }
 
+    //CHECKSTYLE:OFF
     public int id;
     public Integer parentId;
     public int fleetId;
@@ -63,7 +65,9 @@ public class Upload {
     public int errorFlights;
 
     // For AirSync uploads that are grouped by month.
-    String groupString = null, tail = null;
+    String groupString = null;
+    String tail = null;
+    //CHECKSTYLE:ON
 
     public Upload(int id) {
         this.id = id;
@@ -277,14 +281,12 @@ public class Upload {
     }
 
     /*
-     * This gets an upload only by it's id. Used by {@link CSVWriter} to get
-     * archival
-     * files usually.
+     * This gets an upload only by its id. Used by {@link CSVWriter} to get
+     * archival files usually.
      *
      * @param connection a connection to the database
-     * 
      * @param uploadId the id of the upload entry in the database
-     * 
+     *
      * @throws SQLException on a database error
      */
     public static Upload getUploadById(Connection connection, int uploadId) throws SQLException {
@@ -304,9 +306,17 @@ public class Upload {
     /**
      * Create a new user upload object in the database and return it as a Java
      * object.
-     *
-     * @return The upload object
-     * @throws SQLException
+     * @param connection connection to the database
+     * @param uploaderId the id of the user who uploaded the file
+     * @param fleetId the id of the fleet the file belongs to
+     * @param filename the name of the file
+     * @param identifier the identifier of the file
+     * @param kind the kind of the file
+     * @param size the size of the file
+     * @param numberChunks the number of chunks the file is split into
+     * @param md5hash the md5 hash of the file
+     * @return the upload object
+     * @throws SQLException on a database error
      */
     public static Upload createNewUpload(Connection connection, int uploaderId, int fleetId, String filename,
             String identifier, Kind kind, long size, int numberChunks, String md5hash) throws SQLException {
@@ -318,6 +328,9 @@ public class Upload {
      * Creates a new 'derived' upload - an upload that a user did not upload, and
      * only contains data stemming from transformed versions of the files in a user
      * upload.
+     *
+     * @param connection connection to the database
+     * @param parent the parent upload that this derived upload is based on
      *
      * @return The upload object
      * @throws SQLException
@@ -335,16 +348,33 @@ public class Upload {
     }
 
     /**
-     * Creates a new upload in the database and return it as a Java object
-     *
-     * @return The upload object
-     * @throws SQLException
+     * Create a new user upload object in the database and return it as a Java
+     * @param connection connection to the database
+     * @param uploaderId the id of the user who uploaded the file
+     * @param fleetId the id of the fleet the file belongs to
+     * @param parentId the id of the parent upload
+     * @param filename the name of the file
+     * @param identifier the identifier of the file
+     * @param kind the kind of the file
+     * @param size the size of the file
+     * @param numberChunks the number of chunks the file is split into
+     * @param md5hash the md5 hash of the file
+     * @param uploadedChunks the number of chunks that have been uploaded
+     * @param chunkStatus the status of each chunk
+     * @param uploadStatus the status of the upload
+     * @return the upload object
+     * @throws SQLException on a database error
      */
+    // Disable checkstyle for 13 parameters > 10 limit
+    //CHECKSTYLE:OFF
     public static Upload createUpload(Connection connection, int uploaderId, int fleetId, Integer parentId,
             String filename, String identifier, Kind kind, long size, int numberChunks, String md5hash,
             int uploadedChunks, String chunkStatus, String uploadStatus) throws SQLException {
+    //CHECKSTYLE:OFF
         try (PreparedStatement query = connection.prepareStatement(
-                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
+                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, " +
+                        "identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, " +
+                        "uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
             query.setInt(1, uploaderId);
             query.setInt(2, fleetId);
 
@@ -380,7 +410,9 @@ public class Upload {
                     Upload upload = new Upload(resultSet);
                     return upload;
                 } else {
+                    //CHECKSTYLE:OFF
                     // TODO: maybe need to throw an exception
+                    //CHECKSTYLE:ON
                     return null;
                 }
             }
@@ -398,8 +430,9 @@ public class Upload {
         // warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
         String query = "SELECT " + DEFAULT_COLUMNS
                 + " FROM uploads WHERE fleet_id = ? AND uploader_id != ? ORDER BY start_time DESC ";
-        if (condition != null)
+        if (condition != null) {
             query += " " + condition;
+        }
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
@@ -550,6 +583,8 @@ public class Upload {
 
     /**
      * Returns the folder which will contain the zip file corresponding to this upload.
+     *
+     * @return the folder which will contain the zip file corresponding to this upload
      */
     public String getArchiveDirectory() {
         switch (kind) {

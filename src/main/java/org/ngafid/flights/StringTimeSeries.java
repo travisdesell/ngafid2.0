@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-public class StringTimeSeries {
+public final class StringTimeSeries {
 
     public static class StringSeriesName extends NormalizedColumn<StringSeriesName> {
         public StringSeriesName(String name) {
@@ -141,7 +141,9 @@ public class StringTimeSeries {
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name)
             throws IOException, SQLException {
         try (PreparedStatement query = connection.prepareStatement(
-                "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
+                "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, " +
+                        "ss.data FROM string_series AS ss INNER JOIN string_series_names " +
+                        "AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
 
             query.setString(1, name);
             query.setInt(2, flightId);
@@ -226,7 +228,7 @@ public class StringTimeSeries {
             if (current.equals("")) {
                 position--;
             } else {
-                return new String[] { current, String.valueOf(position) };
+                return new String[]{current, String.valueOf(position)};
             }
         }
         return null;
@@ -242,7 +244,8 @@ public class StringTimeSeries {
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement(
-                "INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+                "INSERT INTO string_series " +
+                        "(flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
     }
 
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)

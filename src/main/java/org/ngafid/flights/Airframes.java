@@ -1,22 +1,16 @@
 package org.ngafid.flights;
 
+import org.ngafid.common.NormalizedColumn;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
-import org.ngafid.common.NormalizedColumn;
-
-public class Airframes {
+public enum Airframes {
+    ;
     private static final Logger LOG = Logger.getLogger(Airframes.class.getName());
 
     /*
@@ -40,7 +34,7 @@ public class Airframes {
 
     /**
      * {@link Airframes} names
-     *
+     * <p>
      * TODO: In the future, we may want to consider using Set<String> reather than
      * hardcoded strings. This would make our code more robust to varying airframe
      * names
@@ -83,14 +77,30 @@ public class Airframes {
     private static HashSet<String> fleetAirframes = new HashSet<>();
 
     public static final Set<String> FIXED_WING_AIRFRAMES = Collections.unmodifiableSet(Set.<String>of(
-            AIRFRAME_CESSNA_172R, AIRFRAME_CESSNA_172S, AIRFRAME_CESSNA_172T, AIRFRAME_CESSNA_182T,
-            AIRFRAME_CESSNA_T182T, AIRFRAME_CESSNA_MODEL_525, AIRFRAME_CIRRUS_SR20, AIRFRAME_CIRRUS_SR22,
-            AIRFRAME_DIAMOND_DA40, AIRFRAME_DIAMOND_DA_40_F, AIRFRAME_DIAMOND_DA40NG, AIRFRAME_DIAMOND_DA42NG,
-            AIRFRAME_PA_28_181, AIRFRAME_PA_44_180, AIRFRAME_PIPER_PA_46_500TP_MERIDIAN, AIRFRAME_QUEST_KODIAK_100,
-            AIRFRAME_CESSNA_400, AIRFRAME_BEECHCRAFT_A36_G36, AIRFRAME_BEECHCRAFT_G58));
+            AIRFRAME_CESSNA_172R,
+            AIRFRAME_CESSNA_172S,
+            AIRFRAME_CESSNA_172T,
+            AIRFRAME_CESSNA_182T,
+            AIRFRAME_CESSNA_T182T,
+            AIRFRAME_CESSNA_MODEL_525,
+            AIRFRAME_CIRRUS_SR20,
+            AIRFRAME_CIRRUS_SR22,
+            AIRFRAME_DIAMOND_DA40,
+            AIRFRAME_DIAMOND_DA_40_F,
+            AIRFRAME_DIAMOND_DA40NG,
+            AIRFRAME_DIAMOND_DA42NG,
+            AIRFRAME_PA_28_181,
+            AIRFRAME_PA_44_180,
+            AIRFRAME_PIPER_PA_46_500TP_MERIDIAN,
+            AIRFRAME_QUEST_KODIAK_100,
+            AIRFRAME_CESSNA_400,
+            AIRFRAME_BEECHCRAFT_A36_G36,
+            AIRFRAME_BEECHCRAFT_G58));
 
-    public static Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
+    //CHECKSTYLE:OFF
+    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
 
+    //CHECKSTYLE:ON
     public record AliasKey(String name, int fleetId) {
     }
 
@@ -98,13 +108,17 @@ public class Airframes {
         return new AliasKey(name, -1);
     }
 
+    //CHECKSTYLE:OFF
     public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
-            Map.entry(defaultAlias("Unknown Aircraft"), ""), Map.entry(defaultAlias("Garmin Flight Display"), ""),
+            Map.entry(defaultAlias("Unknown Aircraft"), ""),
+            Map.entry(defaultAlias("Garmin Flight Display"), ""),
             Map.entry(defaultAlias("Diamond DA 40"), "Diamond DA40"),
             Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
-            Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"), Map.entry(defaultAlias("Robinson R44"), "R44"),
+            Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
+            Map.entry(defaultAlias("Robinson R44"), "R44"),
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
+    //CHECKSTYLE:ON
     public static class Airframe extends NormalizedColumn<Airframe> {
 
         @Override
@@ -172,7 +186,8 @@ public class Airframes {
     public static ArrayList<String> getAll(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> airframes = new ArrayList<>();
 
-        String queryString = "SELECT airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+        String queryString = "SELECT airframe FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
 
@@ -192,7 +207,7 @@ public class Airframes {
 
         String queryString = "SELECT airframe FROM airframes ORDER BY airframe";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             ArrayList<String> airframes = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -217,7 +232,7 @@ public class Airframes {
 
         String queryString = "SELECT id, airframe FROM airframes ORDER BY id";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             HashMap<Integer, String> idToNameMap = new HashMap<Integer, String>();
 
             while (resultSet.next()) {
@@ -243,11 +258,12 @@ public class Airframes {
     public static HashMap<Integer, String> getIdToNameMap(Connection connection, int fleetId) throws SQLException {
         HashMap<Integer, String> idToNameMap = new HashMap<Integer, String>();
 
-        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = "
+        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = "
                 + fleetId + " ORDER BY airframe";
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
 
             while (resultSet.next()) {
                 // airframe existed in the database, return the id

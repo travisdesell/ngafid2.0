@@ -18,18 +18,22 @@ import java.util.logging.Logger;
 import static org.ngafid.events.CustomEvent.*;
 import static org.ngafid.flights.Parameters.*;
 
-public class FindLowEndingFuelEvents {
+public final class FindLowEndingFuelEvents {
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
-    private static Map<Integer, EventDefinition> eventDefs = new HashMap<>();
-    private static Map<Integer, Double> thresholds = new HashMap<>();
+    private static final Map<Integer, EventDefinition> EVENT_DEFS = new HashMap<>();
+    private static final Map<Integer, Double> THRESHOLDS = new HashMap<>();
+
+    private FindLowEndingFuelEvents() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static void findLowEndFuelEventsInUpload(Connection connection, Upload upload)
             throws FatalFlightFileException, IOException, MalformedFlightFileException, ParseException, SQLException {
         String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
-                "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_END_FUEL_PA_28.getId()
+                "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + getLowEndFuelPa28().getId()
                 +
-                " OR event_definition_id = " + LOW_END_FUEL_PA_44.getId() + " OR event_definition_id = "
-                + LOW_END_FUEL_CESSNA_172.getId() +
+                " OR event_definition_id = " + getLowEndFuelPa44().getId() + " OR event_definition_id = "
+                + getLowEndFuelCessna172().getId() +
                 ") AND flight_processed.flight_id = flights.id)";
 
         List<Flight> flights = Flight.getFlights(connection, whereClause);
@@ -43,21 +47,21 @@ public class FindLowEndingFuelEvents {
             throws IOException, SQLException, FatalFlightFileException, MalformedFlightFileException {
         int airframeNameID = flight.getAirframeNameId();
 
-        if (!eventDefs.containsKey(airframeNameID)) {
+        if (!EVENT_DEFS.containsKey(airframeNameID)) {
             EventDefinition lowEndEventDef = getLowEndFuelDefinition(flight.getAirframeNameId());
 
             if (lowEndEventDef == null) {
                 return;
             }
 
-            eventDefs.put(airframeNameID, lowEndEventDef);
-            thresholds.put(airframeNameID, getThresholdValueFromText(eventDefs.get(airframeNameID).toHumanReadable()));
+            EVENT_DEFS.put(airframeNameID, lowEndEventDef);
+            THRESHOLDS.put(airframeNameID, getThresholdValueFromText(EVENT_DEFS.get(airframeNameID).toHumanReadable()));
         }
 
         LOG.info("Processing flight " + flight.getId());
 
-        EventDefinition eventDef = eventDefs.get(airframeNameID);
-        double threshold = thresholds.get(airframeNameID);
+        EventDefinition eventDef = EVENT_DEFS.get(airframeNameID);
+        double threshold = THRESHOLDS.get(airframeNameID);
 
         flight.checkCalculationParameters(TOTAL_FUEL, AVG_FUEL_DEPENDENCIES);
 
@@ -81,8 +85,9 @@ public class FindLowEndingFuelEvents {
             fuelSum += fuel.get(i);
             fuelValues++;
 
-            if (currentTime.equals(" "))
+            if (currentTime.equals(" ")) {
                 continue;
+            }
 
             LOG.info("DATE = " + currentTime);
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
@@ -114,7 +119,8 @@ public class FindLowEndingFuelEvents {
     }
 
     static void setFlightProcessed(Connection connection, Flight flight, int count) throws IOException, SQLException {
-        String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
+        String queryString = "INSERT INTO flight_processed SET " +
+                "fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(queryString)) {
             stmt.setInt(1, flight.getFleetId());

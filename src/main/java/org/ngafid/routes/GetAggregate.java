@@ -1,7 +1,6 @@
 package org.ngafid.routes;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -28,18 +27,9 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 
-import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
-import org.ngafid.filters.Filter;
-
 import org.ngafid.flights.Airframes;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.FlightWarning;
-import org.ngafid.flights.Tail;
-import org.ngafid.flights.Tails;
-import org.ngafid.flights.Upload;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;

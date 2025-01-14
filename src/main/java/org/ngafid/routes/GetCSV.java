@@ -1,10 +1,8 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import com.google.gson.Gson;
 

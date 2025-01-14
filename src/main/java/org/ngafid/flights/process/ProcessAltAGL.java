@@ -7,7 +7,6 @@ import java.sql.SQLException;
 
 import java.nio.file.NoSuchFileException;
 
-import org.ngafid.flights.Flight;
 import org.ngafid.terrain.TerrainCache;
 import org.ngafid.flights.DoubleTimeSeries;
 import static org.ngafid.flights.Parameters.*;
@@ -15,8 +14,8 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
 public class ProcessAltAGL extends ProcessStep {
-    private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);
-    private static Set<String> OUTPUT_COLUMNS = Set.of(ALT_AGL);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);
+    private static final Set<String> OUTPUT_COLUMNS = Set.of(ALT_AGL);
 
     public ProcessAltAGL(Connection connection, FlightBuilder builder) {
         super(connection, builder);
@@ -65,7 +64,8 @@ public class ProcessAltAGL extends ProcessStep {
                 altitudeAGLTS.add(altitudeAGL);
             } catch (NoSuchFileException e) {
                 throw new MalformedFlightFileException(
-                        "Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
+                        "Could not calculate AGL for this flight as it had " +
+                                "latitudes/longitudes outside of the United States.");
             }
         }
 

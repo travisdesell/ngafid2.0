@@ -1,35 +1,34 @@
 package org.ngafid;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.User;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-import org.ngafid.routes.event_def_mgmt.*;
-import spark.Spark;
+import org.ngafid.routes.event_def_mgmt.DeleteEventDefinitions;
+import org.ngafid.routes.event_def_mgmt.GetAllEventDefinitions;
+import org.ngafid.routes.event_def_mgmt.PutEventDefinitions;
 import spark.Service;
+import spark.Spark;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import java.io.IOException;
-
-import java.time.*;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.stream.*;
-import com.google.gson.TypeAdapter;
-
 import static org.ngafid.SendEmail.sendAdminEmails;
 
+//CHECKSTYLE:OFF
 
 /**
  * The entry point for the NGAFID web server.
@@ -43,6 +42,7 @@ public final class WebServer {
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
 
+
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
         public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
@@ -52,7 +52,7 @@ public final class WebServer {
             }
             jsonWriter.value(localDate.toString());
         }
-    
+
         @Override
         public LocalDateTime read(final JsonReader jsonReader) throws IOException {
             if (jsonReader.peek() == JsonToken.NULL) {
@@ -63,8 +63,10 @@ public final class WebServer {
         }
     }
 
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
-    
+    public static final Gson gson =
+            new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class,
+                    new LocalDateTimeTypeAdapter()).create();
+
     static {
 
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
@@ -92,7 +94,8 @@ public final class WebServer {
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
 
         // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
+        //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter
+        //     .ofPattern("MM-dd-yyyy HH:mm:ss"));
         //     LOG.info(message);
         //     sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
         // }));
@@ -101,8 +104,7 @@ public final class WebServer {
     /**
      * Entry point for the NGAFID web server.
      *
-     * @param args
-     *    Command line arguments; none expected.
+     * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
         // initialize Logging
@@ -169,7 +171,7 @@ public final class WebServer {
 
             //if the user session variable has not been set, then don't allow
             //access to the protected pages (the user is not logged in).
-            User user = (User)request.session().attribute("user");
+            User user = request.session().attribute("user");
 
             String previousURI = request.session().attribute("previous_uri");
             if (user == null) {
@@ -200,11 +202,12 @@ public final class WebServer {
         });
 
         Spark.before("/", (request, response) -> {
-            User user = (User)request.session().attribute("user");
+            User user = request.session().attribute("user");
             if (user != null) {
                 String previousURI = request.session().attribute("previous_uri");
                 if (previousURI != null) {
-                    LOG.info("user already logged in, redirecting to the previous page because previous URI was not null");
+                    LOG.info("user already logged in, redirecting to the previous page because previous URI was not " +
+                            "null");
                     response.redirect(previousURI);
                     request.session().attribute("previous_uri", null);
                 } else {
@@ -215,7 +218,8 @@ public final class WebServer {
         });
 
         Spark.get("/", new GetHome(gson));
-        Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."));
+        Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access" +
+                " to or attempted to access a page while not logged in."));
         Spark.get("/logout_success", new GetHome(gson, "primary", "You have logged out successfully."));
         Spark.get("/sandbox", new GetSandbox(gson));
 
@@ -333,7 +337,7 @@ public final class WebServer {
         Spark.get("/protected/update_event", new GetUpdateEvent(gson));
         Spark.post("/protected/update_event", new PostUpdateEvent(gson));
 
-         Spark.get("/protected/manage_events", new GetEventManager(gson));
+        Spark.get("/protected/manage_events", new GetEventManager(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
@@ -363,14 +367,15 @@ public final class WebServer {
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
         Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
-        
+
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
         Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
         Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
 
-        // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go beneath it.
+        // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go
+        // beneath it.
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.put("/update_monthly_flights", new UpdateMonthlyFlightsCache(gson));
@@ -385,21 +390,22 @@ public final class WebServer {
             String sStackTrace = sw.toString(); // stack trace as a string
             LOG.severe("stack trace:\n" + sStackTrace);
 
-            String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID WebServer at ")
-                                                .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
-                                                .append(".\n The exception was: ").append(exception).append("\n")
-                                                .append(".\n The exception message was: ").append(exception.getMessage()).append("\n")
-                                                .append(".\n The exception (to string): ").append(exception.toString()).append("\n")
-                                                .append("\n The non-pretty stack trace is:\n").append(sStackTrace).append("\n")
-                                                .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
+            String message = "An uncaught exception was thrown in the NGAFID WebServer at " +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")) +
+                    ".\n The exception was: " + exception + "\n" +
+                    ".\n The exception message was: " + exception.getMessage() + "\n" +
+                    ".\n The exception (to string): " + exception + "\n" +
+                    "\n The non-pretty stack trace is:\n" + sStackTrace + "\n" +
+                    "\nThe stack trace was:\n" + ConvertToHTML.convertError(exception) + "\n";
 
             sendAdminEmails(
-                String.format( "Uncaught Exception in NGAFID: %s", exception.getMessage() ),
-                ConvertToHTML.convertString(message),
-                EmailType.ADMIN_EXCEPTION_NOTIFICATION
-                );
+                    String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()),
+                    ConvertToHTML.convertString(message),
+                    EmailType.ADMIN_EXCEPTION_NOTIFICATION
+            );
         });
 
         LOG.info("NGAFID WebServer initialization complete.");
     }
 }
+//CHECKSTYLE:ON

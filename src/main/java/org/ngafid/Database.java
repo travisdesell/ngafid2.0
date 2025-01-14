@@ -1,50 +1,67 @@
 package org.ngafid;
 
-import java.io.*;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.lang.Thread;
-import java.lang.Runnable;
-import java.util.Properties;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-public class Database {
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.logging.Logger;
+
+public final class Database {
+    private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
     private static HikariDataSource CONNECTION_POOL = null;
-    private static String dbUser = null, dbPassword = null, dbUrl = null;
+    private static String dbHost = null;
+    private static String dbName = null;
+    private static String dbUser = null;
+    private static String dbPassword = null;
 
-    private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
     static {
         initializeConnectionPool();
     }
 
+    /**
+     * Get a connection to the database
+     *
+     * @return a connection to the database
+     * @throws SQLException SQL exception
+     */
     public static Connection getConnection() throws SQLException {
         var info = CONNECTION_POOL.getHikariPoolMXBean();
-        LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
-                + " active / " + info.getTotalConnections() + " total");
+        LOG.info("Connection stats: " + info.getIdleConnections() +
+                " idle / " + info.getActiveConnections() +
+                " active / " + info.getTotalConnections() + " total");
         // new Throwable().printStackTrace();
         return CONNECTION_POOL.getConnection();
     }
 
+    /**
+     * Check if the database information exists
+     *
+     * @return true if the database information exists
+     */
     public static boolean dbInfoExists() {
-        return dbUrl != null && dbUser != null && dbPassword != null;
+        return List.of(dbHost, dbName, dbUser, dbPassword).stream().anyMatch(Objects::isNull);
     }
 
+    /**
+     * Get the database implementation
+     *
+     * @return the database implementation
+     */
     public static String getDatabaseImplementation() {
-        if (System.getenv("NGAFID_USE_MARIA_DB") != null)
+        if (System.getenv("NGAFID_USE_MARIA_DB") != null) {
             return "mariadb";
-        else
+        } else {
             return "mysql";
+        }
     }
 
     private static void readDatabaseCredentials(String path) throws IOException {
@@ -53,9 +70,29 @@ public class Database {
             prop.load(bufferedReader);
 
             dbUser = prop.getProperty("username");
+            dbName = prop.getProperty("name");
             dbPassword = prop.getProperty("password");
-            dbUrl = prop.getProperty("url");
+            dbHost = prop.getProperty("url");
         }
+    }
+
+    /**
+     * Get the Hikari configuration
+     *
+     * @return the Hikari configuration
+     */
+    private static HikariConfig getHikariConfig() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:" + getDatabaseImplementation() + "://" + dbHost + "/" + dbName);
+        config.setUsername(dbUser);
+        config.setPassword(dbPassword);
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "64");
+        config.addDataSourceProperty("prepStmtCacheSize", "64");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "512");
+        config.setMaximumPoolSize(32);
+        config.setMaxLifetime(60000);
+        return config;
     }
 
     private static void initializeConnectionPool() {
@@ -71,16 +108,7 @@ public class Database {
             }
         }
 
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(dbUrl);
-        config.setUsername(dbUser);
-        config.setPassword(dbPassword);
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "64");
-        config.addDataSourceProperty("prepStmtCacheSize", "64");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "512");
-        config.setMaximumPoolSize(32);
-        config.setMaxLifetime(60000);
+        HikariConfig config = getHikariConfig();
         CONNECTION_POOL = new HikariDataSource(config);
     }
 }

@@ -25,6 +25,8 @@ public abstract class CSVWriter {
 
     /**
      * Write to a string and return it to the method caller
+     *
+     * @return the contents of the file as a string
      */
     public abstract String getFileContents();
 

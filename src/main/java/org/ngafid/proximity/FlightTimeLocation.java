@@ -13,7 +13,8 @@ import org.ngafid.common.TimeUtils;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.filters.Pair;
 
-public class FlightTimeLocation {
+public final class FlightTimeLocation {
+    //CHECKSTYLE:OFF
     // set to true if the flight has the required time series values and a start and
     // end date time
     boolean valid = false;
@@ -46,6 +47,8 @@ public class FlightTimeLocation {
 
     StringTimeSeries dateSeries;
     StringTimeSeries timeSeries;
+    //CHECKSTYLE:ON
+
 
     public FlightTimeLocation(Connection connection, int fleetId, int flightId, int airframeNameId,
             String startDateTime, String endDateTime) throws SQLException {
@@ -72,10 +75,12 @@ public class FlightTimeLocation {
         System.out.println("minMaxRPM1: " + minMaxRPM1);
         System.out.println("minMaxRPM2: " + minMaxRPM2);
 
-        if (minMaxRPM1 != null)
+        if (minMaxRPM1 != null) {
             System.out.println("min max E1 RPM: " + minMaxRPM1.first() + ", " + minMaxRPM1.second());
-        if (minMaxRPM2 != null)
+        }
+        if (minMaxRPM2 != null) {
             System.out.println("min max E2 RPM: " + minMaxRPM2.first() + ", " + minMaxRPM2.second());
+        }
 
         if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
                 || (minMaxRPM2 == null && minMaxRPM1.second() < 800) // RPM2 is null, RPM1 is < 800 (RPM1 would not be
@@ -112,9 +117,6 @@ public class FlightTimeLocation {
         // then check and see if this flight had alt MSL, if not we cannot calculate adjacency
         Pair<Double, Double> minMaxAltMSL = DoubleTimeSeries.getMinMax(connection, flightId, "AltMSL");
 
-        // if (minMaxAltMSL != null) System.out.println("min max alt MSL: " + minMaxAltMSL.first() + ", " +
-        // minMaxAltMSL.second());
-
         if (minMaxAltMSL == null) {
             // flight didn't have alt MSL
             valid = false;
@@ -128,6 +130,13 @@ public class FlightTimeLocation {
         valid = true;
     }
 
+    /**
+     * Get the time series data for altitude, latitude, longitude, and indicated airspeed
+     * @param connection the connection to the database
+     * @return true if the time series data was successfully retrieved
+     * @throws IOException io exception
+     * @throws SQLException sql exception
+     */
     public boolean getSeriesData(Connection connection) throws IOException, SQLException {
         // get the time series data for altitude, latitude and longitude
         DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
@@ -193,18 +202,15 @@ public class FlightTimeLocation {
 
     public boolean alreadyProcessed(Connection connection) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
+                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND " +
+                        "flight_id = ? AND event_definition_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
-            stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
+            stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
 
             // if there was a flight processed entry for this flight it was already processed
             try (ResultSet resultSet = stmt.executeQuery()) {
-                if (resultSet.next()) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return resultSet.next();
             }
         }
 
@@ -230,19 +236,23 @@ public class FlightTimeLocation {
         }
     }
 
-    public void updateWithEvent(Connection connection, Event event, String startDateTime)
+    public void updateWithEvent(Connection connection, Event event, String eventStartDateTime)
             throws IOException, SQLException {
-        event.updateDatabase(connection, fleetId, flightId, CalculateProximity.adjacencyEventDefinitionId);
-        event.updateStatistics(connection, fleetId, airframeNameId, CalculateProximity.adjacencyEventDefinitionId);
+        event.updateDatabase(connection, fleetId, flightId, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
+        event.updateStatistics(connection, fleetId, airframeNameId, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
 
         double severity = event.getSeverity();
         double duration = event.getDuration();
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), max_severity = GREATEST(max_severity, ?) WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
+                "UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, " +
+                        "min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), " +
+                        "sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), " +
+                        "max_severity = GREATEST(max_severity, ?) " +
+                        "WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, flightId);
-            stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
+            stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
             stmt.setDouble(4, duration);
             stmt.setDouble(5, duration);
             stmt.setDouble(6, duration);
@@ -253,6 +263,6 @@ public class FlightTimeLocation {
         }
 
         EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId,
-                CalculateProximity.adjacencyEventDefinitionId, startDateTime);
+                CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID, eventStartDateTime);
     }
 }

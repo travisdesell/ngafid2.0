@@ -1,33 +1,20 @@
 package org.ngafid.accounts;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.ngafid.Database;
-import org.ngafid.accounts.EmailType;
-
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
 import java.util.HashMap;
-
 import java.util.logging.Logger;
-
-import static org.ngafid.flights.Parameters.*;
 
 public class UserEmailPreferences {
 
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
+    private static final HashMap<Integer, User> USERS = new HashMap<>();
+    private static final HashMap<String, Integer> USER_IDS = new HashMap<>();
+    private static final HashMap<String, HashMap<String, Boolean>> EMAIL_TYPES_USERS = new HashMap<>();
+    private final int userId;
+    private final HashMap<String, Boolean> emailTypesUser;
+    private final String[] emailTypesKeys;
 
-    private static HashMap<Integer, User> users = new HashMap<>();
-    private static HashMap<String, Integer> userIDs = new HashMap<>();
-    private static HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<>();
-
-    private int userId;
-    private HashMap<String, Boolean> emailTypesUser;
-    private String[] emailTypesKeys;
 
     public UserEmailPreferences(int userId, HashMap<String, Boolean> emailTypesUser) {
         this.userId = userId;
@@ -47,33 +34,33 @@ public class UserEmailPreferences {
         int userTargetID = userTarget.getId();
         String userEmail = userTarget.getEmail();
 
-        // user email --> userId
-        userIDs.put(userEmail, userTargetID);
+        //user email --> userId
+        USER_IDS.put(userEmail, userTargetID);
 
-        // userId --> User
-        users.put(userTargetID, userTarget);
+        //userId --> User
+        USERS.put(userTargetID, userTarget);
 
-        emailTypesUsers.put(userTarget.getEmail(), userTarget.getUserEmailPreferences(connection).getEmailTypesUser());
+        EMAIL_TYPES_USERS.put(userTarget.getEmail(), userTarget.getUserEmailPreferences(connection).getEmailTypesUser());
 
     }
 
-    public static User getUser(int userTargetID) {
-        return users.get(userTargetID);
+    public static User getUser(int userId) {
+        return USERS.get(userId);
     }
 
-    public static int getUserIDFromEmail(String userTargetEmail) {
-        return userIDs.get(userTargetEmail);
+    public static int getUserIDFromEmail(String userEmail) {
+        return USER_IDS.get(userEmail);
     }
 
     public static boolean getEmailTypeUserState(String email, EmailType emailType) {
 
-        // Email does not exist in the map, default to true
-        if (!emailTypesUsers.containsKey(email)) {
+        //Email does not exist in the map, default to true
+        if (!EMAIL_TYPES_USERS.containsKey(email)) {
             LOG.info("User's email does not exist in the map, defaulting to true");
             return true;
         }
 
-        HashMap<String, Boolean> emailTypesTarget = emailTypesUsers.get(email);
+        HashMap<String, Boolean> emailTypesTarget = EMAIL_TYPES_USERS.get(email);
 
         String emailTypeValue = emailType.getType();
 
