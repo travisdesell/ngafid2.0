@@ -1,6 +1,9 @@
 package org.ngafid.proximity;
 
+import org.ngafid.common.TimeUtils;
 import org.ngafid.events.Event;
+import org.ngafid.events.EventStatistics;
+import org.ngafid.filters.Pair;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 
@@ -9,9 +12,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.ngafid.common.TimeUtils;
-import org.ngafid.events.EventStatistics;
-import org.ngafid.filters.Pair;
 
 public final class FlightTimeLocation {
     //CHECKSTYLE:OFF
@@ -51,7 +51,7 @@ public final class FlightTimeLocation {
 
 
     public FlightTimeLocation(Connection connection, int fleetId, int flightId, int airframeNameId,
-            String startDateTime, String endDateTime) throws SQLException {
+                              String startDateTime, String endDateTime) throws SQLException {
         this.fleetId = fleetId;
         this.flightId = flightId;
         this.airframeNameId = airframeNameId;
@@ -84,11 +84,11 @@ public final class FlightTimeLocation {
 
         if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
                 || (minMaxRPM2 == null && minMaxRPM1.second() < 800) // RPM2 is null, RPM1 is < 800 (RPM1 would not be
-                                                                     // null as well)
+                // null as well)
                 || (minMaxRPM1 == null && minMaxRPM2.second() < 800) // RPM1 is null, RPM2 is < 800 (RPM2 would not be
-                                                                     // null as well)
+                // null as well)
                 || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800
-                        && minMaxRPM2.second() < 800))) { // RPM1 and RPM2 < 800
+                && minMaxRPM2.second() < 800))) { // RPM1 and RPM2 < 800
             // couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
             valid = false;
             return;
@@ -132,9 +132,10 @@ public final class FlightTimeLocation {
 
     /**
      * Get the time series data for altitude, latitude, longitude, and indicated airspeed
+     *
      * @param connection the connection to the database
      * @return true if the time series data was successfully retrieved
-     * @throws IOException io exception
+     * @throws IOException  io exception
      * @throws SQLException sql exception
      */
     public boolean getSeriesData(Connection connection) throws IOException, SQLException {
@@ -172,9 +173,9 @@ public final class FlightTimeLocation {
 
         epochTime = new long[length];
         for (int i = 0; i < length; i++) {
-            if (dateSeries.get(i) == null || dateSeries.get(i).equals("")
-                    || timeSeries.get(i) == null || timeSeries.get(i).equals("")
-                    || utcOffsetSeries.get(i) == null || utcOffsetSeries.get(i).equals("")) {
+            if (dateSeries.emptyAt(i)
+                    || timeSeries.emptyAt(i)
+                    || utcOffsetSeries.emptyAt(i)) {
                 epochTime[i] = 0;
                 continue;
             }
@@ -217,7 +218,7 @@ public final class FlightTimeLocation {
     }
 
     public static boolean proximityAlreadyCalculated(Connection connection, FlightTimeLocation first,
-            FlightTimeLocation second) throws SQLException {
+                                                     FlightTimeLocation second) throws SQLException {
         try (PreparedStatement stmt = connection
                 .prepareStatement("SELECT flight_id FROM events WHERE flight_id = ? AND other_flight_id = ?")) {
             stmt.setInt(1, first.flightId);

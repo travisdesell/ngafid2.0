@@ -7,12 +7,10 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-
 import java.util.ArrayList;
 
 public final class FixFlightTimes {
@@ -112,9 +110,9 @@ public final class FixFlightTimes {
                 // find the first non-null time entry
                 int start = 0;
                 while (start < minSize &&
-                        (dates.get(start) == null || dates.get(start).equals("") ||
-                                times.get(start) == null || times.get(start).equals("") ||
-                                offsets.get(start) == null || offsets.get(start).equals("")
+                        (dates.emptyAt(start)
+                                || times.emptyAt(start)
+                                || offsets.emptyAt(start)
                                 || offsets.get(start).equals("+19:00"))) {
 
                     start++;
@@ -130,9 +128,9 @@ public final class FixFlightTimes {
                 // find the last full date time offset entry row
                 int end = minSize - 1;
                 while (end >= 0 &&
-                        (dates.get(end) == null || dates.get(end).equals("") ||
-                                times.get(end) == null || times.get(end).equals("") ||
-                                offsets.get(end) == null || offsets.get(end).equals(""))) {
+                        (dates.emptyAt(end) ||
+                                times.emptyAt(end) ||
+                                offsets.emptyAt(end))) {
 
                     end--;
                 }

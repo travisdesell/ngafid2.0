@@ -4,19 +4,11 @@ import org.ngafid.common.Compression;
 import org.ngafid.common.NormalizedColumn;
 import org.ngafid.flights.Parameters.Unit;
 
+import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
-
-import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-import java.sql.ResultSet;
-
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
-import javax.sql.rowset.serial.SerialBlob;
 
 public final class StringTimeSeries {
 
@@ -103,7 +95,7 @@ public final class StringTimeSeries {
         this.timeSeries = timeSeries;
         validCount = 0;
         for (int i = 0; i < timeSeries.size(); i++) {
-            if (!timeSeries.get(i).equals("")) {
+            if (!emptyAt(i)) {
                 validCount++;
             }
         }
@@ -185,6 +177,11 @@ public final class StringTimeSeries {
 
     public String get(int i) {
         return timeSeries.get(i);
+    }
+
+    public boolean emptyAt(int i) {
+        String value = get(i);
+        return value == null || value.isEmpty();
     }
 
     public String getName() {
