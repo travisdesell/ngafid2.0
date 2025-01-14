@@ -5,16 +5,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import io.javalin.http.Context;
 import org.ngafid.Database;
 
 import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;
 
-import spark.Request;
-
 public class Navbar {
-    public static String getJavascript(Request request) {
-        User user = request.session().attribute("user");
+    public static String getJavascript(Context ctx) {
+        User user = ctx.sessionAttribute("user");
 
         boolean fleetManager = false;
         boolean airSyncEnabled = false;
@@ -56,10 +55,13 @@ public class Navbar {
             // the database
         }
 
-        return "var admin = " + user.isAdmin() + ";" + "var aggregateView = " + user.hasAggregateView() + ";"
-                + "var fleetManager = " + fleetManager + ";" + "var waitingUserCount = " + waitingUserCount + ";"
-                + "var modifyTailsAccess = " + modifyTailsAccess + ";" + "var unconfirmedTailsCount = "
-                + unconfirmedTailsCount + ";" + "var airSyncEnabled = " + airSyncEnabled + ";" + "var isUploader = "
-                + hasUploadAccess + ";";
+        return "var admin = " + user.isAdmin() + ";"
+                + "var aggregateView = " + user.hasAggregateView() + ";"
+                + "var fleetManager = " + fleetManager + ";"
+                + "var waitingUserCount = " + waitingUserCount + ";"
+                + "var modifyTailsAccess = " + modifyTailsAccess + ";"
+                + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
+                + "var airSyncEnabled = " + airSyncEnabled + ";"
+                + "var isUploader = " + hasUploadAccess + ";";
     }
 }

@@ -627,7 +627,7 @@ class Group extends React.Component {
             error : function(jqXHR, textStatus, errorThrown) {
             },   
             async: false 
-        });  
+        });
 
         return storedFilters;
     }

@@ -365,7 +365,7 @@ class UploadsPage extends React.Component {
             xhr.open('POST', '/protected/new_upload');
             xhr.onload = function() {
                 
-                // console.log("New upload response: " + xhr.responseText);
+                 console.log("New upload response: " + xhr.responseText);
                 var response = JSON.parse(xhr.responseText);
 
                 var filename = (file.webkitRelativePath || file.fileName || file.name);

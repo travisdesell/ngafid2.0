@@ -1,5 +1,7 @@
 package org.ngafid.flights;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -11,9 +13,13 @@ import java.util.logging.Logger;
 public class UploadError {
     private static final Logger LOG = Logger.getLogger(UploadError.class.getName());
 
+    @JsonProperty
     private int id;
+    @JsonProperty
     private int uploadId;
+    @JsonProperty
     private String message;
+    @JsonProperty
     private String stackTrace;
 
     public static void insertError(Connection connection, int uploadId, String message) throws SQLException {

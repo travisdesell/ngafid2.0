@@ -205,7 +205,7 @@ public enum SendEmail {
         }
     }
 
-    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject,
+    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
                                  String body, EmailType emailType) throws SQLException {
 
         // Send the email with no existing connection
@@ -216,7 +216,7 @@ public enum SendEmail {
 
     }
 
-    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject,
+    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
                                  String body, EmailType emailType, Connection connection) throws SQLException {
 
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);

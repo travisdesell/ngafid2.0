@@ -13,8 +13,6 @@ import java.util.zip.*;
 import java.util.Enumeration;
 import java.util.Optional;
 
-import spark.utils.IOUtils;
-
 import org.ngafid.Database;
 
 public class CachedCSVWriter extends CSVWriter {
@@ -105,7 +103,7 @@ public class CachedCSVWriter extends CSVWriter {
      */
     public byte[] toBinaryData() throws IOException {
         InputStream inputStream = zipArchive.getInputStream(this.entry);
-        return IOUtils.toByteArray(inputStream);
+        return inputStream.readAllBytes();
     }
 
     /**
