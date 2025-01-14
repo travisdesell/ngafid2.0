@@ -5,7 +5,6 @@
  */
 package org.ngafid.flights;
 
-import java.lang.String;
 
 public interface XPlaneParameters {
     //the file extension
@@ -20,7 +19,7 @@ public interface XPlaneParameters {
     static String NT_ENDL = "I";
 
     //String constants
-    
+
     static String ENDL = "endl_type";
     static String COMM = "comm";
     static String ACFT = "acft";

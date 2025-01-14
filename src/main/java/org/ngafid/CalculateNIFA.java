@@ -1,18 +1,15 @@
 package org.ngafid;
 
-import org.ngafid.events.Event;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.calculations.TurnToFinal;
-import org.ngafid.flights.Airframes;
-import org.ngafid.flights.NIFA;
-
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import org.ngafid.events.Event;
+import org.ngafid.flights.Airframes;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.NIFA;
 
 public class CalculateNIFA {
     private static Connection connection = Database.getConnection();
@@ -24,7 +21,7 @@ public class CalculateNIFA {
 
         while (true) {
             connection = Database.resetConnection();
-            
+
             System.out.println("SIZE : " + Event.getAll(connection, 1).size());
 
             Instant start = Instant.now();

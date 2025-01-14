@@ -1,27 +1,21 @@
 package org.ngafid.flights;
 
-import org.ngafid.Database;
-import org.ngafid.flights.DoubleTimeSeries;
+import static org.ngafid.flights.XPlaneParameters.*;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
-
-import java.io.StringWriter;
-import java.io.PrintWriter;
-import java.io.IOException;
-
+import java.util.HashMap;
+import java.util.Map;
+import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.events.Event;
-
-import static org.ngafid.flights.XPlaneParameters.*;
 
 /**
  * A Class that creates X-Plane FDR files for X-Plane
@@ -35,7 +29,7 @@ public abstract class XPlaneExport{
     protected Flight flight;
     protected Map<String, DoubleTimeSeries> parameters;
 
-    private boolean useMSL;    
+    private boolean useMSL;
     private String startDateTime;
 
     /**
@@ -227,7 +221,7 @@ public abstract class XPlaneExport{
     /**
      * Fills the data block with the flight data for the version of X-Plane requested
      *
-     * @param buffer the {@link StringBuffer} to write to 
+     * @param buffer the {@link StringBuffer} to write to
      * @param scopes the scopes used by {@link MustacheFactory}
      */
     protected abstract void writeFlightData(StringBuffer buffer, Map<String, Object> scopes);
@@ -250,5 +244,3 @@ public abstract class XPlaneExport{
         return this.useMSL;
     }
 }
-
-    

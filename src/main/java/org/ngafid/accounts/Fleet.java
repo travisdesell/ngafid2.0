@@ -3,9 +3,8 @@ package org.ngafid.accounts;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
-
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -80,7 +79,7 @@ public class Fleet {
 
     /**
      * Populates the list of users with access to this fleet
-     * 
+     *
      * @param connection is a connection to the mysql database.
      * @param populatorId is the id of the user whose populating the list of user for this fleet. we should not add this user to the list (or get them from the database) as it might end up in an infinite loop.
      */
@@ -185,7 +184,7 @@ public class Fleet {
         String queryString = "SELECT id FROM fleet";
 
         List<Fleet> fleets = new ArrayList<>();
-        
+
         try {
             PreparedStatement ps = connection.prepareStatement(queryString);
 

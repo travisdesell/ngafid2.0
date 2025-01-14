@@ -22,7 +22,7 @@ public class GeoHash {
     public static String getGeoHash(double latitude, double longitude) {
         return decimalFormat.format(latitude) + decimalFormat.format(longitude);
     }
-    
+
 
     public static String[] getNearbyGeoHashes(double latitude, double longitude) {
         String latHash = decimalFormat.format(latitude);

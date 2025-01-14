@@ -1,34 +1,18 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.HashMap;
-
-import java.sql.Connection;
-import java.sql.SQLException;
 
 import com.google.gson.Gson;
-
-import spark.Route;
+import java.sql.Connection;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.accounts.User;
+import org.ngafid.accounts.UserEmailPreferences;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
 import spark.Spark;
-
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.UserPreferences;
-import org.ngafid.accounts.UserEmailPreferences;
-import org.ngafid.flights.Tail;
-import org.ngafid.flights.Tails;
 
 public class GetUserEmailPreferences implements Route {
 
@@ -49,7 +33,7 @@ public class GetUserEmailPreferences implements Route {
 
     public GetUserEmailPreferences(Gson gson) {
         this.gson = gson;
-        LOG.info("get " + this.getClass().getName() + " initalized");   
+        LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
     @Override
@@ -65,7 +49,7 @@ public class GetUserEmailPreferences implements Route {
 
 
         int fleetUserID = -1;
-        
+
         if (handleFetchType.equals("HANDLE_FETCH_USER")) {              //Fetching Session User...
             fleetUserID = sessionUser.getId();
         } else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) {    //Fetching a Manager's Fleet User...
@@ -91,7 +75,7 @@ public class GetUserEmailPreferences implements Route {
             response.status(500);
             return gson.toJson(new ErrorResponse(se));
         }
-    
+
     }
 
 }

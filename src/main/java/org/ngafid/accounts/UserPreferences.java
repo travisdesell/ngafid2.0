@@ -1,8 +1,8 @@
 package org.ngafid.accounts;
 
-import java.util.List;
-
 import static org.ngafid.flights.calculations.Parameters.*;
+
+import java.util.List;
 
 public class UserPreferences {
     private int userId, decimalPrecision;
@@ -39,7 +39,7 @@ public class UserPreferences {
     public List<String> getFlightMetrics() {
         return this.flightMetrics;
     }
-    
+
     public boolean update(int decimalPrecision) {
         boolean wasUpdated = false;
 

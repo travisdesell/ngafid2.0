@@ -1,24 +1,17 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Tails;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class PostUpdateTail implements Route {
     private static final Logger LOG = Logger.getLogger(PostUpdateTail.class.getName());
@@ -65,7 +58,7 @@ public class PostUpdateTail implements Route {
                 LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
                 Spark.halt(401, "User did not have access to view imports for this fleet.");
                 return null;
-            }   
+            }
 
             Tails.updateTail(connection, fleetId, systemId, tail);
 
@@ -78,4 +71,3 @@ public class PostUpdateTail implements Route {
         }
     }
 }
-

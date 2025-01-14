@@ -1,19 +1,15 @@
 package org.ngafid.events;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.util.logging.Logger;
 import java.util.*;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-
+import java.util.logging.Logger;
 import org.ngafid.filters.Filter;
-
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 
@@ -21,7 +17,7 @@ import org.ngafid.flights.DoubleTimeSeries;
 public class EventDefinition {
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
-    
+
     private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type";
 
     public static final int MIN_SEVERITY = 1;
@@ -217,7 +213,7 @@ public class EventDefinition {
             EventDefinition ed = new EventDefinition(resultSet);
             definitions.add(ed);
         }
-        
+
         statement.close();
         resultSet.close();
 
@@ -226,14 +222,14 @@ public class EventDefinition {
         return definitions;
     }
 
-    
+
     private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
 
     public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
         if (EVENT_DEFINITION_ID_TO_NAME == null) {
             String query = "SELECT id, name FROM event_definitions";
             PreparedStatement ps = connection.prepareStatement(query);
-            
+
             ResultSet resultSet = ps.executeQuery();
 
             EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
@@ -414,7 +410,7 @@ public class EventDefinition {
 
 
     /**
-     * Gets the severity value for this event definition at time 
+     * Gets the severity value for this event definition at time
      *
      * @param columns is an array of DoubleTimeSeries for each column of data used to calculate this event
      * @param i is the time step the severity is being calculated for
@@ -799,7 +795,7 @@ public class EventDefinition {
     public String toHumanReadable() {
         if (this.id < 0) {
             String humanReadableStr = filter.toHumanReadable();
-            
+
             return (humanReadableStr.matches("^[AEIOU].*") ? "An " : "A ") + humanReadableStr;
         }
 

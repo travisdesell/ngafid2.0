@@ -1,27 +1,20 @@
 package org.ngafid.routes;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.accounts.User;
+import org.ngafid.common.*;
+import org.ngafid.filters.Filter;
+import org.ngafid.flights.Flight;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
 import spark.Spark;
-
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-import org.ngafid.flights.Flight;
-import org.ngafid.common.*;
-
-import org.ngafid.filters.Filter;
 
 public class PostFlights implements Route {
     private static final Logger LOG = Logger.getLogger(PostFlights.class.getName());
@@ -99,7 +92,7 @@ public class PostFlights implements Route {
              *
              * Flight Number
              * Flight Length (valid data points)
-             * Start Date and Time 
+             * Start Date and Time
              * End Date and Time
              * Number Airports Visited
              * Number of tags associated

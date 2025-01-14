@@ -1,39 +1,30 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import java.util.logging.Logger;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
-import org.ngafid.common.TimeUtils;
-import org.ngafid.flights.StringTimeSeries;
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import com.google.gson.Gson;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.DoubleTimeSeries;
-
-import java.util.*;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.StringTimeSeries;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class GetNgafidCesium implements Route {
     private static final Logger LOG = Logger.getLogger(GetNgafidCesium.class.getName());
@@ -293,4 +284,3 @@ public class GetNgafidCesium implements Route {
         return "";
     }
 }
-

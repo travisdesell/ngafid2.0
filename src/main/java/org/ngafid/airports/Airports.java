@@ -2,14 +2,12 @@ package org.ngafid.airports;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.ngafid.common.MutableDouble;
 
 
@@ -36,7 +34,7 @@ public class Airports {
         System.out.println("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
 
         AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
-        
+
         //AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
 
         //RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
@@ -137,7 +135,7 @@ public class Airports {
                 airport.addRunway(runway);
                 //System.out.println("Adding " + runway + " to " + airport);
              }
- 
+
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

@@ -1,30 +1,19 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
+import java.util.logging.Logger;
 import javax.servlet.MultipartConfigElement;
-import javax.servlet.http.Part;
-
-import spark.Route;
+import org.ngafid.Database;
+import org.ngafid.accounts.User;
+import org.ngafid.flights.Upload;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
-
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-
-import org.ngafid.accounts.User;
-
-import org.ngafid.flights.Upload;
 
 public class PostNewUpload implements Route {
     private static final Logger LOG = Logger.getLogger(PostNewUpload.class.getName());
@@ -90,7 +79,7 @@ public class PostNewUpload implements Route {
 
             ErrorResponse errorResponse = new ErrorResponse("File Upload Failure", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
             return gson.toJson(errorResponse);
-        }   
+        }
 
 
         //options:
@@ -108,10 +97,10 @@ public class PostNewUpload implements Route {
 
             if (!resultSet.next()) {
                 //  1. file does not exist, insert into database -- start upload
-                String chunkStatus = ""; 
+                String chunkStatus = "";
                 for (int i = 0; i < numberChunks; i++) {
                     chunkStatus += '0';
-                }   
+                }
 
                 query = connection.prepareStatement("INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, filename = ?, identifier = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = 0, chunk_status = ?, status = 'UPLOADING', start_time = now()");
                 query.setInt(1, uploaderId);
@@ -156,6 +145,3 @@ public class PostNewUpload implements Route {
         }
     }
 }
-
-
-

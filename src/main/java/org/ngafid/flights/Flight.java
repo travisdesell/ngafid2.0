@@ -1,68 +1,49 @@
 package org.ngafid.flights;
 
-import java.io.*;
-import java.sql.*;
-import java.text.DateFormat;
-import java.time.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import java.util.Iterator;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.Calendar;
-
-// XML stuff.
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.DocumentBuilder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.NoSuchFileException;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
-import org.ngafid.WebServer;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
+import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.*;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 import javax.xml.bind.DatatypeConverter;
-
-import org.ngafid.common.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.ngafid.Database;
-import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
-import org.ngafid.terrain.TerrainCache;
-
+import org.ngafid.common.*;
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.calculations.*;
-
-import static org.ngafid.flights.calculations.Parameters.*;
+import org.ngafid.terrain.TerrainCache;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -268,8 +249,8 @@ public class Flight {
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
-        
-        
+
+
     }
 
     /**
@@ -510,7 +491,7 @@ public class Flight {
     }
 
     /**
-     * Gets the total number flight seconds NGAFID. 
+     * Gets the total number flight seconds NGAFID.
      *
      * @param connection is the database connection
      * @return the number of flight hours for the entire NGAFID.
@@ -520,7 +501,7 @@ public class Flight {
     }
 
     /**
-     * Gets the total number flight seconds NGAFID. 
+     * Gets the total number flight seconds NGAFID.
      *
      * @param connection is the database connection
      * @param is         the filter to select the flights, can be null.
@@ -1795,7 +1776,7 @@ public class Flight {
 
         System.out.println("\tdate size: " + dateSize + ", time size: " + timeSize + ", offset size: " + offsetSize);
 
-        //get the minimum sized length of each of these series, they should all be the same but 
+        //get the minimum sized length of each of these series, they should all be the same but
         //if the last column was cut off it might not be the case
         int minSize = dateSize;
         if (minSize < timeSize) minSize = timeSize;
@@ -2202,7 +2183,7 @@ public class Flight {
 
     private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
-        //data recorders. depending on the airframe/flight data recorder 
+        //data recorders. depending on the airframe/flight data recorder
         //we should specify these.
 
         try {
@@ -2584,7 +2565,7 @@ public class Flight {
 
         if (spdnodes.item(0) == null)
           throw new FatalFlightFileException("GPX file is missing GndSpd.");
-        
+
         if (!(dates.getLength() == datanodes.getLength() &&
                 dates.getLength() == elenodes.getLength() &&
                 dates.getLength() == spdnodes.getLength())) {
@@ -3483,7 +3464,7 @@ public class Flight {
         this.uploadId = uploadId;
 
         try {
-            //first check and see if the airframe and tail number already exist in the database for this 
+            //first check and see if the airframe and tail number already exist in the database for this
             //flight
             airframeNameId = Airframes.getNameId(connection, airframeName);
             airframeTypeId = Airframes.getTypeId(connection, airframeType);

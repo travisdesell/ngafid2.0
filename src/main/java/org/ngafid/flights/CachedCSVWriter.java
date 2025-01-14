@@ -2,21 +2,15 @@ package org.ngafid.flights;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import java.util.zip.*;
-
 import java.util.Enumeration;
 import java.util.Optional;
-
-import spark.utils.IOUtils;
-
+import java.util.zip.*;
 import org.ngafid.Database;
+import spark.utils.IOUtils;
 
 public class CachedCSVWriter extends CSVWriter {
     private File zipFile;
@@ -85,20 +79,20 @@ public class CachedCSVWriter extends CSVWriter {
 
             if (entry.getName().equals(filename)) {
                 this.entry = entry;
-            } 
-        } 
+            }
+        }
     }
 
     /**
      * Gets the CSV file as primitive (binary) data
      *
-     * @return a primitive array of bytes 
+     * @return a primitive array of bytes
      */
     public byte [] toBinaryData() throws IOException {
         InputStream inputStream = zipArchive.getInputStream(this.entry);
         return IOUtils.toByteArray(inputStream);
     }
-        
+
     /**
      * Accessor method for the {@link ZipEntry} associated with this flight
      *
@@ -142,8 +136,8 @@ public class CachedCSVWriter extends CSVWriter {
             if (entry.getName().equals(filename)) {
                 zipArchive.close();
                 return entry;
-            } 
-        } 
+            }
+        }
 
         zipArchive.close();
         return null;

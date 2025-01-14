@@ -1,23 +1,10 @@
 package org.ngafid;
 
-import java.io.InputStream;
-import java.io.IOException;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
-
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
 import org.ngafid.events.EventStatistics;
-import org.ngafid.flights.calculations.TurnToFinal;
 
 public class TestEventCounts {
     private static Connection connection = Database.getConnection();

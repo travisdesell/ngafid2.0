@@ -1,26 +1,14 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.events.EventDefinition;
 import spark.Request;
 import spark.Response;
-import spark.Session;
-import spark.Spark;
-
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-
-import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.Flight;
-import org.ngafid.filters.Filter;
+import spark.Route;
 
 public class PostCreateEvent implements Route {
     private static final Logger LOG = Logger.getLogger(PostCreateEvent.class.getName());

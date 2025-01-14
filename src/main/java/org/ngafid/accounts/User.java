@@ -2,21 +2,16 @@ package org.ngafid.accounts;
 
 
 import java.sql.*;
-
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.logging.Logger;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
+import java.util.logging.Logger;
 import org.apache.commons.lang.RandomStringUtils;
 import org.ngafid.SendEmail;
-import org.ngafid.accounts.EmailType;
-import org.ngafid.filters.Filter;
 import org.ngafid.flights.Tails;
 
-import com.google.gson.Gson;
 
 
 public class User {
@@ -267,7 +262,7 @@ public class User {
         if (resultSet.next()) {
             decimalPrecision = resultSet.getInt(1);
         }
-            
+
         UserPreferences userPreferences = null;
 
         query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
@@ -451,7 +446,7 @@ public class User {
         userTarget.setEmailPreferences(updatedEmailPreferences);
 
         return updatedEmailPreferences;
-    
+
     }
 
     public void setEmailPreferences(UserEmailPreferences updatedEmailPreferences) {
@@ -645,7 +640,7 @@ public class User {
         query.executeUpdate();
     }
 
- 
+
     /**
      * Updates the password for a user in the database.
      *
@@ -673,7 +668,7 @@ public class User {
         LOG.info(query.toString());
         query.executeUpdate();
     }
- 
+
     /**
      * Updates the password for a user in the database.
      *
@@ -804,7 +799,7 @@ public class User {
 
         if (user.fleetAccess.isManager()) {
             user.fleet.populateUsers(connection, user.getId());
-        }   
+        }
 
         return user;
     }

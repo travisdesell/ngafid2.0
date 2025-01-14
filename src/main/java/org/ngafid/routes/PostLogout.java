@@ -1,24 +1,12 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import com.google.gson.Gson;
-
-import spark.Route;
+import java.util.logging.Logger;
+import org.ngafid.accounts.User;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
-
-import org.ngafid.Database;
-import org.ngafid.accounts.AccountException;
-import org.ngafid.accounts.FleetAccess;
-import org.ngafid.accounts.User;
 
 public class PostLogout implements Route {
     private static final Logger LOG = Logger.getLogger(PostLogout.class.getName());
@@ -61,4 +49,3 @@ public class PostLogout implements Route {
         return gson.toJson(new LogoutResponse(true, false, false, "Successfully logged out.", null));
     }
 }
-

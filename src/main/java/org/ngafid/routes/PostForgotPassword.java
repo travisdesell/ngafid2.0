@@ -1,15 +1,14 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import spark.Request;
 import spark.Response;
 import spark.Route;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.logging.Logger;
 
 public class PostForgotPassword implements Route {
 

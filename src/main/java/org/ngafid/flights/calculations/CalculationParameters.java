@@ -6,11 +6,10 @@
 
 package org.ngafid.flights.calculations;
 
-import java.util.Map;
 
 public interface CalculationParameters {
     public static final double STD_PRESS_INHG = 29.92;
-    public static final double COMP_CONV = (double) (Math.PI / 180); 
+    public static final double COMP_CONV = (double) (Math.PI / 180);
 
     /**
      * Critical Values
@@ -42,7 +41,7 @@ public interface CalculationParameters {
     public static final String ALT_AGL = "AltAGL";
     public static final String ALT_MSL = "AltMSL";
     public static final String ALT_B = "AltB";
-    public static final String AOA_SIMPLE = "AOASimple"; 
+    public static final String AOA_SIMPLE = "AOASimple";
     public static final String E1_RPM = "E1 RPM";
     public static final String TAS_FTMIN = "True Airspeed(ft/min)";
     public static final String STALL_PROB = "Stall Index";
@@ -67,11 +66,11 @@ public interface CalculationParameters {
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      *
-     * @param ALT_B is used as the time reference 
+     * @param ALT_B is used as the time reference
      * @param VSPD not needed for cases where VSpd is drived from AltB
      */
     public static final String [] STALL_DEPENDENCIES = {PITCH, /*VSPD,*/ IAS, BARO_A, OAT, ALT_B};
-    
+
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      */

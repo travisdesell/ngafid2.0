@@ -1,31 +1,16 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.sql.Connection;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
-import org.ngafid.accounts.UserPreferences;
-import org.ngafid.flights.DoubleTimeSeries;
-
-import static org.ngafid.flights.calculations.Parameters.*;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 public class PostUserPreferencesMetric implements Route {
     private static final Logger LOG = Logger.getLogger(PostUserPreferencesMetric.class.getName());
@@ -54,7 +39,7 @@ public class PostUserPreferencesMetric implements Route {
 
             if (type.equals("addition")) {
                 User.addUserPreferenceMetric(connection, userId, metric);
-            } else { 
+            } else {
                 User.removeUserPreferenceMetric(connection, userId, metric);
             }
 

@@ -1,12 +1,9 @@
 package org.ngafid.flights;
 
+import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.*;
-import java.sql.Connection;
-
 import org.ngafid.events.Event;
-import org.ngafid.flights.*;
 
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;

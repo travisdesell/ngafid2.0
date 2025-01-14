@@ -8,9 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.zip.*;
-
 import javax.net.ssl.HttpsURLConnection;
-
 import org.ngafid.CalculateExceedences;
 import org.ngafid.Database;
 import org.ngafid.UploadException;
@@ -34,7 +32,7 @@ public class AirSyncImport {
     private static final String STATUS_WARN = "WARNING";
 
     /* The airsync uploader should be the same across all fleets!
-     * There should only be one dummy 'airsync user' in each NGAFID 
+     * There should only be one dummy 'airsync user' in each NGAFID
      * instance's database! See db/update_tables.php for more info. */
     private static int AIRSYNC_UPLOADER_ID = -1;
 
@@ -172,12 +170,12 @@ public class AirSyncImport {
                 ZipOutputStream zipOutputStream = new ZipOutputStream(bos);
 
                 if (file.exists()) {
-                    //If the zip archive already exists for this aircraft 
+                    //If the zip archive already exists for this aircraft
                     //we must take the exisitng archive and append to it
                     //File tempInput = new File(fileName + ".temp");
                     //if (bos.)  {
                     ZipFile input = new ZipFile(file);
-                    
+
                     Enumeration<? extends ZipEntry> entries = input.entries();
 
                     while (entries.hasMoreElements()) {
@@ -221,7 +219,7 @@ public class AirSyncImport {
                 fos.write(buf);
                 fos.close();
 
-                // The identifier of any AirSync upload will be unique! 
+                // The identifier of any AirSync upload will be unique!
                 // NOTE: multiple imports will reside in one upload.
                 // Format: AS-<ngafid_fleet_id>.<airsync_aircraft_id>-<UPLOAD_YYYY>-<UPLOAD_MM>
                 Flight flight = new Flight(this.fleet.getId(), csvName, new ByteArrayInputStream(this.data), connection);
@@ -236,7 +234,7 @@ public class AirSyncImport {
                 this.createImport(connection, flight);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
-			} catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+            } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
                 UploadException ue = new UploadException(e.getMessage(), e, csvName);
                 try {
                     FlightError.insertError(connection, uploadId, ue.getFilename(), ue.getMessage());
@@ -246,7 +244,7 @@ public class AirSyncImport {
                 }
             } catch (Exception e) {
                 AirSync.crashGracefully(e);
-			}
+            }
         } else {
             try {
                 addErrorFlight(connection, identifier);
@@ -301,7 +299,7 @@ public class AirSyncImport {
             int nErr = resultSet.getInt(5);
             int nWarn = resultSet.getInt(6);
 
-            // This represents the "timestamp_uploaded" on the AirSync 
+            // This represents the "timestamp_uploaded" on the AirSync
             // side of things
             LocalDateTime latestStartTime = resultSet.getTimestamp(7).toLocalDateTime();
 
@@ -331,9 +329,9 @@ public class AirSyncImport {
             query.executeUpdate();
         } else {
             sql = "INSERT INTO uploads (status, fleet_id, filename, identifier, size_bytes, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights, uploader_id, number_chunks, uploaded_chunks, chunk_status, md5_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            
+
             if (!query.isClosed()) {
-                // Make sure we close our resources before 
+                // Make sure we close our resources before
                 // we proceed with another query.
                 query.close();
             }
@@ -356,7 +354,7 @@ public class AirSyncImport {
             query.setInt(12, -2);
             query.setInt(13, 0);
             query.setInt(14, 0);
-        
+
             //TODO: changeme when we get the MD5 hash from AirSync
             query.setInt(15, this.id);
 
@@ -375,7 +373,7 @@ public class AirSyncImport {
 
     /**
      * Creates a record of this import in the database
-     * 
+     *
      * @param connection the DBMS connection
      * @param flight the {@link Flight} that came from this import
      *
@@ -388,7 +386,7 @@ public class AirSyncImport {
         query.setInt(1, this.id);
         query.setString(2, this.aircraft.getTailNumber());
 
-        //NOTE: this is the time that we recieve the CSV, not the time 
+        //NOTE: this is the time that we recieve the CSV, not the time
         //that AirSync recieves it. That will be denoted in the start_time
         //column in `uploads`
         query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
@@ -545,11 +543,11 @@ public class AirSyncImport {
 
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());     
+            connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());
 
             is = connection.getInputStream();
             byte [] respRaw = is.readAllBytes();
-            
+
             String resp = new String(respRaw).replaceAll("file_url", "fileUrl");
 
             LogResponse log = WebServer.gson.fromJson(resp, LogResponse.class);

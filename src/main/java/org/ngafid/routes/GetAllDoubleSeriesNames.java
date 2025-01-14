@@ -1,23 +1,18 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.util.ArrayList;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 /**
  * This class provides all the names of {@link DoubleTimeSeries} in the NGAFID
@@ -77,4 +72,3 @@ public class GetAllDoubleSeriesNames implements Route {
         }
     }
 }
-

@@ -1,30 +1,11 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.Optional;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import com.google.gson.Gson;
-
-import spark.Route;
+import java.util.logging.Logger;
 import spark.Request;
 import spark.Response;
-import spark.Session;
-import spark.Spark;
+import spark.Route;
 
-import org.ngafid.Database;
-import org.ngafid.common.FlightTag;
-import org.ngafid.accounts.User;
-import org.ngafid.events.Event;
-import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Flight;
 
 public class PostNumberFlights implements Route {
     private static final Logger LOG = Logger.getLogger(PostNumberFlights.class.getName());

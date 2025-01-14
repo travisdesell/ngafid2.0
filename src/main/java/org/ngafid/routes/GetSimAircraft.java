@@ -4,21 +4,18 @@
  */
 package org.ngafid.routes;
 
-import java.util.logging.Logger;
-import java.util.List;
 import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
 import java.sql.SQLException;
-
+import java.util.List;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class GetSimAircraft implements Route {
     private static final Logger LOG = Logger.getLogger(GetSimAircraft.class.getName());

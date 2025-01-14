@@ -1,22 +1,17 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
-
+import java.io.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
 import spark.*;
 import spark.utils.IOUtils;
-
-import java.io.*;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Base64;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 
 public class GetUpload implements Route {

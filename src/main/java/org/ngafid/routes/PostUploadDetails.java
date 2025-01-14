@@ -1,21 +1,17 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-
+import java.util.ArrayList;
+import java.util.logging.Logger;
 import org.ngafid.Database;
-import org.ngafid.flights.UploadError;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.FlightWarning;
+import org.ngafid.flights.UploadError;
+import spark.Request;
+import spark.Response;
+import spark.Route;
 
 public class PostUploadDetails implements Route {
     private static final Logger LOG = Logger.getLogger(PostUploadDetails.class.getName());
@@ -58,4 +54,3 @@ public class PostUploadDetails implements Route {
         }
     }
 }
-

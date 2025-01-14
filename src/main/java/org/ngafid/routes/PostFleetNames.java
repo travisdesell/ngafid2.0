@@ -1,20 +1,16 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+import org.ngafid.Database;
 import spark.Request;
 import spark.Response;
-
-import org.ngafid.Database;
+import spark.Route;
 
 public class PostFleetNames implements Route {
     private static final Logger LOG = Logger.getLogger(PostFleetNames.class.getName());
@@ -46,4 +42,3 @@ public class PostFleetNames implements Route {
         }
     }
 }
-

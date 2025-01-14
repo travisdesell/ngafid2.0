@@ -1,34 +1,22 @@
 package org.ngafid;
 
-import org.ngafid.Database;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.TreeSet;
 import org.ngafid.events.Event;
+import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
+import org.ngafid.filters.Conditional;
+import org.ngafid.filters.Filter;
+import org.ngafid.filters.Pair;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collections;
-import java.util.TreeSet;
-
-import org.ngafid.events.EventDefinition;
-import org.ngafid.events.EventStatistics;
-
-import org.ngafid.filters.Conditional;
-import org.ngafid.filters.Filter;
-import org.ngafid.filters.Pair;
 
 public class CalculateExceedences {
 
@@ -377,7 +365,7 @@ public class CalculateExceedences {
                     CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
 
                     ArrayList<Flight> flights = null;
-                    
+
                     if (currentDefinition.getAirframeNameId() == 0) {
                         flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
                     } else {

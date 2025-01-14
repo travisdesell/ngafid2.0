@@ -1,29 +1,20 @@
 package org.ngafid.routes;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.ngafid.Database;
-import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.calculations.TurnToFinal;
 import spark.*;
-
-import javax.xml.crypto.Data;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class PostTurnToFinal implements Route {
     private static final Logger LOG = Logger.getLogger(PostTurnToFinal.class.getName());

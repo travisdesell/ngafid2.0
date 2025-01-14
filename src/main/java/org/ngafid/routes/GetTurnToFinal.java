@@ -5,26 +5,23 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-import org.ngafid.events.Event;
-import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.*;
-import spark.Request;
-import spark.Response;
-import spark.Route;
-import spark.Session;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
+import org.ngafid.events.Event;
+import org.ngafid.flights.*;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 public class GetTurnToFinal implements Route {
     private static final Logger LOG = Logger.getLogger(GetTurnToFinal.class.getName());

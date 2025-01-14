@@ -1,33 +1,16 @@
 package org.ngafid.flights;
 
-import org.ngafid.common.Compression;
-import org.ngafid.flights.SeriesNames;
-import org.ngafid.flights.TypeNames;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
 import java.sql.ResultSet;
-
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
-
 import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.common.Compression;
 
 
 public class StringTimeSeries {
@@ -120,7 +103,7 @@ public class StringTimeSeries {
         byte[] bytes = values.getBytes(1, (int)values.length());
         //System.out.println("values.length: " + (int)values.length());
         values.free();
-        
+
         // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String> objects into the StringTimeSeries cache.
         this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
     }
@@ -229,4 +212,3 @@ public class StringTimeSeries {
         return newSeries;
     }
 }
-

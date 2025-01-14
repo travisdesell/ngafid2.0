@@ -1,11 +1,9 @@
 package org.ngafid.flights;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -32,7 +30,7 @@ public class FlightWarning {
 
     public static List<FlightWarning> getWarningsByFlight(Connection connection, int flightId) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.id = ? AND flight_warnings.flight_id = flights.id");
-                
+
         query.setInt(1, flightId);
         ResultSet resultSet = query.executeQuery();
 
@@ -49,7 +47,7 @@ public class FlightWarning {
 
     public static ArrayList<FlightWarning> getFlightWarnings(Connection connection, int uploadId) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.upload_id = ? AND flight_warnings.flight_id = flights.id");
-                
+
         query.setInt(1, uploadId);
         ResultSet resultSet = query.executeQuery();
 
@@ -63,7 +61,7 @@ public class FlightWarning {
         query.close();
         return warnings;
     }
-        
+
     /**
      * @param connection is the connection to the database
      * @param fleetId is the fleet's id
@@ -72,7 +70,7 @@ public class FlightWarning {
      */
     public static int getCount(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT sum(n_warning_flights) FROM uploads";
-        
+
         if (fleetId > 0)
             queryString += " WHERE fleet_id = " + fleetId;
 

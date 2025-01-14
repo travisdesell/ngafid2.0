@@ -1,18 +1,15 @@
 package org.ngafid.flights;
 
-import java.util.*;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.util.*;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
-
-import java.util.ArrayList;
-import java.util.logging.Logger;
 
 
 public class Itinerary {

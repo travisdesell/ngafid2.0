@@ -1,18 +1,15 @@
 package org.ngafid.accounts;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
-
 import javax.net.ssl.HttpsURLConnection;
-
 import org.ngafid.WebServer;
 import org.ngafid.flights.AirSyncEndpoints;
-
-import com.google.gson.Gson;
 
 /**
  * This class represents the authentication information for an AirSync-enabled fleet
@@ -67,7 +64,7 @@ public class AirSyncAuth {
 
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));     
+            connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));
 
             InputStream is = connection.getInputStream();
             byte [] respRaw = is.readAllBytes();

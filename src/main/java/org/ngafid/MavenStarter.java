@@ -1,14 +1,10 @@
 package org.ngafid;
 
-import java.util.Map;
 
-import org.apache.maven.cli.MavenCli;
-
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.apache.maven.cli.MavenCli;
 
 public class MavenStarter {
 
@@ -70,4 +66,3 @@ public class MavenStarter {
         }
     }
 }
-

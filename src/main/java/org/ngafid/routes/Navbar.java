@@ -4,12 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import org.ngafid.Database;
-
 import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;
-
 import spark.Request;
 
 public class Navbar {
@@ -56,12 +53,12 @@ public class Navbar {
             //don't do anything so the navbar still displays even if there is an issue with the database
         }
 
-        return  "var admin = " + user.isAdmin() + ";" 
-            +   "var aggregateView = " + user.hasAggregateView() + ";" 
+        return  "var admin = " + user.isAdmin() + ";"
+            +   "var aggregateView = " + user.hasAggregateView() + ";"
             +   "var fleetManager = " + fleetManager + ";"
             +   "var waitingUserCount = " + waitingUserCount + ";"
-            +   "var modifyTailsAccess = " + modifyTailsAccess + ";" 
-            +   "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";" 
+            +   "var modifyTailsAccess = " + modifyTailsAccess + ";"
+            +   "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
             +   "var airSyncEnabled = " + airSyncEnabled + ";"
             +   "var uploader = " + hasUploadAccess + ";";
     }

@@ -1,41 +1,26 @@
 package org.ngafid.routes;
 
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
+import com.google.gson.Gson;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.HashMap;
-
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
-
-
+import java.util.HashMap;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Upload;
-import org.ngafid.flights.Itinerary;
-import org.ngafid.flights.Tails;
-
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 
 public class GetCreateEvent implements Route {

@@ -3,9 +3,8 @@ package org.ngafid.flights;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
-
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +24,7 @@ public class Airframes {
         String key = airframeId + "-" + fleetId;
 
         //this was already inserted to the database
-        if (fleetAirframes.contains(key)) return; 
+        if (fleetAirframes.contains(key)) return;
         else {
             String queryString = "REPLACE INTO fleet_airframes SET fleet_id = ?, airframe_id = ?";
             PreparedStatement query = connection.prepareStatement(queryString);

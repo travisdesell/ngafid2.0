@@ -1,34 +1,18 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.sql.Connection;
+import java.util.HashMap;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
-import org.ngafid.accounts.UserPreferences;
-import org.ngafid.accounts.UserEmailPreferences;
-import org.ngafid.flights.DoubleTimeSeries;
-
-import static org.ngafid.flights.calculations.Parameters.*;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 
 
@@ -72,7 +56,7 @@ public class PostUpdateUserEmailPreferences implements Route {
         LOG.severe("INVALID ACCESS: handleUpdateType not specified.");
         Spark.halt(401, "handleUpdateType not specified.");
         return null;
-    
+
     }
 
 
@@ -90,7 +74,7 @@ public class PostUpdateUserEmailPreferences implements Route {
             }
 
             emailTypesUser.put( emailKey, Boolean.parseBoolean(request.queryParams(emailKey)) );
-        
+
         }
 
         try {
@@ -117,7 +101,7 @@ public class PostUpdateUserEmailPreferences implements Route {
             }
 
             emailTypesUser.put( emailKey, Boolean.parseBoolean(request.queryParams(emailKey)) );
-        
+
         }
 
         //Check to see if the logged in user can update access to this fleet

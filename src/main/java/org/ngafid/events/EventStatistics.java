@@ -1,23 +1,17 @@
 package org.ngafid.events;
 
-import org.ngafid.Database;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
-
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Stream;
-import java.util.stream.Collectors;
 import java.util.logging.Logger;
-
-
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.ngafid.Database;
 import org.ngafid.flights.Airframes;
 
 public class EventStatistics {
@@ -40,8 +34,8 @@ public class EventStatistics {
     }
 
     private static final String EVENT_COUNT_BASE_QUERY_PARAMS = """
-             SELECT COUNT(DISTINCT e.id) AS 
-                    event_count, 
+             SELECT COUNT(DISTINCT e.id) AS
+                    event_count,
                     COUNT(DISTINCT flights.id) as flight_count,
                     event_definition_id,
                     flights.fleet_id as fleet_id,
@@ -49,17 +43,17 @@ public class EventStatistics {
     """;
 
     private static final String EVENT_COUNT_BASE_QUERY_CONDITIONS = """
-               FROM events AS e 
-         INNER JOIN flights 
+               FROM events AS e
+         INNER JOIN flights
                  ON flights.id = e.flight_id
     """;
-    
+
     private static final String EVENT_COUNT_BASE_QUERY_GROUP_BY = """
            GROUP BY event_definition_id,
                     flights.airframe_id,
                     flights.fleet_id
     """;
-    
+
     private static final String EVENT_COUNT_BETWEEN_DATE_CLAUSE = """
               WHERE e.start_time BETWEEN ? AND ?
     """;
@@ -68,9 +62,9 @@ public class EventStatistics {
                   , YEAR(e.start_time) as year,
                     MONTH(e.start_time) as month
     """;
-    
+
     private static final String MONTHLY_EVENT_COUNT_QUERY_GROUP_BY = EVENT_COUNT_BASE_QUERY_GROUP_BY + """
-                  , YEAR(e.start_time), 
+                  , YEAR(e.start_time),
                     MONTH(e.start_time)
 
     """;
@@ -114,7 +108,7 @@ public class EventStatistics {
 
             String eventName = idToEventNameMap.get(eventDefinitionId);
             String airframeName = idToAirframeNameMap.get(airframeId);
-            
+
             EventCountsBuilder ec = eventCounts.computeIfAbsent(airframeName, EventCountsBuilder::new);
             ec.updateAggregate(eventName, flightCount, 0, eventCount);
             ec.setAggregateTotalFlights(eventName, fc.getAggregateCounts().get(airframeId));
@@ -152,10 +146,10 @@ public class EventStatistics {
 
         Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
         Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
-    
+
         FlightCounts fc = getFlightCounts(connection, startDate, endDate);
         Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts = new HashMap<>();
-   
+
         while (result.next()) {
             final int fleet = result.getInt("fleet_id");
             final int eventCount = result.getInt("event_count");
@@ -169,7 +163,7 @@ public class EventStatistics {
             final String date = LocalDate.of(year, month, 1).toString();
             final String eventName = idToEventNameMap.get(eventDefinitionId);
             final String airframeName = idToAirframeNameMap.get(airframeId);
-            
+
             MonthlyEventCountsBuilder mec = eventCounts
                 .computeIfAbsent(eventName, k -> new HashMap<>())
                 .computeIfAbsent(airframeName, k -> new MonthlyEventCountsBuilder(airframeName, eventName, startDate, endDate));
@@ -183,7 +177,7 @@ public class EventStatistics {
         // Map<String, Map<String, MonthlyEventCounts>> monthlyEventCounts = new HashMap<>(eventCounts.size());
 
         // for (Map.Entry<String, Map<String, MonthlyEventCountsBuilder>> entry : eventCounts.entrySet()) {
-        //     Map<String, MonthlyEventCounts> 
+        //     Map<String, MonthlyEventCounts>
         // }
 
         return eventCounts
@@ -204,7 +198,7 @@ public class EventStatistics {
     }
 
     public static class FlightCounts {
-        
+
         // Maps airframeId to another map, which maps fleetId to the number of flights in that fleet.
         private Map<Integer, Map<Integer, Integer>> airframeToFleetCounts = new HashMap<>();
 
@@ -264,7 +258,7 @@ public class EventStatistics {
         ps.setString(2, endDate.toString());
 
         ResultSet results = ps.executeQuery();
-        
+
         FlightCounts counts = new FlightCounts(results);
 
         results.close();
@@ -639,7 +633,7 @@ public class EventStatistics {
             resultSet.close();
             preparedStatement.close();
 
-            //get number flights processed 
+            //get number flights processed
             if (airframeNameId == 0) {
                 query = "SELECT count(*) FROM flight_processed WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ?";
                 preparedStatement = connection.prepareStatement(query);
@@ -823,7 +817,7 @@ public class EventStatistics {
 
         public static int[] linearize(List<String> keys, HashMap<String, Integer> map) {
             int[] out = new int[keys.size()];
-            
+
             for (int i = 0; i < keys.size(); i++)
                 out[i] = map.getOrDefault(keys.get(i), 0);
 
@@ -853,11 +847,11 @@ public class EventStatistics {
         public final int[] flightsWithEventCounts;
         public final int[] totalFlightsCounts;
         public final int[] totalEventsCounts;
-        
+
         public final int[] aggregateFlightsWithEventCounts;
         public final int[] aggregateTotalFlightsCounts;
         public final int[] aggregateTotalEventsCounts;
-    
+
         public EventCountsWithAggregate(
             int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
             int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts, int[] aggregateTotalEventsCounts
@@ -875,14 +869,14 @@ public class EventStatistics {
     public static class MonthlyEventCounts extends EventCountsWithAggregate {
         public final String airframeName, eventName;
         public final List<String> dates;
-        
+
         public MonthlyEventCounts(
             String airframeName, String eventName, List<String> dates,
             int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
             int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts, int[] aggregateTotalEventsCounts
         ) {
             super(flightsWithEventCounts, totalFlightsCounts, totalEventsCounts, aggregateFlightsWithEventCounts, aggregateTotalFlightsCounts, aggregateTotalEventsCounts);
-            
+
             this.airframeName = airframeName;
             this.eventName = eventName;
             this.dates = dates;
@@ -898,7 +892,7 @@ public class EventStatistics {
         public MonthlyEventCountsBuilder(String airframeName, String eventName, LocalDate startDate, LocalDate endDate) {
             this.airframeName = airframeName;
             this.eventName = eventName;
-            
+
             // Create a date for each month between start date and end date.
             dates = Stream.iterate(startDate, date -> date.plusMonths(1))
                 .limit(ChronoUnit.MONTHS.between(startDate, endDate))
@@ -924,7 +918,7 @@ public class EventStatistics {
     public static class EventCounts extends EventCountsWithAggregate {
         public final String airframeName;
         public final List<String> names;
-        
+
         public EventCounts(
             String airframeName, List<String> names,
             int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
@@ -1272,4 +1266,3 @@ public class EventStatistics {
     //     return eventCounts;
     // }
 }
-

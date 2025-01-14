@@ -3,25 +3,17 @@ package org.ngafid;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.IOException;
-
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.ngafid.Database;
-import org.ngafid.accounts.EmailType;
-import org.ngafid.accounts.UserEmailPreferences;
-
 import java.util.*;
 import java.util.logging.Logger;
-
+import javax.activation.*;
 import javax.mail.*;
 import javax.mail.internet.*;
-import javax.activation.*;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.UserEmailPreferences;
 
 public class SendEmail {
 
@@ -78,7 +70,7 @@ public class SendEmail {
 
             File file = new File(NGAFID_EMAIL_INFO);
             BufferedReader bufferedReader = null;
-            
+
             //Email info file does not exit...
             if (!file.exists()) {
 
@@ -95,7 +87,7 @@ public class SendEmail {
                 } catch (IOException ie) {
                     LOG.severe("ERROR: Could not write default information to email file: " + NGAFID_EMAIL_INFO);
                 }
-                
+
                 LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + NGAFID_EMAIL_INFO + ".");
 
             } else {    //Email info file does exist...
@@ -151,12 +143,12 @@ public class SendEmail {
             System.out.println("Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
             return !(this.username == null || this.password == null);
         }
-    
+
     }
 
 
     public static void freeExpiredUnsubscribeTokens() {
-        
+
         Calendar calendar = Calendar.getInstance();
         java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
 
@@ -185,9 +177,9 @@ public class SendEmail {
     }
 
     private static String generateUnsubscribeToken(String recipientEmail, int userID) {
-        
+
         //Generate a random string
-        String token = UUID.randomUUID().toString().replace("-", "");        
+        String token = UUID.randomUUID().toString().replace("-", "");
 
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MONTH, EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS);
@@ -268,7 +260,7 @@ public class SendEmail {
             properties.setProperty("mail.smtp.starttls.enable", "true");
             properties.setProperty("mail.smtp.host", host);
             properties.setProperty("mail.smtp.port", "587");
-            properties.setProperty("mail.smtp.auth", "true");        
+            properties.setProperty("mail.smtp.auth", "true");
             properties.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
 
             // Get the default mail session object.
@@ -302,7 +294,7 @@ public class SendEmail {
                     } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {   //Check whether or not the emailType is enabled for the user
 
                         continue;
-                        
+
                     }
 
                     String bodyPersonalized = body;
@@ -328,8 +320,8 @@ public class SendEmail {
                     // Set Subject: header field
                     message.setSubject(subject);
                     message.setContent(bodyPersonalized, "text/html; charset=utf-8");
-                    
-                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));   
+
+                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
 
                     // Send the message to the current recipient
                     System.out.println("sending message!");
@@ -369,10 +361,10 @@ public class SendEmail {
         } else {
             LOG.severe("E-mail info not valid, continuing without sending.");
         }
-    
+
     }
 
-    public static void main(String [] args) {    
+    public static void main(String [] args) {
 
         /*
 
@@ -386,11 +378,11 @@ public class SendEmail {
 
         //  New email system does not support having no Email Type specified,
         //  so this won't work unless a test Email Type is added.
-        
+
         //  sendEmail(recipients, bccRecipients, "test NGAFID email", "testing testing 123", EmailType.TEST_EMAIL_TYPE);
-        
+
         */
-    
+
     }
 
 }

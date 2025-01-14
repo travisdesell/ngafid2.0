@@ -5,32 +5,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
-
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.Instant;
-import java.time.Period;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.time.temporal.TemporalAmount;
 import java.time.format.DateTimeFormatter;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,23 +20,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
-
-
-import org.ngafid.WebServer;
-
 import org.ngafid.common.TimeUtils;
-
 import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.CachedCSVWriter;
-import org.ngafid.flights.FlightAlreadyExistsException;
-import org.ngafid.flights.FatalFlightFileException;
-
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.UploadError;
-
-import org.ngafid.maintenance.MaintenanceRecord;
 import org.ngafid.maintenance.AircraftTimeline;
+import org.ngafid.maintenance.MaintenanceRecord;
 
 public class ExtractMaintenanceFlights {
     private static Connection connection = Database.getConnection();
@@ -128,7 +99,7 @@ public class ExtractMaintenanceFlights {
                         if (tailSet == null) {
                             tailSet = new ArrayList<MaintenanceRecord>();
                             recordsByTailNumber.put(record.getTailNumber(), tailSet);
-                        } 
+                        }
                         tailSet.add(record);
 
                         //add it to the list of reords by labels
@@ -136,7 +107,7 @@ public class ExtractMaintenanceFlights {
                         if (labelList == null) {
                             labelList = new ArrayList<MaintenanceRecord>();
                             recordsByLabel.put(record.getLabel(), labelList);
-                        } 
+                        }
                         labelList.add(record);
 
                         allRecords.add(record);
@@ -194,7 +165,7 @@ public class ExtractMaintenanceFlights {
         for (MaintenanceRecord record : targetRecords) {
             //C172 is Cessna 172
             //ARCH is PA28 (Piper Archer)
-            //SEMI IS PA44 (Piper Seminole) 
+            //SEMI IS PA44 (Piper Seminole)
             if (!(record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") || record.getAirframe().equals("SEMI"))) {
                 //skip the others
                 continue;
@@ -479,7 +450,7 @@ public class ExtractMaintenanceFlights {
                         if (ac.getFlightsSincePrevious() == 4) System.out.println();
                     }
                 }
- 
+
                 tailSystemIdCounts.put(tailNumber, systemIdCount);
                 tailFlightCounts.put(tailNumber, count);
 

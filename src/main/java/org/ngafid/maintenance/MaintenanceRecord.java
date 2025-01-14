@@ -1,26 +1,15 @@
 package org.ngafid.maintenance;
 
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
 
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 
-
-import org.ngafid.flights.Airframes;
 
 public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private static final Logger LOG = Logger.getLogger(MaintenanceRecord.class.getName());
@@ -136,7 +125,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     public String toString() {
         return "[Maintenance Record - WO#: '" + workorderNumber
-            + "', openDate: '" + openDate 
+            + "', openDate: '" + openDate
             + "', closeDate: '" + closeDate
             + "', tailNumber: '" + tailNumber
             + "', airframe: '" + airframe
@@ -150,4 +139,3 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
             + "']";
     }
 }
-

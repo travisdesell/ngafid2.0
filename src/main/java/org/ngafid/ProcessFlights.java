@@ -1,13 +1,10 @@
 package org.ngafid;
 
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
-
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.Duration;
@@ -16,10 +13,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
-
 import javax.xml.parsers.ParserConfigurationException;
-
 import org.ngafid.flights.*;
 import org.xml.sax.SAXException;
 
@@ -155,7 +149,7 @@ public class ProcessFlights {
                                         flightErrors.add(new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                                         errorFlights++;
                                     }
-                                } 
+                                }
 
                             } catch (java.nio.file.NoSuchFileException e) {
                                 System.err.println("IOException: " + e );

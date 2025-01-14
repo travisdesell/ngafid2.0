@@ -1,16 +1,11 @@
 package org.ngafid.routes.event_def_mgmt;
 
 import com.google.gson.Gson;
-
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.logging.Logger;
-
-import com.google.gson.JsonObject;
 import org.ngafid.Database;
 import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.Airframes;
 import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;

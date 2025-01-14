@@ -1,30 +1,20 @@
 package org.ngafid.routes;
 
-import java.time.LocalDate;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.HashMap;
-
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
+import java.time.LocalDate;
+import java.util.Map;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.accounts.User;
+import org.ngafid.common.*;
+import org.ngafid.events.EventStatistics;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
 import spark.Spark;
-
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-import org.ngafid.events.EventStatistics;
-import org.ngafid.common.*;
 
 public class PostAllEventCounts implements Route {
     private static final Logger LOG = Logger.getLogger(PostAllEventCounts.class.getName());

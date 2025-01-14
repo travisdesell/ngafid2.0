@@ -1,39 +1,19 @@
 package org.ngafid.proximity;
 
-import org.ngafid.Database;
-import org.ngafid.events.Event;
-import org.ngafid.events.RateOfClosure;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.StringTimeSeries;
-
-
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-//import java.util.logging.Level;
-//import java.util.logging.Logger;
 import org.ngafid.common.TimeUtils;
-import org.ngafid.events.EventDefinition;
+import org.ngafid.events.Event;
 import org.ngafid.events.EventStatistics;
-import org.ngafid.filters.Conditional;
-import org.ngafid.filters.Filter;
 import org.ngafid.filters.Pair;
-import org.ngafid.airports.Airports;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.StringTimeSeries;
 
 
 public class FlightTimeLocation {
-    //set to true if the flight has the required time series values and a start and 
+    //set to true if the flight has the required time series values and a start and
     //end date time
     boolean valid = false;
 
@@ -91,7 +71,7 @@ public class FlightTimeLocation {
 
         if (minMaxRPM1 != null) System.out.println("min max E1 RPM: " + minMaxRPM1.first() + ", " + minMaxRPM1.second());
         if (minMaxRPM2 != null) System.out.println("min max E2 RPM: " + minMaxRPM2.first() + ", " + minMaxRPM2.second());
-        
+
         if ((minMaxRPM1 == null && minMaxRPM2 == null)  //both RPM values are null, can't calculate exceedence
                 || (minMaxRPM2 == null && minMaxRPM1.second() < 800) //RPM2 is null, RPM1 is < 800 (RPM1 would not be null as well)
                 || (minMaxRPM1 == null && minMaxRPM2.second() < 800) //RPM1 is null, RPM2 is < 800 (RPM2 would not be null as well)
@@ -184,7 +164,7 @@ public class FlightTimeLocation {
     }
 
     public boolean hasRegionOverlap(FlightTimeLocation other) {
-        return other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude 
+        return other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude
                     && other.maxLongitude >= this.minLongitude && other.minLongitude <= this.maxLongitude;
     }
 

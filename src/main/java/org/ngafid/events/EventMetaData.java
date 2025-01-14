@@ -22,7 +22,7 @@ public class EventMetaData {
     private double value;
 
     public EventMetaData(String name, double value) {
-        
+
         this.name = name;
         this.value = value;
     }
@@ -40,7 +40,7 @@ public class EventMetaData {
     }
 
     public void updateDatabase(Connection connection, int eventId) {
-        
+
         try {
             int eventMetaDataKeyId = this.getEventMetaDataKeyId(connection);
             PreparedStatement statement = connection.prepareStatement("INSERT INTO event_metadata (event_id, key_id, value) VALUES (?, ?, ?)");
@@ -52,13 +52,13 @@ public class EventMetaData {
             statement.close();
         } catch (Exception e) {
             System.err.println("Error committing EventMetaData for EventId : " + eventId);
-            throw new RuntimeException(e); 
+            throw new RuntimeException(e);
         }
 
     }
 
     private int getEventMetaDataKeyId(Connection connection) {
-        
+
         int result = 0;
         try {
             PreparedStatement statement = connection.prepareStatement("SELECT id from event_metadata_keys where name = ?");
@@ -78,7 +78,7 @@ public class EventMetaData {
     }
 
     public static List<EventMetaData> getEventMetaData(Connection connection, int eventId) {
-        
+
         List<EventMetaData> metaDataList = new ArrayList<>();
         try {
             PreparedStatement preparedStatement = connection.prepareStatement("SELECT name, value FROM event_metadata JOIN  event_metadata_keys as ek on ek.id = key_id WHERE event_id = ?");
@@ -86,7 +86,7 @@ public class EventMetaData {
             preparedStatement.setInt(1, eventId);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-               metaDataList.add(new EventMetaData(resultSet, eventId)); 
+               metaDataList.add(new EventMetaData(resultSet, eventId));
             }
             resultSet.close();
             preparedStatement.close();

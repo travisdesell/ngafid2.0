@@ -1,30 +1,17 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.Optional;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import com.google.gson.Gson;
-
-import spark.Route;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.accounts.User;
+import org.ngafid.common.FlightTag;
+import org.ngafid.flights.Flight;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
-import spark.Spark;
-
-import org.ngafid.Database;
-import org.ngafid.common.FlightTag;
-import org.ngafid.accounts.User;
-import org.ngafid.events.Event;
-import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Flight;
 
 public class PostCreateTag implements Route {
     private static final Logger LOG = Logger.getLogger(PostTags.class.getName());
@@ -54,7 +41,7 @@ public class PostCreateTag implements Route {
 
         try {
             Connection connection = Database.getConnection();
-    
+
             if(Flight.tagExists(connection, fleetId, name)){
                 return gson.toJson(ALREADY_EXISTS);
             }
@@ -75,4 +62,3 @@ public class PostCreateTag implements Route {
         }
     }
 }
-

@@ -4,21 +4,16 @@ package org.ngafid.events;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
-
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
-import java.util.Objects;
-import java.util.logging.Logger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.ngafid.flights.Airframes;
-
 import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
+import org.ngafid.flights.Airframes;
 
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
@@ -460,7 +455,7 @@ public class Event {
                 int airframeId = eventSet.getInt(9);
                 String airframe = airframeIds.get(airframeId);
 
-                //add the airframe to 
+                //add the airframe to
                 eventsByAirframe.get(airframe).add(event);
                 }
 
@@ -477,8 +472,3 @@ public class Event {
         this.rateOfClosure = rateOfClosure;
     }
 }
-
-
-
-
-

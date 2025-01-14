@@ -1,30 +1,13 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.HashMap;
-
-import java.sql.Connection;
-import java.sql.SQLException;
 
 import com.google.gson.Gson;
-
-import spark.Route;
+import java.util.logging.Logger;
 import spark.Request;
 import spark.Response;
-import spark.Session;
+import spark.Route;
 
 
-import org.ngafid.accounts.User;
-import org.ngafid.events.EventStatistics;
-import org.ngafid.Database;
 
 public class GetEventCounts implements Route {
     private static final Logger LOG = Logger.getLogger(GetEventStatistics.class.getName());

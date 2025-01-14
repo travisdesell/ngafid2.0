@@ -1,14 +1,14 @@
 package org.ngafid.flights.calculations;
 
-import org.ngafid.flights.*;
+import static org.ngafid.flights.calculations.Parameters.*;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import static org.ngafid.flights.calculations.Parameters.*;
+import org.ngafid.flights.*;
 
 /**
- * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression 
+ * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression
  *
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
  */
@@ -52,7 +52,7 @@ public class VSPDRegression implements Calculation {
 
             //TODO: filter out bad readings here
             //possible solution to improve accuracy if research is extended
-            
+
             double yA = average(yValues);
             double xA = average(xValues);
 
@@ -66,10 +66,10 @@ public class VSPDRegression implements Calculation {
     }
 
     /**
-     * Used to normalize altitudes 
+     * Used to normalize altitudes
      *
      * @param yValues the array of y values (altitudes)
-     * @param yA the average y value 
+     * @param yA the average y value
      */
     public static void normalizeAltitudes(double [] yValues, double yA) {
         double stdDev = stdDev(yValues, yA);
@@ -81,7 +81,7 @@ public class VSPDRegression implements Calculation {
 
         }
     }
-           
+
     /**
      * Takes the standard deviation of the yValues
      *
@@ -119,8 +119,8 @@ public class VSPDRegression implements Calculation {
     /**
      * Performs a linear regression on any data point such that the lengths of the datasets is 3
      *
-     * @param xValues the x values to use for the regression 
-     * @param yValues the x values to use for the regression 
+     * @param xValues the x values to use for the regression
+     * @param yValues the x values to use for the regression
      * @param yA the average of the y values
      * @param xA the average of the x values
      *

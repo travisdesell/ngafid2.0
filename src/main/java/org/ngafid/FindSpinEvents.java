@@ -1,22 +1,17 @@
 package org.ngafid;
 
-import java.util.*;
+import static org.ngafid.events.CustomEvent.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import java.io.*;
-
-import org.ngafid.*;
+import java.sql.*;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.accounts.Fleet;
+import org.ngafid.events.*;
 import org.ngafid.flights.*;
 import org.ngafid.flights.calculations.CalculatedDoubleTimeSeries;
 import org.ngafid.flights.calculations.VSPDRegression;
-import org.ngafid.events.*;
-
-import java.sql.*;
-
-import java.util.logging.Logger;
-
-import static org.ngafid.flights.calculations.Parameters.*;
-import static org.ngafid.events.CustomEvent.*;
 
 /**
  * A Custom Exceedence calculation to find spin events.
@@ -49,7 +44,7 @@ public class FindSpinEvents {
         } catch (Exception e)  {
             e.printStackTrace();
             System.exit(1);
-        } 
+        }
     }
 
     public static void findSpinEvents(Connection connection, Flight flight, double altAglLimit) throws Exception {
@@ -129,12 +124,12 @@ public class FindSpinEvents {
                         if (!spinStartFound) {
                             String startTime = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-                            
+
                             currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight);
 
                             spinStartFound = true;
-                        } 
-                    } 
+                        }
+                    }
 
 
                     if (spinStartFound && (lowAirspeedIndexDiff > 3 && lowAirspeedIndexDiff <= 30)) {
@@ -175,7 +170,7 @@ public class FindSpinEvents {
                 }
             }
         }
-        
+
         int airframeNameId = flight.getAirframeNameId(), fleetId = flight.getFleetId();
         for (CustomEvent event : lowAltitudeSpins) {
             event.updateDatabase(connection);
@@ -186,7 +181,7 @@ public class FindSpinEvents {
             event.updateDatabase(connection);
             event.updateStatistics(connection, fleetId, airframeNameId, event.getDefinition().getId());
         }
-        
+
         String flightStartDateTime = flight.getStartDateTime();
         if (!highAltitudeSpins.isEmpty()) {
             EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, HIGH_ALTITUDE_SPIN.getId(), flightStartDateTime);

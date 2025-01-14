@@ -7,8 +7,8 @@
 package org.ngafid.flights.calculations;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import org.ngafid.flights.*;
 
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {

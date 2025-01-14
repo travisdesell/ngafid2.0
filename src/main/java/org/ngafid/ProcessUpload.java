@@ -1,29 +1,24 @@
 package org.ngafid;
 
-import java.io.*;
+import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
+import Files.*;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.*;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-
-import Files.*;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.text.ParseException;
-
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +27,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import org.ngafid.proximity.CalculateProximity;
+import javax.xml.parsers.ParserConfigurationException;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.Fleet;
+import org.ngafid.accounts.User;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
@@ -41,11 +38,8 @@ import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
-import org.ngafid.accounts.Fleet;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
+import org.ngafid.proximity.CalculateProximity;
+import org.xml.sax.SAXException;
 
 public class ProcessUpload {
     private static Connection connection = null;
@@ -71,7 +65,7 @@ public class ProcessUpload {
         }
 
     }
-    
+
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
         System.out.println(Arrays.toString(arguments));
@@ -551,7 +545,7 @@ public class ProcessUpload {
 
     private static void placeInZip(String file, String zipFileName) throws IOException {
         LOG.info("Placing " + file + " in zip");
-        
+
         Map<String, String> zipENV = new HashMap<>();
         zipENV.put("create", "true");
 

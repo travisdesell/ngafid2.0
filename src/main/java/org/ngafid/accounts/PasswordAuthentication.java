@@ -8,15 +8,14 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Hash passwords for storage, and test passwords against password tokens.
- * 
+ *
  * Instances of this class can be used concurrently by multiple threads.
- *  
+ *
  * @author erickson
  * @see <a href="http://stackoverflow.com/a/2861125/3474">StackOverflow</a>
  */
@@ -50,7 +49,7 @@ public final class PasswordAuthentication
 
     /**
      * Create a password manager with a specified cost
-     * 
+     *
      * @param cost the exponential computational cost of hashing a password, 0 to 30
      */
     public PasswordAuthentication(int cost)
@@ -69,8 +68,8 @@ public final class PasswordAuthentication
 
     /**
      * Hash a password for storage.
-     * 
-     * @return a secure authentication token to be stored for later authentication 
+     *
+     * @return a secure authentication token to be stored for later authentication
      */
     public String hash(char[] password)
     {
@@ -86,7 +85,7 @@ public final class PasswordAuthentication
 
     /**
      * Authenticate with a password and a stored password token.
-     * 
+     *
      * @return true if the password and token match
      */
     public boolean authenticate(char[] password, String token)

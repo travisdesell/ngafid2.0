@@ -1,28 +1,22 @@
 package org.ngafid.accounts;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
+import java.net.URL;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.net.URL;
-
 import javax.net.ssl.HttpsURLConnection;
-
-import org.ngafid.Database;
 import org.ngafid.WebServer;
-import org.ngafid.flights.AirSync;
 import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.*;
 
 /**
  * This is a representation of an AirSync enabled fleet in the NGAFID
@@ -39,13 +33,13 @@ public class AirSyncFleet extends Fleet {
     private static final int DEFAULT_TIMEOUT = 1440;
 
     private static AirSyncFleet [] fleets = null;
-        
+
     private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
 
     private static final Gson gson = WebServer.gson;
 
     /**
-     * Default constructor 
+     * Default constructor
      *
      * @param id the fleet id
      * @param name this fleet's name
@@ -123,8 +117,8 @@ public class AirSyncFleet extends Fleet {
 
     public boolean compareAndSetMutex(Connection connection, int expected, int newValue) throws SQLException {
         String queryText = """
-            SELECT fleet_id, mutex FROM airsync_fleet_info WHERE 
-                    fleet_id = ? 
+            SELECT fleet_id, mutex FROM airsync_fleet_info WHERE
+                    fleet_id = ?
                 AND mutex = ? FOR UPDATE
         """;
 
@@ -143,7 +137,7 @@ public class AirSyncFleet extends Fleet {
     }
 
     /**
-     * Semaphore-style (P) mutex that allows for an entity (i.e. the daemon or user) to 
+     * Semaphore-style (P) mutex that allows for an entity (i.e. the daemon or user) to
      * ask AirSync for updates
      *
      * In this case, the database holds the "signal" or lock flag
@@ -160,7 +154,7 @@ public class AirSyncFleet extends Fleet {
     }
 
     /**
-     * Semaphore-style (V) mutex that allows for an entity (i.e. the daemon or user) to 
+     * Semaphore-style (V) mutex that allows for an entity (i.e. the daemon or user) to
      * ask AirSync for updates
      *
      * In this case, the database holds the "signal" or lock flag
@@ -185,14 +179,14 @@ public class AirSyncFleet extends Fleet {
             LocalDateTime lastQueryTime = null;
             if (resultSet.next()) {
                 lastQueryTime = resultSet.getTimestamp(1).toLocalDateTime();
-            } 
-            
+            }
+
             query.close();
             return lastQueryTime;
         }
 
         return this.lastQueryTime;
-    } 
+    }
 
     /**
      * Gets the timeout of the AirSyncFleet
@@ -247,7 +241,7 @@ public class AirSyncFleet extends Fleet {
 
         if (resultSet.next()) {
             timeout = resultSet.getInt(1);
-        } 
+        }
 
         String formattedString = null;
 
@@ -255,7 +249,7 @@ public class AirSyncFleet extends Fleet {
             if (timeout >= 60) {
                 formattedString = String.format("%d Hours", (timeout / 60));
             } else {
-                formattedString = String.format("%d Minutes", timeout); 
+                formattedString = String.format("%d Minutes", timeout);
             }
         }
 
@@ -265,7 +259,7 @@ public class AirSyncFleet extends Fleet {
     }
 
     /**
-     * Determines if the fleet is "out of data" i.e., is the last time we checked with airsync longer 
+     * Determines if the fleet is "out of data" i.e., is the last time we checked with airsync longer
      * ago than the timeout specified?
      *
      * @param connection the DBMS connection
@@ -316,7 +310,7 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if the DBMS has an issue
      */
     public void updateTimeout(Connection connection, User user, String newTimeout) throws SQLException {
-        // It is assumed that the UI will prevent non-admins from doing this, 
+        // It is assumed that the UI will prevent non-admins from doing this,
         // but just to be safe we will have this check.
         if (user.isAdmin()) {
             String [] timeoutTok = newTimeout.split("\\s");
@@ -336,7 +330,7 @@ public class AirSyncFleet extends Fleet {
 
             String sql = "UPDATE airsync_fleet_info SET timeout = ? WHERE fleet_id = ?";
             PreparedStatement query = connection.prepareStatement(sql);
-            
+
             query.setInt(1, timeoutMinutes);
             query.setInt(2, super.getId());
 
@@ -408,20 +402,20 @@ public class AirSyncFleet extends Fleet {
 
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.authCreds.bearerString());     
+            connection.setRequestProperty("Authorization", this.authCreds.bearerString());
 
             InputStream is = connection.getInputStream();
             byte [] respRaw = is.readAllBytes();
-            
+
             String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
-            
+
             Type target = new TypeToken<List<AirSyncAircraft>>(){}.getType();
             System.out.println(resp);
             this.aircraft = gson.fromJson(resp, target);
 
             for (AirSyncAircraft a : aircraft) a.initialize(this);
         }
-        
+
         return this.aircraft;
     }
 
@@ -527,7 +521,7 @@ public class AirSyncFleet extends Fleet {
      * @param connection the DBMS connection
      *
      * @return a "status" string that is human readable
-     * 
+     *
      * @throws SQLException if the DBMS has an issue
      */
     public String update(Connection connection) throws Exception {

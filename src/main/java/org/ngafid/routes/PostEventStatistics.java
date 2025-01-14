@@ -1,19 +1,16 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
-import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventStatistics;
 import spark.Request;
 import spark.Response;
 import spark.Route;
 import spark.Session;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.logging.Logger;
 
 public class PostEventStatistics implements Route {
     private static final Logger LOG = Logger.getLogger(PostEventStatistics.class.getName());

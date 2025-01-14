@@ -1,9 +1,8 @@
 package org.ngafid.flights;
 
-import java.lang.StringBuffer;
-import java.util.Map;
-
 import static org.ngafid.flights.XPlaneParameters.*;
+
+import java.util.Map;
 
 /**
  * Create exports for X-Plane 10
@@ -25,7 +24,7 @@ public class XPlane10Export extends XPlaneExport{
     public void writeFlightData(StringBuffer buffer, Map<String, Object> scopes){
         int length = parameters.get(ALT).size();
         for (int i = 0; i < length; i++) {
-            //make sure we dont log where the GPS wasn't recording coordinates as this will 
+            //make sure we dont log where the GPS wasn't recording coordinates as this will
             //cause X-Plane to crash
             if(!Double.isNaN(parameters.get(LONGITUDE).get(i))
             && !Double.isNaN(parameters.get(LATITUDE).get(i))){
@@ -39,4 +38,3 @@ public class XPlane10Export extends XPlaneExport{
         }
     }
 }
-

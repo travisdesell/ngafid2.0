@@ -1,17 +1,9 @@
 package org.ngafid;
 
 import java.io.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.lang.Thread;
-import java.lang.Runnable;
-
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 
@@ -24,12 +16,12 @@ public class Database {
 
     private static final long HOUR = 3600000;
 
-    public static Connection getConnection() { 
+    public static Connection getConnection() {
         try {
             Connection c = connection.get();
-            if (c == null || c.isClosed()) { //investigate further here 
+            if (c == null || c.isClosed()) { //investigate further here
                 setConnection();
-            } 
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
@@ -122,14 +114,14 @@ public class Database {
 
         /*
         if (!connectionInitiated) {
-            connectionInitiated = true; 
+            connectionInitiated = true;
 
             LOG.info("Log for SQL server poker, starting at: " + LocalDateTime.now().toString());
 
             new Thread(() -> {
                 while (true) {
                     try {
-                        Thread.sleep(HOUR); 
+                        Thread.sleep(HOUR);
 
                         String dummyQuery = "SELECT id FROM event_definitions WHERE id <= 1";
                         PreparedStatement preparedStatement = getConnection().prepareStatement(dummyQuery);

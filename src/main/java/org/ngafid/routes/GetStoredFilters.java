@@ -1,26 +1,17 @@
 package org.ngafid.routes;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-
-
+import java.util.List;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
-import org.ngafid.filters.Filter;
 import org.ngafid.filters.StoredFilter;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 // A route to fetch all saved queries for a given group (site, user, or fleet specific)
 public class GetStoredFilters implements Route {

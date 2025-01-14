@@ -1,14 +1,13 @@
 package org.ngafid.filters;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-
-import java.time.LocalDateTime;
-import java.time.OffsetTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 
 
 public class Filter {
@@ -49,7 +48,7 @@ public class Filter {
      * Helper function for get column names. Appends non-duplicate column names to the input parameter.
      *
      * @param columnNames holds all the column names found
-     * 
+     *
      */
     public void getColumnNamesHelper(Filter filter, TreeSet<String> columnNames) {
         LOG.info("getting column filter for " + filter.type);
@@ -72,7 +71,7 @@ public class Filter {
      * Gets the first input of each rule without duplicates, for use by EventDefinitions.
      *
      * @return a hash set of strings for each column name, without duplicates
-     * 
+     *
      */
     public TreeSet<String> getColumnNames() {
         TreeSet<String> columnNames = new TreeSet<String>();
@@ -187,7 +186,7 @@ public class Filter {
      * @param fleetId the id of the fleet for this query
      * @param parameters will be updated with what inputs this rule needs
      *
-     * @return A string mysql query of this rule 
+     * @return A string mysql query of this rule
      */
     public String getRuleQuery(int fleetId, ArrayList<Object> parameters) {
         String eventName;
@@ -214,13 +213,13 @@ public class Filter {
                 } else {
                     return "flights.fleet_id = ? AND flights.system_id != ?";
                 }
-            
+
             case "Flight ID":
                 condition = checkOperator(inputs.get(1));
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 return "flights.fleet_id = ? AND flights.id " + condition + " ?" ;
-                
+
 
             case "Tail Number":
                 parameters.add(fleetId);
@@ -353,12 +352,12 @@ public class Filter {
             case "Tag":
                 parameters.add(fleetId);
                 parameters.add(inputs.get(1)); //we can ignore index 0, it is for the UI only
-				String det = inputs.get(2);
-				if(det.substring(0,6).equals("Is Not")){
-					return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
-				}else{
-					return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
-				}
+                String det = inputs.get(2);
+                if(det.substring(0,6).equals("Is Not")){
+                    return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+                }else{
+                    return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+                }
 
             default:
                 return "";
@@ -472,7 +471,7 @@ public class Filter {
             Filter t = (Filter)e;
             return t.hashCode() == super.hashCode();
         }else{
-            return false; 
+            return false;
         }
     }
 }

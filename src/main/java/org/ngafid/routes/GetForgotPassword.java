@@ -4,15 +4,14 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
-import org.ngafid.WebServer;
-import spark.Request;
-import spark.Response;
-import spark.Route;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import org.ngafid.WebServer;
+import spark.Request;
+import spark.Response;
+import spark.Route;
 
 public class GetForgotPassword implements Route {
 

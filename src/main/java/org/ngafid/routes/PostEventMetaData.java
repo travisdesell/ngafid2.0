@@ -1,16 +1,14 @@
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.util.List;
 import java.util.logging.Logger;
-
 import org.ngafid.Database;
 import org.ngafid.events.EventMetaData;
-
-import com.google.gson.Gson;
-import spark.Route;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 
 /**
  * PostEventMetaData

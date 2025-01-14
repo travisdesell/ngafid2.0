@@ -1,22 +1,17 @@
 package org.ngafid.flights;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Month;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 import org.ngafid.WebServer;
 
-import java.io.File;
 
-import java.util.logging.Logger;
-
-
-import org.ngafid.flights.Flight;
 
 
 public class Upload {
@@ -159,7 +154,7 @@ public class Upload {
     }
 
     /**
-     * Removes all other entries in the database related to this upload 
+     * Removes all other entries in the database related to this upload
      * and sets its status to 'UPLOADED' so it can be reprocessed
      *
      * @param connection is the database connection
@@ -178,7 +173,7 @@ public class Upload {
     }
 
     /**
-     * Removes all other entries in the database related to this upload 
+     * Removes all other entries in the database related to this upload
      * and then removes the upload from the database, and removes the
      * uploaded files related to it from disk
      *
@@ -229,7 +224,7 @@ public class Upload {
         }
     }
 
-    
+
     /*
      * This gets an upload only by it's id. Used by {@link CSVWriter} to get archival
      * files usually.
@@ -500,7 +495,7 @@ public class Upload {
                 //This should not happen!
                 tail = null;
 
-                //It indicates that more than one aircraft is grouped into an 
+                //It indicates that more than one aircraft is grouped into an
                 //AirSync upload, which is not intended!
                 LOG.severe("This should not be happening! Multiple tails in one AirSync upload! " + Thread.currentThread().getStackTrace().toString());
             }

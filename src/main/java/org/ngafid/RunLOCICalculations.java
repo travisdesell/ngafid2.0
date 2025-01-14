@@ -18,15 +18,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-
-import org.ngafid.Database;
-import org.ngafid.flights.Flight;
 import org.ngafid.filters.Filter;
+import org.ngafid.flights.Flight;
 
 public class RunLOCICalculations {
     static final Connection connection = Database.getConnection();
@@ -44,7 +40,7 @@ public class RunLOCICalculations {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
             //preparedStatement.setInt(1, C172SP_ID);
             ResultSet resultSet = preparedStatement.executeQuery();
-    
+
             nums = new ArrayList<>();
             while (resultSet.next()) {
                 nums.add(resultSet.getInt(1));
@@ -79,7 +75,7 @@ public class RunLOCICalculations {
 
     /**
      * Processes argumrnts from the command line
-     * 
+     *
      * @param args the command line arguments
      * @param path the instance of the {@link Optional} where the path of the file out will reside
      * @param flightNums the instance of the {@link Optional} where the set of flight numbers will reside
@@ -115,7 +111,7 @@ public class RunLOCICalculations {
                 for(int j = 0; j < nums.length; j++) {
                     nums[j] = Integer.parseInt(numsAsStrings[j]);
                 }
-               
+
                 System.out.println(Arrays.toString(nums));
                 Iterator<Integer> it = Arrays.stream(nums).iterator();
                 flightNums = Optional.of(it);
@@ -135,7 +131,7 @@ public class RunLOCICalculations {
 
         while (it.hasNext()) {
             try {
-                Flight flight = Flight.getFlight(connection, it.next());    
+                Flight flight = Flight.getFlight(connection, it.next());
                 flight.runLOCICalculations(connection);
             } catch (Exception e){
                 e.printStackTrace();
@@ -156,7 +152,7 @@ public class RunLOCICalculations {
     public static void main(String [] args) {
         System.out.println("Loss of control calculator");
 
-        Optional<Path> path = Optional.empty();    
+        Optional<Path> path = Optional.empty();
         Optional<Iterator<Integer>> flightNums = Optional.empty();
 
         int fleetId = -1;

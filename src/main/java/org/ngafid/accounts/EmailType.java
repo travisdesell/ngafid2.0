@@ -1,14 +1,12 @@
 package org.ngafid.accounts;
 
-import java.util.*;
-import java.util.logging.Logger;
-
-import org.ngafid.Database;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
+import org.ngafid.Database;
 
 
 
@@ -172,7 +170,7 @@ public enum EmailType {
         }
 
         //Merge individual email type queries
-        String query = 
+        String query =
               "INSERT INTO email_preferences (user_id, email_type) "
             + String.join(" UNION ALL ", emailTypeQueries)
             + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)"
@@ -237,7 +235,7 @@ public enum EmailType {
         }
 
         //Merge individual email type queries
-        String query = 
+        String query =
               "INSERT INTO email_preferences (user_id, email_type) "
             + String.join(" UNION ALL ", emailTypeQueries)
             + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)"
@@ -268,7 +266,7 @@ public enum EmailType {
             ) {
 
             try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
-                    
+
                 //Mark email types for deletion
                 while (queryResult.next()) {
                     String emailType = queryResult.getString("email_type");
@@ -285,13 +283,13 @@ public enum EmailType {
                 }
 
             }
-    
+
         } catch (SQLException e) {
 
             e.printStackTrace();
             LOG.severe("Error removing old Email Types: " + e.getMessage());
             return;
-        
+
         }
 
     }

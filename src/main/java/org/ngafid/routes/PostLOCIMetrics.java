@@ -1,24 +1,20 @@
 
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.DoubleTimeSeries;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 /**
  * This class posts the LOCI metrics data for the map flight metric viewer.
@@ -96,16 +92,16 @@ public class PostLOCIMetrics implements Route {
 
             for (String seriesName : metrics) {
                 System.out.println(seriesName);
-                DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
+                DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName);
 
                 if (series == null) {
                     flightMetrics.add(new FlightMetric(seriesName));
                 } else {
-                    FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
+                    FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);
                     flightMetrics.add(flightMetric);
                 }
             }
-            
+
             LOG.info("Posting " + flightMetrics.size() + " metrics to user");
 
             return gson.toJson(new FlightMetricResponse(flightMetrics, userPreferences.getDecimalPrecision()));
@@ -115,4 +111,3 @@ public class PostLOCIMetrics implements Route {
         }
     }
 }
-

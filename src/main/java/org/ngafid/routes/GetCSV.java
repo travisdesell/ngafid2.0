@@ -1,28 +1,23 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
+import com.google.gson.Gson;
+import java.sql.Connection;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.GeneratedCSVWriter;
 import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.CachedCSVWriter;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.GeneratedCSVWriter;
 import org.ngafid.flights.Upload;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class GetCSV implements Route {
     private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
@@ -70,7 +65,7 @@ public class GetCSV implements Route {
 
             Flight flight = Flight.getFlight(Database.getConnection(), flightId);
 
-            int uploaderId = flight.getUploaderId(); 
+            int uploaderId = flight.getUploaderId();
 
             boolean isAirSync = false;
             String zipRoot;
@@ -89,7 +84,7 @@ public class GetCSV implements Route {
             } else {
                 zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/";
             }
-            
+
             CSVWriter csvWriter;
 
             if (generated) {

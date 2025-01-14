@@ -1,21 +1,19 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
-import org.ngafid.SendEmail;
-import org.ngafid.accounts.EmailType;
-import org.ngafid.accounts.User;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import org.ngafid.SendEmail;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.User;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class PostSendUserInvite implements Route {
     private static final Logger LOG = Logger.getLogger(PostSendUserInvite.class.getName());

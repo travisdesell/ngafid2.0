@@ -1,20 +1,19 @@
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.HashMap;
-import java.sql.Connection;
-import java.sql.SQLException;
-import com.google.gson.Gson;
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.events.EventStatistics;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class PostMonthlyEventCounts implements Route {
     private static final Logger LOG = Logger.getLogger(PostMonthlyEventCounts.class.getName());
@@ -61,7 +60,7 @@ public class PostMonthlyEventCounts implements Route {
                     Spark.halt(401, "User did not have access to view imports for this fleet.");
                     return null;
                 }
-              
+
                 map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
@@ -75,4 +74,3 @@ public class PostMonthlyEventCounts implements Route {
         }
     }
 }
-

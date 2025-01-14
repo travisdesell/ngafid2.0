@@ -1,41 +1,26 @@
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
 import java.io.*;
-
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-
 import java.security.DigestInputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.logging.Logger;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import javax.xml.bind.DatatypeConverter;
-
-import com.google.gson.Gson;
-
+import java.util.logging.Logger;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.http.Part;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-
+import javax.xml.bind.DatatypeConverter;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 public class PostUpload implements Route {
     private static final Logger LOG = Logger.getLogger(PostUpload.class.getName());
@@ -206,6 +191,3 @@ public class PostUpload implements Route {
     }
 
 }
-
-
-

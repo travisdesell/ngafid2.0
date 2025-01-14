@@ -1,22 +1,18 @@
 package org.ngafid.routes;
 
-import java.util.logging.Logger;
-
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.Flight;
 import org.ngafid.common.*;
+import org.ngafid.flights.Flight;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class PostRemoveTag implements Route {
     private static final Logger LOG = Logger.getLogger(PostRemoveTag.class.getName());
@@ -64,7 +60,7 @@ public class PostRemoveTag implements Route {
             } else if(allTags) {
                 LOG.info("Clearing all tags from flight " + flightId);
                 Flight.unassociateAllTags(flightId, connection);
-                
+
                 return gson.toJson(new RemoveTagResponse());
             } else {
                 Flight.unassociateTags(tagId, connection, flightId);

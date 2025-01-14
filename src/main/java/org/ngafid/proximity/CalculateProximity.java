@@ -1,19 +1,19 @@
 package org.ngafid.proximity;
 
-import org.ngafid.Database;
-import org.ngafid.UploadProcessedEmail;
-import org.ngafid.events.Event;
-import org.ngafid.events.RateOfClosure;
-import org.ngafid.flights.Flight;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import org.ngafid.Database;
+import org.ngafid.UploadProcessedEmail;
+import org.ngafid.airports.Airports;
+import org.ngafid.events.Event;
 import org.ngafid.events.EventMetaData;
 import org.ngafid.events.EventStatistics;
-import org.ngafid.airports.Airports;
+import org.ngafid.events.RateOfClosure;
+import org.ngafid.flights.Flight;
 
 
 public class CalculateProximity {
@@ -42,13 +42,13 @@ public class CalculateProximity {
 
     public static double calculateLateralDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude,
                                            double otherFlightLongitude) {
-       
+
         double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
         return lateralDistance;
     }
-    
+
     public static double calculateVerticalDistance(double flightAltitude, double otherFlightAltitude) {
-        
+
         double verticalDistance = Math.abs(flightAltitude - otherFlightAltitude);
         return verticalDistance;
     }
@@ -157,7 +157,7 @@ public class CalculateProximity {
 
         return true;
     }
-    
+
     public static void processFlightWithError(Connection connection, int fleetId, int flightId) throws SQLException {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
         stmt.setInt(1, fleetId);
@@ -319,8 +319,8 @@ public class CalculateProximity {
                                 //for this event, update the severity
                                 severity = distanceFt;
                             }
-                            lateralDistance = lateralDistanceFt < lateralDistance ? lateralDistanceFt : lateralDistance; 
-                            verticalDistance = verticalDistanceFt < verticalDistance ? verticalDistanceFt : verticalDistance; 
+                            lateralDistance = lateralDistanceFt < lateralDistance ? lateralDistanceFt : lateralDistance;
+                            verticalDistance = verticalDistanceFt < verticalDistance ? verticalDistanceFt : verticalDistance;
                             //increment the startCount, reset the endCount
                             startCount++;
                             stopCount = 0;
@@ -344,7 +344,7 @@ public class CalculateProximity {
                                         System.out.println("Creating event for flight : " + flightId );
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
                                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
-                                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
+                                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance);
                                         EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
                                         event.addMetaData(lateralDistanceMetaData);
                                         event.addMetaData(verticalDistanceMetaData);
@@ -395,7 +395,7 @@ public class CalculateProximity {
                         Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
 
-                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
+                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance);
                         EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
                         event.addMetaData(lateralDistanceMetaData);
                         event.addMetaData(verticalDistanceMetaData);

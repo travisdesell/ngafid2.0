@@ -1,35 +1,18 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.lang.reflect.Type;
+import static org.ngafid.flights.calculations.Parameters.*;
+
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-
-import spark.Route;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.accounts.EmailType;
 import spark.Request;
 import spark.Response;
-import spark.Session;
-import spark.Spark;
-
-import org.ngafid.Database;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.UserPreferences;
-import org.ngafid.accounts.UserEmailPreferences;
-import org.ngafid.accounts.EmailType;
-import org.ngafid.flights.DoubleTimeSeries;
-
-import static org.ngafid.flights.calculations.Parameters.*;
+import spark.Route;
 
 
 
@@ -56,7 +39,7 @@ public class GetEmailUnsubscribe implements Route {
 
         //Check if the token is valid
         try {
-                
+
             PreparedStatement query = connection.prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?");
             query.setString(1, token);
             query.setInt(2, id);
@@ -84,7 +67,7 @@ public class GetEmailUnsubscribe implements Route {
         queryClearPreferences = connection.prepareStatement("SELECT * FROM email_preferences WHERE user_id=?");
         queryClearPreferences.setInt(1, id);
         ResultSet resultSet = queryClearPreferences.executeQuery();
-        
+
         while (resultSet.next()) {
 
             String emailType = resultSet.getString("email_type");
@@ -99,7 +82,7 @@ public class GetEmailUnsubscribe implements Route {
         }
 
         return "Successfully unsubscribed from emails...";
-    
+
     }
 
 }

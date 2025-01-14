@@ -1,15 +1,13 @@
 package org.ngafid.flights.calculations;
 
-import java.io.IOException;
+import static org.ngafid.flights.calculations.Parameters.*;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Logger;
-
-import static org.ngafid.flights.calculations.Parameters.*;
-
 import org.apache.commons.cli.*;
 import org.ngafid.Database;
 import org.ngafid.accounts.Fleet;
@@ -94,7 +92,7 @@ public class HeadingTrackDiff implements Calculation {
             for (Fleet fleet : fleets) {
                 LOG.info("Calculating hdg/trk diff for fleet: " + fleet.getName());
                 int fleetId = fleet.getId();
-                // This may be slow for large fleets like UND 
+                // This may be slow for large fleets like UND
                 List<Flight> flights = Flight.getFlights(connection, fleetId);
 
                 for (Flight flight : flights) {
@@ -109,7 +107,7 @@ public class HeadingTrackDiff implements Calculation {
                             LOG.info("Already calculated for flight " + flight.toString());
                         }
                     } else {
-                        //Cant be calculated. 
+                        //Cant be calculated.
                         LOG.severe("Skipping flight " + flight.toString());
                         LOG.severe("Missing columns: " + missingParams.toString());
                     }
@@ -118,7 +116,7 @@ public class HeadingTrackDiff implements Calculation {
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } 
+        }
 
         LOG.info("All done!");
         System.exit(0);

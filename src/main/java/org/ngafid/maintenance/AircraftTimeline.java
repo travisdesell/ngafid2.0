@@ -1,27 +1,15 @@
 package org.ngafid.maintenance;
 
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
 
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
 import java.util.logging.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 
 
-import org.ngafid.flights.Airframes;
-import org.ngafid.filters.Filter;
 
 public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private static final Logger LOG = Logger.getLogger(AircraftTimeline.class.getName());
@@ -113,7 +101,7 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
 
     public String toString() {
         return "[Aircraft Timeline - flightId: '" + flightId
-            + "', startTime: '" + startTime 
+            + "', startTime: '" + startTime
             + "', endTime: '" + endTime
             + "', daysToNext: " + daysToNext
             + ", flightsToNext: " + flightsToNext
@@ -122,4 +110,3 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
            + "]";
     }
 }
-

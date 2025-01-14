@@ -1,17 +1,15 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
+import java.sql.*;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.filters.StoredFilter;
-
 import spark.Request;
 import spark.Response;
 import spark.Route;
 import spark.Session;
-
-import java.sql.*;
-import java.util.logging.Logger;
 
 /**
  * This class provides the spark route for storing filters into the NGAFID's Database

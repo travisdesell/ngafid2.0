@@ -1,13 +1,9 @@
 package org.ngafid.flights.calculations;
 
+import static org.ngafid.flights.calculations.Parameters.*;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import org.ngafid.airports.Airport;
-import org.ngafid.airports.Airports;
-import org.ngafid.airports.Runway;
-import org.ngafid.common.Compression;
-
-import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.*;
@@ -15,10 +11,12 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.airports.Airport;
+import org.ngafid.airports.Airports;
+import org.ngafid.airports.Runway;
+import org.ngafid.common.Compression;
 import org.ngafid.flights.*;
-
-import static org.ngafid.flights.calculations.Parameters.*; //eliminates the need to use Parameters.<PARAM>
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
@@ -144,7 +142,7 @@ public class TurnToFinal implements Serializable {
 
     // Calculate self defined glide path + glide path angle
     private void calculateSelfDefindGlidePath() {
-        //  
+        //
         //   A
         //   *
         //   |\
@@ -152,14 +150,14 @@ public class TurnToFinal implements Serializable {
         //   |  \
         //   |   \
         //   |    \
-        //   |     \ 
+        //   |     \
         //   |      *  D
         //   |      |\
         //   |      | \
         //   |      |  \
         //   |      |   \
         //   |__    |    \
-        //   |##|   |     \ 
+        //   |##|   |     \
         //   *------*------*
         //   B      E       C
         //
@@ -259,7 +257,7 @@ public class TurnToFinal implements Serializable {
         } catch (ClassNotFoundException ce) {
             LOG.info("Serialization error: ");
             ce.printStackTrace();
-            
+
             LOG.info("Deleting problematic ttf row.");
 
             query = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
@@ -389,7 +387,7 @@ public class TurnToFinal implements Serializable {
 
         if (turnToFinals == null)
             return new ArrayList<>();
-        
+
         return turnToFinals.stream()
                 .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
                 .collect(Collectors.toCollection(ArrayList::new));

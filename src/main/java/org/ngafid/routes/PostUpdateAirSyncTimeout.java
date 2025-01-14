@@ -1,17 +1,15 @@
 package org.ngafid.routes;
 
-import java.util.logging.Logger;
-import java.sql.Connection;
-
 import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
+import java.sql.Connection;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.User;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 public class PostUpdateAirSyncTimeout implements Route {
     private static final Logger LOG = Logger.getLogger(PostUpdateAirSyncTimeout.class.getName());

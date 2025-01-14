@@ -1,27 +1,21 @@
 package org.ngafid.accounts;
 
-import java.net.*;
-import java.sql.*;
-import javax.net.ssl.HttpsURLConnection;
-
-import org.ngafid.WebServer;
-import org.ngafid.accounts.AirSyncAuth.AccessToken;
-import org.ngafid.flights.AirSync;
-import org.ngafid.flights.AirSyncEndpoints;
-import org.ngafid.flights.AirSyncImport;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedList;
+import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.*;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.net.ssl.HttpsURLConnection;
+import org.ngafid.WebServer;
+import org.ngafid.flights.AirSync;
+import org.ngafid.flights.AirSyncEndpoints;
+import org.ngafid.flights.AirSyncImport;
 
 /**
  * Represents an Aircraft that is AirSync compatibile
@@ -105,13 +99,13 @@ public class AirSyncAircraft {
 
         query.setString(1, this.tailNumber);
         query.setInt(2, this.fleet.getId());
-            
+
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
             Timestamp timestamp = resultSet.getTimestamp(1);
             if (timestamp != null) {
                 return Optional.of(timestamp.toLocalDateTime());
-            } 
+            }
         }
 
         return Optional.empty();
@@ -123,14 +117,14 @@ public class AirSyncAircraft {
      * @param netConnection the connection to the AirSync servers
      * @param authentication the instance of {@link AirSyncAuth} for this fleet
      *
-     * @return a {@link List} of AirSyncImports 
+     * @return a {@link List} of AirSyncImports
      *
      * @throws an exception if there is a network or dbms issue
      */
     private List<AirSyncImport> getImportsHTTPS(HttpsURLConnection netConnection, AirSyncAuth authentication) throws Exception {
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
-        netConnection.setRequestProperty("Authorization", authentication.bearerString());     
+        netConnection.setRequestProperty("Authorization", authentication.bearerString());
 
         InputStream is = netConnection.getInputStream();
         byte [] respRaw = is.readAllBytes();
@@ -158,7 +152,7 @@ public class AirSyncAircraft {
      * @param connection the database connection
      * @param fleet the fleet this aircraft belongs to
      *
-     * @return a {@link List} of AirSyncImports 
+     * @return a {@link List} of AirSyncImports
      */
     public List<AirSyncImport> getImports(Connection connection, AirSyncFleet fleet) {
         AirSyncAuth authentication = fleet.getAuth();
@@ -178,7 +172,7 @@ public class AirSyncAircraft {
                 AirSync.handleAirSyncAPIException(e, authentication);
             }
         }
-        
+
         return imports;
     }
 
@@ -189,7 +183,7 @@ public class AirSyncAircraft {
      * @param fleet the AirSyncFleet that these imports belong to
      * @param lastImportTime the last import time recorded in the database
      *
-     * @return a {@link List} of AirSyncImports 
+     * @return a {@link List} of AirSyncImports
      */
     public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet fleet, LocalDateTime lastImportTime) {
        AirSyncAuth authentication = fleet.getAuth();
@@ -198,7 +192,7 @@ public class AirSyncAircraft {
        boolean continueIteration = true;
 
        int nPage = 0;
-       
+
        while (continueIteration) {
            try {
                HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
@@ -213,5 +207,5 @@ public class AirSyncAircraft {
 
        return imports;
     }
-    
+
 }

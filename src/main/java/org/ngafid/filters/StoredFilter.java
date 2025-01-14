@@ -4,10 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import org.ngafid.accounts.User;
 
 /**
@@ -17,7 +15,7 @@ import org.ngafid.accounts.User;
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
 public class StoredFilter {
-    /** 
+    /**
      * @param name is the common name given to the stored filter by the user.
      * @param filter is the filter as a {@link String} in the form of a JSON object.
      */
@@ -56,7 +54,7 @@ public class StoredFilter {
         List<StoredFilter> filters = new ArrayList<>();
 
         while (resultSet.next()) {
-            StoredFilter filterResponse = 
+            StoredFilter filterResponse =
                 new StoredFilter(resultSet.getString(1), resultSet.getString(2), resultSet.getString(3));
             filters.add(filterResponse);
         }
@@ -70,7 +68,7 @@ public class StoredFilter {
      * @param connection is the SQL database connection
      * @param fleetId is the id of the fleet that the filter belongs to
      * @param color is the color of this filter in hex
-     * 
+     *
      * @return a {@link StoredFilter} instance containing the data upon successful insertion into the db
      *
      * @throws SQLException in the event there is an issue with the SQL query.
@@ -128,7 +126,7 @@ public class StoredFilter {
         if (resultSet.next()) {
             return resultSet.getBoolean(1);
         }
-        
+
         return false;
     }
 
@@ -137,7 +135,7 @@ public class StoredFilter {
      *
      * @param connection is the SQL database connection
      * @param fleetId is the Fleet ID
-     * @param filterJSON is the new filter JSON 
+     * @param filterJSON is the new filter JSON
      * @param currentName is the name of the filter that already exists
      * @param newName is the new name to be given to the {@link StoredFilter}
      * @param color is the color of this filter in hex
@@ -163,6 +161,6 @@ public class StoredFilter {
      * @return this class as represented as a {@link String}
      */
     public String toString() {
-        return "StoredFilter name: " + this.name + "; filter JSON: " + this.filter + " color: " + this.color; 
+        return "StoredFilter name: " + this.name + "; filter JSON: " + this.filter + " color: " + this.color;
     }
 }

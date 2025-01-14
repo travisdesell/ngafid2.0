@@ -1,18 +1,16 @@
 package org.ngafid.routes.event_def_mgmt;
 
 import com.google.gson.Gson;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;
-import spark.Session;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.logging.Logger;
 
 public class DeleteEventDefinitions implements Route {
     private static final Logger LOG = Logger.getLogger(DeleteEventDefinitions.class.getName());

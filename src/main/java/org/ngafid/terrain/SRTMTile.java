@@ -1,12 +1,10 @@
 package org.ngafid.terrain;
 
 import java.io.IOException;
-
-import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.NoSuchFileException;
 
 public class SRTMTile {
     public static final int srtmTileSize = 1201;
@@ -112,7 +110,7 @@ public class SRTMTile {
         System.out.println("altitudesFt[" + latIndex0 + "][" + lonIndex1 + "]: " + altitudesFt[latIndex0][lonIndex0]);
         System.out.println("altitudesFt[" + latIndex1 + "][" + lonIndex1 + "]: " + altitudesFt[latIndex0][lonIndex0]);
         */
-        
+
         double x = lon_diff - (lonIndex0 * srtmGridSize);
         double y = lat_diff - (latIndex0 * srtmGridSize);
 

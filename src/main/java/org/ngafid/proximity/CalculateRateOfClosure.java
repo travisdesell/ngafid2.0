@@ -1,12 +1,12 @@
 package org.ngafid.proximity;
 
-import org.ngafid.Database;
-import org.ngafid.events.RateOfClosure;
-import org.ngafid.flights.Flight;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.ngafid.Database;
+import org.ngafid.events.RateOfClosure;
+import org.ngafid.flights.Flight;
 
 public class CalculateRateOfClosure {
 

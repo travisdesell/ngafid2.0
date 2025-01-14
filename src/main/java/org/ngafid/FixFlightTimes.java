@@ -1,39 +1,18 @@
 package org.ngafid;
 
-import org.ngafid.Database;
-import org.ngafid.events.Event;
-import org.ngafid.flights.DoubleTimeSeries;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import java.time.Duration;
-import java.time.Instant;
-
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.TreeSet;
-
-import org.ngafid.events.EventDefinition;
-import org.ngafid.events.EventStatistics;
-
-import org.ngafid.filters.Conditional;
-import org.ngafid.filters.Filter;
-import org.ngafid.filters.Pair;
-
-import org.ngafid.airports.Airports;
 
 public class FixFlightTimes {
 
@@ -109,7 +88,7 @@ public class FixFlightTimes {
 
                 System.out.println("\tdate size: " + dateSize + ", time size: " + timeSize + ", offset size: " + offsetSize);
 
-                //get the minimum sized length of each of these series, they should all be the same but 
+                //get the minimum sized length of each of these series, they should all be the same but
                 //if the last column was cut off it might not be the case
                 int minSize = dateSize;
                 if (minSize < timeSize) minSize = timeSize;
@@ -118,7 +97,7 @@ public class FixFlightTimes {
                 //find the first non-null time entry
                 int start = 0;
                 while (start < minSize &&
-                        (dates.get(start) == null || dates.get(start).equals("") || 
+                        (dates.get(start) == null || dates.get(start).equals("") ||
                          times.get(start) == null || times.get(start).equals("") ||
                          offsets.get(start) == null || offsets.get(start).equals("") || offsets.get(start).equals("+19:00"))) {
 
@@ -135,7 +114,7 @@ public class FixFlightTimes {
                 //find the last full date time offset entry row
                 int end = minSize - 1;
                 while (end >= 0 &&
-                        (dates.get(end) == null || dates.get(end).equals("") || 
+                        (dates.get(end) == null || dates.get(end).equals("") ||
                          times.get(end) == null || times.get(end).equals("") ||
                          offsets.get(end) == null || offsets.get(end).equals(""))) {
 

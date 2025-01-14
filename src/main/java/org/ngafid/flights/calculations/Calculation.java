@@ -1,5 +1,5 @@
 /**
- * This interface defines the process of calcuating new {@link DoubleTimeSeries} that require more 
+ * This interface defines the process of calcuating new {@link DoubleTimeSeries} that require more
  * complex analysis, such as for Stall Probaility and Loss of Control Probability
  *
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT Computer Science</a>
@@ -7,9 +7,9 @@
 
 package org.ngafid.flights.calculations;
 
-import org.ngafid.flights.*;
 import java.io.IOException;
 import java.sql.SQLException;
+import org.ngafid.flights.*;
 
 public interface Calculation {
     /**
@@ -19,4 +19,3 @@ public interface Calculation {
      */
     public double calculate(int index) throws SQLException, IOException;
 }
-

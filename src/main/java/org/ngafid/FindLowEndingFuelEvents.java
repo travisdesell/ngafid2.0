@@ -1,12 +1,7 @@
 package org.ngafid;
 
-import org.ngafid.accounts.Fleet;
-import org.ngafid.common.TimeUtils;
-import org.ngafid.events.CustomEvent;
-import org.ngafid.events.EventDefinition;
-import org.ngafid.events.EventStatistics;
-import org.ngafid.filters.Filter;
-import org.ngafid.flights.*;
+import static org.ngafid.events.CustomEvent.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,9 +9,12 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
-
-import static org.ngafid.events.CustomEvent.*;
-import static org.ngafid.flights.calculations.Parameters.*;
+import org.ngafid.accounts.Fleet;
+import org.ngafid.common.TimeUtils;
+import org.ngafid.events.CustomEvent;
+import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
+import org.ngafid.flights.*;
 
 public class FindLowEndingFuelEvents {
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
@@ -178,7 +176,7 @@ public class FindLowEndingFuelEvents {
                         e.printStackTrace();
                         System.exit(1);
                     }
-                    
+
                 }
             } catch (SQLException e) {
                 System.exit(1);

@@ -1,22 +1,16 @@
 package org.ngafid.flights;
 
 import java.io.*;
-import java.net.URL;
+import java.sql.*;
 import java.time.*;
 import java.util.*;
-import java.sql.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import org.codehaus.plexus.util.ExceptionUtils;
 import org.ngafid.Database;
 import org.ngafid.SendEmail;
-import org.ngafid.accounts.EmailType;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.AirSyncAuth;
 import org.ngafid.accounts.AirSyncFleet;
-import org.ngafid.accounts.Fleet;
+import org.ngafid.accounts.EmailType;
 
 /**
  * This class contains code for controlling the AirSync daemon, as well
@@ -36,7 +30,7 @@ public class AirSync {
      * Gracefully handles an exception from the AirSync API
      *
      * @param e the exception caught
-     * @param authentication the authentication used at the time. We can use this 
+     * @param authentication the authentication used at the time. We can use this
      * to request a new one if its simply outdated.
      */
     public static void handleAirSyncAPIException(Exception e, AirSyncAuth authentication) {
@@ -93,7 +87,7 @@ public class AirSync {
     }
 
     /**
-     * This daemon's entry point. 
+     * This daemon's entry point.
      * This is where the logic for how the daemon operates will be defined.
      *
      * @param args command line args

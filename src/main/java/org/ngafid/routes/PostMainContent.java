@@ -1,23 +1,17 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
+import com.google.gson.Gson;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Logger;
-
-import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-
 import org.ngafid.Database;
-import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 public class PostMainContent implements Route {
     private static final Logger LOG = Logger.getLogger(PostMainContent.class.getName());

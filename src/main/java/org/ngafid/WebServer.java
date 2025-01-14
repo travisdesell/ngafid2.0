@@ -1,34 +1,26 @@
 package org.ngafid;
 
-import org.ngafid.common.ConvertToHTML;
-import org.ngafid.routes.*;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-import org.ngafid.routes.event_def_mgmt.*;
-import spark.Spark;
-import spark.Service;
-
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.io.IOException;
-
-import java.time.*;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.time.format.DateTimeFormatter;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
+import static org.ngafid.SendEmail.sendAdminEmails;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.stream.*;
 import com.google.gson.TypeAdapter;
-
-import static org.ngafid.SendEmail.sendAdminEmails;
+import com.google.gson.stream.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.User;
+import org.ngafid.common.ConvertToHTML;
+import org.ngafid.routes.*;
+import org.ngafid.routes.event_def_mgmt.*;
+import spark.Service;
+import spark.Spark;
 
 
 /**
@@ -52,7 +44,7 @@ public final class WebServer {
             }
             jsonWriter.value(localDate.toString());
         }
-    
+
         @Override
         public LocalDateTime read(final JsonReader jsonReader) throws IOException {
             if (jsonReader.peek() == JsonToken.NULL) {
@@ -64,7 +56,7 @@ public final class WebServer {
     }
 
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
-    
+
     static {
 
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
@@ -358,7 +350,7 @@ public final class WebServer {
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
         Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
-        
+
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));

@@ -1,14 +1,13 @@
 package org.ngafid.events;
 
+import java.sql.Connection;
 import org.ngafid.*;
 import org.ngafid.flights.Flight;
 
-import java.sql.Connection;
 
-
-/** 
+/**
  * A CustomEvent is an Event that is not able to be calculated by the NGAFID's
- * standard event calculation process. 
+ * standard event calculation process.
  *
  * <a href=mailto:apl1341@rit.edu>Aidan LaBella @ RIT CS</a>
  */
@@ -36,7 +35,7 @@ public class CustomEvent extends Event {
     public void setDefinition(EventDefinition eventDefinition) {
         this.customEventDefinition = eventDefinition;
     }
-    
+
     public static EventDefinition getLowEndFuelDefinition(int airframeID) {
         return EventDefinition.getEventDefinition(Database.getConnection(), "Low Ending Fuel", airframeID);
     }

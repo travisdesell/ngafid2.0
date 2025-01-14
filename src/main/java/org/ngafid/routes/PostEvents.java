@@ -1,26 +1,19 @@
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.DoubleTimeSeries;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class PostEvents implements Route {
     private static final Logger LOG = Logger.getLogger(PostEvents.class.getName());
@@ -87,5 +80,3 @@ public class PostEvents implements Route {
         }
     }
 }
-
-

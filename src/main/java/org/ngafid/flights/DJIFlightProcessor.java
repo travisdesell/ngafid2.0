@@ -1,5 +1,9 @@
 package org.ngafid.flights;
 
+import static org.ngafid.common.TimeUtils.addMilliseconds;
+
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -8,11 +12,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
-
-import static org.ngafid.common.TimeUtils.addMilliseconds;
 
 public class DJIFlightProcessor {
     private static final Logger LOG = Logger.getLogger(DJIFlightProcessor.class.getName());

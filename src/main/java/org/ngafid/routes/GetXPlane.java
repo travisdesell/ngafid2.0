@@ -4,22 +4,19 @@
  */
 package org.ngafid.routes;
 
-import java.util.logging.Logger;
+import static org.ngafid.flights.XPlaneParameters.*;
+
 import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.util.logging.Logger;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.XPlaneExport;
 import org.ngafid.flights.XPlane10Export;
 import org.ngafid.flights.XPlane11Export;
-
-//Parameters that have to do with fdr file format
-import static org.ngafid.flights.XPlaneParameters.*;
+import org.ngafid.flights.XPlaneExport;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 public class GetXPlane implements Route {
     private static final Logger LOG = Logger.getLogger(GetXPlane.class.getName());

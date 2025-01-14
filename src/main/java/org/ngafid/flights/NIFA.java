@@ -1,24 +1,23 @@
 package org.ngafid.flights;
 
-import org.ngafid.airports.Airport;
-import org.ngafid.airports.Airports;
-import org.ngafid.airports.Runway;
-import org.ngafid.events.EventDefinition;
-import org.ngafid.events.Event;
-import org.ngafid.Database;
+import static org.ngafid.flights.calculations.Parameters.*;
 
-import java.util.Set;
-import java.util.stream.*;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.*;
 import java.util.stream.Stream;
-
-import static org.ngafid.flights.calculations.Parameters.*;
+import org.ngafid.Database;
+import org.ngafid.airports.Airport;
+import org.ngafid.airports.Airports;
+import org.ngafid.airports.Runway;
+import org.ngafid.events.Event;
+import org.ngafid.events.EventDefinition;
 
 public class NIFA implements Serializable {
 
@@ -70,12 +69,12 @@ public class NIFA implements Serializable {
         nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_THIRD_TURN, "DEBUG_EXIT_THIRD_TURN"));
         nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_FINAL_TURN, "DEBUG_EXIT_FINAL_TURN"));
         nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_NIFA_TRACKING_ERROR, "DEBUG_NIFA_TRACKING_ERROR"));
-   
+
         // ... etc
         // Create map
         for (NIFAEventDefinition def : nifaEventDefinitions)
             nifaEventDefinitionMap.put(def.id, def);
-        
+
         try {
             init(Database.getConnection());
         } catch (SQLException e) {
@@ -97,7 +96,7 @@ public class NIFA implements Serializable {
             .collect(Collectors.toSet());
         for (NIFAEventDefinition e : nifaEventDefinitions) {
             if (!eventIds.contains(e.id))
-                EventDefinition.insert(connection, 
+                EventDefinition.insert(connection,
                     e.id, e.name, e.startBuffer, e.stopBuffer, 0);
         }
     }
@@ -160,13 +159,13 @@ public class NIFA implements Serializable {
             LOG.info("Could not process flight " + flight.getId());
         }
     }
-   
+
 
     // Creates event of a given type between the given index range and inserts it into the database.
     void createEvent(Connection connection, int eventDefinitionId, int startIndex, int endIndex) {
         String startTimestamp = dates.get(startIndex)+ " " + times.get(startIndex);
         String endTimestamp = dates.get(endIndex) + " " + times.get(endIndex);
-        
+
         Event e = new Event(0, fleetId, flightId, eventDefinitionId, startIndex, endIndex, startTimestamp, endTimestamp, 1.0, null);
         e.updateDatabase(connection, fleetId, flightId, eventDefinitionId);
     }
@@ -222,7 +221,7 @@ public class NIFA implements Serializable {
             if (!it.wasApproach())
                 continue;
 
-            System.out.println( "start approach: " + it.startOfApproach + ", end approach: " + it.endOfApproach + "\n" 
+            System.out.println( "start approach: " + it.startOfApproach + ", end approach: " + it.endOfApproach + "\n"
                               + "start takeoff:  " + it.startOfTakeoff + ", end takeoff  : " + it.endOfTakeoff + "\n"
                               + "final index:    " + it.finalIndex);
 
@@ -294,7 +293,7 @@ public class NIFA implements Serializable {
                             isCrosswind = false;
                             // TODO mark 'DEBUG ENTER FINAL TURN' event here!
                             createEvent(connection, DEBUG_ENTER_FINAL_TURN, i, i + 1);
-                            
+
                             // TODO: overshoot/undershoot final approach too complex for this implementation
                         }
                     }

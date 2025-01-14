@@ -1,36 +1,23 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.function.Function;
-
-import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-
-import java.sql.Connection;
-import java.sql.SQLException;
 
 import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-import spark.Spark;
-
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+import org.ngafid.Database;
+import org.ngafid.accounts.*;
 import org.ngafid.accounts.User;
 import org.ngafid.events.EventStatistics;
-import org.ngafid.Database;
 import org.ngafid.flights.*;
-import org.ngafid.accounts.*;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
 public class PostStatistic implements Route {
     private static final Logger LOG = Logger.getLogger(PostStatistic.class.getName());
@@ -47,7 +34,7 @@ public class PostStatistic implements Route {
             Map.entry("flightTime", StatFetcher::flightTime),
             Map.entry("yearFlightTime", StatFetcher::yearFlightTime),
             Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
-            
+
             Map.entry("numberFlights", StatFetcher::numberFlights),
             Map.entry("numberAircraft", StatFetcher::numberAircraft),
             Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights),
@@ -73,7 +60,7 @@ public class PostStatistic implements Route {
             this.connection = connection;
             this.user = user;
 
-            if (aggregate) { 
+            if (aggregate) {
                 this.fleetId = -1;
             } else {
                 this.fleetId = user.getFleetId();
@@ -87,10 +74,10 @@ public class PostStatistic implements Route {
         LocalDate thirtyDaysAgo() { return LocalDate.now().minusDays(30); }
         LocalDate firstOfMonth() { return LocalDate.now().with(TemporalAdjusters.firstDayOfMonth()); }
         LocalDate firstOfYear() { return LocalDate.now().with(TemporalAdjusters.firstDayOfYear()); }
-        
+
         String lastThirtyDaysQuery() { return "start_time >= '" + thirtyDaysAgo().toString() + "'"; }
         String yearQuery() { return "start_time >= '" + firstOfYear().toString() + "'"; }
-        
+
         Long flightTime() throws SQLException { return Flight.getTotalFlightTime(connection, fleetId, null); }
         Long yearFlightTime() throws SQLException { return Flight.getTotalFlightTime(connection, yearQuery(), fleetId); }
         Long monthFlightTime() throws SQLException { return Flight.getTotalFlightTime(connection, lastThirtyDaysQuery(), fleetId); }
@@ -135,9 +122,9 @@ public class PostStatistic implements Route {
         try {
             Connection connection = Database.getConnection();
             StatFetcher fetcher = new StatFetcher(connection, user, aggregate);
-            
+
             String[] stats;
-            
+
             if (request.splat().length > 0) {
                 stats = request.splat();
             } else {
@@ -150,7 +137,7 @@ public class PostStatistic implements Route {
                 LOG.info("Computing " + stats[i]);
                 statistics.put(stats[i], StatFetcher.function_map.get(stats[i]).execute(fetcher));
             }
-            
+
             return gson.toJson(statistics);
 
         } catch (SQLException e) {
@@ -158,6 +145,6 @@ public class PostStatistic implements Route {
             return gson.toJson(new ErrorResponse(e));
         }
 
-        
+
     }
 }

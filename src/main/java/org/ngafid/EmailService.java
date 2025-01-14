@@ -1,16 +1,6 @@
 package org.ngafid;
 
 /*
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.Properties;
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
 */
 
 public class EmailService {
@@ -84,5 +74,3 @@ public class EmailService {
     */
 
 }
-
-

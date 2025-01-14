@@ -1,7 +1,6 @@
 package org.ngafid.filters;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -96,7 +95,7 @@ public class Conditional {
                     this.parameterValue = minMax.first(); //set to min
                 } else {
                     this.parameterValue = minMax.second(); //set to max
-                } 
+                }
             }
         } else if (type.equals("GROUP")) {
             for (Conditional child : children) {

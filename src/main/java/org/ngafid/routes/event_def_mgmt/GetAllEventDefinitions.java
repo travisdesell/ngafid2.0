@@ -1,19 +1,13 @@
 package org.ngafid.routes.event_def_mgmt;
 
 import com.google.gson.Gson;
+import java.sql.Connection;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.events.EventDefinition;
-import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.logging.Logger;
 
 public class GetAllEventDefinitions implements Route {
     private static final Logger LOG = Logger.getLogger(GetAllEventDefinitions.class.getName());

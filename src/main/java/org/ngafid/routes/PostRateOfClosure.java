@@ -1,13 +1,13 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
+import java.sql.Connection;
+import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.events.RateOfClosure;
 import spark.Request;
 import spark.Response;
 import spark.Route;
-import java.sql.Connection;
-import java.util.logging.Logger;
 
 public class PostRateOfClosure implements Route {
 

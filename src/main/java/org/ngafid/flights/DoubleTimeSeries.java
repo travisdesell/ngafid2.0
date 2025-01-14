@@ -1,28 +1,23 @@
 package org.ngafid.flights;
 
+import static org.ngafid.flights.calculations.Parameters.*;
+
 import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
-
+import javax.sql.rowset.serial.SerialBlob;
 import org.ngafid.Database;
 import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
-
-import static org.ngafid.flights.calculations.Parameters.*;
-
-import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
@@ -279,9 +274,9 @@ public class DoubleTimeSeries {
         Blob values = resultSet.getBlob(10);
         byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
-        
+
         this.data = Compression.inflateDoubleArray(bytes, size);
-       
+
         // OLD COMPRESSION CODE
         // byte[] bytes = values.getBytes(1, (int)values.length());
         // values.free();
@@ -299,7 +294,7 @@ public class DoubleTimeSeries {
         // } catch (Exception e) {
         //     e.printStackTrace();
         // }
-        // 
+        //
         // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
     }
 
@@ -312,7 +307,7 @@ public class DoubleTimeSeries {
         // Need to resize
         if (this.size == data.length) {
             // Create a new buffer then copy the data to the new buffer.
-            double[] oldData = this.data; 
+            double[] oldData = this.data;
             this.data = new double[data.length * 2];
             System.arraycopy(oldData, 0, this.data, 0, oldData.length);
         }
@@ -406,7 +401,7 @@ public class DoubleTimeSeries {
             // UPDATED COMPRESSION CODE
             // byte[] compressed = Compression.compressDoubleArray(this.data);
             // Blob seriesBlob = new SerialBlob(compressed);
-            
+
             // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
             // is a list of objects rather than a list of primitives - it consumes much more memory.
             // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
@@ -526,4 +521,3 @@ public class DoubleTimeSeries {
         return newSeries;
     }
 }
-

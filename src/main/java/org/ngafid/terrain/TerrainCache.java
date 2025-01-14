@@ -1,16 +1,8 @@
 package org.ngafid.terrain;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
 
-import javax.imageio.ImageIO;
 
-import java.io.IOException;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.NoSuchFileException;
 
 
@@ -32,7 +24,7 @@ public class TerrainCache {
         TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
         //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
     }
-    
+
 
     //each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
     //the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
@@ -197,4 +189,3 @@ public class TerrainCache {
     }
 
 }
-
