@@ -14,10 +14,8 @@ import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;
-import spark.Session;
 
 import org.ngafid.Database;
-import org.ngafid.accounts.User;
 
 /**
  * This class provides all the names of {@link DoubleTimeSeries} in the NGAFID

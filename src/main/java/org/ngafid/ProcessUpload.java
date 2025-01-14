@@ -1,45 +1,41 @@
 package org.ngafid;
 
-import java.io.*;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.Fleet;
+import org.ngafid.accounts.User;
+import org.ngafid.flights.*;
+import org.ngafid.flights.process.Pipeline;
+import org.ngafid.proximity.CalculateProximity;
 
+import java.io.Console;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
-import org.ngafid.flights.FatalFlightFileException;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.MalformedFlightFileException;
-import org.ngafid.flights.Upload;
-import org.ngafid.flights.UploadError;
-import org.ngafid.flights.process.*;
-import org.ngafid.proximity.CalculateProximity;
-import org.ngafid.accounts.Fleet;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-public class ProcessUpload {
-    private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
+public final class ProcessUpload {
     private static final String ERROR_STATUS_STR = "ERROR";
+    private static boolean batchedDB = true;
+    private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
-    static int poolSize = 1;
-    static boolean batchedDB = true;
+    private ProcessUpload() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     public static void sendMonthlyFlightsUpdate(int fleetID) {
         try {
@@ -63,8 +59,7 @@ public class ProcessUpload {
 
     public static void main(String[] arguments) throws SQLException {
         String batchedDBS = System.getenv("BATCHED_DB");
-        if (batchedDBS != null)
-            batchedDB = Boolean.parseBoolean(batchedDBS);
+        if (batchedDBS != null) batchedDB = Boolean.parseBoolean(batchedDBS);
 
         removeNoUploadFlights();
 
@@ -82,21 +77,20 @@ public class ProcessUpload {
 
     /**
      * Sometimes in the process of removing an upload (probably via the webpage)
-     * this operation
-     * does not complete and this results in flights being in the database with a
-     * non-existant
-     * upload. This can cause the upload process to crash.
+     * this operation does not complete and this results in flights being in the
+     * database with a non-existaet upload. This can cause the upload process to
+     * crash.
      *
      * @param connection is the connection to the database
      */
     public static void removeNoUploadFlights() {
         try (Connection connection = Database.getConnection()) {
-            ArrayList<Flight> noUploadFlights = Flight.getFlights(connection,
-                    "NOT EXISTS (SELECT * FROM uploads WHERE uploads.id = flights.upload_id)");
+            ArrayList<Flight> noUploadFlights = Flight.getFlights(connection, "NOT EXISTS (SELECT * FROM uploads " +
+                    "WHERE uploads.id = flights.upload_id)");
 
             for (Flight flight : noUploadFlights) {
-                LOG.info("flight had no related upload. flight id: " + flight.getId() + ", uplaod id: "
-                        + flight.getUploadId());
+                LOG.info("flight had no related upload. flight id: " + flight.getId()
+                        + ", upload id: " + flight.getUploadId());
                 flight.remove(connection);
             }
 
@@ -111,10 +105,11 @@ public class ProcessUpload {
         while (true) {
             Instant start = Instant.now();
 
-            try (Connection connection = Database.getConnection()) {
-                PreparedStatement fleetPreparedStatement = connection.prepareStatement(
-                        "SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
-                ResultSet fleetSet = fleetPreparedStatement.executeQuery();
+            try (Connection connection = Database.getConnection();
+                 PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE " +
+                         "EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = " +
+                         "'UPLOADED')");
+                 ResultSet fleetSet = fleetPreparedStatement.executeQuery()) {
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     LOG.info("Importing an upload from fleet: " + targetFleetId);
@@ -124,34 +119,30 @@ public class ProcessUpload {
                         continue;
                     }
 
-                    PreparedStatement uploadsPreparedStatement = connection
-                            .prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ?");
+                    try (PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id FROM uploads " +
+                            "WHERE status = ? AND fleet_id = ?")) {
 
-                    uploadsPreparedStatement.setString(1, "UPLOADED");
-                    uploadsPreparedStatement.setInt(2, targetFleetId);
+                        uploadsPreparedStatement.setString(1, "UPLOADED");
+                        uploadsPreparedStatement.setInt(2, targetFleetId);
 
-                    ResultSet resultSet = uploadsPreparedStatement.executeQuery();
-
-                    while (resultSet.next()) {
-                        int uploadId = resultSet.getInt(1);
-                        processUpload(uploadId);
+                        try (ResultSet resultSet = uploadsPreparedStatement.executeQuery()) {
+                            while (resultSet.next()) {
+                                int uploadId = resultSet.getInt(1);
+                                processUpload(uploadId);
+                            }
+                        }
                     }
-
-                    resultSet.close();
-                    uploadsPreparedStatement.close();
                 }
 
-                fleetSet.close();
-                fleetPreparedStatement.close();
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.exit(1);
             }
 
             Instant end = Instant.now();
-            double elapsed_millis = (double) Duration.between(start, end).toMillis();
-            double elapsed_seconds = elapsed_millis / 1000;
-            LOG.info("finished in " + elapsed_seconds);
+            double elapsedMillis = (double) Duration.between(start, end).toMillis();
+            double elapsedSeconds = elapsedMillis / 1000;
+            LOG.info("finished in " + elapsedSeconds);
 
             try {
                 Thread.sleep(10000);
@@ -168,15 +159,15 @@ public class ProcessUpload {
             Fleet fleet = Fleet.get(connection, fleetId);
             String f = fleet.getName() == null ? " NULL NAME " : fleet.getName();
             List<Upload> uploads = Upload.getUploads(connection, fleetId);
-            System.out.print("Found " + uploads.size() + " uploads from fleet " + f
-                    + ". Would you like to reimport them? [Y/n] ");
+            System.out.print("Found " + uploads.size() + " uploads from fleet " + f + ". Would you like to reimport " +
+                    "them? [Y/n] ");
             Console con = System.console();
             String s = con.readLine("");
             if (s.toLowerCase().startsWith("y")) {
                 for (Upload upload : uploads) {
                     if (upload == null) {
-                        LOG.severe(
-                                "Encountered a null upload. this should never happen, but moving on to the next upload");
+                        LOG.severe("Encountered a null upload. this should never happen, but moving on to the next " +
+                                "upload");
                         continue;
                     }
                     processUpload(upload);
@@ -199,8 +190,8 @@ public class ProcessUpload {
             if (upload == null) {
                 // An upload with this id did not exist in the database, report an error. This
                 // should not happen.
-                LOG.severe("ERROR: attempted to importing an upload with upload id " + uploadId
-                        + ", but the upload did not exist. This should never happen.");
+                LOG.severe("ERROR: attempted to importing an upload with upload id " + uploadId + ", but the upload " +
+                        "did not exist. This should never happen.");
                 System.exit(1);
             }
 
@@ -224,8 +215,8 @@ public class ProcessUpload {
             recipients.add(uploaderEmail);
             ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); // always email admins to keep tabs on things
 
-            String formattedStartDateTime = ZonedDateTime.now()
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
+            String formattedStartDateTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd " +
+                    "hh:mm:ss z (O)"));
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
@@ -262,31 +253,11 @@ public class ProcessUpload {
         }
     }
 
-    public static class FlightInfo {
-        /**
-         * This is a helper class so we don't keep all loaded flights in memory.
-         */
-
-        int id;
-        int length;
-        String filename;
-        List<MalformedFlightFileException> exceptions;
-
-        public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
-            this.id = id;
-            this.length = length;
-            this.filename = filename;
-            this.exceptions = exceptions;
-        }
-    }
-
-    public static boolean ingestFlights(Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail)
-            throws SQLException {
+    public static boolean ingestFlights(Connection connection, Upload upload,
+                                        UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
 
         int uploadId = upload.getId();
-        int uploaderId = upload.getUploaderId();
-        int fleetId = upload.getFleetId();
 
         String filename = upload.getArchivePath().toString();
         LOG.info("processing: '" + filename + "'");
@@ -308,8 +279,8 @@ public class ProcessUpload {
 
         if (extension.equals(".zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
-            try (ZipFile zipFile = new ZipFile(filename);
-                    Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
+            try (ZipFile zipFile = new ZipFile(filename); Pipeline pipeline = new Pipeline(connection, upload,
+                    zipFile)) {
                 pipeline.execute();
 
                 flightInfo = pipeline.getFlightInfo();
@@ -322,21 +293,21 @@ public class ProcessUpload {
                 LOG.log(Level.SEVERE, "NoSuchFileException: {0}", e.toString());
                 e.printStackTrace();
 
-                UploadError.insertError(connection, uploadId,
-                        "Broken upload: please delete this upload and re-upload.");
+                UploadError.insertError(connection, uploadId, "Broken upload: please delete this upload " +
+                        "and re-upload.");
                 status = ERROR_STATUS_STR;
-                uploadException = new Exception(
-                        e.toString() + ", broken upload: please delete this upload and re-upload.");
+                uploadException = new Exception(e + ", broken upload: please delete this upload and " +
+                        "re-upload.");
 
             } catch (IOException e) {
                 LOG.log(Level.SEVERE, "IOException: {0}", e.toString());
                 e.printStackTrace();
 
-                UploadError.insertError(connection, uploadId,
-                        "Could not read from zip file: please delete this upload and re-upload.");
+                UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this " +
+                        "upload and re-upload.");
                 status = ERROR_STATUS_STR;
-                uploadException = new Exception(
-                        e.toString() + ", could not read from zip file: please delete this upload and re-upload.");
+                uploadException = new Exception(e + ", could not read from zip file: please delete this " +
+                        "upload and re-upload.");
             }
         } else {
             // insert an upload error for this upload
@@ -349,8 +320,8 @@ public class ProcessUpload {
         // update upload in database, add upload exceptions if there are any
         try (
 
-                PreparedStatement updateStatement = connection.prepareStatement(
-                        "UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
+                PreparedStatement updateStatement = connection.prepareStatement("UPDATE uploads SET status = ?, " +
+                        "n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
             updateStatement.setString(1, status);
             updateStatement.setInt(2, validFlights);
             updateStatement.setInt(3, warningFlights);
@@ -367,18 +338,18 @@ public class ProcessUpload {
 
         // prepare the response email
         if (uploadException != null) {
-            uploadProcessedEmail
-                    .addImportFailure("Could not import upload '" + filename + "' due to the following error:\n");
+            uploadProcessedEmail.addImportFailure("Could not import upload '" + filename + "' due to the following " +
+                    "error:\n");
             uploadProcessedEmail.addImportFailure(uploadException.getMessage());
 
             // ingestion failed
             return false;
         } else {
             Instant end = Instant.now();
-            double elapsed_millis = (double) Duration.between(start, end).toMillis();
-            double elapsed_seconds = elapsed_millis / 1000;
-            LOG.info("email in " + elapsed_seconds);
-            uploadProcessedEmail.setImportElapsedTime(elapsed_seconds);
+            double elapsedMillis = (double) Duration.between(start, end).toMillis();
+            double elapsedSeconds = elapsedMillis / 1000;
+            LOG.info("email in " + elapsedSeconds);
+            uploadProcessedEmail.setImportElapsedTime(elapsedSeconds);
 
             LOG.info("valid flights: " + validFlights);
             LOG.info("warning flights: " + warningFlights);
@@ -424,16 +395,35 @@ public class ProcessUpload {
                 CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
                 CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
                 CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
-            } catch (IOException | SQLException | FatalFlightFileException | MalformedFlightFileException
-                    | ParseException e) {
+            } catch (IOException | SQLException | FatalFlightFileException | MalformedFlightFileException |
+                     ParseException e) {
                 LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
                 status = ERROR_STATUS_STR;
-                uploadException = new Exception(
-                        e.toString() + "\nFailed computing events...");
+                uploadException = new Exception(e.toString() + "\nFailed computing events...");
             }
         }
 
-        // ingestion was successfull
+        // ingestion was successful
         return true;
+    }
+
+    public static class FlightInfo {
+        /**
+         * This is a helper class so we don't keep all loaded flights in memory.
+         */
+
+        //CHECKSTYLE:OFF
+        int id;
+        int length;
+        String filename;
+        List<MalformedFlightFileException> exceptions;
+
+        //CHECKSTYLE:ON
+        public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
+            this.id = id;
+            this.length = length;
+            this.filename = filename;
+            this.exceptions = exceptions;
+        }
     }
 }

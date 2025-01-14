@@ -63,11 +63,11 @@ public class PostRemoveTag implements Route {
                 Flight.deleteTag(tagId, connection);
             } else if (allTags) {
                 LOG.info("Clearing all tags from flight " + flightId);
-                Flight.unassociateAllTags(flightId, connection);
+                Flight.disassociateAllTags(flightId, connection);
 
                 return gson.toJson(new RemoveTagResponse());
             } else {
-                Flight.unassociateTags(tagId, connection, flightId);
+                Flight.disassociateTags(tagId, connection, flightId);
             }
 
             // check to see if the user has access to this data

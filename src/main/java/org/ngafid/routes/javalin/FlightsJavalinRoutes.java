@@ -127,7 +127,7 @@ public class FlightsJavalinRoutes {
 
             sb.append("var visitedAirports = JSON.parse('");
             startTime = System.currentTimeMillis();
-            ArrayList<String> airports = Itinerary.getAllAirports(connection, fleetId);
+            List<String> airports = Itinerary.getAllAirports(connection, fleetId);
             sb.append(gson.toJson(airports));
             endTime = System.currentTimeMillis();
             LOG.info("get all airports names took: " + ((endTime - startTime) / 1000.0) + " seconds");

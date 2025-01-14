@@ -1,17 +1,14 @@
 package org.ngafid.flights.process;
 
-import java.time.*;
 import java.util.Set;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.logging.Logger;
-import java.time.format.DateTimeFormatter;
 
+import static org.ngafid.flights.Flight.calculateLOCI;
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
-import org.ngafid.common.*;
-import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.FatalFlightFileException;
@@ -19,7 +16,7 @@ import org.ngafid.flights.FatalFlightFileException;
 public class ProcessLOCI extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessLOCI.class.getName());
 
-    public static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
 
     public ProcessLOCI(Connection connection, FlightBuilder builder) {
         super(connection, builder);
@@ -57,16 +54,7 @@ public class ProcessLOCI extends ProcessStep {
         DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", length,
                 (int index) -> {
                     double laggedHdg = hdgLagged.get(index);
-                    double yawRate = Double.isNaN(laggedHdg) ? 0
-                            : 180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
-
-                    double yawComp = yawRate * COMP_CONV;
-                    double vrComp = ((tas.get(index) / 60) * yawComp);
-                    double rollComp = roll.get(index) * COMP_CONV;
-                    double ctComp = Math.sin(rollComp) * 32.2;
-                    double value = Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
-
-                    return value;
+                    return calculateLOCI(hdg, index, roll, tas, laggedHdg);
                 });
         DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", length,
                 index -> {

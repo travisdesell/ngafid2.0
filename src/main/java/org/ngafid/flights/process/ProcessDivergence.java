@@ -1,19 +1,16 @@
 package org.ngafid.flights.process;
 
-import java.util.Set;
-import java.util.Map;
-import static java.util.Map.entry;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Collections;
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import org.ngafid.flights.DoubleTimeSeries;
-import static org.ngafid.flights.Parameters.*;
-import static org.ngafid.flights.Airframes.*;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+
+import static java.util.Map.entry;
+import static org.ngafid.flights.Airframes.*;
+import static org.ngafid.flights.Parameters.Unit;
 
 public class ProcessDivergence extends ProcessStep {
 
@@ -83,7 +80,7 @@ public class ProcessDivergence extends ProcessStep {
     }
 
     public Set<String> getRequiredStringColumns() {
-        return Collections.<String>emptySet();
+        return Collections.emptySet();
     }
 
     public Set<String> getRequiredColumns() {
@@ -119,8 +116,8 @@ public class ProcessDivergence extends ProcessStep {
     }
 
     private void calculateDivergence(List<String> columnNames, String varianceColumnName)
-            throws MalformedFlightFileException, SQLException {
-        DoubleTimeSeries columns[] = new DoubleTimeSeries[columnNames.size()];
+            throws MalformedFlightFileException {
+        DoubleTimeSeries[] columns = new DoubleTimeSeries[columnNames.size()];
         for (int i = 0; i < columns.length; i++) {
             columns[i] = builder.getDoubleTimeSeries(columnNames.get(i));
 
@@ -136,12 +133,12 @@ public class ProcessDivergence extends ProcessStep {
             double max = -Double.MAX_VALUE;
             double min = Double.MAX_VALUE;
 
-            for (int j = 0; j < columns.length; j++) {
-                double current = columns[j].get(i);
+            for (DoubleTimeSeries column : columns) {
+                double current = column.get(i);
                 if (!Double.isNaN(current) && current > max)
-                    max = columns[j].get(i);
+                    max = column.get(i);
                 if (!Double.isNaN(current) && current < min)
-                    min = columns[j].get(i);
+                    min = column.get(i);
             }
 
             double v = 0;

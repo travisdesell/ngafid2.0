@@ -2,20 +2,22 @@ package org.ngafid.flights.process;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import org.ngafid.flights.*;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Airframes.AliasKey;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.StringTimeSeries;
 
-import java.sql.Connection;
+import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import javax.xml.bind.DatatypeConverter;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders.
@@ -35,8 +37,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         this(connection, stream.readAllBytes(), filename, pipeline);
     }
 
-    private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline)
-            throws IOException {
+    private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline) {
         super(connection, new ByteArrayInputStream(bytes), filename, pipeline);
 
         headers = new ArrayList<>();
@@ -66,9 +67,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
-        try (BufferedReader bufferedReader = new BufferedReader(
-                new InputStreamReader(super.stream, StandardCharsets.UTF_8));
-                CSVReader csvReader = new CSVReader(bufferedReader)) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream,
+                StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
             String fileInformation = getFlightInfo(bufferedReader); // Will read a line
 
             if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
@@ -76,12 +76,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             } else {
                 processFileInormation(fileInformation);
                 bufferedReader.read(); // Skip first char (#)
-                Arrays.stream(csvReader.readNext())
-                        .map(String::strip)
-                        .forEachOrdered(dataTypes::add);
-                Arrays.stream(csvReader.readNext())
-                        .map(String::strip)
-                        .forEachOrdered(headers::add);
+                Arrays.stream(csvReader.readNext()).map(String::strip).forEachOrdered(dataTypes::add);
+                Arrays.stream(csvReader.readNext()).map(String::strip).forEachOrdered(headers::add);
             }
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
@@ -94,8 +90,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             int validRows = 0;
             for (String[] row : rows) {
                 // Encountered a row that is broken for some reason?
-                if (row.length != headers.size())
-                    break;
+                if (row.length != headers.size()) break;
                 for (int i = 0; i < row.length; i++)
                     columns.get(i).add(row[i]);
                 validRows += 1;
@@ -103,8 +98,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
             // If we detect an invalid row before the last row of the file, or there are no valid rows.
             if (validRows < Math.max(columns.size() - 2, 0)) {
-                throw new FatalFlightFileException(
-                        "Flight file has 0 valid rows - something serious is wrong with the format.");
+                throw new FatalFlightFileException("Flight file has 0 valid rows - something serious is wrong with " +
+                        "the format.");
             }
 
             for (int i = 0; i < columns.size(); i++) {
@@ -137,16 +132,16 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     /**
      * Gets the flight information from the first line of the file
-     * 
+     *
      * @param reader BufferedReader for reading the first line
-     * @return
+     * @return The first line of the file
      * @throws FatalFlightFileException
      * @throws IOException
      */
     private String getFlightInfo(BufferedReader reader) throws FatalFlightFileException, IOException {
         String fileInformation = reader.readLine();
 
-        if (fileInformation == null || fileInformation.trim().length() == 0) {
+        if (fileInformation == null || fileInformation.trim().isEmpty()) {
             throw new FatalFlightFileException("The flight file was empty.");
         }
 
@@ -157,8 +152,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 meta.airframe = new Airframes.Airframe("ScanEagle");
                 meta.airframeType = new Airframes.AirframeType("UAS Fixed Wing");
             } else {
-                throw new FatalFlightFileException(
-                        "First line of the flight file should begin with a '#' and contain flight recorder information.");
+                throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain"
+                        + " flight recorder information.");
             }
         }
 
@@ -168,11 +163,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
     /**
      * Flight files usually have two lines of meta data at the top, which are preceeded by pound signs #.
      * An example line looks something like:
-     *
+     * <p>
      * #system_id=xxx, key1=val1, key2=val2, ...
-     *
+     * <p>
      * We gather the key:value pairs and pull out any useful information we find, storing the results in a FlightMeta
      * object.
+     *
+     * @param fileInformation The first line of the file
      */
     private void processFileInormation(String fileInformation) throws FatalFlightFileException {
         // Some files have random double quotes in the header for some reason? We can
@@ -184,10 +181,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
         try {
             for (int i = 1; i < infoParts.length; i++) {
                 // process everything else (G1000 data)
-                if (infoParts[i].trim().length() == 0)
-                    continue;
+                if (infoParts[i].trim().isEmpty()) continue;
 
-                String subParts[] = infoParts[i].trim().split("=");
+                String[] subParts = infoParts[i].trim().split("=");
 
                 // May throw index out of bounds.
                 values.put(subParts[0].trim(), subParts[1].trim());
@@ -195,8 +191,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } catch (IndexOutOfBoundsException e) {
             // LOG.info("parsting flight information threw exception: " + e);
             // e.printStackTrace();
-            throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.",
-                    e);
+            throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs" +
+                    ".", e);
         }
 
         for (var entry : values.entrySet()) {
@@ -219,23 +215,17 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         if (Airframes.AIRFRAME_ALIASES.containsKey(fleetKey)) {
             meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.get(fleetKey));
-        } else if (Airframes.AIRFRAME_ALIASES.containsKey(defaultKey)) {
-            meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.get(defaultKey));
-        } else {
-            meta.airframe = new Airframes.Airframe(name);
-        }
+        } else meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.getOrDefault(defaultKey, name));
 
-        if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframe.getName())
-                || meta.airframe.getName().contains("Garmin")) {
+        if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframe.getName()) || meta.airframe.getName().contains(
+                "Garmin")) {
             meta.airframeType = new Airframes.AirframeType("Fixed Wing");
         } else if (Airframes.ROTORCRAFT.contains(meta.airframe.getName())) {
             meta.airframeType = new Airframes.AirframeType("Rotorcraft");
         } else {
-            LOG.severe(
-                    "Could not import flight because the aircraft type was unknown for the following airframe name: '"
-                            + meta.airframe.getName() + "'");
-            LOG.severe(
-                    "Please add this to the the `airframe_type` table in the database and update this method.");
+            LOG.severe("Could not import flight because the aircraft type was unknown for the following airframe " +
+                    "name: '" + meta.airframe.getName() + "'");
+            LOG.severe("Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }
 
@@ -243,7 +233,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     /**
      * Parses for ScanEagle flight data
-     * 
+     *
      * @param fileInformation First line of the file
      */
     private void scanEagleParsing(String fileInformation) {

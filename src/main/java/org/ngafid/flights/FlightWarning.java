@@ -3,7 +3,6 @@ package org.ngafid.flights;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -31,8 +30,9 @@ public class FlightWarning {
         return connection.prepareStatement("INSERT INTO flight_warnings (flight_id, message_id) VALUES (?, ?)");
     }
 
-    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException {
-        preparedStatement.setInt(1, flightId);
+    public void addBatch(Connection connection, PreparedStatement preparedStatement,
+                         int flightIdToAdd) throws SQLException {
+        preparedStatement.setInt(1, flightIdToAdd);
         preparedStatement.setInt(2, ErrorMessage.getMessageId(connection, message));
         preparedStatement.addBatch();
     }
@@ -46,7 +46,9 @@ public class FlightWarning {
 
     public static List<FlightWarning> getWarningsByFlight(Connection connection, int flightId) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(
-                "SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.id = ? AND flight_warnings.flight_id = flights.id")) {
+                "SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, " +
+                        "flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.id = ? AND " +
+                        "flight_warnings.flight_id = flights.id")) {
             query.setInt(1, flightId);
 
             try (ResultSet resultSet = query.executeQuery()) {
@@ -63,7 +65,9 @@ public class FlightWarning {
 
     public static ArrayList<FlightWarning> getFlightWarnings(Connection connection, int uploadId) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(
-                "SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.upload_id = ? AND flight_warnings.flight_id = flights.id")) {
+                "SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, " +
+                        "flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.upload_id = ? AND " +
+                        "flight_warnings.flight_id = flights.id")) {
             query.setInt(1, uploadId);
 
             try (ResultSet resultSet = query.executeQuery()) {

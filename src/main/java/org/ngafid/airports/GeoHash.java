@@ -1,66 +1,68 @@
 package org.ngafid.airports;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+public final class GeoHash {
+    private static final int HASH_DECIMALS = 2;
+    private static final DecimalFormat DECIMAL_FORMAT;
 
-public class GeoHash {
-    private static final int hashDecimals = 2;
-    private static DecimalFormat decimalFormat;
+    private GeoHash() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     static {
-        String decimalStr = "";
-        for (int i = 0; i < hashDecimals; i++) {
-            decimalStr += "#";
-        }
+        StringBuilder decimalStr = new StringBuilder();
+        decimalStr.append("#".repeat(HASH_DECIMALS));
 
-        decimalFormat = new DecimalFormat("###." + decimalStr);
-        decimalFormat.setRoundingMode(RoundingMode.HALF_DOWN);
-        decimalFormat.setPositivePrefix("+");
+        DECIMAL_FORMAT = new DecimalFormat("###." + decimalStr);
+        DECIMAL_FORMAT.setRoundingMode(RoundingMode.HALF_DOWN);
+        DECIMAL_FORMAT.setPositivePrefix("+");
     }
 
     public static String getGeoHash(double latitude, double longitude) {
-        return decimalFormat.format(latitude) + decimalFormat.format(longitude);
+        return DECIMAL_FORMAT.format(latitude) + DECIMAL_FORMAT.format(longitude);
     }
-    
+
 
     public static String[] getNearbyGeoHashes(double latitude, double longitude) {
-        String latHash = decimalFormat.format(latitude);
-        String lonHash = decimalFormat.format(longitude);
+        String latHash = DECIMAL_FORMAT.format(latitude);
+        String lonHash = DECIMAL_FORMAT.format(longitude);
 
         double trimmedLat = JavaDoubleParser.parseDouble(latHash);
         double trimmedLon = JavaDoubleParser.parseDouble(lonHash);
-        double modifier = Math.pow(10, -hashDecimals);
+        double modifier = Math.pow(10, -HASH_DECIMALS);
 
         String[] hashes = new String[9];
 
         //NW tile
-        hashes[0] = decimalFormat.format(trimmedLat + modifier) + decimalFormat.format(trimmedLon - modifier);
+        hashes[0] = DECIMAL_FORMAT.format(trimmedLat + modifier) + DECIMAL_FORMAT.format(trimmedLon - modifier);
 
         //N tile
-        hashes[1] = decimalFormat.format(trimmedLat + modifier) + lonHash;
+        hashes[1] = DECIMAL_FORMAT.format(trimmedLat + modifier) + lonHash;
 
         //NE tile
-        hashes[2] = decimalFormat.format(trimmedLat + modifier) + decimalFormat.format(trimmedLon + modifier);
+        hashes[2] = DECIMAL_FORMAT.format(trimmedLat + modifier) + DECIMAL_FORMAT.format(trimmedLon + modifier);
 
         //W tile
-        hashes[3] = latHash + decimalFormat.format(trimmedLon - modifier);
+        hashes[3] = latHash + DECIMAL_FORMAT.format(trimmedLon - modifier);
 
         //center tile
         hashes[4] = latHash + lonHash;
 
         //E tile
-        hashes[5] = latHash + decimalFormat.format(trimmedLon + modifier);
+        hashes[5] = latHash + DECIMAL_FORMAT.format(trimmedLon + modifier);
 
         //SW tile
-        hashes[6] = decimalFormat.format(trimmedLat - modifier) + decimalFormat.format(trimmedLon - modifier);
+        hashes[6] = DECIMAL_FORMAT.format(trimmedLat - modifier) + DECIMAL_FORMAT.format(trimmedLon - modifier);
 
         //S tile
-        hashes[7] = decimalFormat.format(trimmedLat - modifier) + lonHash;
+        hashes[7] = DECIMAL_FORMAT.format(trimmedLat - modifier) + lonHash;
 
         //SE tile
-        hashes[8] = decimalFormat.format(trimmedLat - modifier) + decimalFormat.format(trimmedLon + modifier);
+        hashes[8] = DECIMAL_FORMAT.format(trimmedLat - modifier) + DECIMAL_FORMAT.format(trimmedLon + modifier);
 
         /*
         System.out.println("Neighboring GeoTags for " + latitude + ", " + longitude);

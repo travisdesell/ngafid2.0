@@ -8,17 +8,21 @@ import org.ngafid.flights.Flight;
 
 import java.util.logging.Logger;
 
-public class ValidateImporting {
+public final class ValidateImporting {
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
+    private ValidateImporting() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
     public static void main(String[] args) throws SQLException {
         Connection connectionNew = Database.getConnection();
-        Connection connectionOld = connectionNew; // Database.createConnection("ngafid", Database.dbName,
-                                                  // Database.dbHost, Database.dbPassword);
+        // Database.createConnection("ngafid", Database.dbName,
+        // Database.dbHost, Database.dbPassword);
 
         HashMap<String, Integer> newFlights = idMap(connectionNew);
-        HashMap<String, Integer> oldFlights = idMap(connectionOld);
+        HashMap<String, Integer> oldFlights = idMap(connectionNew);
 
         HashSet<String> hashes = new HashSet<>();
         hashes.addAll(newFlights.keySet());
@@ -39,7 +43,7 @@ public class ValidateImporting {
 
             LOG.info("Validating flight with hash " + hash);
 
-            Flight oldFlight = Flight.getFlight(connectionOld, oldId);
+            Flight oldFlight = Flight.getFlight(connectionNew, oldId);
             Flight newFlight = Flight.getFlight(connectionNew, newId);
 
             compareFlights(oldFlight, newFlight);

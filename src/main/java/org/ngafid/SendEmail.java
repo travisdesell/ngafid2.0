@@ -13,28 +13,27 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class SendEmail {
+public enum SendEmail {
+    ;
 
-    private static String password;
-    private static String username;
-    private static final ArrayList<String> adminEmails;
-    private static boolean emailEnabled = true;
-
+    private static final ArrayList<String> ADMIN_EMAILS;
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
-    private static final String baseURLFallback = "https://ngafid.org";
-    private static final String baseURLEnvironment = System.getenv("NGAFID_BASE_URL");
-    private static final String baseURL = Objects.requireNonNullElse(baseURLEnvironment, baseURLFallback);
-    private static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
-    private static final java.sql.Date lastTokenFree = new java.sql.Date(0);
+    private static final String BASE_URL = "https://ngafid.org";
+    // private static final String baseURL = "https://ngafidbeta.rit.edu";
+    private static final String UNSUB_URL_TEMPLATE = (BASE_URL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
+    private static final java.sql.Date LAST_TOKEN_FREE = new java.sql.Date(0);
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
     private static final int MS_PER_DAY = 86_400_000;
     private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY); // Minimum number of milliseconds needed
+    private static String password;
+    private static String username;
+    private static boolean emailEnabled = true;
     // before trying to free old tokens
 
     static {
 
         String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
-        LOG.info("Email base URL: " + baseURL);
+        LOG.info("Email base URL: " + BASE_URL);
 
         if (enabled != null && enabled.equalsIgnoreCase("false")) {
             LOG.info("Emailing has been disabled");
@@ -48,32 +47,34 @@ public class SendEmail {
             System.exit(1);
         }
 
-        String NGAFID_EMAIL_INFO = System.getenv("NGAFID_EMAIL_INFO");
+        String ngafidEmailInfo = System.getenv("NGAFID_EMAIL_INFO");
 
         if (System.getenv("NGAFID_ADMIN_EMAILS") == null) {
             System.err.println("ERROR: 'NGAFID_ADMIN_EMAILS' environment variable not specified at runtime.");
-            System.err.println("Please add a list of semicolon separated emails following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("Please add a list of semicolon separated emails following to your ~/.bash_rc or ~/" +
+                    ".profile file:");
             System.err.println("export NGAFID_ADMIN_EMAILS=\"person1@address.com;person2@address.net\"");
             System.exit(1);
         }
 
-        String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
-        adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
-        LOG.info("import emails will always also be sent to the following admin emails:");
-        for (String adminEmail : adminEmails) {
-            LOG.info("\t'" + adminEmail + "'");
+        String ngafidAdminEmails = System.getenv("NGAFID_ADMIN_EMAILS");
+        ADMIN_EMAILS = new ArrayList<>(Arrays.asList(ngafidAdminEmails.split(";")));
+        System.out.println("import emails will always also be sent to the following admin emails:");
+        for (String adminEmail : ADMIN_EMAILS) {
+            System.out.println("\t'" + adminEmail + "'");
         }
 
         try {
 
-            File file = new File(NGAFID_EMAIL_INFO);
-            BufferedReader bufferedReader = null;
+            File file = new File(ngafidEmailInfo);
 
             // Email info file does not exit...
             if (!file.exists()) {
 
                 // ...Create a new file and will populate it
-                file.createNewFile();
+                if (!file.createNewFile()) {
+                    throw new IllegalStateException("Could not create email file: " + ngafidEmailInfo);
+                }
 
                 try {
                     PrintWriter pw = new PrintWriter(file);
@@ -83,34 +84,36 @@ public class SendEmail {
 
                     pw.close();
                 } catch (IOException ie) {
-                    LOG.severe("ERROR: Could not write default information to email file: " + NGAFID_EMAIL_INFO);
+                    LOG.severe("ERROR: Could not write default information to email file: " + ngafidEmailInfo);
                 }
 
-                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + NGAFID_EMAIL_INFO + ".");
+                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + ngafidEmailInfo +
+                        ".");
 
             } else { // Email info file does exist...
 
                 // ...Read the file
-                bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(ngafidEmailInfo))) {
 
-                username = bufferedReader.readLine();
-                // System.out.println("read username: '" + username + "'");
+                    username = bufferedReader.readLine();
+                    // System.out.println("read username: '" + username + "'");
 
-                if (username != null && username.startsWith("#")) {
-                    LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
-                } else {
-                    password = bufferedReader.readLine();
-                    // System.out.println("read password: '" + password + "'");
-                    LOG.info("Using email address to send emails: " + username);
+                    if (username != null && username.startsWith("#")) {
+                        LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login" +
+                                " information to " + ngafidEmailInfo);
+                    } else {
+                        password = bufferedReader.readLine();
+                        // System.out.println("read password: '" + password + "'");
+                        LOG.info("Using email address to send emails: " + username);
+                    }
+
+                    // Don't remove this!
                 }
-
-                // Don't remove this!
-                bufferedReader.close();
 
             }
 
         } catch (IOException e) {
-            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + NGAFID_EMAIL_INFO + "'");
+            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + ngafidEmailInfo + "'");
             e.printStackTrace();
             System.exit(1);
         }
@@ -118,30 +121,7 @@ public class SendEmail {
     }
 
     public static ArrayList<String> getAdminEmails() {
-        return adminEmails;
-    }
-
-    private static class SMTPAuthenticator extends javax.mail.Authenticator {
-
-        String username;
-        String password;
-
-        public SMTPAuthenticator(String username, String password) {
-            this.username = username;
-            this.password = password;
-            LOG.info("Created authenticator with username: '" + this.username + "' and password: '" + this.password + "'");
-        }
-
-        public PasswordAuthentication getPasswordAuthentication() {
-            LOG.info("Attempting to authenticate with username: '" + this.username + "' and password: '" + this.password + "'");
-            return new PasswordAuthentication(this.username, this.password);
-        }
-
-        public boolean isValid() {
-            LOG.info("Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
-            return !(this.username == null || this.password == null);
-        }
-
+        return ADMIN_EMAILS;
     }
 
     public static void freeExpiredUnsubscribeTokens(Connection connection) throws SQLException {
@@ -149,13 +129,15 @@ public class SendEmail {
         java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
 
         // Wait at least 24 hours before trying to free tokens again
-        long tokenDeltaTime = (currentDate.getTime() - lastTokenFree.getTime());
-        LOG.info("Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " + currentDate.getTime() + " " + lastTokenFree.getTime());
+        long tokenDeltaTime = (currentDate.getTime() - LAST_TOKEN_FREE.getTime());
+        LOG.info("Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " +
+                currentDate.getTime() + " " + LAST_TOKEN_FREE.getTime());
         if (tokenDeltaTime < EXPIRATION_POLL_THRESHOLD_MS) {
-            LOG.info("Not attempting to free expired tokens (only " + tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
+            LOG.info("Not attempting to free expired tokens (only " +
+                    tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
             return;
         }
-        lastTokenFree.setTime(currentDate.getTime());
+        LAST_TOKEN_FREE.setTime(currentDate.getTime());
 
         String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -166,7 +148,8 @@ public class SendEmail {
         LOG.info("Freed expired email unsubscribe tokens");
     }
 
-    private static String generateUnsubscribeToken(String recipientEmail, int userID, Connection connection) throws SQLException {
+    private static String generateUnsubscribeToken(String recipientEmail,
+                                                   int userID, Connection connection) throws SQLException {
 
         // Generate a random string
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -183,18 +166,24 @@ public class SendEmail {
             preparedStatement.execute();
 
         } catch (SQLException e) {
-            LOG.severe("(SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": " + e.getMessage());
+            LOG.severe("(SQL Exception) Failed to generate token for email recipient: "
+                    + recipientEmail + ": " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.severe("(Non-SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": " + e.getMessage());
+            LOG.severe("(Non-SQL Exception) Failed to generate token for email recipient: "
+                    + recipientEmail + ": " + e.getMessage());
         }
 
         // Log the token's expiration date
         Calendar expirationCalendar = Calendar.getInstance();
         expirationCalendar.setTime(expirationDate);
-        String expirationDateString = expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) + " " + expirationCalendar.get(Calendar.DAY_OF_MONTH) + ", " + expirationCalendar.get(Calendar.YEAR) + " " + expirationCalendar.get(Calendar.HOUR_OF_DAY) + ":" + expirationCalendar.get(Calendar.MINUTE) + ":" + expirationCalendar.get(Calendar.SECOND);
+        String expirationDateString = expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) +
+                " " + expirationCalendar.get(Calendar.DAY_OF_MONTH) + ", " + expirationCalendar.get(Calendar.YEAR) +
+                " " + expirationCalendar.get(Calendar.HOUR_OF_DAY) + ":" + expirationCalendar.get(Calendar.MINUTE) +
+                ":" + expirationCalendar.get(Calendar.SECOND);
 
-        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at " + expirationDateString + ")");
+        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token
+                + " (Expires at " + expirationDateString + ")");
 
         return token;
 
@@ -203,26 +192,32 @@ public class SendEmail {
     /**
      * Wrapper for sending an email to NGAFID admins
      *
-     * @param subject - subject of the email
-     * @param body    - body of the email
+     * @param subject   - subject of the email
+     * @param body      - body of the email
+     * @param emailType - type of email to send
      */
     public static void sendAdminEmails(String subject, String body, EmailType emailType) {
+
         try {
-            sendEmail(adminEmails, new ArrayList<>(), subject, body, emailType);
+            sendEmail(ADMIN_EMAILS, new ArrayList<>(), subject, body, emailType);
         } catch (SQLException e) {
             LOG.severe("(SQL Exception) Failed to send admin email: " + e.getMessage());
         }
     }
 
-    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject, String body, EmailType emailType) throws SQLException {
+    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
+                                 String body, EmailType emailType) throws SQLException {
+
         // Send the email with no existing connection
         try (Connection connection = Database.getConnection()) {
             LOG.info("Sending an email with a fresh SQL connection");
             sendEmail(toRecipients, bccRecipients, subject, body, emailType, connection);
         }
+
     }
 
-    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject, String body, EmailType emailType, Connection connection) throws SQLException {
+    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
+                                 String body, EmailType emailType, Connection connection) throws SQLException {
 
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
@@ -289,14 +284,9 @@ public class SendEmail {
                         LOG.info("Delivering FORCED email type: " + emailType);
                         embedUnsubscribeURL = false;
 
-                    } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) { // Check whether
-                        // or not the
-                        // emailType is
-                        // enabled for the
-                        // user
-
+                    } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {
+                        // Check if this email type is enabled for this user.
                         continue;
-
                     }
 
                     String bodyPersonalized = body;
@@ -307,13 +297,16 @@ public class SendEmail {
 
                             // Generate a token for the user to unsubscribe
                             String token = generateUnsubscribeToken(toRecipient, userID, connection);
-                            String unsubscribeURL = unsubscribeURLTemplate.replace("__ID__", Integer.toString(userID)).replace("__TOKEN__", token);
+                            String unsubscribeURL = UNSUB_URL_TEMPLATE.replace("__ID__",
+                                    Integer.toString(userID)).replace("__TOKEN__", token);
 
                             // Embed the Unsubscribe URL at the top of the email body
-                            bodyPersonalized = ("<a href=\"" + unsubscribeURL + "\">Unsubscribe from non-critical NGAFID emails</a><br><br>" + body);
+                            bodyPersonalized = ("<a href=\"" + unsubscribeURL + "\">Unsubscribe from non-critical " +
+                                    "NGAFID emails</a><br><br>" + body);
 
                         } catch (Exception e) {
-                            LOG.severe("Recipient email " + toRecipient + " is not mapped in UserEmailPreferences, skipping unsubscribe URL");
+                            LOG.severe("Recipient email " + toRecipient + " is not mapped in UserEmailPreferences, " +
+                                    "skipping unsubscribe URL");
                         }
 
                     }
@@ -387,4 +380,28 @@ public class SendEmail {
 
     }
 
+    private static class SMTPAuthenticator extends javax.mail.Authenticator {
+
+        private final String username;
+        private final String password;
+
+        SMTPAuthenticator(String username, String password) {
+            this.username = username;
+            this.password = password;
+            System.out.println("Created authenticator with username: '" + this.username
+                    + "' and password: '" + this.password + "'");
+        }
+
+        public PasswordAuthentication getPasswordAuthentication() {
+            System.out.println("Attempting to authenticate with username: '" + this.username
+                    + "' and password: '" + this.password + "'");
+            return new PasswordAuthentication(this.username, this.password);
+        }
+
+        public boolean isValid() {
+            System.out.println("Checking if valid with username: '" + this.username
+                    + "' and password: '" + this.password + "'");
+            return !(this.username == null || this.password == null);
+        }
+    }
 }

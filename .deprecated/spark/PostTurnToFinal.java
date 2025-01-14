@@ -53,7 +53,7 @@ public class PostTurnToFinal implements Route {
                         JsonElement jsonElement = ttf.jsonify();
                         if (jsonElement != null) {
                             _ttfs.add(jsonElement);
-                            iataCodes.add(ttf.airportIataCode);
+                            iataCodes.add(ttf.getAirportIataCode());
                         }
                     }
                 } catch (SQLIntegrityConstraintViolationException e) {
@@ -71,7 +71,7 @@ public class PostTurnToFinal implements Route {
         iataCodesList.addAll(iataCodes);
 
         for (Airport ap : Airports.getAirports(iataCodesList).values()) {
-            System.out.println("long = " + ap.longitude + ", lat = " + ap.latitude);
+            System.out.println("long = " + ap.getLongitude() + ", lat = " + ap.getLatitude());
         }
 
         Map<String, JsonElement> airports = Airports.getAirports(iataCodesList)

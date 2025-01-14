@@ -1,29 +1,43 @@
 package org.ngafid.flights;
 
+import org.ngafid.common.NormalizedColumn;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
-import org.ngafid.common.NormalizedColumn;
-
-public class Airframes {
+public enum Airframes {
+    ;
     private static final Logger LOG = Logger.getLogger(Airframes.class.getName());
+
+    /*
+     * if (airframeName.equals("Cessna 172R") || airframeName.equals("Cessna 172S")
+     * || airframeName.equals("Cessna 172T") || airframeName.equals("Cessna 182T")
+     * || airframeName.equals("Cessna T182T") ||
+     * airframeName.equals("Cessna Model 525") || airframeName.equals("Cirrus SR20")
+     * || airframeName.equals("Cirrus SR22") || airframeName.equals("Diamond DA40")
+     * || airframeName.equals("Diamond DA 40 F") ||
+     * airframeName.equals("Diamond DA40NG") ||
+     * airframeName.equals("Diamond DA42NG") || airframeName.equals("PA-28-181") ||
+     * airframeName.equals("PA-44-180") ||
+     * airframeName.equals("Piper PA-46-500TP Meridian") ||
+     * airframeName.contains("Garmin") || airframeName.equals("Quest Kodiak 100") ||
+     * airframeName.equals("Cessna 400") ||
+     * airframeName.equals("Beechcraft A36/G36") ||
+     * airframeName.equals("Beechcraft G58") ||
+     * airframeName.equals("Beechcraft C90A King Air") ||
+     * airframeName.equals("Cessna T206H")) {
+     */
 
     /**
      * {@link Airframes} names
-     *
-     * TODO: In the future, we may want to consider using Set<String> reather than hardcoded strings.
-     * This would make our code more robust to varying airframe names
+     * <p>
+     * TODO: In the future, we may want to consider using Set<String> reather than
+     * hardcoded strings. This would make our code more robust to varying airframe
+     * names
      **/
     public static final String AIRFRAME_SCAN_EAGLE = "ScanEagle";
     public static final String AIRFRAME_DJI = "DJI";
@@ -83,8 +97,10 @@ public class Airframes {
             AIRFRAME_BEECHCRAFT_A36_G36,
             AIRFRAME_BEECHCRAFT_G58));
 
-    public static Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
+    //CHECKSTYLE:OFF
+    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
 
+    //CHECKSTYLE:ON
     public record AliasKey(String name, int fleetId) {
     }
 
@@ -92,6 +108,7 @@ public class Airframes {
         return new AliasKey(name, -1);
     }
 
+    //CHECKSTYLE:OFF
     public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
             Map.entry(defaultAlias("Unknown Aircraft"), ""),
             Map.entry(defaultAlias("Garmin Flight Display"), ""),
@@ -101,6 +118,7 @@ public class Airframes {
             Map.entry(defaultAlias("Robinson R44"), "R44"),
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
+    //CHECKSTYLE:ON
     public static class Airframe extends NormalizedColumn<Airframe> {
 
         @Override
@@ -168,7 +186,8 @@ public class Airframes {
     public static ArrayList<String> getAll(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> airframes = new ArrayList<>();
 
-        String queryString = "SELECT airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+        String queryString = "SELECT airframe FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
 
@@ -188,7 +207,7 @@ public class Airframes {
 
         String queryString = "SELECT airframe FROM airframes ORDER BY airframe";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             ArrayList<String> airframes = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -213,7 +232,7 @@ public class Airframes {
 
         String queryString = "SELECT id, airframe FROM airframes ORDER BY id";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             HashMap<Integer, String> idToNameMap = new HashMap<Integer, String>();
 
             while (resultSet.next()) {
@@ -239,11 +258,12 @@ public class Airframes {
     public static HashMap<Integer, String> getIdToNameMap(Connection connection, int fleetId) throws SQLException {
         HashMap<Integer, String> idToNameMap = new HashMap<Integer, String>();
 
-        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = "
+        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = "
                 + fleetId + " ORDER BY airframe";
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
 
             while (resultSet.next()) {
                 // airframe existed in the database, return the id

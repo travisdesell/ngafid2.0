@@ -7,9 +7,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 
 public abstract class NormalizedColumn<T> {
-
-  private static HashMap<String, Integer> ID_CACHE = new HashMap<>();
-  private static HashMap<Integer, String> NAME_CACHE = new HashMap<>();
+  private static final HashMap<String, Integer> ID_CACHE = new HashMap<>();
+  private static final HashMap<Integer, String> NAME_CACHE = new HashMap<>();
 
   protected abstract String getTableName();
 
@@ -21,15 +20,15 @@ public abstract class NormalizedColumn<T> {
     return "id";
   }
 
-  private final String getNameQuery() {
+  private String getNameQuery() {
     return "SELECT " + getNameColumn() + " FROM " + getTableName() + " WHERE " + getIdColumn() + " = ?";
   }
 
-  private final String getIdQuery() {
+  private String getIdQuery() {
     return "SELECT " + getIdColumn() + " FROM " + getTableName() + " WHERE " + getNameColumn() + " = ?";
   }
 
-  private final String getInsertionQuery() {
+  private String getInsertionQuery() {
     return "INSERT IGNORE INTO " + getTableName() + " SET " + getNameColumn() + " = ?";
   }
 
@@ -53,31 +52,31 @@ public abstract class NormalizedColumn<T> {
 
   public NormalizedColumn(Connection connection, int id) throws SQLException {
     this.id = id;
-    String name = NAME_CACHE.get(id);
+    String cachedName = NAME_CACHE.get(id);
 
-    if (name == null) {
-      name = getName(connection);
-      ID_CACHE.put(name, id);
-      NAME_CACHE.put(id, name);
+    if (cachedName == null) {
+      cachedName = getName(connection);
+      ID_CACHE.put(cachedName, id);
+      NAME_CACHE.put(id, cachedName);
     }
 
-    this.name = name;
+    this.name = cachedName;
   }
 
   public NormalizedColumn(Connection connection, String name) throws SQLException {
     this.name = name;
-    Integer id = ID_CACHE.get(name);
+    Integer cachedId = ID_CACHE.get(name);
 
-    if (id == null) {
-      id = getId(connection);
-      if (id == null) {
-        id = generateNewId(connection);
-        ID_CACHE.put(name, id);
-        NAME_CACHE.put(id, name);
+    if (cachedId == null) {
+      cachedId = getId(connection);
+      if (cachedId == null) {
+        cachedId = generateNewId(connection);
+        ID_CACHE.put(name, cachedId);
+        NAME_CACHE.put(cachedId, name);
       }
     }
 
-    this.id = id;
+    this.id = cachedId;
   }
 
   private String getName(Connection connection) throws SQLException {
@@ -98,9 +97,10 @@ public abstract class NormalizedColumn<T> {
       query.setString(1, name);
       try (ResultSet resultSet = query.executeQuery()) {
         if (resultSet.next()) {
-          return resultSet.getInt(1);
+          var i = resultSet.getInt(1);
+          return i;
         } else {
-          return null;
+          return generateNewId(connection);
         }
       }
     }
@@ -110,8 +110,8 @@ public abstract class NormalizedColumn<T> {
     try (PreparedStatement insertQuery = connection.prepareStatement(getInsertionQuery())) {
       insertQuery.setString(1, name);
       insertQuery.executeUpdate();
-      return getId(connection);
     }
+    return getId(connection);
   }
 
   public int getId() {
