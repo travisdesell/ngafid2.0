@@ -7,18 +7,21 @@ import java.util.*;
 
 import org.ngafid.events.EventStatistics;
 
-public class TestEventCounts {
+public final class TestEventCounts {
+    private TestEventCounts() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
     public static void main(String[] arguments) {
         try (Connection connection = Database.getConnection()) {
             Map<String, EventStatistics.EventCounts> counts = EventStatistics.getEventCounts(connection,
                     null, null);
             for (Map.Entry<String, EventStatistics.EventCounts> entry : counts.entrySet()) {
-                List<String> names = entry.getValue().names;
+                List<String> names = entry.getValue().getNames();
 
                 for (int i = 0; i < names.size(); i++) {
                     System.out.println("" + entry.getKey() + " : " + names.get(i) + " : "
-                            + entry.getValue().aggregateFlightsWithEventCounts[i]);
+                            + entry.getValue().getAggregateFlightsWithEventCounts()[i]);
                 }
             }
 

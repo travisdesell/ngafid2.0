@@ -16,13 +16,21 @@ import java.util.Collections;
 import java.util.Set;
 
 import static org.ngafid.flights.Parameters.*;
+import java.util.Set;
+import java.util.Collections;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import org.ngafid.flights.*;
+
+import static org.ngafid.flights.Parameters.*;
 
 public class ProcessAirportProximity extends ProcessStep {
-    private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);
-    private static Set<String> OUTPUT_COLUMNS = Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE,
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);
+    private static final Set<String> OUTPUT_COLUMNS = Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE,
             NEAREST_AIRPORT);
-    private final static double MAX_AIRPORT_DISTANCE_FT = 10000;
-    private final static double MAX_RUNWAY_DISTANCE_FT = 100;
+    private static final double MAX_AIRPORT_DISTANCE_FT = 10000;
+    private static final double MAX_RUNWAY_DISTANCE_FT = 100;
 
     public ProcessAirportProximity(Connection connection, FlightBuilder builder) {
         super(connection, builder);
@@ -60,41 +68,8 @@ public class ProcessAirportProximity extends ProcessStep {
         StringTimeSeries nearestRunwayTS = new StringTimeSeries(NEAREST_RUNWAY, "IATA Code", sizeHint);
         DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries(RUNWAY_DISTANCE, "ft", sizeHint);
 
-        for (int i = 0; i < latitudeTS.size(); i++) {
-            double latitude = latitudeTS.get(i);
-            double longitude = longitudeTS.get(i);
-            double altitudeAGL = altitudeAGLTS.get(i);
-
-            MutableDouble airportDistance = new MutableDouble();
-
-            Airport airport = null;
-            if (altitudeAGL <= 2000) {
-                airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT,
-                        airportDistance);
-            }
-
-            if (airport == null) {
-                nearestAirportTS.add("");
-                airportDistanceTS.add(Double.NaN);
-                nearestRunwayTS.add("");
-                runwayDistanceTS.add(Double.NaN);
-            } else {
-                nearestAirportTS.add(airport.iataCode);
-                airportDistanceTS.add(airportDistance.get());
-
-                MutableDouble runwayDistance = new MutableDouble();
-                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, MAX_RUNWAY_DISTANCE_FT,
-                        runwayDistance);
-                if (runway == null) {
-                    nearestRunwayTS.add("");
-                    runwayDistanceTS.add(Double.NaN);
-                } else {
-                    nearestRunwayTS.add(runway.name);
-                    runwayDistanceTS.add(runwayDistance.get());
-                }
-            }
-
-        }
+        Flight.getNearbyLandingAreas(latitudeTS, longitudeTS, altitudeAGLTS, nearestAirportTS,
+                airportDistanceTS, nearestRunwayTS, runwayDistanceTS, MAX_AIRPORT_DISTANCE_FT, MAX_RUNWAY_DISTANCE_FT);
 
         builder.addTimeSeries(NEAREST_RUNWAY, nearestRunwayTS);
         builder.addTimeSeries(NEAREST_AIRPORT, nearestAirportTS);

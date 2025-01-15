@@ -2,7 +2,7 @@ name: Compile and Test
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, josh/refactor ]
 
 jobs:
   build:
@@ -10,10 +10,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Setup JDK 21
+      - name: Setup JDK 22
         uses: actions/setup-java@v3
         with:
-          java-version: 21
+          java-version: 22
           distribution: 'adopt'
 
       - name: Cache Maven packages
@@ -32,5 +32,4 @@ jobs:
 
       - name: Maven Test
         run: mvn test
-
 

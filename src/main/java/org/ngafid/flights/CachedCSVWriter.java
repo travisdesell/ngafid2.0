@@ -2,7 +2,6 @@ package org.ngafid.flights;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.IOException;
 
@@ -13,8 +12,6 @@ import java.util.zip.*;
 
 import java.util.Enumeration;
 import java.util.Optional;
-
-import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
@@ -29,6 +26,8 @@ public class CachedCSVWriter extends CSVWriter {
      *
      * @param directoryRoot the root directory of the zipped files
      * @param flight        the {@link Flight} to write data for
+     * @param outputCSVFile the output file to write to
+     * @param isAirSync     whether the file is an air sync
      */
     public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile, boolean isAirSync)
             throws SQLException {
@@ -39,7 +38,9 @@ public class CachedCSVWriter extends CSVWriter {
         int uploadId = flight.getUploadId();
         System.out.println("target upload id is: " + uploadId);
 
+        //CHECKSTYLE:OFF
         // TODO: Probably better to pass the connection in as an argument to the
+        //CHECKSTYLE:ON
         // constructor
         Upload upload;
         try (Connection connection = Database.getConnection()) {
@@ -60,7 +61,10 @@ public class CachedCSVWriter extends CSVWriter {
         this.zipFile = new File(archiveFilename);
 
         if (!this.zipFile.exists()) {
+            //CHECKSTYLE:OFF
             // TODO: reconstruct from database instead of existing on error
+            //CHECKSTYLE:ON
+
             System.err.println("ERROR: archive file did not exist!");
             System.exit(1);
         } else {
@@ -75,7 +79,6 @@ public class CachedCSVWriter extends CSVWriter {
         }
 
         try {
-            // this.zipArchive = new ZipFile(this.zipFile);
             this.zipArchive = new ZipFile(archiveFilename);
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,10 +88,10 @@ public class CachedCSVWriter extends CSVWriter {
         String filename = flight.getFilename();
         Enumeration<? extends ZipEntry> entries = zipArchive.entries();
         while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
+            ZipEntry currentEntry = entries.nextElement();
 
-            if (entry.getName().equals(filename)) {
-                this.entry = entry;
+            if (currentEntry.getName().equals(filename)) {
+                this.entry = currentEntry;
             }
         }
     }
@@ -100,7 +103,7 @@ public class CachedCSVWriter extends CSVWriter {
      */
     public byte[] toBinaryData() throws IOException {
         InputStream inputStream = zipArchive.getInputStream(this.entry);
-        return IOUtils.toByteArray(inputStream);
+        return inputStream.readAllBytes();
     }
 
     /**
@@ -136,20 +139,20 @@ public class CachedCSVWriter extends CSVWriter {
      * @throws IOException if there is a problem with file i/o
      */
     public ZipEntry getZipEntry() throws IOException {
-        ZipFile zipArchive = new ZipFile(this.zipFile);
+        ZipFile zipArchiveToWrite = new ZipFile(this.zipFile);
         String filename = super.flight.getFilename();
-        Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+        Enumeration<? extends ZipEntry> entries = zipArchiveToWrite.entries();
 
         while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
+            ZipEntry currentEntry = entries.nextElement();
 
-            if (entry.getName().equals(filename)) {
-                zipArchive.close();
-                return entry;
+            if (currentEntry.getName().equals(filename)) {
+                zipArchiveToWrite.close();
+                return currentEntry;
             }
         }
 
-        zipArchive.close();
+        zipArchiveToWrite.close();
         return null;
     }
 

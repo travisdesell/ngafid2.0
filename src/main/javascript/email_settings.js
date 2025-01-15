@@ -4,6 +4,7 @@ import ReactDOM from "react-dom";
 
 
 import $ from 'jquery';
+import { redraw } from 'plotly.js';
 window.jQuery = $;
 window.$ = $;
 
@@ -455,7 +456,7 @@ class EmailSettingsTableManager extends React.Component {
         });
 
     }
-
+   
     handleCheckboxChange = (userTarget, type) => {
 
         this.setState(
@@ -482,7 +483,7 @@ class EmailSettingsTableManager extends React.Component {
                 //Deliver updated preferences
                 this.updateUserEmailPreferences(userTarget, this.state.fleetUsers);
             }
-
+        
         );
 
     };
@@ -495,8 +496,9 @@ class EmailSettingsTableManager extends React.Component {
 
         return (
             <table style={{
-                width: "100%",
-                borderCollapse: "collapse",
+            width:"100%",
+            borderCollapse: "collapse",
+            color:"var(--c_text)"
             }}>
                 <thead>
                 <tr>
@@ -531,49 +533,34 @@ class EmailSettingsTableManager extends React.Component {
                 </thead>
 
                 <tbody>
-                <tr style={{border: "solid", borderColor: "#00004411", borderWidth: "2px 0px"}}></tr>
+                <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
                 {
-                    this.state.fleetUsers
-                        .filter(userCurrent => userCurrent.fleetAccess.accessType !== "DENIED") // Filter out DENIED users
-                        .map((userCurrent, settingIndex) => {
-                            const rowStyle = {
-                                backgroundColor: (settingIndex % 2 === 0) ? '#FFFFFF00' : '#00000009'
-                            };
-
-                            return (
-                                <tr key={settingIndex} style={{
-                                    ...rowStyle,
-                                    border: "solid",
-                                    borderColor: "#00004411",
-                                    borderWidth: "1px 0px"
-                                }}>
-                                    <td style={{padding: "16px 12px"}}>{userCurrent.email}</td>
-                                    {
-                                        this.state.emailTypes.map((type, typeIndex) => (
-                                            <td key={typeIndex}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={
-                                                        (userCurrent.emailTypesUser && userCurrent.emailTypesUser[type])
-                                                            ? userCurrent.emailTypesUser[type]
-                                                            : false
-                                                    }
-                                                    onChange={
-                                                        this.state.disableFetching
-                                                            ? () => undefined
-                                                            : () => this.handleCheckboxChange(userCurrent, type)
-                                                    }
-                                                    style={{scale: "2.00"}}
-                                                />
-                                            </td>
-                                        ))
-                                    }
-                                </tr>
-                            );
-                        })
+                    this.state.fleetUsers.map((userCurrent, settingIndex) => (
+                        <tr key={settingIndex} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
+                            <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
+                            {
+                                this.state.emailTypes.map((type, typeIndex) => (
+                                    <td key={typeIndex}>
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                (userCurrent.emailTypesUser && userCurrent.emailTypesUser[type])
+                                                ? userCurrent.emailTypesUser[type]
+                                                : false
+                                            }
+                                            onChange={
+                                                this.state.disableFetching
+                                                ? () => undefined
+                                                : () => this.handleCheckboxChange(userCurrent, type)
+                                            }
+                                        />
+                                    </td>
+                                ))
+                            }
+                        </tr>
+                    ))
                 }
                 </tbody>
-
 
             </table>
         );

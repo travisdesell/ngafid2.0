@@ -7,7 +7,6 @@ import java.sql.Connection;
 
 import org.ngafid.Database;
 import org.ngafid.events.Event;
-import org.ngafid.flights.*;
 
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;

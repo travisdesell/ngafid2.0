@@ -6,22 +6,23 @@ import org.ngafid.flights.Airframes;
  * Utility class used by FlightBuilder to call the Flight constructor.
  **/
 public final class FlightMeta {
+    //CHECKSTYLE:OFF
+    public int fleetId = -1;
+    public int uploaderId = -1;
+    public int uploadId = -1;
+    public int processingStatus = 0;
 
-    public int fleetId = -1,
-            uploaderId = -1,
-            uploadId = -1,
-            processingStatus = 0;
-
-    public String startDateTime,
-            endDateTime,
-            md5Hash,
-            systemId,
-            filename,
-            calculated,
-            suggestedTailNumber;
+    public String startDateTime;
+    public String endDateTime;
+    public String md5Hash;
+    public String systemId;
+    public String filename;
+    public String calculated;
+    public String suggestedTailNumber;
 
     public Airframes.Airframe airframe = null;
     public Airframes.AirframeType airframeType = null;
+    //CHECKSTYLE:ON
 
     // Default constructor
     public FlightMeta() {

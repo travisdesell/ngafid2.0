@@ -5,19 +5,25 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.process.FlightBuilder;
 
+import java.util.Set;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import static org.ngafid.flights.Flight.calculateLOCI;
 import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Parameters.*;
+import static org.ngafid.flights.Airframes.*;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.FatalFlightFileException;
 
 public class ProcessLOCI extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessLOCI.class.getName());
 
-    public static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
 
     public ProcessLOCI(Connection connection, FlightBuilder builder) {
         super(connection, builder);

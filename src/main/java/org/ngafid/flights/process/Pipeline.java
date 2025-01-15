@@ -8,34 +8,51 @@ import org.ngafid.flights.Upload;
 import org.ngafid.flights.process.formats.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
+
+import org.ngafid.Database;
+import org.ngafid.ProcessUpload.FlightInfo;
+import org.ngafid.UploadException;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.Upload;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
  * This wraps up the process of (1) recognizing file types, (2) parsing the files, and (3) processing the data.
- * <p>
+ *
  * Files are recognized by their file extensions - the extension is used to create a `FlightFileProcessor` from the list
  * of factories in `this.factories`.
- * <p>
+ * 
  * `FlightFlileProcessor` objects handle the task of parsing the data: obtaining meta data and the actual double and
  * string series. These are placed into a flight builder, which is a more general representation of an incomplete
  * flight.
- * <p>
+ *
  * `FlightBuilder`s can be specialized and these specializations will specify a set of `ProcessStep`s which will be
  * applied to compute everything we need. `ProcessStep`s all have required input columns and output columns: these
  * requirements can be used to form a DAG, traversing it in the proper order will let us compute the steps in the proper
@@ -165,7 +182,7 @@ public class Pipeline implements AutoCloseable {
     /**
      * Creates a stream of zip entires in the ZipFile that are in fact, files.
      *
-     * @returns stream of `ZipEntry`s
+     * @return stream of `ZipEntry`s
      */
     private Stream<? extends ZipEntry> getValidFilesStream() {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -181,14 +198,15 @@ public class Pipeline implements AutoCloseable {
      * Creates a FlightFileProcessor for the given entry if possible. The type of FlightFileProcessor is depdendent on
      * the file extension, and is dispatched using `this.factories`.
      *
-     * @returns A FlightFileProcessor if the file extension is supported, otherwise `null`.
+     * @param entry The zip entry to create a FlightFileProcessor for.
+     * @return A FlightFileProcessor if the file extension is supported, otherwise `null`.
      */
     private FlightFileProcessor create(ZipEntry entry) {
         String filename = entry.getName();
 
         int index = filename.lastIndexOf('.');
         String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
-        FlightFileProcessor.Factory f = factories.get(extension);
+        FlightFileProcessor.Factory f = FACTORIES.get(extension);
 
         if (f != null) {
             try {
@@ -275,7 +293,7 @@ public class Pipeline implements AutoCloseable {
     /**
      * Adds a file with the supplied filename containing the supplied data to the derived ZipFile. If the derived
      * ZipFile and upload have not been created yet, create them.
-     * <p>
+     *
      * This method is synchronized so there is only a single thread mutating the derivedFileSystem at once.
      */
     public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
@@ -283,6 +301,7 @@ public class Pipeline implements AutoCloseable {
             derivedUpload = Upload.createDerivedUpload(connection, upload);
             derivedFileSystem = derivedUpload.getZipFileSystem(Map.of("create", "true"));
         }
+
         Path zipFileSystemPath = derivedFileSystem.getPath(filename);
         Path parentPath = zipFileSystemPath.getParent();
         if (parentPath != null && !Files.exists(parentPath)) {

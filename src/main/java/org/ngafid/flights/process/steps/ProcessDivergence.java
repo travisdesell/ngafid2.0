@@ -81,7 +81,7 @@ public class ProcessDivergence extends ProcessStep {
     }
 
     public Set<String> getRequiredStringColumns() {
-        return Collections.<String>emptySet();
+        return Collections.emptySet();
     }
 
     public Set<String> getRequiredColumns() {

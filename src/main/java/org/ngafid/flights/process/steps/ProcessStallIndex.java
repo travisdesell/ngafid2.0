@@ -18,8 +18,8 @@ import static org.ngafid.flights.Parameters.*;
 public class ProcessStallIndex extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStallIndex.class.getName());
 
-    public static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(STALL_DEPENDENCIES);
-    public static Set<String> OUTPUT_COLUMNS = Set.of(STALL_PROB, TAS_FTMIN, VSPD_CALCULATED, CAS);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(STALL_DEPENDENCIES);
+    private static final Set<String> OUTPUT_COLUMNS = Set.of(STALL_PROB, TAS_FTMIN, VSPD_CALCULATED, CAS);
 
     public ProcessStallIndex(Connection connection, FlightBuilder builder) {
         super(connection, builder);

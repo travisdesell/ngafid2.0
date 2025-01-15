@@ -16,27 +16,21 @@ import java.util.stream.Stream;
 
 public abstract class FlightFileProcessor {
 
-    private static Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
+    private static final Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
 
-    public interface Factory {
+    interface Factory {
         FlightFileProcessor create(Connection connection, InputStream is, String filename, Pipeline pipeline)
                 throws Exception;
     }
 
     protected final Connection connection;
-    protected final ByteArrayInputStream stream;
+    protected final InputStream stream;
     protected final String filename;
     protected final Pipeline pipeline;
 
-    public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
-
-        if (stream instanceof ByteArrayInputStream) {
-            this.stream = (ByteArrayInputStream) stream;
-        } else {
-            this.stream = new ByteArrayInputStream(stream.readAllBytes());
-        }
-
+    public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
         this.connection = connection;
+        this.stream = stream;
         this.filename = filename;
         this.pipeline = pipeline;
     }
@@ -46,13 +40,13 @@ public abstract class FlightFileProcessor {
 
     /**
      * Parses the file for flight data to be processed
-     *
+     * 
      * @return A stream of FlightBuilders
      * @throws FlightProcessingException
      */
     private Stream<FlightBuilder> parsedFlightBuilders = null;
 
-    public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
+    protected abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
 
     public FlightFileProcessor pipelinedParse() {
         try {

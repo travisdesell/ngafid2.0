@@ -4,21 +4,13 @@ import org.ngafid.common.Compression;
 import org.ngafid.common.NormalizedColumn;
 import org.ngafid.flights.Parameters.Unit;
 
+import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
-
-import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-import java.sql.ResultSet;
-
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import javax.sql.rowset.serial.SerialBlob;
-
-public class StringTimeSeries {
+public final class StringTimeSeries {
 
     public static class StringSeriesName extends NormalizedColumn<StringSeriesName> {
         public StringSeriesName(String name) {
@@ -103,7 +95,7 @@ public class StringTimeSeries {
         this.timeSeries = timeSeries;
         validCount = 0;
         for (int i = 0; i < timeSeries.size(); i++) {
-            if (!timeSeries.get(i).equals("")) {
+            if (!emptyAt(i)) {
                 validCount++;
             }
         }
@@ -141,7 +133,9 @@ public class StringTimeSeries {
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name)
             throws IOException, SQLException {
         try (PreparedStatement query = connection.prepareStatement(
-                "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
+                "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, " +
+                        "ss.data FROM string_series AS ss INNER JOIN string_series_names " +
+                        "AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
 
             query.setString(1, name);
             query.setInt(2, flightId);
@@ -185,6 +179,11 @@ public class StringTimeSeries {
         return timeSeries.get(i);
     }
 
+    public boolean emptyAt(int i) {
+        String value = get(i);
+        return value == null || value.isEmpty();
+    }
+
     public String getName() {
         return name.getName();
     }
@@ -226,7 +225,7 @@ public class StringTimeSeries {
             if (current.equals("")) {
                 position--;
             } else {
-                return new String[] { current, String.valueOf(position) };
+                return new String[]{current, String.valueOf(position)};
             }
         }
         return null;
@@ -242,7 +241,8 @@ public class StringTimeSeries {
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement(
-                "INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+                "INSERT INTO string_series " +
+                        "(flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
     }
 
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)
@@ -252,6 +252,7 @@ public class StringTimeSeries {
         if (dataType.getId() == -1)
             setTypeId(connection);
 
+        LOG.info("name id = " + name.getId());
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, name.getId());
         preparedStatement.setInt(3, dataType.getId());

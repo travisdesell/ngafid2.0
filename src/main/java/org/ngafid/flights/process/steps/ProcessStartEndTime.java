@@ -20,7 +20,7 @@ import static org.ngafid.flights.Parameters.*;
 public class ProcessStartEndTime extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStartEndTime.class.getName());
 
-    public static Set<String> REQUIRED_STRING_COLUMNS = Set.of(LCL_DATE, LCL_TIME, UTC_OFFSET);
+    private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(LCL_DATE, LCL_TIME, UTC_OFFSET);
 
     public ProcessStartEndTime(Connection connection, FlightBuilder builder) {
         super(connection, builder);

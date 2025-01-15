@@ -14,6 +14,7 @@ class AccessCheck extends React.Component {
         let checkType = this.props.checkType;
         let lcType = checkType.toLowerCase();
         let ucType = checkType.toUpperCase();
+        let slcType = lcType.charAt(0).toUpperCase() + lcType.slice(1);
 
         let userAccess = this.props.userAccess;
         let fleetUserRow = this.props.fleetUserRow;
@@ -96,13 +97,10 @@ class FleetUserRow extends React.Component {
                     fleetUserRow.props.decrementWaiting();
                 }
 
-                // Update the fleetUser's new original access level so that update button will be disabled unless the access is changed again.
+                //update the fleetUser's new original access (so the update button will be disabled unless the access is changed again)
                 fleetUser.fleetAccess.originalAccess = newAccess;
                 fleetUserRow.state.fleetUser = fleetUser;
                 fleetUserRow.setState(fleetUser);
-
-                // Callback to sort Users so that Denied users appear on the bottom.
-                fleetUserRow.props.onAccessChange();
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
@@ -116,7 +114,6 @@ class FleetUserRow extends React.Component {
     render() {
         let fleetUser = this.state.fleetUser;
         let accessType = fleetUser.fleetAccess.accessType;
-        const { rowStyle } = this.props;
 
         console.log("rendering " + fleetUser.email + " with access " + accessType);
 
@@ -124,7 +121,7 @@ class FleetUserRow extends React.Component {
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
 
         return (
-            <tr userid={fleetUser.id} style={rowStyle}>
+            <tr userid={fleetUser.id} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(this.state.settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
                 <td scope="row" style={{padding: "15 12 15 12"}}>{fleetUser.email}</td>
                 <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {this.state.fleetUser.lastName}</td>
 
@@ -152,33 +149,11 @@ class ManageFleetPage extends React.Component {
 
         this.state = {
             user : this.props.user,
-            fleetUsers: [],
             waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
-            showDeniedUsers: false
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
 
         console.log("constructed ManageFleetPage");
-    }
-
-    componentDidMount() {
-        this.sortAndSetUsers();
-    }
-
-    /**
-     * Initializes fleetUsers state from a correspondent prop
-     * Sorts fleetUsers putting the ones with accessType "DENIED" to the bottom of the list
-     */
-    sortAndSetUsers() {
-        const { user } = this.state;
-        if (user && user.fleet && Array.isArray(user.fleet.users)) {
-            const sortedUsers = [...user.fleet.users].sort((a, b) =>
-                a.fleetAccess.accessType === "DENIED" ? 1 : -1
-            );
-            this.setState({ fleetUsers: sortedUsers });
-        } else {
-            console.warn("User data or fleet users array is missing.");
-        }
     }
 
     setUser(user) {
@@ -251,106 +226,92 @@ class ManageFleetPage extends React.Component {
         const hidden = this.props.hidden;
         const bgStyle = { opacity: 0.8 };
         const fgStyle = { opacity: 1.0 };
-        const grayoutStyle = { backgroundColor: '#d3d3d3' };
 
         let fleetName = "";
 
         return (
-            <div>
-                <SignedInNavbar
-                    activePage="account"
-                    waitingUserCount={this.state.waitingUserCount}
-                    fleetManager={fleetManager}
-                    unconfirmedTailsCount={this.state.unconfirmedTailsCount}
-                    modifyTailsAccess={modifyTailsAccess}
-                    plotMapHidden={plotMapHidden}
-                />
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="card-body" hidden={hidden}>
-                    <div className="row ml-1 mb-2 invite" style={{ ...bgStyle, display: "flex", alignItems: "center" }}>
-                        <p style={{ ...fgStyle, marginBottom: "0", marginRight: "10px" }}>
-                            Invite user to {fleetName}:
-                        </p>
-                        <form
-                            onSubmit={this.handleSubmit}
-                            style={{ display: "flex", alignItems: "center", marginRight: "10px" }}
-                        >
-                            <input
-                                id="inviteEmail"
-                                type="email"
-                                placeholder="Enter user email"
-                                name="email"
-                                pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
-                                title="Please enter a valid email address"
-                                required
-                                style={{
-                                    marginRight: "10px",
-                                    border: "1px solid grey",
-                                    borderRadius: "5px",
-                                    padding: "5px",
-                                    backgroundColor: "transparent",
-                                    outline: "none",
-                                    transition: "border-color 0.2s ease",
-                                }}
-                            />
-                            <button className="btn btn-primary" type="submit">
-                                Invite
-                            </button>
-                        </form>
-                        <button
-                            className="btn btn-outline-primary"
-                            onClick={() => this.setState({showDeniedUsers: !this.state.showDeniedUsers})}
-                            style={{alignSelf: "center"}}
-                        >
-                            {this.state.showDeniedUsers ? "Hide Denied Users" : "Show Denied Users"}
-                        </button>
-                    </div>
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar
+                        activePage="account"
+                        waitingUserCount={this.state.waitingUserCount}
+                        fleetManager={fleetManager}
+                        unconfirmedTailsCount={this.state.unconfirmedTailsCount}
+                        modifyTailsAccess={modifyTailsAccess}
+                        plotMapHidden={plotMapHidden}
+                    />
+                </div>
 
-
-                    <div className="card mb-1" style={bgStyle}>
+                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                    <div className="card mb-1 m-2">
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
                         </h5>
 
                         <div className="card-body" style={fgStyle}>
-                            <table className="table">
-                                <thead>
-                                <tr>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Access Level</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {this.state.fleetUsers
-                                    .filter(userCurrent =>
-                                        this.state.showDeniedUsers || userCurrent.fleetAccess.accessType !== "DENIED"
-                                    )
-                                    .map((fleetUser, index) => {
-                                        const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayoutStyle : {};
-                                        return (
-                                            <FleetUserRow
-                                                key={fleetUser.id}
-                                                fleetUser={fleetUser}
-                                                rowStyle={rowStyle}
-                                                incrementWaiting={() => { this.incrementWaiting(); }}
-                                                decrementWaiting={() => { this.decrementWaiting(); }}
-                                                onAccessChange={() => this.sortAndSetUsers()}
-                                            />
-                                        );
-                                    })
-                                }
-                                </tbody>
-                            </table>
 
-                            <h6 className="card-header" style={{ padding: "16px 12px", margin: "0px 0px" }}>
-                                Fleet Email Preferences
-                            </h6>
-                            <div className="form-group">
-                                <div className="d-flex">
-                                    {this.state.fleetUsers.length > 0 && (
-                                        <EmailSettingsTableManager fleetUsers={this.state.fleetUsers}></EmailSettingsTableManager>
-                                    )}
+                            {/* INVITE USER */}
+                            <div style={{ display:"flex", alignItems:"start", width:"100%" }}>
+                                <p style={{...fgStyle, marginTop:"0.4em", marginRight:"1em" }}>
+                                    Invite user to {fleetName}:
+                                </p>
+                                <form onSubmit={this.handleSubmit} style={{ display:"flex", alignItems:"baseline" }}>
+                                    <input
+                                        id="inviteEmail"
+                                        className="form-control"
+                                        type="email"
+                                        placeholder="Enter user email"
+                                        name="email"
+                                        pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                                        title="Please enter a valid email address"
+                                        required
+                                    />
+                                    <button className="btn btn-primary ml-1 mb-2" type="submit">Invite</button>
+                                </form>
+                            </div>
+
+                            <div className="card card-alt">
+                                <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                                    Fleet Access Preferences
+                                </h6>
+                                <table style={{borderCollapse: "collapse", width:"100%", color:"var(--c_text)", backgroundColor:"var(--c_card_bg_alt) !important"}}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Email </div></th>
+                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Name </div></th>
+                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Access Level </div></th>
+                                            <th scope="col"/>
+                                        </tr>
+                                        <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
+                                    </thead>
+                                    <tbody>
+                                        {
+                                            fleetUsers.map((fleetUser, index) => {
+                                                return (
+                                                    <FleetUserRow
+                                                        key={fleetUser.id}
+                                                        settingIndex={index}
+                                                        fleetUser={fleetUser}
+                                                        incrementWaiting={() => {this.incrementWaiting();}}
+                                                        decrementWaiting={() => {this.decrementWaiting();}}
+                                                    />
+                                                );
+
+                                            })
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <br/>
+
+                            <div className="card-alt card">
+                                <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                                    Fleet Email Preferences
+                                </h6>
+                                <div className="form-group d-flex" style={{marginBottom:"0"}}>
+                                    <EmailSettingsTableManager fleetUsers={fleetUsers}/>
                                 </div>
                             </div>
                         </div>
@@ -378,7 +339,11 @@ class ManageFleetPage extends React.Component {
                         .invite input:focus {
                             border-color: #007bff;
                         }
-                    `}
+                        .table>tbody>tr>td,
+                        .table>tbody>tr>th {
+                            border-top: none;
+                        }
+                   `}
                 </style>
 
             </div>

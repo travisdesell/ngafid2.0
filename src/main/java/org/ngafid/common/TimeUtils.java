@@ -14,7 +14,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class TimeUtils {
+public enum TimeUtils {
+    ;
+
     private static TimeZoneMap TIME_ZONE_MAP = null;
 
     private static TimeZoneMap getTimeZoneMap() {
@@ -28,42 +30,55 @@ public class TimeUtils {
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
      *
-     * @param ldt
-     * @param offset
-     * @return Specific offset
+     * @param ldt    the LocalDateTime value which will be updated
+     * @param offset the bad offset
+     * @return the fixed offset
      */
     public static String updateBadOffset(LocalDateTime ldt, String offset) {
         // weird input data
-        if (offset.equals("+19:00")) {
-            ldt = ldt.plusHours(1);
-            offset = "+18:00";
-        } else if (offset.equals("+20:00")) {
-            ldt = ldt.plusHours(2);
-            offset = "+18:00";
-        } else if (offset.equals("+21:00")) {
-            ldt = ldt.plusHours(3);
-            offset = "+18:00";
-        } else if (offset.equals("+22:00")) {
-            ldt = ldt.plusHours(4);
-            offset = "+18:00";
-        } else if (offset.equals("+23:00")) {
-            ldt = ldt.plusHours(5);
-            offset = "+18:00";
-        } else if (offset.equals("-19:00")) {
-            ldt = ldt.minusHours(1);
-            offset = "-18:00";
-        } else if (offset.equals("-20:00")) {
-            ldt = ldt.minusHours(2);
-            offset = "-18:00";
-        } else if (offset.equals("-21:00")) {
-            ldt = ldt.minusHours(3);
-            offset = "-18:00";
-        } else if (offset.equals("-22:00")) {
-            ldt = ldt.minusHours(4);
-            offset = "-18:00";
-        } else if (offset.equals("-23:00")) {
-            ldt = ldt.minusHours(5);
-            offset = "-18:00";
+        switch (offset) {
+            case "+19:00" -> {
+                ldt = ldt.plusHours(1);
+                offset = "+18:00";
+            }
+            case "+20:00" -> {
+                ldt = ldt.plusHours(2);
+                offset = "+18:00";
+            }
+            case "+21:00" -> {
+                ldt = ldt.plusHours(3);
+                offset = "+18:00";
+            }
+            case "+22:00" -> {
+                ldt = ldt.plusHours(4);
+                offset = "+18:00";
+            }
+            case "+23:00" -> {
+                ldt = ldt.plusHours(5);
+                offset = "+18:00";
+            }
+            case "-19:00" -> {
+                ldt = ldt.minusHours(1);
+                offset = "-18:00";
+            }
+            case "-20:00" -> {
+                ldt = ldt.minusHours(2);
+                offset = "-18:00";
+            }
+            case "-21:00" -> {
+                ldt = ldt.minusHours(3);
+                offset = "-18:00";
+            }
+            case "-22:00" -> {
+                ldt = ldt.minusHours(4);
+                offset = "-18:00";
+            }
+            case "-23:00" -> {
+                ldt = ldt.minusHours(5);
+                offset = "-18:00";
+            }
+            default -> {
+            }
         }
 
         return offset;
@@ -125,14 +140,10 @@ public class TimeUtils {
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
                                                  String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
-        // create a LocalDateTime using the date time passed as parameter
-        String originalDateTime = originalDate.trim() + " " + originalTime.trim();
-        DateTimeFormatter formatter = findCorrectFormatter(originalDateTime);
-        if (formatter == null) {
-            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + originalDateTime, originalDateTime, 0);
-        }
 
-        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
+        // create a LocalDateTime using the date time passed as parameter
+        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         // fix bad offset values
         originalOffset = updateBadOffset(ldt, originalOffset);
@@ -190,11 +201,7 @@ public class TimeUtils {
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-            DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss"),
-            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"));
-
+            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws FatalFlightFileException {

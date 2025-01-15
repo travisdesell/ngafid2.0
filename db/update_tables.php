@@ -202,7 +202,8 @@ if ($update_email_settings) {
 
 $update_flight_messages_length = true;
 if ($update_flight_messages_length) {
-query_ngafid_db("ALTER TABLE flight_messages modify COLUMN message VARCHAR (8192);");
+    query_ngafid_db("ALTER TABLE flight_messages modify COLUMN message VARCHAR (8192);");
+}
 
 $update_for_airsync = false;
 if ($update_for_airsync) {

@@ -23,27 +23,12 @@ public class EventMetaData {
 
         private final String name;
 
-        private EventMetaDataKey(String s) {
+        EventMetaDataKey(String s) {
             name = s;
         }
 
         public String toString() {
             return this.name;
-        }
-    }
-
-    static {
-        try (Connection connection = Database.getConnection()) {
-            for (EventMetaDataKey emdk : EventMetaDataKey.values()) {
-                try (PreparedStatement insertion = connection
-                        .prepareStatement("INSERT IGNORE INTO event_metadata_keys (name) VALUES (?)")) {
-                    insertion.setString(1, emdk.toString());
-                    insertion.executeUpdate();
-                }
-            }
-        } catch (SQLException e) {
-            LOG.info("Encountered exception trying to insert meta data keys:");
-            e.printStackTrace();
         }
     }
 
@@ -69,13 +54,13 @@ public class EventMetaData {
         this.value = resultSet.getDouble(2);
     }
 
-    public void updateDatabase(Connection connection, int eventId) throws SQLException {
+    public void updateDatabase(Connection connection, int eventIdToUpdate) throws SQLException {
         try (PreparedStatement statement = connection
                 .prepareStatement("INSERT INTO event_metadata (event_id, key_id, value) VALUES (?, ?, ?)")) {
             LOG.info(statement.toString());
 
             int eventMetaDataKeyId = this.getEventMetaDataKeyId(connection);
-            statement.setInt(1, eventId);
+            statement.setInt(1, eventIdToUpdate);
             statement.setInt(2, eventMetaDataKeyId);
             statement.setDouble(3, this.value);
             statement.executeUpdate();
@@ -104,8 +89,8 @@ public class EventMetaData {
 
         List<EventMetaData> metaDataList = new ArrayList<>();
         try (PreparedStatement preparedStatement = connection.prepareStatement(
-                "SELECT name, value FROM event_metadata JOIN event_metadata_keys as ek on ek.id = key_id WHERE event_id = "
-                        + eventId);
+                "SELECT name, value FROM event_metadata JOIN " +
+                  "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
                 ResultSet resultSet = preparedStatement.executeQuery()) {
 
             LOG.info(preparedStatement.toString());
