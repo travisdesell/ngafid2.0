@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -36,12 +37,12 @@ public class EventStatisticsFetch {
         located in the same directory as the cron scripts.
     */
 
-    private static final String EVENT_STATS_DIRECTORY = "event_stats/";
+    protected static final String EVENT_STATS_DIRECTORY = "event_stats/";
     private static final Logger LOG = Logger.getLogger(EventStatisticsFetch.class.getName());
     private static final String LOG_FILE_NAME = (EVENT_STATS_DIRECTORY + "EventStatisticsFetch.log");
     private static final boolean LOG_DO_APPEND = true;
     
-    private static final String JSON_CACHE_FILE_NAME = (EVENT_STATS_DIRECTORY + "EventStatisticsCache.json");
+    protected static final String JSON_CACHE_FILE_NAME = (EVENT_STATS_DIRECTORY + "EventStatisticsCache.json");
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -102,7 +103,7 @@ public class EventStatisticsFetch {
 
             //Clear/create the JSON cache file
             try (FileWriter file = new FileWriter(JSON_CACHE_FILE_NAME)) {
-                file.write("[]");
+                file.write("{}");
                 file.flush();
             } catch (IOException e) {
                 LOG.severe("Error clearing JSON cache file:\n\t" + e.getMessage());
@@ -155,51 +156,44 @@ public class EventStatisticsFetch {
 
     private static void fetchEventStatistics(Connection connection) throws SQLException, IOException {
 
-        //Start fetching the event statistics
         LOG.info("Established database connection, fetching event statistics and clearing cached statistics...");
         
-        //Get all the fleets
         final String ALL_FLEETS_QUERY = "SELECT * FROM fleet";
         
-        //Execute the query
         try (
             PreparedStatement statement = connection.prepareStatement(ALL_FLEETS_QUERY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet resultSet = statement.executeQuery()
-            ) {
+        ) {
 
-            //Execute the query
             final int resultSetSize = fetchResultSetSize(resultSet);
-            
             LOG.info("Fetched " + resultSetSize + " fleets from the database.");
             
-            int itr = 0;
+            //Aggregate statistics for all fleets
+            Map<Integer, CacheObject> fleetStatisticsMap = new HashMap<>();
+            
             while (resultSet.next()) {
-            
-                //Get the fleet ID
+
                 int fleetId = resultSet.getInt("id");
-            
-                //Get the fleet name
                 String fleetName = resultSet.getString("fleet_name");
+                LOG.info("Fleet Data -- ID: " + fleetId + ", Name: '" + fleetName + "'");
 
-                //Log the fleet metadata
-                LOG.info("Fleet Data <" + itr + "> -- ID: " + fleetId + ", Name: '" + fleetName + "'");
-
-                //Fetch all the event statistics for the fleet                
+                //Fetch statistics for this fleet
                 ArrayList<EventStatistics> eventStatisticsList = EventStatistics.getAll(connection, fleetId);
-
-                //Record event counts
                 Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
 
-                //Save the event statistics to a JSON cache file
-                saveToJsonCache(eventStatisticsList, eventCountsMap);                
-
+                //Store in aggregated data structure
+                fleetStatisticsMap.put(fleetId, new CacheObject(eventStatisticsList, eventCountsMap));
             }
+            
+            //Save aggregated data to JSON cache
+            saveAggregatedToJsonCache(fleetStatisticsMap);
             
         }
 
     }
 
-    private static class CacheObject {
+    //protected static class CacheObject {
+    public static class CacheObject {
 
         ArrayList<EventStatistics> statsList;
         Map<String, EventCounts> eventCounts;
@@ -232,35 +226,18 @@ public class EventStatisticsFetch {
         
     }
 
-    private static void saveToJsonCache(
-        ArrayList<EventStatistics> eventStatisticsList, 
-        Map<String, EventStatistics.EventCounts> eventCountsMap
-    ) throws IOException {
+    private static void saveAggregatedToJsonCache(Map<Integer, CacheObject> fleetStatisticsMap) throws IOException {
 
         Gson gson = new Gson();
-        CacheObject combinedCache = new CacheObject(eventStatisticsList, eventCountsMap);
-
-        //Existing data in the file, read it
-        if (Files.exists(Paths.get(JSON_CACHE_FILE_NAME))) {
-
-            String existingJson = Files.readString(Paths.get(JSON_CACHE_FILE_NAME));
-            CacheObject existingCache = gson.fromJson(existingJson, CacheObject.class);
-            if (existingCache != null)
-                combinedCache = existingCache;
-
-        }
-
-        //Update combined cache
-        combinedCache.setStatsList(eventStatisticsList);
-        combinedCache.setEventCounts(eventCountsMap);
-
         try (FileWriter file = new FileWriter(JSON_CACHE_FILE_NAME)) {
-            file.write(gson.toJson(combinedCache));
-            file.flush();
-        } catch (IOException e) {
-            LOG.severe("Error saving event statistics to JSON cache file: " + e.getMessage());
-        }
 
+            file.write(gson.toJson(fleetStatisticsMap));
+            file.flush();
+            
+        } catch (IOException e) {
+            LOG.severe("Error saving aggregated event statistics to JSON cache file:\n\t" + e.getMessage());
+        }
+        
     }
 
 }

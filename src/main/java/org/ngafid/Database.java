@@ -91,6 +91,7 @@ public class Database {
 
 
     private static void setConnection(Logger loggerIn) {
+        
         if (System.getenv("NGAFID_DB_INFO") == null) {
             loggerIn.severe("ERROR: 'NGAFID_DB_INFO' environment variable not specified at runtime.");
             loggerIn.severe("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -131,8 +132,7 @@ public class Database {
             }
 
         } catch (IOException e) {
-            loggerIn.severe("Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'");
-            e.printStackTrace();
+            loggerIn.severe("Database.java -- Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'\n\t" + e.getMessage());
             System.exit(1);
         }
 
@@ -157,7 +157,7 @@ public class Database {
             connProperties.put("maxReconnects", "5");
             connection.set(DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, connProperties));
         } catch (Exception e) {
-            loggerIn.severe(e.getMessage());
+            loggerIn.severe("Database.java -- Error:\n\t" + e.getMessage());
             System.exit(1);
         }
 

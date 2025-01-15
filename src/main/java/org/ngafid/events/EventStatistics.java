@@ -1,5 +1,10 @@
 package org.ngafid.events;
 
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.ngafid.Database;
 
 import java.sql.Connection;
@@ -17,8 +22,16 @@ import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
-
+import org.ngafid.events.EventStatisticsFetch.CacheObject;
+import static org.ngafid.events.EventStatisticsFetch.JSON_CACHE_FILE_NAME;
 import org.ngafid.flights.Airframes;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
@@ -1271,5 +1284,89 @@ public class EventStatistics {
 
     //     return eventCounts;
     // }
-}
 
+    public int getAirframeNameId() {
+        return airframeNameId;
+    }
+
+    public String getAirframeName() {
+        return airframeName;
+    }
+
+    public static CacheObject importFromJsonCache() {
+
+        CacheObject loadedCache = new CacheObject();
+
+        //File doesn't exist, log a warning and return an empty CacheObject
+        if (!Files.exists(Paths.get(JSON_CACHE_FILE_NAME))) {
+
+            LOG.warning("importFromJsonCache: File not found at '" + JSON_CACHE_FILE_NAME + "'. Returning empty CacheObject.");
+            return loadedCache;
+
+        }
+
+        try {
+            
+            //Read the file content
+            String existingJson = Files.readString(Paths.get(JSON_CACHE_FILE_NAME));
+            Gson gson = new Gson();
+
+            //Parse the JSON
+            JsonElement jsonElement = JsonParser.parseString(existingJson);
+            if (jsonElement.isJsonObject()) {
+
+                CacheObject parsed = gson.fromJson(jsonElement, CacheObject.class);
+                if (parsed != null)
+                    loadedCache = parsed;
+
+                else
+                    LOG.severe("importFromJsonCache: Parsed JSON was null!");
+                
+            } else {
+                LOG.severe("importFromJsonCache: Expected JSON object in the cache file but found something else.");
+            }
+
+        } catch (IOException e) {
+            LOG.severe("importFromJsonCache: IOException reading cache file:\n\t" + e.getMessage());
+        } catch (JsonSyntaxException | JsonIOException e) {
+            LOG.severe("importFromJsonCache: JSON parse error:\n\t" + e.getMessage());
+        }
+
+        return loadedCache;
+
+    }
+
+    public static Map<Integer, EventStatisticsFetch.CacheObject> importAllFleetsCache() {
+
+        Map<Integer, EventStatisticsFetch.CacheObject> fleetMap = new HashMap<>();
+
+        //No cache file, return the empty map
+        if (!Files.exists(Paths.get(EventStatisticsFetch.JSON_CACHE_FILE_NAME))) {
+            LOG.warning("importAllFleetsCache: Cache file not found: " + EventStatisticsFetch.JSON_CACHE_FILE_NAME);
+            return fleetMap; 
+        }
+
+        try {
+            String json = Files.readString(Paths.get(EventStatisticsFetch.JSON_CACHE_FILE_NAME));
+            Gson gson = new Gson();
+
+            //Deserializing Map<Integer, CacheObject>, use TypeToken to get the generic type:
+            Type typeOfMap = new TypeToken<Map<Integer, EventStatisticsFetch.CacheObject>>() {}.getType();
+
+            Map<Integer, EventStatisticsFetch.CacheObject> parsed = gson.fromJson(json, typeOfMap);
+            if (parsed != null)
+                fleetMap = parsed;
+            else
+                LOG.severe("importAllFleetsCache: Parsed JSON was null!");
+
+        } catch (IOException e) {
+            LOG.severe("importAllFleetsCache: IOException while reading cache file:\n\t" + e.getMessage());
+        } catch (Exception e) {
+            LOG.severe("importAllFleetsCache: Unexpected error while parsing:\n\t" + e.getMessage());
+        }
+
+        return fleetMap;
+    }
+
+
+}
