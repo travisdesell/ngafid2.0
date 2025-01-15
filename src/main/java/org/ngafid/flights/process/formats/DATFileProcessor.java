@@ -11,6 +11,8 @@ import org.ngafid.flights.process.FlightBuilder;
 import org.ngafid.flights.process.FlightMeta;
 import org.ngafid.flights.process.FlightProcessingException;
 import org.ngafid.flights.process.Pipeline;
+import org.ngafid.flights.process.steps.ProcessAltAGL;
+import org.ngafid.flights.process.steps.ProcessStep;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -25,6 +27,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.ngafid.common.TimeUtils.addMilliseconds;
+import static org.ngafid.flights.Parameters.ALT_AGL;
 
 /**
  * Parses DAT files from DJI flights after converting them to CSV

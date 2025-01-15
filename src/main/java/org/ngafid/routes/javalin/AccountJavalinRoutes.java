@@ -326,7 +326,7 @@ public class AccountJavalinRoutes {
     }
 
     private static void getUserEmailPreferences(Context ctx) {
-        final String handleFetchType = Objects.requireNonNull(ctx.formParam("handleFetchType"));
+        final String handleFetchType = Objects.requireNonNull(ctx.queryParam("handleFetchType"));
         final User sessionUser = Objects.requireNonNull(ctx.attribute("user"));
         int fleetUserID = -1;
 

@@ -65,9 +65,9 @@ public abstract class WebServer {
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
 
     static {
-        NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
-        NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR");
-        MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR");
+        NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR", null);
+        NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR", null);
+        MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR", "src/main/resources/public/templates");
 
         // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
         //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
@@ -98,7 +98,10 @@ public abstract class WebServer {
         configureExceptions();
     }
 
-    protected void preInitialize() {};
+    protected void preInitialize() {
+    }
+
+    ;
 
     protected abstract void configurePort();
 
@@ -141,13 +144,17 @@ public abstract class WebServer {
         }
     }
 
-    public static String getEnvironmentVariable(String key) {
+    public static String getEnvironmentVariable(String key, String defaultValue) {
         String value = System.getenv(key);
         if (value == null) {
-            System.err.println("ERROR: '" + key + "' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export " + key + "=<value>");
-            throw new RuntimeException("Environment variable '" + key + "' not set.");
+            if (defaultValue == null) {
+                System.err.println("ERROR: '" + key + "' environment variable not specified at runtime.");
+                System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+                System.err.println("export " + key + "=<value>");
+                throw new RuntimeException("Environment variable '" + key + "' not set.");
+            } else {
+                return defaultValue;
+            }
         }
 
         return value;
@@ -159,8 +166,8 @@ public abstract class WebServer {
      * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
-        String staticFiles = getEnvironmentVariable("WEBSERVER_STATIC_FILES");
-        int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
+        String staticFiles = getEnvironmentVariable("WEBSERVER_STATIC_FILES", "src/main/resources/public");
+        int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT", "8181"));
 
         // The application uses Gson to generate JSON representations of Java objects.
         // This should be used by your Ajax Routes to generate JSON for the HTTP

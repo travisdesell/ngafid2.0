@@ -5,8 +5,6 @@ import org.ngafid.flights.process.FlightBuilder;
 import org.ngafid.flights.process.FlightProcessingException;
 import org.ngafid.flights.process.Pipeline;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -18,14 +16,14 @@ public abstract class FlightFileProcessor {
 
     private static final Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
 
-    interface Factory {
+    public interface Factory {
         FlightFileProcessor create(Connection connection, InputStream is, String filename, Pipeline pipeline)
                 throws Exception;
     }
 
     protected final Connection connection;
     protected final InputStream stream;
-    protected final String filename;
+    public final String filename;
     protected final Pipeline pipeline;
 
     public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
@@ -40,13 +38,13 @@ public abstract class FlightFileProcessor {
 
     /**
      * Parses the file for flight data to be processed
-     * 
+     *
      * @return A stream of FlightBuilders
      * @throws FlightProcessingException
      */
     private Stream<FlightBuilder> parsedFlightBuilders = null;
 
-    protected abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
+    public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
 
     public FlightFileProcessor pipelinedParse() {
         try {

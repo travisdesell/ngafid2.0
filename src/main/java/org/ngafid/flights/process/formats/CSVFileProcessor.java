@@ -183,7 +183,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             byte[] hash = md.digest(super.stream.readAllBytes());
             meta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
             super.stream.reset();
-        } catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException | IOException e) {
             System.exit(1);
         }
     }
@@ -201,9 +201,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
         LOG.info("Parsing " + this.meta.filename);
 
         // Ensure we read from the beginning of the stream when we compute the hash, and reset it afterward.
-        stream.reset();
-        computeMd5Hash();
-        stream.reset();
+        try {
+            stream.reset();
+            computeMd5Hash();
+            stream.reset();
+        } catch (IOException e) {
+            // This should never happen since we are using a byte array backed stream.
+            System.exit(1);
+        }
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
