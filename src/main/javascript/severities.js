@@ -308,7 +308,7 @@ class SeveritiesPage extends React.Component {
         var severityLayout = {
             title : 'Severity of Events',
             hovermode : "closest",
-            height: 700,
+            autosize : true,
             margin: {
                 l: 50,
                 r: 50,
@@ -760,7 +760,7 @@ class SeveritiesPage extends React.Component {
                                 />
 
                             <div className="card-body" style={{padding:"0"}}>
-                                <div className="row" style={{margin:"0"}}>
+                                <div className="row" style={{margin:"0", display: "flex", height:"100%"}}>
                                     <div className="col-lg-2" style={{padding:"8 8 8 8"}}>
 
                                         {
@@ -799,8 +799,8 @@ class SeveritiesPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
-                                        <div id="severities-plot"></div>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80", display:"flex", flexDirection:"column", minHeight:"0", flex:"1 1 auto"}}>
+                                        <div id="severities-plot" className="flex-fill" style={{flex: "1 1 auto", minHeight: "0", height: "100%", width:"100%"}}/>
                                     </div>
                                 </div>
                             </div>
