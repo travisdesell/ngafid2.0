@@ -1,51 +1,27 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.HashMap;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
-
-import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-
-import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-
-import org.ngafid.filters.Filter;
-
-import org.ngafid.flights.Airframes;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.FlightWarning;
-import org.ngafid.flights.Tail;
-import org.ngafid.flights.Tails;
-import org.ngafid.flights.Upload;
-
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import com.google.gson.Gson;
+import org.ngafid.Database;
+import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
+import org.ngafid.flights.Airframes;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
 
-
-import org.ngafid.events.EventStatistics;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Logger;
 
 public class GetWelcome implements Route {
     private static final Logger LOG = Logger.getLogger(GetWelcome.class.getName());
@@ -90,7 +66,7 @@ public class GetWelcome implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        try  {
+        try {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -98,26 +74,12 @@ public class GetWelcome implements Route {
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
-            if (messages != null) {
+            if (messages != null)
                 scopes.put("messages", messages);
-            }
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
-
-            LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
-            LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
-
-            long startTime = System.currentTimeMillis();
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
-            LOG.info("getting event counts took " + (System.currentTimeMillis() - startTime) + "ms.");
-
-            startTime = System.currentTimeMillis();
             String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n";
-
             scopes.put("fleet_info_js", fleetInfo);
-            long endTime = System.currentTimeMillis();
-            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
-
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
