@@ -66,7 +66,7 @@ class SeveritiesPage extends React.Component {
 
             let eventNameCur = eventNames[i];
             eventChecked[eventNameCur] = false;
-            eventsEmpty[eventNameCur] = false;
+            eventsEmpty[eventNameCur] = true;
         }
 
         var date = new Date();
