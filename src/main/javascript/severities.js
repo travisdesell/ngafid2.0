@@ -46,6 +46,7 @@ var trace2 = {
 var countData = [];
 var percentData = [];
 
+var eventCounts = null;
 var eventSeverities = {};
 
 var eventFleetPercents = {};
@@ -60,7 +61,7 @@ class SeveritiesPage extends React.Component {
         let eventChecked = {};
         let eventsEmpty = {};
 
-        eventNames.unshift("ANY Event");
+        //  eventNames.unshift("ANY Event");
         for (let i = 0; i < eventNames.length; i++) {
 
             let eventNameCur = eventNames[i];
@@ -72,7 +73,7 @@ class SeveritiesPage extends React.Component {
         this.state = {
             airframe : "All Airframes",
             tagName: "All Tags",
-            startYear : 2020,
+            startYear : 2025,
             startMonth : 1,
             endYear : date.getFullYear(),
             endMonth : date.getMonth() + 1,
@@ -84,8 +85,11 @@ class SeveritiesPage extends React.Component {
             // severityTraces: [],
         };
 
-        //Fetch all event severities
-        this.fetchAllEventSeverities();
+        // //Fetch all event severities
+        // this.fetchAllEventSeverities();
+
+        //Fetch monthly event counts
+        this.fetchMonthlyEventCounts();
 
     }
 
@@ -191,6 +195,8 @@ class SeveritiesPage extends React.Component {
             
             if (!this.state.eventChecked[eventName])
                 continue;
+
+            console.log("Displaying checked event: '" + eventName + "'");
 
             for (let [airframe, counts] of Object.entries(countsMap)) {
 
@@ -406,6 +412,69 @@ class SeveritiesPage extends React.Component {
 
     }
 
+    startDate() {
+        let startDate = this.state.startYear + "-";
+
+        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        else startDate += this.state.startMonth;
+
+        return startDate;
+    }
+
+    endDate() {
+        let endDate = this.state.endYear + "-";
+
+        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        else endDate += this.state.endMonth;
+
+        return endDate;
+    }
+    fetchMonthlyEventCounts() {
+        var submission_data = {
+            startDate : this.startDate() + "-01",
+            endDate : this.endDate() + "-28",
+            aggregatePage : this.props.aggregate_page
+        };
+
+        $('#loading').hide();
+
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'POST',
+                url: '/protected/monthly_event_counts',
+                data : submission_data,
+                dataType : 'json',
+                success : function(response) {
+
+                    if (response.err_msg) {
+                        errorModal.show(response.err_title, response.err_msg);
+                        return;
+                    }   
+
+                    eventCounts = response;
+                    let eventTypesDetected = Object.keys(eventCounts);
+                    console.log("[EX] Events Detected: ", eventTypesDetected);
+                    
+                    //Mark all events as checked if they are detected and unchecked if they are not detected
+                    for (let i = 0; i < eventNames.length; i++) {
+                        let eventNameCur = eventNames[i];
+                        severitiesPage.state.eventsEmpty[eventNameCur] = !eventTypesDetected.includes(eventNameCur);
+                    }
+
+                    severitiesPage.setState(severitiesPage.state);
+                    severitiesPage.displayPlot(severitiesPage.state.airframe);
+
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Loading Uploads", errorThrown);
+                    reject(errorThrown);
+                },
+            });
+        });
+
+    }
+
+    /*
     fetchAllEventSeverities() {
 
         $('#loading').show();
@@ -467,18 +536,18 @@ class SeveritiesPage extends React.Component {
                         severitiesPage.state.eventsEmpty[eventName] = false;
                         eventSeverities[eventName] = eventSeverityCounts;
 
-                        //Concatenate the counts for the "ANY Event" event
-                        if (eventSeverities["ANY Event"] == null)
-                            eventSeverities["ANY Event"] = {};                        
-                        console.log("Merging counts for event: '" + eventName + "'");
-                        for(let [airframe, counts] of Object.entries(eventSeverityCounts)) {
+                        // //Concatenate the counts for the "ANY Event" event
+                        // if (eventSeverities["ANY Event"] == null)
+                        //     eventSeverities["ANY Event"] = {};                        
+                        // console.log("Merging counts for event: '" + eventName + "'");
+                        // for(let [airframe, counts] of Object.entries(eventSeverityCounts)) {
 
-                            if (eventSeverities["ANY Event"][airframe] == null)
-                                eventSeverities["ANY Event"][airframe] = eventSeverityCounts[airframe];
-                            else
-                                eventSeverities["ANY Event"][airframe] = eventSeverities["ANY Event"][airframe].concat(eventSeverityCounts[airframe]);
+                        //     if (eventSeverities["ANY Event"][airframe] == null)
+                        //         eventSeverities["ANY Event"][airframe] = eventSeverityCounts[airframe];
+                        //     else
+                        //         eventSeverities["ANY Event"][airframe] = eventSeverities["ANY Event"][airframe].concat(eventSeverityCounts[airframe]);
                             
-                        }
+                        // }
 
                     }
                     
@@ -497,6 +566,7 @@ class SeveritiesPage extends React.Component {
         });
 
     }
+    */
 
     fetchEventSeverities(eventName) {
 
@@ -514,7 +584,7 @@ class SeveritiesPage extends React.Component {
         else endDate += this.state.endMonth;
 
 
-        let severitiesPage = this;
+        //let severitiesPage = this;
 
 
         var submission_data = {
@@ -529,7 +599,9 @@ class SeveritiesPage extends React.Component {
             url: '/protected/severities',
             data : submission_data,
             dataType : 'json',
+            async: true,
             success : function(response) {
+
                 console.log("Received response <severities>: ", this.data, response);
 
                 $('#loading').hide();
@@ -539,19 +611,19 @@ class SeveritiesPage extends React.Component {
                     return;
                 }   
 
-                //Check if the response is empty
-                for(let [airframe, counts] of Object.entries(response)) {
+                // //Check if the response is empty
+                // for(let [airframe, counts] of Object.entries(response)) {
                     
-                    if (counts.length != 0)
-                        continue;
+                //     if (counts.length != 0)
+                //         continue;
                 
-                    console.log("No counts for event: '" + eventName + "' and airframe: '" + airframe + "'");
+                //     console.log("No counts for event: '" + eventName + "' and airframe: '" + airframe + "'");
 
-                    severitiesPage.state.eventsEmpty[eventName] = true;
-                    eventSeverities[eventName] = {};
-                    severitiesPage.setState(severitiesPage.state);
-                    return;
-                }
+                //     severitiesPage.state.eventsEmpty[eventName] = true;
+                //     eventSeverities[eventName] = {};
+                //     severitiesPage.setState(severitiesPage.state);
+                //     return;
+                // }
 
                 eventSeverities[eventName] = response;
                 severitiesPage.setState(severitiesPage.state);
@@ -560,8 +632,7 @@ class SeveritiesPage extends React.Component {
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
-            },   
-            async: true 
+            } 
         });
 
     }
@@ -570,7 +641,7 @@ class SeveritiesPage extends React.Component {
 
         console.log("Checking event: '" + eventName + "'");
         this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
-        this.setState(this.state);
+        
 
         if (eventName in eventSeverities) {
             console.log("already loaded counts for event: '" + eventName + "'");
@@ -578,6 +649,11 @@ class SeveritiesPage extends React.Component {
         } else {
             this.fetchEventSeverities(eventName);
         }
+
+       // this.fetchEventSeverities(eventName);
+
+        this.setState(this.state);
+
     }
 
     updateStartYear(newStartYear) {
@@ -616,7 +692,8 @@ class SeveritiesPage extends React.Component {
         eventSeverities = {};
         this.displayPlot(this.state.airframe);
 
-        this.fetchAllEventSeverities();
+        //this.fetchAllEventSeverities();
+        this.fetchMonthlyEventCounts();
     }
 
     airframeChange(airframe) {

@@ -62,7 +62,7 @@ class TrendsPage extends React.Component {
         var date = new Date();
         this.state = {
             airframe : "All Airframes",
-            startYear : 2020,
+            startYear : 2025,
             startMonth : 1,
             endYear : date.getFullYear(),
             endMonth : date.getMonth() + 1,

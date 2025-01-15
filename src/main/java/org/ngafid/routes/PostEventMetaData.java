@@ -8,9 +8,10 @@ import org.ngafid.Database;
 import org.ngafid.events.EventMetaData;
 
 import com.google.gson.Gson;
-import spark.Route;
+
 import spark.Request;
 import spark.Response;
+import spark.Route;
 
 /**
  * PostEventMetaData
@@ -28,12 +29,13 @@ public class PostEventMetaData implements Route {
     @Override
     public Object handle(Request request, Response response) {
 
-        LOG.info("handling rate of closure route");
+        //LOG.info("handling rate of closure route");
+        LOG.info("handling post meta data route");
         int eventId = Integer.parseInt(request.queryParams("eventId"));
         try {
             Connection connection = Database.getConnection();
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
-            if (metaDataList.size() > 0) {
+            if (!metaDataList.isEmpty()) {
                 return gson.toJson(metaDataList);
             }
         } catch (Exception e) {
