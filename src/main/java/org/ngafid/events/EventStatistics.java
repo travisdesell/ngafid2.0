@@ -504,6 +504,10 @@ public class EventStatistics {
                     }
                     LOG.info(flightCountStatement.toString());
                     LOG.info(eventStatisticsStatement.toString());
+
+                    if (AirframeStatistics.this.flightCountCache.containsKey(flightCountStatement.toString())) {
+                        this.aggFlightsWithoutError = AirframeStatistics.this.flightCountCache.get(flightCountStatement.toString());
+                    }
                     try (ResultSet resultSet = flightCountStatement.executeQuery()) {
                         resultSet.next();
                         this.aggFlightsWithoutError = resultSet.getInt(1);
