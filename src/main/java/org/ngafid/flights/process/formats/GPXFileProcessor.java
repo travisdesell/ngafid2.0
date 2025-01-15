@@ -1,6 +1,11 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.formats;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.ngafid.flights.*;
+import org.ngafid.flights.process.FlightBuilder;
+import org.ngafid.flights.process.FlightMeta;
+import org.ngafid.flights.process.FlightProcessingException;
+import org.ngafid.flights.process.Pipeline;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -21,8 +26,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-
 /**
  * This class is responsible for parsing GPX files.
  *
@@ -32,7 +35,7 @@ import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
-    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         super(connection, stream, filename, pipeline);
     }
 
@@ -43,7 +46,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
 
             return flights.stream();
         } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException
-                | FlightAlreadyExistsException e) {
+                 | FlightAlreadyExistsException e) {
             throw new RuntimeException(e);
         }
     }

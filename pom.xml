@@ -33,7 +33,6 @@
         <!-- For Maven Embedder -->
 
 
-
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-embedder</artifactId>
@@ -143,12 +142,12 @@
             <artifactId>junit-platform-commons</artifactId>
             <version>1.9.1</version>
             <scope>test</scope>
-            </dependency>
+        </dependency>
 
         <dependency>
-           <groupId>com.zaxxer</groupId>
-           <artifactId>HikariCP</artifactId>
-           <version>5.1.0</version>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
         </dependency>
         <!-- Time Zone converter used in TimeUtils-->
         <dependency>
@@ -156,7 +155,6 @@
             <artifactId>timezonemap</artifactId>
             <version>4.5</version>
         </dependency>
-
 
 
     </dependencies>
@@ -178,21 +176,31 @@
                             <arg>50000</arg>
                         </compilerArgs>
                     </configuration>
-                    </plugin>
+                </plugin>
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>4.8.6.0</version>
                     <dependencies>
-                      <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
-                      <dependency>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs</artifactId>
-                        <version>4.8.6</version>
-                      </dependency>
+                        <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+                        <dependency>
+                            <groupId>com.github.spotbugs</groupId>
+                            <artifactId>spotbugs</artifactId>
+                            <version>4.8.6</version>
+                        </dependency>
                     </dependencies>
-                  </plugin>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

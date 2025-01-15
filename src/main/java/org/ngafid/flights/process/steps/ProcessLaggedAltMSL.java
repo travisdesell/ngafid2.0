@@ -1,15 +1,18 @@
-package org.ngafid.flights.process;
-
-import java.util.Set;
-import java.util.Collections;
-import java.sql.Connection;
-import java.sql.SQLException;
+package org.ngafid.flights.process.steps;
 
 import org.ngafid.flights.DoubleTimeSeries;
-import static org.ngafid.flights.Parameters.*;
-import static org.ngafid.flights.Airframes.*;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.process.FlightBuilder;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.ngafid.flights.Airframes.AIRFRAME_DJI;
+import static org.ngafid.flights.Airframes.AIRFRAME_SCAN_EAGLE;
+import static org.ngafid.flights.Parameters.*;
 
 public class ProcessLaggedAltMSL extends ProcessStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL);

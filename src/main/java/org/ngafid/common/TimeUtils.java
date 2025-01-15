@@ -1,22 +1,33 @@
 package org.ngafid.common;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
+
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.StringTimeSeries;
+import us.dustinj.timezonemap.TimeZoneMap;
+
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
-import us.dustinj.timezonemap.TimeZoneMap;
-import java.time.ZoneId;
-import org.ngafid.flights.FatalFlightFileException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 public class TimeUtils {
+    private static TimeZoneMap TIME_ZONE_MAP = null;
+
+    private static TimeZoneMap getTimeZoneMap() {
+        if (TIME_ZONE_MAP == null)
+            TIME_ZONE_MAP = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
+
+        return TIME_ZONE_MAP;
+    }
+
     /**
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
+     *
      * @param ldt
      * @param offset
      * @return Specific offset
@@ -112,7 +123,7 @@ public class TimeUtils {
     }
 
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
-            String newOffset) {
+                                                 String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
         // create a LocalDateTime using the date time passed as parameter
         String originalDateTime = originalDate.trim() + " " + originalTime.trim();
@@ -267,19 +278,19 @@ public class TimeUtils {
 
     /**
      * Calculates local date, local time, and UTC offset for each entry based on given UTC dates, times, latitudes, and longitudes.
-     * @param map          map object (created once per upload for efficiency.
-     * @param utcDates     time series of UTC dates as strings (e.g., "yyyy-MM-dd")
-     * @param utcTimes     time series of UTC times as strings (e.g., "HH:mm:ss")
-     * @param latitudes    time series of latitude strings
-     * @param longitudes   time series of longitude strings
+     *
+     * @param utcDates   time series of UTC dates as strings (e.g., "yyyy-MM-dd")
+     * @param utcTimes   time series of UTC times as strings (e.g., "HH:mm:ss")
+     * @param latitudes  time series of latitude strings
+     * @param longitudes time series of longitude strings
      * @return a LocalDateTimeResult containing lists of local dates, times, and UTC offsets.
      */
     public static LocalDateTimeResult calculateLocalDateTimeFromTimeSeries(
-            TimeZoneMap map,
             StringTimeSeries utcDates,
             StringTimeSeries utcTimes,
             DoubleTimeSeries latitudes,
             DoubleTimeSeries longitudes) {
+        TimeZoneMap map = getTimeZoneMap();
 
         // Prepare lists for the results.
         ArrayList<String> localDates = new ArrayList<>(utcDates.size());
@@ -319,6 +330,7 @@ public class TimeUtils {
 
     /**
      * Finds the correct DateTimeFormatter by trying to parse a date/time string.
+     *
      * @param dateTimeString
      * @return specific DateTimeFormatter
      */
@@ -347,12 +359,15 @@ public class TimeUtils {
             this.localTimes = localTimes;
             this.utcOffsets = utcOffsets;
         }
+
         public ArrayList<String> getLocalDates() {
             return localDates;
         }
+
         public ArrayList<String> getLocalTimes() {
             return localTimes;
         }
+
         public ArrayList<String> getUtcOffsets() {
             return utcOffsets;
         }

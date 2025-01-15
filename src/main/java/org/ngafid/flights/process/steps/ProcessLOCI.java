@@ -1,20 +1,18 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.steps;
 
-import java.time.*;
-import java.util.Set;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.process.FlightBuilder;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Set;
 import java.util.logging.Logger;
-import java.time.format.DateTimeFormatter;
 
+import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Parameters.*;
-import static org.ngafid.flights.Airframes.*;
-import org.ngafid.common.*;
-import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.MalformedFlightFileException;
-import org.ngafid.flights.FatalFlightFileException;
 
 public class ProcessLOCI extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessLOCI.class.getName());

@@ -1,19 +1,17 @@
-package org.ngafid.flights.process;
-
-import java.util.Set;
-import java.util.Map;
-import static java.util.Map.entry;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Collections;
-import java.sql.Connection;
-import java.sql.SQLException;
+package org.ngafid.flights.process.steps;
 
 import org.ngafid.flights.DoubleTimeSeries;
-import static org.ngafid.flights.Parameters.*;
-import static org.ngafid.flights.Airframes.*;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.process.FlightBuilder;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+
+import static java.util.Map.entry;
+import static org.ngafid.flights.Airframes.*;
+import static org.ngafid.flights.Parameters.Unit;
 
 public class ProcessDivergence extends ProcessStep {
 

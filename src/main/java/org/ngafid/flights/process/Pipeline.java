@@ -1,53 +1,41 @@
 package org.ngafid.flights.process;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
-
 import org.ngafid.Database;
 import org.ngafid.ProcessUpload.FlightInfo;
 import org.ngafid.UploadException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
+import org.ngafid.flights.process.formats.*;
+
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
  * This wraps up the process of (1) recognizing file types, (2) parsing the files, and (3) processing the data.
- *
+ * <p>
  * Files are recognized by their file extensions - the extension is used to create a `FlightFileProcessor` from the list
  * of factories in `this.factories`.
- * 
+ * <p>
  * `FlightFlileProcessor` objects handle the task of parsing the data: obtaining meta data and the actual double and
  * string series. These are placed into a flight builder, which is a more general representation of an incomplete
  * flight.
- *
+ * <p>
  * `FlightBuilder`s can be specialized and these specializations will specify a set of `ProcessStep`s which will be
  * applied to compute everything we need. `ProcessStep`s all have required input columns and output columns: these
  * requirements can be used to form a DAG, traversing it in the proper order will let us compute the steps in the proper
@@ -97,7 +85,7 @@ public class Pipeline implements AutoCloseable {
     // Maps lowercase file extension to the relevent FileProcessor. In the future, these may themselves have to do some
     // additional delegation if a single file extension may actually map to multiple significantly different schemas.
     private static final Map<String, FlightFileProcessor.Factory> factories = Map.of(
-            "csv", CSVFileProcessor::new,
+            "csv", CSVFileProcessor::factory,
             "dat", DATFileProcessor::new,
             "json", JSONFileProcessor::new,
             "gpx", GPXFileProcessor::new);
@@ -182,8 +170,8 @@ public class Pipeline implements AutoCloseable {
     private Stream<? extends ZipEntry> getValidFilesStream() {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         Stream<? extends ZipEntry> validFiles = StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
-                false)
+                        Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
+                        false)
                 .filter(z -> !z.getName().contains("__MACOSX"))
                 .filter(z -> !z.isDirectory());
         return validFiles;
@@ -287,7 +275,7 @@ public class Pipeline implements AutoCloseable {
     /**
      * Adds a file with the supplied filename containing the supplied data to the derived ZipFile. If the derived
      * ZipFile and upload have not been created yet, create them.
-     *
+     * <p>
      * This method is synchronized so there is only a single thread mutating the derivedFileSystem at once.
      */
     public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {

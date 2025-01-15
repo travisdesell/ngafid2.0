@@ -1,21 +1,15 @@
 package org.ngafid.flights.process;
 
+import org.ngafid.flights.*;
+import org.ngafid.flights.process.steps.*;
+
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-import org.ngafid.flights.*;
-import static org.ngafid.flights.process.ProcessStep.required;
-import org.ngafid.flights.process.*;
+import static org.ngafid.flights.process.steps.ProcessStep.required;
 
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic meta
@@ -49,7 +43,7 @@ public class FlightBuilder {
      * Only constructor for FlightBuilder. Copies the entries in the time series maps.
      */
     public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-            Map<String, StringTimeSeries> stringTimeSeries) {
+                         Map<String, StringTimeSeries> stringTimeSeries) {
         this.doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
         this.stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
         this.meta = meta;
@@ -87,16 +81,16 @@ public class FlightBuilder {
     /**
      * Construct and execute the dependency graph formed by the process steps. This method should only be executed
      * within some sort of `Executor` to enable concurrent flight processing.
-     *
+     * <p>
      * All recoverable exceptions / flight processing issues will be caught and stored in this flight builder, otherwise
      * this will raise a FlightProcessingException which indicates an irrecoverable issue.
      *
-     * @returns A flight object
      * @throws FlightProcessingException if an irrecoverable processing issue is encountered
+     * @returns A flight object
      */
     public Flight build(Connection connection) throws FlightProcessingException {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
-        FlightProcessingException[] exception = new FlightProcessingException[] { null };
+        FlightProcessingException[] exception = new FlightProcessingException[]{null};
 
         // We can do this:
         // (1) in serial

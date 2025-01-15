@@ -1,17 +1,21 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.steps;
 
-import java.util.Set;
-import java.util.Collections;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import org.ngafid.airports.*;
+import org.ngafid.airports.Airport;
+import org.ngafid.airports.Airports;
+import org.ngafid.airports.Runway;
 import org.ngafid.common.MutableDouble;
 import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
-import static org.ngafid.flights.Parameters.*;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.process.FlightBuilder;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.ngafid.flights.Parameters.*;
 
 public class ProcessAirportProximity extends ProcessStep {
     private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);

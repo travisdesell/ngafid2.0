@@ -1,17 +1,19 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.steps;
 
-import java.util.Set;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.calculations.VSPDRegression;
+import org.ngafid.flights.process.FlightBuilder;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Set;
 import java.util.logging.Logger;
 
+import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Parameters.*;
-import static org.ngafid.flights.Airframes.*;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.MalformedFlightFileException;
-import org.ngafid.flights.FatalFlightFileException;
-import org.ngafid.flights.calculations.VSPDRegression;
 
 public class ProcessStallIndex extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStallIndex.class.getName());

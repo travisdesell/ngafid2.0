@@ -1,19 +1,21 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.steps;
 
-import java.time.*;
-import java.util.Set;
+import org.ngafid.common.TimeUtils;
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.process.FlightBuilder;
+
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.logging.Logger;
+import java.time.DateTimeException;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Set;
+import java.util.logging.Logger;
 
 import static org.ngafid.flights.Parameters.*;
-import org.ngafid.common.*;
-import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.flights.MalformedFlightFileException;
-import org.ngafid.flights.FatalFlightFileException;
 
 public class ProcessStartEndTime extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStartEndTime.class.getName());

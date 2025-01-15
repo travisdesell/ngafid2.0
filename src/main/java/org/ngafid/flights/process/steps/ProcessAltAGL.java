@@ -1,18 +1,18 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.steps;
 
-import java.util.Set;
-import java.util.Collections;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import java.nio.file.NoSuchFileException;
-
-import org.ngafid.flights.Flight;
-import org.ngafid.terrain.TerrainCache;
 import org.ngafid.flights.DoubleTimeSeries;
-import static org.ngafid.flights.Parameters.*;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.process.FlightBuilder;
+import org.ngafid.terrain.TerrainCache;
+
+import java.nio.file.NoSuchFileException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.ngafid.flights.Parameters.*;
 
 public class ProcessAltAGL extends ProcessStep {
     private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);

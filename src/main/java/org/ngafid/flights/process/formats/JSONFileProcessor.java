@@ -1,9 +1,13 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.formats;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.*;
+import org.ngafid.flights.process.FlightBuilder;
+import org.ngafid.flights.process.FlightMeta;
+import org.ngafid.flights.process.FlightProcessingException;
+import org.ngafid.flights.process.Pipeline;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
@@ -31,7 +35,7 @@ import java.util.stream.Stream;
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
-    public JSONFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+    public JSONFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         super(connection, stream, filename, pipeline);
     }
 
@@ -44,7 +48,7 @@ public class JSONFileProcessor extends FlightFileProcessor {
         try {
             processTimeSeries(flightMeta, doubleTimeSeries, stringTimeSeries);
         } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException
-                | FlightAlreadyExistsException e) {
+                 | FlightAlreadyExistsException e) {
             throw new FlightProcessingException(e);
         }
 
@@ -52,7 +56,7 @@ public class JSONFileProcessor extends FlightFileProcessor {
     }
 
     private void processTimeSeries(FlightMeta flightMeta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-            Map<String, StringTimeSeries> stringTimeSeries) throws SQLException, MalformedFlightFileException,
+                                   Map<String, StringTimeSeries> stringTimeSeries) throws SQLException, MalformedFlightFileException,
             IOException, FatalFlightFileException, FlightAlreadyExistsException {
         String status = "";
         Gson gson = new Gson();

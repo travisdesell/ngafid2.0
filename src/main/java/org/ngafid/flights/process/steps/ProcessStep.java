@@ -1,11 +1,12 @@
-package org.ngafid.flights.process;
-
-import java.util.Set;
-import java.sql.Connection;
-import java.sql.SQLException;
+package org.ngafid.flights.process.steps;
 
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.process.FlightBuilder;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
 
 public abstract class ProcessStep {
 
@@ -55,11 +56,11 @@ public abstract class ProcessStep {
     public final boolean applicable() {
         return airframeIsValid(builder.meta.airframe.getName())
                 && builder
-                        .getStringTimeSeriesKeySet()
-                        .containsAll(getRequiredStringColumns())
+                .getStringTimeSeriesKeySet()
+                .containsAll(getRequiredStringColumns())
                 && builder
-                        .getDoubleTimeSeriesKeySet()
-                        .containsAll(getRequiredDoubleColumns());
+                .getDoubleTimeSeriesKeySet()
+                .containsAll(getRequiredDoubleColumns());
     }
 
     public final String explainApplicability() {

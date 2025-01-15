@@ -1,21 +1,15 @@
-package org.ngafid.flights.process;
+package org.ngafid.flights.process.steps;
 
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-import java.util.Collections;
+import org.ngafid.flights.*;
+import org.ngafid.flights.process.FlightBuilder;
+
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.logging.Logger;
 
-import java.nio.file.NoSuchFileException;
-
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.flights.Itinerary;
 import static org.ngafid.flights.Parameters.*;
-import org.ngafid.flights.FatalFlightFileException;
-import org.ngafid.flights.MalformedFlightFileException;
 
 public class ProcessItinerary extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessItinerary.class.getName());

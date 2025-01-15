@@ -1,22 +1,23 @@
 package org.ngafid.flights.process;
 
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.process.steps.ProcessStep;
+
 import java.sql.SQLException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import org.ngafid.flights.FatalFlightFileException;
-import org.ngafid.flights.MalformedFlightFileException;
 
 /**
  * A directed acyclic graph, where nodes are individual process steps and the edges are defined by column names that are
  * either input or output by that process step. A dummy node is created in the case of columns that are contained in the
  * data source.
- *
+ * <p>
  * A basic understanding of how ForkJoin tasks work in Java is a prerequisite to understand this.
  *
  * @author Joshua Karns (josh@karns.dev)
@@ -85,7 +86,7 @@ public class DependencyGraph {
         /**
          * Attempts to compute the process step in this node, if the step is applicable. If it is not applicable, child
          * process steps are disabled.
-         *
+         * <p>
          * Exceptions are caught and stored, and will cause descendent steps to be disabled.
          */
         public Void compute() {
@@ -224,7 +225,7 @@ public class DependencyGraph {
      * Compute all process steps, possibly concurrently depending on the executor that this method is invoked in. The
      * order the process steps are executed in will not always be the same, but it will always be in a manner which
      * obeys column requirements.
-     *
+     * <p>
      * If this method is invoked in the context of a ForkJoinPool or some other executor / threadpool, it will be
      * executed concurrently. Otherwise, it will be executed it will be computed sequentially.
      */
