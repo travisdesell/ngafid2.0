@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 #Enable the cron job
-printf "\n--------------------\nCron Service Started\n--------------------\n\n" >> $SCRIPT_DIR/EventStatisticsFetch.log
+printf "\n--------------------\nCron Service Started\n--------------------\n(Cron Trigger Time: $CRON_TIME)\n" >> $SCRIPT_DIR/EventStatisticsFetch.log
                          
 
 echo "Cron Path: $CRON_PATH"
