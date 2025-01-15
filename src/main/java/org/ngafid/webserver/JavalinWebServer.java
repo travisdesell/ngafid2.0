@@ -2,7 +2,7 @@ package org.ngafid.webserver;
 
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
-import io.javalin.json.JavalinGson;
+import io.javalin.json.JavalinJackson;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -25,7 +25,7 @@ public class JavalinWebServer extends WebServer {
     protected void preInitialize() {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
-            config.jsonMapper(new JavalinGson());
+            config.jsonMapper(new JavalinJackson());
         });
     }
 
