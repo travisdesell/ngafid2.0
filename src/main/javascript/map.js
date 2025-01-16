@@ -41,15 +41,13 @@ for (i = 0; i < ii; ++i) {
     }));
 }
 
-//modified from chartbundle: http://wms.chartbundle.com/charts/tms.html
-//http://wms.chartbundle.com/charts/tms.js.txt
-
 styles.push('SectionalCharts');
 var tms_sec = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "https://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{-y}.png"})
+        url : "http://localhost:8183/charts/sectional/{z}/{x}/{-y}.png"}),
+    maxZoom: 9
 });
 
 layers.push(tms_sec);
@@ -60,7 +58,8 @@ var tms_enrl = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "https://wms.chartbundle.com/tms/1.0.0/enrl/{z}/{x}/{-y}.png"})
+        url : " http://localhost:8183/charts/enroute-low/{z}/{x}/{-y}.png"}),
+    maxZoom: 9
 });
 
 layers.push(tms_enrl);
@@ -71,7 +70,8 @@ var tms_enrh = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "https://wms.chartbundle.com/tms/1.0.0/enrh/{z}/{x}/{-y}.png"})
+        url : " http://localhost:8183/charts/enroute-high/{z}/{x}/{-y}.png"}),
+    maxZoom: 9
 });
 
 layers.push(tms_enrh);
@@ -81,7 +81,8 @@ var tms_tac = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "https://wms.chartbundle.com/tms/1.0.0/tac/{z}/{x}/{-y}.png"})
+        url : "http://localhost:8183/charts/terminal-area/{z}/{x}/{-y}.png"}),
+    maxZoom: 9
 });
 
 layers.push(tms_tac);
