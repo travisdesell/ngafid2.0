@@ -2,7 +2,6 @@
 
 # - Call with 'bash event_stats/event_stats_cron_check.sh'
 # - Just checks whether or not the cron job from event_stats_cron_start.sh is running
-# - ⚠ Make sure that this file is run from the NGAFID root directory, otherwise the command will not work
 
 
 #Source the configuration script 

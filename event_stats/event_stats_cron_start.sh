@@ -3,7 +3,6 @@
 # - Call with 'bash event_stats/event_stats_cron_start.sh'
 # - Enables a cron job to for the Event Statistics Fetch Java program
 # - Cron job executes every day at midnight (00:00)
-# - ⚠ Make sure that this file is run from the NGAFID root directory, otherwise the command will not work
 
 
 #Source the configuration script 

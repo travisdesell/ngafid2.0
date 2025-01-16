@@ -4,7 +4,6 @@
 # - Stops the event_stats_cron_start.sh cron job (i.e. Removes the cron job from the crontab)
 # - Displays a message to the console indicating that the cron job has been stopped
 # - Checks whether or not the cron job was actually running first
-# - ⚠ Make sure that this file is run from the NGAFID root directory, otherwise the command will not work
 
 
 #Source the configuration script 

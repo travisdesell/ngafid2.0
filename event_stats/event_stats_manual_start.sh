@@ -2,7 +2,6 @@
 
 # - Call with 'bash event_stats/event_stats_manual_start.sh'
 # - Manually triggers the event stats call
-# - ⚠ Make sure that this file is run from the NGAFID root directory, otherwise the command will not work
 
 
 #Source the configuration script 
