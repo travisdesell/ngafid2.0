@@ -345,15 +345,15 @@ public class CalculateProximity {
                         double verticalDistanceFt = calculateVerticalDistance(flightInfo.altitudeMSL[i],
                                 otherInfo.altitudeMSL[j]);
 
-                        final double MAX_DISTANCE_FT = 1000.0;
-                        final double MIN_ALTITUDE_AGL = 50.0;
-                        final double MIN_AIRSPEED = 20.0;
+                        final double maxDistanceFt = 1000.0;
+                        final double minAltitudeAgl = 50.0;
+                        final double minAirspeed = 20.0;
 
-                        boolean distanceCheck = (distanceFt < MAX_DISTANCE_FT);
+                        boolean distanceCheck = (distanceFt < maxDistanceFt);
                         boolean altitudeCheck =
-                                (flightInfo.altitudeAGL[i] >= MIN_ALTITUDE_AGL) && (otherInfo.altitudeAGL[j] >= MIN_ALTITUDE_AGL);
+                                (flightInfo.altitudeAGL[i] >= minAltitudeAgl) && (otherInfo.altitudeAGL[j] >= minAltitudeAgl);
                         boolean airspeedCheck =
-                                (flightInfo.indicatedAirspeed[i] > MIN_AIRSPEED) && (otherInfo.indicatedAirspeed[j] > MIN_AIRSPEED);
+                                (flightInfo.indicatedAirspeed[i] > minAirspeed) && (otherInfo.indicatedAirspeed[j] > minAirspeed);
 
                         if (distanceCheck && altitudeCheck && airspeedCheck) {
 
@@ -689,18 +689,18 @@ public class CalculateProximity {
         }
 
         Instant end = Instant.now();
-        double elapsed_seconds = (double) Duration.between(start, end).toMillis() / 1000.0;
-        double average_seconds = (elapsed_seconds / (double) count);
+        double elapsedSeconds = (double) Duration.between(start, end).toMillis() / 1000.0;
+        double averageSeconds = (elapsedSeconds / (double) count);
         double avgTimeMatchedFlights = ((double) timeMatchFlights / (double) count);
         double avgLocationMatchedFlights = ((double) locMatchFlights / (double) count);
 
-        LOG.info("Calculated " + count + " Proximity evaluations in " + elapsed_seconds +
-                " seconds, averaged: " + average_seconds + " seconds per flight");
+        LOG.info("Calculated " + count + " Proximity evaluations in " + elapsedSeconds +
+                " seconds, averaged: " + averageSeconds + " seconds per flight");
         LOG.info("Average time-matched flights: " + avgTimeMatchedFlights + "," +
                 " Average location-matched flights: " + avgLocationMatchedFlights);
         LOG.info("Proximity events found:" + eventsFound);
 
-        uploadProcessedEmail.setProximityElapsedTime(elapsed_seconds, average_seconds, avgTimeMatchedFlights,
+        uploadProcessedEmail.setProximityElapsedTime(elapsedSeconds, averageSeconds, avgTimeMatchedFlights,
                 avgLocationMatchedFlights);
 
         LOG.info("Finished proximity calculation for upload ID: " + uploadId);
