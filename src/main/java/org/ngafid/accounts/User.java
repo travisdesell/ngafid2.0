@@ -330,7 +330,6 @@ public final class User {
                 "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision)";
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
-
             query.setInt(1, userId);
             query.setInt(2, userPreferences.getDecimalPrecision());
 
