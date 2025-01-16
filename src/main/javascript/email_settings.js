@@ -69,16 +69,9 @@ class EmailSettingsTableUser extends React.Component {
 
     //Fetch user email preferences
     getUserEmailPreferences = () => {
-
-        let submissionData = {
-            handleFetchType : "HANDLE_FETCH_USER"
-        };
-
         $.ajax({
             type: 'GET',
-            url: '/protected/email_preferences',
-            data: submissionData,
-            dataType: 'json',
+            url: '/protected/email_preferences/HANDLE_FETCH_USER',
             async: true,
 
             success: (response) => {
@@ -359,18 +352,9 @@ class EmailSettingsTableManager extends React.Component {
         let fleetUsersEmailSettings = [];
 
         fleetUsers.forEach(userTarget => {
-
-            let submissionData = {
-                handleFetchType : "HANDLE_FETCH_MANAGER",
-                fleetUserID : userTarget.id,
-                fleetID: userTarget.fleet.id
-            };
-
             $.ajax({
                 type: 'GET',
-                url: '/protected/email_preferences',
-                data: submissionData,
-                dataType : 'json',
+                url: '/protected/email_preferences/HANDLE_FETCH_MANAGER/' + userTarget.id + '/' + userTarget.fleet.id,
                 async: true,
 
                 success : (response) => {
