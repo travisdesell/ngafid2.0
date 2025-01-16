@@ -18,7 +18,7 @@
         <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
 
         <spark.version>2.7.2</spark.version>
-        <gson.version>2.11.0</gson.version>
+        <jackson.version>2.18.0</jackson.version>
         <slf4j.version>1.7.25</slf4j.version>
         <javalin.version>6.3.0</javalin.version>
         <jetty.version>11.0.22</jetty.version>
@@ -51,15 +51,6 @@
             <version>1.4</version>
         </dependency>
 
-
-        <!-- Spark Java library -->
-        <!--        <dependency>-->
-        <!--            <groupId>com.sparkjava</groupId>-->
-        <!--            <artifactId>spark-core</artifactId>-->
-        <!--            <version>${spark.version}</version>-->
-        <!--        </dependency>-->
-
-
         <!-- Javalin Webserver -->
         <dependency>
             <groupId>io.javalin</groupId>
@@ -75,9 +66,9 @@
 
         <!-- JSON utils -->
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- Logging library -->
