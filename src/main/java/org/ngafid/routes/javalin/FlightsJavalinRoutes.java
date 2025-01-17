@@ -1,6 +1,7 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -184,7 +185,6 @@ public class FlightsJavalinRoutes {
     private static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
-        final Filter filter = objectMapper.readValue(filterJSON, Filter.class);
         final int fleetId = user.getFleetId();
 
         // check to see if the user has upload access for this fleet.
@@ -196,6 +196,7 @@ public class FlightsJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
+            final Filter filter = objectMapper.readValue(filterJSON, Filter.class);
             final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
             final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
             final String orderingColumnn = Objects.requireNonNull(ctx.formParam("sortingColumn"));
@@ -233,7 +234,7 @@ public class FlightsJavalinRoutes {
                 ctx.json(new FlightsResponse(flights, numberPages));
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }

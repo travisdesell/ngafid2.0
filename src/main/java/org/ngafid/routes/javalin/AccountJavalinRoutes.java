@@ -1,6 +1,7 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -245,7 +246,12 @@ public class AccountJavalinRoutes {
         LOG.info("template file: '" + templateFile + "'");
 
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
-        scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
+        try {
+            scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
+        } catch (JsonProcessingException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e)).status(500);
+        }
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -258,7 +264,12 @@ public class AccountJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
+        try {
+            scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
+        } catch (JsonProcessingException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e)).status(500);
+        }
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);

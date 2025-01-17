@@ -73,7 +73,7 @@ public class EventJavalinRoutes {
             LOG.info("Event Definitions to JSON took " + (endTime - startTime) + "ms.");
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException |JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -139,11 +139,10 @@ public class EventJavalinRoutes {
 
 
     private static void putEventDefinitions(Context ctx) {
-        EventDefinition updatedEvent = objectMapper.readValue(ctx.body(), EventDefinition.class);
-
         try (Connection connection = Database.getConnection()) {
+            EventDefinition updatedEvent = objectMapper.readValue(ctx.body(), EventDefinition.class);
             updatedEvent.updateSelf(connection);
-        } catch (SQLException | JsonProcessingException  e) {
+        } catch (SQLException | JsonProcessingException e) {
             ctx.status(500);
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -211,7 +210,7 @@ public class EventJavalinRoutes {
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
 
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -365,7 +364,7 @@ public class EventJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
-        ctx.json(objectMapper.writeValueAsString(null));
+        ctx.json("[]");
     }
 
     private static void postEvents(Context ctx) {
@@ -409,7 +408,7 @@ public class EventJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             ctx.json(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }

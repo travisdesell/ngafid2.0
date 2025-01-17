@@ -32,6 +32,8 @@ public class TurnToFinal implements Serializable {
     // 0.1 miles of tolerance is allowed
     private static final double CENTER_LINE_DEVIATION_TOLERANCE_IN_MILES = 0.1;
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     // List of (lat, long) coords (in that order) representing a turn to final
     private final double[] latitude;
     private final double[] longitude;
@@ -420,7 +422,7 @@ public class TurnToFinal implements Serializable {
         return getTurnToFinal(connection, flight, airportIataCode);
     }
 
-    public JsonNode jsonify(ObjectMapper objectMapper) {
+    public JsonNode jsonify() {
         try {
             return objectMapper.valueToTree(Map.ofEntries(Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
                     Map.entry(PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences),
