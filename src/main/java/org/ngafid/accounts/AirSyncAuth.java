@@ -1,7 +1,6 @@
 package org.ngafid.accounts;
 
-import com.google.gson.Gson;
-import org.ngafid.WebServer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ngafid.flights.AirSyncEndpoints;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -19,7 +18,7 @@ import java.util.Base64;
 public class AirSyncAuth {
     private static final long BEARER_CERT_EXP_TIME = 3600;
     //CHECKSTYLE:ON
-    private static final Gson GSON = WebServer.gson;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final byte[] hash;
     private AccessToken accessToken;
     private LocalDateTime issueTime;
@@ -64,7 +63,7 @@ public class AirSyncAuth {
 
                 String resp = new String(respRaw).replaceAll("access_token", "accessToken");
 
-                this.accessToken = GSON.fromJson(resp, AccessToken.class);
+                this.accessToken = OBJECT_MAPPER.readValue(resp, AccessToken.class);
                 this.issueTime = LocalDateTime.now();
             }
         } catch (IOException ie) {
