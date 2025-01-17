@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class TagFilterJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());

@@ -18,7 +18,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());
@@ -45,7 +45,7 @@ public class AircraftFleetTailsJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
         final User user = ctx.sessionAttribute("user");
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -76,7 +76,7 @@ public class AircraftFleetTailsJavalinRoutes {
             Map<String, Object> scopes = new HashMap<String, Object>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("system_ids_js", "var systemIds = JSON.parse('" + gson.toJson(tailInfo) + "');\n");
+            scopes.put("system_ids_js", "var systemIds = JSON.parse('" + objectMapper.writeValueAsString(tailInfo) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 import static org.ngafid.events.EventStatistics.updateMonthlyTotalFlights;
 
 public class UncategorizedJavalinRoutes {

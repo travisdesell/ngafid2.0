@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class StartPageJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StartPageJavalinRoutes.class.getName());
@@ -54,7 +54,7 @@ public class StartPageJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
             List<String> airframes = Airframes.getAll(connection, fleetId);
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + objectMapper.writeValueAsString(airframes) + ";\n");
             LOG.info("var airframes = " + airframes + ";\n");
             if (!messages.isEmpty()) {
                 scopes.put("messages", messages);

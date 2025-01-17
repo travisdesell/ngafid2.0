@@ -23,7 +23,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
@@ -65,8 +65,8 @@ public class EventJavalinRoutes {
 
             long startTime = System.currentTimeMillis();
             scopes.put("events_js",
-                    // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventNames = JSON.parse('" + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + "');\n");
+                    // "var eventStats = JSON.parse('" + objectMapper.writeValueAsString(eventStatistics) + "');\n"
+                    "var eventNames = JSON.parse('" + objectMapper.writeValueAsString(EventDefinition.getUniqueNames(connection, fleetId)) + "');\n");
 
             long endTime = System.currentTimeMillis();
 
@@ -91,7 +91,7 @@ public class EventJavalinRoutes {
             resultSet.next();
 
             ctx.contentType("application/json");
-            ctx.result(gson.toJson(new EventDefinition(resultSet).toHumanReadable()));
+            ctx.result(objectMapper.writeValueAsString(new EventDefinition(resultSet).toHumanReadable()));
             LOG.info(new EventDefinition(resultSet).toHumanReadable());
         } catch (SQLException | JsonProcessingException e) {
             ctx.json(new ErrorResponse(e)).status(500);
@@ -139,7 +139,7 @@ public class EventJavalinRoutes {
 
 
     private static void putEventDefinitions(Context ctx) {
-        EventDefinition updatedEvent = gson.fromJson(ctx.body(), EventDefinition.class);
+        EventDefinition updatedEvent = objectMapper.readValue(ctx.body(), EventDefinition.class);
 
         try (Connection connection = Database.getConnection()) {
             updatedEvent.updateSelf(connection);
@@ -203,10 +203,10 @@ public class EventJavalinRoutes {
             }
 
             scopes.put("create_event_js", "var airframes = JSON.parse('" +
-                    gson.toJson(Airframes.getAll(connection)) + "');\n" +
+                    objectMapper.writeValueAsString(Airframes.getAll(connection)) + "');\n" +
                     "var doubleTimeSeriesNames = JSON.parse('" +
-                    gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+                    objectMapper.writeValueAsString(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -242,10 +242,10 @@ public class EventJavalinRoutes {
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("event_manager_js", "var eventDefinitions = JSON.parse('" +
-                    gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframes = JSON.parse('" +
-                    gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" +
-                    gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+                    objectMapper.writeValueAsString(EventDefinition.getAll(connection)) + "');\n" + "var airframes = JSON.parse('" +
+                    objectMapper.writeValueAsString(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" +
+                    objectMapper.writeValueAsString(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -317,11 +317,11 @@ public class EventJavalinRoutes {
             }
 
             scopes.put("update_event_js", "var airframes = JSON.parse('" +
-                    gson.toJson(Airframes.getAll(connection)) + "');\n" +
+                    objectMapper.writeValueAsString(Airframes.getAll(connection)) + "');\n" +
                     "var doubleTimeSeriesNames = JSON.parse('" +
-                    gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n"
-                    + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+                    objectMapper.writeValueAsString(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var eventDefinitions = JSON.parse('" + objectMapper.writeValueAsString(EventDefinition.getAll(connection)) + "');\n"
+                    + "var airframeMap = JSON.parse('" + objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -358,14 +358,14 @@ public class EventJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
             if (!metaDataList.isEmpty()) {
-                ctx.json(gson.toJson(metaDataList));
+                ctx.json(objectMapper.writeValueAsString(metaDataList));
                 return;
             }
         } catch (Exception e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
-        ctx.json(gson.toJson(null));
+        ctx.json(objectMapper.writeValueAsString(null));
     }
 
     private static void postEvents(Context ctx) {
@@ -391,7 +391,7 @@ public class EventJavalinRoutes {
 
             EventInfo eventInfo = new EventInfo(events, definitions);
 
-            String output = gson.toJson(eventInfo);
+            String output = objectMapper.writeValueAsString(eventInfo);
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replaceAll("NaN", "null");
             ctx.json(output);

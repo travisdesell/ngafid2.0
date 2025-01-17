@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class StatisticsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
@@ -174,7 +174,7 @@ public class StatisticsJavalinRoutes {
             if (!wildcardPath.isEmpty()) {
                 stats = wildcardPath.split("/");
             } else {
-                stats = gson.fromJson(ctx.body(), String[].class);
+                stats = objectMapper.readValue(ctx.body(), String[].class);
             }
 
             for (String stat : stats) {
@@ -267,7 +267,7 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + objectMapper.writeValueAsString(Airframes.getAll(connection)) + ";\n");
             long endTime = System.currentTimeMillis();
 
             LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
@@ -304,7 +304,7 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+            String fleetInfo = "var airframes = " + objectMapper.writeValueAsString(Airframes.getAll(connection)) + ";\n" + "var eventNames = " + objectMapper.writeValueAsString(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + objectMapper.writeValueAsString(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
@@ -407,8 +407,8 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             scopes.put("events_js",
-                    // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
+                    // "var eventStats = JSON.parse('" + objectMapper.writeValueAsString(eventStatistics) + "');\n"
+                    "var eventDefinitions = JSON.parse('" + objectMapper.writeValueAsString(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

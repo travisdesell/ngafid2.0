@@ -311,7 +311,7 @@ public final class AirSyncImport {
 
             String resp = new String(respRaw).replaceAll("file_url", "fileUrl");
 
-            LogResponse log = WebServer.gson.fromJson(resp, LogResponse.class);
+            LogResponse log = WebServer.objectMapper.readValue(resp, LogResponse.class);
             URL input = new URL(log.getFileUrl());
             LOG.info("Got URL for logfile " + log.getFileUrl());
 

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 import static org.ngafid.flights.AirSyncImport.getImports;
 import static org.ngafid.flights.AirSyncImport.getNumImports;
 
@@ -54,7 +54,7 @@ public class AirsyncJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
-            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
+            scopes.put("imports_js", "var imports = JSON.parse('" + objectMapper.writeValueAsString(imports) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -92,8 +92,8 @@ public class AirsyncJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
-            scopes.put("lastUpdateTime_js", "var lastUpdateTime = " + gson.toJson(timestamp) + ";");
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(uploads) + "');");
+            scopes.put("lastUpdateTime_js", "var lastUpdateTime = " + objectMapper.writeValueAsString(timestamp) + ";");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + objectMapper.writeValueAsString(uploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

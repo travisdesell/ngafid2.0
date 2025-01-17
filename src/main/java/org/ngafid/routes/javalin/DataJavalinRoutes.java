@@ -128,7 +128,7 @@ public class DataJavalinRoutes {
             final DoubleTimeSeries latitude = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
             final DoubleTimeSeries longitude = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 
-            // LOG.info(gson.toJson(flights));
+            // LOG.info(objectMapper.writeValueAsString(flights));
 
             StringBuilder sb = new StringBuilder();
 

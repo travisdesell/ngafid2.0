@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class AccountJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
@@ -245,7 +245,7 @@ public class AccountJavalinRoutes {
         LOG.info("template file: '" + templateFile + "'");
 
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -258,7 +258,7 @@ public class AccountJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -373,13 +373,13 @@ public class AccountJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
-            scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
-            scopes.put("user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+            scopes.put("user_name", "var userName = JSON.parse('" + objectMapper.writeValueAsString(user.getFullName()) + "');\n");
+            scopes.put("is_admin", "var isAdmin = JSON.parse('" + objectMapper.writeValueAsString(user.isAdmin()) + "');\n");
+            scopes.put("user_prefs_json", "var userPreferences = JSON.parse('" + objectMapper.writeValueAsString(userPreferences) + "');\n");
 
             if (fleet.hasAirsync(connection)) {
                 String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
-                scopes.put("airsync", "var airsync_timeout = JSON.parse('" + gson.toJson(timeout) + "');\n");
+                scopes.put("airsync", "var airsync_timeout = JSON.parse('" + objectMapper.writeValueAsString(timeout) + "');\n");
             } else {
                 scopes.put("airsync", "var airsync_timeout = -1;\n");
             }

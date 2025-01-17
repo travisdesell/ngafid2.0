@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.WebServer.objectMapper;
 
 public class ImportUploadJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
@@ -138,21 +138,21 @@ public class ImportUploadJavalinRoutes {
         String identifier = ctx.formParam("identifier");
         if (identifier == null) {
             LOG.severe("ERROR! Missing upload identifier");
-            ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing.")));
+            ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing.")));
             return;
         }
 
         String md5Hash = ctx.formParam("md5Hash");
         if (md5Hash == null) {
             LOG.severe("ERROR! Missing upload md5Hash");
-            ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing.")));
+            ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing.")));
             return;
         }
 
         String sChunkNumber = ctx.formParam("chunkNumber");
         if (sChunkNumber == null) {
             LOG.severe("ERROR! Missing upload chunk number");
-            ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing.")));
+            ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing.")));
             return;
         }
         int chunkNumber = Integer.parseInt(sChunkNumber);
@@ -161,7 +161,7 @@ public class ImportUploadJavalinRoutes {
             Upload upload = Upload.getUploadByUser(connection, uploaderId, md5Hash);
             if (upload == null) {
                 LOG.severe("ERROR! Upload was not in the database!");
-                ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "A system error occurred where this upload was not in the database. Please try again.")));
+                ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Upload Failure", "A system error occurred where this upload was not in the database. Please try again.")));
                 return;
             }
 
@@ -202,7 +202,7 @@ public class ImportUploadJavalinRoutes {
 
                     if (!upload.checkSize()) {
                         LOG.severe("ERROR! Final file had incorrect number of bytes.");
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
+                        ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
                         return;
                     }
 
@@ -214,13 +214,13 @@ public class ImportUploadJavalinRoutes {
                     } catch (NoSuchAlgorithmException | IOException e) {
                         LOG.severe("Error calculating MD5 hash: " + e.getMessage());
                         ctx.status(500);
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
+                        ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
                         return;
                     }
 
                     if (!newMd5Hash.equals(upload.getMd5Hash())) {
                         LOG.severe("ERROR! MD5 hashes do not match.");
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
+                        ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
                         return;
                     }
 
@@ -228,15 +228,15 @@ public class ImportUploadJavalinRoutes {
                     deleteDirectory(new File(chunkDirectory));
                 } catch (IOException e) {
                     LOG.severe("Error writing final file: " + e.getMessage());
-                    ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error writing final file.")));
+                    ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Upload Failure", "Error writing final file.")));
                     return;
                 }
             }
 
-            ctx.result(gson.toJson(upload));
+            ctx.result(objectMapper.writeValueAsString(upload));
         } catch (Exception e) {
             LOG.severe("Error during file upload: " + e.getMessage());
-            ctx.result(gson.toJson(new ErrorResponse(e)));
+            ctx.result(objectMapper.writeValueAsString(new ErrorResponse(e)));
         }
     }
 
@@ -274,7 +274,7 @@ public class ImportUploadJavalinRoutes {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pending_uploads = JSON.parse('" + gson.toJson(pending_uploads) + "');");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + objectMapper.writeValueAsString(other_uploads) + "'); var pending_uploads = JSON.parse('" + objectMapper.writeValueAsString(pending_uploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -377,7 +377,7 @@ public class ImportUploadJavalinRoutes {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
+            scopes.put("imports_js", "var imports = JSON.parse('" + objectMapper.writeValueAsString(imports) + "');");
 
             for (String key : scopes.keySet()) {
                 if (scopes.get(key) == null) {
@@ -480,7 +480,7 @@ public class ImportUploadJavalinRoutes {
                 }
             }
         } catch (SQLException e) {
-            LOG.severe(gson.toJson(e));
+            LOG.severe(objectMapper.writeValueAsString(e));
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }

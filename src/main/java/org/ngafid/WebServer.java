@@ -30,13 +30,12 @@ public abstract class WebServer {
     public static final String MUSTACHE_TEMPLATE_DIR;
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
 
-    protected static final ObjectMapper objectMapper = new ObjectMapper();
+    public static final ObjectMapper objectMapper = new ObjectMapper();
 
     static {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
         NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR");
         MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR");
-
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         SimpleModule module = new SimpleModule();
