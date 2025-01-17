@@ -1,6 +1,7 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -45,7 +46,7 @@ public class EventJavalinRoutes {
             ctx.header("Content-Type", "application/json; charset=UTF-8");
 
             ctx.json(EventDefinition.getAll(connection));
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.status(500);
             ctx.result(e.toString());
@@ -80,7 +81,9 @@ public class EventJavalinRoutes {
 
     private static void getEventDescription(Context ctx) {
         final String expectedName = Objects.requireNonNull(ctx.queryParam("eventName"));
-        final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = " + "\"" + expectedName + "\"";
+        final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json," +
+                " column_names, severity_column_names, severity_type FROM event_definitions" +
+                " WHERE event_definitions.name = " + "\"" + expectedName + "\"";
 
         try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
@@ -90,14 +93,16 @@ public class EventJavalinRoutes {
             ctx.contentType("application/json");
             ctx.result(gson.toJson(new EventDefinition(resultSet).toHumanReadable()));
             LOG.info(new EventDefinition(resultSet).toHumanReadable());
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
 
     }
 
     private static void getAllEventDescriptions(Context ctx) {
-        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id";
+        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id," +
+                " condition_json, column_names, severity_column_names, severity_type, airframe " +
+                "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id";
 
         try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             LOG.info("preparedStatement: " + preparedStatement);
@@ -122,11 +127,12 @@ public class EventJavalinRoutes {
                     airframeNames.put(eventDefinition.getAirframeNameId(), resultSet.getString(11));
                 }
 
-                definitions.get(eventDefinition.getName()).put(airframeNames.get(eventDefinition.getAirframeNameId()), eventDefinition.toHumanReadable());
+                definitions.get(eventDefinition.getName()).put(
+                        airframeNames.get(eventDefinition.getAirframeNameId()), eventDefinition.toHumanReadable());
             }
 
             ctx.json(definitions);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
@@ -137,7 +143,7 @@ public class EventJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             updatedEvent.updateSelf(connection);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException  e) {
             ctx.status(500);
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -196,7 +202,11 @@ public class EventJavalinRoutes {
                 return;
             }
 
-            scopes.put("create_event_js", "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+            scopes.put("create_event_js", "var airframes = JSON.parse('" +
+                    gson.toJson(Airframes.getAll(connection)) + "');\n" +
+                    "var doubleTimeSeriesNames = JSON.parse('" +
+                    gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -231,7 +241,11 @@ public class EventJavalinRoutes {
             }
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("event_manager_js", "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+            scopes.put("event_manager_js", "var eventDefinitions = JSON.parse('" +
+                    gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframes = JSON.parse('" +
+                    gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" +
+                    gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -252,11 +266,12 @@ public class EventJavalinRoutes {
         final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
-            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
+            EventDefinition.insert(connection, fleetId, eventName, startBuffer,
+                    stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
 
             ctx.contentType("application/json");
             ctx.result("{}");
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException  e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
@@ -276,7 +291,8 @@ public class EventJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            Map<String, EventStatistics.EventCounts> eventCountsMap =
+                    EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
             ctx.json(eventCountsMap);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
@@ -300,11 +316,16 @@ public class EventJavalinRoutes {
                 return;
             }
 
-            scopes.put("update_event_js", "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+            scopes.put("update_event_js", "var airframes = JSON.parse('" +
+                    gson.toJson(Airframes.getAll(connection)) + "');\n" +
+                    "var doubleTimeSeriesNames = JSON.parse('" +
+                    gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n"
+                    + "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException  e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -322,11 +343,12 @@ public class EventJavalinRoutes {
         final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
-            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
+            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe,
+                    filterJSON, severityColumnNamesJSON, severityType);
 
             ctx.contentType("application/json");
             ctx.result("{}");
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException  e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
@@ -373,7 +395,7 @@ public class EventJavalinRoutes {
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replaceAll("NaN", "null");
             ctx.json(output);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException  e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
