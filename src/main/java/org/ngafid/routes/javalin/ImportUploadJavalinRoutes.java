@@ -1,6 +1,7 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
@@ -138,21 +139,21 @@ public class ImportUploadJavalinRoutes {
         String identifier = ctx.formParam("identifier");
         if (identifier == null) {
             LOG.severe("ERROR! Missing upload identifier");
-            ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing.")));
+            ctx.json(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing."));
             return;
         }
 
         String md5Hash = ctx.formParam("md5Hash");
         if (md5Hash == null) {
             LOG.severe("ERROR! Missing upload md5Hash");
-            ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing.")));
+            ctx.json(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing."));
             return;
         }
 
         String sChunkNumber = ctx.formParam("chunkNumber");
         if (sChunkNumber == null) {
             LOG.severe("ERROR! Missing upload chunk number");
-            ctx.result(objectMapper.writeValueAsString(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing.")));
+            ctx.json(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing."));
             return;
         }
         int chunkNumber = Integer.parseInt(sChunkNumber);
@@ -233,10 +234,10 @@ public class ImportUploadJavalinRoutes {
                 }
             }
 
-            ctx.result(objectMapper.writeValueAsString(upload));
+            ctx.json(upload);
         } catch (Exception e) {
             LOG.severe("Error during file upload: " + e.getMessage());
-            ctx.result(objectMapper.writeValueAsString(new ErrorResponse(e)));
+            ctx.json(new ErrorResponse(e));
         }
     }
 
@@ -421,7 +422,7 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void postNewUpload(Context ctx) {
+    private static void postNewUpload(Context ctx) throws JsonProcessingException {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int uploaderId = user.getId();
         final int fleetId = user.getFleetId();

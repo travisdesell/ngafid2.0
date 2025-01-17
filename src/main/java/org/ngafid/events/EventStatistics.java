@@ -1,5 +1,6 @@
 package org.ngafid.events;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.ngafid.flights.Airframes;
 
 import java.sql.Connection;
@@ -59,7 +60,7 @@ public class EventStatistics {
     private ArrayList<AirframeStatistics> events;
 
     public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId)
-            throws SQLException {
+            throws SQLException, JsonProcessingException {
         this.airframeNameId = airframeNameId;
         this.airframeName = airframeName;
         events = new ArrayList<>();
@@ -69,7 +70,6 @@ public class EventStatistics {
 
         events = new ArrayList<>();
         for (int i = 0; i < eventDefinitions.size(); i++) {
-
             events.add(new AirframeStatistics(connection, eventDefinitions.get(i), fleetId));
         }
     }
@@ -338,7 +338,7 @@ public class EventStatistics {
     }
 
     public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventId,
-                                                 String startDateTime) throws SQLException {
+                                                 String startDateTime) throws SQLException, JsonProcessingException {
         // cannot update event statistics if the flight had no startDateTime
         if (startDateTime == null)
             return;
@@ -361,7 +361,7 @@ public class EventStatistics {
         }
     }
 
-    public static ArrayList<EventStatistics> getAll(Connection connection, int fleetId) throws SQLException {
+    public static ArrayList<EventStatistics> getAll(Connection connection, int fleetId) throws SQLException, JsonProcessingException {
         String query = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = " +
                 "fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
