@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -182,7 +183,7 @@ public class StatisticsJavalinRoutes {
             }
 
             ctx.json(statistics);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -274,7 +275,7 @@ public class StatisticsJavalinRoutes {
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -304,7 +305,9 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo = "var airframes = " + objectMapper.writeValueAsString(Airframes.getAll(connection)) + ";\n" + "var eventNames = " + objectMapper.writeValueAsString(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + objectMapper.writeValueAsString(Flight.getAllTagNames(connection)) + ";\n";
+            String fleetInfo = "var airframes = " + objectMapper.writeValueAsString(Airframes.getAll(connection)) + ";\n" +
+                    "var eventNames = " + objectMapper.writeValueAsString(EventDefinition.getUniqueNames(connection)) + ";\n" +
+                    "var tagNames = " + objectMapper.writeValueAsString(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
@@ -312,7 +315,7 @@ public class StatisticsJavalinRoutes {
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException |JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -408,11 +411,14 @@ public class StatisticsJavalinRoutes {
 
             scopes.put("events_js",
                     // "var eventStats = JSON.parse('" + objectMapper.writeValueAsString(eventStatistics) + "');\n"
-                    "var eventDefinitions = JSON.parse('" + objectMapper.writeValueAsString(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
+                    "var eventDefinitions = JSON.parse('" +
+                            objectMapper.writeValueAsString(EventDefinition.getAll(connection)) + "');\n" +
+                            "var airframeMap = JSON.parse('" +
+                            objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException |JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
