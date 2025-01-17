@@ -398,8 +398,8 @@ public class TurnToFinal implements Serializable {
      *
      * @param connection      database connection
      * @param flight          the flight for which the turn to finals should be analyzed
-     * @param airportIataCode the IATA code for the airport. If this is null, all of the TTFs will be returned.
-     * @return an array list of all of the turn to finals for the given flight that occur at the specified airport
+     * @param airportIataCode the IATA code for the airport. If this is null, all the TTFs will be returned.
+     * @return an array list of all the turn to finals for the given flight that occur at the specified airport
      * @throws SQLException
      */
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode)

@@ -1,8 +1,7 @@
 package org.ngafid.accounts;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import org.ngafid.WebServer;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ngafid.flights.AirSync;
 import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
@@ -10,7 +9,6 @@ import org.ngafid.flights.AirSyncImport;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
@@ -24,8 +22,8 @@ import java.util.logging.Logger;
  * Represents an Aircraft that is AirSync compatibile
  */
 public final class AirSyncAircraft {
-    private static final Gson GSON = WebServer.gson;
     // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
     private static final String TIMESTAMP_UPLOADED = "";
     private static final Logger LOG = Logger.getLogger(AirSyncAircraft.class.getName());
@@ -139,9 +137,7 @@ public final class AirSyncAircraft {
         resp = resp.replaceAll("file_url", "fileUrl");
         resp = resp.replaceAll("timestamp_uploaded", "timestampUploaded");
 
-        Type target = new TypeToken<List<AirSyncImport>>() {
-        }.getType();
-        List<AirSyncImport> page = GSON.fromJson(resp, target);
+        List<AirSyncImport> page = OBJECT_MAPPER.readValue(resp, new TypeReference<>() {});
 
         // initialize the imports
         for (AirSyncImport i : page)
@@ -154,9 +150,7 @@ public final class AirSyncAircraft {
         try {
             byte[] respRaw = getBytes();
 
-            List<AirSyncAircraftAccountInfo> info = GSON.fromJson(new String(respRaw),
-                    new TypeToken<List<AirSyncAircraftAccountInfo>>() {
-            }.getType());
+            List<AirSyncAircraftAccountInfo> info = OBJECT_MAPPER.readValue(new String(respRaw), new TypeReference<>() {});
 
             if (info.size() != 1) {
                 LOG.severe("AirSync aircraft appears for multiple fleets. We do not support this functionality " +
