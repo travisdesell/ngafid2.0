@@ -169,22 +169,31 @@ var eventStats = [
 ];
 */
 
-let eventStats = [];
-airframeMap[0] = "Generic";
+/* 
 
-let eventDefinitionsMap = {};
-for (let i = 0; i < eventDefinitions.length; i++) {
-    let eventDefinition = eventDefinitions[i];
-    let airframeId = eventDefinition.airframeNameId;
+    -------------------------------------------------------------------------------
+    01/17/25
+    Temporarily disabled while other Event Statistics changes/fixes are being made.
+    -------------------------------------------------------------------------------
 
-    if (!(airframeId in eventDefinitionsMap)) {
-        eventDefinitionsMap[airframeId] = [];
-        console.log("map did not have airframeId: " + airframeId);
+    let eventStats = [];
+    airframeMap[0] = "Generic";
+
+    let eventDefinitionsMap = {};
+    for (let i = 0; i < eventDefinitions.length; i++) {
+        let eventDefinition = eventDefinitions[i];
+        let airframeId = eventDefinition.airframeNameId;
+
+        if (!(airframeId in eventDefinitionsMap)) {
+            eventDefinitionsMap[airframeId] = [];
+            console.log("map did not have airframeId: " + airframeId);
+        }
+        eventDefinitionsMap[airframeId].push(eventDefinition);
     }
-    eventDefinitionsMap[airframeId].push(eventDefinition);
-}
 
-console.log(eventDefinitionsMap);
+    console.log(eventDefinitionsMap);
+    
+*/
 
 class EventCard extends React.Component {
     render() {
@@ -581,9 +590,42 @@ class DashboardCard extends React.Component {
             </div>
         );
     }
+
+}
+
+// var profilePage = ReactDOM.render(
+//     <DashboardCard />,
+//     document.querySelector('#event-statistics-page')
+// );
+
+
+
+class UnderConstructionCard extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <div>
+                <SignedInNavbar activePage="event statistics" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="card m-3">
+                    <h5 className="card-header">Under Maintenance 🛠</h5>
+                    <div className="card-body">
+                        <p className="card-text">This page is currently unavailable, and will remain in maintenance as improvements are being made.</p>
+                        <br/>
+                        <p className="card-text">We apologize for any inconvenience.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 }
 
 var profilePage = ReactDOM.render(
-    <DashboardCard />,
+    <UnderConstructionCard />,
     document.querySelector('#event-statistics-page')
 );
