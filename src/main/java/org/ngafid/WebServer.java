@@ -1,9 +1,16 @@
 package org.ngafid;
 
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import org.ngafid.accounts.EmailType;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.webserver.JavalinWebServer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -14,11 +21,8 @@ import java.util.logging.Logger;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
 
-
 /**
  * The entry point for the NGAFID web server.
- *
- * @author <a href='mailto:tjdvse@rit.edu'>Travis Desell</a>
  */
 public abstract class WebServer {
     public static final String NGAFID_UPLOAD_DIR;
@@ -26,17 +30,31 @@ public abstract class WebServer {
     public static final String MUSTACHE_TEMPLATE_DIR;
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
 
+    protected static final ObjectMapper objectMapper = new ObjectMapper();
+
     static {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
         NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR");
         MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR");
 
-        // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy
-        //     HH:mm:ss"));
-        //     LOG.info(message);
-        //     sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
-        // }));
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(LocalDateTime.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(LocalDateTime value, com.fasterxml.jackson.core.JsonGenerator gen,
+                                  com.fasterxml.jackson.databind.SerializerProvider serializers) throws IOException {
+                gen.writeString(value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            }
+        });
+        module.addDeserializer(LocalDateTime.class, new JsonDeserializer<>() {
+            @Override
+            public LocalDateTime deserialize(com.fasterxml.jackson.core.JsonParser p,
+                                             com.fasterxml.jackson.databind.DeserializationContext ctxt) throws IOException {
+                return LocalDateTime.parse(p.getText(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+        });
+        objectMapper.registerModule(module);
     }
 
     protected final String staticFilesLocation;
@@ -44,9 +62,6 @@ public abstract class WebServer {
     protected final int maxThreads = 32;
     protected final int minThreads = 2;
     protected final int timeOutMillis = 1000 * 60 * 5;
-
-// Register a custom serializer/deserializer for LocalDateTime
-
 
     public WebServer(int port, String staticFilesLocation) {
         this.port = port;
@@ -78,7 +93,6 @@ public abstract class WebServer {
             System.err.println("export " + key + "=<value>");
             throw new RuntimeException("Environment variable '" + key + "' not set.");
         }
-
         return value;
     }
 
@@ -92,8 +106,6 @@ public abstract class WebServer {
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
 
         // The application uses Jackson to generate JSON representations of Java objects.
-        // This should be used by your Ajax Routes to generate JSON for the HTTP
-        // response to Ajax requests.
         WebServer webserver = new JavalinWebServer(port, staticFiles);
         LOG.info("NGAFID web server initialization complete.");
     }
