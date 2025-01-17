@@ -1,5 +1,7 @@
 package org.ngafid.flights.calculations;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import org.ngafid.airports.Airport;
@@ -420,10 +422,9 @@ public class TurnToFinal implements Serializable {
         return getTurnToFinal(connection, flight, airportIataCode);
     }
 
-    public JsonElement jsonify() {
-        Gson gson = new Gson();
+    public JsonNode jsonify(ObjectMapper objectMapper) {
         try {
-            return gson.toJsonTree(Map.ofEntries(Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
+            return objectMapper.valueToTree(Map.ofEntries(Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
                     Map.entry(PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences),
                     Map.entry(PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle),
                     Map.entry(PARAM_JSON_LATITUDE, this.latitude), Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
@@ -435,7 +436,7 @@ public class TurnToFinal implements Serializable {
                     Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
                     Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false)));
         } catch (IllegalArgumentException _iae) {
-            // This means there were nans in some of the arrays which means we can't necissarily analyze it and it
+            // This means there were nans in some of the arrays which means we can't necessarily analyze it, and it
             // won't parse on the front end since nan is not included in the JSON spec for some reason
             return null;
         }

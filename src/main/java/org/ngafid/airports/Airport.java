@@ -1,7 +1,7 @@
 package org.ngafid.airports;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ngafid.common.MutableDouble;
 
 import java.util.Collection;
@@ -77,10 +77,10 @@ public class Airport {
         return !runways.isEmpty();
     }
 
-    public JsonElement jsonify(Gson gson) {
+    public JsonNode jsonify(ObjectMapper objectMapper) {
         HashMap<String, Runway> runwaysMap = this.runways;
         this.runways = null;
-        JsonElement je = gson.toJsonTree(this);
+        JsonNode je = objectMapper.valueToTree(this);
         this.runways = runwaysMap;
         return je;
     }

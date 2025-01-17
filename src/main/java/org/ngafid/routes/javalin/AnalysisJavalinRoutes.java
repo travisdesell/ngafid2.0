@@ -1,6 +1,9 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonElement;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -24,10 +27,9 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.ngafid.WebServer.gson;
-
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static class Coordinates {
         @JsonProperty
@@ -134,7 +136,10 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         String airframeType;
 
-        public CesiumResponse(List<Double> flightGeoAglTaxiing, List<Double> flightGeoAglTakeOff, List<Double> flightGeoAglClimb, List<Double> flightGeoAglCruise, List<Double> flightGeoInfoAgl, List<String> flightTaxiingTimes, List<String> flightTakeOffTimes, List<String> flightClimbTimes, List<String> flightCruiseTimes, List<String> flightAglTimes, String airframeType) {
+        public CesiumResponse(List<Double> flightGeoAglTaxiing, List<Double> flightGeoAglTakeOff, List<Double> flightGeoAglClimb,
+                              List<Double> flightGeoAglCruise, List<Double> flightGeoInfoAgl, List<String> flightTaxiingTimes,
+                              List<String> flightTakeOffTimes, List<String> flightClimbTimes, List<String> flightCruiseTimes,
+                              List<String> flightAglTimes, String airframeType) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -161,7 +166,9 @@ public class AnalysisJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
-            final String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllFleetTagNames(connection, fleetId)) + ";\n";
+            final String fleetInfo = "var airframes = " + OBJECT_MAPPER.writeValueAsString(Airframes.getAll(connection, fleetId)) +
+                    ";\n" + "var eventNames = " + OBJECT_MAPPER.writeValueAsString(EventDefinition.getUniqueNames(connection, fleetId)) +
+                    ";\n" + "var tagNames = " + OBJECT_MAPPER.writeValueAsString(Flight.getAllFleetTagNames(connection, fleetId)) + ";\n";
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
 
@@ -190,7 +197,8 @@ public class AnalysisJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            Map<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
+            Map<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName,
+                    LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
             ctx.json(eventMap);
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
@@ -231,7 +239,8 @@ public class AnalysisJavalinRoutes {
 
                 if (eventName.equals("ANY Event")) continue;
 
-                Map<String, ArrayList<Event>> events = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
+                Map<String, ArrayList<Event>> events = Event.getEvents(connection, fleetId, eventName,
+                        LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
                 eventMap.put(eventName, events);
             }
 
@@ -250,11 +259,12 @@ public class AnalysisJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("ttf_js", "var airports = " + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n" + "var runways = " + gson.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n");
+            scopes.put("ttf_js", "var airports = " + OBJECT_MAPPER.writeValueAsString(Itinerary.getAllAirports(connection, fleetId)) + ";\n" +
+                    "var runways = " + OBJECT_MAPPER.writeValueAsString(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -268,7 +278,7 @@ public class AnalysisJavalinRoutes {
         System.out.println(endDate);
 
 
-        List<JsonElement> _ttfs = new ArrayList<>();
+        List<JsonNode> _ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         try (Connection connection = Database.getConnection()) {
 
@@ -277,7 +287,7 @@ public class AnalysisJavalinRoutes {
 
             for (Flight flight : flights) {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
-                    JsonElement jsonElement = ttf.jsonify();
+                    JsonNode jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         _ttfs.add(jsonElement);
                         iataCodes.add(ttf.getAirportIataCode());
@@ -296,7 +306,8 @@ public class AnalysisJavalinRoutes {
             System.out.println("long = " + ap.getLongitude() + ", lat = " + ap.getLatitude());
         }
 
-        Map<String, JsonElement> airports = Airports.getAirports(iataCodesList).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().jsonify(gson)));
+        Map<String, JsonNode> airports = Airports.getAirports(iataCodesList).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().jsonify(new ObjectMapper())));
 
         ctx.status(200);
         ctx.json(Map.of("airports", airports, "ttfs", _ttfs));
@@ -309,13 +320,15 @@ public class AnalysisJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
-            final String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+            final String fleetInfo = "var airframes = " + OBJECT_MAPPER.writeValueAsString(Airframes.getAll(connection, fleetId)) + ";\n" +
+                    "var eventNames = " + OBJECT_MAPPER.writeValueAsString(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" +
+                    "var tagNames = " + OBJECT_MAPPER.writeValueAsString(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
@@ -484,7 +497,7 @@ public class AnalysisJavalinRoutes {
 
             }
 
-            scopes.put("cesium_data", gson.toJson(flights));
+            scopes.put("cesium_data", OBJECT_MAPPER.writeValueAsString(flights));
 
             // This is for webpage section
             final String templateFile = "ngafid_cesium.html";
@@ -502,7 +515,7 @@ public class AnalysisJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
             if (rateOfClosure != null) {
-                ctx.json(gson.toJson(new RateOfClosurePlotData(rateOfClosure)));
+                ctx.json(OBJECT_MAPPER.writeValueAsString(new RateOfClosurePlotData(rateOfClosure)));
             }
         } catch (Exception e) {
             ctx.json(new ErrorResponse(e)).status(500);
@@ -556,7 +569,7 @@ public class AnalysisJavalinRoutes {
             }
 
             final Coordinates coordinates = new Coordinates(connection, flightId);
-            final String output = gson.toJson(coordinates).replaceAll("NaN", "null");
+            final String output = OBJECT_MAPPER.writeValueAsString(coordinates).replaceAll("NaN", "null");
 
             ctx.json(output);
         } catch (Exception e) {
