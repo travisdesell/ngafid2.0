@@ -1,14 +1,13 @@
 package org.ngafid.flights.process;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.*;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -55,9 +54,8 @@ public class JSONFileProcessor extends FlightFileProcessor {
             Map<String, StringTimeSeries> stringTimeSeries) throws SQLException, MalformedFlightFileException,
             IOException, FatalFlightFileException, FlightAlreadyExistsException {
         String status = "";
-        Gson gson = new Gson();
-        JsonReader reader = new JsonReader(new InputStreamReader(super.stream));
-        Map jsonMap = gson.fromJson(reader, Map.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> jsonMap = objectMapper.readValue(super.stream, new TypeReference<>() {});
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HHmmssZ");
 
