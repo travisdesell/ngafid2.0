@@ -1,5 +1,7 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -24,9 +26,13 @@ public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());
 
     private static class UpdateTailResponse {
+        @JsonProperty
         private final int fleetId;
+        @JsonProperty
         private final String systemId;
+        @JsonProperty
         private final String tail;
+        @JsonProperty
         private final int confirmed;
 
         public UpdateTailResponse(int fleetId, String systemId, String tail, int confirmed) {
@@ -45,7 +51,13 @@ public class AircraftFleetTailsJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
         final User user = ctx.sessionAttribute("user");
-        scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
+        try {
+            scopes.put("user_js", "var user = JSON.parse('" + objectMapper.writeValueAsString(user) + "');");
+        } catch (JsonProcessingException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e)).status(500);
+            return;
+        }
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -80,7 +92,7 @@ public class AircraftFleetTailsJavalinRoutes {
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
-        } catch (SQLException e) {
+        } catch (SQLException | JsonProcessingException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
