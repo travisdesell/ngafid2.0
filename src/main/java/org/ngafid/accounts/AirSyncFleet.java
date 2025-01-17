@@ -1,10 +1,9 @@
 package org.ngafid.accounts;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.ngafid.Database;
-import org.ngafid.WebServer;
 import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
@@ -12,7 +11,6 @@ import org.ngafid.flights.Upload;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -30,7 +28,7 @@ public class AirSyncFleet extends Fleet {
     // 1 Day
     private static final int DEFAULT_TIMEOUT = 1440;
     private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
-    private static final Gson GSON = WebServer.gson;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static AirSyncFleet[] fleets = null;
     private final AirSyncAuth authCreds;
     private final String airsyncFleetName;
@@ -373,13 +371,11 @@ public class AirSyncFleet extends Fleet {
 
             String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
 
-            Type target = new TypeToken<List<AirSyncAircraft>>() {
-            }.getType();
             System.out.println(resp);
-
-            List<AirSyncAircraft> aircrafts = GSON.fromJson(resp, target);
-            for (AirSyncAircraft a : aircrafts)
+            List<AirSyncAircraft> aircrafts = OBJECT_MAPPER.readValue(resp, new TypeReference<>() {});
+            for (AirSyncAircraft a : aircrafts) {
                 a.initialize(this);
+            }
 
             this.aircraft =
                     aircrafts.stream().filter(a -> a.getAirSyncFleetName()
