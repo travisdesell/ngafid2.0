@@ -326,16 +326,16 @@ public class AccountJavalinRoutes {
     }
 
     private static void getUserEmailPreferences(Context ctx) {
-        final String handleFetchType = Objects.requireNonNull(ctx.formParam("handleFetchType"));
-        final User sessionUser = Objects.requireNonNull(ctx.attribute("user"));
+        final String handleFetchType = Objects.requireNonNull(ctx.pathParam("handleFetchType"));
+        final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int fleetUserID = -1;
 
         if (handleFetchType.equals("HANDLE_FETCH_USER")) { // Fetching Session User...
             fleetUserID = sessionUser.getId();
         } else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) { // Fetching a Manager's Fleet User...
 
-            fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetUserID")));
-            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetID")));
+            fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fleetUserID")));
+            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fleetID")));
 
             if (!sessionUser.managesFleet(fleetID)) {
                 ctx.status(401);
@@ -704,7 +704,9 @@ public class AccountJavalinRoutes {
         app.post("/protected/update_user_access", AccountJavalinRoutes::postUpdateUserAccess);
         app.get("/protected/user_preference", AccountJavalinRoutes::getUserPreferences);
 
-        app.get("/protected/email_preferences", AccountJavalinRoutes::getUserEmailPreferences);
+        app.get("/protected/email_preferences/{handleFetchType}", AccountJavalinRoutes::getUserEmailPreferences);
+        app.get("/protected/email_preferences/{handleFetchType}/{fleetUserID}/{fleetID}",
+                AccountJavalinRoutes::getUserEmailPreferences);
         app.get("/email_unsubscribe", AccountJavalinRoutes::getEmailUnsubscribe);
         app.after("/email_unsubscribe", ctx -> ctx.redirect("/"));
 

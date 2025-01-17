@@ -283,9 +283,10 @@ public final class User {
     public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
         int decimalPrecision = 1;
         try (PreparedStatement query = connection
-                .prepareStatement("SELECT decimal_precision FROM user_preferences WHERE user_id = " + userId);
-                ResultSet resultSet = query.executeQuery()) {
+                .prepareStatement("SELECT decimal_precision FROM user_preferences WHERE user_id = ?")) {
+
             query.setInt(1, userId);
+            ResultSet resultSet = query.executeQuery();
 
             if (resultSet.next()) {
                 decimalPrecision = resultSet.getInt(1);
@@ -329,7 +330,6 @@ public final class User {
                 "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision)";
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
-
             query.setInt(1, userId);
             query.setInt(2, userPreferences.getDecimalPrecision());
 
