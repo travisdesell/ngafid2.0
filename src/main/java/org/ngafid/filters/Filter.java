@@ -1,5 +1,8 @@
 package org.ngafid.filters;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
@@ -13,12 +16,17 @@ import java.util.logging.Logger;
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
 
+    @JsonProperty
     protected String type = null;
+    @JsonProperty
     protected String condition = null;
 
+    @JsonProperty
     protected String text = null;
 
+    @JsonProperty
     protected ArrayList<String> inputs = null;
+    @JsonProperty
     protected ArrayList<Filter> filters = null;
 
     /**
@@ -26,7 +34,8 @@ public class Filter {
      *
      * @param inputs a list of inputs for the rule, e.g., "Pitch" "&gt;" "15.33"
      */
-    public Filter(ArrayList<String> inputs) {
+    @JsonCreator
+    public Filter(@JsonProperty("inputs") ArrayList<String> inputs) {
         this.type = "RULE";
 
         this.inputs = inputs;

@@ -328,10 +328,8 @@ public class AccountJavalinRoutes {
             } else {
                 ctx.json(new ErrorResponse("Invalid Account Type", "A request was made to create an account with an unknown account type '" + accountType + "'."));
             }
-        } catch (SQLException e) {
+        } catch (SQLException | AccountException e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e)).status(500);
-        } catch (AccountException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }

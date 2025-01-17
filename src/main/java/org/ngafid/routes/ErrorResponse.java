@@ -1,19 +1,19 @@
 package org.ngafid.routes;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.accounts.AccountException;
 
 public class ErrorResponse {
+    @JsonProperty
     private String errorTitle;
+    @JsonProperty
     private String errorMessage;
 
-    public ErrorResponse(String errorTitle, String errorMessage) {
+    @JsonCreator
+    public ErrorResponse(@JsonProperty String errorTitle, @JsonProperty String errorMessage) {
         this.errorTitle = errorTitle;
         this.errorMessage = errorMessage;
-    }
-
-    public ErrorResponse(AccountException e) {
-        this.errorTitle = e.getTitle();
-        this.errorMessage = e.getMessage();
     }
 
     public ErrorResponse(Exception e) {
