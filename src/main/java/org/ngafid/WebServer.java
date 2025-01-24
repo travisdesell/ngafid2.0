@@ -10,10 +10,7 @@ import org.ngafid.accounts.EmailType;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.webserver.JavalinWebServer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,6 +38,30 @@ public abstract class WebServer {
     protected final int maxThreads = 32;
     protected final int minThreads = 2;
     protected final int timeOutMillis = 1000 * 60 * 5;
+
+    protected void startChartServer() {
+        String relativePath = "./services/chart_processor/chartServer.py";
+        String venvPath = "./python_venv/bin/activate";
+        try {
+            String scriptPath = new java.io.File(relativePath).getCanonicalPath();
+            System.out.println("Resolved script path: " + scriptPath);
+            String activateVenv = "source " + venvPath + " && python3 " + scriptPath;
+
+            ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", activateVenv);
+            processBuilder.directory(new java.io.File(System.getProperty("user.dir"))); // Set working directory
+
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+            Process process = processBuilder.start();
+            System.out.println("Chart server started with PID: " + process.pid());
+        } catch (IOException e) {
+            System.err.println("Failed to start chart server: " + e.getMessage());
+        }
+    }
+
+
+
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -96,6 +117,8 @@ public abstract class WebServer {
         configureRoutes();
         configureAuthChecks();
         configureExceptions();
+
+        startChartServer();
     }
 
     protected void preInitialize() {};
