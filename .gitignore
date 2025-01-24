@@ -16,3 +16,7 @@ email_info.txt
 package-lock.json
 data/*
 src/main/resources/liquidbase.properties
+services/chart_processor/tifs_original/*
+services/chart_processor/temp_files/*
+services/chart_processor/charts/*
+

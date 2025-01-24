@@ -135,8 +135,7 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
     areas = chart_config["areas"]
 
     # Directory to store extracted TIF files
-    chart_tifs_path = os.path.join(tifs_path, chart_type.name.lower())
-    os.makedirs(chart_tifs_path, exist_ok=True)
+    os.makedirs(tifs_path, exist_ok=True)
 
     for area in areas:
         zip_url = f"{base_url}{area}.zip"
@@ -168,7 +167,7 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
                             base_name, ext = os.path.splitext(file_name)
                             file_name = f"{base_name.lower()}{ext}"  # Lowercase name
 
-                        output_tif = os.path.join(chart_tifs_path, file_name)
+                        output_tif = os.path.join(tifs_path, file_name)
 
                         os.rename(input_tif, output_tif)
                         logging.info(f"Moved {input_tif} to {output_tif}")
@@ -427,7 +426,7 @@ def get_chart_paths(chart_type):
     temp_file_path = os.path.join(base_path, "temp_files")
 
     return {
-        "tifs_path": os.path.join(base_path, "tifs_original"),
+        "tifs_path": os.path.join(base_path, "tifs_original", chart_type),
         "shapes_path": os.path.join(base_path, "shape_files", chart_type),
         "charts_output_path": os.path.join(base_path, "charts", chart_type.replace("_", "-")),
         "cropped_tifs_path": os.path.join(temp_file_path, "cropped_tifs"),
