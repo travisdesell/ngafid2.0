@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import io.javalin.http.Context;
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 
 import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;

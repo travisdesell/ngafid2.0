@@ -13,20 +13,22 @@ import java.util.logging.Logger;
 public final class StringTimeSeries {
 
     public static class StringSeriesName extends NormalizedColumn<StringSeriesName> {
+        static Class<StringSeriesName> clazz = StringSeriesName.class;
+
         public StringSeriesName(String name) {
-            super(name);
+            super(clazz, name);
         }
 
         public StringSeriesName(int id) {
-            super(id);
+            super(clazz, id);
         }
 
         public StringSeriesName(Connection connection, int id) throws SQLException {
-            super(connection, id);
+            super(clazz, connection, id);
         }
 
         public StringSeriesName(Connection connection, String string) throws SQLException {
-            super(connection, string);
+            super(clazz, connection, string);
         }
 
         @Override
@@ -252,7 +254,7 @@ public final class StringTimeSeries {
         if (dataType.getId() == -1)
             setTypeId(connection);
 
-        LOG.info("name id = " + name.getId());
+        LOG.info("name = " + name.getName() + ", name id = " + name.getId());
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, name.getId());
         preparedStatement.setInt(3, dataType.getId());

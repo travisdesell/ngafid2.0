@@ -1,8 +1,8 @@
 package org.ngafid.flights;
 
-import org.ngafid.airports.Airport;
-import org.ngafid.airports.Airports;
-import org.ngafid.airports.Runway;
+import org.ngafid.common.airports.Airport;
+import org.ngafid.common.airports.Airports;
+import org.ngafid.common.airports.Runway;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -377,7 +377,7 @@ public class Itinerary {
         // insert new visited airports and runways -- will ignore if it already exists
         try (PreparedStatement statement = createPreparedStatement(connection); PreparedStatement airportStatement =
                 createAirportPreparedStatement(connection); PreparedStatement runwayStatement =
-                createRunwayPreparedStatement(connection)) {
+                     createRunwayPreparedStatement(connection)) {
 
             this.addBatch(statement, airportStatement, runwayStatement, fleetId, flightId, orderToAdd);
 

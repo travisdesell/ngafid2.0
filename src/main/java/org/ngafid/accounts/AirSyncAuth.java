@@ -1,8 +1,8 @@
 package org.ngafid.accounts;
 
 import com.google.gson.Gson;
-import org.ngafid.WebServer;
-import org.ngafid.flights.AirSyncEndpoints;
+import org.ngafid.bin.WebServer;
+import org.ngafid.uploads.airsync.AirSyncEndpoints;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -23,6 +23,7 @@ public class AirSyncAuth {
     private final byte[] hash;
     private AccessToken accessToken;
     private LocalDateTime issueTime;
+
     /**
      * Default constructor
      *

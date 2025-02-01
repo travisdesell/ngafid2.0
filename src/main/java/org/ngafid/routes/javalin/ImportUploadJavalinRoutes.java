@@ -5,12 +5,17 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 import jakarta.servlet.MultipartConfigElement;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
+import org.ngafid.common.Database;
+import org.ngafid.bin.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.*;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightError;
+import org.ngafid.flights.FlightWarning;
+import org.ngafid.flights.Tails;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.Navbar;
+import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.UploadError;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -31,7 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class ImportUploadJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
@@ -264,8 +269,8 @@ public class ImportUploadJavalinRoutes {
             // webpage knows they
             // need to be restarted and aren't currently being uploaded.
             for (Upload upload : pending_uploads) {
-                if (upload.getStatus().equals("UPLOADING")) {
-                    upload.setStatus("UPLOAD INCOMPLETE");
+                if (upload.getStatus().equals(Upload.Status.UPLOADING)) {
+                    upload.setStatus(Upload.Status.UPLOADING_FAILED);
                 }
             }
 
@@ -413,7 +418,7 @@ public class ImportUploadJavalinRoutes {
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             ctx.json(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
@@ -460,10 +465,10 @@ public class ImportUploadJavalinRoutes {
                         ctx.json(upload);
                     } else {
                         // a file with this md5 hash exists
-                        String dbStatus = resultSet.getString(5);
+                        Upload.Status dbStatus = Upload.Status.valueOf(resultSet.getString(5));
                         String dbFilename = resultSet.getString(6);
 
-                        if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
+                        if (dbStatus.equals(Upload.Status.UPLOADED) || dbStatus.isProcessed()) {
                             // 3. file does exist and has finished uploading -- report finished
                             // do the same thing, client will handle completion
                             LOG.severe("ERROR! Final file has already been uploaded.");

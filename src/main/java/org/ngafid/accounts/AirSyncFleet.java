@@ -3,11 +3,11 @@ package org.ngafid.accounts;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.flights.AirSyncEndpoints;
-import org.ngafid.flights.AirSyncImport;
-import org.ngafid.flights.Upload;
+import org.ngafid.common.Database;
+import org.ngafid.bin.WebServer;
+import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.airsync.AirSyncEndpoints;
+import org.ngafid.uploads.airsync.AirSyncImport;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;

@@ -1,17 +1,17 @@
 package org.ngafid.common;
 
+import org.ngafid.uploads.process.FatalFlightFileException;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import org.ngafid.flights.FatalFlightFileException;
 
 public final class TimeUtils {
     private TimeUtils() {
@@ -22,7 +22,7 @@ public final class TimeUtils {
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
      *
-     * @param ldt the LocalDateTime value which will be updated
+     * @param ldt    the LocalDateTime value which will be updated
      * @param offset the bad offset
      * @return the fixed offset
      */
@@ -130,7 +130,7 @@ public final class TimeUtils {
     }
 
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
-            String newOffset) {
+                                                 String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
 
         // create a LocalDateTime using the date time passed as parameter

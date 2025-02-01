@@ -1,18 +1,19 @@
 package org.ngafid.flights;
 
+import org.ngafid.common.NormalizedColumn;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.ngafid.common.NormalizedColumn;
-
 public final class TypeName extends NormalizedColumn<TypeName> {
+    private static Class<TypeName> clazz = TypeName.class;
 
     public TypeName(String name) {
-        super(name);
+        super(clazz, name);
     }
 
     public TypeName(int id) {
-        super(id);
+        super(clazz, id);
     }
 
     public TypeName(int id, String name) {
@@ -20,11 +21,11 @@ public final class TypeName extends NormalizedColumn<TypeName> {
     }
 
     public TypeName(Connection connection, int id) throws SQLException {
-        super(connection, id);
+        super(clazz, connection, id);
     }
 
     public TypeName(Connection connection, String name) throws SQLException {
-        super(connection, name);
+        super(clazz, connection, name);
     }
 
     @Override

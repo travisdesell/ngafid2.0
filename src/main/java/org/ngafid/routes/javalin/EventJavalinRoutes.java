@@ -3,7 +3,7 @@ package org.ngafid.routes.javalin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());

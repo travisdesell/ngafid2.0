@@ -7,7 +7,7 @@ import io.javalin.http.Context;
 import io.javalin.rendering.FileRenderer;
 import io.javalin.util.JavalinLogger;
 import org.jetbrains.annotations.NotNull;
-import org.ngafid.WebServer;
+import org.ngafid.bin.WebServer;
 
 import java.io.IOException;
 import java.io.PrintWriter;

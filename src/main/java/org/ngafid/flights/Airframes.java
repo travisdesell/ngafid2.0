@@ -120,6 +120,7 @@ public enum Airframes {
 
     //CHECKSTYLE:ON
     public static class Airframe extends NormalizedColumn<Airframe> {
+        private static Class<Airframe> clazz = Airframe.class;
 
         @Override
         protected String getTableName() {
@@ -132,34 +133,36 @@ public enum Airframes {
         }
 
         public Airframe(String name) {
-            super(name);
+            super(clazz, name);
         }
 
         public Airframe(Connection connection, String name) throws SQLException {
-            super(connection, name);
+            super(clazz, connection, name);
         }
 
         public Airframe(Connection connection, int id) throws SQLException {
-            super(connection, id);
+            super(clazz, connection, id);
         }
     }
 
-    public static class AirframeType extends NormalizedColumn<Airframe> {
+    public static class AirframeType extends NormalizedColumn<AirframeType> {
+        private static Class<AirframeType> clazz = AirframeType.class;
+
         @Override
         protected String getTableName() {
             return "airframe_types";
         }
 
         public AirframeType(String name) {
-            super(name);
+            super(clazz, name);
         }
 
         public AirframeType(Connection connection, String name) throws SQLException {
-            super(connection, name);
+            super(clazz, connection, name);
         }
 
         public AirframeType(Connection connection, int id) throws SQLException {
-            super(connection, id);
+            super(clazz, connection, id);
         }
     }
 

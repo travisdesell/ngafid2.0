@@ -4,18 +4,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.JsonElement;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
-import org.ngafid.airports.Airport;
-import org.ngafid.airports.Airports;
+import org.ngafid.common.airports.Airport;
+import org.ngafid.common.airports.Airports;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.*;
-import org.ngafid.flights.calculations.TurnToFinal;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.Navbar;
+import org.ngafid.events.calculations.TurnToFinal;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());

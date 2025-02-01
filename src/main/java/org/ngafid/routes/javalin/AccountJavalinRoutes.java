@@ -3,8 +3,8 @@ package org.ngafid.routes.javalin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
-import org.ngafid.SendEmail;
+import org.ngafid.common.Database;
+import org.ngafid.common.SendEmail;
 import org.ngafid.accounts.*;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.MustacheHandler;
@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class AccountJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());

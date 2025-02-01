@@ -1,6 +1,6 @@
 package org.ngafid.accounts;
 
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

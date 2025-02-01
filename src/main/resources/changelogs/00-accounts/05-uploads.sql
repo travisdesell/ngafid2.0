@@ -9,8 +9,26 @@ CREATE TABLE uploads (
     
     filename VARCHAR(256) NOT NULL,
     identifier VARCHAR(128) NOT NULL,
-    kind enum('FILE', 'AIRSYNC', 'DERIVED') DEFAULT 'FILE',
-    status varchar(16),
+
+    kind enum(
+        'FILE',
+        'AIRSYNC',
+        'DERIVED'
+    ) DEFAULT 'FILE',
+
+    status enum(
+        'UPLOADING',
+        'UPLOADED',
+        'ENQUEUED',
+        'PROCESSING',
+        'PROCESSED_OK',
+        'PROCESSED_WARNING',
+        'FAILED_FILE_TYPE',
+        'FAILED_AIRCRAFT_TYPE',
+        'FAILED_ARCHIVE_TYPE',
+        'FAILED_UNKNOWN',
+        'DERIVED',
+    ),
     
     number_chunks INT NOT NULL,
     uploaded_chunks INT NOT NULL,

@@ -1,13 +1,16 @@
 package org.ngafid.common;
 
+import org.ngafid.events.calculations.TurnToFinal;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.logging.Logger;
-import java.util.zip.*;
-
-import org.ngafid.flights.calculations.TurnToFinal;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterOutputStream;
 
 public final class Compression {
     private Compression() {

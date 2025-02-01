@@ -2,7 +2,7 @@ package org.ngafid.routes.javalin;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.routes.ErrorResponse;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class DoubleSeriesJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());

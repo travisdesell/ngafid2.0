@@ -1,16 +1,18 @@
 package org.ngafid.flights;
 
-import org.ngafid.Database;
-import org.ngafid.airports.Airport;
-import org.ngafid.airports.Airports;
-import org.ngafid.airports.Runway;
+import org.ngafid.common.Database;
+import org.ngafid.common.airports.Airport;
+import org.ngafid.common.airports.Airports;
+import org.ngafid.common.airports.Runway;
 import org.ngafid.common.FlightTag;
 import org.ngafid.common.MutableDouble;
-import org.ngafid.filters.Filter;
-import org.ngafid.flights.calculations.CalculatedDoubleTimeSeries;
-import org.ngafid.flights.calculations.VSPDRegression;
-import org.ngafid.flights.process.FlightMeta;
-import org.ngafid.terrain.TerrainCache;
+import org.ngafid.common.filters.Filter;
+import org.ngafid.common.terrain.TerrainCache;
+import org.ngafid.uploads.Upload;
+import org.ngafid.events.calculations.CalculatedDoubleTimeSeries;
+import org.ngafid.events.calculations.VSPDRegression;
+import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.MalformedFlightFileException;
 
 import java.io.FileWriter;
 import java.io.IOException;

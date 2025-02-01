@@ -3,7 +3,7 @@ package org.ngafid.flights;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.ngafid.common.Compression;
 import org.ngafid.common.NormalizedColumn;
-import org.ngafid.filters.Pair;
+import org.ngafid.common.filters.Pair;
 
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
@@ -35,6 +35,7 @@ public class DoubleTimeSeries {
     private int validCount;
     private double avg;
     private double max = -Double.MAX_VALUE;
+
     // Construct from an array
     public DoubleTimeSeries(String name, String dataType, double[] data, int size) {
         this.name = new DoubleSeriesName(name);
@@ -565,20 +566,22 @@ public class DoubleTimeSeries {
     }
 
     public static class DoubleSeriesName extends NormalizedColumn<DoubleSeriesName> {
+        private static Class<DoubleSeriesName> clazz = DoubleSeriesName.class;
+
         public DoubleSeriesName(String name) {
-            super(name);
+            super(clazz, name);
         }
 
         public DoubleSeriesName(int id) {
-            super(id);
+            super(clazz, id);
         }
 
         public DoubleSeriesName(Connection connection, int id) throws SQLException {
-            super(connection, id);
+            super(clazz, connection, id);
         }
 
         public DoubleSeriesName(Connection connection, String string) throws SQLException {
-            super(connection, string);
+            super(clazz, connection, string);
         }
 
         @Override

@@ -1,6 +1,6 @@
 package org.ngafid.events;
 
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 import org.ngafid.flights.Flight;
 
 import java.io.IOException;

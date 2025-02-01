@@ -1,14 +1,12 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.common.FlightTag;
-import org.ngafid.filters.StoredFilter;
+import org.ngafid.common.filters.StoredFilter;
 import org.ngafid.flights.Flight;
 import org.ngafid.routes.ErrorResponse;
 
@@ -18,8 +16,6 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import static org.ngafid.WebServer.gson;
 
 public class TagFilterJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());

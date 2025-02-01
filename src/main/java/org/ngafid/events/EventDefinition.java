@@ -3,7 +3,7 @@ package org.ngafid.events;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.ngafid.filters.Filter;
+import org.ngafid.common.filters.Filter;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 
@@ -287,15 +287,16 @@ public class EventDefinition {
 
     /**
      * Inserts this event definition into the database.
-     * @param connection is the connection to the database.
-     * @param fleetId is the fleet id for the event definitions
-     * @param name is the name of the event definition
-     * @param startBuffer is the start buffer
-     * @param stopBuffer is the stop buffer
-     * @param airframe is the airframe
-     * @param filterJson is the filter json
+     *
+     * @param connection              is the connection to the database.
+     * @param fleetId                 is the fleet id for the event definitions
+     * @param name                    is the name of the event definition
+     * @param startBuffer             is the start buffer
+     * @param stopBuffer              is the stop buffer
+     * @param airframe                is the airframe
+     * @param filterJson              is the filter json
      * @param severityColumnNamesJson is the severity column names json
-     * @param severityType is the severity type
+     * @param severityType            is the severity type
      * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(Connection connection, int fleetId, String name, int startBuffer, int stopBuffer,

@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.ngafid.Database;
-
 /**
  * EventMetaData
  */
@@ -90,8 +88,8 @@ public class EventMetaData {
         List<EventMetaData> metaDataList = new ArrayList<>();
         try (PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT name, value FROM event_metadata JOIN " +
-                  "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
-                ResultSet resultSet = preparedStatement.executeQuery()) {
+                        "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
 
             LOG.info(preparedStatement.toString());
 
