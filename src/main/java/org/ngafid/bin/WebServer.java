@@ -101,7 +101,7 @@ public abstract class WebServer {
     protected void preInitialize() {
     }
 
-    ;
+    public abstract void start();
 
     protected abstract void configurePort();
 
@@ -170,5 +170,6 @@ public abstract class WebServer {
         // response to Ajax requests.
         WebServer webserver = new JavalinWebServer(port, staticFiles);
         LOG.info("NGAFID web server initialization complete.");
+        webserver.start();
     }
 }

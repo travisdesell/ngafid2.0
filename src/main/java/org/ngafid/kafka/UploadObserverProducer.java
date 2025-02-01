@@ -17,10 +17,11 @@ import java.util.logging.Logger;
  * <p>
  * When an upload with status 'UPLOADED' is detected, a message will be added to the `upload` topic for processing.
  */
-public class UploadObserverProducer {
+public class UploadObserverProducer implements Runnable {
     private static final Logger LOG = Logger.getLogger(UploadObserverProducer.class.getName());
 
-    public static void main(String[] args) throws Exception {
+    @Override
+    public void run() {
         Properties props = Configuration.getProperties();
 
         KafkaProducer<String, Integer> producer = new KafkaProducer<>(props);

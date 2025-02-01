@@ -1,47 +1,74 @@
 # Steps for running the NGAFID2.0 website
 
+## 0. Requirements
+
+You will need the following software packages:
+
+1. Mysql
+2. Maven
+3. Java >= 21
+4. Nodejs
+5. Kafka
+
 ## 1. Clone the repository
 
 Using SSH (reccomended):
+
 ```
 ~/ $ git clone git@github.com:travisdesell/ngafid2.0
 ```
+
 Using HTTPS:
+
 ```
 ~/ $ git clone https://github.com/travisdesell/ngafid2.0.git
 ```
 
 ## 2. Set up the database
+
 Install mysql on your system. For ubuntu:
+
 ```
 ~/ $ sudo apt install mysql-server
 ```
 
 ### NOTE: On most Linux distributions, the MySQL package is provided by MariaDB. MariaDB is essentially the open-source version of MySQL and fully compatible with the MySQL syntax, however make sure you are using the latest version or you may run into problems.
+
 Most distributions (with the exception of Arch and a few others) will alias MySQL to MariaDB
 i.e.
+
 ```
 ~/ $ sudo zypper in mysql mysql-server
 ```
+
 or, for Arch:
+
 ```
 ~/ $ sudo pacman -S mariadb
 ```
-You will also need to run 
+
+You will also need to run
+
 ```
 ~/ $ sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
 ```
+
 before starting the systemd service (see below)
+
 ```
 ~/ $ sudo systemctl enable --now mariadb
 ```
+
 or
+
 ```
 ~/ $ sudo systemctl enable --now mysql
 ```
+
 **the systemd service name may vary depending on your distro.
 
 Next we'll create the database in mysql:
+
 ```
 ~/ $ sudo mysql
 ...
@@ -59,7 +86,9 @@ mysql> exit
 Bye
 ```
 
-We need to store these credentials in a file called `src/main/resources/liquibase.properties`, along with some other information:
+We need to store these credentials in a file called `src/main/resources/liquibase.properties`, along with some other
+information:
+
 ```
 changeLogFile=changelog-root.xml
 outputChangeLogFile=changelog.mysql.sql
@@ -68,17 +97,21 @@ username=ngafid_user
 password=password
 ```
 
-You should not modify the first two lines, but lines 3-5 may need to be tweaked depending on your database setup. In particular, if you are using a database other than mysql you will have to tweak the URL.
+You should not modify the first two lines, but lines 3-5 may need to be tweaked depending on your database setup. In
+particular, if you are using a database other than mysql you will have to tweak the URL.
 
 Once you have done this, you can create the database tables by running the following:
+
 ```
 ~/ngafid2.0 $ mvn liquibase:update
 ```
 
 ## 3. Configure the environment
+
 We need to set up some environmental variables that point to some important data / directories.
 
 Create `init_env.sh`, and add the following:
+
 ```bash
 export NGAFID_REPO=<absolute path to ngafid2.0 repo>
 export NGAFID_DATA_FOLDER=<create a ngafid data folder and put the absolute path here>
@@ -104,19 +137,25 @@ export NGAFID_EMAIL_ENABLED=false
 ```
 
 and run
+
 ```
 ~/ngafid2.0 $ source init_env.sh
 ```
+
 every time you want to run the website from a new shell.
 
 If you want these variables to be initialized automatically when you launch a new shell,
 add the following line to your `~/.bashrc` file:
+
 ```bash
 source ~/ngafid2.0/init_env.sh
 ```
 
 ## 4. Download Data Required for Flight Processing
-You need to download the data from the following link, and place the files in the following folder structure: [NGAFID Setup Data](https://drive.google.com/drive/folders/1cPMWpXCQb-I1lraFDY5Snn14UvMqu2SH?usp=drive_link). Request permissions if you do not have them (if you use an RIT google account you should have access by default).
+
+You need to download the data from the following link, and place the files in the following folder
+structure: [NGAFID Setup Data](https://drive.google.com/drive/folders/1cPMWpXCQb-I1lraFDY5Snn14UvMqu2SH?usp=drive_link).
+Request permissions if you do not have them (if you use an RIT google account you should have access by default).
 
 ```
 $NGAFID_DATA_FOLDER
@@ -133,47 +172,91 @@ $NGAFID_DATA_FOLDER
 ```
 
 ## 5. Running the webserver
+
 First, we need to install a JAR file dependency to where Maven fetches your dependencies from.
 Running the next step will not be possible without running this script.
+
 ```
 sh setup_dat_importing.sh
 ```
 
 Afterwards, we need maven to fetch all of the java dependencies:
+
 ```
 ~/ngafid2.0 $ mvn install
 ```
 
 Next we need to initialize node. You'll need npm installed for this. For ubuntu:
+
 ```
 ~/ $ sudo apt install npm
 ```
 
 Then run:
+
 ```
 ~/ngafid2.0 $ npm install
 ```
 
-This will download the javascript dependencies. 
+This will download the javascript dependencies.
 
 Then, in order to compile the javascript
 and automatically recompile whenever you change one of the files:
+
 ```
 ~/ngafid2.0 $ npm run watch
 ```
 
-Run:
+Before we run the actual webserver, we need to launch Kafka so the webserver can produce messages. Change the properties
+file path you use here depending on what platform you're on. Note that these will need to be launched in separate
+terminals and be ran persistently while the data processing daemon or web server is up:
+
+```
+# Launch Zookeeper -- required for Kafka server
+~/ngafid2.0 $ zookeeper-server-start src/main/resources/zookeeper-{mac,linux}.properties
+
+# Launch this in a separate terminal
+~/ngafid2.0 $ kafka-server-start src/main/resources/server-{mac,linux}.properties
+```
+
 You should then be able to compile and run the webserver by running `run/webserver.sh`
+
 ```
 ~/ngafid2.0 $ run/webserver.sh
 ```
 
-Importing flights and calculating exceedences can be done by running the `run/process_upload.sh` file.
+## 6. Data Processing
 
+We use Kafka to spin off upload processing events. After uploading a file to the web server, we need to spin up the data
+processing daemon.
+
+Next, launch the `UploadObserverProducer` which will watch the database and send processing messages to kafka when new
+uploads are detected:
+
+```
+~/ngafid2.0 $ run/upload_observer_producer.sh
+```
+
+Finally, we launch the `UploadConsumer` to read processing messages from the kafka queue and actually process the
+uploads:
+
+```
+~/ngafid2.0 $ run/upload_consumer.sh
+```
+
+If you modify the upload processing code in some way and want to re-add an upload to the processing queue, you may use
+the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue:
+
+```
+~/ngafid2.0 $ run/upload_helper.sh --fleet {fleet-id}
+```
 
 ## (Optional) using the backup daemon - works on Linux systems only.
-As demonstrated in `init_env.sh`, the NGAFID can be backed up using a configurable set of parameters (i.e. what tables to backup, etc).
-First, change the first line of the file in `db/backup_database.sh` so that the argument after `source` is the path to the aformentioned `init_env.sh` file.
+
+As demonstrated in `init_env.sh`, the NGAFID can be backed up using a configurable set of parameters (i.e. what tables
+to backup, etc).
+First, change the first line of the file in `db/backup_database.sh` so that the argument after `source` is the path to
+the aformentioned `init_env.sh` file.
 
 Then, you will need to copy the systemd files to your systemd directory and reload the os daemons.
 
@@ -183,25 +266,30 @@ Then, you will need to copy the systemd files to your systemd directory and relo
 ```
 
 To enable the backup service:
+
 ```
 # systemctl enable ngafid-backup.service ngafid-backup.timer
 ```
 
 If you desire to change the backup interval (default is weekly), you can override the `OnCalendar=` parameter with:
+
 ```
 # systemctl edit ngafid-backup.service
 # systemctl daemon-reload
 ```
 
-You may also want to check that everything has been loaded successfully. 
+You may also want to check that everything has been loaded successfully.
+
 ```
 # systemctl status *timer
 ```
 
 To run the backup at any given time, you can now simply invoke:
+
 ```
 # systemctl start ngafid-backup
 ```
+
 # ngafid2.0
 
 airport database:
@@ -210,12 +298,10 @@ http://osav-usdot.opendata.arcgis.com/datasets/a36a509eab4e43b4864fb594a35b90d6_
 runway database:
 http://osav-usdot.opendata.arcgis.com/datasets/d1b43f8a1d474b8c9c24cad4b942b74a_0?uiTab=table&geometry=-97.2%2C47.944%2C-97.146%2C47.953&filterByExtent=false
 
-
 required for jQuery query-builder:
 
 https://github.com/mistic100/jQuery.extendext.git
 https://github.com/olado/doT.git
-
 
 setting up javascript with react/webpack/babel:
 https://www.valentinog.com/blog/react-webpack-babel/

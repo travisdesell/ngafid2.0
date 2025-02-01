@@ -4,8 +4,8 @@ import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.ngafid.bin.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.bin.WebServer;
 import org.ngafid.routes.javalin.*;
 
 import java.util.logging.Logger;
@@ -17,6 +17,9 @@ public class JavalinWebServer extends WebServer {
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
         LOG.info("Using static files location: " + staticFilesLocation);
+    }
+
+    public void start() {
         app.start();
     }
 
