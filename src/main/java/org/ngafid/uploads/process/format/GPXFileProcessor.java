@@ -1,8 +1,9 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

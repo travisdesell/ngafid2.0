@@ -125,7 +125,7 @@ export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv
 # If you don't have the data for the runways directory, ask for it.
 export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv
 export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/src/main/resources/public/templates/
-export SPARK_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
+export WEBSERVER_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
 export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
 export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
 # Set me to true if you dont want backups being made everytime you fire off the NGAFID

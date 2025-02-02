@@ -6,25 +6,22 @@ import org.apache.kafka.clients.admin.NewTopic;
 import java.util.Arrays;
 import java.util.List;
 
-public class Topics {
+public enum Topic {
+    UPLOAD("upload"),
+    UPLOAD_RETRY("upload-retry"),
+    UPLOAD_DLQ("upload-dlq"),
+    EMAIL("email"),
+    EMAIL_RETRY("email-retry"),
+    EMAIL_DLQ("email-dlq");
 
-    private enum Topic {
-        UPLOAD("upload"),
-        UPLOAD_RETRY("upload-retry"),
-        UPLOAD_DLQ("upload-dlq"),
-        EMAIL("email"),
-        EMAIL_RETRY("email-retry"),
-        EMAIL_DLQ("email-dlq");
+    private final String name;
 
-        private final String name;
+    Topic(String name) {
+        this.name = name;
+    }
 
-        Topic(String name) {
-            this.name = name;
-        }
-
-        public String toString() {
-            return this.name;
-        }
+    public String toString() {
+        return this.name;
     }
 
     public static void main(String[] args) throws Exception {

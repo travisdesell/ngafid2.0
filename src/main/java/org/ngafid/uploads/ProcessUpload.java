@@ -32,84 +32,96 @@ public final class ProcessUpload {
 
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
 
-    public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException {
+    public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyProcessingException {
         LOG.info("processing upload with id: " + uploadId);
+        Upload upload = null;
+
         try (Connection connection = Database.getConnection()) {
-
             // We need to set the upload status to PROCESSING
-            Upload upload = Upload.getUploadById(connection, uploadId);
-
+            upload = Upload.getUploadById(connection, uploadId);
             if (upload == null)
                 throw new UploadDoesNotExistException(uploadId);
-
-            // Already being processed by someone else
-            if (upload.status == Upload.Status.PROCESSING) {
-                LOG.severe("Upload " + uploadId + " is already processing, giving up.");
-                return true;
-            }
-
-            // Update the upload status -- technically this should be a compare and set operation, but
-            // the volume of transactions is low enough that it shouldn't really matter.
-            upload.setStatus(Upload.Status.PROCESSING);
-            upload.updateStatus(connection);
-
-            Upload.Status status = processUpload(upload);
-            upload.setStatus(status);
-            upload.updateStatus(connection);
-            return status.isProcessed();
         }
+
+        return processUpload(upload);
     }
 
-    private static Upload.Status processUpload(Upload upload) {
+    private static boolean processUpload(Upload upload) throws SQLException, UploadAlreadyProcessingException {
         try (Connection connection = Database.getConnection()) {
-            int uploaderId = upload.getUploaderId();
-            int fleetId = upload.getFleetId();
-            String filename = upload.getFilename();
-
-            User uploader = User.get(connection, uploaderId, fleetId);
-            String uploaderEmail = uploader.getEmail();
-
-            ArrayList<String> recipients = new ArrayList<String>();
-            recipients.add(uploaderEmail);
-            ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); // always email admins to keep tabs on things
-
-            String formattedStartDateTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd " +
-                    "hh:mm:ss z (O)"));
-
-            String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
-            String body = subject;
-            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
-
-            upload.reset(connection);
-            LOG.info("upload was reset!\n\n");
-
-            UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
-
-            long start = System.nanoTime();
-
-            Upload.Status status = ingestFlights(connection, upload, uploadProcessedEmail);
-
-            // only progress if the upload ingestion was successful
-            if (status.isProcessed()) {
-                String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
-                uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
-            } else {
-                uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
+            /********************************************************************
+             * READ THE DOCUMENTATION FOR Upload.lock BEFORE MESSING WITH THIS  *
+             ********************************************************************/
+            if (!upload.lock(connection, true)) {
+                LOG.info("Failed to acquire lock for upload: " + upload.getId());
+                throw new UploadAlreadyProcessingException("Failed to acquire lock for upload: " + upload.getId());
             }
 
-            long end = System.nanoTime();
-            long diff = end - start;
-            double asSeconds = ((double) diff) * 1.0e-9;
+            try {
+                upload.setStatus(Upload.Status.PROCESSING);
+                upload.updateStatus(connection);
 
-            LOG.info("Processing upload took " + asSeconds + "s");
+                int uploaderId = upload.getUploaderId();
+                int fleetId = upload.getFleetId();
+                String filename = upload.getFilename();
 
-            uploadProcessedEmail.sendEmail(connection);
+                User uploader = User.get(connection, uploaderId, fleetId);
+                String uploaderEmail = uploader.getEmail();
 
-            return status;
-        } catch (Exception e) {
-            LOG.severe("ERROR processing upload: " + e);
-            e.printStackTrace();
-            return Upload.Status.FAILED_UNKNOWN;
+                ArrayList<String> recipients = new ArrayList<String>();
+                recipients.add(uploaderEmail);
+                ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); // always email admins to keep tabs on things
+
+                String formattedStartDateTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd " +
+                        "hh:mm:ss z (O)"));
+
+                String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
+                String body = subject;
+                SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
+
+                upload.reset(connection);
+                LOG.info("upload was reset!\n\n");
+
+                UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
+
+                long start = System.nanoTime();
+
+                Upload.Status status = ingestFlights(connection, upload, uploadProcessedEmail);
+
+                // only progress if the upload ingestion was successful
+                if (status.isProcessed()) {
+                    String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
+                    uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
+                } else {
+                    uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
+                }
+
+                long end = System.nanoTime();
+                long diff = end - start;
+                double asSeconds = ((double) diff) * 1.0e-9;
+
+                LOG.info("Processing upload took " + asSeconds + "s");
+
+                uploadProcessedEmail.sendEmail(connection);
+
+                upload.setStatus(status);
+                upload.updateStatus(connection);
+
+
+                return status.isProcessed();
+            } catch (Exception e) {
+                return false;
+            } finally {
+                /********************************************************************
+                 * READ THE DOCUMENTATION FOR Upload.lock BEFORE MESSING WITH THIS  *
+                 ********************************************************************/
+
+                // No matter what happens, attempt to release this since if we hit this try-catch-finally block, it means
+                // we acquired the lock.
+                if (!upload.lock(connection, false)) {
+                    LOG.info("Failed to release lock despite using the same connection -- this is likely a symptom of a logic error :(");
+                    throw new RuntimeException("Failed to release lock despite using the same connection");
+                }
+            }
         }
     }
 

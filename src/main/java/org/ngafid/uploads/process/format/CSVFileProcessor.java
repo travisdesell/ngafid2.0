@@ -1,17 +1,19 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import org.ngafid.common.MD5;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Airframes.AliasKey;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.FlightProcessingException;
+import org.ngafid.uploads.process.Pipeline;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.util.*;
 import java.util.logging.Level;
@@ -50,14 +52,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         LOG.info("Parsing " + this.meta.filename);
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(super.stream.readAllBytes());
-            meta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
-
+            meta.setMd5Hash(MD5.computeHexHash(super.stream));
             super.stream.reset();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            System.exit(1);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
@@ -107,7 +103,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 var dataType = dataTypes.get(i);
 
                 try {
-                    Double.parseDouble(column.get(0));
+                    Double.parseDouble(column.get(column.size() / 2));
                     doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
                 } catch (NumberFormatException e) {
                     stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));

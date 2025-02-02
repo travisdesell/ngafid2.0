@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
@@ -22,9 +21,7 @@ public class UploadObserverProducer implements Runnable {
 
     @Override
     public void run() {
-        Properties props = Configuration.getProperties();
-
-        KafkaProducer<String, Integer> producer = new KafkaProducer<>(props);
+        KafkaProducer<String, Integer> producer = Configuration.getUploadProducer();
 
         // To be run as an auto-restarting daemon:
         while (true) {
@@ -35,8 +32,8 @@ public class UploadObserverProducer implements Runnable {
                 while (uploads.next()) {
                     int uploadId = uploads.getInt("id");
 
+                    LOG.info("Adding upload " + uploadId + " to queue.");
                     producer.send(new ProducerRecord<>("upload", uploads.getInt("id")));
-
                     Upload.updateStatus(connection, uploadId, Upload.Status.ENQUEUED);
                 }
             } catch (SQLException e) {

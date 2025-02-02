@@ -5,6 +5,7 @@ import org.ngafid.uploads.ProcessUpload.FlightInfo;
 import org.ngafid.uploads.UploadException;
 import org.ngafid.flights.Flight;
 import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.process.format.*;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;

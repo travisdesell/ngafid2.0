@@ -82,6 +82,8 @@ public class EmailConsumer {
                         converted.forEach(email -> producer.send(new ProducerRecord<>(targetTopic, email)));
                     }
                 }
+
+                consumer.commitSync();
             }
         }
     }

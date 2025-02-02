@@ -144,14 +144,11 @@ public class Filter {
      */
     public static String getOffsetDateTime(String datetime, String longOffset) {
         String offset = longOffset.substring(4, 10);
-        System.out.println("datetime is: " + datetime);
-        System.out.println("time zone offset is: " + offset);
         OffsetDateTime odt =
                 LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         .atOffset(ZoneOffset.of(offset));
         String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("yyyy" +
                 "-MM-dd HH:mm:ss"));
-        System.out.println("gmt date time is: " + gmtTime);
 
         return gmtTime;
     }
@@ -166,12 +163,9 @@ public class Filter {
      */
     public static String getOffsetTime(String time, String longOffset) {
         String offset = longOffset.substring(4, 10);
-        System.out.println("time is: " + time);
-        System.out.println("time  zone offset is: " + offset);
         OffsetTime ot = OffsetTime.parse(time + offset);
         String gmtTime = ot.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("HH:mm" +
                 ":ss"));
-        System.out.println("gmt time is: " + gmtTime);
 
         return gmtTime;
     }
@@ -193,7 +187,6 @@ public class Filter {
 
         switch (inputs.get(0)) {
             case "Airframe":
-                System.out.println(inputs);
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 if (inputs.get(1).equals("is")) {

@@ -260,8 +260,6 @@ public class DoubleTimeSeries {
             query.setInt(1, flightId);
             query.setString(2, name);
 
-            LOG.info(query.toString());
-
             try (ResultSet resultSet = query.executeQuery()) {
                 if (resultSet.next()) {
                     DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
@@ -449,8 +447,6 @@ public class DoubleTimeSeries {
 
         if (this.name.getId() == -1)
             setNameId(connection);
-
-        LOG.info("name id = " + name.getId());
 
         preparedStatement.setInt(1, flightIdAdded);
         preparedStatement.setInt(2, name.getId());

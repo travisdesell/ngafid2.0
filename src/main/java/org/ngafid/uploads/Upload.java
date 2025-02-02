@@ -1,16 +1,18 @@
 package org.ngafid.uploads;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.bin.WebServer;
+import org.ngafid.common.MD5;
 import org.ngafid.flights.Flight;
+import org.ngafid.kafka.Configuration;
+import org.ngafid.kafka.Topic;
 import org.ngafid.uploads.airsync.AirSyncImport;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -48,6 +50,22 @@ public final class Upload {
         FAILED_ARCHIVE_TYPE,
         FAILED_UNKNOWN,
         DERIVED;
+
+        public static Status[] IMPORTED_SET = new Status[]{
+                Status.PROCESSED_OK,
+                Status.PROCESSED_WARNING,
+                Status.FAILED_UNKNOWN,
+                Status.FAILED_AIRCRAFT_TYPE,
+                Status.FAILED_ARCHIVE_TYPE,
+                Status.FAILED_FILE_TYPE,
+        };
+
+        public static Status[] NOT_IMPORTED_SET = new Status[]{
+                Status.UPLOADING,
+                Status.UPLOADED,
+                Status.UPLOADING_FAILED,
+                Status.ENQUEUED,
+        };
 
         public boolean isProcessed() {
             return this == PROCESSED_OK || this == PROCESSED_WARNING;
@@ -124,6 +142,37 @@ public final class Upload {
      */
     public Status getStatus() {
         return status;
+    }
+
+    private static String lockNameFor(int uploadId) {
+        return "upload_" + uploadId;
+    }
+
+    /**
+     * Releases or acquires the mysql lock corresponding to this upload, based on parameter acquire.
+     * <p>
+     * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK FUNCTIONALITY:
+     * MySQL locks are automatically released when a session is terminated, where a session is effectively a single connection.
+     * This means that the same connection MUST be used to acquire and release the connection.
+     *
+     * @param connection the connection used for the operation -- this must be the same connection used for the inverse operation.
+     * @param acquire    whether to acquire the lock (true) or release the lock (false)
+     * @return a boolean representing whether the lock was successfully released or acquired.
+     * @throws SQLException
+     */
+    public boolean lock(Connection connection, boolean acquire) throws SQLException {
+        String function = acquire ? "GET_LOCK(?, 1)" : "RELEASE_LOCK(?)";
+        try (PreparedStatement statement = connection.prepareStatement("SELECT " + function)) {
+            statement.setString(1, lockNameFor(id));
+            LOG.info(statement.toString());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) == 1;
+                } else {
+                    return false;
+                }
+            }
+        }
     }
 
     private static void deleteDirectory(File folder) {
@@ -214,15 +263,7 @@ public final class Upload {
     }
 
     static String getDerivedMd5(String md5) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(md5.getBytes());
-            md.update("DERIVED".getBytes());
-            byte[] hash = md.digest();
-            return DatatypeConverter.printHexBinary(hash).toLowerCase();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("MD5 Hashing algorithm not available");
-        }
+        return MD5.computeHexHash(md5 + "DERIVED");
     }
 
     /**
@@ -482,7 +523,7 @@ public final class Upload {
         }
     }
 
-    public static List<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
+    public static List<Upload> getUploads(Connection connection, int fleetId, Upload.Status[] types) throws SQLException {
         // String query = "SELECT id, fleetId, uploaderId, filename, identifier,
         // numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status,
         // startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads
@@ -507,7 +548,7 @@ public final class Upload {
         uploadQuery.setInt(2, AirSyncImport.getUploaderId());
 
         for (int i = 0; i < types.length; i++) {
-            uploadQuery.setString(i + 3, types[i]);
+            uploadQuery.setString(i + 3, types[i].toString());
         }
 
         ResultSet resultSet = uploadQuery.executeQuery();
@@ -524,7 +565,7 @@ public final class Upload {
         return uploads;
     }
 
-    public static List<Upload> getUploads(Connection connection, int fleetId, String[] types, String sqlLimit)
+    public static List<Upload> getUploads(Connection connection, int fleetId, Upload.Status[] types, String sqlLimit)
             throws SQLException {
         String query = "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
 
@@ -548,7 +589,7 @@ public final class Upload {
         uploadQuery.setInt(2, AirSyncImport.getUploaderId());
 
         for (int i = 0; i < types.length; i++) {
-            uploadQuery.setString(i + 3, types[i]);
+            uploadQuery.setString(i + 3, types[i].toString());
         }
         ResultSet resultSet = uploadQuery.executeQuery();
 
@@ -663,6 +704,8 @@ public final class Upload {
         return bytesUploaded == sizeBytes;
     }
 
+    private static KafkaProducer<String, Integer> producer = null;
+
     public void complete(Connection connection) throws SQLException {
         status = Status.UPLOADED;
         try (PreparedStatement query = connection
@@ -671,6 +714,12 @@ public final class Upload {
             query.setInt(2, id);
             query.executeUpdate();
         }
+
+        if (producer == null) {
+            producer = Configuration.getUploadProducer();
+        }
+
+        producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
     }
 
     public void chunkUploaded(Connection connection, int chunkNumber, long chunkSize) throws SQLException {

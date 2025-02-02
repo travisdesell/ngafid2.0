@@ -45,8 +45,6 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      * @param calculation the calculation to use to get the new {@link DoubleTimeSeries}
      */
     public void create(Calculation calculation) throws IOException, SQLException {
-        System.out.println("Performing " + super.getName() + " calculation");
-
         for (int i = 0; i < this.flight.getNumberRows(); i++) {
             super.add(calculation.calculate(i));
         }

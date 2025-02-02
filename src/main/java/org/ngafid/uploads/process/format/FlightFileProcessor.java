@@ -1,6 +1,8 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import org.ngafid.flights.Flight;
+import org.ngafid.uploads.process.FlightProcessingException;
+import org.ngafid.uploads.process.Pipeline;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -13,15 +15,15 @@ public abstract class FlightFileProcessor {
 
     private static final Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
 
-    interface Factory {
+    public interface Factory {
         FlightFileProcessor create(Connection connection, InputStream is, String filename, Pipeline pipeline)
                 throws Exception;
     }
 
-    protected final Connection connection;
-    protected final InputStream stream;
-    protected final String filename;
-    protected final Pipeline pipeline;
+    public final Connection connection;
+    public final InputStream stream;
+    public final String filename;
+    public final Pipeline pipeline;
 
     public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
         this.connection = connection;
@@ -41,7 +43,7 @@ public abstract class FlightFileProcessor {
      */
     private Stream<FlightBuilder> parsedFlightBuilders = null;
 
-    protected abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
+    public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
 
     public FlightFileProcessor pipelinedParse() {
         try {
@@ -54,8 +56,8 @@ public abstract class FlightFileProcessor {
         return this;
     }
 
-    protected Stream<Flight> flights = null;
-    protected final ArrayList<FlightProcessingException> buildExceptions = new ArrayList<>();
+    public Stream<Flight> flights = null;
+    public final ArrayList<FlightProcessingException> buildExceptions = new ArrayList<>();
 
     private Flight build(FlightBuilder fb) {
         try {

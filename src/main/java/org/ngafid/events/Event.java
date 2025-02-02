@@ -304,7 +304,6 @@ public class Event {
 
                     Event event = new Event(eventId, fleetId, flightId, definitionId, startLine,
                             endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail, tag);
-                    System.out.println("event: " + event);
 
                     int airframeId = eventSet.getInt(9);
                     String airframe = airframeIds.get(airframeId);
@@ -347,7 +346,6 @@ public class Event {
             }
 
             String fixedDateTime = year + "-" + month + "-" + day + " " + time;
-            System.out.println("Fixed '" + time + "' to '" + fixedDateTime + "'");
 
             return fixedDateTime;
         }
@@ -438,8 +436,8 @@ public class Event {
             EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
                     this.getEndTime(), this.getSeverity(), this.getDuration());
         } else {
-            System.out.println("WARNING: could not update event statistics for event: " + this);
-            System.out.println("WARNING: event start and end time were both null.");
+            LOG.warning("could not update event statistics for event: " + this);
+            LOG.warning("event start and end time were both null.");
         }
     }
 
@@ -476,8 +474,6 @@ public class Event {
             } else {
                 preparedStatement.setInt(9, otherFlightId);
             }
-
-            System.err.println(preparedStatement);
 
             preparedStatement.executeUpdate();
 

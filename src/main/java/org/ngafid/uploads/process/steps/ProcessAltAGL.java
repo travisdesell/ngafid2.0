@@ -1,7 +1,10 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.steps;
 
-import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.common.terrain.TerrainCache;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
+import org.ngafid.uploads.process.MalformedFlightFileException;
 
 import java.nio.file.NoSuchFileException;
 import java.sql.Connection;

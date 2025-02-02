@@ -254,7 +254,6 @@ public final class StringTimeSeries {
         if (dataType.getId() == -1)
             setTypeId(connection);
 
-        LOG.info("name = " + name.getName() + ", name id = " + name.getId());
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, name.getId());
         preparedStatement.setInt(3, dataType.getId());

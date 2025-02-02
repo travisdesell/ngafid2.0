@@ -1,9 +1,14 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.DependencyGraph;
+import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.FlightProcessingException;
+import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.steps.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -11,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static org.ngafid.uploads.process.ProcessStep.required;
+import static org.ngafid.uploads.process.steps.ProcessStep.required;
 
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic

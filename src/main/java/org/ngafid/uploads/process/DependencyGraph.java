@@ -1,5 +1,8 @@
 package org.ngafid.uploads.process;
 
+import org.ngafid.uploads.process.format.FlightBuilder;
+import org.ngafid.uploads.process.steps.ProcessStep;
+
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

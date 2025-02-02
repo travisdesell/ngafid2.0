@@ -5,9 +5,10 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 import jakarta.servlet.MultipartConfigElement;
-import org.ngafid.common.Database;
-import org.ngafid.bin.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.bin.WebServer;
+import org.ngafid.common.Database;
+import org.ngafid.common.MD5;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.FlightWarning;
@@ -17,13 +18,10 @@ import org.ngafid.routes.Navbar;
 import org.ngafid.uploads.Upload;
 import org.ngafid.uploads.UploadError;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -213,10 +211,8 @@ public class ImportUploadJavalinRoutes {
 
                     String newMd5Hash = null;
                     try (InputStream is = new FileInputStream(Paths.get(targetFilename).toFile())) {
-                        MessageDigest md = MessageDigest.getInstance("MD5");
-                        byte[] hash = md.digest(is.readAllBytes());
-                        newMd5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
-                    } catch (NoSuchAlgorithmException | IOException e) {
+                        newMd5Hash = MD5.computeHexHash(is);
+                    } catch (IOException e) {
                         LOG.severe("Error calculating MD5 hash: " + e.getMessage());
                         ctx.status(500);
                         ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
@@ -263,18 +259,17 @@ public class ImportUploadJavalinRoutes {
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalUploads / pageSize;
 
-            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"});
+            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new Upload.Status[]{Upload.Status.UPLOADING});
 
             // update the status of all the uploads currently uploading to incomplete so the
             // webpage knows they
             // need to be restarted and aren't currently being uploaded.
+            // TODO: This will cause a problem if a user is uploading something while another user views the uploads page.
             for (Upload upload : pending_uploads) {
-                if (upload.getStatus().equals(Upload.Status.UPLOADING)) {
-                    upload.setStatus(Upload.Status.UPLOADING_FAILED);
-                }
+                upload.setStatus(Upload.Status.UPLOADING_FAILED);
             }
 
-            List<Upload> other_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADED", "IMPORTED", "ERROR"}, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> other_uploads = Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
@@ -377,7 +372,7 @@ public class ImportUploadJavalinRoutes {
             final int startPage = 0;
             final int pageSize = 10;
             final int numberPages = totalImports / pageSize;
-            final List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + startPage + "," + pageSize);
+            final List<Upload> imports = Upload.getUploads(connection, fleetId, Upload.Status.IMPORTED_SET, " LIMIT " + startPage + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
@@ -418,7 +413,7 @@ public class ImportUploadJavalinRoutes {
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, Upload.Status.IMPORTED_SET, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             ctx.json(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {

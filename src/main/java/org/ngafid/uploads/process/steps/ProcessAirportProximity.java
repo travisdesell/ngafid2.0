@@ -1,8 +1,11 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.steps;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
+import org.ngafid.uploads.process.MalformedFlightFileException;
 
 import java.sql.Connection;
 import java.sql.SQLException;

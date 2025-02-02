@@ -1,7 +1,8 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.FlightMeta;
 
 import java.util.Map;
 import java.util.Set;

@@ -72,16 +72,6 @@ public final class FlightTimeLocation {
         Pair<Double, Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
         Pair<Double, Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
 
-        System.out.println("minMaxRPM1: " + minMaxRPM1);
-        System.out.println("minMaxRPM2: " + minMaxRPM2);
-
-        if (minMaxRPM1 != null) {
-            System.out.println("min max E1 RPM: " + minMaxRPM1.first() + ", " + minMaxRPM1.second());
-        }
-        if (minMaxRPM2 != null) {
-            System.out.println("min max E2 RPM: " + minMaxRPM2.first() + ", " + minMaxRPM2.second());
-        }
-
         if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
                 || (minMaxRPM2 == null && minMaxRPM1.second() < 800) // RPM2 is null, RPM1 is < 800 (RPM1 would not be
                 // null as well)
@@ -227,10 +217,8 @@ public final class FlightTimeLocation {
             // if there was a flight processed entry for this flight it was already processed
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
-                    System.out.println("proximity event already exists!");
                     return true;
                 } else {
-                    System.out.println("proximity does not already exist!");
                     return false;
                 }
             }

@@ -16,12 +16,14 @@ public enum Configuration {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("group.id", "ngafid");
-        props.put("enable.auto.commit", "true");
+        props.put("enable.auto.commit", "false");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
         return props;
     }
 

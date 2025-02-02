@@ -1,17 +1,16 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import org.ngafid.common.MD5;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.*;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -154,19 +153,12 @@ public class JSONFileProcessor extends FlightFileProcessor {
         stringTimeSeries.put("Lcl Time", localTime);
         stringTimeSeries.put("UTCOfst", offset);
 
-        MessageDigest md = null;
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new FatalFlightFileException("Could not create MD5 hash: " + e.getMessage());
-        }
-        byte[] hash = md.digest(filename.getBytes());
 
         flightMeta.setStartDateTime(localDateSeries.get(0) + " " + localTimeSeries.get(0) + " " + utcOfstSeries.get(0));
         flightMeta.setEndDateTime(localDateSeries.get(localDateSeries.size() - 1) + " "
                 + localTimeSeries.get(localTimeSeries.size() - 1) + " " + utcOfstSeries.get(utcOfstSeries.size() - 1));
-        flightMeta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
         flightMeta.setAirframeType("UAS Rotorcraft");
+        flightMeta.setMd5Hash(MD5.computeHexHash(stream));
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));
         flightMeta.setFilename(super.filename);
         flightMeta.setAirframe((String) jsonMap.get("controller_model"));

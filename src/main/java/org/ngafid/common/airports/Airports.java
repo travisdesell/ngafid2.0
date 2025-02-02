@@ -258,7 +258,6 @@ public final class Airports {
     }
 
     public static boolean hasRunwayInfo(String iataCode) {
-        System.out.println("checking to see if airport '" + iataCode + "' has runway info");
         Airport ap = IATA_TO_AIRPORT.get(iataCode);
         return ap != null && ap.hasRunways();
     }

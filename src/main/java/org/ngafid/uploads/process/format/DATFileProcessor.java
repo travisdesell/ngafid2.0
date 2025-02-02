@@ -1,4 +1,4 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import Files.*;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
@@ -6,6 +6,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.*;
 
 import java.io.*;
 import java.nio.file.Files;

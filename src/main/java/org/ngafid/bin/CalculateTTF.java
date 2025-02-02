@@ -1,8 +1,8 @@
 package org.ngafid.bin;
 
 import org.ngafid.common.Database;
-import org.ngafid.flights.Flight;
 import org.ngafid.events.calculations.TurnToFinal;
+import org.ngafid.flights.Flight;
 import org.ngafid.uploads.UploadProcessedEmail;
 
 import java.io.IOException;
@@ -45,7 +45,6 @@ public final class CalculateTTF {
             try {
                 TurnToFinal.calculateFlightTurnToFinals(connection, flight);
             } catch (IOException e) {
-                System.err.println("IOException: " + e);
                 e.printStackTrace();
 
                 uploadProcessedEmail.addTTFError(flight.getFilename(),
@@ -57,7 +56,6 @@ public final class CalculateTTF {
         Instant end = Instant.now();
         double elapsedMillis = (double) Duration.between(start, end).toMillis();
         double elapsedSeconds = Math.round(elapsedMillis) / 1000;
-        System.err.println("calculated TTF for " + total + " flight(s) in " + elapsedSeconds + "s");
         uploadProcessedEmail.setTtfElapsedTime(elapsedSeconds);
     }
 
@@ -112,17 +110,14 @@ public final class CalculateTTF {
                 Instant end = Instant.now();
                 double elapsedMillis = (double) Duration.between(start, end).toMillis();
                 double elapsedSeconds = (double) Math.round(elapsedMillis) / 1000;
-                System.err.println("calculated TTF for " + total + " flight(s) in " + elapsedSeconds + "s");
 
                 try {
                     Thread.sleep(10000);
                 } catch (Exception e) {
-                    System.err.println(e);
                     e.printStackTrace();
                 }
             } catch (SQLException | IOException e) {
                 e.printStackTrace();
-                System.err.println("Failed...");
                 return;
             }
         }

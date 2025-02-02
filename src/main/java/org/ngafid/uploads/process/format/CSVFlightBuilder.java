@@ -1,7 +1,9 @@
-package org.ngafid.uploads.process;
+package org.ngafid.uploads.process.format;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.steps.ProcessStep;
 
 import java.sql.Connection;
 import java.util.List;
