@@ -1914,6 +1914,7 @@ public class Flight {
         this.uploadId = newUploadId;
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
+
             // first check and see if the airframe and tail number already exist in the
             // database for this flight
             airframe = new Airframes.Airframe(connection, airframe.getName());
@@ -1922,6 +1923,11 @@ public class Flight {
 
             Tails.setSuggestedTail(connection, fltId, systemId, suggestedTailNumber);
             tailNumber = Tails.getTail(connection, fltId, systemId);
+
+            LOG.info(
+                "Preparing to update database with upload ID " + newUploadId + " and uploader ID "
+                + newUploaderId + " for flight " + this.systemId
+            );
 
             this.addBatch(preparedStatement);
 
@@ -1949,6 +1955,7 @@ public class Flight {
                     " = ?")) {
                 ps.setInt(1, this.id);
                 ps.executeUpdate();
+                LOG.info("Flight " + this.systemId + " has been updated in the database.");
             }
         }
     }
