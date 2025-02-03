@@ -138,7 +138,12 @@ public interface Parameters {
     String[] STALL_DEPENDENCIES = {PITCH, /* VSPD, */ IAS, BARO_A, OAT, ALT_B};
 
     /**
-     * Strings that represent the parameters used in the Stall Index calculation
+     * Strings that represent the parameters used in the Yaw Rate calculation
+     */
+    String[] YAW_RATE_DEPENDENCIES = {HDG};
+
+    /**
+     * Strings that represent the parameters used in the LOCI calculation
      */
     String[] LOCI_DEPENDENCIES = {HDG, ROLL, TAS_FTMIN};
     //

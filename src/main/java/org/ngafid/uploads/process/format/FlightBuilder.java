@@ -1,5 +1,16 @@
 package org.ngafid.uploads.process.format;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Itinerary;
@@ -8,15 +19,18 @@ import org.ngafid.uploads.process.DependencyGraph;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.FlightProcessingException;
 import org.ngafid.uploads.process.MalformedFlightFileException;
-import org.ngafid.uploads.process.steps.*;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
+import org.ngafid.uploads.process.steps.ProcessAirportProximity;
+import org.ngafid.uploads.process.steps.ProcessAltAGL;
+import org.ngafid.uploads.process.steps.ProcessDivergence;
+import org.ngafid.uploads.process.steps.ProcessItinerary;
+import org.ngafid.uploads.process.steps.ProcessLOCI;
+import org.ngafid.uploads.process.steps.ProcessLaggedAltMSL;
+import org.ngafid.uploads.process.steps.ProcessStallIndex;
+import org.ngafid.uploads.process.steps.ProcessStartEndTime;
+import org.ngafid.uploads.process.steps.ProcessStep;
 import static org.ngafid.uploads.process.steps.ProcessStep.required;
+import org.ngafid.uploads.process.steps.ProcessTotalFuel;
+import org.ngafid.uploads.process.steps.ProcessYawRate;
 
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic
@@ -29,9 +43,18 @@ public class FlightBuilder {
 
     // The only thing we require, by default, is a start and end time.
     // TODO: Determine if this is the exact behavior we want.
-    private static final List<ProcessStep.Factory> PROCESS_STEPS = List.of(required(ProcessStartEndTime::new),
-            ProcessAirportProximity::new, ProcessLaggedAltMSL::new, ProcessStallIndex::new, ProcessTotalFuel::new,
-            ProcessDivergence::new, ProcessLOCI::new, ProcessItinerary::new, ProcessAltAGL::new);
+    private static final List<ProcessStep.Factory> PROCESS_STEPS = List.of(
+        required(ProcessStartEndTime::new),
+        ProcessAirportProximity::new,
+        ProcessLaggedAltMSL::new,
+        ProcessStallIndex::new,
+        ProcessTotalFuel::new,
+        ProcessDivergence::new,
+        ProcessYawRate::new,
+        ProcessLOCI::new,
+        ProcessItinerary::new,
+        ProcessAltAGL::new
+    );
     //CHECKSTYLE:OFF
     // Flight meta data - see FlightMeta definition for details.
     public final FlightMeta meta;
