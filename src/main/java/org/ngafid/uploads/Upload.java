@@ -55,7 +55,9 @@ public final class Upload {
         FAILED_AIRCRAFT_TYPE,
         FAILED_ARCHIVE_TYPE,
         FAILED_UNKNOWN,
-        DERIVED;
+        DERIVED,
+        IMPORTED,       /*<-- Re-added this because the Uploads page fails to load when uploads made on the previous verison are present */
+        ;
 
         public static Status[] IMPORTED_SET = new Status[]{
                 Status.PROCESSED_OK,
