@@ -1,7 +1,7 @@
 # Running CesiumJs on the NGAFID2.0 website
 
 <p align="center">
-    <a href="http://cesiu.jsx.org/">
+    <a href="http://cesiumjs.org/">
         <img src="https://github.com/AnalyticalGraphicsInc/cesium/wiki/logos/Cesium_Logo_Color.jpg" width="50%" />
     </a>
 </p>
@@ -28,4 +28,4 @@ NGAFID 2.0 now running Cesium 1.73. Thanks Cesium with following updates:
 
 -Controller button in browser viewer fixed.
 
-Refrences: https://cesium.com/cesiu.jsx/
+Refrences: https://cesium.com/cesiumjs/
