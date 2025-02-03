@@ -1,8 +1,25 @@
 package org.ngafid.uploads.process.format;
 
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
-import org.ngafid.common.MD5;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+
+import javax.xml.bind.DatatypeConverter;
+
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Airframes.AliasKey;
 import org.ngafid.flights.DoubleTimeSeries;
@@ -12,13 +29,10 @@ import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.FlightProcessingException;
 import org.ngafid.uploads.process.Pipeline;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Stream;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders.
@@ -39,7 +53,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline) {
+
         super(connection, new ByteArrayInputStream(bytes), filename, pipeline);
+
+        LOG.info("Creating CSV File Processor for file: " + filename);
 
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
@@ -52,8 +69,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         LOG.info("Parsing " + this.meta.filename);
         try {
-            meta.setMd5Hash(MD5.computeHexHash(super.stream));
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(super.stream.readAllBytes());
+            meta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
+
             super.stream.reset();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(1);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
@@ -62,9 +85,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream,
-                StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
-            String fileInformation = getFlightInfo(bufferedReader); // Will read a line
+        int validRows = 0;
+        try (
+            BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(super.stream, StandardCharsets.UTF_8) );
+            CSVReader csvReader = new CSVReader(bufferedReader)
+        ) {
+
+            //Will read a line
+            String fileInformation = getFlightInfo(bufferedReader); 
 
             if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
@@ -76,42 +104,132 @@ public class CSVFileProcessor extends FlightFileProcessor {
             }
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
-            for (int i = 0; i < headers.size(); i++)
+            for (String header : headers) {
                 columns.add(new ArrayList<>());
+            }
 
             // Documentation of CSVReader claims this is a linked list,
             // so it is important to iterate over it rather than using indexing
             List<String[]> rows = csvReader.readAll();
-            int validRows = 0;
+            
             for (String[] row : rows) {
+
                 // Encountered a row that is broken for some reason?
-                if (row.length != headers.size()) break;
+                if (row.length != headers.size())
+                    break;
+
                 for (int i = 0; i < row.length; i++)
                     columns.get(i).add(row[i]);
+
                 validRows += 1;
+
             }
 
             // If we detect an invalid row before the last row of the file, or there are no valid rows.
-            if (validRows < Math.max(columns.size() - 2, 0)) {
-                throw new FatalFlightFileException("Flight file has 0 valid rows - something serious is wrong with " +
-                        "the format.");
-            }
 
-            for (int i = 0; i < columns.size(); i++) {
-                var column = columns.get(i);
-                var name = headers.get(i);
-                var dataType = dataTypes.get(i);
+            //Detected invalid row before the last row of the file (or no valid rows), throw exception
+            if (validRows < Math.max(columns.size() - 2, 0))
+                throw new FatalFlightFileException("Flight file has 0 valid rows - something serious is wrong with the format.");
 
-                try {
-                    Double.parseDouble(column.get(column.size() / 2));
-                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
-                } catch (NumberFormatException e) {
-                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+            //Ignore flights that are too short (they didn't actually take off)
+            final int MINIMUM_FLIGHT_DURATION_SEC = 180;
+            if (validRows < MINIMUM_FLIGHT_DURATION_SEC)
+                throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+
+            for (int i = 0 ; i < columns.size() ; i++) {
+
+                ArrayList<String> column = columns.get(i);
+                String name = headers.get(i);
+                String dataType = dataTypes.get(i);
+
+                LOG.info("Name: " + name + "; Data Type: " + dataType);
+
+                //Track whether any non-empty cell was found, and whether it was numeric
+                boolean foundNonEmptyValue = false;
+                boolean isNumeric = false;
+                
+                //Use the first usable string encountered for fallback
+                String firstUsableValue = null;
+
+                //Scan the column for the first non-blank value
+                for (int j = 0 ; j < column.size() ; j++) {
+
+                    String value = column.get(j);
+
+                    //Trim whitespace / possible placeholders
+                    if (value == null)
+                        value = "";
+
+                    value = value.strip();
+                    if (value.isEmpty()
+                        || value.equalsIgnoreCase("null")
+                        || value.equalsIgnoreCase("NaN")
+                        || value.equalsIgnoreCase("N/A")
+                        || value.equals("-")) {
+
+                        column.set(j, "");
+                        continue;
+                    }
+
+                    //Found a non-empty cell
+                    foundNonEmptyValue = true;
+                    firstUsableValue = value;
+
+                    //Attempt parsing as a double... - 
+                    try {
+
+                        String normalized = value.replaceAll("[^\\d.+-Ee]", "");
+                        JavaDoubleParser.parseDouble(normalized);  
+                        
+                        //...Successfully parsed as double, the column is numeric
+                        isNumeric = true;
+
+                    } catch (NumberFormatException nfe) {
+                        
+                        //...Not numeric, treat entire column as string
+
+                    }
+                    
+                    break;
+
                 }
+
+                //Apply typing to the entire column
+                if (isNumeric) {
+
+                    for (int j = 0; j < column.size(); j++) {
+
+                        String v = column.get(j).strip();
+
+                        //Empty cell, insert empty string placeholder
+                        if (v.isEmpty()) {
+                            column.set(j, "");
+                            continue;
+                        }
+
+                        String normalized = v.replaceAll("[^\\d.+-Ee]", "");
+                        column.set(j, normalized);
+
+                    }
+
+                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
+                    LOG.info("Interpreted column '" + name + "' as DOUBLE; first usable value: " + firstUsableValue);
+
+                } else {
+
+                    if (!foundNonEmptyValue)
+                        LOG.warning("Column '" + name  + "' has no valid (non-blank) values; defaulting to STRING.");
+
+                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                    LOG.info("Interpreted column '" + name + "' as STRING; first usable value: " + firstUsableValue);
+
+                }
+
             }
+
 
             for (String name : doubleTimeSeries.keySet()) {
-                LOG.info("name = " + name + "; = " + doubleTimeSeries.get(name));
+                LOG.info("CSVFilePrcoessor -- Name -> Double Time Series Name: " + name + " = " + doubleTimeSeries.get(name));
             }
 
         } catch (IOException | FatalFlightFileException | CsvException e) {
@@ -119,10 +237,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throw new FlightProcessingException(e);
         }
 
+        //Update the number of rows in the meta object
+        meta.setNumberRows(validRows);
+        LOG.info("Number of rows: " + validRows);
+
         FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
 
         LOG.info("Returning flight builder!");
         return Stream.of(builder);
+
     }
 
     /**
