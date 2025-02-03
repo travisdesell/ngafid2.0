@@ -131,8 +131,8 @@ public final class CalculateProximityEventMetaData {
 
                     }
 
-                    EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance);
-                    EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
+                    EventMetaData lateralDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, lateralDistance);
+                    EventMetaData verticalDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, verticalDistance);
 
                     lateralDistanceMetaData.updateDatabase(connection, eventId);
                     verticalDistanceMetaData.updateDatabase(connection, eventId);

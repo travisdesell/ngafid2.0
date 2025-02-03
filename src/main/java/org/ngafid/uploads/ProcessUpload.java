@@ -1,16 +1,5 @@
 package org.ngafid.uploads;
 
-import org.ngafid.accounts.EmailType;
-import org.ngafid.accounts.User;
-import org.ngafid.bin.*;
-import org.ngafid.common.Database;
-import org.ngafid.common.SendEmail;
-import org.ngafid.events.proximity.CalculateProximity;
-import org.ngafid.flights.FlightError;
-import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.MalformedFlightFileException;
-import org.ngafid.uploads.process.Pipeline;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,6 +16,21 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
+
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.User;
+import org.ngafid.bin.CalculateExceedences;
+import org.ngafid.bin.CalculateTTF;
+import org.ngafid.bin.FindLowEndingFuelEvents;
+import org.ngafid.bin.FindSpinEvents;
+import org.ngafid.bin.UploadHelper;
+import org.ngafid.common.Database;
+import org.ngafid.common.SendEmail;
+import org.ngafid.events.proximity.CalculateProximity;
+import org.ngafid.flights.FlightError;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.Pipeline;
 
 public final class ProcessUpload {
 
@@ -101,6 +105,8 @@ public final class ProcessUpload {
 
                 return status.isProcessed();
             } catch (Exception e) {
+
+                LOG.info("Caught exception, will return 'false': " + e.toString());
                 return false;
             }
         }

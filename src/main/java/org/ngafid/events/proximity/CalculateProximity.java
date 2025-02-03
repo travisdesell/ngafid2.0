@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.ngafid.events.EventMetaData.EventMetaDataKey;
+
 public class CalculateProximity {
 
     // Proximity events (and potentially other complicated event calculations) will have negative IDs so they
@@ -453,10 +455,8 @@ public class CalculateProximity {
                                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine,
                                                 otherEndLine, severity, otherFlight.getId(), flightId);
 
-                                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance",
-                                                lateralDistance);
-                                        EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance"
-                                                , verticalDistance);
+                                        EventMetaData lateralDistanceMetaData = new EventMetaData(EventMetaDataKey.LATERAL_DISTANCE, lateralDistance);
+                                        EventMetaData verticalDistanceMetaData = new EventMetaData(EventMetaDataKey.VERTICAL_DISTANCE, verticalDistance);
 
                                         event.addMetaData(lateralDistanceMetaData);
                                         event.addMetaData(verticalDistanceMetaData);
@@ -516,9 +516,8 @@ public class CalculateProximity {
                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine,
                                 severity, otherFlight.getId(), flightId);
 
-                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance);
-                        EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance",
-                                verticalDistance);
+                        EventMetaData lateralDistanceMetaData = new EventMetaData(EventMetaDataKey.LATERAL_DISTANCE, lateralDistance);
+                        EventMetaData verticalDistanceMetaData = new EventMetaData(EventMetaDataKey.VERTICAL_DISTANCE, verticalDistance);
 
                         event.addMetaData(lateralDistanceMetaData);
                         event.addMetaData(verticalDistanceMetaData);
