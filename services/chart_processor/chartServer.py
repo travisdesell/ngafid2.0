@@ -30,8 +30,16 @@ import signal
 import sys
 import platform
 
-# Configure logging
-log_file = "chart_server.log"
+"""Configure logging. Log files will be rotating if the size will reach 10 MB"""""
+log_file = "./services/chart_processor/chart_server.log"
+log_dir = os.path.dirname(log_file)
+
+os.makedirs(log_dir, exist_ok=True)
+
+if not os.path.isfile(log_file):
+    with open(log_file, 'w') as f:
+        f.write("")
+
 max_log_file_size = 10 * 1024 * 1024  # 10 MB
 backup_count = 2  # Number of backup files to keep
 
@@ -43,6 +51,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+
 
 configuration_file = "chart_service_config.json"
 

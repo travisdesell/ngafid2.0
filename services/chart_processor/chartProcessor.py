@@ -37,13 +37,27 @@ def check_dependencies():
 
 
 """Configure logging. Log files will be rotating if the size will reach 10 MB"""""
-log_file = "./chart_processor.log"
+log_file = "./services/chart_processor/chart_processor.log"
+log_dir = os.path.dirname(log_file)
+
+os.makedirs(log_dir, exist_ok=True)
+
+if not os.path.isfile(log_file):
+    with open(log_file, 'w') as f:
+        f.write("")  # Create an empty log file
+
 max_log_file_size = 10 * 1024 * 1024  # 10 MB
 backup_count = 2  # Number of backup files to keep
 
-log_dir = os.path.dirname(log_file)
-if log_dir and not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        RotatingFileHandler(log_file, maxBytes=max_log_file_size, backupCount=backup_count),
+        logging.StreamHandler()
+    ]
+)
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -444,7 +458,7 @@ def process_sectional(chart_date):
         os.path.dirname(paths["virtual_raster_path"]),
         paths["rgb_tifs_path"],
     ])
-    logging.info("Processing Sectional Charts.")
+    logging.info("\n*** Processing Sectional Charts ***\n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.SECTIONAL)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
     convert_to_rgba(paths["cropped_tifs_path"], paths["rgb_tifs_path"])
@@ -457,6 +471,9 @@ def process_sectional(chart_date):
 def process_terminal_area(chart_date):
     """
     Processing steps for Terminal Area charts.
+    NOTE! Sectional charts are processed as they are. We don't crop terminal area tifs, since they may
+    change, and we can not maintain(and update) shape file for terminal area tifs. Also, terminal
+    area charts do not cover the entire area of the USA, and they rarely overlap.
     :param chart_date: date when the chart is released / scheduled to be updated.
     :return: none
     """
@@ -467,10 +484,9 @@ def process_terminal_area(chart_date):
         os.path.dirname(paths["virtual_raster_path"]),
         paths["rgb_tifs_path"],
     ])
-    logging.info("Processing Terminal Area Charts.")
+    logging.info("\n\n *** Processing Terminal Area Charts *** \n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.TERMINAL_AREA)
-    crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
-    convert_to_rgba(paths["cropped_tifs_path"], paths["rgb_tifs_path"])
+    convert_to_rgba(paths["tifs_path"], paths["rgb_tifs_path"])
     reproject_tifs(paths["rgb_tifs_path"], paths["reprojected_tifs_path"])
     create_virtual_raster(paths["reprojected_tifs_path"], paths["virtual_raster_path"])
     generate_tiles(paths["virtual_raster_path"], paths["charts_output_path"])
@@ -489,7 +505,7 @@ def process_enroute_low(chart_date):
         paths["reprojected_tifs_path"],
         os.path.dirname(paths["virtual_raster_path"]),
     ])
-    logging.info("Processing IFR Enroute Low Charts.")
+    logging.info("\n\n*** Processing IFR Enroute Low Charts *** \n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.IFR_ENROUTE_LOW)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
     reproject_tifs(paths["cropped_tifs_path"], paths["reprojected_tifs_path"])
@@ -510,7 +526,7 @@ def process_enroute_high(chart_date):
         paths["reprojected_tifs_path"],
         os.path.dirname(paths["virtual_raster_path"]),
     ])
-    logging.info("Processing IFR Enroute High Charts.")
+    logging.info("\n\n*** Processing IFR Enroute High Charts ***\n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.IFR_ENROUTE_HIGH)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
     reproject_tifs(paths["cropped_tifs_path"], paths["reprojected_tifs_path"])
@@ -520,12 +536,16 @@ def process_enroute_high(chart_date):
 
 if __name__ == "__main__":
 
+    logging.info("\n\n*** Start processing charts *** \n")
+
     check_dependencies()
     args = parse_arguments()
     chart_date = args.chart_date
 
     # Process charts
-    process_sectional(chart_date)
     process_terminal_area(chart_date)
+    process_sectional(chart_date)
     process_enroute_low(chart_date)
     process_enroute_high(chart_date)
+
+    logging.info("\n\n*** End processing charts *** \n")
