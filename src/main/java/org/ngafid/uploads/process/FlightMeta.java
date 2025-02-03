@@ -11,6 +11,7 @@ public final class FlightMeta {
     public int uploaderId = -1;
     public int uploadId = -1;
     public int processingStatus = 0;
+    public int numberRows = 0;
 
     public String startDateTime;
     public String endDateTime;
@@ -134,5 +135,13 @@ public final class FlightMeta {
 
     public void setSuggestedTailNumber(String suggestedTailNumber) {
         this.suggestedTailNumber = suggestedTailNumber;
+    }
+
+    public int getNumberRows() {
+        return numberRows;
+    }
+
+    public void setNumberRows(int numberRows) {
+        this.numberRows = numberRows;
     }
 }
