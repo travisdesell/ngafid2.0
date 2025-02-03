@@ -101,6 +101,7 @@ public final class ProcessUpload {
 
                 return status.isProcessed();
             } catch (Exception e) {
+                e.printStackTrace();
                 return false;
             }
         }
@@ -132,7 +133,14 @@ public final class ProcessUpload {
 
         if (extension.equals(".zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
-            try (ZipFile zipFile = new ZipFile(filename); Pipeline pipeline = new Pipeline(connection, upload,
+            try (ZipFile zipFile = new ZipFile(filename) {
+                @Override
+                public void close() throws IOException {
+                    super.close();
+                    LOG.info("We're closing the zip now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
+                    (new Throwable()).printStackTrace();
+                }
+            }; Pipeline pipeline = new Pipeline(connection, upload,
                     zipFile)) {
                 pipeline.execute();
 

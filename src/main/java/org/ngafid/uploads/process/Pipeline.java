@@ -1,13 +1,14 @@
 package org.ngafid.uploads.process;
 
 import org.ngafid.common.Database;
-import org.ngafid.uploads.ProcessUpload.FlightInfo;
-import org.ngafid.uploads.UploadException;
 import org.ngafid.flights.Flight;
+import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.UploadException;
 import org.ngafid.uploads.process.format.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,35 +45,9 @@ import java.util.zip.ZipFile;
  * @author Joshua Karns (josh@karns.dev)
  */
 public class Pipeline implements AutoCloseable {
-    // Maps lowercase file extension to the relevent FileProcessor. In the future, these may themselves have to do some
-    // additional delegation if a single file extension may actually map to multiple significantly different schemas.
-    private static final Map<String, FlightFileProcessor.Factory> FACTORIES = Map.of("csv", CSVFileProcessor::new,
-            "dat", DATFileProcessor::new, "json", JSONFileProcessor::new, "gpx", GPXFileProcessor::new);
-    private static final Logger LOG = Logger.getLogger(Pipeline.class.getName());
-    private static ForkJoinPool pool = null;
-    private final Connection connection;
-    private final Upload upload;
-    private final ZipFile zipFile;
-    // Used to count the number of valid flights. Atomic to enable concurrent mutation.
-    private final AtomicInteger validFlightsCount = new AtomicInteger(0);
-    // Same story as above but for warning flights.
-    private final AtomicInteger warningFlightsCount = new AtomicInteger(0);
-    // Maps filenames to the upload exception that caused processing of that flight to fail.
-    private final ConcurrentHashMap<String, UploadException> flightErrors = new ConcurrentHashMap<>();
-    // Maps filenames to a FlightInfo object.
-    private final ConcurrentHashMap<String, FlightInfo> flightInfo = new ConcurrentHashMap<>();
-    // Whether processing was successfull. Processing is only to be considered unsuccessful from the perspective of this
-    // pipeline if we encounter a SQL
-    private final boolean successfull = true;
-    // ZipFileSystem
-    private FileSystem derivedFileSystem = null;
-    private Upload derivedUpload = null;
+    private static Logger LOG = Logger.getLogger(Pipeline.class.getName());
 
-    public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
-        this.connection = connection;
-        this.upload = upload;
-        this.zipFile = zipFile;
-    }
+    private static ForkJoinPool pool = null;
 
     /**
      * Creates the thread pool used for flight file processing pipelines. By default, the number of threads created is
@@ -87,10 +62,51 @@ public class Pipeline implements AutoCloseable {
             parallelism = Runtime.getRuntime().availableProcessors();
         }
 
-        if (parallelism <= 0) pool = new ForkJoinPool();
-        else pool = new ForkJoinPool(parallelism);
+        if (parallelism <= 0)
+            pool = new ForkJoinPool();
+        else
+            pool = new ForkJoinPool(parallelism);
 
         LOG.info("Created pool with " + parallelism + " threads");
+    }
+
+    private final Connection connection;
+
+    // Whether processing was successfull. Processing is only to be considered unsuccessful from the perspective of this
+    // pipeline if we encounter a SQL
+    private boolean successfull = true;
+
+    private final Upload upload;
+    private final ZipFile zipFile;
+
+    // ZipFileSystem
+    private FileSystem derivedFileSystem = null;
+    private Upload derivedUpload = null;
+
+    // Maps lowercase file extension to the relevent FileProcessor. In the future, these may themselves have to do some
+    // additional delegation if a single file extension may actually map to multiple significantly different schemas.
+    private static final Map<String, FlightFileProcessor.Factory> FACTORIES = Map.of(
+            "csv", CSVFileProcessor::factory,
+            "dat", DATFileProcessor::new,
+            "json", JSONFileProcessor::new,
+            "gpx", GPXFileProcessor::new);
+
+    // Used to count the number of valid flights. Atomic to enable concurrent mutation.
+    private final AtomicInteger validFlightsCount = new AtomicInteger(0);
+
+    // Same story as above but for warning flights.
+    private final AtomicInteger warningFlightsCount = new AtomicInteger(0);
+
+    // Maps filenames to the upload exception that caused processing of that flight to fail.
+    private final ConcurrentHashMap<String, UploadException> flightErrors = new ConcurrentHashMap<>();
+
+    // Maps filenames to a FlightInfo object.
+    private final ConcurrentHashMap<String, ProcessUpload.FlightInfo> flightInfo = new ConcurrentHashMap<>();
+
+    public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
+        this.connection = connection;
+        this.upload = upload;
+        this.zipFile = zipFile;
     }
 
     /**
@@ -98,7 +114,8 @@ public class Pipeline implements AutoCloseable {
      */
     @Override
     public void close() throws IOException {
-        if (derivedFileSystem != null) derivedFileSystem.close();
+        if (derivedFileSystem != null)
+            derivedFileSystem.close();
     }
 
     /**
@@ -109,33 +126,37 @@ public class Pipeline implements AutoCloseable {
      * (4) Insert the created flights into the database.
      */
     public void execute() {
-        if (Pipeline.pool == null) initialize();
+        if (Pipeline.pool == null)
+            initialize();
 
         LOG.info("Creating pipeline to process upload id " + upload.id + " / " + upload.filename);
 
-        var processHandle = pool.submit(() -> this.getValidFilesStream().parallel().forEach((ZipEntry ze) -> {
-            try (Connection connection = Database.getConnection()) {
-                List<Flight> f =
-                        this.parse(this.create(ze)).parallel().map(fbs -> this.build(connection, fbs))
-                                .filter(Objects::nonNull).map(this::finalize).collect(Collectors.toList());
+        var processHandle = pool.submit(() -> this.getValidFilesStream()
+                .parallel()
+                .forEach((ZipEntry ze) -> {
+                    try (Connection connection = Database.getConnection()) {
+                        List<Flight> f = this
+                                .parse(this.create(ze))
+                                .filter(Objects::nonNull)
+                                .parallel()
+                                .map(fbs -> this.build(connection, fbs))
+                                .filter(Objects::nonNull)
+                                .map(this::finalize)
+                                .collect(Collectors.toList());
 
-                // Don't bother opening a database connection if there are no flights to insert.
-                if (f.isEmpty()) return;
+                        if (f.isEmpty())
+                            return;
 
-                for (var flight : f) {
-                    LOG.info("STATUS: " + flight.getStatus());
-                    LOG.info("WARNINGS: " + flight.getExceptions().size());
-                }
-
-                Flight.batchUpdateDatabase(connection, upload, f);
-            } catch (SQLException | IOException e) {
-                LOG.info("Encountered SQLException trying to get database connection...");
-                e.printStackTrace();
-                this.fail(ze.getName(), e);
-            }
-        }));
-
+                        Flight.batchUpdateDatabase(connection, upload, f);
+                    } catch (SQLException | IOException e) {
+                        LOG.info("Encountered SQLException trying to get database connection...");
+                        e.printStackTrace();
+                        this.fail(ze.getName(), e);
+                    }
+                }));
+        LOG.info("Executing...");
         processHandle.join();
+        LOG.info("Joined.");
     }
 
     /**
@@ -145,11 +166,11 @@ public class Pipeline implements AutoCloseable {
      */
     private Stream<? extends ZipEntry> getValidFilesStream() {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        Stream<? extends ZipEntry> validFiles =
-                StreamSupport.stream(Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
-                                false).filter(z -> !z.getName().contains("__MACOSX"))
-                        .filter(z -> !z.isDirectory());
-        return validFiles;
+        return StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
+                        false)
+                .filter(z -> !z.getName().contains("__MACOSX"))
+                .filter(z -> !z.isDirectory());
     }
 
     /**
@@ -167,29 +188,30 @@ public class Pipeline implements AutoCloseable {
         FlightFileProcessor.Factory f = FACTORIES.get(extension);
 
         if (f != null) {
-            try {
-                return f.create(connection, zipFile.getInputStream(entry), filename, this);
+            try (InputStream is = zipFile.getInputStream(entry)) {
+                return f.create(connection, is, filename, this);
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(filename, new UploadException(e.getMessage(), e, filename));
             }
         } else {
-            fail(filename, new UploadException("Unknown file type '" + extension + "' contained in zip file.",
-                    filename));
+            fail(filename,
+                    new UploadException("Unknown file type '" + extension + "' contained in zip file.", filename));
         }
 
         return null;
     }
 
     /**
-     * Calls the `parse` method on `processor`, returning the resulting stream of FlightBuilder objects. In the event
-     * of an error, the error is logged using `this::fail` and empty stream is returned.
+     * Calls the `parse` method on `processor`, returning the resulting stream of FlightBuilder objects. In the event of
+     * an error, the error is logged using `this::fail` and and empty stream is returned.
      *
-     * @param processor The processor to parse.
-     * @return A stream of flight builders on success, an empty stream if there is an error.
+     * @returns A stream of flight builders on success, an empty stream if there is an error.
      */
     public Stream<FlightBuilder> parse(FlightFileProcessor processor) {
         try {
+            if (processor == null)
+                return Stream.of();
             return processor.parse();
         } catch (FlightProcessingException e) {
             fail(processor.filename, e);
@@ -200,13 +222,11 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `FlightBuilder::build` on the supplied flight builder and returns the resulting flight.
      *
-     * @param conn The database connection to use.
-     * @param fb   The flight builder to build.
-     * @return a flight object if there are no exceptions, otherwise returns `null`.
+     * @returns a flight object if there are no exceptions, otherwise returns `null`.
      */
-    public Flight build(Connection conn, FlightBuilder fb) {
+    public Flight build(Connection connection, FlightBuilder fb) {
         try {
-            return fb.build(conn);
+            return fb.build(connection);
         } catch (FlightProcessingException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
             e.printStackTrace();
@@ -218,19 +238,14 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `this::build` on each `FlightBuilder` in the supplied stream.
      *
-     * @param conn The database connection to use.
-     * @param fbs  The stream of flight builders to build.
-     * @return a list of `Flight` objects, having filtered out any `null` values.
+     * @returns a list of `Flight` objects, having filtered out any `null` values.
      */
-    public List<Flight> build(Connection conn, Stream<FlightBuilder> fbs) {
-        return fbs.map(fb -> this.build(conn, fb)).filter(Objects::nonNull).collect(Collectors.toList());
+    public List<Flight> build(Connection connection, Stream<FlightBuilder> fbs) {
+        return fbs.map(fb -> this.build(connection, fb)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**
      * Tabulates various flight information.
-     *
-     * @param flight The flight to finalize.
-     * @return the finalized flight
      */
     public Flight finalize(Flight flight) {
         if (flight.getStatus().equals("WARNING")) {
@@ -241,17 +256,14 @@ public class Pipeline implements AutoCloseable {
 
         LOG.info("FLIGHT STATUS = " + flight.getStatus());
 
-        flightInfo.put(flight.getFilename(), new FlightInfo(flight.getId(), flight.getNumberRows(),
-                flight.getFilename(), flight.getExceptions()));
+        flightInfo.put(flight.getFilename(),
+                new ProcessUpload.FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
         return flight;
     }
 
     /**
      * Add an upload exception to the flightError map for the given filename.
-     *
-     * @param filename The filename of the flight that failed processing.
-     * @param e        The exception that caused the failure.
      */
     public void fail(String filename, Exception e) {
         LOG.info("Encountered an irrecoverable issue processing a flight");
@@ -264,9 +276,6 @@ public class Pipeline implements AutoCloseable {
      * ZipFile and upload have not been created yet, create them.
      * <p>
      * This method is synchronized so there is only a single thread mutating the derivedFileSystem at once.
-     *
-     * @param filename The filename to add to the derived ZipFile.
-     * @param data     The data to write to the file.
      */
     public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
         if (derivedFileSystem == null) {
@@ -275,11 +284,16 @@ public class Pipeline implements AutoCloseable {
         }
 
         Path zipFileSystemPath = derivedFileSystem.getPath(filename);
-        Files.createDirectories(zipFileSystemPath.getParent());
+        Path parentPath = zipFileSystemPath.getParent();
+
+        if (parentPath != null && !Files.exists(parentPath)) {
+            Files.createDirectories(parentPath);
+        }
+
         Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 
-    public Map<String, FlightInfo> getFlightInfo() {
+    public Map<String, ProcessUpload.FlightInfo> getFlightInfo() {
         return flightInfo;
     }
 

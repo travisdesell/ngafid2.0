@@ -1,10 +1,11 @@
 package org.ngafid.uploads.process.steps;
 
 import org.ngafid.common.terrain.TerrainCache;
+import org.ngafid.common.terrain.TerrainUnavailableException;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.nio.file.NoSuchFileException;
 import java.sql.Connection;
@@ -63,7 +64,7 @@ public class ProcessAltAGL extends ProcessStep {
             try {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
                 altitudeAGLTS.add(altitudeAGL);
-            } catch (NoSuchFileException e) {
+            } catch (NoSuchFileException | TerrainUnavailableException e) {
                 throw new MalformedFlightFileException(
                         "Could not calculate AGL for this flight as it had " +
                                 "latitudes/longitudes outside of the United States.");

@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
-    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         super(connection, stream, filename, pipeline);
     }
 

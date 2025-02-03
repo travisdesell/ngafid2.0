@@ -1,23 +1,21 @@
 package org.ngafid.flights;
 
 import org.ngafid.common.Database;
+import org.ngafid.common.FlightTag;
+import org.ngafid.common.MutableDouble;
 import org.ngafid.common.airports.Airport;
 import org.ngafid.common.airports.Airports;
 import org.ngafid.common.airports.Runway;
-import org.ngafid.common.FlightTag;
-import org.ngafid.common.MutableDouble;
 import org.ngafid.common.filters.Filter;
-import org.ngafid.common.terrain.TerrainCache;
-import org.ngafid.uploads.Upload;
 import org.ngafid.events.calculations.CalculatedDoubleTimeSeries;
 import org.ngafid.events.calculations.VSPDRegression;
+import org.ngafid.uploads.Upload;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.MalformedFlightFileException;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.NoSuchFileException;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -1716,171 +1714,10 @@ public class Flight {
         doubleTimeSeries.put(totalFuelColumnName, totalFuel);
     }
 
-    public void calculateAGL(Connection connection, String altitudeAGLColumnName, String altitudeMSLColumnName,
-                             String latitudeColumnName, String longitudeColumnName)
-            throws MalformedFlightFileException, SQLException {
-        // calculates altitudeAGL (above ground level) from altitudeMSL (mean sea levl)
-        headers.add(altitudeAGLColumnName);
-        dataTypes.add("ft agl");
-
-        DoubleTimeSeries altitudeMSLTS = doubleTimeSeries.get(altitudeMSLColumnName);
-        DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
-        DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
-
-        if (altitudeMSLTS == null || latitudeTS == null || longitudeTS == null) {
-            String message = "Cannot calculate AGL, flight file had empty or missing ";
-
-            int count = 0;
-            if (altitudeMSLTS == null) {
-                message += "'" + altitudeMSLColumnName + "'";
-                count++;
-            }
-
-            if (latitudeTS == null) {
-                if (count > 0) message += ", ";
-                message += "'" + latitudeColumnName + "'";
-                count++;
-            }
-
-            if (longitudeTS == null) {
-                if (count > 0) message += " and ";
-                message += "'" + longitudeColumnName + "'";
-                count++;
-            }
-
-            message += " column";
-            if (count >= 2) message += "s";
-            message += ".";
-
-            // should be initialized to false, but let's make sure
-            hasCoords = false;
-            hasAGL = false;
-            throw new MalformedFlightFileException(message);
-        }
-        hasCoords = true;
-        hasAGL = true;
-
-        DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(connection, altitudeAGLColumnName, "ft agl");
-
-        for (int i = 0; i < altitudeMSLTS.size(); i++) {
-            double altitudeMSL = altitudeMSLTS.get(i);
-            double latitude = latitudeTS.get(i);
-            double longitude = longitudeTS.get(i);
-
-            if (Double.isNaN(altitudeMSL) || Double.isNaN(latitude) || Double.isNaN(longitude)) {
-                altitudeAGLTS.add(Double.NaN);
-                // System.err.println("result is: " + Double.NaN);
-                continue;
-            }
-
-            try {
-                int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
-
-                // System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
-
-                altitudeAGLTS.add(altitudeAGL);
-
-                // the terrain cache will not be able to find the file if the lat/long is
-                // outside the USA
-            } catch (NoSuchFileException e) {
-                System.err.println("ERROR: could not read terrain file: " + e);
-
-                hasAGL = false;
-                throw new MalformedFlightFileException("Could not calculate AGL for this flight as it had " +
-                        "latitudes/longitudes " + "outside of the United States.");
-            }
-        }
-        doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
-    }
-
-    public void calculateAirportProximity(Connection connection, String latitudeColumnName,
-                                          String longitudeColumnName, String altitudeAGLColumnName)
-            throws MalformedFlightFileException, SQLException {
-        // calculates if the aircraft is within maxAirportDistance from an airport
-
-        DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
-        DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
-        DoubleTimeSeries altitudeAGLTS = doubleTimeSeries.get(altitudeAGLColumnName);
-
-        if (latitudeTS == null || longitudeTS == null || altitudeAGLTS == null) {
-            String message = "Cannot calculate airport and runway distances, flight file had empty or missing ";
-
-            int count = 0;
-            if (latitudeTS == null) {
-                message += "'" + latitudeColumnName + "'";
-                count++;
-            }
-
-            if (longitudeTS == null) {
-                if (count > 0) message += " and ";
-                message += "'" + longitudeColumnName + "'";
-                count++;
-            }
-
-            if (altitudeAGLTS == null) {
-                if (count > 0) message += " and ";
-                message += "'" + altitudeAGLColumnName + "'";
-                count++;
-            }
-
-            message += " column";
-            if (count >= 2) message += "s";
-            message += ".";
-
-            // should be initialized to false, but let's make sure
-            hasCoords = false;
-            throw new MalformedFlightFileException(message);
-        }
-        hasCoords = true;
-
-        headers.add("NearestAirport");
-        dataTypes.add("IATA Code");
-
-        headers.add("AirportDistance");
-        dataTypes.add("ft");
-
-        headers.add("NearestRunway");
-        dataTypes.add("IATA Code");
-
-        headers.add("RunwayDistance");
-        dataTypes.add("ft");
-
-        StringTimeSeries nearestAirportTS = new StringTimeSeries(connection, "NearestAirport", "txt");
-        stringTimeSeries.put("NearestAirport", nearestAirportTS);
-        DoubleTimeSeries airportDistanceTS = new DoubleTimeSeries(connection, "AirportDistance", "ft");
-        doubleTimeSeries.put("AirportDistance", airportDistanceTS);
-
-        StringTimeSeries nearestRunwayTS = new StringTimeSeries(connection, "NearestRunway", "txt");
-        stringTimeSeries.put("NearestRunway", nearestRunwayTS);
-        DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries(connection, "RunwayDistance", "ft");
-        doubleTimeSeries.put("RunwayDistance", runwayDistanceTS);
-
-        getNearbyLandingAreas(latitudeTS, longitudeTS, altitudeAGLTS, nearestAirportTS, airportDistanceTS,
-                nearestRunwayTS, runwayDistanceTS, MAX_AIRPORT_DISTANCE_FT, MAX_RUNWAY_DISTANCE_FT);
-    }
-
-    public void updateTail(Connection connection, String tailNum) throws SQLException {
-        if (this.systemId != null && !this.systemId.isBlank()) {
-            String sql = "INSERT INTO tails(system_id, fleet_id, tail, confirmed) VALUES(?,?,?,?) " + "ON DUPLICATE " +
-                    "KEY UPDATE tail = ?";
-            try (PreparedStatement query = connection.prepareStatement(sql)) {
-                query.setString(1, this.systemId);
-                query.setInt(2, this.fleetId);
-                query.setString(3, tailNum);
-                query.setBoolean(4, true);
-                query.setString(5, tailNum);
-
-                query.executeUpdate();
-            }
-        }
-    }
-
     private void addBatch(PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, uploaderId);
         preparedStatement.setInt(3, uploadId);
-        LOG.info("AIRFRAME = " + airframe.getId());
-        LOG.info("AIRFRAME TYPE = " + airframeType.getId());
         preparedStatement.setInt(4, airframe.getId());
         preparedStatement.setInt(5, airframeType.getId());
         preparedStatement.setString(6, systemId);
@@ -1918,7 +1755,6 @@ public class Flight {
 
             this.addBatch(preparedStatement);
 
-            LOG.info(preparedStatement.toString());
             preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {

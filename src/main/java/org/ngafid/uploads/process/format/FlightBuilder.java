@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static org.ngafid.uploads.process.steps.ProcessStep.required;
@@ -26,6 +27,7 @@ import static org.ngafid.uploads.process.steps.ProcessStep.required;
  * @author Joshua Karns (josh@karns.dev)
  */
 public class FlightBuilder {
+    private static Logger LOG = Logger.getLogger(FlightBuilder.class.getName());
 
     // The only thing we require, by default, is a start and end time.
     // TODO: Determine if this is the exact behavior we want.
@@ -76,7 +78,7 @@ public class FlightBuilder {
         // doubleTimeSeries or stringTimeSeries are ignored.
         return PROCESS_STEPS.stream().map(factory -> factory.create(connection, this))
                 .filter(step -> step.getOutputColumns().stream()
-                        .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x)))
+                        .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x)))
                 .collect(Collectors.toList());
     }
 
