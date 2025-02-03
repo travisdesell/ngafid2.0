@@ -21,6 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * Upload object, corresponding to a file uploaded by a user.
+ * <p>
+ * Upload objects cannot be modified in the database directly without acquiring the corresponding LockedUpload object.
+ * This is backed by a MySQL lock to avoid concurrent modification which could cause database corruption.
+ */
 public final class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
 
@@ -70,6 +76,195 @@ public final class Upload {
         public boolean isProcessed() {
             return this == PROCESSED_OK || this == PROCESSED_WARNING;
         }
+    }
+
+    public class LockedUpload implements AutoCloseable {
+        final Connection connection;
+
+        LockedUpload(Connection connection) throws SQLException, UploadAlreadyLockedException {
+            this.connection = connection;
+            lock(true);
+        }
+
+        private static String lockNameFor(int uploadId) {
+            return "upload_" + uploadId;
+        }
+
+        /**
+         * Releases or acquires the mysql lock corresponding to this upload, based on parameter acquire.
+         * <p>
+         * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK FUNCTIONALITY:
+         * MySQL locks are automatically released when a session is terminated, where a session is effectively a single connection.
+         * This means that the same connection MUST be used to acquire and release the connection.
+         *
+         * @param acquire whether to acquire the lock (true) or release the lock (false)
+         * @return a boolean representing whether the lock was successfully released or acquired.
+         * @throws SQLException
+         */
+        private boolean lock(boolean acquire) throws SQLException {
+            String function = acquire ? "GET_LOCK(?, 1)" : "RELEASE_LOCK(?)";
+            try (PreparedStatement statement = connection.prepareStatement("SELECT " + function)) {
+                statement.setString(1, lockNameFor(id));
+                LOG.info(statement.toString());
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getInt(1) == 1;
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void close() throws SQLException, UploadAlreadyLockedException {
+            lock(false);
+        }
+
+        /**
+         * Removes all other entries in the database related to this upload so
+         * it can be reprocessed or deleted
+         *
+         * @throws SQLException if there is an error in the database
+         */
+        public void clearUpload() throws SQLException {
+            String query = "DELETE FROM upload_errors WHERE upload_id = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setInt(1, id);
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
+            }
+
+            query = "DELETE FROM flight_errors WHERE upload_id = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setInt(1, id);
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
+            }
+
+            ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, id);
+
+            for (Flight flight : flights) {
+                flight.remove(connection);
+            }
+
+            if (!md5Hash.contains("DERIVED")) {
+                Upload derived = getUploadByUser(connection, uploaderId, getDerivedMd5(md5Hash));
+                if (derived != null) {
+                    try (LockedUpload derivedLocked = derived.getLockedUpload(connection)) {
+                        derivedLocked.remove();
+                    }
+                }
+            }
+
+            query = "DELETE FROM uploads WHERE md5_hash = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, getDerivedMd5(md5Hash));
+                preparedStatement.executeUpdate();
+            }
+        }
+
+        /**
+         * Removes all other entries in the database related to this upload
+         * and sets its status to 'ENQUEUED' so it can be reprocessed
+         *
+         * @throws SQLException if there is an error in the database
+         */
+        public void reset() throws SQLException {
+            this.clearUpload();
+
+            if (status != Status.ENQUEUED) {
+                String query = "UPDATE uploads SET status = '" + Status.UPLOADED + "' WHERE id = ?";
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setInt(1, id);
+                    LOG.info(preparedStatement.toString());
+                    preparedStatement.executeUpdate();
+                }
+            }
+        }
+
+        private static KafkaProducer<String, Integer> producer = null;
+
+        public void complete() throws SQLException {
+            status = Status.UPLOADED;
+            try (PreparedStatement query = connection
+                    .prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?")) {
+                query.setString(1, status.name());
+                query.setInt(2, id);
+                query.executeUpdate();
+            }
+
+            if (producer == null) {
+                producer = Configuration.getUploadProducer();
+            }
+
+            producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
+        }
+
+        public void chunkUploaded(int chunkNumber, long chunkSize) throws SQLException {
+            uploadedChunks++;
+            bytesUploaded += chunkSize;
+
+            StringBuilder statusSB = new StringBuilder(chunkStatus);
+            statusSB.setCharAt(chunkNumber, '1');
+
+            chunkStatus = statusSB.toString();
+
+            try (PreparedStatement query = connection.prepareStatement(
+                    "UPDATE uploads SET uploaded_chunks = ?, bytes_uploaded = ?, chunk_status = ? WHERE id = ?")) {
+                query.setInt(1, uploadedChunks);
+                query.setLong(2, bytesUploaded);
+                query.setString(3, chunkStatus);
+                query.setInt(4, id);
+                query.executeUpdate();
+            }
+        }
+
+        public void updateStatus(Status status) throws SQLException {
+            Upload.this.status = status;
+            try (PreparedStatement query = connection
+                    .prepareStatement("UPDATE uploads SET status = ? WHERE id = ?")) {
+                query.setString(1, status.name());
+                query.setInt(2, id);
+                query.executeUpdate();
+            }
+        }
+
+        /**
+         * Removes all other entries in the database related to this upload
+         * and then removes the upload from the database, and removes the
+         * uploaded files related to it from disk
+         *
+         * @throws SQLException if there is an error in the database
+         */
+        public void remove() throws SQLException {
+            clearUpload();
+
+            if (kind == Kind.AIRSYNC) {
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement("DELETE FROM airsync_imports WHERE upload_id = " + id)) {
+                    preparedStatement.executeUpdate();
+                }
+            }
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM uploads WHERE id = ?")) {
+                preparedStatement.setInt(1, id);
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
+            }
+
+            File archiveFile = new File(getArchivePath().toUri());
+            archiveFile.delete();
+        }
+    }
+
+    public LockedUpload getLockedUpload(Connection connection) throws SQLException {
+        return new LockedUpload(connection);
+    }
+
+    public static LockedUpload getLockedUpload(Connection connection, int id) throws SQLException {
+        Upload upload = getUploadById(connection, id);
+        return upload.getLockedUpload(connection);
     }
 
     //CHECKSTYLE:OFF
@@ -144,174 +339,9 @@ public final class Upload {
         return status;
     }
 
-    private static String lockNameFor(int uploadId) {
-        return "upload_" + uploadId;
-    }
-
-    /**
-     * Releases or acquires the mysql lock corresponding to this upload, based on parameter acquire.
-     * <p>
-     * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK FUNCTIONALITY:
-     * MySQL locks are automatically released when a session is terminated, where a session is effectively a single connection.
-     * This means that the same connection MUST be used to acquire and release the connection.
-     *
-     * @param connection the connection used for the operation -- this must be the same connection used for the inverse operation.
-     * @param acquire    whether to acquire the lock (true) or release the lock (false)
-     * @return a boolean representing whether the lock was successfully released or acquired.
-     * @throws SQLException
-     */
-    public boolean lock(Connection connection, boolean acquire) throws SQLException {
-        String function = acquire ? "GET_LOCK(?, 1)" : "RELEASE_LOCK(?)";
-        try (PreparedStatement statement = connection.prepareStatement("SELECT " + function)) {
-            statement.setString(1, lockNameFor(id));
-            LOG.info(statement.toString());
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt(1) == 1;
-                } else {
-                    return false;
-                }
-            }
-        }
-    }
-
-    private static void deleteDirectory(File folder) {
-        File[] files = folder.listFiles();
-        if (files != null) { // some JVMs return null for empty dirs
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    deleteDirectory(f);
-                } else {
-                    f.delete();
-                }
-            }
-        }
-        folder.delete();
-    }
-
-    /**
-     * Removes all other entries in the database related to this upload so
-     * it can be reprocessed or deleted
-     *
-     * @param connection is the database connection
-     * @param uploadId   is the id of the upload to delete (in case it does not
-     *                   exist for some reason)
-     * @throws SQLException if there is an error in the database
-     */
-    public static void clearUpload(Connection connection, int uploadId) throws SQLException {
-        String query = "DELETE FROM upload_errors WHERE upload_id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, uploadId);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
-
-        query = "DELETE FROM flight_errors WHERE upload_id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, uploadId);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
-
-        ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, uploadId);
-
-        for (Flight flight : flights) {
-            flight.remove(connection);
-        }
-    }
-
-    /**
-     * Removes all other entries in the database related to this upload so
-     * it can be reprocessed or deleted
-     *
-     * @param connection is the database connection
-     * @throws SQLException if there is an error in the database
-     */
-    public void clearUpload(Connection connection) throws SQLException {
-        String query = "DELETE FROM upload_errors WHERE upload_id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, this.id);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
-
-        query = "DELETE FROM flight_errors WHERE upload_id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, this.id);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
-
-        ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, this.id);
-
-        for (Flight flight : flights) {
-            flight.remove(connection);
-        }
-
-        if (!md5Hash.contains("DERIVED")) {
-            Upload derived = getUploadByUser(connection, uploaderId, getDerivedMd5(md5Hash));
-            if (derived != null) {
-                derived.remove(connection);
-            }
-        }
-
-        query = "DELETE FROM uploads WHERE md5_hash = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setString(1, getDerivedMd5(md5Hash));
-            preparedStatement.executeUpdate();
-        }
-    }
 
     static String getDerivedMd5(String md5) {
         return MD5.computeHexHash(md5 + "DERIVED");
-    }
-
-    /**
-     * Removes all other entries in the database related to this upload
-     * and sets its status to 'ENQUEUED' so it can be reprocessed
-     *
-     * @param connection is the database connection
-     * @throws SQLException if there is an error in the database
-     */
-    public void reset(Connection connection) throws SQLException {
-        this.clearUpload(connection);
-
-        if (status != Status.ENQUEUED) {
-            String query = "UPDATE uploads SET status = '" + Status.UPLOADED + "' WHERE id = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, this.id);
-                LOG.info(preparedStatement.toString());
-                preparedStatement.executeUpdate();
-            }
-        }
-    }
-
-    /**
-     * Removes all other entries in the database related to this upload
-     * and then removes the upload from the database, and removes the
-     * uploaded files related to it from disk
-     *
-     * @param connection is the database connection
-     * @throws SQLException if there is an error in the database
-     */
-    public void remove(Connection connection) throws SQLException {
-        this.clearUpload(connection);
-
-        if (kind == Kind.AIRSYNC) {
-            try (PreparedStatement preparedStatement = connection
-                    .prepareStatement("DELETE FROM airsync_imports WHERE upload_id = " + this.id)) {
-                preparedStatement.executeUpdate();
-            }
-        }
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM uploads WHERE id = ?")) {
-            preparedStatement.setInt(1, this.id);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
-
-        File archiveFile = new File(this.getArchivePath().toUri());
-        archiveFile.delete();
     }
 
     public static Upload getUploadByUser(Connection connection, int uploaderId, String md5Hash) throws SQLException {
@@ -702,56 +732,6 @@ public final class Upload {
 
     public boolean checkSize() {
         return bytesUploaded == sizeBytes;
-    }
-
-    private static KafkaProducer<String, Integer> producer = null;
-
-    public void complete(Connection connection) throws SQLException {
-        status = Status.UPLOADED;
-        try (PreparedStatement query = connection
-                .prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?")) {
-            query.setString(1, status.name());
-            query.setInt(2, id);
-            query.executeUpdate();
-        }
-
-        if (producer == null) {
-            producer = Configuration.getUploadProducer();
-        }
-
-        producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
-    }
-
-    public void chunkUploaded(Connection connection, int chunkNumber, long chunkSize) throws SQLException {
-        uploadedChunks++;
-        bytesUploaded += chunkSize;
-
-        StringBuilder statusSB = new StringBuilder(chunkStatus);
-        statusSB.setCharAt(chunkNumber, '1');
-
-        chunkStatus = statusSB.toString();
-
-        try (PreparedStatement query = connection.prepareStatement(
-                "UPDATE uploads SET uploaded_chunks = ?, bytes_uploaded = ?, chunk_status = ? WHERE id = ?")) {
-            query.setInt(1, uploadedChunks);
-            query.setLong(2, bytesUploaded);
-            query.setString(3, chunkStatus);
-            query.setInt(4, id);
-            query.executeUpdate();
-        }
-    }
-
-    public void updateStatus(Connection connection) throws SQLException {
-        Upload.updateStatus(connection, id, status);
-    }
-
-    public static void updateStatus(Connection connection, int id, Status status) throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement("UPDATE uploads SET status = ? WHERE id = ?")) {
-            query.setString(1, status.name());
-            query.setInt(2, id);
-            query.executeUpdate();
-        }
     }
 
     public void getAirSyncInfo(Connection connection) throws SQLException {

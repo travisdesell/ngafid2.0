@@ -1,7 +1,7 @@
 package org.ngafid.bin;
 
-import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.common.Database;
+import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.uploads.Upload;
 
 import java.sql.Connection;
@@ -24,9 +24,10 @@ public final class ClearUpload {
     public static void main(String[] arguments) {
         LOG.info("Arguments are " + Arrays.toString(arguments));
 
-        try (Connection connection = Database.getConnection()) {
-            int uploadId = Integer.parseInt(arguments[0]);
-            Upload.clearUpload(connection, uploadId);
+        int uploadId = Integer.parseInt(arguments[0]);
+        try (Connection connection = Database.getConnection();
+             Upload.LockedUpload upload = Upload.getLockedUpload(connection, uploadId)) {
+            upload.clearUpload();
         } catch (SQLException e) {
             LOG.severe("Error clearing upload: " + e);
             e.printStackTrace();

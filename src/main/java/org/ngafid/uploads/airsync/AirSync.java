@@ -1,11 +1,11 @@
 package org.ngafid.uploads.airsync;
 
 import org.codehaus.plexus.util.ExceptionUtils;
-import org.ngafid.common.Database;
-import org.ngafid.common.SendEmail;
 import org.ngafid.accounts.AirSyncAuth;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.EmailType;
+import org.ngafid.common.Database;
+import org.ngafid.common.SendEmail;
 import org.ngafid.uploads.Upload;
 
 import java.io.IOException;
@@ -110,7 +110,9 @@ public final class AirSync {
                          ResultSet results = query.executeQuery()) {
                         while (results.next()) {
                             Upload upload = new Upload(results);
-                            upload.reset(connection);
+                            try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
+                                locked.reset();
+                            }
                         }
                     }
                 }
@@ -155,7 +157,9 @@ public final class AirSync {
                      ResultSet results = query.executeQuery()) {
                     while (results.next()) {
                         Upload upload = new Upload(results);
-                        upload.complete(connection);
+                        try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
+                            locked.complete();
+                        }
                     }
                 }
                 AirSyncFleet[] airSyncFleets = AirSyncFleet.getAll(connection);

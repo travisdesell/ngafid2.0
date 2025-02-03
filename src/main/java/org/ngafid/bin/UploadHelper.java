@@ -83,6 +83,7 @@ public enum UploadHelper {
                             idCursor = Math.max(uploadId, idCursor);
                             nRows += 1;
                         }
+
                         if (nRows == 0)
                             break;
                     }

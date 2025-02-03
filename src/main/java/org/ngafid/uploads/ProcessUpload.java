@@ -32,7 +32,7 @@ public final class ProcessUpload {
 
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
 
-    public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyProcessingException {
+    public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
         LOG.info("processing upload with id: " + uploadId);
         Upload upload = null;
 
@@ -46,19 +46,12 @@ public final class ProcessUpload {
         return processUpload(upload);
     }
 
-    private static boolean processUpload(Upload upload) throws SQLException, UploadAlreadyProcessingException {
-        try (Connection connection = Database.getConnection()) {
-            /********************************************************************
-             * READ THE DOCUMENTATION FOR Upload.lock BEFORE MESSING WITH THIS  *
-             ********************************************************************/
-            if (!upload.lock(connection, true)) {
-                LOG.info("Failed to acquire lock for upload: " + upload.getId());
-                throw new UploadAlreadyProcessingException("Failed to acquire lock for upload: " + upload.getId());
-            }
+    private static boolean processUpload(Upload upload) throws SQLException, UploadAlreadyLockedException {
+        try (Connection connection = Database.getConnection();
+             Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
 
             try {
-                upload.setStatus(Upload.Status.PROCESSING);
-                upload.updateStatus(connection);
+                lockedUpload.updateStatus(Upload.Status.PROCESSING);
 
                 int uploaderId = upload.getUploaderId();
                 int fleetId = upload.getFleetId();
@@ -78,7 +71,7 @@ public final class ProcessUpload {
                 String body = subject;
                 SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
 
-                upload.reset(connection);
+                lockedUpload.reset();
                 LOG.info("upload was reset!\n\n");
 
                 UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
@@ -104,23 +97,11 @@ public final class ProcessUpload {
                 uploadProcessedEmail.sendEmail(connection);
 
                 upload.setStatus(status);
-                upload.updateStatus(connection);
-
+                lockedUpload.updateStatus(status);
 
                 return status.isProcessed();
             } catch (Exception e) {
                 return false;
-            } finally {
-                /********************************************************************
-                 * READ THE DOCUMENTATION FOR Upload.lock BEFORE MESSING WITH THIS  *
-                 ********************************************************************/
-
-                // No matter what happens, attempt to release this since if we hit this try-catch-finally block, it means
-                // we acquired the lock.
-                if (!upload.lock(connection, false)) {
-                    LOG.info("Failed to release lock despite using the same connection -- this is likely a symptom of a logic error :(");
-                    throw new RuntimeException("Failed to release lock despite using the same connection");
-                }
             }
         }
     }

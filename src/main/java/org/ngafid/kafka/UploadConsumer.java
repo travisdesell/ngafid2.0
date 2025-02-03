@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.uploads.ProcessUpload;
-import org.ngafid.uploads.UploadAlreadyProcessingException;
+import org.ngafid.uploads.UploadAlreadyLockedException;
 import org.ngafid.uploads.UploadDoesNotExistException;
 
 import java.sql.SQLException;
@@ -26,7 +26,7 @@ public class UploadConsumer {
     public static void main(String[] args) {
         Properties props = Configuration.getUploadProperties();
         props.put("max.poll.records", "1");
-        props.put("max.poll.interval.ms", "60000");
+        props.put("max.poll.interval.ms", "360000");
         try {
             fleetUploadConsumerMain(props);
         } catch (Exception e) {
@@ -63,7 +63,7 @@ public class UploadConsumer {
                     } catch (UploadDoesNotExistException e) {
                         System.out.println("WA");
                         LOG.info("Received message to process upload with id " + record.value() + " but that upload was not found in the database.");
-                    } catch (UploadAlreadyProcessingException e) {
+                    } catch (UploadAlreadyLockedException e) {
                         System.out.println("Oh sweet!!!");
                         LOG.info("Upload lock could not be acquired - skipping processing.");
                     }

@@ -1,14 +1,5 @@
 package org.ngafid.kafka;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.common.Database;
-import org.ngafid.uploads.Upload;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /**
@@ -21,30 +12,5 @@ public class UploadObserverProducer implements Runnable {
 
     @Override
     public void run() {
-        KafkaProducer<String, Integer> producer = Configuration.getUploadProducer();
-
-        // To be run as an auto-restarting daemon:
-        while (true) {
-            try (Connection connection = Database.getConnection();
-                 PreparedStatement uploadsStatement = connection.prepareStatement(
-                         "SELECT id, status FROM uploads WHERE status = '" + Upload.Status.UPLOADED.name() + "' ORDER BY id ASC LIMIT 100");
-                 ResultSet uploads = uploadsStatement.executeQuery()) {
-                while (uploads.next()) {
-                    int uploadId = uploads.getInt("id");
-
-                    LOG.info("Adding upload " + uploadId + " to queue.");
-                    producer.send(new ProducerRecord<>("upload", uploads.getInt("id")));
-                    Upload.updateStatus(connection, uploadId, Upload.Status.ENQUEUED);
-                }
-            } catch (SQLException e) {
-                LOG.severe("Error while producing records: ");
-                LOG.severe(e.getMessage());
-            }
-
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-            }
-        }
     }
 }
