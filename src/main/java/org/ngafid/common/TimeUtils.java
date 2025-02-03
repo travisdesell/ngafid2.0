@@ -1,7 +1,5 @@
 package org.ngafid.common;
 
-import org.ngafid.uploads.process.FatalFlightFileException;
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -12,6 +10,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
+import org.ngafid.uploads.process.FatalFlightFileException;
 
 public final class TimeUtils {
     private TimeUtils() {
@@ -190,18 +190,23 @@ public final class TimeUtils {
     }
 
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+        DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
+        DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
+        DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") // New formatter without the 'T'
+    );
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws FatalFlightFileException {
 
+        final String startDateTimeNormalized = startDateTime.replaceAll("\\s+", " ").trim();
+        final String endDateTimeNormalized = endDateTime.replaceAll("\\s+", " ").trim();
+
         for (var dateFormatter : DATE_FORMATTERS) {
             try {
-                var start = LocalDateTime.parse(startDateTime, dateFormatter);
-                var end = LocalDateTime.parse(endDateTime, dateFormatter);
+                var start = LocalDateTime.parse(startDateTimeNormalized, dateFormatter);
+                var end = LocalDateTime.parse(endDateTimeNormalized, dateFormatter);
                 return ChronoUnit.SECONDS.between(start, end);
             } catch (DateTimeParseException e) {
                 continue;
@@ -211,14 +216,17 @@ public final class TimeUtils {
         throw new FatalFlightFileException("Flight file is using unsupported date time format.");
     }
 
-    public static LocalDateTime parseLocalDateTime(String dateTimeString, String pattern)
-            throws FatalFlightFileException {
+    public static LocalDateTime parseLocalDateTime(String dateTimeString, String pattern) throws FatalFlightFileException {
+
         LocalDateTime dateTime = null;
         String patterns = "";
         boolean first = true;
+
+        final String dateTimeStringNormalized = dateTimeString.replaceAll("\\s+", " ").trim();
+
         for (var formatter : DATE_FORMATTERS) {
             try {
-                dateTime = LocalDateTime.parse(dateTimeString, formatter);
+                dateTime = LocalDateTime.parse(dateTimeStringNormalized, formatter);
                 break;
             } catch (DateTimeParseException e) {
             }
@@ -231,10 +239,8 @@ public final class TimeUtils {
             first = false;
         }
 
-        if (dateTime == null) {
-            throw new FatalFlightFileException(
-                    "Flight had incorrectly formatted date/time values (should be one of " + patterns + ")");
-        }
+        if (dateTime == null)
+            throw new FatalFlightFileException("Flight had incorrectly formatted date/time values - got dateTimeString '"+dateTimeStringNormalized+"', should be one of " + patterns);
 
         return dateTime;
     }
