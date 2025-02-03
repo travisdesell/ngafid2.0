@@ -166,9 +166,21 @@ def start_update_checker():
     """
     Schedule the update checker to run daily at midnight.
     If today is the day of tif file release (specified in chart_service_config.json),
-    runs run_chart_processor() function to start the update process
-    :return: none
+    runs run_chart_processor() function to start the update process.
     """
+
+    def get_next_update_date(schedule, today_date):
+        """
+        Find the next update date after today.
+        :param schedule: List of update dates in MM-DD-YYYY format
+        :param today_date: Today's date as a datetime object
+        :return: The next update date as a string or None if not found
+        """
+        for date_str in schedule:
+            update_date = datetime.strptime(date_str, "%m-%d-%Y")
+            if update_date > today_date:
+                return date_str
+        return None  # No future update dates found
 
     def checker():
         # Load the update schedule
@@ -180,6 +192,12 @@ def start_update_checker():
         if is_update_due(schedule, today):
             logging.info(f"The update is due for today: {today}. Running chart processor.")
             run_chart_processor(today)
+        else:
+            next_update = get_next_update_date(schedule, datetime.now())
+            if next_update:
+                logging.info(f"Today: {today} is not the chart update date. The next update is scheduled for {next_update}.")
+            else:
+                logging.info(f"Today: {today} is not the chart update date, and no future updates are scheduled.")
 
         # Enter the daily scheduling loop to check for updates
         while not stop_event.is_set():
@@ -196,9 +214,16 @@ def start_update_checker():
                 if is_update_due(schedule, today):
                     logging.info(f"The update is due for today: {today}. Running chart processor.")
                     run_chart_processor(today)
+                else:
+                    next_update = get_next_update_date(schedule, datetime.now())
+                    if next_update:
+                        logging.info(f"Today: {today} is not the chart update date. The next update is scheduled for {next_update}.")
+                    else:
+                        logging.info(f"Today: {today} is not the chart update date, and no future updates are scheduled.")
 
     thread = threading.Thread(target=checker, daemon=True)
     thread.start()
+
 
 
 class TileRequestHandler(SimpleHTTPRequestHandler):
