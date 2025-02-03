@@ -24,6 +24,13 @@ Using HTTPS:
 ~/ $ git clone https://github.com/travisdesell/ngafid2.0.git
 ```
 
+Afterwards, we need to install a JAR file dependency to where Maven fetches your dependencies from.
+Running Maven will not be possible without running this script.
+
+```
+sh setup_dat_importing.sh
+```
+
 ## 2. Set up the database
 
 Install mysql on your system. For ubuntu:
@@ -173,14 +180,7 @@ $NGAFID_DATA_FOLDER
 
 ## 5. Running the webserver
 
-First, we need to install a JAR file dependency to where Maven fetches your dependencies from.
-Running the next step will not be possible without running this script.
-
-```
-sh setup_dat_importing.sh
-```
-
-Afterwards, we need maven to fetch all of the java dependencies:
+First, we need maven to fetch all of the java dependencies:
 
 ```
 ~/ngafid2.0 $ mvn install

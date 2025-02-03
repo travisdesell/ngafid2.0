@@ -27,7 +27,7 @@ CREATE TABLE uploads (
         'FAILED_AIRCRAFT_TYPE',
         'FAILED_ARCHIVE_TYPE',
         'FAILED_UNKNOWN',
-        'DERIVED',
+        'DERIVED'
     ),
     
     number_chunks INT NOT NULL,
