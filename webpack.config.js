@@ -106,6 +106,9 @@ module.exports = {
             jQuery: "jquery",
             'window.jQuery': 'jquery',
             Popper: ['@popperjs/core', 'default']
+        }),
+        new webpack.ProvidePlugin({
+            process: 'process/browser',
         })
     ],
 
