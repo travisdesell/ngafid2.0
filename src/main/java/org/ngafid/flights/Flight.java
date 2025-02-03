@@ -110,6 +110,8 @@ public class Flight {
         startDateTime = meta.startDateTime;
         endDateTime = meta.endDateTime;
 
+        numberRows = meta.numberRows;
+
         this.itinerary = itinerary;
 
         hasCoords = doubleTimeSeries.containsKey(LATITUDE) && doubleTimeSeries.containsKey(LONGITUDE);
@@ -1391,6 +1393,10 @@ public class Flight {
         return this.numberRows;
     }
 
+    public int setNumberRows(int numberRows) {
+        return this.numberRows = numberRows;
+    }
+
     /**
      * @return the airframe id for this flight
      */
@@ -1569,11 +1575,12 @@ public class Flight {
                 return calculateLOCI(hdg, index, roll, tas, laggedHdg);
             });
 
-            CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(connection, LOCI, "index", true, this);
-            loci.create(index -> {
-                double prob = (stallIndex.get(index) * getDoubleTimeSeries(PRO_SPIN_FORCE).get(index));
-                return prob / 100;
-            });
+            // CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(connection, LOCI, "index", true, this);
+            // loci.create(index -> {
+            //     double prob = (stallIndex.get(index) * getDoubleTimeSeries(PRO_SPIN_FORCE).get(index));
+            //     return prob / 100;
+            // });
+            // [EX]
         }
     }
 
