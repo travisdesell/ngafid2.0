@@ -53,7 +53,7 @@ logging.basicConfig(
 )
 
 
-configuration_file = "chart_service_config.json"
+configuration_file = "./services/chart_processor/chart_service_config.json"
 
 stop_event = threading.Event()
 def parse_arguments():

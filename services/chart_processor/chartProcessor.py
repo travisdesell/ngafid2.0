@@ -78,7 +78,7 @@ class ChartType(Enum):
     IFR_ENROUTE_LOW = "ifr_enroute_low"
     IFR_ENROUTE_HIGH = "ifr_enroute_high"
 
-configuration_file = "./chart_service_config.json"
+configuration_file = "./services/chart_processor/chart_service_config.json"
 
 def validate_date(date_str):
     """
