@@ -1,19 +1,32 @@
 package org.ngafid.uploads.process.steps;
 
-import org.ngafid.events.calculations.VSPDRegression;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
-import org.ngafid.uploads.process.MalformedFlightFileException;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.ngafid.events.calculations.VSPDRegression;
 import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
-import static org.ngafid.flights.Parameters.*;
+import org.ngafid.flights.DoubleTimeSeries;
+import static org.ngafid.flights.Parameters.ALT_B;
+import static org.ngafid.flights.Parameters.AOA_CRIT;
+import static org.ngafid.flights.Parameters.AOA_SIMPLE;
+import static org.ngafid.flights.Parameters.BARO_A;
+import static org.ngafid.flights.Parameters.CAS;
+import static org.ngafid.flights.Parameters.DENSITY_RATIO;
+import static org.ngafid.flights.Parameters.IAS;
+import static org.ngafid.flights.Parameters.OAT;
+import static org.ngafid.flights.Parameters.PITCH;
+import static org.ngafid.flights.Parameters.STALL_DEPENDENCIES;
+import static org.ngafid.flights.Parameters.STALL_PROB;
+import static org.ngafid.flights.Parameters.STD_PRESS_INHG;
+import static org.ngafid.flights.Parameters.TAS_FTMIN;
+import org.ngafid.flights.Parameters.Unit;
+import static org.ngafid.flights.Parameters.VSPD_CALCULATED;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 public class ProcessStallIndex extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStallIndex.class.getName());
@@ -96,6 +109,9 @@ public class ProcessStallIndex extends ProcessStep {
                     fltPthAngle = fltPthAngle * (180 / Math.PI);
                     double value = pitch.get(index) - fltPthAngle;
 
+                    if (Double.isNaN(value))
+                        return 0.0;
+
                     return value;
                 });
 
@@ -106,5 +122,6 @@ public class ProcessStallIndex extends ProcessStep {
 
         builder.addTimeSeries(stallIndex);
         builder.addTimeSeries(tasFtMin);
+        builder.addTimeSeries(aoaSimple);
     }
 }
