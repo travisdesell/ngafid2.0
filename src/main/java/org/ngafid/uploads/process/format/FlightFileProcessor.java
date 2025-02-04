@@ -4,6 +4,8 @@ import org.ngafid.flights.Flight;
 import org.ngafid.uploads.process.FlightProcessingException;
 import org.ngafid.uploads.process.Pipeline;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -25,9 +27,13 @@ public abstract class FlightFileProcessor {
     public final String filename;
     public final Pipeline pipeline;
 
-    public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+    public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         this.connection = connection;
-        this.stream = stream;
+        if (!(stream instanceof ByteArrayInputStream)) {
+            this.stream = new ByteArrayInputStream(stream.readAllBytes());
+        } else {
+            this.stream = stream;
+        }
         this.filename = filename;
         this.pipeline = pipeline;
     }

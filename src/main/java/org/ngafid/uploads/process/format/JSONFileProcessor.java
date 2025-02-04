@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
-    public JSONFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+    public JSONFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         super(connection, stream, filename, pipeline);
     }
 
@@ -108,7 +108,6 @@ public class JSONFileProcessor extends FlightFileProcessor {
             parsedDate = TimeUtils.addMilliseconds(parsedDate, (int) milliseconds);
 
             if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90) {
-                LOG.severe("Invalid latitude: " + line.get(latIndex));
                 status = "WARNING";
                 lat.add(Double.NaN);
             } else {
@@ -116,7 +115,6 @@ public class JSONFileProcessor extends FlightFileProcessor {
             }
 
             if ((double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
-                LOG.severe("Invalid longitude: " + line.get(lonIndex));
                 status = "WARNING";
                 lon.add(Double.NaN);
             } else {
@@ -158,6 +156,7 @@ public class JSONFileProcessor extends FlightFileProcessor {
         flightMeta.setEndDateTime(localDateSeries.get(localDateSeries.size() - 1) + " "
                 + localTimeSeries.get(localTimeSeries.size() - 1) + " " + utcOfstSeries.get(utcOfstSeries.size() - 1));
         flightMeta.setAirframeType("UAS Rotorcraft");
+        stream.reset();
         flightMeta.setMd5Hash(MD5.computeHexHash(stream));
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));
         flightMeta.setFilename(super.filename);

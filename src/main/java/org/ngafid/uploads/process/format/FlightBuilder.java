@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.ngafid.flights.DoubleTimeSeries;
@@ -40,6 +41,7 @@ import org.ngafid.uploads.process.steps.ProcessYawRate;
  * @author Joshua Karns (josh@karns.dev)
  */
 public class FlightBuilder {
+    private static Logger LOG = Logger.getLogger(FlightBuilder.class.getName());
 
     // The only thing we require, by default, is a start and end time.
     // TODO: Determine if this is the exact behavior we want.
@@ -99,7 +101,7 @@ public class FlightBuilder {
         // doubleTimeSeries or stringTimeSeries are ignored.
         return PROCESS_STEPS.stream().map(factory -> factory.create(connection, this))
                 .filter(step -> step.getOutputColumns().stream()
-                        .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x)))
+                        .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x)))
                 .collect(Collectors.toList());
     }
 

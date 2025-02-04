@@ -65,7 +65,7 @@ public final class TerrainCache {
         return ns + ilatitude + ew + strLongitude + ".hgt";
     }
 
-    public static int getAltitudeFt(double msl, double latitude, double longitude) throws NoSuchFileException {
+    public static int getAltitudeFt(double msl, double latitude, double longitude) throws NoSuchFileException, TerrainUnavailableException {
         //cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
         int latIndex = -((int) Math.ceil(latitude) - 91);
         int lonIndex = (int) Math.floor(longitude) + 180;
@@ -77,7 +77,7 @@ public final class TerrainCache {
             System.err.println("tile[" + latIndex + "][" + lonIndex + "] does not exist!");
             System.err.println("latitude should be >= -90 and <= 90");
             System.err.println("longitude should be >= -180 and <= 180");
-            System.exit(1);
+            throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
         }
 
         SRTMTile tile = TILES[latIndex][lonIndex];
@@ -96,7 +96,7 @@ public final class TerrainCache {
 
     }
 
-    public static void main(String[] arguments) throws NoSuchFileException {
+    public static void main(String[] arguments) throws NoSuchFileException, TerrainUnavailableException {
         //albany airport - should be 267 ft
         double test = getAltitudeFt(0, 42.74871, -73.80550);
         System.out.println("albany airport altitude: " + test + ", should be 267 ft");

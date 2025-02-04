@@ -168,6 +168,12 @@
             <artifactId>commons-cli</artifactId>
             <version>1.3.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>us.dustinj.timezonemap</groupId>
+            <artifactId>timezonemap</artifactId>
+            <version>4.5</version>
+        </dependency>
     </dependencies>
 
 

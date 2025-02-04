@@ -6,7 +6,10 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.uploads.process.*;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.FlightProcessingException;
+import org.ngafid.uploads.process.Pipeline;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -324,7 +327,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             String[] line;
             while ((line = reader.readNext()) != null) {
                 if (line[line.length - 1].contains("|")) {
-                    String[] split = line[line.length - 1].split("|");
+                    String[] split = line[line.length - 1].split("\\|");
 
                     // We may encounter the case of "AttrName|" which will yield an array of size 1
                     if (split.length > 1) attributeMap.put(split[0], split[1]);
@@ -707,6 +710,10 @@ public class DATFileProcessor extends FlightFileProcessor {
             // 1));
 
             stream.reset();
+
+            for (var entry : attributeMap.entrySet()) {
+                LOG.info(entry.getKey() + " : " + entry.getValue());
+            }
 
             if (!attributeMap.containsKey("mcID(SN)")) {
                 LOG.info("No DJI Serial number provided in binary.");

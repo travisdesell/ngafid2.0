@@ -25,6 +25,29 @@ public final class FlightMeta {
     public Airframes.AirframeType airframeType = null;
     //CHECKSTYLE:ON
 
+    // Default constructor
+    public FlightMeta() {
+    }
+
+    // Copy constructor
+    public FlightMeta(FlightMeta other) {
+        this.fleetId = other.fleetId;
+        this.uploaderId = other.uploaderId;
+        this.uploadId = other.uploadId;
+        this.processingStatus = other.processingStatus;
+        this.startDateTime = other.startDateTime;
+        this.endDateTime = other.endDateTime;
+        this.md5Hash = other.md5Hash;
+        this.systemId = other.systemId;
+        this.filename = other.filename;
+        this.calculated = other.calculated;
+        this.suggestedTailNumber = other.suggestedTailNumber;
+
+        // Deep copy of Airframe, AirframeType  if not null
+        this.airframe = other.airframe;
+        this.airframeType = other.airframeType;
+    }
+
     public int getFleetId() {
         return fleetId;
     }
