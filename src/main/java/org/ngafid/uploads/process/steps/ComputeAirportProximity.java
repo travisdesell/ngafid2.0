@@ -4,8 +4,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,14 +14,14 @@ import java.util.Set;
 
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessAirportProximity extends ProcessStep {
+public class ComputeAirportProximity extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);
     private static final Set<String> OUTPUT_COLUMNS = Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE,
             NEAREST_AIRPORT);
     private static final double MAX_AIRPORT_DISTANCE_FT = 10000;
     private static final double MAX_RUNWAY_DISTANCE_FT = 100;
 
-    public ProcessAirportProximity(Connection connection, FlightBuilder builder) {
+    public ComputeAirportProximity(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 

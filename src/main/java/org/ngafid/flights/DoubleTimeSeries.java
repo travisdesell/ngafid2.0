@@ -557,27 +557,29 @@ public class DoubleTimeSeries {
         return newSeries;
     }
 
+    public Pair<Double, Double> getMinMax() {
+        return new Pair<>(min, max);
+    }
+
     public interface TimeStepCalculation {
         double compute(int i);
     }
 
     public static class DoubleSeriesName extends NormalizedColumn<DoubleSeriesName> {
-        private static Class<DoubleSeriesName> clazz = DoubleSeriesName.class;
-
         public DoubleSeriesName(String name) {
-            super(clazz, name);
+            super(name);
         }
 
         public DoubleSeriesName(int id) {
-            super(clazz, id);
+            super(id);
         }
 
         public DoubleSeriesName(Connection connection, int id) throws SQLException {
-            super(clazz, connection, id);
+            super(connection, id);
         }
 
         public DoubleSeriesName(Connection connection, String string) throws SQLException {
-            super(clazz, connection, string);
+            super(connection, string);
         }
 
         @Override

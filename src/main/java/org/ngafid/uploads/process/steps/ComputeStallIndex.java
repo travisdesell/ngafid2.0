@@ -1,10 +1,11 @@
 package org.ngafid.uploads.process.steps;
 
 import org.ngafid.events.calculations.VSPDRegression;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,13 +16,13 @@ import java.util.logging.Logger;
 import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessStallIndex extends ProcessStep {
-    private static final Logger LOG = Logger.getLogger(ProcessStallIndex.class.getName());
+public class ComputeStallIndex extends ComputeStep {
+    private static final Logger LOG = Logger.getLogger(ComputeStallIndex.class.getName());
 
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(STALL_DEPENDENCIES);
     private static final Set<String> OUTPUT_COLUMNS = Set.of(STALL_PROB, TAS_FTMIN, VSPD_CALCULATED, CAS);
 
-    public ProcessStallIndex(Connection connection, FlightBuilder builder) {
+    public ComputeStallIndex(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 
@@ -39,6 +40,11 @@ public class ProcessStallIndex extends ProcessStep {
 
     public Set<String> getOutputColumns() {
         return OUTPUT_COLUMNS;
+    }
+
+    @Override
+    public boolean airframeIsValid(Airframes.Airframe airframe) {
+        return true;
     }
 
     public boolean airframeIsValid(String airframe) {

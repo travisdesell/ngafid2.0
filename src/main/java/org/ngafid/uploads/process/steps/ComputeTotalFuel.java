@@ -2,8 +2,8 @@ package org.ngafid.uploads.process.steps;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,14 +15,14 @@ import static org.ngafid.flights.Airframes.AIRFRAME_DJI;
 import static org.ngafid.flights.Airframes.AIRFRAME_SCAN_EAGLE;
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessTotalFuel extends ProcessStep {
-    private static final Logger LOG = Logger.getLogger(ProcessTotalFuel.class.getName());
+public class ComputeTotalFuel extends ComputeStep {
+    private static final Logger LOG = Logger.getLogger(ComputeTotalFuel.class.getName());
 
     private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(FUEL_QTY_LEFT, FUEL_QTY_RIGHT);
     private static Set<String> OUTPUT_COLUMNS = Set.of(TOTAL_FUEL);
     private static Set<String> AIRFRAME_BLACKLIST = Set.of(AIRFRAME_SCAN_EAGLE, AIRFRAME_DJI);
 
-    public ProcessTotalFuel(Connection connection, FlightBuilder builder) {
+    public ComputeTotalFuel(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 

@@ -9,7 +9,6 @@ package org.ngafid.events.calculations;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -33,7 +32,7 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
         this.cache = cache;
     }
 
-    public CalculatedDoubleTimeSeries(String name, String dataType, boolean cache, Flight flight) throws SQLException {
+    public CalculatedDoubleTimeSeries(String name, String dataType, boolean cache, Flight flight) {
         super(name, dataType);
         this.cache = cache;
         this.flight = flight;
@@ -44,7 +43,7 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      *
      * @param calculation the calculation to use to get the new {@link DoubleTimeSeries}
      */
-    public void create(Calculation calculation) throws IOException, SQLException {
+    public void create(Calculation calculation) {
         for (int i = 0; i < this.flight.getNumberRows(); i++) {
             super.add(calculation.calculate(i));
         }

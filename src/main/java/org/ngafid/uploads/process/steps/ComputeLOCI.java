@@ -1,9 +1,10 @@
 package org.ngafid.uploads.process.steps;
 
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,12 +16,12 @@ import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Flight.calculateLOCI;
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessLOCI extends ProcessStep {
-    private static final Logger LOG = Logger.getLogger(ProcessLOCI.class.getName());
+public class ComputeLOCI extends ComputeStep {
+    private static final Logger LOG = Logger.getLogger(ComputeLOCI.class.getName());
 
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
 
-    public ProcessLOCI(Connection connection, FlightBuilder builder) {
+    public ComputeLOCI(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 
@@ -38,6 +39,11 @@ public class ProcessLOCI extends ProcessStep {
 
     public Set<String> getOutputColumns() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public boolean airframeIsValid(Airframes.Airframe airframe) {
+        return true;
     }
 
     public boolean airframeIsValid(String airframe) {

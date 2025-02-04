@@ -7,7 +7,9 @@ import org.ngafid.common.airports.Airport;
 import org.ngafid.common.airports.Airports;
 import org.ngafid.common.airports.Runway;
 import org.ngafid.common.filters.Filter;
+import org.ngafid.events.Event;
 import org.ngafid.events.calculations.CalculatedDoubleTimeSeries;
+import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.events.calculations.VSPDRegression;
 import org.ngafid.uploads.Upload;
 import org.ngafid.uploads.process.FlightMeta;
@@ -55,6 +57,7 @@ public class Flight {
     private static final String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, " +
             "airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status," + " " +
             "has_coords, has_agl, insert_completed, processing_status";
+
     private final String filename;
     private final String systemId;
     private final String md5Hash;
@@ -89,10 +92,12 @@ public class Flight {
     private List<FlightTag> tags = null;
     private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
     private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
+    private List<Event> events = new ArrayList<>();
+    private List<TurnToFinal> turnToFinal = new ArrayList<>();
 
     public Flight(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
                   Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary,
-                  List<MalformedFlightFileException> exceptions) throws SQLException {
+                  List<MalformedFlightFileException> exceptions, List<Event> events) {
         fleetId = meta.fleetId;
         uploaderId = meta.uploaderId;
         uploadId = meta.uploadId;
@@ -115,6 +120,8 @@ public class Flight {
 
         this.exceptions = exceptions;
         checkExceptions();
+
+        this.events = events;
 
         this.stringTimeSeries = Map.copyOf(stringTimeSeries);
         this.doubleTimeSeries = Map.copyOf(doubleTimeSeries);
@@ -1215,6 +1222,7 @@ public class Flight {
 
             warningPreparedStatement.executeBatch();
         }
+
         try (PreparedStatement processingStatusStatement = connection.prepareStatement("UPDATE flights SET " +
                 "insert_completed = 1 WHERE id = ?")) {
 
@@ -1225,6 +1233,9 @@ public class Flight {
 
             processingStatusStatement.executeBatch();
         }
+
+        for (Flight flight : flights)
+            Event.batchInsertion(connection, flight, flight.events);
     }
 
     private static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
@@ -1534,8 +1545,8 @@ public class Flight {
 
         if (this.isC172()) {
             CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(connection, CAS, "knots", true, this);
+            DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
             cas.create(index -> {
-                DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
                 double iasValue = ias.get(index);
 
                 if (iasValue < 70.d) {
@@ -1559,17 +1570,17 @@ public class Flight {
             DoubleTimeSeries hdgLagged = hdg.lag(connection, YAW_RATE_LAG);
             CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(connection, PRO_SPIN_FORCE, "index",
                     true, this);
+            DoubleTimeSeries roll = getDoubleTimeSeries(ROLL);
+            DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
             coordIndex.create(index -> {
-                DoubleTimeSeries roll = getDoubleTimeSeries(ROLL);
-                DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
-
                 double laggedHdg = hdgLagged.get(index);
                 return calculateLOCI(hdg, index, roll, tas, laggedHdg);
             });
 
             CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(connection, LOCI, "index", true, this);
+            var prospin = getDoubleTimeSeries(PRO_SPIN_FORCE);
             loci.create(index -> {
-                double prob = (stallIndex.get(index) * getDoubleTimeSeries(PRO_SPIN_FORCE).get(index));
+                double prob = (stallIndex.get(index) * prospin.get(index));
                 return prob / 100;
             });
         }
@@ -1580,10 +1591,9 @@ public class Flight {
             throws SQLException, IOException {
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio",
                 false, this);
+        DoubleTimeSeries baroA = getDoubleTimeSeries(BARO_A);
+        DoubleTimeSeries oat = getDoubleTimeSeries(OAT);
         densityRatio.create(index -> {
-            DoubleTimeSeries baroA = getDoubleTimeSeries(BARO_A);
-            DoubleTimeSeries oat = getDoubleTimeSeries(OAT);
-
             double pressRatio = baroA.get(index) / STD_PRESS_INHG;
             double tempRatio = (273 + oat.get(index)) / 288;
 
@@ -1606,16 +1616,13 @@ public class Flight {
             throws SQLException, IOException {
         CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(connection, TAS_FTMIN, "ft/min", false,
                 this);
-        tasFtMin.create(index -> {
-            DoubleTimeSeries airspeed = this.isC172() ? getDoubleTimeSeries(CAS) : getDoubleTimeSeries(IAS);
-
-            return (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
-        });
+        DoubleTimeSeries airspeed = this.isC172() ? getDoubleTimeSeries(CAS) : getDoubleTimeSeries(IAS);
+        tasFtMin.create(index -> (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60));
 
         CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(connection, AOA_SIMPLE,
                 "degrees", true, this);
+        DoubleTimeSeries pitch = getDoubleTimeSeries(PITCH);
         aoaSimple.create(index -> {
-            DoubleTimeSeries pitch = getDoubleTimeSeries(PITCH);
 
             double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
             double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));

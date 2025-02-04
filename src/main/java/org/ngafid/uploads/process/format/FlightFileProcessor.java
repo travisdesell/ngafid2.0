@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -65,20 +64,12 @@ public abstract class FlightFileProcessor {
     public Stream<Flight> flights = null;
     public final ArrayList<FlightProcessingException> buildExceptions = new ArrayList<>();
 
-    private Flight build(FlightBuilder fb) {
+    private FlightBuilder build(FlightBuilder fb) {
         try {
             return fb.build(connection);
         } catch (FlightProcessingException e) {
             buildExceptions.add(e);
         }
         return null;
-    }
-
-    public FlightFileProcessor pipelinedBuild() {
-        if (parseException == null) {
-            flights = parsedFlightBuilders.map(this::build).filter(Objects::nonNull);
-        }
-
-        return this;
     }
 }

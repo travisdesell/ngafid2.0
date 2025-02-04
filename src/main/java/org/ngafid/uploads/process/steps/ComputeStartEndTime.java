@@ -3,8 +3,8 @@ package org.ngafid.uploads.process.steps;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,12 +17,12 @@ import java.util.logging.Logger;
 
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessStartEndTime extends ProcessStep {
-    private static final Logger LOG = Logger.getLogger(ProcessStartEndTime.class.getName());
+public class ComputeStartEndTime extends ComputeStep {
+    private static final Logger LOG = Logger.getLogger(ComputeStartEndTime.class.getName());
 
     private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(LCL_DATE, LCL_TIME, UTC_OFFSET);
 
-    public ProcessStartEndTime(Connection connection, FlightBuilder builder) {
+    public ComputeStartEndTime(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 

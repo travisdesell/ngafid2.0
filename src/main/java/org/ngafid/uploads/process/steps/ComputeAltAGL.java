@@ -15,11 +15,11 @@ import java.util.Set;
 
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessAltAGL extends ProcessStep {
+public class ComputeAltAGL extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);
     private static final Set<String> OUTPUT_COLUMNS = Set.of(ALT_AGL);
 
-    public ProcessAltAGL(Connection connection, FlightBuilder builder) {
+    public ComputeAltAGL(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 

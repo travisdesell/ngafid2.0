@@ -6,14 +6,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public final class TypeName extends NormalizedColumn<TypeName> {
-    private static Class<TypeName> clazz = TypeName.class;
-
     public TypeName(String name) {
-        super(clazz, name);
+        super(name);
     }
 
     public TypeName(int id) {
-        super(clazz, id);
+        super(id);
     }
 
     public TypeName(int id, String name) {
@@ -21,11 +19,11 @@ public final class TypeName extends NormalizedColumn<TypeName> {
     }
 
     public TypeName(Connection connection, int id) throws SQLException {
-        super(clazz, connection, id);
+        super(connection, id);
     }
 
     public TypeName(Connection connection, String name) throws SQLException {
-        super(clazz, connection, name);
+        super(connection, name);
     }
 
     @Override

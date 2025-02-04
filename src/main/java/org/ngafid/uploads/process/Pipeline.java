@@ -1,6 +1,8 @@
 package org.ngafid.uploads.process;
 
 import org.ngafid.common.Database;
+import org.ngafid.events.Event;
+import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.flights.Flight;
 import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.uploads.Upload;
@@ -135,7 +137,7 @@ public class Pipeline implements AutoCloseable {
                 .parallel()
                 .forEach((ZipEntry ze) -> {
                     try (Connection connection = Database.getConnection()) {
-                        List<Flight> f = this
+                        List<FlightBuilder> fbuilders = this
                                 .parse(this.create(ze))
                                 .filter(Objects::nonNull)
                                 .parallel()
@@ -144,10 +146,15 @@ public class Pipeline implements AutoCloseable {
                                 .map(this::finalize)
                                 .collect(Collectors.toList());
 
-                        if (f.isEmpty())
+                        if (fbuilders.isEmpty())
                             return;
 
-                        Flight.batchUpdateDatabase(connection, upload, f);
+                        List<Flight> flights = fbuilders.stream().map(FlightBuilder::getFlight).toList();
+                        Flight.batchUpdateDatabase(connection, upload, flights);
+                        for (FlightBuilder builder : fbuilders) {
+                            Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
+                            TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
+                        }
                     } catch (SQLException | IOException e) {
                         LOG.info("Encountered SQLException trying to get database connection...");
                         e.printStackTrace();
@@ -224,8 +231,9 @@ public class Pipeline implements AutoCloseable {
      *
      * @returns a flight object if there are no exceptions, otherwise returns `null`.
      */
-    public Flight build(Connection connection, FlightBuilder fb) {
+    public FlightBuilder build(Connection connection, FlightBuilder fb) {
         try {
+            fb.meta.setFleetId(this.upload.fleetId);
             return fb.build(connection);
         } catch (FlightProcessingException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
@@ -240,14 +248,16 @@ public class Pipeline implements AutoCloseable {
      *
      * @returns a list of `Flight` objects, having filtered out any `null` values.
      */
-    public List<Flight> build(Connection connection, Stream<FlightBuilder> fbs) {
+    public List<FlightBuilder> build(Connection connection, Stream<FlightBuilder> fbs) {
         return fbs.map(fb -> this.build(connection, fb)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**
      * Tabulates various flight information.
      */
-    public Flight finalize(Flight flight) {
+    public FlightBuilder finalize(FlightBuilder builder) {
+        Flight flight = builder.getFlight();
+
         if (flight.getStatus().equals("WARNING")) {
             warningFlightsCount.incrementAndGet();
         } else {
@@ -259,7 +269,7 @@ public class Pipeline implements AutoCloseable {
         flightInfo.put(flight.getFilename(),
                 new ProcessUpload.FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
-        return flight;
+        return builder;
     }
 
     /**

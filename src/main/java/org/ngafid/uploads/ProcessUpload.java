@@ -2,12 +2,13 @@ package org.ngafid.uploads;
 
 import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
-import org.ngafid.bin.*;
+import org.ngafid.bin.CalculateExceedences;
+import org.ngafid.bin.FindSpinEvents;
+import org.ngafid.bin.UploadHelper;
 import org.ngafid.common.Database;
 import org.ngafid.common.SendEmail;
 import org.ngafid.events.proximity.CalculateProximity;
 import org.ngafid.flights.FlightError;
-import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.Pipeline;
 
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -251,12 +251,11 @@ public final class ProcessUpload {
         if (status.isProcessed()) {
             try {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
-                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+                // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
                 CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
                 CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
-                CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
-            } catch (IOException | SQLException | FatalFlightFileException | MalformedFlightFileException |
-                     ParseException e) {
+                // CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
+            } catch (IOException | SQLException e) {
                 LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
                 status = Upload.Status.FAILED_UNKNOWN;
                 uploadException = new Exception(e.toString() + "\nFailed computing events...");

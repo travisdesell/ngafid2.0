@@ -1,7 +1,7 @@
 package org.ngafid.uploads.process;
 
 import org.ngafid.uploads.process.format.FlightBuilder;
-import org.ngafid.uploads.process.steps.ProcessStep;
+import org.ngafid.uploads.process.steps.ComputeStep;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -38,7 +38,7 @@ public class DependencyGraph {
      * @param builder The builder object that contains the data source.
      * @param steps   The list of process steps to create nodes for.
      **/
-    public DependencyGraph(FlightBuilder builder, List<ProcessStep> steps) throws FlightProcessingException {
+    public DependencyGraph(FlightBuilder builder, List<ComputeStep> steps) throws FlightProcessingException {
         this.taskMap = new ConcurrentHashMap<>(steps.size() * 2);
         this.builder = builder;
 
@@ -57,7 +57,7 @@ public class DependencyGraph {
         return taskMap.computeIfAbsent(node, x -> x.fork());
     }
 
-    private void nodeConflictError(ProcessStep first, ProcessStep second) throws FatalFlightFileException {
+    private void nodeConflictError(ComputeStep first, ComputeStep second) throws FatalFlightFileException {
         throw new FatalFlightFileException("ERROR when building dependency graph! " + "Two ProcessSteps are indicated" +
                 " as having the same output column. " + "While it is possible for two ProcessSteps to have the same " +
                 "output column(s), " + "their use should be mutually exclusive from one another. " + "\nDEBUG INFO:\n" +
@@ -72,7 +72,7 @@ public class DependencyGraph {
      * @param step The process step to add to the graph.
      * @return The node that was created.
      */
-    private DependencyNode registerStep(ProcessStep step) throws FatalFlightFileException {
+    private DependencyNode registerStep(ComputeStep step) throws FatalFlightFileException {
         DependencyNode node = new DependencyNode(step);
         nodes.add(node);
 
@@ -201,7 +201,7 @@ public class DependencyGraph {
      * Dummy step meant to act as a root node in DAG. This is done by adding all the columns included in the file as
      * output columns, so all other steps will depend on this.
      **/
-    static class DummyStep extends ProcessStep {
+    static class DummyStep extends ComputeStep {
         private final Set<String> outputColumns = new HashSet<>();
 
         DummyStep(FlightBuilder builder) {
@@ -245,7 +245,7 @@ public class DependencyGraph {
         private static final long serialVersionUID = 0;
 
         // The process step to execute.
-        private final ProcessStep step;
+        private final ComputeStep step;
         // Outgoing edges.
         private final HashSet<DependencyNode> requiredBy = new HashSet<>(32);
         // Incoming edges.
@@ -258,7 +258,7 @@ public class DependencyGraph {
         // A list of exceptions that could be created during the execution of this process step.
         private final ArrayList<Exception> exceptions = new ArrayList<>();
 
-        DependencyNode(ProcessStep step) {
+        DependencyNode(ComputeStep step) {
             this.step = step;
         }
 

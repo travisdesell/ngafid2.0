@@ -1,17 +1,18 @@
 package org.ngafid.uploads.process.steps;
 
+import org.ngafid.flights.Airframes;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 
-public abstract class ProcessStep {
+public abstract class ComputeStep {
 
     public interface Factory {
-        ProcessStep create(Connection connection, FlightBuilder builder);
+        ComputeStep create(Connection connection, FlightBuilder builder);
     }
 
     public static Factory required(Factory factory) {
@@ -28,7 +29,7 @@ public abstract class ProcessStep {
     // This grabs the lock on the object so only one thread is using the connection at any given point in time.
     private Connection connection;
 
-    public ProcessStep(Connection connection, FlightBuilder builder) {
+    public ComputeStep(Connection connection, FlightBuilder builder) {
         this.connection = connection;
         this.builder = builder;
     }
@@ -50,11 +51,13 @@ public abstract class ProcessStep {
         return required;
     }
 
-    // Whether or not this ProcessStep can be performed for a given airframe
-    public abstract boolean airframeIsValid(String airframe);
+    // Whether this ProcessStep can be performed for a given airframe
+    public boolean airframeIsValid(Airframes.Airframe airframe) {
+        return true;
+    }
 
     public final boolean applicable() {
-        return airframeIsValid(builder.meta.airframe.getName())
+        return airframeIsValid(builder.meta.airframe)
                 && builder
                 .getStringTimeSeriesKeySet()
                 .containsAll(getRequiredStringColumns())
@@ -72,7 +75,7 @@ public abstract class ProcessStep {
         StringBuilder sb = new StringBuilder(
                 "Step '" + className + "' cannot be applied for the following reason(s):\n");
 
-        if (!airframeIsValid(builder.meta.airframe.getName())) {
+        if (!airframeIsValid(builder.meta.airframe)) {
             sb.append("  - airframeName '" + builder.meta.airframe.getName() + "' is invalid ("
                     + className + "::airframeIsValid returned false for airframeName '" + className + "')\n");
         }

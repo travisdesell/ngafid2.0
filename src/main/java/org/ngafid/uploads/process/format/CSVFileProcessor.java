@@ -10,7 +10,7 @@ import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.FlightProcessingException;
 import org.ngafid.uploads.process.Pipeline;
-import org.ngafid.uploads.process.steps.ProcessStep;
+import org.ngafid.uploads.process.steps.ComputeStep;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -47,14 +47,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
             super(meta, doubleTimeSeries, stringTimeSeries);
         }
 
-        private static final List<ProcessStep.Factory> processSteps = List.of();
+        private static final List<ComputeStep.Factory> processSteps = List.of();
 
         // This can be overridden.
-        protected List<ProcessStep> gatherSteps(Connection connection) {
+        protected List<ComputeStep> gatherSteps(Connection connection) {
             // Add all of our processing steps here...
             // The order doesn't matter; the DependencyGraph will resolve
             // the order in the event that there are dependencies.
-            List<ProcessStep> steps = super.gatherSteps(connection);
+            List<ComputeStep> steps = super.gatherSteps(connection);
             processSteps.stream().map(factory -> factory.create(connection, this)).forEach(steps::add);
             return steps;
         }

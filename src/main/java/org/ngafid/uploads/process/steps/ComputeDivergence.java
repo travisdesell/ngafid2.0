@@ -2,8 +2,8 @@ package org.ngafid.uploads.process.steps;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,7 +13,7 @@ import static java.util.Map.entry;
 import static org.ngafid.flights.Airframes.*;
 import static org.ngafid.flights.Parameters.Unit;
 
-public class ProcessDivergence extends ProcessStep {
+public class ComputeDivergence extends ComputeStep {
 
     private record DivergenceConfig(List<String> parameters, String output) {
     }
@@ -56,7 +56,7 @@ public class ProcessDivergence extends ProcessStep {
             entry(AIRFRAME_DIAMOND_DA_40, DIAMOND_CONFIG),
             entry(AIRFRAME_DIAMOND_DA40, DIAMOND_CONFIG));
 
-    public ProcessDivergence(Connection connection, FlightBuilder builder) {
+    public ComputeDivergence(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 

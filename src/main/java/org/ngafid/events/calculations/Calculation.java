@@ -7,9 +7,6 @@
 
 package org.ngafid.events.calculations;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 public interface Calculation {
     /**
      * This method contains the logic of the calculation for any index
@@ -17,6 +14,6 @@ public interface Calculation {
      * @param index the index to calculate at
      * @return the calculated value
      */
-    double calculate(int index) throws SQLException, IOException;
+    double calculate(int index);
 }
 

@@ -6,7 +6,7 @@ import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.Pipeline;
-import org.ngafid.uploads.process.steps.ProcessStep;
+import org.ngafid.uploads.process.steps.ComputeStep;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
         }
 
         @Override
-        protected List<ProcessStep> gatherSteps(Connection connection) {
+        protected List<ComputeStep> gatherSteps(Connection connection) {
             // As of now, none of our process steps apply to scan eagle data.
             return List.of();
         }

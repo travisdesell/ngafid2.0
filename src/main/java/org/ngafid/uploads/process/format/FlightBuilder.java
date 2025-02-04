@@ -1,5 +1,7 @@
 package org.ngafid.uploads.process.format;
 
+import org.ngafid.events.Event;
+import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Itinerary;
@@ -11,13 +13,12 @@ import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.steps.*;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.ngafid.uploads.process.steps.ProcessStep.required;
+import static org.ngafid.uploads.process.steps.ComputeStep.required;
 
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic
@@ -29,12 +30,25 @@ import static org.ngafid.uploads.process.steps.ProcessStep.required;
 public class FlightBuilder {
     private static Logger LOG = Logger.getLogger(FlightBuilder.class.getName());
 
+    //CHECKSTYLE:OFF
     // The only thing we require, by default, is a start and end time.
     // TODO: Determine if this is the exact behavior we want.
-    private static final List<ProcessStep.Factory> PROCESS_STEPS = List.of(required(ProcessStartEndTime::new),
-            ProcessAirportProximity::new, ProcessLaggedAltMSL::new, ProcessStallIndex::new, ProcessTotalFuel::new,
-            ProcessDivergence::new, ProcessLOCI::new, ProcessItinerary::new, ProcessAltAGL::new);
-    //CHECKSTYLE:OFF
+    private static final List<ComputeStep.Factory> PROCESS_STEPS = List.of(
+            required(ComputeStartEndTime::new),
+            ComputeAirportProximity::new,
+            ComputeLaggedAltMSL::new,
+            ComputeStallIndex::new,
+            ComputeTotalFuel::new,
+            ComputeDivergence::new,
+            ComputeLOCI::new,
+            ComputeItinerary::new,
+            ComputeAltAGL::new,
+            ComputeSpinEvents::new,
+            // ComputeTurnToFinal::new,
+            // ComputePitchEvents::new,
+            ComputeLowEndingFuelEvents::new
+    );
+
     // Flight meta data - see FlightMeta definition for details.
     public final FlightMeta meta;
     // A list of non-fatal exceptions: issues with the data that don't prevent us from ingesting the data.
@@ -51,6 +65,11 @@ public class FlightBuilder {
     //CHECKSTYLE:ON
     // A list of airports this aircraft visited.
     private ArrayList<Itinerary> itinerary = null;
+
+    private final ArrayList<Event> events = new ArrayList<>();
+    private final ArrayList<TurnToFinal> turnToFinals = new ArrayList<>();
+
+    private Flight flight = null;
 
     /**
      * Only constructor for FlightBuilder. Copies the entries in the time series maps.
@@ -72,7 +91,7 @@ public class FlightBuilder {
      * @param connection The connection to the database
      * @return A list of processing steps
      */
-    protected List<ProcessStep> gatherSteps(Connection connection) {
+    protected List<ComputeStep> gatherSteps(Connection connection) {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
@@ -93,7 +112,7 @@ public class FlightBuilder {
      * @return A flight object
      * @throws FlightProcessingException if an irrecoverable processing issue is encountered
      */
-    public Flight build(Connection connection) throws FlightProcessingException {
+    public FlightBuilder build(Connection connection) throws FlightProcessingException {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
         FlightProcessingException[] exception = new FlightProcessingException[]{null};
 
@@ -121,12 +140,13 @@ public class FlightBuilder {
 
         dg.compute();
 
-        try {
-            return new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new FlightProcessingException(e);
-        }
+        flight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
+
+        return this;
+    }
+
+    public final Flight getFlight() {
+        return flight;
     }
 
     // TODO: implement this hehe
@@ -282,4 +302,21 @@ public class FlightBuilder {
         this.meta.processingStatus |= processingStatus;
         return this;
     }
+
+    public void emitEvent(Event event) {
+        this.events.add(event);
+    }
+
+    public List<Event> getEvents() {
+        return events;
+    }
+
+    public void emitTurnToFinal(TurnToFinal turnToFinal) {
+        this.turnToFinals.add(turnToFinal);
+    }
+
+    public ArrayList<TurnToFinal> getTurnToFinals() {
+        return turnToFinals;
+    }
+
 }

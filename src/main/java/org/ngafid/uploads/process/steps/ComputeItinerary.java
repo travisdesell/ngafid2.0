@@ -4,8 +4,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,8 +15,8 @@ import java.util.logging.Logger;
 
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessItinerary extends ProcessStep {
-    private static final Logger LOG = Logger.getLogger(ProcessItinerary.class.getName());
+public class ComputeItinerary extends ComputeStep {
+    private static final Logger LOG = Logger.getLogger(ComputeItinerary.class.getName());
 
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE,
             RUNWAY_DISTANCE, GND_SPD, E1_RPM);
@@ -24,7 +24,7 @@ public class ProcessItinerary extends ProcessStep {
     // This is a fake column; never actually created.
     private static final Set<String> OUTPUT_COLUMNS = Set.of("_itinerary");
 
-    public ProcessItinerary(Connection connection, FlightBuilder builder) {
+    public ComputeItinerary(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 

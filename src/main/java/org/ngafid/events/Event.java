@@ -1,6 +1,7 @@
 package org.ngafid.events;
 
 import org.ngafid.flights.Airframes;
+import org.ngafid.flights.Flight;
 
 import java.io.IOException;
 import java.sql.*;
@@ -441,55 +442,89 @@ public class Event {
         }
     }
 
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO events (fleet_id, " +
+                "flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, " +
+                "other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+    }
+
+    public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
+        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
+            for (Event event : events) {
+                event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+            }
+            preparedStatement.executeBatch();
+
+            try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+                int i = 0;
+                while (resultSet.next()) {
+                    events.get(i).updateDatabaseMetadata(connection, resultSet.getInt(1));
+                    i += 1;
+                }
+            }
+        }
+    }
+
+    public void addBatch(PreparedStatement preparedStatement, int fleetId, int flightId, int eventDefinitionId) throws SQLException {
+        this.eventDefinitionId = eventDefinitionId;
+        this.flightId = flightId;
+        this.fleetId = fleetId;
+
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setInt(2, flightId);
+        preparedStatement.setInt(3, eventDefinitionId);
+        preparedStatement.setInt(4, startLine);
+        preparedStatement.setInt(5, endLine);
+
+        if (startTime.equals(" ")) {
+            preparedStatement.setString(6, null);
+        } else {
+            preparedStatement.setString(6, startTime);
+        }
+
+        if (endTime.equals(" ")) {
+            preparedStatement.setString(7, null);
+        } else {
+            preparedStatement.setString(7, endTime);
+        }
+
+        preparedStatement.setDouble(8, severity);
+
+        if (otherFlightId == null) {
+            preparedStatement.setNull(9, java.sql.Types.INTEGER);
+        } else {
+            preparedStatement.setInt(9, otherFlightId);
+        }
+
+        preparedStatement.addBatch();
+    }
+
     public void updateDatabase(Connection connection, int fleetIdUpdated, int flightIdUpdated, int eventDefId)
             throws IOException, SQLException {
         this.flightId = flightIdUpdated;
         this.eventDefinitionId = eventDefId;
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, " +
-                "flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, " +
-                "other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setInt(1, fleetIdUpdated);
-            preparedStatement.setInt(2, flightIdUpdated);
-            preparedStatement.setInt(3, eventDefId);
-            preparedStatement.setInt(4, startLine);
-            preparedStatement.setInt(5, endLine);
-
-            if (startTime.equals(" ")) {
-                preparedStatement.setString(6, null);
-            } else {
-                preparedStatement.setString(6, startTime);
-            }
-
-            if (endTime.equals(" ")) {
-                preparedStatement.setString(7, null);
-            } else {
-                preparedStatement.setString(7, endTime);
-            }
-
-            preparedStatement.setDouble(8, severity);
-
-            if (otherFlightId == null) {
-                preparedStatement.setNull(9, java.sql.Types.INTEGER);
-            } else {
-                preparedStatement.setInt(9, otherFlightId);
-            }
-
-            preparedStatement.executeUpdate();
+        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
+            addBatch(preparedStatement, fleetId, flightId, eventDefId);
+            preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
                 if (resultSet.next()) {
                     int eventId = resultSet.getInt(1);
-                    if (this.rateOfClosure != null) {
-                        this.rateOfClosure.updateDatabase(connection, eventId);
-                    }
-
-                    if (this.metaDataList != null && !this.metaDataList.isEmpty()) {
-                        for (EventMetaData metaData : this.metaDataList) {
-                            metaData.updateDatabase(connection, eventId);
-                        }
-                    }
+                    updateDatabaseMetadata(connection, eventId);
                 }
+            }
+        }
+    }
+
+    private void updateDatabaseMetadata(Connection connection, int eventId) throws SQLException, IOException {
+        if (this.rateOfClosure != null) {
+            this.rateOfClosure.updateDatabase(connection, eventId);
+        }
+
+        if (this.metaDataList != null && !this.metaDataList.isEmpty()) {
+            for (EventMetaData metaData : this.metaDataList) {
+                metaData.updateDatabase(connection, eventId);
             }
         }
     }

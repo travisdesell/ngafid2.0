@@ -2,8 +2,8 @@ package org.ngafid.uploads.process.steps;
 
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
-import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,13 +14,13 @@ import static org.ngafid.flights.Airframes.AIRFRAME_DJI;
 import static org.ngafid.flights.Airframes.AIRFRAME_SCAN_EAGLE;
 import static org.ngafid.flights.Parameters.*;
 
-public class ProcessLaggedAltMSL extends ProcessStep {
+public class ComputeLaggedAltMSL extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL);
     private static final Set<String> OUTPUT_COLUMNS = Set.of(ALT_MSL_LAG_DIFF);
     private static final Set<String> AIRFRAME_BLACKLIST = Set.of(AIRFRAME_SCAN_EAGLE, AIRFRAME_DJI);
     private static final int LAG = 10;
 
-    public ProcessLaggedAltMSL(Connection connection, FlightBuilder builder) {
+    public ComputeLaggedAltMSL(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 
