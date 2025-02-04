@@ -161,69 +161,60 @@ def run_chart_processor(date):
     except Exception as e:
         logging.error(f"Unexpected error running chartProcessor: {e}")
 
+def get_next_update_date(schedule, today_date):
+    """
+    Find the next update date after today.
+    :param schedule: List of update dates in MM-DD-YYYY format
+    :param today_date: Today's date as a datetime object or string
+    :return: The next update date as a string or None if not found
+    """
+    # Convert today_date to datetime if it's a string
+    if isinstance(today_date, str):
+        today_date = datetime.strptime(today_date, "%m-%d-%Y")
+
+    for date_str in schedule:
+        update_date = datetime.strptime(date_str, "%m-%d-%Y")
+        if update_date > today_date:
+            return date_str
+
+    return None  # No future update dates found
+
 
 def start_update_checker():
-    """
-    Schedule the update checker to run daily at midnight.
-    If today is the day of tif file release (specified in chart_service_config.json),
-    runs run_chart_processor() function to start the update process.
-    """
-
-    def get_next_update_date(schedule, today_date):
-        """
-        Find the next update date after today.
-        :param schedule: List of update dates in MM-DD-YYYY format
-        :param today_date: Today's date as a datetime object
-        :return: The next update date as a string or None if not found
-        """
-        for date_str in schedule:
-            update_date = datetime.strptime(date_str, "%m-%d-%Y")
-            if update_date > today_date:
-                return date_str
-        return None  # No future update dates found
-
     def checker():
-        # Load the update schedule
         schedule = load_schedule()
+        isFirstUpdate = True
 
-        # Perform the initial check for today's date
-        logging.info("Performing initial update check.")
-        today = datetime.now().strftime("%m-%d-%Y")
-        if is_update_due(schedule, today):
-            logging.info(f"The update is due for today: {today}. Running chart processor.")
-            run_chart_processor(today)
-        else:
-            next_update = get_next_update_date(schedule, datetime.now())
-            if next_update:
-                logging.info(f"Today: {today} is not the chart update date. The next update is scheduled for {next_update}.")
-            else:
-                logging.info(f"Today: {today} is not the chart update date, and no future updates are scheduled.")
-
-        # Enter the daily scheduling loop to check for updates
         while not stop_event.is_set():
-            logging.info("Entering the daily update checker loop.")
-            now = datetime.now()
-            next_midnight = datetime.combine(now.date(), datetime.min.time()) + timedelta(days=1)
-            sleep_duration = (next_midnight - now).total_seconds()
-            logging.info(f"Sleeping for {sleep_duration} seconds until midnight.")
-            stop_event.wait(timeout=sleep_duration)
+            try:
+                now = datetime.now()
+                today = now.strftime("%m-%d-%Y")
+                logging.info(f"Checking update schedule at: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
-            if not stop_event.is_set():
-                logging.info("Stop event not set; proceeding with update check.")
-                today = datetime.now().strftime("%m-%d-%Y")
-                if is_update_due(schedule, today):
-                    logging.info(f"The update is due for today: {today}. Running chart processor.")
-                    run_chart_processor(today)
-                else:
-                    next_update = get_next_update_date(schedule, datetime.now())
-                    if next_update:
-                        logging.info(f"Today: {today} is not the chart update date. The next update is scheduled for {next_update}.")
+                # Perform update only at midnight
+                if isFirstUpdate or now.hour == 0:
+                    if isFirstUpdate:
+                        logging.info("Performing initial update update check.")
+                        isFirstUpdate = False
                     else:
-                        logging.info(f"Today: {today} is not the chart update date, and no future updates are scheduled.")
+                        logging.info("Performing scheduled update check.")
+
+                    if is_update_due(schedule, today):
+                        logging.info(f"Update due for today: {today}. Running chart processor.")
+                        run_chart_processor(today)
+                    else:
+                        logging.info(f"No update due today: {today}.")
+                        nextUpdate = get_next_update_date(schedule,today)
+                        logging.info(f"Next update is due: {nextUpdate}")
+
+                # Sleep for 1 hour until the next check
+                stop_event.wait(timeout=3600)
+
+            except Exception as e:
+                logging.error(f"Unexpected error in update checker loop: {e}", exc_info=True)
 
     thread = threading.Thread(target=checker, daemon=True)
     thread.start()
-
 
 
 class TileRequestHandler(SimpleHTTPRequestHandler):

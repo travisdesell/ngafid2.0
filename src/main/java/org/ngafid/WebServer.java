@@ -156,6 +156,7 @@ public abstract class WebServer {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(installProcess.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
+                        // Comment this out / remove when the chart service system is tested and stable.
                         System.out.println(line);
                     }
                 }
