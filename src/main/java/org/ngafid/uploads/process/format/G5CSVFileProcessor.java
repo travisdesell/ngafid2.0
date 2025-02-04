@@ -1,12 +1,5 @@
 package org.ngafid.uploads.process.format;
 
-import org.jetbrains.annotations.NotNull;
-import org.ngafid.common.TimeUtils;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.uploads.process.*;
-
-import javax.xml.bind.DatatypeConverter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,12 +12,29 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.bind.DatatypeConverter;
+
+import org.jetbrains.annotations.NotNull;
+import org.ngafid.common.TimeUtils;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.FatalFlightFileException;
+import org.ngafid.uploads.process.FlightFileFormatException;
+import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.FlightProcessingException;
+import org.ngafid.uploads.process.Pipeline;
 
 /**
  * File processor for Garmin G5 (and G3x, I think).
@@ -97,7 +107,11 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
 
         List<String[]> rows = extractFlightData();
 
-        readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
+        try {
+            readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
+        } catch (FatalFlightFileException ex) {
+            throw new FlightProcessingException(ex);
+        }
 
         // We cannot filter out "invalid" rows or else our aircraft will travel through time. Many of our analyses assume a 1-second gap.
         // rows = filterInvalidRows(rows, latitudeIndex, longitudeIndex);
