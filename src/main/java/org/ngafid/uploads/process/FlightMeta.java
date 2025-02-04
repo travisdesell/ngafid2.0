@@ -42,6 +42,7 @@ public final class FlightMeta {
         this.filename = other.filename;
         this.calculated = other.calculated;
         this.suggestedTailNumber = other.suggestedTailNumber;
+        this.numberRows = other.numberRows;
 
         // Deep copy of Airframe, AirframeType  if not null
         this.airframe = other.airframe;
