@@ -338,7 +338,9 @@ class Import extends React.Component {
         let cardClasses = (textClasses + colorClasses);
 
         console.log("Import Info: ", importInfo);
-        let totalFlights = (importInfo.validFlights + importInfo.warningFlights + importInfo.errorFlights);
+        let totalFlights = (importInfo.validFlights + importInfo.errorFlights);
+
+        let hasWarnings = (importInfo.warningFlights > 0);
 
         return (
             <div className="m-2">
@@ -357,7 +359,11 @@ class Import extends React.Component {
                             className="d-flex flex-row"
                             style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_valid)" }}
                         >
-                            <i className="fa fa-check" style={{alignContent:"center"}} aria-hidden="true" />
+                            {
+                                (hasWarnings)
+                                ? <i className="fa fa-check" style={{alignContent:"center", color: "var(--c_warning)"}} title="Flights with non-critical Warnings are included as Valid flights."/> 
+                                : <i className="fa fa-check" style={{alignContent:"center", color: "white"}} title="No Flights in this upload have Warnings."/> 
+                            }
                             <div>&nbsp;Valid:</div>
                             <div style={{textAlign:"end", width:"100%"}}>{importInfo.validFlights}&nbsp;</div>
                         </div>
