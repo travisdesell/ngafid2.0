@@ -8,7 +8,6 @@ import org.ngafid.common.airports.Airports;
 import org.ngafid.common.airports.Runway;
 import org.ngafid.common.filters.Filter;
 import org.ngafid.events.Event;
-import org.ngafid.events.calculations.CalculatedDoubleTimeSeries;
 import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.events.calculations.VSPDRegression;
 import org.ngafid.uploads.Upload;
@@ -1544,92 +1543,84 @@ public class Flight {
         checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
 
         if (this.isC172()) {
-            CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(connection, CAS, "knots", true, this);
             DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
-            cas.create(index -> {
-                double iasValue = ias.get(index);
+            DoubleTimeSeries cas = DoubleTimeSeries.computed(CAS, "knots", ias.size(),
+                    index -> {
+                        double iasValue = ias.get(index);
 
-                if (iasValue < 70.d) {
-                    iasValue = (0.7d * iasValue) + 20.667;
-                }
+                        if (iasValue < 70.d) {
+                            iasValue = (0.7d * iasValue) + 20.667;
+                        }
 
-                return iasValue;
-            });
+                        return iasValue;
+                    });
+            this.addDoubleTimeSeries(CAS, cas);
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft" +
-                "/min", true, this);
-        vspdCalculated.create(new VSPDRegression(getDoubleTimeSeries(ALT_B)));
+        DoubleTimeSeries vspdCalculated = DoubleTimeSeries.computed(VSPD_CALCULATED, "ft/min", this.getNumberRows(), new VSPDRegression(getDoubleTimeSeries(ALT_B)));
+        this.addDoubleTimeSeries(VSPD_CALCULATED, vspdCalculated);
 
-        CalculatedDoubleTimeSeries stallIndex = getCalculatedDoubleTimeSeries(connection, vspdCalculated);
+        DoubleTimeSeries stallIndex = computeStallIndex(connection, vspdCalculated);
 
         if (this.isC172()) {
             // We still can only perform a LOC-I calculation on the Skyhawks. This can be changed down the road
             checkCalculationParameters(LOCI, LOCI_DEPENDENCIES);
             DoubleTimeSeries hdg = getDoubleTimeSeries(HDG);
             DoubleTimeSeries hdgLagged = hdg.lag(connection, YAW_RATE_LAG);
-            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(connection, PRO_SPIN_FORCE, "index",
-                    true, this);
             DoubleTimeSeries roll = getDoubleTimeSeries(ROLL);
             DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
-            coordIndex.create(index -> {
-                double laggedHdg = hdgLagged.get(index);
-                return calculateLOCI(hdg, index, roll, tas, laggedHdg);
-            });
+            DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", this.getNumberRows(),
+                    index -> {
+                        double laggedHdg = hdgLagged.get(index);
+                        return calculateLOCI(hdg, index, roll, tas, laggedHdg);
+                    });
+            this.addDoubleTimeSeries(PRO_SPIN_FORCE, coordIndex);
 
-            CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(connection, LOCI, "index", true, this);
-            var prospin = getDoubleTimeSeries(PRO_SPIN_FORCE);
-            loci.create(index -> {
-                double prob = (stallIndex.get(index) * prospin.get(index));
+            DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", this.getNumberRows(), index -> {
+                double prob = (stallIndex.get(index) * coordIndex.get(index));
                 return prob / 100;
             });
+            this.addDoubleTimeSeries(LOCI, loci);
         }
     }
 
-    private CalculatedDoubleTimeSeries getCalculatedDoubleTimeSeries(Connection connection,
-                                                                     CalculatedDoubleTimeSeries vspdCalculated)
+    private DoubleTimeSeries computeStallIndex(Connection connection,
+                                               DoubleTimeSeries vspdCalculated)
             throws SQLException, IOException {
-        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio",
-                false, this);
         DoubleTimeSeries baroA = getDoubleTimeSeries(BARO_A);
         DoubleTimeSeries oat = getDoubleTimeSeries(OAT);
-        densityRatio.create(index -> {
-            double pressRatio = baroA.get(index) / STD_PRESS_INHG;
-            double tempRatio = (273 + oat.get(index)) / 288;
+        DoubleTimeSeries densityRatio = DoubleTimeSeries.computed(DENSITY_RATIO, "ratio", this.getNumberRows(),
+                index -> {
+                    double pressRatio = baroA.get(index) / STD_PRESS_INHG;
+                    double tempRatio = (273 + oat.get(index)) / 288;
 
-            return pressRatio / tempRatio;
-        });
+                    return pressRatio / tempRatio;
+                });
 
-        CalculatedDoubleTimeSeries aoaSimple = getCalculatedDoubleTimeSeries(connection, vspdCalculated, densityRatio);
+        DoubleTimeSeries aoaSimple = computeAngleOfAttack(vspdCalculated, densityRatio);
 
-        CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(connection, STALL_PROB, "index", true,
-                this);
-        stallIndex.create(index -> {
+        DoubleTimeSeries stallIndex = DoubleTimeSeries.computed(STALL_PROB, "index", this.getNumberRows(), index -> {
             return (Math.min(((Math.abs(aoaSimple.get(index) / AOA_CRIT)) * 100), 100)) / 100;
         });
         return stallIndex;
     }
 
-    private CalculatedDoubleTimeSeries getCalculatedDoubleTimeSeries(Connection connection,
-                                                                     CalculatedDoubleTimeSeries vspdCalculated,
-                                                                     CalculatedDoubleTimeSeries densityRatio)
+    private DoubleTimeSeries computeAngleOfAttack(DoubleTimeSeries vspdCalculated,
+                                                  DoubleTimeSeries densityRatio)
             throws SQLException, IOException {
-        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(connection, TAS_FTMIN, "ft/min", false,
-                this);
         DoubleTimeSeries airspeed = this.isC172() ? getDoubleTimeSeries(CAS) : getDoubleTimeSeries(IAS);
-        tasFtMin.create(index -> (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60));
-
-        CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(connection, AOA_SIMPLE,
-                "degrees", true, this);
+        DoubleTimeSeries tasFtMin = DoubleTimeSeries.computed(TAS_FTMIN, "ft/min", this.getNumberRows(), index -> (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60));
         DoubleTimeSeries pitch = getDoubleTimeSeries(PITCH);
-        aoaSimple.create(index -> {
+        DoubleTimeSeries aoaSimple = DoubleTimeSeries.computed(AOA_SIMPLE,
+                "degrees", this.getNumberRows(), index -> {
+                    double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
+                    double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
+                    fltPthAngle = fltPthAngle * (180 / Math.PI);
 
-            double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
-            double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
-            fltPthAngle = fltPthAngle * (180 / Math.PI);
+                    return pitch.get(index) - fltPthAngle;
+                });
+        this.addDoubleTimeSeries(AOA_SIMPLE, aoaSimple);
 
-            return pitch.get(index) - fltPthAngle;
-        });
         return aoaSimple;
     }
 

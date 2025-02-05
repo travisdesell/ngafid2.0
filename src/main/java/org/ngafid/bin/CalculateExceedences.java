@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
@@ -34,6 +35,7 @@ public class CalculateExceedences {
     private final Conditional conditional;
     private final int startBuffer;
     private final int stopBuffer;
+    private final EventDefinition definition;
 
     /**
      * Constructor
@@ -45,6 +47,7 @@ public class CalculateExceedences {
         this.conditional = new Conditional(filter);
         this.startBuffer = eventDefinition.getStartBuffer();
         this.stopBuffer = eventDefinition.getStopBuffer();
+        this.definition = eventDefinition;
     }
 
     private boolean flightHadError(Connection connection, Flight flight, EventDefinition eventDefinition,
@@ -86,12 +89,9 @@ public class CalculateExceedences {
         return false;
     }
 
-    private List<Event> calculateAllPitchEvents(Flight flight, DoubleTimeSeries[] doubleSeries,
-                                                StringTimeSeries dateSeries, StringTimeSeries timeSeries,
-                                                EventDefinition eventDefinition,
-                                                UploadProcessedEmail uploadProcessedEmail) {
-        int flightId = flight.getId();
-        String flightFilename = flight.getFilename();
+    public List<Event> searchForEvent(Map<String, DoubleTimeSeries> doubleSeries,
+                                      StringTimeSeries dateSeries,
+                                      StringTimeSeries timeSeries) {
 
         int lineNumber = 0;
         String startTime = null;
@@ -106,15 +106,15 @@ public class CalculateExceedences {
         List<Event> eventList = new ArrayList<>();
 
         // skip the first 30 seconds as that is usually the FDR being initialized
-        for (int i = 30; i < doubleSeries[0].size(); i++) {
+        for (int i = 30; i < dateSeries.size(); i++) {
             // for (i = 0; i < doubleSeries[0].size(); i++) {
             lineNumber = i;
 
             // LOG.info("Pre-set conditional: " + conditional.toString());
 
             conditional.reset();
-            for (DoubleTimeSeries series : doubleSeries) {
-                conditional.set(series.getName(), series.get(i));
+            for (Map.Entry<String, DoubleTimeSeries> entry : doubleSeries.entrySet()) {
+                conditional.set(entry.getKey(), entry.getValue().get(i));
             }
             // LOG.info("Post-set conditional: " + conditional.toString());
 
@@ -135,6 +135,7 @@ public class CalculateExceedences {
                         if (startCount >= startBuffer) {
                             // we had enough triggers to reach the start count so create the event
                             Event event = new Event(startTime, endTime, startLine, endLine, severity);
+                            event.setEventDefinitionId(definition.getId());
                             eventList.add(event);
                         }
 
@@ -156,13 +157,13 @@ public class CalculateExceedences {
                 if (startTime == null) {
                     startTime = dateSeries.get(i) + " " + timeSeries.get(i);
                     startLine = lineNumber;
-                    severity = eventDefinition.getSeverity(doubleSeries, i);
+                    severity = definition.getSeverity(doubleSeries, i);
 
                     LOG.info("start date time: " + startTime + ", start line number: " + startLine);
                 }
                 endLine = lineNumber;
                 endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-                severity = eventDefinition.updateSeverity(severity, doubleSeries, i);
+                severity = definition.getSeverity(doubleSeries, severity, i);
 
                 // increment the startCount, reset the endCount
                 startCount++;
@@ -173,17 +174,6 @@ public class CalculateExceedences {
         if (startTime != null) {
             Event event = new Event(startTime, endTime, startLine, endLine, severity);
             eventList.add(event);
-        }
-        LOG.info("");
-
-        for (Event event : eventList) {
-            LOG.info("Event : [line: " + event.getStartLine() + " to " + event.getEndLine() + ", time: "
-                    + event.getStartTime() + " to " + event.getEndTime() + "]");
-            if (uploadProcessedEmail != null) {
-                uploadProcessedEmail.addExceedence(flightFilename,
-                        "flight " + flightId + ", '" + flightFilename + "' - '" + eventDefinition.getName()
-                                + "' from " + event.getStartTime() + " to " + event.getEndTime());
-            }
         }
 
         return eventList;
@@ -356,16 +346,9 @@ public class CalculateExceedences {
             return;
         }
 
-        DoubleTimeSeries[] doubleSeries = new DoubleTimeSeries[columnNames.size()];
-        int doubleSeriesIndex = 0;
-        for (String columnName : columnNames) {
-            doubleSeries[doubleSeriesIndex++] = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, columnName);
-        }
-
         // Step 1: Calculate all the pitch events and put them in this pitchEvents
         // ArrayList
-        List<Event> eventList = calculateAllPitchEvents(flight, doubleSeries, dateSeries, timeSeries, eventDefinition,
-                uploadProcessedEmail);
+        List<Event> eventList = searchForEvent(flight.getDoubleTimeSeriesMap(), dateSeries, timeSeries);
 
         // Step 2: export the pitch events to the database
         exportPitchEvents(connection, eventList, flight, eventDefinition);

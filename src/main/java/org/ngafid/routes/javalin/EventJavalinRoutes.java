@@ -3,8 +3,8 @@ package org.ngafid.routes.javalin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
+import org.ngafid.common.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventMetaData;
@@ -322,7 +322,7 @@ public class EventJavalinRoutes {
         final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
-            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
+            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, EventDefinition.SeverityType.valueOf(severityType));
 
             ctx.contentType("application/json");
             ctx.result("{}");

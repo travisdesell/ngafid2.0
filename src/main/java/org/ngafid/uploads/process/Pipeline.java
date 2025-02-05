@@ -139,12 +139,12 @@ public class Pipeline implements AutoCloseable {
                     try (Connection connection = Database.getConnection()) {
                         List<FlightBuilder> fbuilders = this
                                 .parse(this.create(ze))
-                                .filter(Objects::nonNull)
                                 .parallel()
+                                .filter(Objects::nonNull)
                                 .map(fbs -> this.build(connection, fbs))
                                 .filter(Objects::nonNull)
                                 .map(this::finalize)
-                                .collect(Collectors.toList());
+                                .toList();
 
                         if (fbuilders.isEmpty())
                             return;
@@ -157,7 +157,6 @@ public class Pipeline implements AutoCloseable {
                         }
                     } catch (SQLException | IOException e) {
                         LOG.info("Encountered SQLException trying to get database connection...");
-                        e.printStackTrace();
                         this.fail(ze.getName(), e);
                     }
                 }));
@@ -198,7 +197,6 @@ public class Pipeline implements AutoCloseable {
             try (InputStream is = zipFile.getInputStream(entry)) {
                 return f.create(connection, is, filename, this);
             } catch (Exception e) {
-                e.printStackTrace();
                 fail(filename, new UploadException(e.getMessage(), e, filename));
             }
         } else {
@@ -237,7 +235,6 @@ public class Pipeline implements AutoCloseable {
             return fb.build(connection);
         } catch (FlightProcessingException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
-            e.printStackTrace();
             fail(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
             return null;
         }

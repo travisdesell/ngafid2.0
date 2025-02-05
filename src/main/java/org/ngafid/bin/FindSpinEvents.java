@@ -4,12 +4,11 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.common.Database;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventStatistics;
+import org.ngafid.events.calculations.VSPDRegression;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.Upload;
-import org.ngafid.events.calculations.CalculatedDoubleTimeSeries;
-import org.ngafid.events.calculations.VSPDRegression;
 import org.ngafid.uploads.process.MalformedFlightFileException;
 
 import java.io.IOException;
@@ -232,9 +231,9 @@ public final class FindSpinEvents {
 
         if (dts == null) {
             flight.checkCalculationParameters(VSPD_CALCULATED, ALT_B);
-            CalculatedDoubleTimeSeries dVSI =
-                    new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, flight);
-            dVSI.create(new VSPDRegression(flight.getDoubleTimeSeries(ALT_B)));
+            DoubleTimeSeries dVSI =
+                    DoubleTimeSeries.computed(VSPD_CALCULATED, "ft/min", flight.getNumberRows(), new VSPDRegression(flight.getDoubleTimeSeries(ALT_B)));
+            flight.addDoubleTimeSeries(VSPD_CALCULATED, dVSI);
             dVSI.updateDatabase(connection, flightId);
         }
     }

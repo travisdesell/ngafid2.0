@@ -29,6 +29,10 @@ public class DependencyGraph {
     private final HashMap<String, DependencyNode> columnToSource = new HashMap<>(64);
     private final HashSet<DependencyNode> nodes = new HashSet<>(64);
     private final FlightBuilder builder;
+    private List<DependencyNode> sortedNodes;
+    private HashSet<DependencyNode> visited;
+    private HashSet<DependencyNode> marked;
+    private List<DependencyNode> toVisit;
 
     /**
      * Create nodes for each step and create a mapping from output column name
@@ -99,6 +103,43 @@ public class DependencyGraph {
         }
     }
 
+    private void topologicalSortVisit(DependencyNode node) {
+        if (visited.contains(node)) return;
+
+        if (marked.contains(node)) throw new RuntimeException("Dependency graph contains a cycle.");
+
+        marked.add(node);
+
+        for (var req : node.requiredBy) {
+            topologicalSortVisit(req);
+        }
+
+        visited.add(node);
+        sortedNodes.add(node);
+    }
+
+    /**
+     * Implements depth first search method from here:
+     * https://en.wikipedia.org/wiki/Topological_sorting
+     * <p>
+     * This function linearized the graph such that the dependency nodes can be executed in the returned order without
+     * violating any dependencies.
+     *
+     * @return
+     */
+    private List<DependencyNode> topologicalSort() {
+        toVisit = new ArrayList<>(nodes);
+        sortedNodes = new ArrayList<>();
+        visited = new HashSet<>();
+        marked = new HashSet<>();
+
+        while (!toVisit.isEmpty()) {
+            topologicalSortVisit(toVisit.removeLast());
+        }
+
+        return sortedNodes.reversed();
+    }
+
     /**
      * Compute all process steps, possibly concurrently depending on the executor that this method is invoked in. The
      * order the process steps are executed in will not always be the same, but it will always be in a manner which
@@ -107,13 +148,13 @@ public class DependencyGraph {
      * If this method is invoked in the context of a ForkJoinPool or some other executor / threadpool, it will be
      * executed concurrently. Otherwise, it will be executed it will be computed sequentially.
      */
-    public void compute() throws FlightProcessingException {
+    public void computeParallel() throws FlightProcessingException {
         // Start with root nodes only
         ConcurrentHashMap<DependencyNode, ForkJoinTask<Void>> tasks = new ConcurrentHashMap<>();
         ArrayList<ForkJoinTask<Void>> initialTasks = new ArrayList<>();
 
         for (var node : nodes) {
-            if (node.requiredBy.size() == 0) {
+            if (node.requiredBy.isEmpty()) {
                 initialTasks.add(node);
                 tasks.put(node, node);
             }
@@ -121,12 +162,21 @@ public class DependencyGraph {
 
         scrutinize();
 
-        // We need to fork all of the root tasks before we proceed to join with them!
+        // We need to fork all the root tasks before we proceed to join with them!
         var handles = initialTasks.stream().map(x -> x.fork()).collect(Collectors.toList());
 
         // All tasks have been created: join them.
         handles.forEach(ForkJoinTask::join);
 
+        handleExceptions();
+    }
+
+    public void computeSequential() throws FlightProcessingException {
+        topologicalSort().forEach(DependencyNode::compute);
+        handleExceptions();
+    }
+
+    private void handleExceptions() throws FlightProcessingException {
         ArrayList<Exception> fatalExceptions = new ArrayList<>();
         for (var node : nodes) {
             for (var e : node.exceptions) {
@@ -148,7 +198,12 @@ public class DependencyGraph {
             }
         }
 
-        if (fatalExceptions.size() != 0) throw new FlightProcessingException(fatalExceptions);
+        if (!fatalExceptions.isEmpty()) {
+            for (var e : fatalExceptions) {
+                e.printStackTrace();
+            }
+            throw new FlightProcessingException(fatalExceptions);
+        }
     }
 
     public void scrutinize() {
@@ -265,11 +320,11 @@ public class DependencyGraph {
         /**
          * Disable this node and all descendent nodes.
          */
-        void disableChildren() {
+        void disableChildren(Exception e) {
             if (enabled.get()) {
                 enabled.set(false);
 
-                String reason = step.explainApplicability();
+                String reason = e == null ? step.explainApplicability() : e.getMessage();
                 if (step.isRequired()) {
                     LOG.severe("Required step " + step.getClass().getName() + " has been disabled for the following " +
                             "reason:\n    " + reason);
@@ -279,7 +334,7 @@ public class DependencyGraph {
                             " has been disabled because:\n\t" + reason);
                 }
                 for (var child : requiredBy)
-                    child.disableChildren();
+                    child.disableChildren(null);
             }
         }
 
@@ -302,12 +357,12 @@ public class DependencyGraph {
                     if (step.applicable()) {
                         step.compute();
                     } else {
-                        disableChildren();
+                        disableChildren(null);
                     }
                 } catch (SQLException | MalformedFlightFileException | FatalFlightFileException e) {
                     LOG.warning("Encountered exception when calculating process step " + step + ": " + e);
                     exceptions.add(e);
-                    disableChildren();
+                    disableChildren(e);
                 }
             }
 

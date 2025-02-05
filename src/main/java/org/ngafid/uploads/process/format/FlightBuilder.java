@@ -1,6 +1,7 @@
 package org.ngafid.uploads.process.format;
 
 import org.ngafid.events.Event;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
@@ -16,7 +17,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.ngafid.uploads.process.steps.ComputeStep.required;
 
@@ -66,9 +67,24 @@ public class FlightBuilder {
     // A list of airports this aircraft visited.
     private ArrayList<Itinerary> itinerary = null;
 
+    /**
+     * List of events found in this flight.
+     */
     private final ArrayList<Event> events = new ArrayList<>();
+
+    /**
+     * Turn to final objects for this flight.
+     */
     private final ArrayList<TurnToFinal> turnToFinals = new ArrayList<>();
 
+    /**
+     * List of all events definitions the flight data was searched for.
+     */
+    private final ArrayList<EventDefinition> computedEvents = new ArrayList<>();
+
+    /**
+     * The flight object of this flight builder - will only be populated after FlightBuilder::build is called.
+     */
     private Flight flight = null;
 
     /**
@@ -95,10 +111,11 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
-        return PROCESS_STEPS.stream().map(factory -> factory.create(connection, this))
-                .filter(step -> step.getOutputColumns().stream()
-                        .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x)))
-                .collect(Collectors.toList());
+        return Stream.concat(PROCESS_STEPS.stream()
+                        .map(factory -> factory.create(connection, this))
+                        .filter(step -> step.getOutputColumns().stream()
+                                .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
+                ComputeEvent.getAllApplicable(connection, this).stream()).toList();
     }
 
     /**
@@ -116,29 +133,9 @@ public class FlightBuilder {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
         FlightProcessingException[] exception = new FlightProcessingException[]{null};
 
-        // We can do this:
-        // (1) in serial
-        // (2) in parallel
-        //
-        // My (josh) unscientific testing shows that the parallel version is faster for tough uploads,
-        // and the same speed for easy uploads
-
-        // This is a cheeky way to execute things sequentially. This method will usually be invoked in a ThreadPool
-        // anyways, so if you want to make it concurrent just call dg.compute directly
-        // Executor executor = Runnable::run;
-        // executor.execute(() -> {
-        // try {
-        // dg.compute();
-        // } catch (FlightProcessingException e) {
-        // exception[0] = e;
-        // }
-        // });
-
-        // if (exception[0] != null) {
-        // throw exception[0];
-        // }
-
-        dg.compute();
+        // We can process individual steps in parallel as well, but it might not be worth the overhead.
+        // dg.computeParallel();
+        dg.computeSequential();
 
         flight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
 
@@ -200,6 +197,10 @@ public class FlightBuilder {
         }
 
         return set;
+    }
+
+    public final Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap() {
+        return doubleTimeSeries;
     }
 
     /**
@@ -303,15 +304,19 @@ public class FlightBuilder {
         return this;
     }
 
-    public void emitEvent(Event event) {
+    public synchronized void emitEvent(Event event) {
         this.events.add(event);
+    }
+
+    public synchronized void emitEvents(List<Event> events) {
+        this.events.addAll(events);
     }
 
     public List<Event> getEvents() {
         return events;
     }
 
-    public void emitTurnToFinal(TurnToFinal turnToFinal) {
+    public synchronized void emitTurnToFinal(TurnToFinal turnToFinal) {
         this.turnToFinals.add(turnToFinal);
     }
 
@@ -319,4 +324,7 @@ public class FlightBuilder {
         return turnToFinals;
     }
 
+    public synchronized void addComputedEvent(EventDefinition eventDefinition) {
+        this.computedEvents.add(eventDefinition);
+    }
 }

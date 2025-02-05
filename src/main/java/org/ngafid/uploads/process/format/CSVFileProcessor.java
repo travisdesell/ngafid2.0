@@ -194,8 +194,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * For G5 flight recorders, calculates local time and time zone information.
      * Generates flight builders with corresponding time series data and returns them as a stream.
      *
-     * @return Stream of FlightBuilder objects representing parsed flights.
      * @throws FlightProcessingException
+     * @rreturn Stream of FlightBuilder objects representing parsed flights.
      */
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         LOG.info("Parsing " + this.meta.filename);

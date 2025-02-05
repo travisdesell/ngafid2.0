@@ -11,7 +11,7 @@ CREATE TABLE event_definitions (
     column_names VARCHAR(128),
     condition_json VARCHAR(512),
     severity_column_names VARCHAR(128),
-    severity_type VARCHAR(7),
+    severity_type ENUM('MIN', 'MAX', 'MIN_ABS', 'MAX_ABS'),
     color VARCHAR(6) DEFAULT NULL,
 
     PRIMARY KEY(id),
@@ -44,6 +44,44 @@ CREATE TABLE events (
     INDEX(end_time),
     FOREIGN KEY(event_definition_id) REFERENCES event_definitions(id)
 );
+
+--changeset josh:flights-processed-trigger labels:flights,events
+CREATE TRIGGER update_flights_processed AFTER INSERT ON `events` FOR EACH ROW
+BEGIN
+    DECLARE event_duration INT;
+    SET event_duration := TIMESTAMPDIFF(SECOND,NEW.start_time,NEW.end_time);
+    INSERT INTO flight_processed (
+        fleet_id,
+        flight_id,
+        event_definition_id,
+        count,
+        sum_duration,
+        min_duration,
+        max_duration,
+        sum_severity,
+        min_severity,
+        max_severity,
+        had_error
+    ) VALUES (
+        NEW.fleet_id,
+        NEW.flight_id,
+        NEW.event_definition_id,
+        1,
+        event_duration,
+        event_duration,
+        event_duration,
+        NEW.severity,
+        NEW.severity,
+        NEW.severity,
+        0
+    ) ON DUPLICATE KEY UPDATE
+        sum_duration = event_duration + sum_duration,
+        min_duration = LEAST(event_duration, min_duration),
+        max_duration = GREATEST(event_duration, max_duration),
+        sum_severity = NEW.severity + sum_severity,
+        min_severity = LEAST(NEW.severity, min_severity),
+        max_severity = GREATEST(NEW.severity, max_severity);
+END;
 
 --changeset josh:event-statistics labels:flights,events
 CREATE TABLE event_statistics (

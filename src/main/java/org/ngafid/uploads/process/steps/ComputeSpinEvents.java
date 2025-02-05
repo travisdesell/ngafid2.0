@@ -1,8 +1,6 @@
 package org.ngafid.uploads.process.steps;
 
 import org.ngafid.events.CustomEvent;
-import org.ngafid.events.calculations.CalculatedDoubleTimeSeries;
-import org.ngafid.events.calculations.VSPDRegression;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
@@ -53,17 +51,11 @@ public class ComputeSpinEvents extends ComputeStep {
         return builder.meta.airframeType.getName().equals("Fixed Wing");
     }
 
-    private DoubleTimeSeries getVSPDDerived() {
-        CalculatedDoubleTimeSeries dVSI =
-                new CalculatedDoubleTimeSeries(VSPD_CALCULATED, "ft/min", false, null);
-        dVSI.create(new VSPDRegression(builder.getDoubleTimeSeries(ALT_B)));
-        return dVSI;
-    }
-
     @Override
     public void compute() {
         DoubleTimeSeries ias = builder.getDoubleTimeSeries(IAS);
-        DoubleTimeSeries dVSI = getVSPDDerived();
+        DoubleTimeSeries dVSI = builder.getDoubleTimeSeries(VSPD_CALCULATED);
+
         DoubleTimeSeries normAc = builder.getDoubleTimeSeries(NORM_AC);
         DoubleTimeSeries latAc = builder.getDoubleTimeSeries(LAT_AC);
         DoubleTimeSeries altAGL = builder.getDoubleTimeSeries(ALT_AGL);

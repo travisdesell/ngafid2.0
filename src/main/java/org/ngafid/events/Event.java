@@ -363,6 +363,10 @@ public class Event {
         return flightId;
     }
 
+    public void setEventDefinitionId(int eventDefinitionId) {
+        this.eventDefinitionId = eventDefinitionId;
+    }
+
     public int getEndLine() {
         return endLine;
     }

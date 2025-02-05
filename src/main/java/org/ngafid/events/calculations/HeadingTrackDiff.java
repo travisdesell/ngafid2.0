@@ -1,8 +1,8 @@
 package org.ngafid.events.calculations;
 
 import org.apache.commons.cli.*;
-import org.ngafid.common.Database;
 import org.ngafid.accounts.Fleet;
+import org.ngafid.common.Database;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 
@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 import static org.ngafid.flights.Parameters.*;
 
-public class HeadingTrackDiff implements Calculation {
+public class HeadingTrackDiff implements DoubleTimeSeries.TimeStepCalculation {
     private final DoubleTimeSeries hdg;
     private final DoubleTimeSeries trk;
     private final Flight flight;
@@ -33,7 +33,7 @@ public class HeadingTrackDiff implements Calculation {
      * {@inheritDoc}
      */
     @Override
-    public double calculate(int index) {
+    public double compute(int index) {
         double hdgInst = this.hdg.get(index);
         double trkInst = this.trk.get(index);
 
@@ -103,10 +103,8 @@ public class HeadingTrackDiff implements Calculation {
                     List<String> missingParams = flight.checkCalculationParameters(HDG_TRK_DEPENDENCIES);
                     if (missingParams.isEmpty()) {
                         HeadingTrackDiff calculation = new HeadingTrackDiff(flight, connection);
-                        CalculatedDoubleTimeSeries hdgTrakDiff =
-                                new CalculatedDoubleTimeSeries(connection, HDG_TRK_DIFF, "degrees", true, flight);
                         if (!calculation.existsInDB(connection)) {
-                            hdgTrakDiff.create(calculation);
+                            DoubleTimeSeries hdgTrakDiff = DoubleTimeSeries.computed(HDG_TRK_DIFF, "degrees", flight.getNumberRows(), calculation);
                             hdgTrakDiff.updateDatabase(connection, flight.getId());
                         } else {
                             LOG.info("Already calculated for flight " + flight);
@@ -126,4 +124,5 @@ public class HeadingTrackDiff implements Calculation {
         LOG.info("All done!");
         System.exit(0);
     }
+
 }
