@@ -7,16 +7,18 @@ import us.dustinj.timezonemap.TimeZoneMap;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 public enum TimeUtils {
     ;
-
+    private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
     private static TimeZoneMap TIME_ZONE_MAP = null;
 
     private static TimeZoneMap getTimeZoneMap() {
@@ -87,7 +89,7 @@ public enum TimeUtils {
     public static long toEpochSecond(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(date.trim() + " " + time.trim(),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
         offset = updateBadOffset(ldt, offset);
@@ -116,7 +118,7 @@ public enum TimeUtils {
 
     public static String toUTC(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
         offset = updateBadOffset(ldt, offset);
@@ -133,17 +135,23 @@ public enum TimeUtils {
         // create a ZonedDateTime from the OffsetDateTime and use UTC as time zone
         ZonedDateTime utcZdt = odt.atZoneSameInstant(ZoneOffset.UTC);
 
-        return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
     }
 
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
-                                                 String newOffset) {
+                                                 String newOffset) throws UnrecognizedDateTimeFormatException {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
 
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime,
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        DateTimeFormatter dateTimeFormat = findCorrectFormatter(originalDate + " " + originalTime);
+
+        LOG.info("Date is " + originalDate + " " + originalTime);
+        DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder()
+                .append(dateTimeFormat)
+                .appendOffset("+HH:mm", "");
+
+        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime + originalOffset, builder.toFormatter());
 
         // fix bad offset values
         originalOffset = updateBadOffset(ldt, originalOffset);
@@ -171,7 +179,7 @@ public enum TimeUtils {
 
     public static String convertToOffset(String originalDateTime, String originalOffset, String newOffset) {
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
         // originalOffset = updateBadOffset(ldt, originalOffset);
@@ -194,14 +202,15 @@ public enum TimeUtils {
         // String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         // System.out.println("with offset (same instant):\t" + newTime);
 
-        return odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return odt3.format(DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
     }
 
+    // Date formats WITHOUT TIMEZONE
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
+            DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"),
+            DateTimeFormatter.ofPattern("yyyy/M/d H:m:s"),
+            DateTimeFormatter.ofPattern("M/d/yyyy H:m:s"),
+            DateTimeFormatter.ofPattern("M-d-yyyy H:m:s"));
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws FatalFlightFileException {
@@ -219,38 +228,18 @@ public enum TimeUtils {
         throw new FatalFlightFileException("Flight file is using unsupported date time format.");
     }
 
-    public static LocalDateTime parseLocalDateTime(String dateTimeString, String pattern)
-            throws FatalFlightFileException {
-        LocalDateTime dateTime = null;
-        String patterns = "";
-        boolean first = true;
-        for (var formatter : DATE_FORMATTERS) {
-            try {
-                dateTime = LocalDateTime.parse(dateTimeString, formatter);
-                break;
-            } catch (DateTimeParseException e) {
-            }
+    public static LocalDateTime parseLocalDateTime(String dateTimeString)
+            throws UnrecognizedDateTimeFormatException {
+        var formatter = findCorrectFormatter(dateTimeString);
 
-            if (!first) {
-                patterns += ", '" + formatter.toString() + "'";
-            } else {
-                patterns += "'" + formatter.toString() + "'";
-            }
-            first = false;
-        }
-
-        if (dateTime == null) {
-            throw new FatalFlightFileException(
-                    "Flight had incorrectly formatted date/time values (should be one of " + patterns + ")");
-        }
-
-        return dateTime;
+        return LocalDateTime.parse(dateTimeString, formatter);
     }
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime, String pattern)
-            throws FatalFlightFileException {
-        LocalDateTime start = parseLocalDateTime(startDateTime, pattern);
-        LocalDateTime end = parseLocalDateTime(endDateTime, pattern);
+            throws UnrecognizedDateTimeFormatException {
+        DateTimeFormatter formatter = findCorrectFormatter(startDateTime);
+        LocalDateTime start = LocalDateTime.parse(startDateTime, formatter);
+        LocalDateTime end = LocalDateTime.parse(endDateTime, formatter);
 
         return ChronoUnit.SECONDS.between(start, end);
     }
@@ -296,7 +285,7 @@ public enum TimeUtils {
             StringTimeSeries utcDates,
             StringTimeSeries utcTimes,
             DoubleTimeSeries latitudes,
-            DoubleTimeSeries longitudes) {
+            DoubleTimeSeries longitudes) throws UnrecognizedDateTimeFormatException {
         TimeZoneMap map = getTimeZoneMap();
 
         // Prepare lists for the results.
@@ -306,9 +295,6 @@ public enum TimeUtils {
 
         String dateTimeString = utcDates.get(0).trim() + " " + utcTimes.get(0).trim();
         DateTimeFormatter formatter = findCorrectFormatter(dateTimeString);
-        if (formatter == null) {
-            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + dateTimeString, dateTimeString, 0);
-        }
 
         // Iterate over each index and calculate the corresponding local date, time, and offset.
         for (int i = 0; i < utcDates.size(); i++) {
@@ -328,11 +314,14 @@ public enum TimeUtils {
             ZoneId zoneId = ZoneId.of(zoneIdStr);
             ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
 
-            localDates.add(localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-            localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            localDates.add(localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-M-d")));
+            localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("H:m:s")));
             utcOffsets.add(localZonedDateTime.getOffset().getId());
         }
         return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
+    }
+
+    public static class UnrecognizedDateTimeFormatException extends Exception {
     }
 
     /**
@@ -341,7 +330,7 @@ public enum TimeUtils {
      * @param dateTimeString
      * @return specific DateTimeFormatter
      */
-    public static DateTimeFormatter findCorrectFormatter(String dateTimeString) {
+    public static DateTimeFormatter findCorrectFormatter(String dateTimeString) throws UnrecognizedDateTimeFormatException {
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 LocalDateTime.parse(dateTimeString, formatter);
@@ -350,7 +339,7 @@ public enum TimeUtils {
                 // Continue trying other formatters
             }
         }
-        return null;
+        throw new DateTimeException("Could not deduce date-time formatter for the following: " + dateTimeString);
     }
 
     /**

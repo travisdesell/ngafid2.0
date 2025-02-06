@@ -2,11 +2,14 @@ package org.ngafid.uploads.process.format;
 
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.Pipeline;
+import org.ngafid.uploads.process.steps.ComputeScanEagleStartEndTime;
 import org.ngafid.uploads.process.steps.ComputeStep;
+import org.ngafid.uploads.process.steps.ComputeUnitConversion;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,7 +37,12 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
         @Override
         protected List<ComputeStep> gatherSteps(Connection connection) {
             // As of now, none of our process steps apply to scan eagle data.
-            return List.of();
+            return List.of(
+                    new ComputeScanEagleStartEndTime(connection, this),
+                    new ComputeUnitConversion(connection, this, Parameters.SCAN_EAGLE_LATITUDE, Parameters.LATITUDE, ComputeUnitConversion.UnitConversion.RADIAN_TO_DEGREE),
+                    new ComputeUnitConversion(connection, this, Parameters.SCAN_EAGLE_LONGITUDE, Parameters.LONGITUDE, ComputeUnitConversion.UnitConversion.RADIAN_TO_DEGREE),
+                    new ComputeUnitConversion(connection, this, Parameters.SCAN_EAGLE_ALT_MSL, Parameters.ALT_MSL, ComputeUnitConversion.UnitConversion.METERS_TO_FEET)
+            );
         }
     }
 
@@ -43,6 +51,11 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
 
         meta.airframe = new Airframes.Airframe("ScanEagle");
         meta.airframeType = new Airframes.AirframeType("UAS Fixed Wing");
+    }
+
+    @Override
+    FlightBuilder makeFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
+        return new ScanEagleFlightBuilder(meta, doubleSeries, stringSeries);
     }
 
     /**
@@ -81,15 +94,11 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
 
     // TODO: Figure out ScanEagle data
     void scanEagleHeaders(String fileInformation) {
-        String headersLine = fileInformation;
-        headers.addAll(Arrays.asList(headersLine.split(",", -1)));
-        headers.replaceAll(String::trim);
+        headers = Arrays.stream(fileInformation.split(",", -1)).map(String::trim).toList();
 
         // scan eagle files have no data types, set all to ""
         // TODO: These columns certainly have data types. We should create a map of them ourselves?
-        for (int i = 0; i < headers.size(); i++) {
-            dataTypes.add("none");
-        }
+        dataTypes = headers.stream().map(x -> "none").toList();
     }
 
     @Override
@@ -101,4 +110,5 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
     List<String> processHeaders(BufferedReader reader) throws FatalFlightFileException {
         return headers;
     }
+
 }

@@ -457,6 +457,7 @@ public class Event {
             for (Event event : events) {
                 event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
             }
+            LOG.info(preparedStatement.toString());
             preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {

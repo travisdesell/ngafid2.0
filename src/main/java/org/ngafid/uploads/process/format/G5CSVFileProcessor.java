@@ -103,17 +103,15 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         // rows = filterInvalidRows(rows, latitudeIndex, longitudeIndex);
 
         // Calculate G5-specific local date/time and timezone offset if applicable. Adds them to stringTimeSeries directly.
-        calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
 
-        // Split the rows into flight segments bases on split time.
-        List<Integer> splitIndices;
         try {
-            splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
-        } catch (FlightFileFormatException e) {
+            calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
+            List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
+            return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
+        } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException e) {
             throw new FlightProcessingException(e);
         }
 
-        return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
     }
 
     /**
@@ -206,7 +204,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * @param splitIntervalInMinutes - max time difference between rows.
      * @return
      */
-    public List<Integer> splitCSVIntoFlightIndices(Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes) throws FlightFileFormatException {
+    public List<Integer> splitCSVIntoFlightIndices(Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes) throws FlightFileFormatException, TimeUtils.UnrecognizedDateTimeFormatException {
         List<Integer> splitIndices = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
@@ -246,13 +244,9 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     }
 
     @NotNull
-    private static DateTimeFormatter getDateTimeFormatter(String date, String time) throws FlightFileFormatException {
+    private static DateTimeFormatter getDateTimeFormatter(String date, String time) throws TimeUtils.UnrecognizedDateTimeFormatException {
         String firstDateTimeString = date + " " + time;
         DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(firstDateTimeString.replaceAll("\\s+", " "));
-
-        if (correctFormatter == null) {
-            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + firstDateTimeString, firstDateTimeString, 0);
-        }
         return correctFormatter;
     }
 
@@ -318,7 +312,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      */
     private void calculateLocalDateTimeAndOffset(
             Map<String, DoubleTimeSeries> doubleTimeSeries,
-            Map<String, StringTimeSeries> stringTimeSeries) {
+            Map<String, StringTimeSeries> stringTimeSeries) throws TimeUtils.UnrecognizedDateTimeFormatException {
 
         StringTimeSeries utcDateSeries = stringTimeSeries.get("UTC Date");
         StringTimeSeries utcTimeSeries = stringTimeSeries.get("UTC Time");

@@ -327,4 +327,8 @@ public class FlightBuilder {
     public synchronized void addComputedEvent(EventDefinition eventDefinition) {
         this.computedEvents.add(eventDefinition);
     }
+
+    public List<EventDefinition> getEventDefinitions() {
+        return computedEvents;
+    }
 }

@@ -8,7 +8,6 @@ import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.DateTimeException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -39,7 +38,7 @@ public class ComputeStartEndTime extends ComputeStep {
     }
 
     public Set<String> getOutputColumns() {
-        return Collections.<String>emptySet();
+        return Set.of("_start_end_time");
     }
 
     public boolean airframeIsValid(String airframe) {
@@ -98,7 +97,7 @@ public class ComputeStartEndTime extends ComputeStep {
         OffsetDateTime startODT = null;
         try {
             startODT = TimeUtils.convertToOffset(startDate, startTime, startOffset, "+00:00");
-        } catch (DateTimeException dte) {
+        } catch (TimeUtils.UnrecognizedDateTimeFormatException dte) {
             LOG.severe("Corrupt start time data in flight file: " + dte.getMessage());
             throw new MalformedFlightFileException(
                     "Corrupt start time data in flight file: '" + dte.getMessage() + "'");
@@ -107,7 +106,7 @@ public class ComputeStartEndTime extends ComputeStep {
         OffsetDateTime endODT = null;
         try {
             endODT = TimeUtils.convertToOffset(endDate, endTime, endOffset, "+00:00");
-        } catch (DateTimeException dte) {
+        } catch (TimeUtils.UnrecognizedDateTimeFormatException dte) {
             LOG.severe("Corrupt end time data in flight file: " + dte.getMessage());
             throw new MalformedFlightFileException("Corrupt end time data in flight file: '" + dte.getMessage() + "'");
         }

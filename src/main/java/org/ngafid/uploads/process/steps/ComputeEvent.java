@@ -38,10 +38,12 @@ public class ComputeEvent extends ComputeStep {
 
     public static List<ComputeEvent> getAllApplicable(Connection connection, FlightBuilder fb) {
         // We will mark these event definitions as having been computed (or attempted) in the
-        ALL_EVENT_DEFS.forEach(fb::addComputedEvent);
-        return ALL_EVENT_DEFS.stream()
+        var applicableEvents = ALL_EVENT_DEFS.stream()
                 .filter(def -> def.getFleetId() == 0 || def.getFleetId() == fb.meta.fleetId)
                 .filter(def -> def.getAirframeNameId() == 0 || def.getAirframeNameId() == fb.meta.airframe.getId())
+                .toList();
+        applicableEvents.forEach(fb::addComputedEvent);
+        return applicableEvents.stream()
                 .map(def -> new ComputeEvent(connection, fb, def))
                 .toList();
     }

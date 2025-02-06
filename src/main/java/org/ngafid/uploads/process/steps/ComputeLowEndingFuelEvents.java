@@ -82,7 +82,11 @@ public class ComputeLowEndingFuelEvents extends ComputeStep {
             }
 
             LOG.info("DATE = " + currentTime);
-            duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
+            try {
+                duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
+            } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {
+                throw new FatalFlightFileException(e.getMessage(), e);
+            }
         }
 
         if (duration >= 15) {

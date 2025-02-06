@@ -8,6 +8,7 @@ import org.ngafid.common.airports.Airports;
 import org.ngafid.common.airports.Runway;
 import org.ngafid.common.filters.Filter;
 import org.ngafid.events.Event;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.events.calculations.VSPDRegression;
 import org.ngafid.uploads.Upload;
@@ -47,6 +48,7 @@ public class Flight {
     public static final String WARNING = "WARNING";
     public static final String SUCCESS = "SUCCESS";
     public static final String ERROR = "ERROR";
+    
     private static final Logger LOG = Logger.getLogger(Flight.class.getName());
     private static final double MAX_AIRPORT_DISTANCE_FT = 10000;
     private static final double MAX_RUNWAY_DISTANCE_FT = 100;
@@ -1244,6 +1246,26 @@ public class Flight {
                         "VALUES (?," +
                         " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(?), UNIX_TIMESTAMP(?))",
                 Statement.RETURN_GENERATED_KEYS);
+    }
+
+    public void insertComputedEvents(Connection connection, List<EventDefinition> eventDefinitions) throws SQLException {
+        String query = """
+                    INSERT IGNORE INTO `flight_processed` SET
+                        fleet_id = ?,
+                        flight_id = ?,
+                        event_definition_id = ?
+                    ;
+                """;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            for (var def : eventDefinitions) {
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setInt(2, id);
+                preparedStatement.setInt(3, def.getId());
+                preparedStatement.addBatch();
+            }
+
+            preparedStatement.executeBatch();
+        }
     }
 
     public List<MalformedFlightFileException> getExceptions() {

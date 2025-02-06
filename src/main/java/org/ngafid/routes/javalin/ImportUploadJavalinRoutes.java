@@ -188,10 +188,10 @@ public class ImportUploadJavalinRoutes {
             LOG.info("Chunk file size: " + chunkSize);
 
             try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
-                locked.complete();
                 locked.chunkUploaded(chunkNumber, chunkSize);
 
                 if (upload.completed()) {
+                    locked.complete();
                     String targetDirectory = upload.getArchiveDirectory();
                     new File(targetDirectory).mkdirs();
                     String targetFilename = targetDirectory + "/" + upload.getArchiveFilename();

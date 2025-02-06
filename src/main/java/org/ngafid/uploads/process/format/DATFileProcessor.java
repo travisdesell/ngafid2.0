@@ -480,7 +480,6 @@ public class DATFileProcessor extends FlightFileProcessor {
      */
     private static void handleGPSDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
                                           Map<String, StringTimeSeries> stringTimeSeriesMap) {
-
         if (colName.contains("dateTimeStamp")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "yyyy-mm-ddThh:mm:ssZ"));
             return;

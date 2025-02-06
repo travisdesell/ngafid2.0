@@ -151,7 +151,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             List<String> headerLines = extractHeaderLines(reader);
             String firstLine = reader.readLine();
             if (firstLine == null)
-                throw new IOException("Encountered end of stream prematurely.");
+                throw new IOException("Encountered end of stream prematurely in file " + filename);
 
             String[] values = firstLine.split(",");
 
@@ -219,8 +219,12 @@ public class CSVFileProcessor extends FlightFileProcessor {
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         return Stream.of(
-                new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries)
+                makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries)
         );
+    }
+
+    FlightBuilder makeFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
+        return new CSVFlightBuilder(meta, doubleSeries, stringSeries);
     }
 
     /**
@@ -284,7 +288,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             }
         }
     }
-
 
     /**
      * Flight files usually have two lines of meta-data at the top, which are proceeded by pound signs #.

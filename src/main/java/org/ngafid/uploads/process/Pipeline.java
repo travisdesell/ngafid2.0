@@ -154,6 +154,7 @@ public class Pipeline implements AutoCloseable {
                         for (FlightBuilder builder : fbuilders) {
                             Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
                             TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
+                            builder.getFlight().insertComputedEvents(connection, builder.getEventDefinitions());
                         }
                     } catch (SQLException | IOException e) {
                         LOG.info("Encountered SQLException trying to get database connection...");
@@ -197,6 +198,7 @@ public class Pipeline implements AutoCloseable {
             try (InputStream is = zipFile.getInputStream(entry)) {
                 return f.create(connection, is, filename, this);
             } catch (Exception e) {
+                e.printStackTrace();
                 fail(filename, new UploadException(e.getMessage(), e, filename));
             }
         } else {
@@ -209,7 +211,7 @@ public class Pipeline implements AutoCloseable {
 
     /**
      * Calls the `parse` method on `processor`, returning the resulting stream of FlightBuilder objects. In the event of
-     * an error, the error is logged using `this::fail` and and empty stream is returned.
+     * an error, the error is logged using `this::fail` and an empty stream is returned.
      *
      * @returns A stream of flight builders on success, an empty stream if there is an error.
      */

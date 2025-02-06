@@ -36,7 +36,7 @@ public final class FindLowEndingFuelEvents {
     }
 
     public static void findLowEndFuelEventsInUpload(Connection connection, Upload upload)
-            throws FatalFlightFileException, IOException, MalformedFlightFileException, ParseException, SQLException {
+            throws FatalFlightFileException, IOException, MalformedFlightFileException, ParseException, SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
         String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
                 "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + getLowEndFuelPa28().getId()
                 +
@@ -52,7 +52,7 @@ public final class FindLowEndingFuelEvents {
     }
 
     public static void findLowEndFuel(Connection connection, Flight flight)
-            throws IOException, SQLException, FatalFlightFileException, MalformedFlightFileException {
+            throws IOException, SQLException, FatalFlightFileException, MalformedFlightFileException, TimeUtils.UnrecognizedDateTimeFormatException {
         int airframeNameID = flight.getAirframeNameId();
 
         if (!EVENT_DEFS.containsKey(airframeNameID)) {
