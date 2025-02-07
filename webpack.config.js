@@ -112,13 +112,4 @@ module.exports = {
             process: 'process/browser',
         })
     ],
-
-    devServer: {
-        static: {
-            directory: path.join(__dirname, 'src/main/resources/public/'),
-        },
-        compress: true,
-        port: 9000,
-        hot: true
-    }
 };
