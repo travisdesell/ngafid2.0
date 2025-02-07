@@ -128,7 +128,7 @@ class SignedInNavbar extends React.Component {
 
                 uploadsButton = (
                     <li className="nav-item dropdown">
-                        <a className={"nav-link dropdown-toggle" + (this.props.activePage === "uploads" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <a className={"nav-link dropdown-toggle" + (this.props.activePage === "uploads" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i className="fa fa-fw fa-upload" aria-hidden="true"/>
                             {"Uploads"}
                         </a>
@@ -141,7 +141,7 @@ class SignedInNavbar extends React.Component {
 
                 importsButton = (
                     <li className="nav-item dropdown">
-                        <a className={"nav-link dropdown-toggle" + (this.props.activePage === "imports" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <a className={"nav-link dropdown-toggle" + (this.props.activePage === "imports" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
                             {"Imports"}
                         </a>
@@ -173,7 +173,7 @@ class SignedInNavbar extends React.Component {
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:"var(--c_navbar_bg)"}}>
                 <a className="navbar-brand" style={{color:"var(--c_text)"}} href="../">NGAFID</a>
-                <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
@@ -184,7 +184,7 @@ class SignedInNavbar extends React.Component {
                             { 
                                 //only display the filter icon on the navbar if it's being used
                                 this.props.filterVisible ? (
-                                    <button id="filter-toggle-button" className={filterButtonClasses} data-toggle="button" title="Toggle the filter." aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
+                                    <button id="filter-toggle-button" className={filterButtonClasses} data-bs-toggle="button" title="Toggle the filter." aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
                                         <i className="fa fa-search p-1"></i>
                                     </button>
                                 ) : ( "" )
@@ -192,14 +192,14 @@ class SignedInNavbar extends React.Component {
 
                             {
                                 (this.props.showPlotButton) &&
-                                <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
+                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
                                     <i className="fa fa-area-chart p-1"></i>
                                 </button>
                             }
 
                             <div className="input-group m-0">
                                 <div className="input-group-prepend">
-                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()} disabled={this.props.disableMapButton}>
+                                    <button id="map-toggle-button" className={mapButtonClasses} data-bs-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()} disabled={this.props.disableMapButton}>
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
@@ -226,7 +226,7 @@ class SignedInNavbar extends React.Component {
 
                         {aggregateView ?
                             <li className="nav-item dropdown">
-                                <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Aggregate View
                                 </a>
                                 <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
@@ -237,7 +237,7 @@ class SignedInNavbar extends React.Component {
                         }
 
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} style={eventsActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} style={eventsActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-fw fa-calendar-check-o" aria-hidden="true"/>
                                 &nbsp;Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
@@ -259,7 +259,7 @@ class SignedInNavbar extends React.Component {
                         </li>
                         
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")} style={analysisActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")} style={analysisActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-fw fa-search" aria-hidden="true"/>
                                 &nbsp;Analysis{analysisActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
@@ -274,7 +274,7 @@ class SignedInNavbar extends React.Component {
                         {uploadsButton}
 
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")} style={accountsActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")} style={accountsActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-fw fa-user" aria-hidden="true"/>
                                 &nbsp;{"Account" + accountNotifications}{accountsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>

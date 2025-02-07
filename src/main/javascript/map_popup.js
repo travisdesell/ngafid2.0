@@ -180,14 +180,14 @@ class MapPopup extends React.Component {
                                 <Col style={{ display: "flex" }}>
                                     <ButtonGroup className="text-right" aria-label="toolbar" style={{marginLeft: "auto"}}>
                                         {this.state.events != null &&
-                                            <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
+                                            <Button onClick={() => this.toggleEventRow()} data-bs-toggle="button" variant="outline-secondary" size="sm">
                                                 <i className="fa fa-exclamation p-1"></i>
                                             </Button>
                                         }
                                         <Button onClick={() => this.openSettingsDialog()} variant="outline-secondary" size="sm">
                                             <i className="fa fa fa-cog p-1"></i>
                                         </Button>
-                                        <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
+                                        <Button onClick={() => this.pin()} data-bs-toggle="button" variant="outline-secondary" size="sm">
                                             <i className="fa fa-thumb-tack p-1"></i>
                                         </Button>
                                         <Button onClick={() => this.close()} variant="outline-secondary" size="sm">
