@@ -10,6 +10,7 @@ module.exports = {
             fs: false,
             path: false,
             stream: require.resolve('stream-browserify'),
+            events: require.resolve('events/'),
         },
     },
 
