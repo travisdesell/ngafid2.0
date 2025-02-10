@@ -336,7 +336,7 @@ public class AnalysisJavalinRoutes {
     private static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
-        final String otherFlightId = ctx.queryParam("other_flight_id"); // Can be null
+        final String otherFlightId = ctx.queryParam("other_flight_id"); // Can be -1
         final int flightId = Integer.parseInt(flightIdStr);
         final int fleetId = user.getFleetId();
 
@@ -350,7 +350,7 @@ public class AnalysisJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             final List<String> flightIdsAll = Objects.requireNonNull(ctx.formParams("flight_id"));
             final Flight flight = Objects.requireNonNull(Flight.getFlight(connection, flightId));
-            final Flight otherFlight = otherFlightId != null ?
+            final Flight otherFlight = !Objects.equals(otherFlightId, "-1") ?
                     Objects.requireNonNull(Flight.getFlight(connection, Integer.parseInt(otherFlightId))) : null;
 
             if (flight.getFleetId() != fleetId || (otherFlight != null && otherFlight.getFleetId() != fleetId)) {

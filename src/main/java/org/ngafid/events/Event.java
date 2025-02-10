@@ -395,7 +395,7 @@ public class Event {
     public String toString() {
         String readable = "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + ", " +
                 "severity: " + severity;
-        if (otherFlightId != null) readable += ", other flight: " + otherFlightId;
+        if (otherFlightId != -1) readable += ", other flight: " + otherFlightId;
         readable += "]";
 
         return readable;
