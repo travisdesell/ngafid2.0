@@ -1203,11 +1203,11 @@ class Flight extends React.Component {
                                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
                                                     Export to CSV (Original)
-                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
                                                     Export to CSV (Generated)
-                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>

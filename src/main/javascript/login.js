@@ -186,7 +186,7 @@ class LoginModal extends React.Component {
 
                 <div className='modal-header'>
                     <h5 id='login-modal-title' className='modal-title'>Login</h5>
-                    <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
+                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
@@ -232,7 +232,7 @@ class LoginModal extends React.Component {
                 </div>
 
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
+                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
                     <button id='loginSubmitButton' type='submit' className='btn btn-primary' onClick={() => {this.submitLogin();}} disabled={submitDisabled}>Submit</button>
                 </div>
 

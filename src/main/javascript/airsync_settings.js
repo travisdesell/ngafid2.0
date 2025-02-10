@@ -100,7 +100,7 @@ class AirSyncSettings extends React.Component {
                                 <div className="p-2 d-flex" style={formHeaderStyle}>
                                     <label htmlFor="selectedMetricsNames" style={labelStyle}>
                                       Sync Frequency
-                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="This is the amount of time the NGAFID waits to check for new AirSync flights. For example, if this is set to 12 hours, the NGAFID will check with the AirSync servers once every 12 hours."></i>
+                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="This is the amount of time the NGAFID waits to check for new AirSync flights. For example, if this is set to 12 hours, the NGAFID will check with the AirSync servers once every 12 hours."></i>
                                     </label>
                                 </div>
                                 <div className="p-2 d-flex">

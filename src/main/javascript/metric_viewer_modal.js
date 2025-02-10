@@ -116,7 +116,7 @@ class MetricViewerSettingsModal extends React.Component {
 
                 <div className='modal-header'>
                     <h5 id='confirm-modal-title' className='modal-title'>Change Your Metric Viewer Settings:</h5>
-                    <button type='button' className='close' data-dismiss='modal' onClick={() => this.state.parent.show()} aria-label='Close'>
+                    <button type='button' className='close' data-bs-dismiss='modal' onClick={() => this.state.parent.show()} aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
