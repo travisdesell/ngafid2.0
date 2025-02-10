@@ -275,7 +275,7 @@ public class ImportUploadJavalinRoutes {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + objectMapper.writeValueAsString(other_uploads) + "'); var pendingUploads = JSON.parse('" + objectMapper.writeValueAsString(pendingUploads) + "');");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + objectMapper.writeValueAsString(other_uploads) + "'); var pending_uploads = JSON.parse('" + objectMapper.writeValueAsString(pendingUploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

@@ -638,10 +638,6 @@ public final class Upload {
         return Paths.get(getArchiveDirectory(), getArchiveFilename());
     }
 
-    public FileSystem getZipFileSystem() throws IOException {
-        return getZipFileSystem(Map.of());
-    }
-
     public FileSystem getZipFileSystem(Map<String, String> env) throws IOException {
         Files.createDirectories(getArchivePath().getParent());
         return FileSystems.newFileSystem(URI.create("jar:" + getArchivePath().toUri()), env);
