@@ -259,12 +259,12 @@ public class ImportUploadJavalinRoutes {
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalUploads / pageSize;
 
-            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"});
+            List<Upload> pendingUploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"});
 
             // update the status of all the uploads currently uploading to incomplete so the
             // webpage knows they
             // need to be restarted and aren't currently being uploaded.
-            for (Upload upload : pending_uploads) {
+            for (Upload upload : pendingUploads) {
                 if (upload.getStatus().equals("UPLOADING")) {
                     upload.setStatus("UPLOAD INCOMPLETE");
                 }
@@ -275,7 +275,7 @@ public class ImportUploadJavalinRoutes {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + objectMapper.writeValueAsString(other_uploads) + "'); var pending_uploads = JSON.parse('" + objectMapper.writeValueAsString(pending_uploads) + "');");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + objectMapper.writeValueAsString(other_uploads) + "'); var pendingUploads = JSON.parse('" + objectMapper.writeValueAsString(pendingUploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -364,21 +364,25 @@ public class ImportUploadJavalinRoutes {
         final String templateFile = "imports.html";
 
         try (Connection connection = Database.getConnection()) {
+            LOG.info("Entered imports");
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int fleetId = user.getFleetId();
             Map<String, Object> scopes = new HashMap<String, Object>();
 
             // default page values
+            LOG.info("Getting uploads");
             final int totalImports = Upload.getNumUploads(connection, fleetId, null);
             final int startPage = 0;
             final int pageSize = 10;
             final int numberPages = totalImports / pageSize;
             final List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + startPage + "," + pageSize);
+            LOG.info("Got uploads");
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("imports_js", "var imports = JSON.parse('" + objectMapper.writeValueAsString(imports) + "');");
+            LOG.info("Put in scopes");
 
             for (String key : scopes.keySet()) {
                 if (scopes.get(key) == null) {
@@ -386,8 +390,12 @@ public class ImportUploadJavalinRoutes {
                 }
             }
 
+            LOG.info("Rendering imports");
+
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
+
+            LOG.info("Rendered imports");
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         } catch (Exception e) {
