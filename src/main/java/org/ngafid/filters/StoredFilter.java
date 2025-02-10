@@ -1,6 +1,7 @@
 package org.ngafid.filters;
 
 //CHECKSTYLE:OFF
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.accounts.User;
 //CHECKSTYLE:ON
 import java.sql.Connection;
@@ -17,8 +18,11 @@ import java.util.List;
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
 public final class StoredFilter {
+    @JsonProperty
     private final String name; // Common name given by the user
+    @JsonProperty
     private final String filter; // Filter as a String in JSON form
+    @JsonProperty
     private final String color; // Color of the filter in hex
 
     /**

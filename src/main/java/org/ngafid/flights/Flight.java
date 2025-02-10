@@ -1,5 +1,6 @@
 package org.ngafid.flights;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.Database;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
@@ -55,39 +56,65 @@ public class Flight {
     private static final String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, " +
             "airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status," + " " +
             "has_coords, has_agl, insert_completed, processing_status";
+    @JsonProperty
     private final String filename;
+    @JsonProperty
     private final String systemId;
+    @JsonProperty
     private final String md5Hash;
+    @JsonProperty
     private final String startDateTime;
+    @JsonProperty
     private final String endDateTime;
+    @JsonProperty
     private final List<Itinerary> itinerary;
     // TODO: Roll a lot of this stuff up into some sort of meta-data object?
+    @JsonProperty
     private int id = -1;
+    @JsonProperty
     private int fleetId;
+    @JsonProperty
     private int uploaderId;
+    @JsonProperty
     private int uploadId;
     // Make / model of the aircraft
+    @JsonProperty
     private Airframes.Airframe airframe;
     // The "type" meaning a fixed wing, rotorcraft, etc.
+    @JsonProperty
     private Airframes.AirframeType airframeType;
+    @JsonProperty
     private String tailNumber;
+    @JsonProperty
     private String suggestedTailNumber;
     // these will be set to true if the flight has
     // latitude/longitude coordinates and can therefore
     // calculate AGL, airport and runway proximity
     // hasAGL also requires an altitudeMSL column
+    @JsonProperty
     private boolean hasCoords;
+    @JsonProperty
     private boolean hasAGL;
+    @JsonProperty
     private boolean insertCompleted = false;
+    @JsonProperty
     private long processingStatus = 0;
+    @JsonProperty
     private String status;
+    @JsonProperty
     private transient List<MalformedFlightFileException> exceptions = new ArrayList<>();
+    @JsonProperty
     private int numberRows;
+    @JsonProperty
     private List<String> dataTypes;
+    @JsonProperty
     private List<String> headers;
     // the tags associated with this flight
+    @JsonProperty
     private List<FlightTag> tags = null;
+    @JsonProperty
     private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
+    @JsonProperty
     private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
     public Flight(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,

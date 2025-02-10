@@ -1,5 +1,6 @@
 package org.ngafid.flights;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -20,20 +21,35 @@ public class Itinerary {
     private static final String TOUCH_AND_GO = "touch_and_go";
     private static final String TAKEOFF = "takeoff";
     private static final String LANDING = "landing";
+    @JsonProperty
     private double minAirportDistance = Double.MAX_VALUE;
+    @JsonProperty
     private double minRunwayDistance = Double.MAX_VALUE;
+    @JsonProperty
     private int order = -1;
+    @JsonProperty
     private final String airport;
+    @JsonProperty
     private String runway;
+    @JsonProperty
     private final HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
+    @JsonProperty
     private int minAltitudeIndex = -1;
+    @JsonProperty
     private double minAltitude = Double.MAX_VALUE;
+    @JsonProperty
     private int startOfApproach = -1;
+    @JsonProperty
     private int endOfApproach = -1;
+    @JsonProperty
     private int startOfTakeoff = -1;
+    @JsonProperty
     private int endOfTakeoff = -1;
+    @JsonProperty
     private int finalIndex;
+    @JsonProperty
     private int takeoffCounter = 0;
+    @JsonProperty
     private String type = GO_AROUND; // go_around is the default -> will be updated or set if otherwise
 
     public Itinerary(ResultSet resultSet) throws SQLException {

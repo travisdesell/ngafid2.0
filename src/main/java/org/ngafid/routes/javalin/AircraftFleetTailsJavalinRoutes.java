@@ -74,7 +74,8 @@ public class AircraftFleetTailsJavalinRoutes {
                 ctx.json(names);
             }
         } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
+            // Can't put a 500 status here since modal won't show
+            ctx.json(new ErrorResponse(e));
         }
     }
 
