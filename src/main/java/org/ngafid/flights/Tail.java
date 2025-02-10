@@ -1,12 +1,18 @@
 package org.ngafid.flights;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Tail {
+    @JsonProperty
     private final String systemId;
+    @JsonProperty
     private final int fleetId;
+    @JsonProperty
     private final String tail;
+    @JsonProperty
     private final boolean confirmed;
 
     /**

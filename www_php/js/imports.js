@@ -184,7 +184,7 @@ class Import extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './request.php',
+                url: '.php',
                 data : submission_data,
                 dataType : 'json',
                 success : function(response) {

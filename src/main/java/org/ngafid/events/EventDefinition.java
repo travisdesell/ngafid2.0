@@ -1,5 +1,6 @@
 package org.ngafid.events;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,17 +30,29 @@ public class EventDefinition {
      */
     private static final Map<String, List<EventDefinition>> NAME_TO_EVENT_DEFINITIONS = new HashMap<>();
     private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
+    @JsonProperty
     private final int fleetId;
+    @JsonProperty
     private final int startBuffer;
+    @JsonProperty
     private final int stopBuffer;
+    @JsonProperty
     private final int airframeNameId;
+    @JsonProperty
     private final TreeSet<String> severityColumnNames;
+    @JsonProperty
     private final String severityType;
+    @JsonProperty
     private int id = 0;
+    @JsonProperty
     private String name;
+    @JsonProperty
     private Filter filter;
+    @JsonProperty
     private TreeSet<String> columnNames;
+    @JsonProperty
     private int[] severityColumnIds;
+    @JsonProperty
     private int severityTypeId;
 
     /**

@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.Month;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.WebServer;
 
 import java.io.File;
@@ -44,28 +45,49 @@ public final class Upload {
     }
 
     //CHECKSTYLE:OFF
+    @JsonProperty
     public int id;
+    @JsonProperty
     public Integer parentId;
+    @JsonProperty
     public int fleetId;
+    @JsonProperty
     public int uploaderId;
+    @JsonProperty
     public String filename;
+    @JsonProperty
     public String identifier;
+    @JsonProperty
     public Kind kind;
+    @JsonProperty
     public int numberChunks;
+    @JsonProperty
     public int uploadedChunks;
+    @JsonProperty
     public String chunkStatus;
+    @JsonProperty
     public String md5Hash;
+    @JsonProperty
     public long sizeBytes;
+    @JsonProperty
     public long bytesUploaded;
+    @JsonProperty
     public String status;
+    @JsonProperty
     public String startTime;
+    @JsonProperty
     public String endTime;
+    @JsonProperty
     public int validFlights;
+    @JsonProperty
     public int warningFlights;
+    @JsonProperty
     public int errorFlights;
 
     // For AirSync uploads that are grouped by month.
+    @JsonProperty
     String groupString = null;
+    @JsonProperty
     String tail = null;
     //CHECKSTYLE:ON
 
