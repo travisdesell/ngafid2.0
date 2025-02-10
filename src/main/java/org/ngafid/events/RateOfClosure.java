@@ -1,5 +1,6 @@
 package org.ngafid.events;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.common.Compression;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,10 +15,13 @@ public class RateOfClosure {
 
     private static final Logger LOG = Logger.getLogger(RateOfClosure.class.getName());
 
+    @JsonProperty
     private int id;
 
+    @JsonProperty
     private int size;
 
+    @JsonProperty
     private double[] rateOfClosureArray;
 
     public int getSize() {

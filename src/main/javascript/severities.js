@@ -335,7 +335,7 @@ class SeveritiesPage extends React.Component {
             for (var i = 0; i < data.points.length; i++) {
                 let index = data.points[i].pointIndex;
                 let flightId = data.points[i].data.flightIds[index];
-                let otherFlightId = null;
+                let otherFlightId = -1;
                 if (typeof flightId === 'string' && flightId.indexOf(' ') >= 0) {
                     let parts = flightId.split(' ');
                     flightId = parts[0];
@@ -343,7 +343,7 @@ class SeveritiesPage extends React.Component {
                 }
 
                 console.log("point index of clicked point is: " + index + " with a flight id of: " + flightId);
-                if (otherFlightId == null) {
+                if (otherFlightId == -1) {
                     window.open("/protected/flight?flight_id=" + flightId);
                 } else {
                     window.open("/protected/flight?flight_id=" + otherFlightId + "&flight_id=" + flightId);
@@ -368,7 +368,7 @@ class SeveritiesPage extends React.Component {
             var tagName = severityData.tagName[idIndex];
 
             let flightId = severityData.flightIds[idIndex];
-            let otherFlightId = null;
+            let otherFlightId = -1;
             if (typeof flightId === 'string' && flightId.indexOf(' ') >= 0) {
                 let parts = flightId.split(' ');
                 flightId = parts[0];

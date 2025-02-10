@@ -1,5 +1,6 @@
 package org.ngafid.events;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ngafid.flights.Airframes;
 
 import java.io.IOException;
@@ -14,25 +15,40 @@ import java.util.logging.Logger;
 
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
+    @JsonProperty
     private double severity;
+    @JsonProperty
     private int id;
+    @JsonProperty
     private int fleetId;
+    @JsonProperty
     private int flightId;
+    @JsonProperty
     private int eventDefinitionId;
+    @JsonProperty
     private String startTime;
+    @JsonProperty
     private String endTime;
+    @JsonProperty
     private int startLine;
+    @JsonProperty
     private int endLine;
-    private Integer otherFlightId = null;
+    @JsonProperty
+    private int otherFlightId;
 
+    @JsonProperty
     private String systemId;
 
+    @JsonProperty
     private String tail;
 
+    @JsonProperty
     private String tagName;
 
+    @JsonProperty
     private RateOfClosure rateOfClosure;
 
+    @JsonProperty
     private List<EventMetaData> metaDataList;
 
     public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
@@ -41,7 +57,7 @@ public class Event {
         this.startLine = startLine;
         this.endLine = endLine;
         this.severity = severity;
-        this.otherFlightId = null;
+        this.otherFlightId = -1;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
@@ -92,7 +108,7 @@ public class Event {
         this.severity = resultSet.getDouble(9);
         this.otherFlightId = resultSet.getInt(10);
         if (resultSet.wasNull()) {
-            this.otherFlightId = null;
+            this.otherFlightId = -1;
         }
     }
 
@@ -299,7 +315,7 @@ public class Event {
                     }
 
                     if (eventSet.wasNull()) {
-                        otherFlightId = null;
+                        otherFlightId = -1;
                     }
 
                     Event event = new Event(eventId, fleetId, flightId, definitionId, startLine,
@@ -471,7 +487,7 @@ public class Event {
 
             preparedStatement.setDouble(8, severity);
 
-            if (otherFlightId == null) {
+            if (otherFlightId == -1) {
                 preparedStatement.setNull(9, java.sql.Types.INTEGER);
             } else {
                 preparedStatement.setInt(9, otherFlightId);
