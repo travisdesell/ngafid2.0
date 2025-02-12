@@ -2,12 +2,9 @@ package org.ngafid.uploads;
 
 import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
-import org.ngafid.bin.CalculateExceedences;
-import org.ngafid.bin.FindSpinEvents;
 import org.ngafid.bin.UploadHelper;
 import org.ngafid.common.Database;
 import org.ngafid.common.SendEmail;
-import org.ngafid.events.proximity.CalculateProximity;
 import org.ngafid.flights.FlightError;
 import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.Pipeline;
@@ -249,17 +246,15 @@ public final class ProcessUpload {
         }
 
         if (status.isProcessed()) {
-            try {
-                FindSpinEvents.findSpinEventsInUpload(connection, upload);
-                // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
-                CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
-                CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
-                // CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
-            } catch (IOException | SQLException e) {
-                LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
-                status = Upload.Status.FAILED_UNKNOWN;
-                uploadException = new Exception(e.toString() + "\nFailed computing events...");
-            }
+            // try {
+            //     // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+            //     CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
+            //     // CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
+            // } catch (SQLException e) {
+            //     LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
+            //     status = Upload.Status.FAILED_UNKNOWN;
+            //     uploadException = new Exception(e.toString() + "\nFailed computing events...");
+            // }
         }
 
         // ingestion was successful

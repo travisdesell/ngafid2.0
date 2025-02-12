@@ -18,8 +18,9 @@ CREATE TABLE event_definitions (
     UNIQUE KEY(name, airframe_id, fleet_id)
 );
 
-ALTER TABLE flight_processed ADD CONSTRAINT fk_event_definition 
-    FOREIGN KEY (event_definition_id) REFERENCES event_definitions(id);
+ALTER TABLE flight_processed ADD CONSTRAINT fk_event_definition
+    FOREIGN KEY (event_definition_id) REFERENCES event_definitions(id)
+        ON DELETE CASCADE;
 
 --changeset josh:events labels:flights,events
 CREATE TABLE events (
@@ -38,11 +39,16 @@ CREATE TABLE events (
 
     PRIMARY KEY(id),
     FOREIGN KEY(fleet_id) REFERENCES fleet(id),
-    FOREIGN KEY(flight_id) REFERENCES flights(id),
-    FOREIGN KEY(other_flight_id) REFERENCES flights(id),
+    FOREIGN KEY(flight_id) REFERENCES flights(id)
+        ON DELETE CASCADE,
+    FOREIGN KEY(other_flight_id) REFERENCES flights(id)
+        ON DELETE CASCADE,
     INDEX(start_time),
     INDEX(end_time),
+    INDEX(event_definition_id, flight_id),
+    INDEX(event_definition_id, other_flight_id),
     FOREIGN KEY(event_definition_id) REFERENCES event_definitions(id)
+        ON DELETE CASCADE
 );
 
 --changeset josh:flights-processed-trigger labels:flights,events
@@ -104,6 +110,7 @@ CREATE TABLE event_statistics (
     FOREIGN KEY(fleet_id) REFERENCES fleet(id),
     FOREIGN KEY(airframe_id) REFERENCES airframes(id),
     FOREIGN KEY(event_definition_id) REFERENCES event_definitions(id)
+        ON DELETE CASCADE
 );
 
 --changeset josh:turn-to-final labels:flights,events
@@ -114,6 +121,7 @@ CREATE TABLE turn_to_final (
 
     PRIMARY KEY(flight_id),
     FOREIGN KEY(flight_id) REFERENCES flights(id)
+        ON DELETE CASCADE
 );
 
 --changeset josh:rate-of-closure labels:flights,events
@@ -125,6 +133,7 @@ CREATE TABLE rate_of_closure (
     
     PRIMARY KEY(id),
     FOREIGN KEY(event_id) REFERENCES events(id)
+        ON DELETE CASCADE
 );
 
 --changeset josh:event-metadata-keys labels:flights,events
@@ -145,6 +154,7 @@ CREATE TABLE event_metadata (
     key_id INT(11) NOT NULL,
     value DOUBLE NOT NULL,
 
-    FOREIGN KEY(event_id) REFERENCES events(id),
+    FOREIGN KEY(event_id) REFERENCES events(id)
+        ON DELETE CASCADE,
     FOREIGN KEY(key_id) REFERENCES event_metadata_keys(id)
 );

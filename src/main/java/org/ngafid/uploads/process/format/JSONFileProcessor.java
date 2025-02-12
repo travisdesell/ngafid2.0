@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import org.ngafid.common.MD5;
 import org.ngafid.common.TimeUtils;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.*;
@@ -155,12 +156,11 @@ public class JSONFileProcessor extends FlightFileProcessor {
         flightMeta.setStartDateTime(localDateSeries.get(0) + " " + localTimeSeries.get(0) + " " + utcOfstSeries.get(0));
         flightMeta.setEndDateTime(localDateSeries.get(localDateSeries.size() - 1) + " "
                 + localTimeSeries.get(localTimeSeries.size() - 1) + " " + utcOfstSeries.get(utcOfstSeries.size() - 1));
-        flightMeta.setAirframeType("UAS Rotorcraft");
         stream.reset();
         flightMeta.setMd5Hash(MD5.computeHexHash(stream));
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));
         flightMeta.setFilename(super.filename);
-        flightMeta.setAirframe((String) jsonMap.get("controller_model"));
+        flightMeta.airframe = new Airframes.Airframe(String.valueOf(jsonMap.get("controller_model")), new Airframes.Type("UAS Rotorcraft"));
         flightMeta.setCalculated(""); // TODO: Figure this out
         flightMeta.setSuggestedTailNumber((String) jsonMap.get("serial_number"));
     }

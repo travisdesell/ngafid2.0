@@ -56,7 +56,7 @@ public abstract class ComputeStep {
         return true;
     }
 
-    public final boolean applicable() {
+    public boolean applicable() {
         return airframeIsValid(builder.meta.airframe)
                 && builder
                 .getStringTimeSeriesKeySet()

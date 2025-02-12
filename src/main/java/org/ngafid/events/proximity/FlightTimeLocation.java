@@ -2,9 +2,8 @@ package org.ngafid.events.proximity;
 
 import org.ngafid.common.TimeUtils;
 import org.ngafid.common.filters.Pair;
-import org.ngafid.events.Event;
-import org.ngafid.events.EventStatistics;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 
 import java.io.IOException;
@@ -50,13 +49,12 @@ public final class FlightTimeLocation {
     //CHECKSTYLE:ON
 
 
-    public FlightTimeLocation(Connection connection, int fleetId, int flightId, int airframeNameId,
-                              String startDateTime, String endDateTime) throws SQLException {
-        this.fleetId = fleetId;
-        this.flightId = flightId;
-        this.airframeNameId = airframeNameId;
-        this.startDateTime = startDateTime;
-        this.endDateTime = endDateTime;
+    public FlightTimeLocation(Connection connection, Flight flight) throws SQLException {
+        this.fleetId = flight.getFleetId();
+        this.flightId = flight.getId();
+        this.airframeNameId = flight.getAirframeNameId();
+        this.startDateTime = flight.getStartDateTime();
+        this.endDateTime = flight.getEndDateTime();
 
         // first check and see if the flight had a start and end time, if not we cannot process it
         // System.out.println("Getting info for flight with start date time: " + startDateTime + " and end date time: "
@@ -128,7 +126,7 @@ public final class FlightTimeLocation {
      * @throws IOException  io exception
      * @throws SQLException sql exception
      */
-    public boolean getSeriesData(Connection connection) throws IOException, SQLException {
+    public boolean getSeriesData(Connection connection) throws SQLException {
         // get the time series data for altitude, latitude and longitude
         DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
         DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
@@ -191,22 +189,6 @@ public final class FlightTimeLocation {
         return hasSeriesData;
     }
 
-    public boolean alreadyProcessed(Connection connection) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND " +
-                        "flight_id = ? AND event_definition_id = ?")) {
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, flightId);
-            stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
-
-            // if there was a flight processed entry for this flight it was already processed
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                return resultSet.next();
-            }
-        }
-
-    }
-
     public static boolean proximityAlreadyCalculated(Connection connection, FlightTimeLocation first,
                                                      FlightTimeLocation second) throws SQLException {
         try (PreparedStatement stmt = connection
@@ -223,35 +205,5 @@ public final class FlightTimeLocation {
                 }
             }
         }
-    }
-
-    public void updateWithEvent(Connection connection, Event event, String eventStartDateTime)
-            throws IOException, SQLException {
-        event.updateDatabase(connection, fleetId, flightId, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
-        event.updateStatistics(connection, fleetId, airframeNameId, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
-
-        double severity = event.getSeverity();
-        double duration = event.getDuration();
-
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, " +
-                        "min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), " +
-                        "sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), " +
-                        "max_severity = GREATEST(max_severity, ?) " +
-                        "WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, flightId);
-            stmt.setInt(3, CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID);
-            stmt.setDouble(4, duration);
-            stmt.setDouble(5, duration);
-            stmt.setDouble(6, duration);
-            stmt.setDouble(7, severity);
-            stmt.setDouble(8, severity);
-            stmt.setDouble(9, severity);
-            stmt.executeUpdate();
-        }
-
-        EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId,
-                CalculateProximity.ADJACENCY_EVENT_DEFINITION_ID, eventStartDateTime);
     }
 }

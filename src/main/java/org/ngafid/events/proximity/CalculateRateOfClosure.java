@@ -1,20 +1,11 @@
 package org.ngafid.events.proximity;
 
-import org.ngafid.common.Database;
-import org.ngafid.events.RateOfClosure;
-import org.ngafid.flights.Flight;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 public final class CalculateRateOfClosure {
     private CalculateRateOfClosure() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
+    /*
     public static void main(String[] args) {
         try (Connection connection = Database.getConnection()) {
             String queryString = "SELECT e.flight_id as flight_id, e.other_flight_id as " +
@@ -83,4 +74,5 @@ public final class CalculateRateOfClosure {
         System.out.println("Calculating Rate of Closure for all proximity events complete.");
         System.exit(0);
     }
+     */
 }

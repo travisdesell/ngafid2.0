@@ -162,7 +162,7 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      */
     private static List<AircraftTimeline> buildTimeline(Connection connection, ResultSet tailSet, LocalDate startDate,
-                                                        LocalDate endDate) throws SQLException {
+                                                        LocalDate endDate) throws SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
         List<AircraftTimeline> timeline = new ArrayList<>();
 
         while (tailSet.next()) {
@@ -186,8 +186,8 @@ public final class ExtractMaintenanceFlights {
                 String flightEndTime = resultSet.getString(3);
 
                 // convert the start time (which is in GMT) to CST
-                flightStartTime = TimeUtils.convertToOffset(flightStartTime, "+00:00", "-06:00");
-                flightEndTime = TimeUtils.convertToOffset(flightEndTime, "+00:00", "-06:00");
+                flightStartTime = TimeUtils.toString(TimeUtils.convertToOffset(flightStartTime, "+00:00", "-06:00"));
+                flightEndTime = TimeUtils.toString(TimeUtils.convertToOffset(flightEndTime, "+00:00", "-06:00"));
 
                 timeline.add(new AircraftTimeline(flightId, flightStartTime, flightEndTime));
                 count++;
@@ -554,6 +554,8 @@ public final class ExtractMaintenanceFlights {
         } catch (IOException e) {
             System.err.println("IOException: " + e);
             e.printStackTrace();
+        } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {
+            throw new RuntimeException(e);
         }
     }
 }

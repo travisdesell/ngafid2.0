@@ -36,19 +36,20 @@ public class Event {
 
     private List<EventMetaData> metaDataList;
 
-    public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
+    public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
         this.severity = severity;
         this.otherFlightId = null;
+        this.eventDefinitionId = defId;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
     }
 
-    public Event(String startTime, String endTime, int startLine, int endLine, double severity, int flightId, int otherFlightId) {
+    public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity, int flightId, int otherFlightId) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
@@ -56,6 +57,7 @@ public class Event {
         this.severity = severity;
         this.flightId = flightId;
         this.otherFlightId = otherFlightId;
+        this.eventDefinitionId = defId;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
@@ -63,13 +65,14 @@ public class Event {
     }
 
     public Event(String startTime, String endTime,
-                 int startLine, int endLine, double severity, Integer otherFlightId) {
+                 int startLine, int endLine, int defId, double severity, Integer otherFlightId) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
         this.severity = severity;
         this.otherFlightId = otherFlightId;
+        this.eventDefinitionId = defId;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
@@ -191,7 +194,7 @@ public class Event {
 
         // get a map of the airframe ids to airframe names
         for (String airframe : fleetAirframes) {
-            airframeIds.put(new Airframes.Airframe(connection, airframe).getId(), airframe);
+            airframeIds.put(Airframes.Airframe.getAirframeByName(connection, airframe).getId(), airframe);
 
             eventsByAirframe.put(airframe, new ArrayList<Event>());
         }
@@ -215,11 +218,8 @@ public class Event {
         }
 
         try (PreparedStatement ps = preparedStatement; ResultSet resultSet = preparedStatement.executeQuery()) {
-            LOG.info(preparedStatement.toString());
-
             while (resultSet.next()) {
                 int definitionId = resultSet.getInt(1);
-                LOG.info("getting events for definition id: " + definitionId);
 
                 // could use this but it won't grab the airframeId because it's not in the events table so
                 // doing it the longer way below is quicker
@@ -254,9 +254,6 @@ public class Event {
                 }
 
                 eventsQuery += " ORDER BY events.start_time";
-
-                LOG.info(eventsQuery);
-                LOG.info("startTime: '" + startTime + "', endTime: '" + endTime + "'");
 
                 PreparedStatement eventsStatement = connection.prepareStatement(eventsQuery);
                 eventsStatement.setInt(1, definitionId);
@@ -319,6 +316,17 @@ public class Event {
         }
 
         return eventsByAirframe;
+    }
+
+    public static void deleteEvents(Connection connection, int flightId, int eventDefinitionId) throws SQLException {
+        String query = "DELETE FROM events WHERE event_definition_id = ? AND (flight_id = ? OR other_flight_id = ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, eventDefinitionId);
+            preparedStatement.setInt(2, flightId);
+            preparedStatement.setInt(3, flightId);
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
     }
 
     /**
@@ -456,8 +464,9 @@ public class Event {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Event event : events) {
                 event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+                LOG.info(preparedStatement.toString());
             }
-            LOG.info(preparedStatement.toString());
+
             preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {

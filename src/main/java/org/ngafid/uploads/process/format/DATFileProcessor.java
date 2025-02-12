@@ -747,8 +747,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             FlightMeta meta = new FlightMeta();
             meta.setFilename(filename);
             meta.setUploadId(pipeline.getDerivedUploadId());
-            meta.setAirframeType("UAS Rotorcraft");
-            meta.setAirframe("DJI " + attributeMap.get("ACType"));
+            meta.setAirframe("DJI " + attributeMap.get("ACType"), "UAS Rotorcraft");
             meta.setSystemId(attributeMap.get("mcID(SN)"));
 
             LOG.info("Flight builder DA");

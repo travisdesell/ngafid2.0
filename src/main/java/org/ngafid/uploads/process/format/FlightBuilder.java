@@ -32,8 +32,7 @@ public class FlightBuilder {
     private static Logger LOG = Logger.getLogger(FlightBuilder.class.getName());
 
     //CHECKSTYLE:OFF
-    // The only thing we require, by default, is a start and end time.
-    // TODO: Determine if this is the exact behavior we want.
+    // Note that event steps will be added at a separate time as they are a bit more dynamic.
     private static final List<ComputeStep.Factory> PROCESS_STEPS = List.of(
             required(ComputeStartEndTime::new),
             ComputeAirportProximity::new,
@@ -43,11 +42,7 @@ public class FlightBuilder {
             ComputeDivergence::new,
             ComputeLOCI::new,
             ComputeItinerary::new,
-            ComputeAltAGL::new,
-            ComputeSpinEvents::new,
-            // ComputeTurnToFinal::new,
-            // ComputePitchEvents::new,
-            ComputeLowEndingFuelEvents::new
+            ComputeAltAGL::new
     );
 
     // Flight meta data - see FlightMeta definition for details.
@@ -330,5 +325,9 @@ public class FlightBuilder {
 
     public List<EventDefinition> getEventDefinitions() {
         return computedEvents;
+    }
+
+    public Map<String, StringTimeSeries> getStringTimeSeriesMap() {
+        return stringTimeSeries;
     }
 }

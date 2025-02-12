@@ -10,9 +10,14 @@ public enum Topic {
     UPLOAD("upload"),
     UPLOAD_RETRY("upload-retry"),
     UPLOAD_DLQ("upload-dlq"),
+
     EMAIL("email"),
     EMAIL_RETRY("email-retry"),
-    EMAIL_DLQ("email-dlq");
+    EMAIL_DLQ("email-dlq"),
+
+    EVENT("event"),
+    EVENT_RETRY("event-retry"),
+    EVENT_DLQ("event-dlq");
 
     private final String name;
 

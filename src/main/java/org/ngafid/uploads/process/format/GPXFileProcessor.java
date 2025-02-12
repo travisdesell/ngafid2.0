@@ -1,6 +1,7 @@
 package org.ngafid.uploads.process.format;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.*;
@@ -185,10 +186,9 @@ public class GPXFileProcessor extends FlightFileProcessor {
 
                     FlightMeta meta = new FlightMeta();
                     meta.setFilename(this.filename + ":" + start + "-" + end);
-                    meta.setAirframe(airframeName);
+                    meta.airframe = new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing"));
                     meta.setSuggestedTailNumber(nickname);
                     meta.setSystemId(nickname);
-                    meta.setAirframeType("Fixed Wing");
 
                     flights.add(new FlightBuilder(meta, doubleSeries, stringSeries));
                     start = end;

@@ -12,6 +12,7 @@ import org.ngafid.common.Database;
 import org.ngafid.common.SendEmail;
 
 import java.sql.Connection;
+import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -58,11 +59,11 @@ public class EmailConsumer {
     private static void emailConsumer(Properties props) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
              KafkaProducer<String, SendEmail.Email> producer = new KafkaProducer<>(props)) {
-            List<String> topics = List.of("email", "email-retry");
+            List<String> topics = List.of(Topic.EMAIL.toString(), Topic.EMAIL_RETRY.toString());
             consumer.subscribe(topics);
 
             while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(10000);
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(10000));
                 for (String topic : topics) {
                     List<ConsumerRecord<String, String>> emails = IteratorUtils.<ConsumerRecord<String, String>>toList(records.records(topic).iterator());
                     List<SendEmail.Email> converted = emails.stream().map(ConsumerRecord::value).map(x -> {
@@ -78,7 +79,7 @@ public class EmailConsumer {
                     } catch (Exception e) {
                         LOG.info("Encountered error in upload consumer: " + e.getMessage());
                         e.printStackTrace();
-                        String targetTopic = topic.equals("email") ? "email-retry" : "email-dlq";
+                        String targetTopic = topic.equals(Topic.EMAIL.toString()) ? Topic.EMAIL_RETRY.toString() : Topic.EMAIL_DLQ.toString();
                         converted.forEach(email -> producer.send(new ProducerRecord<>(targetTopic, email)));
                     }
                 }

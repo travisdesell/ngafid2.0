@@ -135,13 +135,6 @@ public final class Upload {
                 preparedStatement.executeUpdate();
             }
 
-            query = "DELETE FROM flight_errors WHERE upload_id = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, id);
-                LOG.info(preparedStatement.toString());
-                preparedStatement.executeUpdate();
-            }
-
             ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, id);
 
             for (Flight flight : flights) {

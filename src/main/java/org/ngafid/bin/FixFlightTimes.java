@@ -4,7 +4,6 @@ import org.ngafid.common.Database;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -184,7 +183,7 @@ public final class FixFlightTimes {
             System.out.println("processed " + count + " flights");
 
             connection.close();
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }

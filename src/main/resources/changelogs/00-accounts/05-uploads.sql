@@ -53,14 +53,18 @@ CREATE TABLE uploads (
     FOREIGN KEY (fleet_id)      REFERENCES fleet(id),
     FOREIGN KEY (uploader_id)   REFERENCES user(id),
     FOREIGN KEY (parent_id)     REFERENCES uploads(id)
+        ON DELETE CASCADE
 );
 
 --changeset josh:uploads-foreign-keys
 ALTER TABLE airsync_imports ADD CONSTRAINT fk_airsync_imports_upload_id
-    FOREIGN KEY (upload_id) REFERENCES uploads(id);
+    FOREIGN KEY (upload_id) REFERENCES uploads(id)
+        ON DELETE CASCADE;
 
 ALTER TABLE flight_errors ADD CONSTRAINT fk_flight_errors_upload_id
-    FOREIGN KEY (upload_id) REFERENCES uploads(id);
+    FOREIGN KEY (upload_id) REFERENCES uploads(id)
+        ON DELETE CASCADE;
 
 ALTER TABLE upload_errors ADD CONSTRAINT fk_upload_errors_upload_id
-    FOREIGN KEY (upload_id) REFERENCES uploads(id);
+    FOREIGN KEY (upload_id) REFERENCES uploads(id)
+        ON DELETE CASCADE;

@@ -252,7 +252,7 @@ public class EventDefinition {
         int airframeNameID = 0;
 
         if (!airframe.equals("All Airframes")) {
-            airframeNameID = new Airframes.Airframe(connection, airframe).getId();
+            airframeNameID = new Airframes.Airframe(connection, airframe, null).getId();
         }
 
         update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson,
@@ -347,7 +347,7 @@ public class EventDefinition {
                 preparedStatement.executeUpdate();
             }
         } else {
-            int airframeNameId = new Airframes.Airframe(connection, airframe).getId();
+            int airframeNameId = new Airframes.Airframe(connection, airframe, null).getId();
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, " +
                     "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
                     + "?," + " severity_type = ?";

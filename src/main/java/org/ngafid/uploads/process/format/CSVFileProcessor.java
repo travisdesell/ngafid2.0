@@ -1,5 +1,6 @@
 package org.ngafid.uploads.process.format;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import org.ngafid.flights.Airframes;
@@ -172,7 +173,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throws IOException {
         super(connection, stream, filename, pipeline);
 
-        meta.airframe = new Airframes.Airframe("Fixed Wing"); // Fixed Wing By default
         meta.filename = filename;
     }
 
@@ -281,7 +281,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             var dataType = dataTypes.get(j);
 
             try {
-                Double.parseDouble(columnData.get(columnData.size() / 2));  // Check if the column is numeric
+                JavaDoubleParser.parseDouble(columnData.get(columnData.size() / 2).trim());  // Check if the column is numeric
                 doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, columnData));
             } catch (NumberFormatException e) {
                 stringTimeSeries.put(name, new StringTimeSeries(name, dataType, columnData));
@@ -382,24 +382,28 @@ public class CSVFileProcessor extends FlightFileProcessor {
         var fleetKey = new AliasKey(name, pipeline.getUpload().getFleetId());
         var defaultKey = Airframes.defaultAlias(name);
 
+        String airframeName = null;
         if (Airframes.AIRFRAME_ALIASES.containsKey(fleetKey)) {
-            meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.get(fleetKey));
+            airframeName = Airframes.AIRFRAME_ALIASES.get(fleetKey);
         } else {
-            meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.getOrDefault(defaultKey, name));
+            airframeName = Airframes.AIRFRAME_ALIASES.getOrDefault(defaultKey, name);
         }
 
-        if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframe.getName())
-                || meta.airframe.getName().contains("Garmin")) {
-            meta.airframeType = new Airframes.AirframeType("Fixed Wing");
-        } else if (Airframes.ROTORCRAFT.contains(meta.airframe.getName())) {
-            meta.airframeType = new Airframes.AirframeType("Rotorcraft");
+        String airframeType = null;
+        if (Airframes.FIXED_WING_AIRFRAMES.contains(airframeName)
+                || airframeName.contains("Garmin")) {
+            airframeType = "Fixed Wing";
+        } else if (Airframes.ROTORCRAFT.contains(airframeName)) {
+            airframeType = "Rotorcraft";
         } else {
             LOG.severe("Could not import flight because the aircraft type was unknown for the following airframe name: '"
-                    + meta.airframe.getName() + "'");
+                    + airframeName + "'");
             LOG.severe(
                     "Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }
+
+        meta.airframe = new Airframes.Airframe(airframeName, new Airframes.Type(airframeType));
     }
 
 

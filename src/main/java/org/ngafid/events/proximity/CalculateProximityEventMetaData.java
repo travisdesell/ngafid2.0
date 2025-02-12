@@ -1,12 +1,12 @@
 package org.ngafid.events.proximity;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
 import org.ngafid.common.Database;
 import org.ngafid.events.EventMetaData;
 import org.ngafid.flights.DoubleTimeSeries;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 /**
  * CalculateProximityEventMetaData
@@ -131,8 +131,8 @@ public final class CalculateProximityEventMetaData {
 
                     }
 
-                    EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance);
-                    EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
+                    EventMetaData lateralDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, lateralDistance);
+                    EventMetaData verticalDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, verticalDistance);
 
                     lateralDistanceMetaData.updateDatabase(connection, eventId);
                     verticalDistanceMetaData.updateDatabase(connection, eventId);
@@ -140,9 +140,6 @@ public final class CalculateProximityEventMetaData {
 
                 otherResultSet.close();
                 otherStatement.close();
-
-                System.out.println("Processing event : " + eventId);
-
             }
 
             resultSet.close();

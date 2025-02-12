@@ -49,8 +49,7 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
     public ScanEagleCSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         super(connection, stream, filename, pipeline);
 
-        meta.airframe = new Airframes.Airframe("ScanEagle");
-        meta.airframeType = new Airframes.AirframeType("UAS Fixed Wing");
+        meta.airframe = new Airframes.Airframe("ScanEagle", new Airframes.Type("UAS Fixed Wing"));
     }
 
     @Override

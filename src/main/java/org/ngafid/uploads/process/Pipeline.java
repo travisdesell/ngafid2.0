@@ -150,7 +150,7 @@ public class Pipeline implements AutoCloseable {
                             return;
 
                         List<Flight> flights = fbuilders.stream().map(FlightBuilder::getFlight).toList();
-                        Flight.batchUpdateDatabase(connection, upload, flights);
+                        Flight.batchUpdateDatabase(connection, flights);
                         for (FlightBuilder builder : fbuilders) {
                             Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
                             TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
@@ -234,6 +234,8 @@ public class Pipeline implements AutoCloseable {
     public FlightBuilder build(Connection connection, FlightBuilder fb) {
         try {
             fb.meta.setFleetId(this.upload.fleetId);
+            fb.meta.setUploaderId(this.upload.uploaderId);
+            fb.meta.setUploadId(this.upload.id);
             return fb.build(connection);
         } catch (FlightProcessingException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");

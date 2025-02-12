@@ -21,7 +21,6 @@ public final class FlightMeta {
     public String suggestedTailNumber;
 
     public Airframes.Airframe airframe = null;
-    public Airframes.AirframeType airframeType = null;
     //CHECKSTYLE:ON
 
     // Default constructor
@@ -44,7 +43,6 @@ public final class FlightMeta {
 
         // Deep copy of Airframe, AirframeType  if not null
         this.airframe = other.airframe;
-        this.airframeType = other.airframeType;
     }
 
     public int getFleetId() {
@@ -103,27 +101,19 @@ public final class FlightMeta {
         this.md5Hash = md5Hash;
     }
 
-    public Airframes.AirframeType getAirframeType() {
-        return airframeType;
-    }
-
-    public void setAirframeType(String airframeType) {
-        this.airframeType = new Airframes.AirframeType(airframeType);
-    }
-
-    public void setAirframeType(Airframes.AirframeType airframeType) {
-        this.airframeType = airframeType;
+    public Airframes.Type getAirframeType() {
+        return airframe.getType();
     }
 
     public Airframes.Airframe getAirframe() {
         return airframe;
     }
 
-    public void setAirframe(String airframe) {
-        this.airframe = new Airframes.Airframe(airframe);
+    public void setAirframe(String airframe, String airframeType) {
+        this.airframe = new Airframes.Airframe(airframe, new Airframes.Type(airframeType));
     }
 
-    public void setAirframe(Airframes.Airframe airframe) {
+    public void setAirframe(Airframes.Airframe airframe, Airframes.Type airframeType) {
         this.airframe = airframe;
     }
 

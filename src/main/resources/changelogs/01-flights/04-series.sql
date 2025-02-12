@@ -44,7 +44,8 @@ CREATE TABLE double_series (
     PRIMARY KEY(id),
     INDEX(flight_id),
     INDEX(name_id),
-    FOREIGN KEY(flight_id) REFERENCES flights(id),
+    FOREIGN KEY(flight_id) REFERENCES flights(id)
+        ON DELETE CASCADE,
     FOREIGN KEY(name_id) REFERENCES double_series_names(id),
     FOREIGN KEY(data_type_id) REFERENCES data_type_names(id)
 );
@@ -62,7 +63,8 @@ CREATE TABLE string_series (
     PRIMARY KEY(id),
     INDEX(flight_id),
     INDEX(name_id),
-    FOREIGN KEY(flight_id) REFERENCES flights(id),
+    FOREIGN KEY(flight_id) REFERENCES flights(id)
+        ON DELETE CASCADE,
     FOREIGN KEY(name_id) REFERENCES string_series_names(id),
     FOREIGN KEY(data_type_id) REFERENCES data_type_names(id)
 );

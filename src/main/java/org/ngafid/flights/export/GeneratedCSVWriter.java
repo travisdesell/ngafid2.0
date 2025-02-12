@@ -26,7 +26,7 @@ public class GeneratedCSVWriter extends CSVWriter {
             for (String columnName : timeSeriesColumnNames) {
                 timeSeries.add(super.flight.getDoubleTimeSeries(connection, columnName));
             }
-        } catch (IOException | SQLException se) {
+        } catch (SQLException se) {
             se.printStackTrace();
         }
     }
