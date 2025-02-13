@@ -153,7 +153,6 @@ public class DATFileProcessor extends FlightFileProcessor {
 
         while ((line = reader.readNext()) != null) {
             for (int i = 0; i < line.length; i++) {
-
                 String name = columnNames.get(i);
 
                 try {
@@ -265,7 +264,7 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @return The start date and time
      */
-    private static String findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
+    private static String findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws FatalFlightFileException {
         DoubleTimeSeries dateSeries = doubleTimeSeriesMap.get("GPS(0):Date");
         DoubleTimeSeries timeSeries = doubleTimeSeriesMap.get("GPS(0):Time");
         DoubleTimeSeries offsetTime = doubleTimeSeriesMap.get("offsetTime");
@@ -299,14 +298,14 @@ public class DATFileProcessor extends FlightFileProcessor {
                     return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(newDate);
                 } catch (ParseException e) {
                     LOG.log(Level.WARNING, "Could not parse date {0} and time {1} as date", new Object[]{date, time});
-                    return null;
+                    throw new FatalFlightFileException("Unrecognized date format: '" + date + " " + time + "'");
                 }
             }
 
             colCount++;
         }
 
-        return null;
+        throw new FatalFlightFileException("File did not contain required date information");
     }
 
     /**
@@ -730,16 +729,16 @@ public class DATFileProcessor extends FlightFileProcessor {
                 if (attributeMap.containsKey("dateTime")) {
                     calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
                     String dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
-
-                    if (dateTimeStr != null) {
-                        calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
-                    }
+                    calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
+                } else {
+                    throw new FatalFlightFileException("No dateTime provided in binary.");
                 }
             } catch (CsvValidationException | FatalFlightFileException | IOException e) {
                 e.printStackTrace();
                 throw new FlightProcessingException(e);
             } catch (ParseException e) {
                 e.printStackTrace();
+                throw new FlightProcessingException(new FatalFlightFileException("Unable to parse dates in converted CSV file."));
             }
 
             dropBlankCols(doubleTimeSeriesMap, stringTimeSeriesMap);
