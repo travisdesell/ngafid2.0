@@ -623,7 +623,7 @@ html, body {
     position: fixed;
     display: block;
     opacity: 0.7;
-    background-color: #fff;
+    background-color: var(--c_bg);
     z-index: 99;
     text-align: center;
 }
@@ -633,12 +633,37 @@ html, body {
     color: var(--c_text) !important;
 }
 
-#loading-image {
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 10%;
-    z-index: 100;
+
+
+@keyframes pulse {
+    0%      { transform: scale(1) rotate(0deg); }
+    50%     { transform: scale(1.5) rotate(180deg); }
+    100%    { transform: scale(1) rotate(360deg); }
 }
+@keyframes flash {
+    0%      { color: var(--c_confirm_bg); }
+    50%     { color: white; }
+    100%    { color: var(--c_confirm_bg); }
+}
+#loading-image {
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    margin: -100px 0 0 -100px;
+
+    font-size: 200px;
+
+    scale: 0.50;
+
+    z-index: 100;
+    color: var(--c_confirm_bg);
+
+    animation: pulse 2.5s infinite linear, flash 2.5s infinite ease-in-out;
+}
+
 
 /*#endregion Loading Properties */
 
