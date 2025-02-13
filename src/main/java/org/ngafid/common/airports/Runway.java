@@ -4,14 +4,14 @@ import java.io.Serializable;
 
 public class Runway implements Serializable {
 
-    private final String siteNumber;
-    private final String name;
-    private final boolean hasCoordinates;
+    public final String siteNumber;
+    public final String name;
+    public final boolean hasCoordinates;
 
-    private final double lat1;
-    private final double lon1;
-    private final double lat2;
-    private final double lon2;
+    public final double lat1;
+    public final double lon1;
+    public final double lat2;
+    public final double lon2;
 
     public Runway(String siteNumber, String name) {
         this.siteNumber = siteNumber;
@@ -38,52 +38,12 @@ public class Runway implements Serializable {
     }
 
     /**
-     * Modified from:
-     * https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-     *
      * @param pointLatitude  latitude of the point
      * @param pointLongitude longitude of the point
      * @return the distance in feet
      */
     public double getDistanceFt(double pointLatitude, double pointLongitude) {
         return Airports.shortestDistanceBetweenLineAndPointFt(pointLatitude, pointLongitude, lat1, lon1, lat2, lon2);
-
-        // double A = point_longitude - lon1;
-        // double B = pointLatitude - lat1;
-        // double C = lon2 - lon1;
-        // double D = lat2 - lat1;
-
-        // double dot = A * C + B * D;
-        // double len_sq = C * C + D * D;
-        // double param = -1;
-
-        // if (len_sq != 0) {
-        //     //in case of 0 length line
-        //     param = dot / len_sq;
-        // }
-
-        // double xx, yy;
-
-        // if (param < 0) {
-        //     xx = lon1;
-        //     yy = lat1;
-
-        // } else if (param > 1) {
-        //     xx = lon2;
-        //     yy = lat2;
-
-        // } else {
-        //     xx = lon1 + param * C;
-        //     yy = lat1 + param * D;
-        // }
-
-        // double dx = point_longitude - xx;
-        // double dy = pointLatitude - yy;
-
-        // //return Math.sqrt(dx * dx + dy * dy);
-        // //return min_distance * 3280.84;
-        // return Airports.calculateDistanceInFeet(pointLatitude, point_longitude, pointLatitude + dy,
-        // point_longitude + dx);
     }
 
     public String toString() {
@@ -94,23 +54,4 @@ public class Runway implements Serializable {
         }
     }
 
-    public boolean isHasCoordinates() {
-        return hasCoordinates;
-    }
-
-    public double getLat1() {
-        return lat1;
-    }
-
-    public double getLon1() {
-        return lon1;
-    }
-
-    public double getLat2() {
-        return lat2;
-    }
-
-    public double getLon2() {
-        return lon2;
-    }
 }

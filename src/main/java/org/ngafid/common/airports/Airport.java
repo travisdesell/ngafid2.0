@@ -1,21 +1,19 @@
 package org.ngafid.common.airports;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import org.ngafid.common.MutableDouble;
 
 import java.util.Collection;
 import java.util.HashMap;
 
 public class Airport {
-    private final String iataCode;
-    private final String siteNumber;
-    private final String type;
+    public final String iataCode;
+    public final String siteNumber;
+    public final String type;
 
-    private final double latitude;
-    private final double longitude;
+    public final double latitude;
+    public final double longitude;
 
-    private final String geoHash;
+    public final String geoHash;
 
     private HashMap<String, Runway> runways;
 
@@ -57,11 +55,9 @@ public class Airport {
 
         double minDistance = maxDistanceFt;
         for (Runway runway : runways.values()) {
-            if (!runway.isHasCoordinates()) continue;
+            if (!runway.hasCoordinates) continue;
 
             double distanceFt = runway.getDistanceFt(lat, lon);
-            //System.err.println("distance between " + lat + ", " + lon + " and " + iataCode + " runway "
-            // + runway.name + ": " + distanceFt + ", minDistance: " + minDistance);
 
             if (distanceFt < minDistance) {
                 minDistance = distanceFt;
@@ -77,31 +73,4 @@ public class Airport {
         return !runways.isEmpty();
     }
 
-    public JsonElement jsonify(Gson gson) {
-        HashMap<String, Runway> runwaysMap = this.runways;
-        this.runways = null;
-        JsonElement je = gson.toJsonTree(this);
-        this.runways = runwaysMap;
-        return je;
-    }
-
-    public String getIataCode() {
-        return iataCode;
-    }
-
-    public String getGeoHash() {
-        return geoHash;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public String getSiteNumber() {
-        return siteNumber;
-    }
 }

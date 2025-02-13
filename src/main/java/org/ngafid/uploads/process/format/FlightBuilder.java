@@ -42,7 +42,8 @@ public class FlightBuilder {
             ComputeDivergence::new,
             ComputeLOCI::new,
             ComputeItinerary::new,
-            ComputeAltAGL::new
+            ComputeAltAGL::new,
+            ComputeTurnToFinal::new
     );
 
     // Flight meta data - see FlightMeta definition for details.
@@ -287,6 +288,10 @@ public class FlightBuilder {
         return this;
     }
 
+    public List<Itinerary> getItinerary() {
+        return itinerary;
+    }
+
     /**
      * Masks in the supplied bits into the `processingStatus` field of `meta.` This is sychronized to avoid race
      * conditions.
@@ -311,8 +316,8 @@ public class FlightBuilder {
         return events;
     }
 
-    public synchronized void emitTurnToFinal(TurnToFinal turnToFinal) {
-        this.turnToFinals.add(turnToFinal);
+    public synchronized void emitTurnToFinals(List<TurnToFinal> turnToFinals) {
+        this.turnToFinals.addAll(turnToFinals);
     }
 
     public ArrayList<TurnToFinal> getTurnToFinals() {

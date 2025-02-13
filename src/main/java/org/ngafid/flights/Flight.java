@@ -1088,7 +1088,7 @@ public class Flight {
 
                 // System.out.println(latitude + ", " + longitude + ", null, null, null, null");
             } else {
-                nearestAirportTS.add(airport.getIataCode());
+                nearestAirportTS.add(airport.iataCode);
                 airportDistanceTS.add(airportDistance.getValue());
 
                 MutableDouble runwayDistance = new MutableDouble();

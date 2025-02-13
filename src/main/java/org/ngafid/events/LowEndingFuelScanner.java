@@ -55,7 +55,6 @@ public class LowEndingFuelScanner extends AbstractEventScanner {
                 continue;
             }
 
-            LOG.info("DATE = " + currentTime);
             try {
                 duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime);
             } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {

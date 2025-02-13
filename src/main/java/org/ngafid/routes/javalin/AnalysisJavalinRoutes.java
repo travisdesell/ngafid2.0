@@ -1,29 +1,28 @@
 package org.ngafid.routes.javalin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.JsonElement;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
+import org.ngafid.common.Database;
 import org.ngafid.common.airports.Airport;
 import org.ngafid.common.airports.Airports;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.RateOfClosure;
+import org.ngafid.events.calculations.TurnToFinal;
 import org.ngafid.flights.*;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.Navbar;
-import org.ngafid.events.calculations.TurnToFinal;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
+import static java.util.Map.of;
 import static org.ngafid.bin.WebServer.gson;
 
 public class AnalysisJavalinRoutes {
@@ -268,7 +267,7 @@ public class AnalysisJavalinRoutes {
         System.out.println(endDate);
 
 
-        List<JsonElement> _ttfs = new ArrayList<>();
+        List<TurnToFinal.TurnToFinalJSON> _ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         try (Connection connection = Database.getConnection()) {
 
@@ -277,10 +276,10 @@ public class AnalysisJavalinRoutes {
 
             for (Flight flight : flights) {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
-                    JsonElement jsonElement = ttf.jsonify();
+                    var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         _ttfs.add(jsonElement);
-                        iataCodes.add(ttf.getAirportIataCode());
+                        iataCodes.add(ttf.airportIataCode);
                     }
                 }
             }
@@ -292,14 +291,10 @@ public class AnalysisJavalinRoutes {
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
         iataCodesList.addAll(iataCodes);
 
-        for (Airport ap : Airports.getAirports(iataCodesList).values()) {
-            System.out.println("long = " + ap.getLongitude() + ", lat = " + ap.getLatitude());
-        }
-
-        Map<String, JsonElement> airports = Airports.getAirports(iataCodesList).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().jsonify(gson)));
+        Map<String, Airport> airports = Airports.getAirports(iataCodesList);
 
         ctx.status(200);
-        ctx.json(Map.of("airports", airports, "ttfs", _ttfs));
+        ctx.json(of("airports", airports, "ttfs", _ttfs));
     }
 
     private static void getTrends(Context ctx) {

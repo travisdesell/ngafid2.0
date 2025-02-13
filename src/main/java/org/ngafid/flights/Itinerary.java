@@ -160,8 +160,8 @@ public class Itinerary {
             }
 
             for (Runway rw : airport.getRunways())
-                if (rw.isHasCoordinates()) rws.add(rw);
-            runways.put(airport.getIataCode(), rws);
+                if (rw.hasCoordinates) rws.add(rw);
+            runways.put(airport.iataCode, rws);
         }
 
         return runways;
