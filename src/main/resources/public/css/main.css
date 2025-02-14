@@ -694,4 +694,12 @@ html, body {
     z-index: 1000;
 }
 
+.flight-setting-line-divider {
+    color: var(--c_border);
+}
+hr.rounded {
+    border-top: 6px solid var(--c_border);
+    border-radius: 5px;
+}
+
 /* #endregion Map & Graph Containers */

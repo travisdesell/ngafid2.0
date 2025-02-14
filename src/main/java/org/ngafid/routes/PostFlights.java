@@ -59,7 +59,6 @@ public class PostFlights implements Route {
 
         LOG.info(filterJSON);
 
-
         Filter filter = gson.fromJson(filterJSON, Filter.class);
         LOG.info("received request for flights with filter: " + filter);
 

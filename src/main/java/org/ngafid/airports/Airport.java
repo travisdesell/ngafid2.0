@@ -2,7 +2,6 @@ package org.ngafid.airports;
 
 import java.util.Collection;
 import java.util.HashMap;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.Expose;
