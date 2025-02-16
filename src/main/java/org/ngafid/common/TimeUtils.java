@@ -272,7 +272,10 @@ public enum TimeUtils {
             try {
                 zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
             } catch (Exception e) {
-                throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
+                // throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
+                localDates.add("");
+                localTimes.add("");
+                utcOffsets.add("");
             }
 
             ZoneId zoneId = ZoneId.of(zoneIdStr);

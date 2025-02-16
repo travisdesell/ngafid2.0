@@ -211,7 +211,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         // Determine the correct formatter based on the first row
         StringTimeSeries dateSeries = stringTimeSeries.get("UTC Date");
         StringTimeSeries timeSeries = stringTimeSeries.get("UTC Time");
-        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(0), dateSeries.get(0));
+        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), dateSeries.get(dateSeries.size() / 2));
 
         for (int i = 0; i < dateSeries.size(); i++) {
 
@@ -250,58 +250,6 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         return correctFormatter;
     }
 
-    /**
-     * Creates a map of header indices by header name and retrieves required G5 column indices.
-     *
-     * @param headerLine a coma separated string with header values.
-     * @return Map of required G5 column names to their indices
-     * @throws Exception if any required G5 headers are missing
-     */
-    private Map<String, Integer> initializeAndValidateHeaderIndices(String headerLine) throws FlightFileFormatException {
-        Map<String, Integer> headerIndices = new HashMap<>();
-
-        // Populate header indices
-        for (int i = 0; i < headers.size(); i++)
-            headerIndices.put(this.headers.get(i).trim(), i);
-
-        // Define and validate required G5 headers
-        List<String> requiredG5Headers = Arrays.asList("UTC Date", "UTC Time", "Latitude", "Longitude");
-        Map<String, Integer> g5Indices = new HashMap<>();
-
-        for (String g5Header : requiredG5Headers) {
-            Integer index = headerIndices.get(g5Header);
-            if (index == null) {
-                throw new FlightFileFormatException("Required G5 header '" + g5Header + "' not found in CSV file.");
-            }
-            g5Indices.put(g5Header, index);
-        }
-
-        return g5Indices;
-    }
-
-    /**
-     * Filters out rows where either the "Latitude" or "Longitude" column is missing or empty.
-     *
-     * @param rows           List of rows from the CSV file.
-     * @param latitudeIndex  Index of the Latitude column.
-     * @param longitudeIndex Index of the Longitude column.
-     * @return Filtered list of valid rows.
-     */
-    private List<String[]> filterInvalidRows(List<String[]> rows, int latitudeIndex, int longitudeIndex) {
-        List<String[]> validRows = new ArrayList<>();
-        int rowsSkipped = 0;
-
-        for (String[] row : rows) {
-            if (!row[latitudeIndex].isEmpty() && !row[longitudeIndex].isEmpty()) {
-                validRows.add(row);
-            } else {
-                rowsSkipped++;
-            }
-        }
-
-        LOG.info("Found and skipped in G5 file: " + rowsSkipped + " rows. Input rows size: " + rows.size() + ". Valid rows size: " + validRows.size());
-        return validRows;
-    }
 
     /**
      * G5 data recorder do not have local date time fields.

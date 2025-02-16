@@ -12,16 +12,8 @@ You will need the following software packages:
 
 ## 1. Clone the repository
 
-Using SSH (reccomended):
-
 ```
 ~/ $ git clone git@github.com:travisdesell/ngafid2.0
-```
-
-Using HTTPS:
-
-```
-~/ $ git clone https://github.com/travisdesell/ngafid2.0.git
 ```
 
 Afterwards, we need to install a JAR file dependency to where Maven fetches your dependencies from.
@@ -186,13 +178,7 @@ First, we need maven to fetch all of the java dependencies:
 ~/ngafid2.0 $ mvn install
 ```
 
-Next we need to initialize node. You'll need npm installed for this. For ubuntu:
-
-```
-~/ $ sudo apt install npm
-```
-
-Then run:
+Next we need to initialize node. You'll need npm installed for this, then run:
 
 ```
 ~/ngafid2.0 $ npm install
@@ -200,8 +186,7 @@ Then run:
 
 This will download the javascript dependencies.
 
-Then, in order to compile the javascript
-and automatically recompile whenever you change one of the files:
+Then, in order to compile the javascript and automatically recompile whenever you change one of the files:
 
 ```
 ~/ngafid2.0 $ npm run watch
@@ -211,12 +196,21 @@ Before we run the actual webserver, we need to launch Kafka so the webserver can
 file path you use here depending on what platform you're on. Note that these will need to be launched in separate
 terminals and be ran persistently while the data processing daemon or web server is up:
 
+Note that depending on your kafka installation, these programs may actually be shell scripts (e.g.
+`zookeeper-server-start.sh`) -- the following works for kafka installed via Brew on MacOS:
+
 ```
 # Launch Zookeeper -- required for Kafka server
 ~/ngafid2.0 $ zookeeper-server-start src/main/resources/zookeeper-{mac,linux}.properties
 
 # Launch this in a separate terminal
 ~/ngafid2.0 $ kafka-server-start src/main/resources/server-{mac,linux}.properties
+```
+
+Next, run the following script to create the appropriate kafka topics:
+
+```
+~/ngafid2.0 $ run/create_topics.sh
 ```
 
 You should then be able to compile and run the webserver by running `run/webserver.sh`
@@ -227,28 +221,42 @@ You should then be able to compile and run the webserver by running `run/webserv
 
 ## 6. Data Processing
 
-We use Kafka to spin off upload processing events. After uploading a file to the web server, we need to spin up the data
-processing daemon.
+The data processing pipeline consists of two Kafka consumers and one database observer -- one processes archives
+uploaded to the website, and the other two handle event processing. They should all run persistently in separate
+terminals:
 
-Next, launch the `UploadObserverProducer` which will watch the database and send processing messages to kafka when new
-uploads are detected:
+The upload consumer simply processes uploaded files from the `upload` topic:
 
-```
-~/ngafid2.0 $ run/upload_observer_producer.sh
-```
-
-Finally, we launch the `UploadConsumer` to read processing messages from the kafka queue and actually process the
-uploads:
-
-```
+```shell
 ~/ngafid2.0 $ run/upload_consumer.sh
 ```
+
+The event consumer and event observer work in concert: the event observer looks for uncomputed events in fully imported
+flights and places them into the `event` topic. Then, the event consumer computes those events.
+
+```shell
+~/ngafid2.0 $ run/event_consumer.sh
+```
+
+```shell
+~/ngafid2.0 $ run/event_observer.sh
+```
+
+## 7. Workflow
 
 If you modify the upload processing code in some way and want to re-add an upload to the processing queue, you may use
 the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue:
 
 ```
-~/ngafid2.0 $ run/upload_helper.sh --fleet {fleet-id}
+~/ngafid2.0 $ run/upload_helper.sh --help
+```
+
+Similarly, if you modify a custom-event computation you can use the `EventHelper` to remove events from the database.
+The event observer will pick up on this and enqueue them for re-computation. You may also delete events and opt for them
+not to be recomputed.
+
+```
+~/ngafid2.0 $ run/event_helper.sh --help
 ```
 
 ## (Optional) using the backup daemon - works on Linux systems only.

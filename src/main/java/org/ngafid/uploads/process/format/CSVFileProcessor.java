@@ -19,11 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,7 +59,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
     }
 
+    private static Pattern G5_PART_NUMBER_REGEX = Pattern.compile("006-B2304-\\d\\d");
+
     /**
+     * Scans for Garmin-G5 part number in header. We might in the future use part numbers to identify other file formats.
+     * <p>
+     * According to the following document: https://static.garmin.com/pumac/190-01112-10_28.pdf?download=true
+     * The part number for the G5 is 006-B2304-XX where XX represent the specific version.
+     * <p>
      * Determines if the data comes from G5 date recorder.
      * Checks the conditions:
      * If Headers contains serial_number AND no system_id AND no airframe_name AND
@@ -73,19 +78,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     private static boolean airframeIsG5(List<String> headerLines, String[] firstRow) {
         // G5 recorder has date in the format below
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
-        if (headerLines.get(0).contains("serial_number") &&
-                !headerLines.get(0).contains("system_id") &&
-                !headerLines.get(0).contains("airframe_name")) {
-            // Check if the date in the expected format.
-            try {
-                LocalDate.parse(firstRow[0], formatter);
-                return true;
-            } catch (DateTimeParseException e) {
-                return false;
-            }
-        }
-        return false;
+        return G5_PART_NUMBER_REGEX.asPredicate().test(headerLines.get(0));
     }
 
     /**
@@ -157,10 +150,12 @@ public class CSVFileProcessor extends FlightFileProcessor {
             String[] values = firstLine.split(",");
 
             if (airframeIsG5(headerLines, values)) {
+                LOG.info("Creating G5 CSV file processor");
                 _factory = G5CSVFileProcessor::new;
             } else if (airframeIsScanEagle(headerLines.get(0))) {
                 _factory = ScanEagleCSVFileProcessor::new;
             } else {
+                LOG.info("Creating normal CSV file processor");
                 _factory = CSVFileProcessor::new;
             }
         }
