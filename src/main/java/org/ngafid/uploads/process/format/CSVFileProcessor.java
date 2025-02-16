@@ -59,7 +59,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
     }
 
-    private static Pattern G5_PART_NUMBER_REGEX = Pattern.compile("006-B2304-\\d\\d");
+    private static final Pattern G5_PART_NUMBER_REGEX = Pattern.compile("006-B2304-\\d\\d");
 
     /**
      * Scans for Garmin-G5 part number in header. We might in the future use part numbers to identify other file formats.
@@ -73,12 +73,23 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * If the date is in the following format: M/d/yyyy
      *
      * @param headerLines
-     * @param firstRow
      * @return true or false
      */
-    private static boolean airframeIsG5(List<String> headerLines, String[] firstRow) {
+    private static boolean airframeIsG5(List<String> headerLines) {
         // G5 recorder has date in the format below
         return G5_PART_NUMBER_REGEX.asPredicate().test(headerLines.get(0));
+    }
+
+    private static final Pattern G3X_PART_NUMBER_REGEX = Pattern.compile("006-B1727-[A-Za-z\\d]{2}");
+
+    /**
+     * Scans first line of file for G3X part number.
+     *
+     * @param headerLines
+     * @return
+     */
+    private static boolean airframeIsG3X(List<String> headerLines) {
+        return G3X_PART_NUMBER_REGEX.asPredicate().test(headerLines.get(0));
     }
 
     /**
@@ -149,7 +160,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
             String[] values = firstLine.split(",");
 
-            if (airframeIsG5(headerLines, values)) {
+            if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
                 LOG.info("Creating G5 CSV file processor");
                 _factory = G5CSVFileProcessor::new;
             } else if (airframeIsScanEagle(headerLines.get(0))) {
