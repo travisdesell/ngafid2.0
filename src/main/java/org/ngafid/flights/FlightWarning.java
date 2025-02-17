@@ -1,13 +1,14 @@
 package org.ngafid.flights;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.ngafid.common.ErrorMessage;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class FlightWarning {
@@ -85,7 +86,6 @@ public class FlightWarning {
     /**
      * @param connection is the connection to the database
      * @param fleetId    is the fleet's id
-     *
      * @return the number of flight warnings for a fleet
      */
     public static int getCount(Connection connection, int fleetId) throws SQLException {
@@ -95,7 +95,7 @@ public class FlightWarning {
             queryString += " WHERE fleet_id = " + fleetId;
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             resultSet.next();

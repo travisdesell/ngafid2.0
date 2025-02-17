@@ -471,7 +471,7 @@ export default class SummaryPage extends React.Component {
                             </div>
 
                             <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</h3> Flights <br></br>
+                                <h3>{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</h3> Flights Without Errors <br></br>
                             </div>
 
                             <div className = "col-sm-4">
@@ -550,7 +550,13 @@ export default class SummaryPage extends React.Component {
 
     UploadsSummary() {
 
-        let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithWarning + this.state.statistics.flightsWithError);
+        let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithError);
+        let hasWarnings = (this.state.statistics.flightsWithWarning > 0);
+
+        //Modifes a string to be plural if the supplied is not 1
+        const pluralize = (count, stringIn) => {
+            return (count === 1 ? stringIn : stringIn + "s");
+        }
 
         return (
                 <div className="card mb-2 m-2" style={{display:"flex", flexFlow:"column nowrap", height:"50%"}}>
@@ -567,7 +573,7 @@ export default class SummaryPage extends React.Component {
                                             &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Upload(s)</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.uploads, "Upload")}</td>
                                 </tr>
 
                                 <tr>
@@ -577,7 +583,7 @@ export default class SummaryPage extends React.Component {
                                             &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Upload(s) awaiting Import</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import</td>
                                 </tr>
  
                                 <tr>
@@ -587,7 +593,7 @@ export default class SummaryPage extends React.Component {
                                             &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Upload(s) with Errors</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors</td>
                                 </tr>  
 
                             </tbody>
@@ -597,11 +603,15 @@ export default class SummaryPage extends React.Component {
                                 <tr>
                                     <td style={{textAlign: "right"}}>
                                         <span className="badge" style={{backgroundColor:"var(--c_valid)", color:"white"}}>
-                                            <i className="fa fa-fw fa-check" aria-hidden="true"/>
+                                            {
+                                                (hasWarnings)
+                                                ? <i className="fa fa-fw fa-check" style={{alignContent:"center", color: "var(--c_warning)"}} title="Flights with non-critical Warnings are included as Valid flights."/> 
+                                                : <i className="fa fa-fw fa-check" style={{alignContent:"center", color: "white"}} title="No Flights in this Fleet have Warnings."/> 
+                                            }
                                             &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) Valid</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.numberFlights, "Flight")} Valid</td>
                                 </tr>
 
                                 <tr>
@@ -611,7 +621,7 @@ export default class SummaryPage extends React.Component {
                                             &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) with Warnings</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.flightsWithWarning, "Flight")} with Warnings</td>
                                 </tr>
  
                                 <tr>
@@ -621,7 +631,7 @@ export default class SummaryPage extends React.Component {
                                             &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) with Errors</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.flightsWithError, "Flight")} with Errors</td>
                                 </tr>     
 
                                 <tr>
@@ -631,7 +641,7 @@ export default class SummaryPage extends React.Component {
                                             &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
                                         </span>
                                     </td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) Imported</td>
+                                    <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(totalFlights, "Flight")} Imported</td>
                                 </tr>
 
                             </tbody>

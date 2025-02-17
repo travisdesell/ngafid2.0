@@ -3,7 +3,7 @@ package org.ngafid.flights;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.ngafid.common.Compression;
 import org.ngafid.common.NormalizedColumn;
-import org.ngafid.filters.Pair;
+import org.ngafid.common.filters.Pair;
 
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
@@ -35,6 +35,7 @@ public class DoubleTimeSeries {
     private int validCount;
     private double avg;
     private double max = -Double.MAX_VALUE;
+
     // Construct from an array
     public DoubleTimeSeries(String name, String dataType, double[] data, int size) {
         this.name = new DoubleSeriesName(name);
@@ -115,12 +116,19 @@ public class DoubleTimeSeries {
 
         for (int i = 0; i < stringTimeSeries.size(); i++) {
             String currentValue = stringTimeSeries.get(i);
-            if (currentValue.length() == 0) {
+
+            int offset = 0;
+            while (offset < currentValue.length() && currentValue.charAt(offset) == ' ') {
+                offset += 1;
+            }
+
+            if (currentValue.isEmpty() || offset == currentValue.length()) {
                 this.add(Double.NaN);
                 emptyValues++;
                 continue;
             }
-            double currentDouble = JavaDoubleParser.parseDouble(stringTimeSeries.get(i));
+
+            double currentDouble = JavaDoubleParser.parseDouble(currentValue, offset, currentValue.length() - offset);
 
             this.add(currentDouble);
 
@@ -147,7 +155,7 @@ public class DoubleTimeSeries {
         avg /= validCount;
     }
 
-    public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException {
+    public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         flightId = resultSet.getInt(2);
         name = new DoubleSeriesName(connection, resultSet.getInt(3));
@@ -162,7 +170,11 @@ public class DoubleTimeSeries {
         byte[] bytes = values.getBytes(1, (int) values.length());
         values.free();
 
-        this.data = Compression.inflateDoubleArray(bytes, size);
+        try {
+            this.data = Compression.inflateDoubleArray(bytes, size);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize a double time series!");
+        }
     }
 
     public static DoubleTimeSeries computed(String name, Unit dataType, int length, TimeStepCalculation calculation) {
@@ -252,14 +264,12 @@ public class DoubleTimeSeries {
      * not exist.
      */
     public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name)
-            throws IOException, SQLException {
+            throws SQLException {
         try (PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
                 + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = " +
                 "ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?")) {
             query.setInt(1, flightId);
             query.setString(2, name);
-
-            LOG.info(query.toString());
 
             try (ResultSet resultSet = query.executeQuery()) {
                 if (resultSet.next()) {
@@ -449,8 +459,6 @@ public class DoubleTimeSeries {
         if (this.name.getId() == -1)
             setNameId(connection);
 
-        LOG.info("name id = " + name.getId());
-
         preparedStatement.setInt(1, flightIdAdded);
         preparedStatement.setInt(2, name.getId());
         preparedStatement.setInt(3, dataType.getId());
@@ -558,6 +566,10 @@ public class DoubleTimeSeries {
         newSeries.size = until - from;
         System.arraycopy(data, from, newSeries.data, 0, until - from);
         return newSeries;
+    }
+
+    public Pair<Double, Double> getMinMax() {
+        return new Pair<>(min, max);
     }
 
     public interface TimeStepCalculation {

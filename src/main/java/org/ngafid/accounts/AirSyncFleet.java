@@ -3,11 +3,11 @@ package org.ngafid.accounts;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.flights.AirSyncEndpoints;
-import org.ngafid.flights.AirSyncImport;
-import org.ngafid.flights.Upload;
+import org.ngafid.bin.WebServer;
+import org.ngafid.common.Database;
+import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.airsync.AirSyncEndpoints;
+import org.ngafid.uploads.airsync.AirSyncImport;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -484,7 +484,11 @@ public class AirSyncFleet extends Fleet {
             filesAdded += 1;
 
             if (filesAdded >= 128) {
-                uploadResult.complete(connection);
+                try (Upload.LockedUpload locked = uploadResult.getLockedUpload(connection)) {
+                    locked.complete();
+                }
+
+                // Create new upload + Zip file
                 uploadResult = Upload.createAirsyncUpload(connection, getId());
                 zipFile.close();
                 zipFile = null;
@@ -546,8 +550,9 @@ public class AirSyncFleet extends Fleet {
 
         public void close() throws IOException, SQLException {
             if (upload != null) {
-                try (Connection connection = Database.getConnection()) {
-                    upload.complete(connection);
+                try (Connection connection = Database.getConnection();
+                     Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
+                    locked.complete();
                 }
             }
             if (zipFile != null) zipFile.close();

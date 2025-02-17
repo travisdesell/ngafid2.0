@@ -50,7 +50,7 @@ public final class StringTimeSeries {
     public StringTimeSeries(String name, String dataType, int sizeHint) {
         this.name = new StringSeriesName(name);
         this.dataType = new TypeName(dataType);
-        this.timeSeries = new ArrayList<String>(sizeHint);
+        this.timeSeries = new ArrayList<>(sizeHint);
 
         validCount = 0;
     }
@@ -95,6 +95,7 @@ public final class StringTimeSeries {
         this.timeSeries = timeSeries;
         validCount = 0;
         for (int i = 0; i < timeSeries.size(); i++) {
+            timeSeries.set(i, timeSeries.get(i).trim());
             if (!emptyAt(i)) {
                 validCount++;
             }
@@ -131,7 +132,7 @@ public final class StringTimeSeries {
     }
 
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name)
-            throws IOException, SQLException {
+            throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(
                 "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, " +
                         "ss.data FROM string_series AS ss INNER JOIN string_series_names " +
@@ -145,7 +146,7 @@ public final class StringTimeSeries {
                     try {
                         StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
                         return sts;
-                    } catch (ClassNotFoundException e) {
+                    } catch (IOException | ClassNotFoundException e) {
                         LOG.severe("Failed to read string time series from database due to a serialization error");
                         e.printStackTrace();
                         return null;
@@ -180,7 +181,7 @@ public final class StringTimeSeries {
     }
 
     public boolean emptyAt(int i) {
-        String value = get(i);
+        String value = get(i).strip();
         return value == null || value.isEmpty();
     }
 
@@ -252,7 +253,6 @@ public final class StringTimeSeries {
         if (dataType.getId() == -1)
             setTypeId(connection);
 
-        LOG.info("name id = " + name.getId());
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, name.getId());
         preparedStatement.setInt(3, dataType.getId());

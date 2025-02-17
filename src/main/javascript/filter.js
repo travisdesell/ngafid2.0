@@ -801,9 +801,9 @@ class Group extends React.Component {
                                     id='save-filter-button-card'
                                     className="btn btn-outline-secondary"
                                     onClick={() => {this.saveFilter()}}
-                                    data-toggle="tooltip"
-                                    data-trigger='manual'
-                                    data-placement="top"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-trigger='manual'
+                                    data-bs-placement="top"
                                     data-title='A filter with that name already exists in your fleet. Please provide a unique name.'
                                     disabled={submitDisabled}
                                 >
@@ -856,7 +856,7 @@ class Group extends React.Component {
                                     if (filter.name == this.state.editingFilter.name) {
                                         //When editing 
                                         editButton = (
-                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Submit Changes" data-title="A filter in your fleet already exists with that name! Please choose another name.">
+                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" title="Submit Changes" data-title="A filter in your fleet already exists with that name! Please choose another name.">
                                                 <i className='fa fa-check' aria-hidden='true'></i>
                                             </button>
                                         );
@@ -925,7 +925,7 @@ class Group extends React.Component {
                 <div className="d-flex justify-content-between">
 
                     <div className="p-2">
-                        <div className="btn-group btn-group-toggle" data-toggle="buttons">
+                        <div className="btn-group btn-group-toggle" data-bs-toggle="buttons">
                             <label className={"btn btn-outline-primary btn-sm " + andActive} onClick={() => this.props.setFilter(andClicked(this.props.getFilter(), this.props.treeIndex))}>
                                 <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andChecked} />AND
                             </label>
@@ -987,10 +987,10 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} data-toggle='tooltip' data-placement='top' data-trigger='manual' data-title='Changes Saved!'>
+                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} data-bs-toggle='tooltip' data-bs-placement='top' data-bs-trigger='manual' data-title='Changes Saved!'>
                               Load a Saved Filter
                           </button>
-                          <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Filter saved successfully">
+                          <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" title="Filter saved successfully">
                               Save Filter
                           </button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >

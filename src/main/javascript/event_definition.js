@@ -1,10 +1,7 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
-import { errorModal } from "./error_modal.js";
-
-import { Filter, isValidFilter } from './filter.js';
+import {Filter, isValidFilter} from './filter.js';
 
 
 class EventDefinitionCard extends React.Component {
@@ -22,7 +19,7 @@ class EventDefinitionCard extends React.Component {
 
     render() {
         let style = {
-            padding : 5
+            padding: 5
         };
 
         let formGroupStyle = {
@@ -36,20 +33,20 @@ class EventDefinitionCard extends React.Component {
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let bgStyle = {
-            background : "rgba(248,259,250,0.8)",
-            margin:0
+            background: "rgba(248,259,250,0.8)",
+            margin: 0
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -86,7 +83,10 @@ class EventDefinitionCard extends React.Component {
                             <label htmlFor="eventName" style={labelStyle}>Event name</label>
                         </div>
                         <div className="p-2 flex-fill">
-                            <input type="text" className="form-control" id="eventName" aria-describedby="eventName" placeholder="Enter event name" onChange={(event) => this.props.validateEventName(event)} value={this.props.eventName}/>
+                            <input type="text" className="form-control" id="eventName" aria-describedby="eventName"
+                                   placeholder="Enter event name"
+                                   onChange={(event) => this.props.validateEventName(event)}
+                                   value={this.props.eventName}/>
                         </div>
                     </div>
                 </div>
@@ -99,7 +99,9 @@ class EventDefinitionCard extends React.Component {
                         </div>
                         <div className="p-2 flex-fill">
 
-                            <select id="airframeSelect" className="form-control" onChange={(event) => this.props.validateAirframe(event)} value={this.props.airframe}>
+                            <select id="airframeSelect" className="form-control"
+                                    onChange={(event) => this.props.validateAirframe(event)}
+                                    value={this.props.airframe}>
                                 {
                                     this.props.airframes.map((airframeInfo, index) => {
                                         return (
@@ -107,7 +109,7 @@ class EventDefinitionCard extends React.Component {
                                         )
                                     })
                                 }
-                            </select>               
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -119,7 +121,10 @@ class EventDefinitionCard extends React.Component {
                             <label htmlFor="startBuffer" style={labelStyle}>Start buffer (seconds)</label>
                         </div>
                         <div className="p-2 flex-fill">
-                            <input type="number" className="form-control" id="eventName" aria-describedby="startBuffer" placeholder="Enter seconds" min="1" onChange={(event) => this.props.validateStartBuffer(event)} value={this.props.startBuffer} />
+                            <input type="number" className="form-control" id="eventName" aria-describedby="startBuffer"
+                                   placeholder="Enter seconds" min="1"
+                                   onChange={(event) => this.props.validateStartBuffer(event)}
+                                   value={this.props.startBuffer}/>
                         </div>
                     </div>
                 </div>
@@ -130,7 +135,10 @@ class EventDefinitionCard extends React.Component {
                             <label htmlFor="stopBuffer" style={labelStyle}>Stop buffer (seconds)</label>
                         </div>
                         <div className="p-2 flex-fill">
-                            <input type="number" className="form-control" id="eventName" aria-describedby="stopBuffer" placeholder="Enter seconds" min="1" onChange={(event) => this.props.validateStopBuffer(event)} value={this.props.stopBuffer}/>
+                            <input type="number" className="form-control" id="eventName" aria-describedby="stopBuffer"
+                                   placeholder="Enter seconds" min="1"
+                                   onChange={(event) => this.props.validateStopBuffer(event)}
+                                   value={this.props.stopBuffer}/>
                         </div>
                     </div>
                 </div>
@@ -142,7 +150,9 @@ class EventDefinitionCard extends React.Component {
                         </div>
                         <div className="p-2">
 
-                            <select id="severityColumnNames" className="form-control" onChange={(event) => this.props.changeSeverityColumn(event)} value={this.props.severityColumn}>
+                            <select id="severityColumnNames" className="form-control"
+                                    onChange={(event) => this.props.changeSeverityColumn(event)}
+                                    value={this.props.severityColumn}>
                                 {
                                     this.props.doubleTimeSeriesNames.map((seriesName, index) => {
                                         return (
@@ -150,19 +160,23 @@ class EventDefinitionCard extends React.Component {
                                         )
                                     })
                                 }
-                            </select>               
+                            </select>
                         </div>
                         <div className="p-2 flex-fill">
 
                             {
                                 this.props.severityColumnNames.map((columnName, index) => {
-                                    return (<button type="button" key={columnName} className="btn btn-primary mr-1" onClick={() => this.props.removeSeverityColumn(columnName)}>{columnName} <i className="fa fa-times p-1"></i></button>)
+                                    return (<button type="button" key={columnName} className="btn btn-primary mr-1"
+                                                    onClick={() => this.props.removeSeverityColumn(columnName)}>{columnName}
+                                        <i className="fa fa-times p-1"></i></button>)
                                 })
                             }
 
                         </div>
                         <div className="p-2">
-                            <button type="button" className="btn btn-primary" onClick={() => this.props.addSeverityColumn()}>Add Column</button>
+                            <button type="button" className="btn btn-primary"
+                                    onClick={() => this.props.addSeverityColumn()}>Add Column
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -175,12 +189,14 @@ class EventDefinitionCard extends React.Component {
                         </div>
                         <div className="p-2 flex-fill">
 
-                            <select id="severityTypeSelect" className="form-control" onChange={(event) => this.props.validateSeverityType(event)} value={this.props.severityType}>
-                                <option key="min" value="min">Minimum</option>
-                                <option key="max" value="max">Maximum</option>
-                                <option key="min abs" value="min abs">Minimum Absolute Value</option>
-                                <option key="max abs" value="max abs">Maximum Absolute Value</option>
-                            </select>               
+                            <select id="severityTypeSelect" className="form-control"
+                                    onChange={(event) => this.props.validateSeverityType(event)}
+                                    value={this.props.severityType}>
+                                <option key="min" value="MIN">Minimum</option>
+                                <option key="max" value="MAX">Maximum</option>
+                                <option key="min abs" value="MIN_ABS">Minimum Absolute Value</option>
+                                <option key="max abs" value="MAX_ABS">Maximum Absolute Value</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -197,7 +213,9 @@ class EventDefinitionCard extends React.Component {
                                     filters={this.props.filters}
                                     rules={this.props.rules}
 
-                                    getFilter={() => {return this.props.getFilter()}}
+                                    getFilter={() => {
+                                        return this.props.getFilter()
+                                    }}
                                     setFilter={(filter) => this.props.setFilter(filter)}
                                 />
                             </div>
@@ -210,13 +228,14 @@ class EventDefinitionCard extends React.Component {
                                 <label htmlFor="conditionJsonText" style={labelStyle}>Condition JSON Text</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <input type="text" className="form-control" id="conditionJsonText" aria-describedby="conditionJsonText"
+                                <input type="text" className="form-control" id="conditionJsonText"
+                                       aria-describedby="conditionJsonText"
                                        placeholder="Enter condition JSON text"
                                        onChange={(event) => {
-                                            this.setState({conditionText: event.target.value});
-                                            this.props.setFilter({
-                                                "text": event.target.value,
-                                            });
+                                           this.setState({conditionText: event.target.value});
+                                           this.props.setFilter({
+                                               "text": event.target.value,
+                                           });
 
                                        }}
                                        value={this.props.filters.text}/>
@@ -243,4 +262,4 @@ class EventDefinitionCard extends React.Component {
     }
 }
 
-export { EventDefinitionCard }
+export {EventDefinitionCard}

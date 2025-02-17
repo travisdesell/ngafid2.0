@@ -1,17 +1,13 @@
 package org.ngafid.accounts;
 
-import java.sql.*;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang.RandomStringUtils;
-import org.ngafid.SendEmail;
+import org.ngafid.common.SendEmail;
 import org.ngafid.flights.Tails;
+
+import java.sql.*;
+import java.util.Date;
+import java.util.*;
+import java.util.logging.Logger;
 
 
 public final class User {
@@ -150,7 +146,7 @@ public final class User {
      * to the fleet of the flight.
      *
      * @param connection A connection to the database.
-     * @param flightId the id of the flight.
+     * @param flightId   the id of the flight.
      * @return true if the user has access to the flight.
      */
     public boolean hasFlightAccess(Connection connection, int flightId) throws SQLException {
@@ -159,7 +155,7 @@ public final class User {
 
         try (PreparedStatement query = connection
                 .prepareStatement("SELECT id FROM flights WHERE fleet_id = " + getFleetId() + " and id = " + flightId);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             // if there was a flight in the result set then the user had access (i.e., the
@@ -173,7 +169,6 @@ public final class User {
      * to allow access to modify that fleet.
      *
      * @param fleetId the fleet the access check is being made on
-     *
      * @return true if the user has access to that fleet.
      */
     public boolean managesFleet(int fleetId) {
@@ -184,7 +179,6 @@ public final class User {
      * Checks to see if the user can upload flights for a fleet.
      *
      * @param fleetId the fleet the access check is being made on
-     *
      * @return true if the user has access to that fleet.
      */
     public boolean hasUploadAccess(int fleetId) {
@@ -195,7 +189,6 @@ public final class User {
      * Checks to see if the user can view flights for a fleet.
      *
      * @param fleetId the fleet the access check is being made on
-     *
      * @return true if the user has access to that fleet.
      */
     public boolean hasViewAccess(int fleetId) {
@@ -206,11 +199,9 @@ public final class User {
      * Return the number of users in the NGAFID
      *
      * @param connection A connection to the database.
-     * @param fleetId The fleet ID of all the users.
-     *
-     * @exception SQLException if there was a problem with the query or database.
-     *
+     * @param fleetId    The fleet ID of all the users.
      * @return the number of users in the NGAFID
+     * @throws SQLException if there was a problem with the query or database.
      */
     public static int getNumberUsers(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT count(id) FROM user";
@@ -221,7 +212,7 @@ public final class User {
                     + fleetId;
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             if (resultSet.next()) {
@@ -246,16 +237,14 @@ public final class User {
      *
      * @param connection A connection to the database.
      * @param userId     The user's id.
-     * @param fleetId The fleet ID of the user
-     *
-     * @exception SQLException if there was a problem with the SQL query.
-     *
+     * @param fleetId    The fleet ID of the user
      * @return A user object for the user with that id, null if the user did not
-     *         exist.
+     * exist.
+     * @throws SQLException if there was a problem with the SQL query.
      */
     public static User get(Connection connection, int userId, int fleetId) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(USER_ROW_QUERY + " WHERE id = " + userId);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             if (!resultSet.next())
@@ -276,9 +265,8 @@ public final class User {
      *
      * @param connection A connection to the database
      * @param userId     the userId to query for
-     *
      * @return an instance of {@link UserPreferences} with all the user's preferences
-     *         and settings
+     * and settings
      */
     public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
         int decimalPrecision = 1;
@@ -299,7 +287,7 @@ public final class User {
                 "SELECT dsn.name FROM user_preferences_metrics AS upm " +
                         "INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = "
                         + userId + " ORDER BY dsn.name");
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             List<String> metricNames = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -344,9 +332,9 @@ public final class User {
     /**
      * Updates the users preferences in the database
      *
-     * @param connection      A connection to the database
-     * @param userId          the userId to update for
-     * @param metricName      the metric name to add
+     * @param connection A connection to the database
+     * @param userId     the userId to update for
+     * @param metricName the metric name to add
      */
     public static void addUserPreferenceMetric(Connection connection, int userId, String metricName)
             throws SQLException {
@@ -364,9 +352,9 @@ public final class User {
     /**
      * Updates the users preferences in the database
      *
-     * @param connection      A connection to the database
-     * @param userId          the userId to update for
-     * @param metricName      the metric name to remove
+     * @param connection A connection to the database
+     * @param userId     the userId to update for
+     * @param metricName the metric name to remove
      */
     public static void removeUserPreferenceMetric(Connection connection, int userId, String metricName)
             throws SQLException {
@@ -384,13 +372,13 @@ public final class User {
     /**
      * Updates the users preferences in the database
      *
-     * @param connection A connection to the database
-     * @param userId     the userId to update for
-     * @param decimalPrecision  the new decimal precision value to store
+     * @param connection       A connection to the database
+     * @param userId           the userId to update for
+     * @param decimalPrecision the new decimal precision value to store
      * @return an instance of {@link UserPreferences} with all the user's preferences
      */
     public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId,
-            int decimalPrecision) throws SQLException {
+                                                                 int decimalPrecision) throws SQLException {
         String queryString = "UPDATE user_preferences SET decimal_precision = ? WHERE user_id = ?";
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
@@ -408,16 +396,15 @@ public final class User {
      *
      * @param connection A connection to the database
      * @param userId     the userId to query for
-     *
      * @return an instance of {@link UserPreferences} with all the user's preferences
-     *         and settings
+     * and settings
      */
     public static UserEmailPreferences getUserEmailPreferences(Connection connection, int userId) throws SQLException {
 
         // Check if the user has any email preferences first...
         try (PreparedStatement queryInitial = connection
                 .prepareStatement("SELECT COUNT(*) FROM email_preferences WHERE user_id = " + userId);
-                ResultSet resultSetInitial = queryInitial.executeQuery()) {
+             ResultSet resultSetInitial = queryInitial.executeQuery()) {
             int emailPreferencesCount = 0;
 
             if (resultSetInitial.next()) {
@@ -442,7 +429,7 @@ public final class User {
         // Get the user's email preferences...
         try (PreparedStatement query = connection
                 .prepareStatement("SELECT email_type, enabled FROM email_preferences WHERE user_id = " + userId);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             HashMap<String, Boolean> emailPreferences = new HashMap<>();
 
             while (resultSet.next()) {
@@ -465,7 +452,7 @@ public final class User {
      * @return an instance of {@link UserEmailPreferences} with all the user's email
      */
     public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId,
-            Map<String, Boolean> emailPreferences) throws SQLException {
+                                                                  Map<String, Boolean> emailPreferences) throws SQLException {
         String queryString = "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
                 + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)";
 
@@ -495,10 +482,9 @@ public final class User {
      * Checks to see if the passphrase provided matches the password reset
      * passphrase for this user
      *
-     * @param connection A connection to the database.
+     * @param connection   A connection to the database.
      * @param emailAddress user's email address
      * @param passphrase   generated passphrase for the password reset
-     *
      * @return true if the password hashes correctly to the user's password token.
      */
     public static boolean validatePassphrase(Connection connection, String emailAddress, String passphrase)
@@ -519,13 +505,12 @@ public final class User {
      *
      * @param connection A connection to the database.
      * @param password   the password to be tested
-     *
      * @return true if the password hashes correctly to the user's password token.
      */
     public boolean validate(Connection connection, String password) throws SQLException {
         try (PreparedStatement query = connection
                 .prepareStatement("SELECT password_token FROM user WHERE id = " + id);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             if (!resultSet.next())
                 return false;
 
@@ -540,13 +525,11 @@ public final class User {
      *
      * @param connection A connection to the database.
      * @param email      The user's email.
-     * @param pass   The password entered by the user for login.
-     *
-     * @exception SQLException     if there was a problem with the SQL query.
-     * @exception AccountException if the password was incorrect.
-     *
+     * @param pass       The password entered by the user for login.
      * @return A user object if the password for that email address was correct.
-     *         null if the user did not exist.
+     * null if the user did not exist.
+     * @throws SQLException     if there was a problem with the SQL query.
+     * @throws AccountException if the password was incorrect.
      */
     public static User get(Connection connection, String email, String pass) throws SQLException, AccountException {
         User user = null;
@@ -615,10 +598,8 @@ public final class User {
      *
      * @param connection A connection to the database.
      * @param email      The user email.
-     *
-     * @exception SQLException if there was a problem with the query or database.
-     *
      * @return true if the user exists in the database, false otherwise.
+     * @throws SQLException if there was a problem with the query or database.
      */
     public static boolean exists(Connection connection, String email) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement("SELECT id FROM user WHERE email = ?")) {
@@ -634,7 +615,7 @@ public final class User {
     /**
      * Updates the profile information for a user in the database.
      *
-     * @param connection  A connection to the database.
+     * @param connection     A connection to the database.
      * @param newFirstName   The user's first name (optional, may be null).
      * @param newLastName    The user's last name (optional, may be null).
      * @param newCountry     The user's country (optional, may be null).
@@ -643,9 +624,8 @@ public final class User {
      * @param newAddress     The user's address (optional, may be null).
      * @param newPhoneNumber The user's phone number (optional, may be null).
      * @param newZipCode     The user's zip code (optional, may be null).
-     *
-     * @exception SQLException if there was a problem with the SQL query or the user
-     *                         already exists in the database.
+     * @throws SQLException if there was a problem with the SQL query or the user
+     *                      already exists in the database.
      */
     public void updateProfile(Connection connection, String newFirstName, String newLastName,
                               String newCountry, String newState, String newCity, String newAddress,
@@ -683,10 +663,9 @@ public final class User {
      *
      * @param connection   A connection to the database.
      * @param emailAddress The user's email address.
-     * @param newPassword The user's updated password.
-     *
-     * @exception SQLException if there was a problem with the SQL query or the user
-     *                         already exists in the database.
+     * @param newPassword  The user's updated password.
+     * @throws SQLException if there was a problem with the SQL query or the user
+     *                      already exists in the database.
      */
     public static void updatePassword(Connection connection, String emailAddress, String newPassword)
             throws SQLException {
@@ -717,9 +696,8 @@ public final class User {
      *
      * @param connection  A connection to the database.
      * @param newPassword the new password
-     *
-     * @exception SQLException if there was a problem with the SQL query or the user
-     *                         already exists in the database.
+     * @throws SQLException if there was a problem with the SQL query or the user
+     *                      already exists in the database.
      */
     public void updatePassword(Connection connection, String newPassword) throws SQLException {
         String passwordToken = new PasswordAuthentication().hash(newPassword.toCharArray());
@@ -752,20 +730,18 @@ public final class User {
      * @param address     The user's address (optional, may be null).
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode     The user's zip code (optional, may be null).
-     *
-     * @exception SQLException     if there was a problem with the SQL query or the
-     *                             user already exists in the database.
-     * @exception AccountException if there was an error getting the id of the new
-     *                             user row created in the database.
-     *
      * @return A user object if it was successfully created and added to the
-     *         database.
+     * database.
+     * @throws SQLException     if there was a problem with the SQL query or the
+     *                          user already exists in the database.
+     * @throws AccountException if there was an error getting the id of the new
+     *                          user row created in the database.
      */
     //CHECKSTYLE:OFF
     private static User create(Connection connection, String email, String password, String firstName, String lastName,
-            String country, String state, String city, String address, String phoneNumber, String zipCode)
+                               String country, String state, String city, String address, String phoneNumber, String zipCode)
             throws SQLException, AccountException {
-    //CHECKSTYLE:ON
+        //CHECKSTYLE:ON
         // exists should be checked before calling this method
         User user = new User();
 
@@ -782,8 +758,8 @@ public final class User {
 
         try (PreparedStatement query = connection.prepareStatement(
                 "INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?," +
-                   " country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?," +
-                   " registration_time = NOW()", Statement.RETURN_GENERATED_KEYS)) {
+                        " country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?," +
+                        " registration_time = NOW()", Statement.RETURN_GENERATED_KEYS)) {
             query.setString(1, user.email);
             query.setString(2, passwordToken);
             query.setString(3, user.firstName);
@@ -834,19 +810,17 @@ public final class User {
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode     The user's zip code (optional, may be null).
      * @param fleetName   The name of the new fleet. Required, may not be null.
-     *
-     * @exception SQLException     if there was a problem with any SQL queries.
-     * @exception AccountException if the user or fleet already existed in the
-     *                             database.
-     *
      * @return A user object if it was successfully created and added to the
-     *         database.
+     * database.
+     * @throws SQLException     if there was a problem with any SQL queries.
+     * @throws AccountException if the user or fleet already existed in the
+     *                          database.
      */
     //CHECKSTYLE:OFF
     public static User createNewFleetUser(Connection connection, String email, String password, String firstName,
-            String lastName, String country, String state, String city, String address, String phoneNumber,
-            String zipCode, String fleetName) throws SQLException, AccountException {
-    //CHECKSTYLE:ON
+                                          String lastName, String country, String state, String city, String address, String phoneNumber,
+                                          String zipCode, String fleetName) throws SQLException, AccountException {
+        //CHECKSTYLE:ON
         // TODO: double check all the passed in strings with regexes to make sure
         // they're valid
         // validateUserInformation(email, password, firstName, lastName, country, state,
@@ -902,19 +876,17 @@ public final class User {
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode     The user's zip code (optional, may be null).
      * @param fleetName   The name of the new fleet. Required, may not be null.
-     *
-     * @exception SQLException     if there was a problem with any SQL queries.
-     * @exception AccountException if the user already exists in the database or if
-     *                             the fleet does not exist in the database.
-     *
      * @return A user object if it was successfully created and added to the
-     *         database.
+     * database.
+     * @throws SQLException     if there was a problem with any SQL queries.
+     * @throws AccountException if the user already exists in the database or if
+     *                          the fleet does not exist in the database.
      */
     //CHECKSTYLE:OFF
     public static User createExistingFleetUser(Connection connection, String email, String password, String firstName,
-            String lastName, String country, String state, String city, String address, String phoneNumber,
-            String zipCode, String fleetName) throws SQLException, AccountException {
-    //CHECKSTYLE:ON
+                                               String lastName, String country, String state, String city, String address, String phoneNumber,
+                                               String zipCode, String fleetName) throws SQLException, AccountException {
+        //CHECKSTYLE:ON
         // TODO: double check all the passed in strings with regexes to make sure
         // they're valid
         // validateUserInformation(email, password, firstName, lastName, country, state,
@@ -965,12 +937,12 @@ public final class User {
         body.append("<p>A password reset was requested for your account<p>");
         body.append("<p>Please click the below link to change your password.<p>");
         body.append("<p> Password Reset Link : <a href=")
-            .append(resetPasswordUrl)
-            .append(">Reset Password</a></p><br>");
+                .append(resetPasswordUrl)
+                .append(">Reset Password</a></p><br>");
         body.append("</body></html>");
         ArrayList<String> bccRecipients = new ArrayList<>();
         SendEmail.sendEmail(recipients, bccRecipients, "NGAFID Password Reset Information", body.toString(),
-                EmailType.PASSWORD_RESET, connection);
+                EmailType.PASSWORD_RESET);
     }
 
     public void updateLastLoginTimeStamp(Connection connection) throws SQLException {

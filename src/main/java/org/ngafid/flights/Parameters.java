@@ -31,7 +31,7 @@ public interface Parameters {
      *
      * @param AOA_CRIT    this is the critical angle of attack that can be changes based on the FDM's guidelines
      * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on
-     *                    certain guidelines
+     * certain guidelines
      */
     double AOA_CRIT = 15;
     double PROSPIN_LIM = 4;
@@ -91,6 +91,11 @@ public interface Parameters {
     String HDG_TRK_DIFF = "HDG TRK Diff";
     String FUEL_QTY_LEFT = "FQtyL";
     String FUEL_QTY_RIGHT = "FQtyR";
+
+    String SCAN_EAGLE_GPS_TIME = "DID_GPS_TIME";
+    String SCAN_EAGLE_LATITUDE = "DID_GPS_LAT";
+    String SCAN_EAGLE_LONGITUDE = "DID_GPS_LON";
+    String SCAN_EAGLE_ALT_MSL = "DID_GPS_ALT";
 
     String NEAREST_RUNWAY = "NearestRunway";
     String RUNWAY_DISTANCE = "RunwayDistance";

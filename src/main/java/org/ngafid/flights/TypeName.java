@@ -1,12 +1,11 @@
 package org.ngafid.flights;
 
+import org.ngafid.common.NormalizedColumn;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.ngafid.common.NormalizedColumn;
-
 public final class TypeName extends NormalizedColumn<TypeName> {
-
     public TypeName(String name) {
         super(name);
     }

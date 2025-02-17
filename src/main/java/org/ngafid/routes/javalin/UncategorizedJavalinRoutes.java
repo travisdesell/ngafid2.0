@@ -1,18 +1,17 @@
 package org.ngafid.routes.javalin;
 
 import io.javalin.http.Context;
-import org.ngafid.Database;
 import org.ngafid.accounts.User;
+import org.ngafid.common.Database;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.Upload;
 import org.ngafid.routes.ErrorResponse;
+import org.ngafid.uploads.Upload;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
-import static org.ngafid.WebServer.gson;
 import static org.ngafid.events.EventStatistics.updateMonthlyTotalFlights;
 
 public class UncategorizedJavalinRoutes {
@@ -24,7 +23,7 @@ public class UncategorizedJavalinRoutes {
         public MainContent(Connection connection, int fleetId) throws SQLException {
             flights = Flight.getFlights(connection, fleetId);
             uploads = Upload.getUploads(connection, fleetId);
-            imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"});
+            imports = Upload.getUploads(connection, fleetId, Upload.Status.IMPORTED_SET);
         }
     }
 

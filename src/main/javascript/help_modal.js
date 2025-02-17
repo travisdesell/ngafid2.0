@@ -59,7 +59,7 @@ class HelpModal extends React.Component {
             <div className='modal-content'>
                 <div className='modal-header'>
                     <h5 id='help-modal-title' className='modal-title'>Help</h5>
-                    <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
+                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
@@ -71,7 +71,7 @@ class HelpModal extends React.Component {
                 </div>
 
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-dismiss='modal' onClick={() => this.state.closeMethod()}>Close</button>
+                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal' onClick={() => this.state.closeMethod()}>Close</button>
                 </div>
             </div>
         );

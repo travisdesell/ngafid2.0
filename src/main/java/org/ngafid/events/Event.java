@@ -1,6 +1,7 @@
 package org.ngafid.events;
 
 import org.ngafid.flights.Airframes;
+import org.ngafid.flights.Flight;
 
 import java.io.IOException;
 import java.sql.*;
@@ -35,19 +36,20 @@ public class Event {
 
     private List<EventMetaData> metaDataList;
 
-    public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
+    public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
         this.severity = severity;
         this.otherFlightId = null;
+        this.eventDefinitionId = defId;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
     }
 
-    public Event(String startTime, String endTime, int startLine, int endLine, double severity, int flightId, int otherFlightId) {
+    public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity, int flightId, int otherFlightId) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
@@ -55,6 +57,7 @@ public class Event {
         this.severity = severity;
         this.flightId = flightId;
         this.otherFlightId = otherFlightId;
+        this.eventDefinitionId = defId;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
@@ -62,13 +65,14 @@ public class Event {
     }
 
     public Event(String startTime, String endTime,
-                 int startLine, int endLine, double severity, Integer otherFlightId) {
+                 int startLine, int endLine, int defId, double severity, Integer otherFlightId) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
         this.severity = severity;
         this.otherFlightId = otherFlightId;
+        this.eventDefinitionId = defId;
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
@@ -190,7 +194,7 @@ public class Event {
 
         // get a map of the airframe ids to airframe names
         for (String airframe : fleetAirframes) {
-            airframeIds.put(new Airframes.Airframe(connection, airframe).getId(), airframe);
+            airframeIds.put(Airframes.Airframe.getAirframeByName(connection, airframe).getId(), airframe);
 
             eventsByAirframe.put(airframe, new ArrayList<Event>());
         }
@@ -214,11 +218,8 @@ public class Event {
         }
 
         try (PreparedStatement ps = preparedStatement; ResultSet resultSet = preparedStatement.executeQuery()) {
-            LOG.info(preparedStatement.toString());
-
             while (resultSet.next()) {
                 int definitionId = resultSet.getInt(1);
-                LOG.info("getting events for definition id: " + definitionId);
 
                 // could use this but it won't grab the airframeId because it's not in the events table so
                 // doing it the longer way below is quicker
@@ -253,9 +254,6 @@ public class Event {
                 }
 
                 eventsQuery += " ORDER BY events.start_time";
-
-                LOG.info(eventsQuery);
-                LOG.info("startTime: '" + startTime + "', endTime: '" + endTime + "'");
 
                 PreparedStatement eventsStatement = connection.prepareStatement(eventsQuery);
                 eventsStatement.setInt(1, definitionId);
@@ -304,7 +302,6 @@ public class Event {
 
                     Event event = new Event(eventId, fleetId, flightId, definitionId, startLine,
                             endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail, tag);
-                    System.out.println("event: " + event);
 
                     int airframeId = eventSet.getInt(9);
                     String airframe = airframeIds.get(airframeId);
@@ -319,6 +316,17 @@ public class Event {
         }
 
         return eventsByAirframe;
+    }
+
+    public static void deleteEvents(Connection connection, int flightId, int eventDefinitionId) throws SQLException {
+        String query = "DELETE FROM events WHERE event_definition_id = ? AND (flight_id = ? OR other_flight_id = ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, eventDefinitionId);
+            preparedStatement.setInt(2, flightId);
+            preparedStatement.setInt(3, flightId);
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
     }
 
     /**
@@ -347,7 +355,6 @@ public class Event {
             }
 
             String fixedDateTime = year + "-" + month + "-" + day + " " + time;
-            System.out.println("Fixed '" + time + "' to '" + fixedDateTime + "'");
 
             return fixedDateTime;
         }
@@ -362,6 +369,10 @@ public class Event {
 
     public int getFlightId() {
         return flightId;
+    }
+
+    public void setEventDefinitionId(int eventDefinitionId) {
+        this.eventDefinitionId = eventDefinitionId;
     }
 
     public int getEndLine() {
@@ -438,9 +449,68 @@ public class Event {
             EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
                     this.getEndTime(), this.getSeverity(), this.getDuration());
         } else {
-            System.out.println("WARNING: could not update event statistics for event: " + this);
-            System.out.println("WARNING: event start and end time were both null.");
+            LOG.warning("could not update event statistics for event: " + this);
+            LOG.warning("event start and end time were both null.");
         }
+    }
+
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO events (fleet_id, " +
+                "flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, " +
+                "other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+    }
+
+    public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
+        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
+            for (Event event : events) {
+                event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+                LOG.info(preparedStatement.toString());
+            }
+
+            preparedStatement.executeBatch();
+
+            try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+                int i = 0;
+                while (resultSet.next()) {
+                    events.get(i).updateDatabaseMetadata(connection, resultSet.getInt(1));
+                    i += 1;
+                }
+            }
+        }
+    }
+
+    public void addBatch(PreparedStatement preparedStatement, int fleetId, int flightId, int eventDefinitionId) throws SQLException {
+        this.eventDefinitionId = eventDefinitionId;
+        this.flightId = flightId;
+        this.fleetId = fleetId;
+
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setInt(2, flightId);
+        preparedStatement.setInt(3, eventDefinitionId);
+        preparedStatement.setInt(4, startLine);
+        preparedStatement.setInt(5, endLine);
+
+        if (startTime.equals(" ")) {
+            preparedStatement.setString(6, null);
+        } else {
+            preparedStatement.setString(6, startTime);
+        }
+
+        if (endTime.equals(" ")) {
+            preparedStatement.setString(7, null);
+        } else {
+            preparedStatement.setString(7, endTime);
+        }
+
+        preparedStatement.setDouble(8, severity);
+
+        if (otherFlightId == null) {
+            preparedStatement.setNull(9, java.sql.Types.INTEGER);
+        } else {
+            preparedStatement.setInt(9, otherFlightId);
+        }
+
+        preparedStatement.addBatch();
     }
 
     public void updateDatabase(Connection connection, int fleetIdUpdated, int flightIdUpdated, int eventDefId)
@@ -448,52 +518,27 @@ public class Event {
         this.flightId = flightIdUpdated;
         this.eventDefinitionId = eventDefId;
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, " +
-                "flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, " +
-                "other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setInt(1, fleetIdUpdated);
-            preparedStatement.setInt(2, flightIdUpdated);
-            preparedStatement.setInt(3, eventDefId);
-            preparedStatement.setInt(4, startLine);
-            preparedStatement.setInt(5, endLine);
-
-            if (startTime.equals(" ")) {
-                preparedStatement.setString(6, null);
-            } else {
-                preparedStatement.setString(6, startTime);
-            }
-
-            if (endTime.equals(" ")) {
-                preparedStatement.setString(7, null);
-            } else {
-                preparedStatement.setString(7, endTime);
-            }
-
-            preparedStatement.setDouble(8, severity);
-
-            if (otherFlightId == null) {
-                preparedStatement.setNull(9, java.sql.Types.INTEGER);
-            } else {
-                preparedStatement.setInt(9, otherFlightId);
-            }
-
-            System.err.println(preparedStatement);
-
-            preparedStatement.executeUpdate();
+        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
+            addBatch(preparedStatement, fleetId, flightId, eventDefId);
+            preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
                 if (resultSet.next()) {
                     int eventId = resultSet.getInt(1);
-                    if (this.rateOfClosure != null) {
-                        this.rateOfClosure.updateDatabase(connection, eventId);
-                    }
-
-                    if (this.metaDataList != null && !this.metaDataList.isEmpty()) {
-                        for (EventMetaData metaData : this.metaDataList) {
-                            metaData.updateDatabase(connection, eventId);
-                        }
-                    }
+                    updateDatabaseMetadata(connection, eventId);
                 }
+            }
+        }
+    }
+
+    private void updateDatabaseMetadata(Connection connection, int eventId) throws SQLException, IOException {
+        if (this.rateOfClosure != null) {
+            this.rateOfClosure.updateDatabase(connection, eventId);
+        }
+
+        if (this.metaDataList != null && !this.metaDataList.isEmpty()) {
+            for (EventMetaData metaData : this.metaDataList) {
+                metaData.updateDatabase(connection, eventId);
             }
         }
     }

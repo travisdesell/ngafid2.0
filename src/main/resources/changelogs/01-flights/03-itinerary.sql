@@ -21,4 +21,5 @@ CREATE TABLE itinerary (
     INDEX(airport),
     INDEX(runway),
     FOREIGN KEY(flight_id) REFERENCES flights(id)
+        ON DELETE CASCADE
 );

@@ -2,7 +2,7 @@ package org.ngafid.routes.javalin;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
+import org.ngafid.common.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Tail;
@@ -10,7 +10,6 @@ import org.ngafid.flights.Tails;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.Navbar;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,7 +17,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());

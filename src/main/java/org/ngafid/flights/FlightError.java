@@ -1,12 +1,12 @@
 package org.ngafid.flights;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.ngafid.common.ErrorMessage;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -39,7 +39,7 @@ public class FlightError {
     public static ArrayList<FlightError> getFlightErrors(Connection connection, int uploadId) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(
                 "SELECT id, upload_id, filename, message_id FROM flight_errors WHERE upload_id = " + uploadId);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             ArrayList<FlightError> errors = new ArrayList<FlightError>();
 
             while (resultSet.next()) {
@@ -53,7 +53,6 @@ public class FlightError {
     /**
      * @param connection is the connection to the database
      * @param fleetId    is the fleet's id
-     *
      * @return the number of flight errors for a fleet
      */
     public static int getCount(Connection connection, int fleetId) throws SQLException {
@@ -62,7 +61,7 @@ public class FlightError {
             queryString += " WHERE fleet_id = " + fleetId;
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet resultSet = query.executeQuery()) {
+             ResultSet resultSet = query.executeQuery()) {
             resultSet.next();
 
             int count = resultSet.getInt(1);

@@ -1,12 +1,14 @@
 package org.ngafid.flights;
 
 import org.ngafid.common.NormalizedColumn;
+import org.ngafid.common.filters.Pair;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public enum Airframes {
@@ -119,48 +121,129 @@ public enum Airframes {
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
     //CHECKSTYLE:ON
-    public static class Airframe extends NormalizedColumn<Airframe> {
-
-        @Override
-        protected String getTableName() {
-            return "airframes";
-        }
-
-        @Override
-        protected String getNameColumn() {
-            return "airframe";
-        }
-
-        public Airframe(String name) {
-            super(name);
-        }
-
-        public Airframe(Connection connection, String name) throws SQLException {
-            super(connection, name);
-        }
-
-        public Airframe(Connection connection, int id) throws SQLException {
-            super(connection, id);
-        }
-    }
-
-    public static class AirframeType extends NormalizedColumn<Airframe> {
+    public static class Type extends NormalizedColumn<Type> {
         @Override
         protected String getTableName() {
             return "airframe_types";
         }
 
-        public AirframeType(String name) {
+        public Type(String name) {
             super(name);
         }
 
-        public AirframeType(Connection connection, String name) throws SQLException {
+        public Type(Connection connection, String name) throws SQLException {
             super(connection, name);
         }
 
-        public AirframeType(Connection connection, int id) throws SQLException {
+        public Type(Connection connection, int id) throws SQLException {
             super(connection, id);
         }
+    }
+
+    public static class Airframe {
+        private static final ConcurrentHashMap<String, Pair<Type, Integer>> NAME_TO_TYPE_AND_ID = new ConcurrentHashMap<>();
+        private static final ConcurrentHashMap<Integer, Pair<Type, String>> ID_TO_TYPE_AND_NAME = new ConcurrentHashMap<>();
+
+        private int id;
+        private String name;
+        private Type type;
+
+        public static Airframe getAirframeByName(Connection connection, String airframeName) throws SQLException {
+            return new Airframe(connection, airframeName, null);
+        }
+
+        public Airframe(String name, Type type) {
+            this.id = -1;
+            this.name = name;
+            this.type = type;
+        }
+
+        public Airframe(Connection connection, String name, Type type) throws SQLException {
+            this.name = name;
+            this.id = -1;
+            this.type = type;
+
+            if (!NAME_TO_TYPE_AND_ID.containsKey(name)) {
+                getIdAndType(connection);
+                NAME_TO_TYPE_AND_ID.put(name, new Pair<>(this.type, this.id));
+            } else {
+                Pair<Type, Integer> typeAndId = NAME_TO_TYPE_AND_ID.get(name);
+                this.type = typeAndId.first();
+                this.id = typeAndId.second();
+            }
+        }
+
+        public Airframe(Connection connection, int id) throws SQLException {
+            this.id = id;
+            this.name = null;
+            this.type = null;
+
+            if (!ID_TO_TYPE_AND_NAME.containsKey(id)) {
+                getNameAndType(connection);
+                ID_TO_TYPE_AND_NAME.put(id, new Pair<>(type, name));
+            } else {
+                Pair<Type, String> typeAndName = ID_TO_TYPE_AND_NAME.get(id);
+                this.type = typeAndName.first();
+                this.name = typeAndName.second();
+            }
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Type getType() {
+            return type;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        private void getIdAndType(Connection connection) throws SQLException {
+            try (PreparedStatement query = connection.prepareStatement("SELECT id, type_id FROM airframes WHERE airframe = ?")) {
+                query.setString(1, name);
+
+                try (ResultSet rs = query.executeQuery()) {
+                    if (rs.next()) {
+                        this.id = rs.getInt("id");
+                        this.type = new Type(connection, rs.getInt("type_id"));
+                    } else {
+                        if (type != null)
+                            generateNewId(connection);
+                        else
+                            throw new SQLException("Airframe not found");
+                    }
+                }
+            }
+        }
+
+        void generateNewId(Connection connection) throws SQLException {
+            try (PreparedStatement query = connection.prepareStatement("INSERT IGNORE INTO airframes (airframe, type_id) VALUES (?, ?)")) {
+                this.type = new Type(connection, this.type.getName());
+                query.setString(1, name);
+                query.setInt(2, type.getId());
+
+                int rs = query.executeUpdate();
+                getIdAndType(connection);
+            }
+        }
+
+        private void getNameAndType(Connection connection) throws SQLException {
+            try (PreparedStatement query = connection.prepareStatement("SELECT airframe, type_id FROM airframes WHERE id = ?")) {
+                query.setInt(1, id);
+
+                try (ResultSet rs = query.executeQuery()) {
+                    if (rs.next()) {
+                        this.name = rs.getString("airframe");
+                        this.type = new Type(connection, rs.getInt("type_id"));
+                    } else {
+                        throw new SQLException("Unrecognized Airframe id: " + id);
+                    }
+                }
+            }
+        }
+
     }
 
     public static void setAirframeFleet(Connection connection, int airframeId, int fleetId) throws SQLException {

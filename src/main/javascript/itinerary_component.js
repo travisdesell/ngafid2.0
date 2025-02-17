@@ -93,7 +93,7 @@ class Itinerary extends React.Component {
                         <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                     </div>
 
-                    <button className="m-1 btn btn-outline-dark dropdown-toggle" style={styleButton} type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button className="m-1 btn btn-outline-dark dropdown-toggle" style={styleButton} type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i className="fa fa-map-o p-1"></i>
                         {this.getSelectedLayer()}
                     </button>

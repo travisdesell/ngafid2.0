@@ -9,8 +9,26 @@ CREATE TABLE uploads (
     
     filename VARCHAR(256) NOT NULL,
     identifier VARCHAR(128) NOT NULL,
-    kind enum('FILE', 'AIRSYNC', 'DERIVED') DEFAULT 'FILE',
-    status varchar(16),
+
+    kind enum(
+        'FILE',
+        'AIRSYNC',
+        'DERIVED'
+    ) DEFAULT 'FILE',
+
+    status enum(
+        'UPLOADING',
+        'UPLOADED',
+        'ENQUEUED',
+        'PROCESSING',
+        'PROCESSED_OK',
+        'PROCESSED_WARNING',
+        'FAILED_FILE_TYPE',
+        'FAILED_AIRCRAFT_TYPE',
+        'FAILED_ARCHIVE_TYPE',
+        'FAILED_UNKNOWN',
+        'DERIVED'
+    ),
     
     number_chunks INT NOT NULL,
     uploaded_chunks INT NOT NULL,
@@ -35,14 +53,18 @@ CREATE TABLE uploads (
     FOREIGN KEY (fleet_id)      REFERENCES fleet(id),
     FOREIGN KEY (uploader_id)   REFERENCES user(id),
     FOREIGN KEY (parent_id)     REFERENCES uploads(id)
+        ON DELETE CASCADE
 );
 
 --changeset josh:uploads-foreign-keys
 ALTER TABLE airsync_imports ADD CONSTRAINT fk_airsync_imports_upload_id
-    FOREIGN KEY (upload_id) REFERENCES uploads(id);
+    FOREIGN KEY (upload_id) REFERENCES uploads(id)
+        ON DELETE CASCADE;
 
 ALTER TABLE flight_errors ADD CONSTRAINT fk_flight_errors_upload_id
-    FOREIGN KEY (upload_id) REFERENCES uploads(id);
+    FOREIGN KEY (upload_id) REFERENCES uploads(id)
+        ON DELETE CASCADE;
 
 ALTER TABLE upload_errors ADD CONSTRAINT fk_upload_errors_upload_id
-    FOREIGN KEY (upload_id) REFERENCES uploads(id);
+    FOREIGN KEY (upload_id) REFERENCES uploads(id)
+        ON DELETE CASCADE;

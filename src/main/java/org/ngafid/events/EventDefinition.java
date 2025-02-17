@@ -3,7 +3,7 @@ package org.ngafid.events;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.ngafid.filters.Filter;
+import org.ngafid.common.filters.Filter;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 
@@ -16,19 +16,42 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class EventDefinition {
+    // TODO: Replace with Jackson
     public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
-    public static final int MIN_SEVERITY = 1;
-    public static final int MAX_SEVERITY = 2;
-    public static final int MIN_ABS_SEVERITY = 3;
-    public static final int MAX_ABS_SEVERITY = 4;
+
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, " +
             "condition_json, column_names, severity_column_names, severity_type";
+
     /*
      * Caches event definitions by name. Events are rarely added anyways...
      */
     private static final Map<String, List<EventDefinition>> NAME_TO_EVENT_DEFINITIONS = new HashMap<>();
     private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
+
+    public enum SeverityType {
+        MIN,
+        MAX,
+        MIN_ABS,
+        MAX_ABS;
+
+        public double apply(double current, double value) {
+            return switch (this) {
+                case MIN -> Math.min(current, value);
+                case MIN_ABS -> Math.min(current, Math.abs(value));
+                case MAX -> Math.max(current, value);
+                case MAX_ABS -> Math.max(current, Math.abs(value));
+            };
+        }
+
+        public double defaultValue() {
+            return switch (this) {
+                case MIN, MIN_ABS -> Double.MAX_VALUE;
+                case MAX, MAX_ABS -> Double.MIN_VALUE;
+            };
+        }
+    }
+
     private int id = 0;
     private final int fleetId;
     private String name;
@@ -38,9 +61,7 @@ public class EventDefinition {
     private Filter filter;
     private TreeSet<String> columnNames;
     private final TreeSet<String> severityColumnNames;
-    private final String severityType;
-    private int[] severityColumnIds;
-    private int severityTypeId;
+    private final SeverityType severityType;
 
     /**
      * Creates an event definition.
@@ -56,7 +77,7 @@ public class EventDefinition {
      * @param severityType        a string representation of the severity type, can be 'min', 'abs' or 'max'
      */
     public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeNameId,
-                           Filter filter, TreeSet<String> severityColumnNames, String severityType) {
+                           Filter filter, TreeSet<String> severityColumnNames, SeverityType severityType) {
         this.fleetId = fleetId;
         this.startBuffer = startBuffer;
         this.stopBuffer = stopBuffer;
@@ -95,6 +116,7 @@ public class EventDefinition {
             try {
                 this.filter = GSON.fromJson(resultSet.getString(7), Filter.class);
             } catch (NullPointerException e) {
+                e.printStackTrace();
                 this.filter = null;
             }
         }
@@ -103,7 +125,7 @@ public class EventDefinition {
         }.getType());
         this.severityColumnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {
         }.getType());
-        this.severityType = resultSet.getString(10);
+        this.severityType = SeverityType.valueOf(resultSet.getString(10));
 
         initializeSeverity();
     }
@@ -226,15 +248,15 @@ public class EventDefinition {
      */
     public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
                               int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson,
-                              String severityType) throws SQLException {
+                              SeverityType severityType) throws SQLException {
         int airframeNameID = 0;
 
         if (!airframe.equals("All Airframes")) {
-            airframeNameID = new Airframes.Airframe(connection, airframe).getId();
+            airframeNameID = new Airframes.Airframe(connection, airframe, null).getId();
         }
 
         update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson,
-                severityColumnNamesJson, severityType);
+                severityColumnNamesJson, severityType.toString());
     }
 
     /**
@@ -287,15 +309,16 @@ public class EventDefinition {
 
     /**
      * Inserts this event definition into the database.
-     * @param connection is the connection to the database.
-     * @param fleetId is the fleet id for the event definitions
-     * @param name is the name of the event definition
-     * @param startBuffer is the start buffer
-     * @param stopBuffer is the stop buffer
-     * @param airframe is the airframe
-     * @param filterJson is the filter json
+     *
+     * @param connection              is the connection to the database.
+     * @param fleetId                 is the fleet id for the event definitions
+     * @param name                    is the name of the event definition
+     * @param startBuffer             is the start buffer
+     * @param stopBuffer              is the stop buffer
+     * @param airframe                is the airframe
+     * @param filterJson              is the filter json
      * @param severityColumnNamesJson is the severity column names json
-     * @param severityType is the severity type
+     * @param severityType            is the severity type
      * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(Connection connection, int fleetId, String name, int startBuffer, int stopBuffer,
@@ -324,7 +347,7 @@ public class EventDefinition {
                 preparedStatement.executeUpdate();
             }
         } else {
-            int airframeNameId = new Airframes.Airframe(connection, airframe).getId();
+            int airframeNameId = new Airframes.Airframe(connection, airframe, null).getId();
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, " +
                     "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
                     + "?," + " severity_type = ?";
@@ -546,35 +569,9 @@ public class EventDefinition {
      * be calculated quickly.
      */
     void initializeSeverity() {
-        if (severityType.equals("min")) {
-            severityTypeId = MIN_SEVERITY;
-        } else if (severityType.equals("max")) {
-            severityTypeId = MAX_SEVERITY;
-        } else if (severityType.equals("min abs")) {
-            severityTypeId = MIN_ABS_SEVERITY;
-        } else if (severityType.equals("max abs")) {
-            severityTypeId = MAX_ABS_SEVERITY;
-        } else {
-            LOG.severe("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
-            System.exit(1);
-        }
-
-        severityColumnIds = new int[severityColumnNames.size()];
-
-        int current = 0;
-        int columnId = 0;
-        for (String columnName : columnNames) {
-            if (severityColumnNames.contains(columnName)) {
-                severityColumnIds[current] = columnId;
-                current++;
-            }
-            columnId++;
-        }
-
-        if (current != severityColumnNames.size()) {
+        if (!columnNames.containsAll(severityColumnNames)) {
             // there was a column in the severity column names that wasn't in the column names
             LOG.severe("ERROR initializing EventDefinition: '" + this.name + "'");
-            LOG.severe("current: " + current + ", severityColumnIds.length: " + severityColumnIds.length);
             LOG.severe("severityColumnNames did not match columnNames");
             LOG.severe("severityColumnNames:");
             for (String columnName : severityColumnNames) {
@@ -586,7 +583,9 @@ public class EventDefinition {
                 LOG.severe("\t'" + columnName + "'");
             }
 
-            throw new RuntimeException("severityColumnNames did not match columnNames");
+            LOG.severe("This means that this event definition is no good, id = " + id);
+
+            System.exit(1);
         }
     }
 
@@ -649,86 +648,6 @@ public class EventDefinition {
     }
 
     /**
-     * Calculates the maximum value in an array of DoubleTimeSeries at a particular time.
-     * It ignores NaNs and returns -Double.MAX_VALUE if all values are NaN
-     *
-     * @param columns are the DoubleTimeSeries
-     * @param time    is the time step in the series
-     * @return the maximum value from the given columns at time
-     */
-
-    double maxArray(DoubleTimeSeries[] columns, int time) {
-        double max = -Double.MAX_VALUE;
-
-        for (int severityColumnId : severityColumnIds) {
-            double value = columns[severityColumnId].get(time);
-            if (Double.isNaN(value)) continue;
-            max = Math.max(value, max);
-        }
-        return max;
-    }
-
-    /**
-     * Calculates the maximum absolute value in an array of DoubleTimeSeries at a particular time.
-     * It ignores NaNs and returns -Double.MAX_VALUE if all values are NaN
-     *
-     * @param columns are the DoubleTimeSeries
-     * @param time    is the time step in the series
-     * @return the maximum absolute value from the given columns at time
-     */
-
-    double maxAbsArray(DoubleTimeSeries[] columns, int time) {
-        double max = -Double.MAX_VALUE;
-
-        for (int severityColumnId : severityColumnIds) {
-            double value = Math.abs(columns[severityColumnId].get(time));
-            if (Double.isNaN(value)) continue;
-            max = Math.max(value, max);
-        }
-        return max;
-    }
-
-    /**
-     * Calculates the minimum value in an array of DoubleTimeSeries at a particular time.
-     * It ignores NaNs and returns Double.MAX_VALUE if all values are NaN
-     *
-     * @param columns are the DoubleTimeSeries
-     * @param time    is the time step in the series
-     * @return the minimum value from the given columns at time
-     */
-
-    double minArray(DoubleTimeSeries[] columns, int time) {
-        double min = Double.MAX_VALUE;
-
-        for (int severityColumnId : severityColumnIds) {
-            double value = columns[severityColumnId].get(time);
-            if (Double.isNaN(value)) continue;
-            min = Math.min(value, min);
-        }
-        return min;
-    }
-
-    /**
-     * Calculates the minimum absolute value in an array of DoubleTimeSeries at a particular time.
-     * It ignores NaNs and returns +Double.MAX_VALUE if all values are NaN
-     *
-     * @param columns are the DoubleTimeSeries
-     * @param time    is the time step in the series
-     * @return the minimum absolute value from the given columns at time
-     */
-
-    double minAbsArray(DoubleTimeSeries[] columns, int time) {
-        double min = Double.MAX_VALUE;
-
-        for (int severityColumnId : severityColumnIds) {
-            double value = Math.abs(columns[severityColumnId].get(time));
-            if (Double.isNaN(value)) continue;
-            min = Math.min(value, min);
-        }
-        return min;
-    }
-
-    /**
      * Gets the severity value for this event definition at time
      *
      * @param columns is an array of DoubleTimeSeries for each column of data used to calculate this event
@@ -736,72 +655,18 @@ public class EventDefinition {
      * @return the severity value from the given columns at time
      */
 
-    public double getSeverity(DoubleTimeSeries[] columns, int time) {
-        if (columns.length == 1) {
-            switch (severityTypeId) {
-                case MIN_ABS_SEVERITY:
-                case MAX_ABS_SEVERITY:
-                    return Math.abs(columns[0].get(time));
-
-                case MIN_SEVERITY:
-                case MAX_SEVERITY:
-                    return columns[0].get(time);
-
-                default:
-                    LOG.severe("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
-                    System.exit(1);
-            }
-
-        } else {
-            switch (severityTypeId) {
-                case MIN_SEVERITY:
-                    return minArray(columns, time);
-
-                case MAX_SEVERITY:
-                    return maxArray(columns, time);
-
-                case MIN_ABS_SEVERITY:
-                    return minAbsArray(columns, time);
-
-                case MAX_ABS_SEVERITY:
-                    return maxAbsArray(columns, time);
-
-                default:
-                    LOG.severe("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
-                    System.exit(1);
-            }
-        }
-
-        // should never get here
-        return 0.0;
+    public double getSeverity(Map<String, DoubleTimeSeries> columns, int time) {
+        return getSeverity(columns, severityType.defaultValue(), time);
     }
 
-    /**
-     * @param currentSeverity is the current severity value
-     * @param doubleSeries    is an array of DoubleTimeSeries for each column of data used to calculate this event
-     * @param time            is the time step the severity is being calculated for
-     * @return the severity value from the given columns at time i
-     */
-
-    public double updateSeverity(double currentSeverity, DoubleTimeSeries[] doubleSeries, int time) {
-        switch (severityTypeId) {
-            case MAX_ABS_SEVERITY:
-            case MAX_SEVERITY:
-                return Math.max(currentSeverity, getSeverity(doubleSeries, time));
-
-            case MIN_ABS_SEVERITY:
-            case MIN_SEVERITY:
-                return Math.min(currentSeverity, getSeverity(doubleSeries, time));
-
-            default:
-                System.err.println("Error getting severity for event:  " + this);
-                System.err.println("Could not update severity for unknown event severity type: '" + severityType +
-                        "', severityTypeId: '" + severityTypeId + "'");
-                System.exit(1);
+    public double getSeverity(Map<String, DoubleTimeSeries> columns, double severity, int time) {
+        for (String columnName : severityColumnNames) {
+            double value = columns.get(columnName).get(time);
+            if (Double.isNaN(value)) continue;
+            severity = severityType.apply(severity, value);
         }
 
-        // should never get here
-        return 0;
+        return severity;
     }
 
     /**
@@ -813,7 +678,7 @@ public class EventDefinition {
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
         update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, GSON.toJson(filter),
-                GSON.toJson(severityColumnNames), severityType);
+                GSON.toJson(severityColumnNames), severityType.toString());
     }
 
     /**

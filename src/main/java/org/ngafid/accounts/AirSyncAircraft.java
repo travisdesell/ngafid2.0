@@ -2,10 +2,10 @@ package org.ngafid.accounts;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.ngafid.WebServer;
-import org.ngafid.flights.AirSync;
-import org.ngafid.flights.AirSyncEndpoints;
-import org.ngafid.flights.AirSyncImport;
+import org.ngafid.bin.WebServer;
+import org.ngafid.uploads.airsync.AirSync;
+import org.ngafid.uploads.airsync.AirSyncEndpoints;
+import org.ngafid.uploads.airsync.AirSyncImport;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -156,7 +156,7 @@ public final class AirSyncAircraft {
 
             List<AirSyncAircraftAccountInfo> info = GSON.fromJson(new String(respRaw),
                     new TypeToken<List<AirSyncAircraftAccountInfo>>() {
-            }.getType());
+                    }.getType());
 
             if (info.size() != 1) {
                 LOG.severe("AirSync aircraft appears for multiple fleets. We do not support this functionality " +
@@ -188,8 +188,8 @@ public final class AirSyncAircraft {
     /**
      * Gets ALL imports for this Aircraft
      *
-     * @param connection the database connection
-     * @param airSyncFleet      the fleet this aircraft belongs to
+     * @param connection   the database connection
+     * @param airSyncFleet the fleet this aircraft belongs to
      * @return a {@link List} of AirSyncImports
      */
     public List<AirSyncImport> getImports(Connection connection, AirSyncFleet airSyncFleet) throws IOException {
@@ -214,7 +214,7 @@ public final class AirSyncAircraft {
      * Gets a List of imports after a certian date
      *
      * @param connection     the database connection
-     * @param airSyncFleet          the AirSyncFleet that these imports belong to
+     * @param airSyncFleet   the AirSyncFleet that these imports belong to
      * @param lastImportTime the last import time recorded in the database
      * @return a {@link List} of AirSyncImports
      */

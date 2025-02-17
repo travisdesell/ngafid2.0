@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.ngafid.Database;
-
 /**
  * EventMetaData
  */
@@ -30,6 +28,14 @@ public class EventMetaData {
         public String toString() {
             return this.name;
         }
+
+        public static EventMetaDataKey fromString(String s) {
+            return switch (s.toUpperCase()) {
+                case "LATERAL_DISTANCE" -> LATERAL_DISTANCE;
+                case "VERTICAL_DISTANCE" -> VERTICAL_DISTANCE;
+                default -> throw new IllegalArgumentException("Unknown event meta data key: " + s);
+            };
+        }
     }
 
     private int eventId;
@@ -44,13 +50,13 @@ public class EventMetaData {
     }
 
     public EventMetaData(String string, double value) {
-        this.name = EventMetaDataKey.valueOf(string);
+        this.name = EventMetaDataKey.fromString(string);
         this.value = value;
     }
 
     public EventMetaData(ResultSet resultSet, int eventId) throws SQLException {
         this.eventId = eventId;
-        this.name = EventMetaDataKey.valueOf(resultSet.getString(1));
+        this.name = EventMetaDataKey.fromString(resultSet.getString(1));
         this.value = resultSet.getDouble(2);
     }
 
@@ -90,8 +96,8 @@ public class EventMetaData {
         List<EventMetaData> metaDataList = new ArrayList<>();
         try (PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT name, value FROM event_metadata JOIN " +
-                  "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
-                ResultSet resultSet = preparedStatement.executeQuery()) {
+                        "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
 
             LOG.info(preparedStatement.toString());
 

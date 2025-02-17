@@ -1,12 +1,14 @@
 package org.ngafid.routes.javalin;
 
 import io.javalin.http.Context;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
+import org.ngafid.common.Database;
+import org.ngafid.bin.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.*;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.export.*;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.MustacheHandler;
+import org.ngafid.uploads.Upload;
 
 import java.sql.Connection;
 import java.util.HashMap;
@@ -15,7 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.XPlaneParameters.FDR_FILE_EXTENSION;
+import static org.ngafid.flights.export.XPlaneParameters.FDR_FILE_EXTENSION;
 
 public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());

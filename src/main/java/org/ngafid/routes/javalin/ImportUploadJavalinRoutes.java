@@ -5,23 +5,24 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 import jakarta.servlet.MultipartConfigElement;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.*;
+import org.ngafid.bin.WebServer;
+import org.ngafid.common.Database;
+import org.ngafid.common.MD5;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightError;
+import org.ngafid.flights.FlightWarning;
+import org.ngafid.flights.Tails;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.Navbar;
+import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.UploadError;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class ImportUploadJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
@@ -186,50 +187,52 @@ public class ImportUploadJavalinRoutes {
             chunkSize = new File(chunkFilename).length();
             LOG.info("Chunk file size: " + chunkSize);
 
-            upload.chunkUploaded(connection, chunkNumber, chunkSize);
+            try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
+                locked.chunkUploaded(chunkNumber, chunkSize);
 
-            if (upload.completed()) {
-                String targetDirectory = upload.getArchiveDirectory();
-                new File(targetDirectory).mkdirs();
-                String targetFilename = targetDirectory + "/" + upload.getArchiveFilename();
+                if (upload.completed()) {
+                    locked.complete();
+                    String targetDirectory = upload.getArchiveDirectory();
+                    new File(targetDirectory).mkdirs();
+                    String targetFilename = targetDirectory + "/" + upload.getArchiveFilename();
 
-                LOG.info("Attempting to write final file to '" + targetFilename + "'");
-                try (FileOutputStream out = new FileOutputStream(targetFilename)) {
-                    for (int i = 0; i < upload.getNumberChunks(); i++) {
-                        byte[] bytes = Files.readAllBytes(Paths.get(chunkDirectory + "/" + i + ".part"));
-                        out.write(bytes);
-                    }
+                    LOG.info("Attempting to write final file to '" + targetFilename + "'");
+                    try (FileOutputStream out = new FileOutputStream(targetFilename)) {
+                        for (int i = 0; i < upload.getNumberChunks(); i++) {
+                            byte[] bytes = Files.readAllBytes(Paths.get(chunkDirectory + "/" + i + ".part"));
+                            out.write(bytes);
+                        }
 
-                    if (!upload.checkSize()) {
-                        LOG.severe("ERROR! Final file had incorrect number of bytes.");
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
+                        if (!upload.checkSize()) {
+                            LOG.severe("ERROR! Final file had incorrect number of bytes.");
+                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
+                            return;
+                        }
+
+                        String newMd5Hash = null;
+                        try (InputStream is = new FileInputStream(Paths.get(targetFilename).toFile())) {
+                            newMd5Hash = MD5.computeHexHash(is);
+                        } catch (IOException e) {
+                            LOG.severe("Error calculating MD5 hash: " + e.getMessage());
+                            ctx.status(500);
+                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
+                            return;
+                        }
+
+                        if (!newMd5Hash.equals(upload.getMd5Hash())) {
+                            LOG.severe("ERROR! MD5 hashes do not match.");
+                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
+                            return;
+                        }
+
+                        locked.complete();
+
+                        deleteDirectory(new File(chunkDirectory));
+                    } catch (IOException e) {
+                        LOG.severe("Error writing final file: " + e.getMessage());
+                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error writing final file.")));
                         return;
                     }
-
-                    String newMd5Hash = null;
-                    try (InputStream is = new FileInputStream(Paths.get(targetFilename).toFile())) {
-                        MessageDigest md = MessageDigest.getInstance("MD5");
-                        byte[] hash = md.digest(is.readAllBytes());
-                        newMd5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
-                    } catch (NoSuchAlgorithmException | IOException e) {
-                        LOG.severe("Error calculating MD5 hash: " + e.getMessage());
-                        ctx.status(500);
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
-                        return;
-                    }
-
-                    if (!newMd5Hash.equals(upload.getMd5Hash())) {
-                        LOG.severe("ERROR! MD5 hashes do not match.");
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
-                        return;
-                    }
-
-                    upload.complete(connection);
-                    deleteDirectory(new File(chunkDirectory));
-                } catch (IOException e) {
-                    LOG.severe("Error writing final file: " + e.getMessage());
-                    ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error writing final file.")));
-                    return;
                 }
             }
 
@@ -258,18 +261,17 @@ public class ImportUploadJavalinRoutes {
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalUploads / pageSize;
 
-            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"});
+            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new Upload.Status[]{Upload.Status.UPLOADING});
 
             // update the status of all the uploads currently uploading to incomplete so the
             // webpage knows they
             // need to be restarted and aren't currently being uploaded.
+            // TODO: This will cause a problem if a user is uploading something while another user views the uploads page.
             for (Upload upload : pending_uploads) {
-                if (upload.getStatus().equals("UPLOADING")) {
-                    upload.setStatus("UPLOAD INCOMPLETE");
-                }
+                upload.setStatus(Upload.Status.UPLOADING_FAILED);
             }
 
-            List<Upload> other_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADED", "IMPORTED", "ERROR"}, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> other_uploads = Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
@@ -350,7 +352,10 @@ public class ImportUploadJavalinRoutes {
                 flight.remove(connection);
             }
 
-            upload.remove(connection);
+            try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
+                locked.remove();
+            }
+
             Tails.removeUnused(connection);
         } catch (Exception e) {
             LOG.info(e.getMessage());
@@ -372,7 +377,7 @@ public class ImportUploadJavalinRoutes {
             final int startPage = 0;
             final int pageSize = 10;
             final int numberPages = totalImports / pageSize;
-            final List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT " + startPage + "," + pageSize);
+            final List<Upload> imports = Upload.getUploads(connection, fleetId, Upload.Status.IMPORTED_SET, " LIMIT " + startPage + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
@@ -413,7 +418,7 @@ public class ImportUploadJavalinRoutes {
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, Upload.Status.IMPORTED_SET, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             ctx.json(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
@@ -448,35 +453,29 @@ public class ImportUploadJavalinRoutes {
         // 4. file does exist but with different hash -- error message
 
         try (Connection connection = Database.getConnection()) {
-            try (PreparedStatement query = connection.prepareStatement("SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?")) {
-                query.setString(1, md5Hash);
-                query.setInt(2, uploaderId);
+            Upload upload = Upload.getUploadByUser(connection, uploaderId, md5Hash);
+            if (upload == null) {
+                upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier,
+                        Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash);
 
-                try (ResultSet resultSet = query.executeQuery()) {
-                    if (!resultSet.next()) {
-                        Upload upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier,
-                                Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash);
+                ctx.json(upload);
+            } else {
+                // a file with this md5 hash exists
+                Upload.Status dbStatus = upload.getStatus();
+                String dbFilename = upload.getFilename();
 
-                        ctx.json(upload);
-                    } else {
-                        // a file with this md5 hash exists
-                        String dbStatus = resultSet.getString(5);
-                        String dbFilename = resultSet.getString(6);
+                if (dbStatus.equals(Upload.Status.UPLOADED) || dbStatus.isProcessed()) {
+                    // 3. file does exist and has finished uploading -- report finished
+                    // do the same thing, client will handle completion
+                    LOG.severe("ERROR! Final file has already been uploaded.");
 
-                        if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
-                            // 3. file does exist and has finished uploading -- report finished
-                            // do the same thing, client will handle completion
-                            LOG.severe("ERROR! Final file has already been uploaded.");
+                    ctx.json(new ErrorResponse("File Already Exists",
+                            "This file has already been uploaded to the server as '" + dbFilename
+                                    + "' and does not need to be uploaded again."));
 
-                            ctx.json(new ErrorResponse("File Already Exists",
-                                    "This file has already been uploaded to the server as '" + dbFilename
-                                            + "' and does not need to be uploaded again."));
-
-                        } else {
-                            // 2. file does exist and has not finished uploading -- restart upload
-                            ctx.json(Objects.requireNonNull(Upload.getUploadByUser(connection, uploaderId, md5Hash)));
-                        }
-                    }
+                } else {
+                    // 2. file does exist and has not finished uploading -- restart upload
+                    ctx.json(Objects.requireNonNull(Upload.getUploadByUser(connection, uploaderId, md5Hash)));
                 }
             }
         } catch (SQLException e) {
