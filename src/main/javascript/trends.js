@@ -750,8 +750,8 @@ class TrendsPage extends React.Component {
         }
 
         /*
-        console.log("percentData:");
-        console.log(percentData);
+            console.log("percentData:");
+            console.log(percentData);
         */
 
         let styles = getComputedStyle(document.documentElement);
@@ -760,11 +760,9 @@ class TrendsPage extends React.Component {
         let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
         var countLayout = {
-            title : 'Event Counts Over Time',
+            title : {text: 'Event Counts Over Time'},
             hovermode : "x unified",
-            //autosize: false,
-            //width: 500,
-            //height: 500,
+            autosize: true,
             margin: {
                 l: 50,
                 r: 50,
@@ -789,11 +787,9 @@ class TrendsPage extends React.Component {
         };
 
         var percentLayout = {
-            title : 'Percentage of Flights With Event Over Time',
+            title : {text: 'Percentage of Flights With Event Over Time'},
             hovermode : "x unified",
-            //autosize: false,
-            //width: 500,
-            //height: 500,
+            autosize: true,
             margin: {
                 l: 50,
                 r: 50,
@@ -938,7 +934,7 @@ class TrendsPage extends React.Component {
                                     exportCSV={() => this.exportCSV()}
                                 />
                             <div className="card-body" style={{padding:"0"}}>
-                                <div className="row" style={{margin:"0"}}>
+                                <div className="row" style={{margin:"0", display: "flex", height: "100%"}}>
                                     <div className="col-lg-2" style={{padding:"8 8 8 8"}}>
 
                                         {
@@ -979,9 +975,10 @@ class TrendsPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
-                                        <div id="count-trends-plot"></div>
-                                        <div id="percent-trends-plot"></div>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80", display:"flex", flexDirection: "column", minHeight: "85vh", flex:"1 1 auto"}}>
+                                        <div id="count-trends-plot" className="flex-fill" style={{flex: "1 1 auto", minHeight: "0", height: "100%", widhth: "100%"}}></div>
+                                        <hr style={{margin:"0", borderTop:"8px solid var(--c_card_bg)"}}></hr>
+                                        <div id="percent-trends-plot" className="flex-fill" style={{flex: "1 1 auto", minHeight: "0", height: "100%", widhth: "100%"}}></div>
                                     </div>
                                 </div>
                             </div>

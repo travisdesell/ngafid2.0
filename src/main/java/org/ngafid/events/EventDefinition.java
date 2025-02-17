@@ -125,7 +125,11 @@ public class EventDefinition {
         }.getType());
         this.severityColumnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {
         }.getType());
-        this.severityType = SeverityType.valueOf(resultSet.getString(10));
+
+        String severityTypeStr = resultSet.getString(10);
+        severityTypeStr = severityTypeStr.toUpperCase();
+        severityTypeStr = severityTypeStr.replaceAll(" ", "_");
+        this.severityType = SeverityType.valueOf(severityTypeStr);
 
         initializeSeverity();
     }
