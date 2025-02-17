@@ -503,7 +503,7 @@ class EmailSettingsTableManager extends React.Component {
             }}>
                 <thead>
                     <tr>
-                        <th style={{padding:"0 12px"}}>Email</th>
+                        <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Email </div></th>
                         {
                             this.state.emailTypes.map((type, index) => (
                                 <th key={index}>
