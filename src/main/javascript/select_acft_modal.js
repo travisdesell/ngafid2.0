@@ -199,7 +199,7 @@ class SelectAircraftModal extends React.Component {
 
                 <div className='modal-header'>
                     <h5 id='confirm-modal-title' className='modal-title'>Select Aircraft Filepath for X-Plane</h5>
-                    <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
+                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
@@ -227,9 +227,9 @@ class SelectAircraftModal extends React.Component {
                 </div>
 
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
-                    <button type='button' className='btn btn-success' data-dismiss='modal' onClick={() => this.helpClicked()}>Help</button>
-                    <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
+                    <button type='button' className='btn btn-primary' data-bs-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
+                    <button type='button' className='btn btn-success' data-bs-dismiss='modal' onClick={() => this.helpClicked()}>Help</button>
+                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>
                 </div>
 
             </div>
