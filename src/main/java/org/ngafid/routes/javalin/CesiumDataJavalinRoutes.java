@@ -6,8 +6,8 @@ import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.Database;
-import org.ngafid.WebServer;
+import org.ngafid.common.Database;
+import org.ngafid.bin.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.flights.DoubleTimeSeries;
@@ -21,7 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
-import static org.ngafid.WebServer.gson;
+import static org.ngafid.bin.WebServer.gson;
 
 public class CesiumDataJavalinRoutes {
 
