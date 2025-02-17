@@ -222,7 +222,7 @@ class Events extends React.Component {
                 // create new button for toggle
                 let type =
                         (
-                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
+                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-bs-toggle="button" aria-pressed="false" key={index}
                                         onClick={() =>
                                             {
 
@@ -302,7 +302,7 @@ class Events extends React.Component {
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
 
                             if (rocPlotData != null) {
-                                rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
+                                rateOfClosureBtn = ( <button id="rocButton" data-bs-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
                                     <i className="fa fa-area-chart p-1" ></i></button>   );
                                 if (!event.rocPlotVisible) {
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
@@ -314,7 +314,7 @@ class Events extends React.Component {
                         console.log("Flight id " + event.flightId);
                         if (this.props.parent.state.cesiumMapVisible) {
                             zoomToCesiumEntityBtn = (
-                                <button id="zoomCesium" data-toggle="button" className={buttonClasses} onClick={() =>  this.props.parent.zoomToEventEntity(event.id, event.flightId)}>
+                                <button id="zoomCesium" data-bs-toggle="button" className={buttonClasses} onClick={() =>  this.props.parent.zoomToEventEntity(event.id, event.flightId)}>
                                     <i className="fa fa-search-plus"></i>
                                 </button>)
                         }
@@ -333,7 +333,7 @@ class Events extends React.Component {
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                <button id={buttonID} className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
                                     {rocPlot} 
                                 </button>

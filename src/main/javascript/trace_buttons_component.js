@@ -94,7 +94,7 @@ class TraceButtons extends React.Component {
                             if (ariaPressed) active = " active";
 
                             return (
-                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
                                     {traceName}
                                 </button>
                             );
@@ -109,7 +109,7 @@ class TraceButtons extends React.Component {
                             if (ariaPressed) active = " active";
 
                             return (
-                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
                                     {traceName}
                                 </button>
                             );

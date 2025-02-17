@@ -44,7 +44,7 @@ export default class TimeHeader extends React.Component {
             airframe = (
                <div className="col-auto">
                    <div className="dropdown">
-                       <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                       <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                            {this.props.airframe}
                        </button>
                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -65,7 +65,7 @@ export default class TimeHeader extends React.Component {
             tags = (
                 <div className="col-auto">
                     <div className="dropdown">
-                        <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             {this.props.tagName}
                         </button>
                         <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -194,7 +194,7 @@ class TurnToFinalHeaderComponents extends React.Component {
         return (
             <div className="col-auto">
                 <div className="dropdown">
-                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {currentItem}
                     </button>
                     <div className="dropdown-menu" aria-labelledby="dropdownMenuButton" style={dropdownStyle}>

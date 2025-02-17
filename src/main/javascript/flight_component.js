@@ -1141,7 +1141,7 @@ class Flight extends React.Component {
                         {   
                         flightPhases.map((phase, index) => {
                             return (
-                                <button className={buttonClassesFlightPhase} style={{flex: "0 0 10em"}} data-toggle="button" aria-pressed="false" key={index} onClick={() => this.props.addCesiumFlightPhase(phase, flightId)}>
+                                <button className={buttonClassesFlightPhase} style={{flex: "0 0 10em"}} data-bs-toggle="button" aria-pressed="false" key={index} onClick={() => this.props.addCesiumFlightPhase(phase, flightId)}>
                                         {phase}
                                 </button>
                             )
@@ -1156,7 +1156,7 @@ class Flight extends React.Component {
             toggleCameraButton = (
                 <div>
                     <div className={"d-flex flex-row p-1"} style={{"ovrflowX" : "auto"}}>
-                        <button className={buttonClassesFlightPhase} style={{flex: "0 0 10em"}} data-toggle="button" aria-pressed="false" onClick={() => this.props.toggleCamera(flightId)}>
+                        <button className={buttonClassesFlightPhase} style={{flex: "0 0 10em"}} data-bs-toggle="button" aria-pressed="false" onClick={() => this.props.toggleCamera(flightId)}>
                             Toggle Camera
                         </button>
                     </div>
@@ -1198,7 +1198,7 @@ class Flight extends React.Component {
         }
 
         $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
+            $('[data-bs-toggle="tooltip"]').tooltip()
         })
 
         console.log("[EX] Tail Number: " + flightInfo.tailNumber);
@@ -1283,7 +1283,7 @@ class Flight extends React.Component {
                                 <div style={{overflow:"hidden"}}>
 
                                     <div style={{ position: "absolute", top: "1", right: "1", zIndex:"1", scale:"0.75"}} onClick={() => this.tagClicked()}>
-                                        <button className={"p-1 btn btn-outline-secondary d-flex align-items-center justify-content-center"} data-toggle="button" title={tagTooltip} aria-pressed="false" style={{...styleButton, border:"none"}}>
+                                        <button className={"p-1 btn btn-outline-secondary d-flex align-items-center justify-content-center"} data-bs-toggle="button" title={tagTooltip} aria-pressed="false" style={{...styleButton, border:"none"}}>
                                             <i className="fa fa-plus p-1"/>
                                         </button>
                                     </div>
@@ -1300,21 +1300,21 @@ class Flight extends React.Component {
                                     <div className={"d-flex flex-column"} style={{gap:"0.25em"}}>
 
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
-                                            <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
+                                            <button className={buttonClasses} data-bs-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
                                                 <i className="fa fa-exclamation p-1"></i>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
+                                            <button className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
                                                 <i className="fa fa-area-chart p-1"></i>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} id={"mapToggle-" + this.props.flightInfo.id} data-toggle="button" aria-pressed="false" onClick={() => this.mapClicked()}>
+                                            <button className={buttonClasses} style={styleButton} id={"mapToggle-" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed="false" onClick={() => this.mapClicked()}>
                                                 <i className="fa fa-map-o p-1"></i>
                                             </button>
                                         </div>
 
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
-                                            <button className={buttonClasses + globeClasses} style={styleButton} title={globeTooltip} id={"cesiumToggle-" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} onClick={() => this.toggleCesiumFlight()}>
+                                            <button className={buttonClasses + globeClasses} style={styleButton} title={globeTooltip} id={"cesiumToggle-" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed={this.state.replayToggled} onClick={() => this.toggleCesiumFlight()}>
                                                 <i className="fa fa-globe p-1"></i>
                                             </button>
 
@@ -1322,18 +1322,18 @@ class Flight extends React.Component {
                                                 <i className="fa fa-video-camera p-1"></i>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <button className={buttonClasses} style={styleButton} type="button" id="dropdownMenu2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 <i className="fa fa-download p-1"></i>
                                             </button>
 
                                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
                                                     Export to CSV (Original)
-                                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
                                                     Export to CSV (Generated)
-                                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
