@@ -177,7 +177,7 @@ class ProfilePage extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {opacity : 0.8};
+        
         const fgStyle = {opacity : 1.0};
 
         let formGroupStyle = {
@@ -299,12 +299,15 @@ class ProfilePage extends React.Component {
         console.log("rendering with profile validation message: '" + profileValidationMessage + "' and profile validation visible: " + profileValidationHidden);
 
         return (
-            <div>
-                <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
 
 
-                <div className="card-body" hidden={hidden}>
-                    <div className="card mb-1" style={bgStyle}>
+                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                    <div className="card mb-1 m-2">
                         <h5 className="card-header" style={fgStyle}>
                             Update Profile
                         </h5>
@@ -316,7 +319,7 @@ class ProfilePage extends React.Component {
                                 <div className="form-group" style={formGroupStyle}>
                                     <div className="d-flex">
                                         <div className="p-2" style={formHeaderStyle}>
-                                            <label htmlFor="createEmail" style={labelStyle}>Email address</label>
+                                            <label htmlFor="createEmail" style={labelStyle}>Email Address</label>
                                         </div>
                                         <div className="p-2 flex-fill">
                                             <input type="email" ref={this.emailInput} className="form-control" id="createEmail" aria-describedby="emailHelp" readOnly value={this.state.user.email} />
@@ -746,9 +749,9 @@ class ProfilePage extends React.Component {
 
                         </div>
                     </div>
+                </div>
 
                 </div>
-            </div>
         );
     }
 }

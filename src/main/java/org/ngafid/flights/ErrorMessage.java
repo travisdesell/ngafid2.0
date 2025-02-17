@@ -1,97 +1,76 @@
 package org.ngafid.flights;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.HashMap;
-import java.util.logging.Logger;
+import java.util.Map;
 
-public class ErrorMessage {
-    private static final Logger LOG = Logger.getLogger(ErrorMessage.class.getName());
+public final class ErrorMessage {
+    private static final Map<String, Integer> ID_MAP = new HashMap<>();
+    private static final Map<Integer, String> MESSAGE_MAP = new HashMap<>();
 
-    static HashMap<String,Integer> idMap = new HashMap<>();
-    static HashMap<Integer,String> messageMap = new HashMap<>();
+    private ErrorMessage() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     public static int getMessageId(Connection connection, String message) throws SQLException {
-        Integer id = idMap.get(message);
+        Integer id = ID_MAP.get(message);
 
         if (id != null) {
             return id;
-
         } else {
-            //id wasn't in the hashmap, look it up
+            // id wasn't in the hashmap, look it up
             String queryString = "SELECT id FROM flight_messages WHERE message = ?";
-            PreparedStatement query = connection.prepareStatement(queryString);
-            query.setString(1, message);
 
-            LOG.info(query.toString());
-            System.out.println(query);
-            ResultSet resultSet = query.executeQuery();
-
-            if (resultSet.next()) {
-                //message existed in the database, return the id
-                int messageId = resultSet.getInt(1);
-                idMap.put(message, messageId);
-                resultSet.close();
-                query.close();
-                return messageId;
-
-            } else {
-                //message did not exist in the database, insert it and return it's generated id
-                queryString = "INSERT INTO flight_messages SET message = ?";
-                query = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
+            try (PreparedStatement query = connection.prepareStatement(queryString)) {
                 query.setString(1, message);
 
-                LOG.info(query.toString());
-                query.executeUpdate();
-                resultSet.close();
+                try (ResultSet resultSet = query.executeQuery()) {
+                    if (resultSet.next()) {
+                        // message existed in the database, return the id
+                        int messageId = resultSet.getInt(1);
+                        ID_MAP.put(message, messageId);
+                        return messageId;
+                    }
+                }
+            }
 
-                resultSet = query.getGeneratedKeys();
-                resultSet.next();
+            // message did not exist in the database, insert it and return it's generated id
+            queryString = "INSERT IGNORE INTO flight_messages SET message = ?";
 
-                int messageId = resultSet.getInt(1);
-                idMap.put(message, messageId);
-                resultSet.close();
-                query.close();
+            try (PreparedStatement insertQuery = connection.prepareStatement(queryString)) {
+                insertQuery.setString(1, message);
+                insertQuery.executeUpdate();
 
-                return messageId;
+                return getMessageId(connection, message);
             }
         }
     }
 
     public static String getMessage(Connection connection, int messageId) throws SQLException {
-        String message = messageMap.get(messageId);
+        String message = MESSAGE_MAP.get(messageId);
 
         if (message != null) {
             return message;
-
         } else {
-            //id wasn't in the hashmap, look it up
-            String queryString = "SELECT message FROM flight_messages WHERE id = ?";
-            PreparedStatement query = connection.prepareStatement(queryString);
-            query.setInt(1, messageId);
+            // id wasn't in the hashmap, look it up
+            String queryString = "SELECT message FROM flight_messages WHERE id = " + messageId;
 
-            LOG.info(query.toString());
-            ResultSet resultSet = query.executeQuery();
+            try (PreparedStatement query = connection.prepareStatement(queryString);
+                    ResultSet resultSet = query.executeQuery()) {
 
-            if (resultSet.next()) {
-                //message existed in the database, return the id
-                message = resultSet.getString(1);
-                messageMap.put(messageId, message);
-                resultSet.close();
-                query.close();
-                return message;
-
-            } else {
-                //message id did not exist in the database, this should not happen -- return null
-                resultSet.close();
-                query.close();
-                return null;
+                if (resultSet.next()) {
+                    // message existed in the database, return the id
+                    message = resultSet.getString(1);
+                    MESSAGE_MAP.put(messageId, message);
+                    return message;
+                }
             }
+
+            return "<MESSAGE LOOKUP IN DATABASE FAILED - THIS MEANS AN INVALID MESSAGE ID WAS USED>";
         }
     }
 }

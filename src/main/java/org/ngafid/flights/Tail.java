@@ -4,10 +4,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Tail {
-    public final String systemId;
-    public final int fleetId;
-    public final String tail;
-    public final boolean confirmed;
+    private final String systemId;
+    private final int fleetId;
+    private final String tail;
+    private final boolean confirmed;
 
     /**
      * Create a tail object from a resultSet from the database

@@ -4,7 +4,11 @@ package org.ngafid.common;
  * Conversion methods for converting objects into nicely formatted HTML
  */
 
-public class ConvertToHTML {
+public final class ConvertToHTML {
+    private ConvertToHTML() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
+
     /**
      * Gets the stack trace from an exception and converts it to a string
      *

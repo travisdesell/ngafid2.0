@@ -3,147 +3,77 @@ package org.ngafid;
 import java.io.*;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.lang.Thread;
-import java.lang.Runnable;
-
-import java.util.logging.LogManager;
+import java.util.Properties;
 import java.util.logging.Logger;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 public class Database {
-    private static ThreadLocal<Connection> connection = new ThreadLocal<>();
-    private static boolean connectionInitiated;
-    private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+
+    private static HikariDataSource CONNECTION_POOL = null;
+    private static String dbUser = null, dbPassword = null, dbUrl = null;
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
-    private static final long HOUR = 3600000;
+    static {
+        initializeConnectionPool();
+    }
 
-    public static Connection getConnection() { 
-        try {
-            Connection c = connection.get();
-            if (c == null || c.isClosed()) { //investigate further here 
-                setConnection();
-            } 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        return connection.get();
+    public static Connection getConnection() throws SQLException {
+        var info = CONNECTION_POOL.getHikariPoolMXBean();
+        LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
+                + " active / " + info.getTotalConnections() + " total");
+        // new Throwable().printStackTrace();
+        return CONNECTION_POOL.getConnection();
     }
 
     public static boolean dbInfoExists() {
-        return !dbHost.isBlank() && !dbName.isBlank() && !dbUser.isBlank() && !dbPassword.isBlank();
+        return dbUrl != null && dbUser != null && dbPassword != null;
     }
 
-    public static Connection resetConnection() {
-        try {
-            Connection c = connection.get();
-            if (c != null) c.close();
-            setConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return connection.get();
+    public static String getDatabaseImplementation() {
+        if (System.getenv("NGAFID_USE_MARIA_DB") != null)
+            return "mariadb";
+        else
+            return "mysql";
     }
 
-    private static void setConnection() {
-        if (System.getenv("NGAFID_DB_INFO") == null) {
-            System.err.println("ERROR: 'NGAFID_DB_INFO' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_DB_INFO=<path/to/db_info_file>");
-            System.exit(1);
+    private static void readDatabaseCredentials(String path) throws IOException {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
+            Properties prop = new Properties();
+            prop.load(bufferedReader);
+
+            dbUser = prop.getProperty("username");
+            dbPassword = prop.getProperty("password");
+            dbUrl = prop.getProperty("url");
         }
-        String NGAFID_DB_INFO = System.getenv("NGAFID_DB_INFO");
+    }
 
+    private static void initializeConnectionPool() {
+        String dbInfoPath = "src/main/resources/liquibase.properties";
 
-        try {
-            if (!dbInfoExists()) {
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_DB_INFO));
-                bufferedReader.readLine();
-
-                dbUser = bufferedReader.readLine();
-                dbUser = dbUser.substring(dbUser.indexOf("'") + 1);
-                dbUser = dbUser.substring(0, dbUser.indexOf("'"));
-
-                dbName = bufferedReader.readLine();
-                dbName = dbName.substring(dbName.indexOf("'") + 1);
-                dbName = dbName.substring(0, dbName.indexOf("'"));
-
-                dbHost = bufferedReader.readLine();
-                dbHost = dbHost.substring(dbHost.indexOf("'") + 1);
-                dbHost = dbHost.substring(0, dbHost.indexOf("'"));
-
-                dbPassword = bufferedReader.readLine();
-                dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
-                dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
-
-                System.out.println("dbHost: '" + dbHost + "'");
-                System.out.println("dbName: '" + dbName + "'");
-                System.out.println("dbUser: '" + dbUser + "'");
-                System.out.println("dbPassword: '" + dbPassword + "'");
-
-                //Don't remove this!
-                bufferedReader.close();
+        if (!dbInfoExists()) {
+            try {
+                readDatabaseCredentials(dbInfoPath);
+            } catch (IOException e) {
+                System.err.println("Error reading from NGAFID_DB_INFO: '" + dbInfoPath + "'");
+                e.printStackTrace();
+                System.exit(1);
             }
-
-        } catch (IOException e) {
-            System.err.println("Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'");
-            e.printStackTrace();
-            System.exit(1);
         }
 
-        try {
-            // This will load the MySQL driver, each DB has its own driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
-
-            java.util.Properties connProperties = new java.util.Properties();
-            connProperties.put("user", dbUser);
-            connProperties.put("password", dbPassword);
-
-            // set additional connection properties:
-            // if connection stales, then make automatically
-            // reconnect; make it alive again;
-            // if connection stales, then try for reconnection;
-            connProperties.put("autoReconnect", "true");
-            connProperties.put("maxReconnects", "5");
-            connection.set(DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, connProperties));
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        /*
-        if (!connectionInitiated) {
-            connectionInitiated = true; 
-
-            LOG.info("Log for SQL server poker, starting at: " + LocalDateTime.now().toString());
-
-            new Thread(() -> {
-                while (true) {
-                    try {
-                        Thread.sleep(HOUR); 
-
-                        String dummyQuery = "SELECT id FROM event_definitions WHERE id <= 1";
-                        PreparedStatement preparedStatement = getConnection().prepareStatement(dummyQuery);
-
-                        ResultSet rs = preparedStatement.executeQuery();
-                        rs.close();
-
-                        LOG.info("Performed dummy query: " + dummyQuery + " at " + LocalDateTime.now().toString());
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                }
-            }).start();
-        }
-        */
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(dbUrl);
+        config.setUsername(dbUser);
+        config.setPassword(dbPassword);
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "64");
+        config.addDataSourceProperty("prepStmtCacheSize", "64");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "512");
+        config.setMaximumPoolSize(32);
+        config.setMaxLifetime(60000);
+        CONNECTION_POOL = new HikariDataSource(config);
     }
 }

@@ -5,14 +5,18 @@ const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
+
 module.exports = {
 
     watch: true,
+
+
     resolve: {
         fallback: {
             fs: false,
             path: false,
-        }
+            stream: require.resolve('stream-browserify'),
+        },
     },
     externals: {
         cesium: "Cesium"
@@ -23,17 +27,20 @@ module.exports = {
     },
     */
 
+
     watchOptions: {
         aggregateTimeout: 300,
         poll: 1000,
         ignored: /node_modules/
     },
 
+
     optimization: {
         removeAvailableModules: false,
         removeEmptyChunks: false,
         splitChunks: false,
     },
+
 
     entry: {
         aggregate: __dirname + "/src/main/javascript/aggregate.js",
@@ -67,10 +74,13 @@ module.exports = {
         update_password: __dirname + "/src/main/javascript/update_password.js",
         update_profile: __dirname + "/src/main/javascript/update_profile.js",
         uploads: __dirname + "/src/main/javascript/uploads.js",
-        welcome: __dirname + "/src/main/javascript/welcome.js"
+        welcome: __dirname + "/src/main/javascript/welcome.js",
+        theme_preload: __dirname + "/src/main/javascript/theme_preload.js",
     },
 
+
     devtool: "source-map",
+
 
     output: {
         // Farhad: for webpackCesium
@@ -80,13 +90,14 @@ module.exports = {
         filename: "[name]-bundle.js"
     },
 
+
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
                 exclude: /node_modules/,
                 use: [
-                    'cache-loader', 
+                    'cache-loader',
                     {
                         loader: 'babel-loader',
                         options: {
@@ -96,6 +107,13 @@ module.exports = {
                 ],
                 include: path.resolve('src')
             },
+            {
+                test: /\.css$/,
+                use: [
+                    'css-loader',
+                ]
+            },
+
 
             {
                 test: /\.html$/,
@@ -112,6 +130,7 @@ module.exports = {
             }
         ]
     },
+
 
     plugins: [
         new webpack.ProvidePlugin({
@@ -138,6 +157,7 @@ module.exports = {
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
+
 
         /*
         new HtmlWebPackPlugin({

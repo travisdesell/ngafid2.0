@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.ngafid.Database;
+
 /**
  * EventMetaData
  */
@@ -15,83 +17,87 @@ public class EventMetaData {
 
     private static final Logger LOG = Logger.getLogger(EventMetaData.class.getName());
 
+    public enum EventMetaDataKey {
+        LATERAL_DISTANCE("lateral_distance"),
+        VERTICAL_DISTANCE("vertical_distance");
+
+        private final String name;
+
+        EventMetaDataKey(String s) {
+            name = s;
+        }
+
+        public String toString() {
+            return this.name;
+        }
+    }
+
     private int eventId;
 
-    private String name;
+    private EventMetaDataKey name;
 
     private double value;
 
-    public EventMetaData(String name, double value) {
-        
+    public EventMetaData(EventMetaDataKey name, double value) {
         this.name = name;
         this.value = value;
     }
 
-    public EventMetaData(ResultSet resultSet, int eventId) {
-
-        try {
-            this.eventId = eventId;
-            this.name = resultSet.getString(1);
-            this.value = resultSet.getDouble(2);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
+    public EventMetaData(String string, double value) {
+        this.name = EventMetaDataKey.valueOf(string);
+        this.value = value;
     }
 
-    public void updateDatabase(Connection connection, int eventId) {
-        
-        try {
-            int eventMetaDataKeyId = this.getEventMetaDataKeyId(connection);
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO event_metadata (event_id, key_id, value) VALUES (?, ?, ?)");
+    public EventMetaData(ResultSet resultSet, int eventId) throws SQLException {
+        this.eventId = eventId;
+        this.name = EventMetaDataKey.valueOf(resultSet.getString(1));
+        this.value = resultSet.getDouble(2);
+    }
+
+    public void updateDatabase(Connection connection, int eventIdToUpdate) throws SQLException {
+        try (PreparedStatement statement = connection
+                .prepareStatement("INSERT INTO event_metadata (event_id, key_id, value) VALUES (?, ?, ?)")) {
             LOG.info(statement.toString());
-            statement.setInt(1, eventId);
+
+            int eventMetaDataKeyId = this.getEventMetaDataKeyId(connection);
+            statement.setInt(1, eventIdToUpdate);
             statement.setInt(2, eventMetaDataKeyId);
             statement.setDouble(3, this.value);
             statement.executeUpdate();
-            statement.close();
-        } catch (Exception e) {
-            System.err.println("Error committing EventMetaData for EventId : " + eventId);
-            throw new RuntimeException(e); 
         }
-
     }
 
-    private int getEventMetaDataKeyId(Connection connection) {
-        
+    private int getEventMetaDataKeyId(Connection connection) throws SQLException {
+
         int result = 0;
-        try {
-            PreparedStatement statement = connection.prepareStatement("SELECT id from event_metadata_keys where name = ?");
+        try (PreparedStatement statement = connection
+                .prepareStatement("SELECT id from event_metadata_keys where name = ?")) {
+            statement.setString(1, this.name.toString());
+
             LOG.info(statement.toString());
-            statement.setString(1, this.name);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                result = resultSet.getInt(1);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    result = resultSet.getInt(1);
+                }
             }
-            resultSet.close();
-            statement.close();
-        } catch (SQLException e) {
-            System.err.println("Error getting event key id for name : " + this.name);
         }
 
         return result;
     }
 
-    public static List<EventMetaData> getEventMetaData(Connection connection, int eventId) {
-        
+    public static List<EventMetaData> getEventMetaData(Connection connection, int eventId) throws SQLException {
+
         List<EventMetaData> metaDataList = new ArrayList<>();
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT name, value FROM event_metadata JOIN  event_metadata_keys as ek on ek.id = key_id WHERE event_id = ?");
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT name, value FROM event_metadata JOIN " +
+                  "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+
             LOG.info(preparedStatement.toString());
-            preparedStatement.setInt(1, eventId);
-            ResultSet resultSet = preparedStatement.executeQuery();
+
             while (resultSet.next()) {
-               metaDataList.add(new EventMetaData(resultSet, eventId)); 
+                metaDataList.add(new EventMetaData(resultSet, eventId));
             }
-            resultSet.close();
-            preparedStatement.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
 
         return metaDataList;

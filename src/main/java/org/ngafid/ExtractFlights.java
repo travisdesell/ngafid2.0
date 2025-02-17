@@ -1,25 +1,9 @@
 package org.ngafid;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
 
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -29,16 +13,15 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import org.ngafid.flights.FlightAlreadyExistsException;
-import org.ngafid.flights.FatalFlightFileException;
-
 import org.ngafid.flights.Flight;
 
-public class ExtractFlights {
-    private static Connection connection = Database.getConnection();
-
+public final class ExtractFlights {
+    private ExtractFlights() {
+        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
+    }
 
     public static void main(String[] arguments) throws Exception {
+        Connection connection = Database.getConnection();
         Options options = new Options();
 
         Option flightIds = new Option("f", "flight_ids", true, "list of flight ids to extract");
@@ -49,7 +32,6 @@ public class ExtractFlights {
         Option outfilePrefix = new Option("o", "output_file_prefix", true, "prefix for output file names");
         outfilePrefix.setRequired(true);
         options.addOption(outfilePrefix);
-
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();

@@ -4,6 +4,7 @@ import ReactDOM from "react-dom";
 
 
 import $ from 'jquery';
+import { redraw } from 'plotly.js';
 window.jQuery = $;
 window.$ = $;
 
@@ -68,16 +69,9 @@ class EmailSettingsTableUser extends React.Component {
 
     //Fetch user email preferences
     getUserEmailPreferences = () => {
-
-        let submissionData = {
-            handleFetchType : "HANDLE_FETCH_USER"
-        };
-
         $.ajax({
             type: 'GET',
-            url: '/protected/email_preferences',
-            data: submissionData,
-            dataType: 'json',
+            url: '/protected/email_preferences/HANDLE_FETCH_USER',
             async: true,
 
             success: (response) => {
@@ -167,6 +161,7 @@ class EmailSettingsTableUser extends React.Component {
                 textAlign: "center",
                 borderCollapse: "separate",
                 borderSpacing: "16px 16px",
+                color: "var(--c_text)"
             }}>
                 <thead>
                     <tr>
@@ -357,18 +352,9 @@ class EmailSettingsTableManager extends React.Component {
         let fleetUsersEmailSettings = [];
 
         fleetUsers.forEach(userTarget => {
-
-            let submissionData = {
-                handleFetchType : "HANDLE_FETCH_MANAGER",
-                fleetUserID : userTarget.id,
-                fleetID: userTarget.fleet.id
-            };
-
             $.ajax({
                 type: 'GET',
-                url: '/protected/email_preferences',
-                data: submissionData,
-                dataType : 'json',
+                url: '/protected/email_preferences/HANDLE_FETCH_MANAGER/' + userTarget.id + '/' + userTarget.fleet.id,
                 async: true,
 
                 success : (response) => {
@@ -497,6 +483,7 @@ class EmailSettingsTableManager extends React.Component {
             <table style={{
             width:"100%",
             borderCollapse: "collapse",
+            color:"var(--c_text)"
             }}>
                 <thead>
                     <tr>
@@ -524,11 +511,10 @@ class EmailSettingsTableManager extends React.Component {
                 </thead>
 
                 <tbody>
-                <tr style={{border:"solid", borderColor:"#00004411", borderWidth: "2px 0px"}}>
-                </tr>
+                <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
                 {
                     this.state.fleetUsers.map((userCurrent, settingIndex) => (
-                        <tr key={settingIndex} style={{border:"solid", borderColor:"#00004411", borderWidth: "1px 0px", backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000009'}}>
+                        <tr key={settingIndex} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
                             <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
                             {
                                 this.state.emailTypes.map((type, typeIndex) => (

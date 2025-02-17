@@ -2,7 +2,7 @@ name: Compile and Test
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, josh/refactor ]
 
 jobs:
   build:
@@ -32,5 +32,4 @@ jobs:
 
       - name: Maven Test
         run: mvn test
-
 
