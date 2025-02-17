@@ -1,11 +1,15 @@
 package org.ngafid.flights.process;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+
+import org.ngafid.Database;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.*;
 import org.ngafid.flights.Airframes.AliasKey;
 import us.dustinj.timezonemap.TimeZoneMap;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -62,8 +66,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      *
      *  @return Stream of FlightBuilder objects representing parsed flights.
      * @throws FlightProcessingException
-     */
-    public Stream<FlightBuilder> parse() throws FlightProcessingException {
+          * @throws SQLException 
+          */
+         public Stream<FlightBuilder> parse() throws FlightProcessingException, SQLException {
         LOG.info("Parsing " + this.meta.filename);
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
@@ -532,8 +537,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * #system_id=xxx, key1=val1, key2=val2, ...
      * We gather the key:value pairs and pull out any useful information we find, storing the results in a FlightMeta
      * object.
-     */
-    private void processFileInformation(String fileInformation) throws FatalFlightFileException {
+          * @throws SQLException 
+          */
+         private void processFileInformation(String fileInformation) throws FatalFlightFileException, SQLException {
         // Some files have random double quotes in the header for some reason? We can
         // just remove these since we don't consider them anyways.
         fileInformation = fileInformation.replace("\"", "");
@@ -553,26 +559,63 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } catch (IndexOutOfBoundsException e) {
             throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.", e);
         }
-        // This is where we can integrate airframe name input from user.
-        // Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
-        if (!values.containsKey("airframe_name")) {
-            values.put("airframe_name", "Cessna 172S");
-            LOG.severe("!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
-        }
 
         if (!values.containsKey("system_id")) {
             if (values.containsKey("serial_number")) {
                 values.put("system_id", values.get("serial_number"));
-                    LOG.severe("Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
-            } else {
-                values.put("system_id", "11111111111111");
-                LOG.severe("!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
+                LOG.severe("Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
+            } 
+            // else {
+            //     values.put("system_id", "11111111111111");
+            //     LOG.severe("!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
+            // }
+        }
+
+        // This is where we can integrate airframe name input from user.
+        // Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
+        if (!values.containsKey("airframe_name")) {
+            try(Connection connection = Database.getConnection()){
+                
+                LOG.info("Establishing Connection");
+
+                LOG.info("system_id "+values.get("system_id"));
+
+                String query = "Select system_id,fleet_id,airframe_id,airframes.airframe from system_id_to_airframe left join airframes ON system_id_to_airframe.airframe_id = airframes.id where system_id = ?";
+
+                LOG.info("prepared statement start");
+                
+                PreparedStatement pmt = connection.prepareStatement(query);
+
+                LOG.info("prepared statement done");
+
+                pmt.setString(1, values.get("system_id"));
+
+                LOG.info("system_id22 "+values.get("system_id"));
+
+                ResultSet rs = pmt.executeQuery();
+
+                while(rs.next()){
+                    LOG.info("Enteredd ");
+                    System.out.println("System ID " +rs.getString(1));
+                    System.out.println("airframe_name "+rs.getString(4));
+                    System.out.println("fleet_id "+rs.getInt(2));
+                    System.out.println("airframe_id "+rs.getInt(3));
+                    values.put("airframe_name", rs.getString(4));
+                }
+
+                //throw new Error("stopping the process");
             }
+            catch(SQLException e){
+                e.printStackTrace();
+            }
+            // values.put("airframe_name", "Cessna 172S");
+            // LOG.severe("!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
         }
 
         for (var entry : values.entrySet()) {
             switch (entry.getKey()) {
                 case "airframe_name":
+                    LOG.info("case airframe_name "+entry.getValue());
                     setAirframeName(entry.getValue());
                     break;
                 case "system_id":

@@ -220,10 +220,11 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls the `parse` method on `processor`, returning the resulting stream of FlightBuilder objects. In the event of
      * an error, the error is logged using `this::fail` and and empty stream is returned.
-     *
-     * @returns A stream of flight builders on success, an empty stream if there is an error.
-     */
-    public Stream<FlightBuilder> parse(FlightFileProcessor processor) {
+          * @throws SQLException 
+          *
+          * @returns A stream of flight builders on success, an empty stream if there is an error.
+          */
+         public Stream<FlightBuilder> parse(FlightFileProcessor processor) throws SQLException {
         try {
             return processor.parse();
         } catch (FlightProcessingException e) {

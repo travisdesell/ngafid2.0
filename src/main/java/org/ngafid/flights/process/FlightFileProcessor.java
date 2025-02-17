@@ -2,6 +2,7 @@ package org.ngafid.flights.process;
 
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -41,9 +42,9 @@ public abstract class FlightFileProcessor {
      */
     private Stream<FlightBuilder> parsedFlightBuilders = null;
 
-    protected abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
+    protected abstract Stream<FlightBuilder> parse() throws FlightProcessingException, SQLException;
 
-    public FlightFileProcessor pipelinedParse() {
+    public FlightFileProcessor pipelinedParse() throws SQLException {
         try {
             parsedFlightBuilders = parse();
             assert parsedFlightBuilders != null;
