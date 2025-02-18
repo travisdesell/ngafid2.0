@@ -33,56 +33,44 @@ public class RateOfClosure {
         this.size = this.rateOfClosureArray.length;
     }
 
-    public RateOfClosure(ResultSet resultSet) {
-
-        try {
-            Blob values = resultSet.getBlob(1);
-            int size = resultSet.getInt(2);
-            byte[] bytes = values.getBytes(1, (int)values.length());
-            values.free();
-            this.rateOfClosureArray = Compression.inflateDoubleArray(bytes, size);
-            this.size = this.rateOfClosureArray.length;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+    public RateOfClosure(ResultSet resultSet) throws SQLException, IOException {
+        Blob values = resultSet.getBlob(1);
+        int sizeResult = resultSet.getInt(2);
+        byte[] bytes = values.getBytes(1, (int) values.length());
+        values.free();
+        this.rateOfClosureArray = Compression.inflateDoubleArray(bytes, sizeResult);
+        this.size = this.rateOfClosureArray.length;
     }
 
-    public void updateDatabase(Connection connection , int eventId) {
-        try {
-            byte blobBytes[] = Compression.compressDoubleArray(this.rateOfClosureArray);
-            Blob rateOfClosureBlob = new SerialBlob(blobBytes);
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO rate_of_closure (event_id, size, data) VALUES (?,?,?)");
-            preparedStatement.setInt(1,eventId);
+    public void updateDatabase(Connection connection, int eventId) throws IOException, SQLException {
+        byte[] blobBytes = Compression.compressDoubleArray(this.rateOfClosureArray);
+        Blob rateOfClosureBlob = new SerialBlob(blobBytes);
+
+        try (PreparedStatement preparedStatement = connection
+                .prepareStatement("INSERT INTO rate_of_closure (event_id, size, data) VALUES (?,?,?)")) {
+            preparedStatement.setInt(1, eventId);
             preparedStatement.setInt(2, this.size);
             preparedStatement.setBlob(3, rateOfClosureBlob);
+
             LOG.info(preparedStatement.toString());
             preparedStatement.executeUpdate();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            System.err.println("Error commiting rateofclosure for eventid : " + eventId);
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
-    public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId) {
-        try {
-            PreparedStatement query = connection.prepareStatement("select data, size from rate_of_closure where event_id = ?");
-            LOG.info(query.toString());
+    public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId)
+            throws IOException, SQLException {
+        try (PreparedStatement query = connection
+                .prepareStatement("select data, size from rate_of_closure where event_id = ?")) {
             query.setInt(1, eventId);
-            ResultSet resultSet = query.executeQuery();
-            if (resultSet.next()) {
-                RateOfClosure rateOfClosure = new RateOfClosure(resultSet);
-                return rateOfClosure;
+
+            LOG.info(query.toString());
+
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (resultSet.next()) {
+                    RateOfClosure rateOfClosure = new RateOfClosure(resultSet);
+                    return rateOfClosure;
+                }
             }
-            resultSet.close();
-            query.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
 
         return null;

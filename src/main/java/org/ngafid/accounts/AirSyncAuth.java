@@ -1,5 +1,10 @@
 package org.ngafid.accounts;
 
+import com.google.gson.Gson;
+import org.ngafid.bin.WebServer;
+import org.ngafid.uploads.airsync.AirSyncEndpoints;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -7,45 +12,29 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import org.ngafid.WebServer;
-import org.ngafid.flights.AirSyncEndpoints;
-
-import com.google.gson.Gson;
-
 /**
  * This class represents the authentication information for an AirSync-enabled fleet
  * The pertinent information should be stored in the database
  */
 public class AirSyncAuth {
-    /**
-     * This represents the access token that is used to access AirSync
-     *
-     * @param accessToken the raw access token, in {@link String} form
-     */
-    class AccessToken {
-        public String accessToken;
-    }
-
-    private byte [] hash;
-    private AccessToken accessToken;
-
     private static final long BEARER_CERT_EXP_TIME = 3600;
-
+    //CHECKSTYLE:ON
+    private static final Gson GSON = WebServer.gson;
+    private final byte[] hash;
+    private AccessToken accessToken;
     private LocalDateTime issueTime;
-    private static final Gson gson = WebServer.gson;
 
     /**
      * Default constructor
      *
-     * @param apiKey the api key string (probably from the database)
+     * @param apiKey    the api key string (probably from the database)
      * @param apiSecret the api secret string (probably from the database)
      */
     public AirSyncAuth(String apiKey, String apiSecret) {
-        byte [] srcWord = (apiKey + ":" + apiSecret).getBytes();
+        byte[] srcWord = (apiKey + ":" + apiSecret).getBytes();
         this.hash = Base64.getEncoder().encode(srcWord);
-
+        System.out.println("API Key = " + apiKey);
+        System.out.println("API Secret = " + apiSecret);
         this.requestAuthorization();
     }
 
@@ -67,15 +56,18 @@ public class AirSyncAuth {
 
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));     
+            connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));
 
-            InputStream is = connection.getInputStream();
-            byte [] respRaw = is.readAllBytes();
+            try (InputStream is = connection.getInputStream()) {
+                byte[] respRaw = is.readAllBytes();
 
-            String resp = new String(respRaw).replaceAll("access_token", "accessToken");
+                is.close();
 
-            this.accessToken = gson.fromJson(resp, AccessToken.class);
-            this.issueTime = LocalDateTime.now();
+                String resp = new String(respRaw).replaceAll("access_token", "accessToken");
+
+                this.accessToken = GSON.fromJson(resp, AccessToken.class);
+                this.issueTime = LocalDateTime.now();
+            }
         } catch (IOException ie) {
             ie.printStackTrace();
             System.err.println("FATAL: Unable to get a token from AirSync! Exiting due to fatal error.");
@@ -103,5 +95,15 @@ public class AirSyncAuth {
         Duration duration = Duration.between(this.issueTime, LocalDateTime.now());
 
         return (duration.getSeconds() > BEARER_CERT_EXP_TIME);
+    }
+
+    /**
+     * This represents the access token that is used to access AirSync
+     *
+     * @param accessToken the raw access token, in {@link String} form
+     */
+    //CHECKSTYLE:OFF
+    class AccessToken {
+        public String accessToken;
     }
 }

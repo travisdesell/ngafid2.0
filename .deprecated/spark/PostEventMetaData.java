@@ -1,0 +1,46 @@
+package org.ngafid.routes.spark;
+
+import java.sql.Connection;
+import java.util.List;
+import java.util.logging.Logger;
+
+import org.ngafid.Database;
+import org.ngafid.events.EventMetaData;
+
+import com.google.gson.Gson;
+import org.ngafid.routes.ErrorResponse;
+import spark.Route;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+
+/**
+ * PostEventMetaData
+ */
+public class PostEventMetaData implements Route {
+
+    private static final Logger LOG = Logger.getLogger(PostEventMetaData.class.getName());
+
+    private Gson gson;
+
+    public PostEventMetaData(Gson gson) {
+        this.gson = gson;
+    }
+
+    @Override
+    public Object handle(Request request, Response response) {
+
+        LOG.info("handling rate of closure route");
+        int eventId = Integer.parseInt(request.formParams("eventId"));
+        try (Connection connection = Database.getConnection()) {
+            List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
+            if (!metaDataList.isEmpty()) {
+                return gson.toJson(metaDataList);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return gson.toJson(new ErrorResponse(e));
+        }
+        return gson.toJson(null);
+    }
+}

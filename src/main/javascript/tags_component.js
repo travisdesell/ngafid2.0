@@ -303,7 +303,7 @@ class Tags extends React.Component {
                         tags.map((tag, index) => {
                             return (
                                 <button id={"tag_button_" + index} key={index} className={buttonClasses} data-bs-toggle="button" onClick={() => this.selectTag(index, tag)}>
-                                    <i id={"tag_img_" + index} className="fa fa-tag m-1" data-bs-toggle="tooltip" data-trigger='manual' data-placement="right" style={{color : tag.color, marginRight : '10px'}}></i>
+                                    <i id={"tag_img_" + index} className="fa fa-tag m-1" data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="right" style={{color : tag.color, marginRight : '10px'}}></i>
                                     {tag.name}
                                 </button>
                             );
@@ -356,7 +356,7 @@ class Tags extends React.Component {
         }
 
         let submitButton = (
-            <button id="submit-tag-button" className="btn btn-outline-secondary" style={styleButton} onClick={defAddAction} data-bs-toggle="tooltip" data-trigger='manual' data-placement="top" disabled>
+            <button id="submit-tag-button" className="btn btn-outline-secondary" style={styleButton} onClick={defAddAction} data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" disabled>
                 <i className="fa fa-check mr-1" aria-hidden="true"/>
                 Submit
             </button> 
@@ -364,7 +364,7 @@ class Tags extends React.Component {
 
         if (!this.state.editing || !this.tagEquals(activeTag, editedTag)) {
             submitButton = (
-                <button id="submit-tag-button" className="btn btn-outline-secondary" data-bs-toggle="tooltip" data-trigger='manual' data-placement="top" style={styleButton} onClick={defAddAction} >
+                <button id="submit-tag-button" className="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" style={styleButton} onClick={defAddAction} >
                     <i className="fa fa-check mr-1" aria-hidden="true"/>
                     Submit
                 </button> 

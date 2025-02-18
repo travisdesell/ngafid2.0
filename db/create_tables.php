@@ -12,6 +12,7 @@ $update_turn_to_final = false;
 $update_visited_airports = false;
 $update_uploads_for_raise = false;
 $update_rate_of_closure = false;
+$update_rate_of_closure_cascade_delete = true;
 $create_airsync = false;
 $create_event_metadata = false;
 //need to drop and reload these tables for 2020_05_16 changes
@@ -34,6 +35,10 @@ query_ngafid_db("DROP TABLE tails");
 
 
 if ($drop_tables) {
+
+    query_ngafid_db("DROP TABLE event_metadata");
+    query_ngafid_db("DROP TABLE event_metadata_keys");
+    query_ngafid_db("DROP TABLE rate_of_closure");
     query_ngafid_db("DROP TABLE events");
     query_ngafid_db("DROP TABLE flight_processed");
     query_ngafid_db("DROP TABLE event_statistics");
@@ -47,13 +52,15 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE upload_errors");
     query_ngafid_db("DROP TABLE flight_messages");
 
-    query_ngafid_db("DROP TABLE airframe_types");
+    query_ngafid_db("DROP TABLE turn_to_final");
     query_ngafid_db("DROP TABLE data_type_names");
     query_ngafid_db("DROP TABLE flight_tag_map");
     query_ngafid_db("DROP TABLE turn_to_final");
+    query_ngafid_db("DROP TABLE airsync_imports");
     query_ngafid_db("DROP TABLE flights");
-    query_ngafid_db("DROP TABLE tails");
     query_ngafid_db("DROP TABLE airframes");
+    query_ngafid_db("DROP TABLE tails");
+    query_ngafid_db("DROP TABLE airframe_types");
     query_ngafid_db("DROP TABLE fleet_airframes");
     query_ngafid_db("DROP TABLE visited_airports");
     query_ngafid_db("DROP TABLE visited_runways");
@@ -69,6 +76,9 @@ if ($drop_tables) {
 
     query_ngafid_db("DROP TABLE uploads");
 
+    
+    query_ngafid_db("DROP TABLE airsync_fleet_info");
+    query_ngafid_db("DROP TABLE email_preferences");
     query_ngafid_db("DROP TABLE fleet_access");
     query_ngafid_db("DROP TABLE fleet");
     query_ngafid_db("DROP TABLE user");
@@ -107,7 +117,6 @@ if ($update_2022_02_17) {
     query_ngafid_db($query);
 
 
-
     $query = "CREATE TABLE `user` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `email` VARCHAR(128) NOT NULL,
@@ -133,10 +142,12 @@ if ($update_2022_02_17) {
 
     $query = "CREATE TABLE `uploads` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `parent_id` INT(11) NULL DEFAULT NULL,
         `fleet_id` INT(11) NOT NULL,
         `uploader_id` INT(11) NOT NULL,
         `filename` VARCHAR(256) NOT NULL,
         `identifier` VARCHAR(128) NOT NULL,
+        `kind` enum('FILE', 'AIRSYNC', 'DERIVED') DEFAULT 'FILE',
         `number_chunks` int(11) NOT NULL,
         `uploaded_chunks` int(11) NOT NULL,
         `chunk_status` VARCHAR(8096) NOT NULL,
@@ -154,8 +165,10 @@ if ($update_2022_02_17) {
         PRIMARY KEY (`id`),
         UNIQUE KEY (`uploader_id`, `md5_hash`),
         UNIQUE KEY (`fleet_id`, `md5_hash`),
+        UNIQUE KEY (`parent_id`),
         FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
-        FOREIGN KEY(`uploader_id`) REFERENCES user(`id`)
+        FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
+        FOREIGN KEY(`parent_id`) REFERENCES uploads(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
@@ -234,7 +247,7 @@ if ($update_2022_02_17) {
         `fleet_id` INT(11) NOT NULL,
         `uploader_id` INT(11) NOT NULL,
         `upload_id` INT(11) NOT NULL,
-        `system_id` VARCHAR(16) NOT NULL,
+        `system_id` VARCHAR(128) NOT NULL,
         `airframe_id` INT(11) NOT NULL,
         `airframe_type_id` INT(11) NOT NULL,
         `start_time` DATETIME,
@@ -383,7 +396,7 @@ if ($update_2022_02_17) {
 
     $query = "CREATE TABLE `flight_messages` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
-        `message` VARCHAR(512),
+        `message` TEXT,
 
         PRIMARY KEY(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -608,12 +621,13 @@ if ($update_2022_02_17) {
     query_ngafid_db($query);
 
     $query = "CREATE TABLE `airsync_fleet_info` (
-        `fleet_id` int(11) NOT NULL,                                                            
-        `api_key` varchar(32) NOT NULL,                                                         
-        `api_secret` varchar(64) NOT NULL,                                                      
+        `fleet_id` int(11) NOT NULL, 
+        `airsync_fleet_name` TEXT NOT NULL,
+        `api_key` varchar(32) NOT NULL,
+        `api_secret` varchar(64) NOT NULL,
         `last_upload_time` timestamp ON UPDATE CURRENT_TIMESTAMP,
-        `timeout` int(11) DEFAULT NULL,                                                             
-        `mutex` TINYINT DEFAULT 0,
+        `timeout` int(11) DEFAULT NULL,
+        `override` tinyint(4) DEFAULT NULL,
 
         PRIMARY KEY(`fleet_id`),
         FOREIGN KEY(`fleet_id`) REFERENCES `fleet`(`id`)
@@ -621,7 +635,8 @@ if ($update_2022_02_17) {
 
     # CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
     query_ngafid_db($query);
-
+    
+    # Node that the id here is not an auto-generated key, it is the id that airsync provides.
     $query = "CREATE TABLE `airsync_imports` (
         `id` int(11) NOT NULL,
         `time_received` timestamp NULL DEFAULT NULL,
@@ -629,6 +644,7 @@ if ($update_2022_02_17) {
         `fleet_id` int(11) NOT NULL,
         `flight_id` int(11) DEFAULT NULL,
         `tail` varchar(512) NOT NULL,
+
         PRIMARY KEY (`id`),
         KEY `airsync_imports_uploads_null_fk` (`upload_id`),
         KEY `airsync_imports_fleet_id_fk` (`fleet_id`),
@@ -640,40 +656,6 @@ if ($update_2022_02_17) {
 
     query_ngafid_db($query);
 }
-
-if ($create_airsync) {
-    $query = "CREATE TABLE `airsync_fleet_info` (
-        `fleet_id` int(11) NOT NULL,                                                            
-        `api_key` varchar(32) NOT NULL,                                                         
-        `api_secret` varchar(64) NOT NULL,                                                      
-        `last_upload_time` timestamp ON UPDATE CURRENT_TIMESTAMP,
-        `timeout` int(11) DEFAULT NULL,                                                             
-        `mutex` TINYINT DEFAULT 0,                                                             
-        KEY `airsync_fleet_id_fk` (`fleet_id`),                                                     
-        CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
-    );";
-
-    query_ngafid_db($query);
-
-    $query = "CREATE TABLE `airsync_imports` (
-        `id` int(11) NOT NULL,
-        `time_received` timestamp NULL DEFAULT NULL,
-        `upload_id` int(11) NOT NULL,
-        `fleet_id` int(11) NOT NULL,
-        `flight_id` int(11) DEFAULT NULL,
-        `tail` varchar(512) NOT NULL,
-        PRIMARY KEY (`id`),
-        KEY `airsync_imports_uploads_null_fk` (`upload_id`),
-        KEY `airsync_imports_fleet_id_fk` (`fleet_id`),
-        KEY `airsync_imports_flights_null_fk` (`flight_id`),
-        CONSTRAINT `airsync_imports_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`),
-        CONSTRAINT `airsync_imports_flights_null_fk` FOREIGN KEY (`flight_id`) REFERENCES `flights` (`id`),
-        CONSTRAINT `airsync_imports_uploads_null_fk` FOREIGN KEY (`upload_id`) REFERENCES `uploads` (`id`)
-    );";
-
-    query_ngafid_db($query);
-}
-
 
 if (!$update_turn_to_final) {
     $query = "CREATE TABLE `turn_to_final` (
@@ -689,6 +671,9 @@ if (!$update_turn_to_final) {
 }
 
 if (!$update_rate_of_closure) {
+
+    echo "Creating 'rate_of_closure' table...\n";
+
     $query = "CREATE TABLE `rate_of_closure` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `event_id` INT(11) NOT NULL,
@@ -696,10 +681,41 @@ if (!$update_rate_of_closure) {
         `data` MEDIUMBLOB,
         
         PRIMARY KEY(`id`),
-        FOREIGN KEY(`event_id`) REFERENCES events(`id`)
+        FOREIGN KEY(`event_id`) REFERENCES events(`id`) ON DELETE CASCADE   -- Source Event deleted => Delete rate of closure
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
+}
+
+if ($update_rate_of_closure_cascade_delete) {
+    
+    /*
+
+        Alters existing 'rate_of_closure' table to have a foreign
+        key constraint with Cascading Delete on 'event_id'.
+
+
+        Used to prevent an error when deleting uploads after
+        fixing the duplicate Proximity events issue:
+        
+            SQLIntegrityConstraintViolationException
+
+            Cannot delete or update a parent row: a foreign key constraint fails
+            (`ngafid`.`rate_of_closure`, CONSTRAINT `rate_of_closure_ibfk_1`
+            FOREIGNKEY (`event_id`) REFERENCES `events` (`id`))
+
+    */
+
+    echo "Updating 'rate_of_closure' table foreign key constraint...\n";
+
+    //Drop existing foreign key constraint
+    $query = "ALTER TABLE `rate_of_closure` DROP FOREIGN KEY `rate_of_closure_ibfk_1`";
+    query_ngafid_db($query);
+
+    //Add new foreign key constraint with Cascading Delete
+    $query = "ALTER TABLE `rate_of_closure` ADD FOREIGN KEY(`event_id`) REFERENCES events(`id`) ON DELETE CASCADE";
+    query_ngafid_db($query);
+
 }
 
 if (!$update_visited_airports) {

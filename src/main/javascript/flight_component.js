@@ -1308,13 +1308,13 @@ class Flight extends React.Component {
                                                 <i className="fa fa-area-chart p-1"></i>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} id={"mapToggle-" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed="false" onClick={() => this.mapClicked()}>
+                                            <button className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.mapClicked()}>
                                                 <i className="fa fa-map-o p-1"></i>
                                             </button>
                                         </div>
 
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
-                                            <button className={buttonClasses + globeClasses} style={styleButton} title={globeTooltip} id={"cesiumToggle-" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed={this.state.replayToggled} onClick={() => this.toggleCesiumFlight()}>
+                                            <button className={buttonClasses + globeClasses} style={styleButton} title={globeTooltip} id={"cesiumToggled" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
                                                 <i className="fa fa-globe p-1"></i>
                                             </button>
 
@@ -1329,11 +1329,11 @@ class Flight extends React.Component {
                                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
                                                     Export to CSV (Original)
-                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
                                                     Export to CSV (Generated)
-                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                                    <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
                                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>

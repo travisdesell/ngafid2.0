@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.WebServer"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.bin.WebServer"

@@ -1,23 +1,28 @@
 package org.ngafid.common;
 
+import org.ngafid.events.calculations.TurnToFinal;
+
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.logging.Logger;
-import java.util.zip.*;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterOutputStream;
 
-import org.ngafid.flights.calculations.TurnToFinal;
-
-public class Compression {
+public final class Compression {
+    private Compression() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated.");
+    }
 
     private static class TTFFixObjectInputStream extends ObjectInputStream {
-        public TTFFixObjectInputStream() throws IOException {
+        TTFFixObjectInputStream() throws IOException {
             super();
         }
 
-        public TTFFixObjectInputStream(InputStream in) throws IOException {
+        TTFFixObjectInputStream(InputStream in) throws IOException {
             super(in);
         }
 
@@ -89,8 +94,10 @@ public class Compression {
         byte[] inflated = inflate(bytes);
 
         // Deserialize
-        // Use the custom TTFFixObjectInputStream which will properly recognize the outdated reference to the turn to final class
-        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        // Use the custom TTFFixObjectInputStream which will properly recognize
+        // the outdated reference to the turn to final class
+        // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated));
         Object o = inputStream.readObject();
         inputStream.close();
 
