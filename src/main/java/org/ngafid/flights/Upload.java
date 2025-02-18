@@ -622,16 +622,12 @@ public final class Upload {
     }
 
     public String getArchiveFilename() {
-        switch (kind) {
-            case AIRSYNC:
-                return id + "__airsync__" + filename;
-            case DERIVED:
-                return id + "__derived__" + filename;
-            case FILE:
-                return id + "__" + filename;
-            default:
-                return ""; // unreachable
-        }
+        return switch (kind) {
+            case AIRSYNC -> id + "__airsync__" + filename;
+            case DERIVED -> id + "__derived__" + filename;
+            case FILE -> id + "__" + filename;
+            default -> ""; // unreachable
+        };
     }
 
     public Path getArchivePath() {

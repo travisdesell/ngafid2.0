@@ -1,6 +1,7 @@
 package org.ngafid.filters;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
@@ -25,8 +26,10 @@ public class Filter {
     protected String text = null;
 
     @JsonProperty
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     protected ArrayList<String> inputs = null;
     @JsonProperty
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     protected ArrayList<Filter> filters = null;
 
     /**
