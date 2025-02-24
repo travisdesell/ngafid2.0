@@ -81,7 +81,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             // Calculate MD5 hash and convert to hex
             byte[] flightHash = md.digest(flightDataBuilder.toString().getBytes(StandardCharsets.UTF_8));
             String result = DatatypeConverter.printHexBinary(flightHash).toLowerCase();
-            System.out.println("Md5 hash calculated: " + result);
+            LOG.info("Md5 hash calculated: " + result);
             return result;
         } catch (NoSuchAlgorithmException e) {
             throw new FlightProcessingException(e);
