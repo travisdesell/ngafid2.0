@@ -264,36 +264,18 @@ public enum TimeUtils {
         for (int i = 0; i < utcDates.size(); i++) {
             String date = utcDates.get(i).trim();
             String time = utcTimes.get(i).trim();
-           // if (date.isEmpty() || time.isEmpty()) {
-           //     System.out.println("Both date and time are empty at index " + i + ". Skipping iteration.");
-           //     continue;
-           // }
+
             String dateTime = date + " " + time;
             LocalDateTime utcDateTime = LocalDateTime.parse(dateTime, formatter);
 
-
-          //  if (latitudes == null || longitudes == null) {
-          //      System.err.println("Latitudes or longitudes is null. Skipping iteration " + i);
-          //      continue;
-          //  }
-
             double latitude = latitudes.get(i);
             double longitude = longitudes.get(i);
-
-
-
-            // Check if latitude or longitude is not a valid double
-           // if (Double.isNaN(latitude) || Double.isNaN(longitude) ||
-           //         Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
-            //    System.out.println("Invalid latitude or longitude at index " + i + ". Skipping iteration.");
-           //     continue;
-          //  }
 
             String zoneIdStr = null;
             try {
                 zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
             } catch (Exception e) {
-                // throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
+                //throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
                 localDates.add("");
                 localTimes.add("");
                 utcOffsets.add("");

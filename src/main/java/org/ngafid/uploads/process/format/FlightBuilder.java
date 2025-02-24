@@ -284,7 +284,6 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> newItinerary) {
-        System.out.println("TEST!!! Setting Itenerary!!");
         this.itinerary = newItinerary;
         return this;
     }
