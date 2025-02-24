@@ -262,11 +262,32 @@ public enum TimeUtils {
 
         // Iterate over each index and calculate the corresponding local date, time, and offset.
         for (int i = 0; i < utcDates.size(); i++) {
-            String dateTime = utcDates.get(i).trim() + " " + utcTimes.get(i).trim();
+            String date = utcDates.get(i).trim();
+            String time = utcTimes.get(i).trim();
+           // if (date.isEmpty() || time.isEmpty()) {
+           //     System.out.println("Both date and time are empty at index " + i + ". Skipping iteration.");
+           //     continue;
+           // }
+            String dateTime = date + " " + time;
             LocalDateTime utcDateTime = LocalDateTime.parse(dateTime, formatter);
+
+
+          //  if (latitudes == null || longitudes == null) {
+          //      System.err.println("Latitudes or longitudes is null. Skipping iteration " + i);
+          //      continue;
+          //  }
 
             double latitude = latitudes.get(i);
             double longitude = longitudes.get(i);
+
+
+
+            // Check if latitude or longitude is not a valid double
+           // if (Double.isNaN(latitude) || Double.isNaN(longitude) ||
+           //         Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
+            //    System.out.println("Invalid latitude or longitude at index " + i + ". Skipping iteration.");
+           //     continue;
+          //  }
 
             String zoneIdStr = null;
             try {
@@ -277,7 +298,6 @@ public enum TimeUtils {
                 localTimes.add("");
                 utcOffsets.add("");
             }
-
             ZoneId zoneId = ZoneId.of(zoneIdStr);
             ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
 

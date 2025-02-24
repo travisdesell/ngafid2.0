@@ -95,12 +95,13 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
-        List<String[]> rows = extractFlightData();
+        List<String[]> rowsUnfiltered = extractFlightData();
+        List<String[]> rows = getValidRows(rowsUnfiltered);
 
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         // We cannot filter out "invalid" rows or else our aircraft will travel through time. Many of our analyses assume a 1-second gap.
-        // rows = filterInvalidRows(rows, latitudeIndex, longitudeIndex);
+          //rows = filterInvalidRows(rows, latitudeIndex, longitudeIndex);
 
         // Calculate G5-specific local date/time and timezone offset if applicable. Adds them to stringTimeSeries directly.
 
@@ -113,6 +114,31 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         }
 
     }
+
+    /**
+     * Filters the provided list of rows and returns only the valid rows.
+     * A row is considered valid if, for the indices 2 through 6 (inclusive), each field is not empty.
+     * @param rows a list of rows (unfiltered)
+     * @return a list of valid rows that have non-null and non-empty values at indices 2 to 6
+     */
+    public static List<String[]> getValidRows(List<String[]> rows) {
+        List<String[]> validRows = new ArrayList<>();
+        for (String[] fields : rows) {
+            boolean isValid = true;
+            // Check positions 2, 3, 4, 5, 6 (indices 2 to 6)
+            for (int i = 2; i <= 6; i++) {
+                if (fields[i] == null || fields[i].trim().isEmpty()) {
+                    isValid = false;
+                    break;
+                }
+            }
+            if (isValid) {
+                validRows.add(fields);
+            }
+        }
+        return validRows;
+    }
+
 
     /**
      * G5, G3x data has metadata formated like this: UTC Date (yyyy-mm-dd),UTC Time (hh:mm:ss),
@@ -211,11 +237,11 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         // Determine the correct formatter based on the first row
         StringTimeSeries dateSeries = stringTimeSeries.get("UTC Date");
         StringTimeSeries timeSeries = stringTimeSeries.get("UTC Time");
-        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), dateSeries.get(dateSeries.size() / 2));
+        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), timeSeries.get(dateSeries.size() / 2));
 
         for (int i = 0; i < dateSeries.size(); i++) {
 
-            String dateTimeString = dateSeries + " " + timeSeries; // Assuming the first two columns are date and time
+            String dateTimeString = dateSeries.get(i) + " " + timeSeries.get(i); // Assuming the first two columns are date and time
             String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");
 
             LocalDateTime currentTimestamp;
@@ -247,6 +273,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     private static DateTimeFormatter getDateTimeFormatter(String date, String time) throws TimeUtils.UnrecognizedDateTimeFormatException {
         String firstDateTimeString = date + " " + time;
         DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(firstDateTimeString.replaceAll("\\s+", " "));
+        System.out.println("Correct Formatter: " + correctFormatter);
         return correctFormatter;
     }
 
