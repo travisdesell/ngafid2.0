@@ -1,6 +1,7 @@
 package org.ngafid.filters;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -27,10 +28,10 @@ public class Filter {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    protected ArrayList<String> inputs = null;
+    protected ArrayList<String> inputs = new ArrayList<>();
     @JsonProperty
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    protected ArrayList<Filter> filters = null;
+    protected ArrayList<Filter> filters = new ArrayList<>();
 
     /**
      * Creates a RULE filter with the given inputs
@@ -40,7 +41,6 @@ public class Filter {
     @JsonCreator
     public Filter(@JsonProperty("inputs") ArrayList<String> inputs) {
         this.type = "RULE";
-
         this.inputs = inputs;
     }
 
@@ -52,8 +52,6 @@ public class Filter {
     public Filter(String condition) {
         this.type = "GROUP";
         this.condition = condition;
-
-        filters = new ArrayList<Filter>();
     }
 
     /**
@@ -84,6 +82,7 @@ public class Filter {
      *
      * @return a hash set of strings for each column name, without duplicates
      */
+    @JsonIgnore
     public TreeSet<String> getColumnNames() {
         TreeSet<String> columnNames = new TreeSet<String>();
         getColumnNamesHelper(this, columnNames);

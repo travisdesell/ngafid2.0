@@ -1,6 +1,8 @@
 package org.ngafid.webserver;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -31,7 +33,8 @@ public class JavalinWebServer extends WebServer {
                     objectMapper -> objectMapper
                             .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
                             .setSerializationInclusion(JsonInclude.Include.ALWAYS)
-                            .setSerializationInclusion(JsonInclude.Include.ALWAYS)
+                            .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+                            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
                             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             ));
         });

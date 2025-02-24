@@ -408,7 +408,7 @@ public class StatisticsJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-
+            LOG.severe("Airframe Map: " + Airframes.getIdToNameMap(connection, fleetId));
             scopes.put("events_js",
                     // "var eventStats = JSON.parse('" + objectMapper.writeValueAsString(eventStatistics) + "');\n"
                     "var eventDefinitions = JSON.parse('" +
