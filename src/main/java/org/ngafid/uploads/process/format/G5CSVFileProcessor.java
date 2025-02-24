@@ -99,16 +99,11 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
 
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
-        // We cannot filter out "invalid" rows or else our aircraft will travel through time. Many of our analyses assume a 1-second gap.
-        // rows = filterInvalidRows(rows, latitudeIndex, longitudeIndex);
-
-        // Calculate G5-specific local date/time and timezone offset if applicable. Adds them to stringTimeSeries directly.
-
         try {
             calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
             List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
             return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
-        } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException e) {
+        } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException | NullPointerException e) {
             throw new FlightProcessingException(e);
         }
 
@@ -266,6 +261,10 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         StringTimeSeries utcTimeSeries = stringTimeSeries.get("UTC Time");
         DoubleTimeSeries latitudeSeries = doubleTimeSeries.get("Latitude");
         DoubleTimeSeries longitudeSeries = doubleTimeSeries.get("Longitude");
+
+        if (Stream.of(utcTimeSeries, utcTimeSeries, latitudeSeries, longitudeSeries).anyMatch(Objects::isNull)) {
+            throw new NullPointerException("Need UTC Date, UTC Time, Latitude, and Longitude to import G5 / G3X data.");
+        }
 
         TimeUtils.LocalDateTimeResult localDateTimeResult = TimeUtils.calculateLocalDateTimeFromTimeSeries(
                 utcDateSeries, utcTimeSeries, latitudeSeries, longitudeSeries);
