@@ -95,50 +95,19 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
-        List<String[]> rowsUnfiltered = extractFlightData();
-        List<String[]> rows = getValidRows(rowsUnfiltered);
+        List<String[]> rows = extractFlightData();
 
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
-
-        // We cannot filter out "invalid" rows or else our aircraft will travel through time. Many of our analyses assume a 1-second gap.
-          //rows = filterInvalidRows(rows, latitudeIndex, longitudeIndex);
-
-        // Calculate G5-specific local date/time and timezone offset if applicable. Adds them to stringTimeSeries directly.
 
         try {
             calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
             List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
             return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
-        } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException e) {
+        } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException | NullPointerException e) {
             throw new FlightProcessingException(e);
         }
 
     }
-
-    /**
-     * Filters the provided list of rows and returns only the valid rows.
-     * A row is considered valid if, for the indices 2 through 6 (inclusive), each field is not empty.
-     * @param rows a list of rows (unfiltered)
-     * @return a list of valid rows that have non-null and non-empty values at indices 2 to 6
-     */
-    public static List<String[]> getValidRows(List<String[]> rows) {
-        List<String[]> validRows = new ArrayList<>();
-        for (String[] fields : rows) {
-            boolean isValid = true;
-            // Check positions 2, 3, 4, 5, 6 (indices 2 to 6)
-            for (int i = 2; i <= 6; i++) {
-                if (fields[i] == null || fields[i].trim().isEmpty()) {
-                    isValid = false;
-                    break;
-                }
-            }
-            if (isValid) {
-                validRows.add(fields);
-            }
-        }
-        return validRows;
-    }
-
 
     /**
      * G5, G3x data has metadata formated like this: UTC Date (yyyy-mm-dd),UTC Time (hh:mm:ss),
@@ -223,7 +192,6 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         return segmentFlightBuilders;
     }
 
-
     /**
      * Splits flights based on time intervals between rows and returns flight indices.
      *
@@ -273,7 +241,6 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     private static DateTimeFormatter getDateTimeFormatter(String date, String time) throws TimeUtils.UnrecognizedDateTimeFormatException {
         String firstDateTimeString = date + " " + time;
         DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(firstDateTimeString.replaceAll("\\s+", " "));
-        System.out.println("Correct Formatter: " + correctFormatter);
         return correctFormatter;
     }
 
@@ -294,13 +261,15 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         DoubleTimeSeries latitudeSeries = doubleTimeSeries.get("Latitude");
         DoubleTimeSeries longitudeSeries = doubleTimeSeries.get("Longitude");
 
+        if (Stream.of(utcTimeSeries, utcTimeSeries, latitudeSeries, longitudeSeries).anyMatch(Objects::isNull)) {
+            throw new NullPointerException("Need UTC Date, UTC Time, Latitude, and Longitude to import G5 / G3X data.");
+        }
+
         TimeUtils.LocalDateTimeResult localDateTimeResult = TimeUtils.calculateLocalDateTimeFromTimeSeries(
                 utcDateSeries, utcTimeSeries, latitudeSeries, longitudeSeries);
 
         stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", "yyyy-MM-dd", localDateTimeResult.getLocalDates()));
         stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", "HH:mm:ss", localDateTimeResult.getLocalTimes()));
         stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm", localDateTimeResult.getUtcOffsets()));
-
     }
 }
-
