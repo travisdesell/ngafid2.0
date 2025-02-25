@@ -19,6 +19,7 @@ import { FlightsCard } from "./flights_card_component.js";
 import Plotly from "plotly.js";
 
 import { timeZones } from "./time_zones.js";
+import CesiumPage from "./ngafid_cesium.js";
 import { linearRingLength } from "ol/geom/flat/length.js";
 import { View } from "ol";
 
@@ -414,7 +415,7 @@ class FlightsPage extends React.Component {
   	sortColumn: "Start Date and Time", //need to define a default here, flt# will alias to primary key server side
   	sortingOrder: "Descending", //need to define a default here, descending is default
   	storedFilters: this.getStoredFilters(),
-
+    cesiumVisible: false,
   	filters: {
     	type: "GROUP",
     	condition: "AND",
@@ -427,6 +428,7 @@ class FlightsPage extends React.Component {
   	pageSize: 10,
 	};
 
+    this.cesiumRef = React.createRef();
 	this.navRef = React.createRef();
 
   }
@@ -502,15 +504,134 @@ class FlightsPage extends React.Component {
 	return this.state.sortingOrder;
   }
 
-  showMap() {
+    addCesiumFlightPhase(phase, flightId) {
+        this.cesiumRef.current.addPhaseEntity(phase, flightId);
+    }
 
-	if (this.state.mapVisible)
-    	return;
+    addCesiumEventEntity(event, flightId) {
+        this.cesiumRef.current.addEventEntity(event, flightId);
+    }
 
-	if (!$("#map-toggle-button").hasClass("active")) {
-  	$("#map-toggle-button").addClass("active");
-  	$("#map-toggle-button").attr("aria-pressed", true);
-	}
+    zoomToEventEntity(eventId, flightId) {
+        this.cesiumRef.current.zoomToEventEntity(eventId, flightId);
+    }
+
+    removeCesiumFlight(flightId) {
+        this.cesiumRef.current.removeFlightEntities(flightId);
+    }
+    addCesiumFlight(flightId, color) {
+
+        console.log("add cesium flight");
+
+        if (this.state.plotVisible) {
+            this.hidePlot();
+        }
+        if (this.state.mapVisible) {
+            this.toggleMap();
+        }
+
+        console.log("in showCesium flight id from flight component " + flightId);
+
+        this.cesiumRef.current.addFlightEntity(flightId, color);
+        this.showCesiumMap();
+    }
+
+
+    setMapStyle(style) {
+         this.setState({
+            mapStyle : style
+        });
+    }
+
+    setSortingColumn(column) {
+        console.log("sorting by: " + column);
+        this.state.sortColumn = column;
+        this.setState(this.state);
+
+        this.submitFilter(true);
+    }
+
+    getSortingColumn() {
+        return this.state.sortColumn;
+    }
+
+    setSortingOrder(order) {
+        if (order != this.state.sortingOrder) {
+            console.log("sorting in " + order + " order");
+            this.state.sortingOrder = order;
+            this.setState(this.state);
+            this.submitFilter(true);
+        }
+    }
+
+    getSortingOrder() {
+        return this.state.sortingOrder;
+    }
+
+    addCesiumFlightPhase(phase, flightId) {
+        this.cesiumRef.current.addPhaseEntity(phase, flightId);
+    }
+
+    addCesiumEventEntity(event, flightId) {
+        this.cesiumRef.current.addEventEntity(event, flightId);
+    }
+
+    zoomToEventEntity(eventId, flightId) {
+        this.cesiumRef.current.zoomToEventEntity(eventId, flightId);
+    }
+
+    removeCesiumEntity(flightId) {
+        this.cesiumRef.current.removeEntity(flightId);
+    }
+
+    addCesiumFlight(flightId, color) {
+
+        console.log("add cesium flight");
+
+        if (this.state.plotVisible) {
+            this.hidePlot();
+        }
+        if (this.state.mapVisible) {
+            this.toggleMap();
+        }
+
+        console.log("in showCesium flight id from flight component " + flightId);
+
+        this.cesiumRef.current.addFlightEntity(flightId, color);
+        this.showCesiumMap();
+    }
+
+    showCesiumMap() {
+
+        if (!$("#cesium-toggle-button").hasClass("active")) {
+            $("#cesium-toggle-button").addClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", true);
+        }
+        this.state.cesiumVisible = true;
+        this.setState(this.state);
+        $("#cesium-div").css("height", "100%");
+        $("#cesium-div").show();
+
+    }
+
+    showMap() {
+
+        console.log("new show map implementation");
+
+        if (this.state.mapVisible) return;
+
+        if (this.state.cesiumVisible)
+            console.log("hiding cesium (toggle)");
+            this.hideCesiumMap();
+
+
+
+        console.log("in flight.js showmap");
+
+        if ( !$("#map-toggle-button").hasClass("active") ) {
+            $("#map-toggle-button").addClass("active");
+            $("#map-toggle-button").attr("aria-pressed", true);
+        }
 
 	this.state.mapVisible = true;
 	this.setState(this.state);
@@ -537,6 +658,25 @@ class FlightsPage extends React.Component {
 
   }
 
+    toggleCamera(flightId) {
+
+        this.cesiumRef.current.toggleCamera(flightId);
+    }
+    hideCesiumMap() {
+        if (!this.state.cesiumVisible) return;
+
+        if ( $("#cesium-toggle-button").hasClass("active") ) {
+            $("#cesium-toggle-button").removeClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", false);
+        }
+
+        this.state.cesiumVisible = false;
+        this.setState(this.state);
+
+        $("#cesium-div").hide();
+
+    }
+
   toggleMap() {
 
 	//Map is expanded, collapse it
@@ -550,11 +690,18 @@ class FlightsPage extends React.Component {
 
   }
 
-  showPlot() {
+    toggleCesiumMap() {
+        if (this.state.cesiumVisible) {
+            this.hideCesiumMap();
+        } else {
 
-	//Plot is already visible
-	if (this.state.plotVisible)
-    	return;
+            this.showCesiumMap();
+        }
+
+    }
+
+    showPlot() {
+        if (this.state.plotVisible) return;
 
 	if (!$("#plot-toggle-button").hasClass("active")) {
   	$("#plot-toggle-button").addClass("active");
@@ -587,7 +734,7 @@ class FlightsPage extends React.Component {
   }
 
   togglePlot() {
-    
+
 	//Plot is expanded, collapse it
 	if (this.state.containerExpanded === "plot-container")
         	this.expandContainer(undefined);
@@ -615,7 +762,7 @@ class FlightsPage extends React.Component {
 	}
 
 	expandContainer(targetContainerName) {
-   	 
+
     	let newExpandedContainerValue;
 
     	//Already expanded, so collapse
@@ -711,7 +858,7 @@ class FlightsPage extends React.Component {
 
     	//Check if the plot is visible
     	let plotVisible = this.state.plotVisible;
-    
+
     	//Check if the map is visible
     	let mapVisible = this.state.mapVisible;
 
@@ -749,7 +896,7 @@ class FlightsPage extends React.Component {
 
     	//If the plot is visible...
     	if (plotVisible) {
-       	 
+
         	//...Show the plot element
         	$("#plot").show();
 
@@ -772,7 +919,9 @@ class FlightsPage extends React.Component {
     	if (mapVisible) {
 
         	//...Show the map element
+			$("#plot-map-div").css("height", "50%");
         	$("#map").show();
+			$("#map").css("height", "50%");
 
         	//...
         	$("#map-container").css("height", "50%");
@@ -856,7 +1005,7 @@ class FlightsPage extends React.Component {
                     	}
                 	]
             	});
-       	 
+
         	//Attempt to recursively transform nested filters...
         	} else if (filter.filters) {
             	newFilters.push({
@@ -1175,10 +1324,10 @@ class FlightsPage extends React.Component {
 
             	console.log("received response: ");
             	console.log(response);
-   	 
+
             	//Permanently deleting a tag
             	if (isPermanent) {
-   	 
+
                 	console.log("permanent deletion of tag with id: " + tagId);
                 	for (var i = 0; i < thisFlight.state.flights.length; i++) {
                     	let flight = thisFlight.state.flights[i];
@@ -1187,20 +1336,20 @@ class FlightsPage extends React.Component {
                         	tags.splice(tags.indexOf(response.tag)-1, 1);
                     	}
                 	}
-           	 
+
             	//Clearing all tags from a flight
             	} else if (response.allTagsCleared) {
-   	 
+
                 	for (var i = 0; i < thisFlight.state.flights.length; i++) {
                     	let flight = thisFlight.state.flights[i];
                     	if (flight.id == flightId) {
                         	flight.tags = [];
                     	}
                 	}
-   	 
+
             	//Removing a tag from a flight
             	} else {
-   	 
+
                 	for (var i = 0; i < thisFlight.state.flights.length; i++) {
                     	let flight = thisFlight.state.flights[i];
                     	if (flight.id == flightId) {
@@ -1208,7 +1357,7 @@ class FlightsPage extends React.Component {
                         	tags.splice(tags.indexOf(response.tag)-1, 1);
                     	}
                 	}
-               	 
+
             	}
             	thisFlight.setState(thisFlight.state);
 
@@ -1418,7 +1567,7 @@ class FlightsPage extends React.Component {
             	}
 
         	});
-       	 
+
     	});
 
 	}
@@ -1431,7 +1580,7 @@ class FlightsPage extends React.Component {
 
 	return (
     	<div style={{overflowY:"hidden", overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
- 
+
       	<div style={{flex:"0 0 auto"}}>
           	<SignedInNavbar
               	activePage="flights"
@@ -1445,6 +1594,7 @@ class FlightsPage extends React.Component {
               	mapStyle={this.state.mapStyle}
               	togglePlot={() => this.togglePlot()}
               	toggleFilter={() => this.toggleFilter()}
+                toggleCesiumMap={() => this.toggleCesiumMap()}
               	toggleMap={() => this.toggleMap()}
               	mapSelectChanged={(style) => this.mapSelectChanged(style)}
               	mapLayerChanged={(style) => this.mapLayerChanged(style)}
@@ -1456,128 +1606,172 @@ class FlightsPage extends React.Component {
               	darkModeOnClickAlt={()=>{this.displayPlot();}}
           	/>
       	</div>
- 
-      	<div className="d-flex flex-row" style={{overflowY:"auto", overflowX:"hidden", flex:"1 1 auto"}}>
- 
-          	<div
-          	id="plot-map-div"
-          	className="d-flex flex-column col m-0"
-          	style={{ minWidth:"45%", maxWidth:"45%", minHeight:"100%", maxHeight:"100%", padding:"0.50em 0 1.00em 0.50em"}}
-          	>
-              	<div id="plot-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", overflow:"hidden" }}>
-                  	<div id="plot" style={{minHeight:"100%", maxHeight:"100%"}}/>
-                  	<div className="map-graph-expand-button btn btn-outline-secondary d-flex align-items-center justify-content-center" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("plot-container")}>
-                      	<i className="fa fa-expand p-1"/>
-                  	</div>
-              	</div>
- 
-              	<div id="map-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", marginTop:"0.50em", overflow:"hidden"}}>
-                  	<div id="map" style={{minHeight:"100%", maxHeight:"100%"}}/>
-                  	<div className="map-graph-expand-button btn btn-outline-secondary" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("map-container")}>
-                      	<i className="fa fa-expand p-1"/>
-                  	</div>
-              	</div>
- 
-          	</div>
- 
-          	<div className="p-0 m-2 d-flex flex-column col" style={{width:"100%", overflowX:"hidden"}}>
- 
-              	<div>
-                  	<Filter
-                      	filterVisible={this.state.filterVisible}
-                      	submitButtonName="Apply Filter"
-                      	submitFilter={(resetCurrentPage=true) => {this.submitFilter(resetCurrentPage);}}
-                      	rules={rules}
-                      	filters={this.state.filters}
-                      	getFilter={() => {return this.state.filters;}}
-                      	setFilter={(filter) => this.setFilter(filter)}
-                      	setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
-                      	getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
-                  	/>
-              	</div>
- 
-              	<div id="flights-card-container" className="mb-2 card" style={{overflowY:"scroll", flex:"1 1 auto", border:"1px solid var(--c_border_alt)", borderRadius:"0.25em", marginTop:"0.50em"}}>
-                  	<FlightsCard
-                      	parent={this}
-                      	layers={this.state.layers}
-                      	flights={this.state.flights}
-                      	navBar={this.navRef}
-                      	ref={(elem) => (this.flightsRef = elem)}
-                      	showMap={() => {
-                      	this.showMap();
-                      	}}
-                      	showPlot={() => {
-                      	this.showPlot();
-                      	}}
-                      	setAvailableLayers={(plotLayers) => {
-                      	this.setAvailableLayers(plotLayers);
-                      	}}
-                      	setFlights={(flights) => {
-                      	this.setState({
-                          	flights: flights,
-                      	});
-                      	}}
-                      	updateNumberPages={(numberPages) => {
-                      	this.setState({
-                          	numberPages: numberPages,
-                      	});
-                      	}}
-                      	addTag={(flightId, name, description, color) =>
-                      	this.addTag(flightId, name, description, color)
-                      	}
-                      	removeTag={(flightId, tagId, perm) =>
-                      	this.removeTag(flightId, tagId, perm)
-                      	}
-                      	deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
-                      	getUnassociatedTags={(flightId) =>
-                      	this.getUnassociatedTags(flightId)
-                      	}
-                      	associateTag={(tagId, flightId) =>
-                      	this.associateTag(tagId, flightId)
-                      	}
-                      	clearTags={(flightId) => this.clearTags(flightId)}
-                      	editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
-                  	/>
-              	</div>
- 
-              	<div style={{ width:"100%", bottom:"0", alignSelf:"center" }}>
-                  	<Paginator
-                      	submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
-                      	items={this.state.flights}
-                      	itemName="flights"
-                      	rules={sortableColumns}
-                      	currentPage={this.state.currentPage}
-                      	numberPages={this.state.numberPages}
-                      	pageSize={this.state.pageSize}
-                      	setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
-                      	getSortingColumn={() => this.getSortingColumn()}
-                      	setSortingOrder={(order) => this.setSortingOrder(order)}
-                      	getSortingOrder={() => this.getSortingOrder()}
-                      	sortOptions={sortableColumnsHumanReadable}
-                      	updateCurrentPage={(currentPage) => {this.state.currentPage = currentPage;}}
-                      	updateItemsPerPage={(pageSize) => {this.state.pageSize = pageSize;}}
-                      	location="Bottom"
-                  	/>
-              	</div>
- 
-          	</div>
- 
-      	</div>
-     	 
-    	</div>
-  	);
+
+			<div className="d-flex flex-row" style={{overflowY: "auto", overflowX: "hidden", flex: "1 1 auto"}}>
+
+				<div
+					id="plot-map-div"
+					className="d-flex flex-column col m-0"
+					style={{
+						minWidth: "45%",
+						maxWidth: "45%",
+						minHeight: "100%",
+						maxHeight: "100%",
+						padding: "0.50em 0 1.00em 0.50em"
+					}}
+				>
+					<div id="plot-container" className="card"
+						 style={{width: "100%", minHeight: "50%", maxHeight: "50%", overflow: "hidden"}}>
+						<div id="plot" style={{minHeight: "100%", maxHeight: "100%"}}/>
+						<div
+							className="map-graph-expand-button btn btn-outline-secondary d-flex align-items-center justify-content-center"
+							style={{position: "absolute", top: "0", left: "0"}}
+							onClick={() => this.expandContainer("plot-container")}>
+							<i className="fa fa-expand p-1"/>
+						</div>
+					</div>
+
+					<div id="map-container" className="card" style={{
+						width: "100%",
+						minHeight: "50%",
+						maxHeight: "50%",
+						marginTop: "0.50em",
+						overflow: "hidden"
+					}}>
+						<div id="map" style={{minHeight: "100%", maxHeight: "100%"}}/>
+						<div className="map-graph-expand-button btn btn-outline-secondary"
+							 style={{position: "absolute", top: "0", left: "0"}}
+							 onClick={() => this.expandContainer("map-container")}>
+							<i className="fa fa-expand p-1"/>
+						</div>
+					</div>
+
+				</div>
+				<div id="cesium-div" className='row m-0' style={{width: "50%", height: "0%", display: "none"}}>
+					<CesiumPage
+						parent={this}
+						setRef={this.cesiumRef}
+						flights={this.state.flights}
+					/>
+				</div>
+				<div className="p-0 m-2 d-flex flex-column col" style={{width: "100%", overflowX: "hidden"}}>
+
+					<div>
+						<Filter
+							filterVisible={this.state.filterVisible}
+							submitButtonName="Apply Filter"
+							submitFilter={(resetCurrentPage = true) => {
+								this.submitFilter(resetCurrentPage);
+							}}
+							rules={rules}
+							filters={this.state.filters}
+							getFilter={() => {
+								return this.state.filters;
+							}}
+							setFilter={(filter) => this.setFilter(filter)}
+							setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
+							getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
+						/>
+					</div>
+
+					<div id="flights-card-container" className="mb-2 card" style={{
+						overflowY: "scroll",
+						flex: "1 1 auto",
+						border: "1px solid var(--c_border_alt)",
+						borderRadius: "0.25em",
+						marginTop: "0.50em"
+					}}>
+						<FlightsCard
+							parent={this}
+							layers={this.state.layers}
+							flights={this.state.flights}
+							navBar={this.navRef}
+							ref={(elem) => (this.flightsRef = elem)}
+							showMap={() => {
+								this.showMap();
+							}}
+							showPlot={() => {
+								this.showPlot();
+							}}
+							setAvailableLayers={(plotLayers) => {
+								this.setAvailableLayers(plotLayers);
+							}}
+							setFlights={(flights) => {
+								this.setState({
+									flights: flights,
+								});
+							}}
+							updateNumberPages={(numberPages) => {
+								this.setState({
+									numberPages: numberPages,
+								});
+							}}
+							addTag={(flightId, name, description, color) =>
+								this.addTag(flightId, name, description, color)
+							}
+							removeTag={(flightId, tagId, perm) =>
+								this.removeTag(flightId, tagId, perm)
+							}
+							deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
+							getUnassociatedTags={(flightId) =>
+								this.getUnassociatedTags(flightId)
+							}
+							associateTag={(tagId, flightId) =>
+								this.associateTag(tagId, flightId)
+							}
+							clearTags={(flightId) => this.clearTags(flightId)}
+							editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
+							showCesiumPage={(flightId, color) => {this.addCesiumFlight(flightId, color);}}
+							addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
+							addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
+							removeCesiumFlight={(flightId) => {this.removeCesiumFlight(flightId);}}
+
+						/>
+					</div>
+
+					<div style={{width: "100%", bottom: "0", alignSelf: "center"}}>
+						<Paginator
+							submitFilter={(resetCurrentPage) => {
+								this.submitFilter(resetCurrentPage);
+							}}
+							items={this.state.flights}
+							itemName="flights"
+							rules={sortableColumns}
+							currentPage={this.state.currentPage}
+							numberPages={this.state.numberPages}
+							pageSize={this.state.pageSize}
+							setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+							getSortingColumn={() => this.getSortingColumn()}
+							setSortingOrder={(order) => this.setSortingOrder(order)}
+							getSortingOrder={() => this.getSortingOrder()}
+							sortOptions={sortableColumnsHumanReadable}
+							updateCurrentPage={(currentPage) => {
+								this.state.currentPage = currentPage;
+							}}
+							updateItemsPerPage={(pageSize) => {
+								this.state.pageSize = pageSize;
+							}}
+							location="Bottom"
+						/>
+					</div>
+
+				</div>
+
+			</div>
+
+		</div>
+	);
   }
 }
 
 
-
 var flightsPage = ReactDOM.render(
-	<FlightsPage />,
+	<FlightsPage/>,
 	document.querySelector("#flights-page")
-  );
- 
-  initializeMap();
-  flightsPage.displayPlot();
-  flightsPage.resolveDisplay();
- 
-  console.log("rendered flightsCard!");
+);
+
+initializeMap();
+flightsPage.displayPlot();
+flightsPage.resolveDisplay();
+
+console.log("rendered flightsCard!");
