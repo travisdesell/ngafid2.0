@@ -1326,7 +1326,7 @@ class Flight extends React.Component {
                                         </div>
 
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
-                                            <button className={buttonClasses + globeClasses} title={globeTooltip} id={"cesiumToggle-" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
+                                            <button className={buttonClasses + globeClasses} title={globeTooltip} id={"cesiumToggle-" + this.props.flightInfo.id} disabled={traceDisabled} data-bs-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
                                                 <i className="fa fa-globe p-1"></i>
                                             </button>
 

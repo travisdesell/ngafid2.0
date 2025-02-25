@@ -83,9 +83,7 @@ module.exports = {
     devtool: "source-map",
 
     output: {
-        // Farhad: for webpackCesium
-        sourcePrefix: "",
-        //
+
         path: path.resolve(__dirname, "src/main/resources/public/js/"),
         filename: "[name]-bundle.js"
     },
@@ -103,14 +101,6 @@ module.exports = {
                 },
                 include: path.resolve('src')
             },
-            {
-                test: /\.css$/,
-                use: [
-                    'css-loader',
-                ]
-            },
-
-
             {
                 test: /\.html$/,
                 use: ["html-loader"]

@@ -396,13 +396,13 @@ class CesiumPage extends React.Component {
         console.log("Before entities");
         console.log(this.viewer.entities);
         console.log(flightStartTime);
-        if (JulianDate.compare(flightStartTime, clockStartTime) < 0) {
+        if (JulianDate.compare(flightStartTime, this.viewer.clock.startTime) < 0) {
             // console.log("Earlier time detected. Setting start time to " + startTime)
             this.viewer.clock.startTime = flightStartTime.clone();
             this.viewer.clock.currentTime = flightStartTime.clone();
         }
 
-        if (JulianDate.compare(clockEndTime, flightEndTime) > 0) {
+        if (JulianDate.compare(this.viewer.clock.stopTime, flightEndTime) > 0) {
             // console.log("Later time detected. Setting end time to " + endTime);
             this.viewer.clock.stopTime = flightEndTime.clone();
 
@@ -410,7 +410,7 @@ class CesiumPage extends React.Component {
 
         this.viewer.clock.shouldAnimate = true;
         this.viewer.clock.multiplier = 10;
-        this.viewer.timeline.zoomTo(flightStartTime.clone(), flightStartTime.clone());
+        this.viewer.timeline.zoomTo(flightStartTime.clone(), flightEndTime.clone());
         var pathColor = Color.fromCssColorString(color).withAlpha(0.8);
         var positionProperty = this.getPositionProperty(flightData);
 
@@ -446,9 +446,9 @@ class CesiumPage extends React.Component {
         this.viewer.entities.add(geoFlightGroundEntity);
         // this.viewer.entities.add(defaultEntity);
         this.viewer.entities.add(replayEntity);
-        this.setState(this.state);
         this.viewer.zoomTo(geoFlightGroundEntity);
         this.state.currentZoomedEntity = geoFlightGroundEntity;
+        this.setState(this.state);
         // return replayEntity;
     }
 
