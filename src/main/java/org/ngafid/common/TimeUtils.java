@@ -81,7 +81,6 @@ public enum TimeUtils {
             default -> {
             }
         }
-
         return offset;
     }
 
@@ -257,34 +256,37 @@ public enum TimeUtils {
         ArrayList<String> localTimes = new ArrayList<>(utcDates.size());
         ArrayList<String> utcOffsets = new ArrayList<>(utcDates.size());
 
-        String dateTimeString = utcDates.get(0).trim() + " " + utcTimes.get(0).trim();
+        String dateTimeString = utcDates.get(0) + " " + utcTimes.get(0);
         DateTimeFormatter formatter = findCorrectFormatter(dateTimeString);
 
         // Iterate over each index and calculate the corresponding local date, time, and offset.
         for (int i = 0; i < utcDates.size(); i++) {
-            String dateTime = utcDates.get(i).trim() + " " + utcTimes.get(i).trim();
+            String dateTime = utcDates.get(i) + " " + utcTimes.get(i);
             LocalDateTime utcDateTime = LocalDateTime.parse(dateTime, formatter);
 
             double latitude = latitudes.get(i);
             double longitude = longitudes.get(i);
+            String date = "", time = "", offset = "";
 
-            String zoneIdStr = null;
+            // If our latitude and / or longitude are NaN, we will get an illegal argument exception.
             try {
-                zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
-            } catch (Exception e) {
-                // throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
-                localDates.add("");
-                localTimes.add("");
-                utcOffsets.add("");
+                String zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
+                ZoneId zoneId = ZoneId.of(zoneIdStr);
+                ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
+
+                date = localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-M-d"));
+                time = localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("H:m:s"));
+                offset = localZonedDateTime.getOffset().getId();
+            } catch (IllegalArgumentException e) {
+                // lat long values were invalid (nan or out of bounds).
             }
 
-            ZoneId zoneId = ZoneId.of(zoneIdStr);
-            ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
-
-            localDates.add(localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-M-d")));
-            localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("H:m:s")));
-            utcOffsets.add(localZonedDateTime.getOffset().getId());
+            // Add a default value.
+            localDates.add(date);
+            localTimes.add(time);
+            utcOffsets.add(offset);
         }
+
         return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
     }
 
