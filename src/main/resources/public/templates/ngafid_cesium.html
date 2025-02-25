@@ -319,10 +319,6 @@
         async function loadModel(airframe) {
             const pathColor = Cesium.Color.fromRandom();
             const model = airframeModels[airframe];
-            console.log("position property : ");
-            console.log(positionProperty);
-            console.log("model");
-            console.log(model);
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
@@ -351,8 +347,6 @@
                 let flightId = keys[i];
                 let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
                 let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
-                console.log("InfoAglDemo : ");
-                console.log(InfoAglDemo);
 
                 var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
@@ -702,16 +696,9 @@
 
         function toggleAirframeLockCamera() {
 
-            console.log("Toggle Camera tracked entities");
-            console.log(trackedEntities);
-
-            console.log("Tracked Entity before");
-            console.log(viewer.trackedEntity);
             // Will intentionally go to trackedEntities.length + 1 to set to null
             viewer.trackedEntity = trackedEntities[entityToggleIndex++];
 
-            console.log("Tracked Entity after");
-            console.log(viewer.trackedEntity);
             console.log("Locked onto " + trackedEntities[entityToggleIndex]);
 
             if (entityToggleIndex > trackedEntities.length) {

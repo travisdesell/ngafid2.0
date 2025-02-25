@@ -797,8 +797,6 @@ class Flight extends React.Component {
                     //console.log(response);
 
                     var coordinates = response.coordinates;
-                    console.log("coordinates");
-                    console.log(coordinates);
                     let points = thisFlight.state.points;
                     for (var i = 0; i < coordinates.length; i++) {
                         var point = fromLonLat(coordinates[i]);
