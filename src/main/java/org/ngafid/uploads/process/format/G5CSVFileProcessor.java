@@ -81,7 +81,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             // Calculate MD5 hash and convert to hex
             byte[] flightHash = md.digest(flightDataBuilder.toString().getBytes(StandardCharsets.UTF_8));
             String result = DatatypeConverter.printHexBinary(flightHash).toLowerCase();
-            System.out.println("Md5 hash calculated: " + result);
+            LOG.info("Md5 hash calculated: " + result);
             return result;
         } catch (NoSuchAlgorithmException e) {
             throw new FlightProcessingException(e);
@@ -100,7 +100,12 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         try {
-            calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
+            //G3x does have Local date time,
+            if (stringTimeSeries.get("Lcl Date") == null)
+            {
+                LOG.info("Lcl Date is null (This is G5), calculating local Lcl Date Time from UDT");
+                calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
+            }
             List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
             return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
         } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException | NullPointerException e) {
@@ -192,7 +197,6 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         return segmentFlightBuilders;
     }
 
-
     /**
      * Splits flights based on time intervals between rows and returns flight indices.
      *
@@ -200,19 +204,25 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * @return
      */
     public List<Integer> splitCSVIntoFlightIndices(Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes) throws FlightFileFormatException, TimeUtils.UnrecognizedDateTimeFormatException {
+
         List<Integer> splitIndices = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
-        // Determine the correct formatter based on the first row
         StringTimeSeries dateSeries = stringTimeSeries.get("UTC Date");
         StringTimeSeries timeSeries = stringTimeSeries.get("UTC Time");
-        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), dateSeries.get(dateSeries.size() / 2));
+
+        // G3x do not have UTC Date, use Lcl
+        if (dateSeries == null) {
+            dateSeries = stringTimeSeries.get("Lcl Date");
+            timeSeries = stringTimeSeries.get("Lcl Time");
+        }
+
+        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), timeSeries.get(dateSeries.size() / 2));
 
         for (int i = 0; i < dateSeries.size(); i++) {
 
-            String dateTimeString = dateSeries + " " + timeSeries; // Assuming the first two columns are date and time
+            String dateTimeString = dateSeries.get(i) + " " + timeSeries.get(i); // Assuming the first two columns are date and time
             String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");
-
             LocalDateTime currentTimestamp;
             try {
                 currentTimestamp = LocalDateTime.parse(normalizedDateTime, correctFormatter);
@@ -254,6 +264,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * @return
      */
     private void calculateLocalDateTimeAndOffset(
+
             Map<String, DoubleTimeSeries> doubleTimeSeries,
             Map<String, StringTimeSeries> stringTimeSeries) throws TimeUtils.UnrecognizedDateTimeFormatException {
 
@@ -268,11 +279,8 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
 
         TimeUtils.LocalDateTimeResult localDateTimeResult = TimeUtils.calculateLocalDateTimeFromTimeSeries(
                 utcDateSeries, utcTimeSeries, latitudeSeries, longitudeSeries);
-
         stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", "yyyy-MM-dd", localDateTimeResult.getLocalDates()));
         stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", "HH:mm:ss", localDateTimeResult.getLocalTimes()));
         stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm", localDateTimeResult.getUtcOffsets()));
-
     }
 }
-

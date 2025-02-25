@@ -61,7 +61,7 @@ public class FlightBuilder {
     private final ConcurrentHashMap<String, StringTimeSeries> stringTimeSeries;
     //CHECKSTYLE:ON
     // A list of airports this aircraft visited.
-    private ArrayList<Itinerary> itinerary = null;
+    private ArrayList<Itinerary> itinerary = new ArrayList<>();
 
     /**
      * List of events found in this flight.
