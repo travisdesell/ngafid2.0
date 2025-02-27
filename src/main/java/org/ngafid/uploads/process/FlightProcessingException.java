@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * An exception that contains all of the FATAL exceptions that occurred during flight processing.
+ * An aggregate exception that contains all of the FATAL exceptions that occurred during flight processing.
  * Namely SQLException, FatalFlightFileException, IOException, and FlightAlreadyExistsException.
  * <p>
  * If flight processing steps are done in parallel multiple exceptions could be thrown, which is

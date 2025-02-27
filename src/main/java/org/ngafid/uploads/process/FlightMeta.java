@@ -3,8 +3,8 @@ package org.ngafid.uploads.process;
 import org.ngafid.flights.Airframes;
 
 /**
- * Utility class used by FlightBuilder to call the Flight constructor.
- **/
+ * Utility class used by FlightBuilder to call the Flight constructor, contains all metadata required for a flight.
+ */
 public final class FlightMeta {
     //CHECKSTYLE:OFF
     public int fleetId = -1;

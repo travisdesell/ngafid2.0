@@ -2,10 +2,6 @@ package org.ngafid.flights;
 
 import org.ngafid.common.Database;
 import org.ngafid.common.FlightTag;
-import org.ngafid.common.MutableDouble;
-import org.ngafid.common.airports.Airport;
-import org.ngafid.common.airports.Airports;
-import org.ngafid.common.airports.Runway;
 import org.ngafid.common.filters.Filter;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -1062,47 +1058,6 @@ public class Flight {
         double rollComp = roll.get(index) * COMP_CONV;
         double ctComp = Math.sin(rollComp) * 32.2;
         return Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
-    }
-
-    public static void getNearbyLandingAreas(DoubleTimeSeries latitudeTS, DoubleTimeSeries longitudeTS,
-                                             DoubleTimeSeries altitudeAGLTS, StringTimeSeries nearestAirportTS,
-                                             DoubleTimeSeries airportDistanceTS, StringTimeSeries nearestRunwayTS,
-                                             DoubleTimeSeries runwayDistanceTS, double maxAirportDistanceFt,
-                                             double maxRunwayDistanceFt) {
-        for (int i = 0; i < latitudeTS.size(); i++) {
-            double latitude = latitudeTS.get(i);
-            double longitude = longitudeTS.get(i);
-            double altitudeAGL = altitudeAGLTS.get(i);
-
-            MutableDouble airportDistance = new MutableDouble();
-            Airport airport = null;
-            if (altitudeAGL <= 2000) {
-                airport = Airports.getNearestAirportWithin(latitude, longitude, maxAirportDistanceFt, airportDistance);
-            }
-
-            if (airport == null) {
-                nearestAirportTS.add("");
-                airportDistanceTS.add(Double.NaN);
-                nearestRunwayTS.add("");
-                runwayDistanceTS.add(Double.NaN);
-
-                // System.out.println(latitude + ", " + longitude + ", null, null, null, null");
-            } else {
-                nearestAirportTS.add(airport.iataCode);
-                airportDistanceTS.add(airportDistance.getValue());
-
-                MutableDouble runwayDistance = new MutableDouble();
-                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, maxRunwayDistanceFt,
-                        runwayDistance);
-                if (runway == null) {
-                    nearestRunwayTS.add("");
-                    runwayDistanceTS.add(Double.NaN);
-                } else {
-                    nearestRunwayTS.add(runway.getName());
-                    runwayDistanceTS.add(runwayDistance.getValue());
-                }
-            }
-        }
     }
 
     public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights)

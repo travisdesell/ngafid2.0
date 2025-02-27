@@ -15,9 +15,11 @@ import java.util.stream.Collectors;
 /**
  * A directed acyclic graph, where nodes are individual process steps and the edges are defined by column names that are
  * either input or output by that process step. A dummy node is created in the case of columns that are contained in the
- * data source.
+ * data source. See {@link org.ngafid.uploads.process.steps.ComputeStep} for more details on these compute steps.
  * <p>
- * A basic understanding of how ForkJoin tasks work in Java is a prerequisite to understand this.
+ * A basic understanding of how ForkJoin tasks work in Java is a prerequisite to understand the parallel execution of
+ * this graph. In practice though, parallelizing at the level of individual compute steps provides little to no speedup,
+ * therefore a topological sort is used to linearize the graph nodes so the compute steps can be executed in sequence.
  *
  * @author Joshua Karns (josh@karns.dev)
  **/

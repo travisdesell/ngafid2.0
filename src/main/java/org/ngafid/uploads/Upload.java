@@ -26,6 +26,12 @@ import java.util.logging.Logger;
  * <p>
  * Upload objects cannot be modified in the database directly without acquiring the corresponding LockedUpload object.
  * This is backed by a MySQL lock to avoid concurrent modification which could cause database corruption.
+ * <p>
+ * The process of actually processing an upload starts in {@link ProcessUpload}. When an upload finishes uploading, it is
+ * added to the Kafka upload topic. The {@link org.ngafid.kafka.UploadConsumer} monitors this topic and processes the
+ * uploads it finds.
+ * <p>
+ * Uploads can also be manually added to this queue using the utility program {@link org.ngafid.bin.UploadHelper}.
  */
 public final class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
@@ -80,10 +86,13 @@ public final class Upload {
 
     public class LockedUpload implements AutoCloseable {
         final Connection connection;
+        private boolean markedComplete = false;
 
         LockedUpload(Connection connection) throws SQLException, UploadAlreadyLockedException {
             this.connection = connection;
-            lock(true);
+            if (!lock(true)) {
+                throw new UploadAlreadyLockedException("Upload with id " + id + " is already locked!");
+            }
         }
 
         private static String lockNameFor(int uploadId) {
@@ -119,6 +128,16 @@ public final class Upload {
         @Override
         public void close() throws SQLException, UploadAlreadyLockedException {
             lock(false);
+
+            // We don't want to add this upload to the kafka queue while it is still locked, because then processing
+            // could fail if it is read from the queue too fast while we still have the lock.
+            if (markedComplete) {
+                if (producer == null) {
+                    producer = new KafkaProducer<>(Configuration.getUploadProperties());
+                }
+
+                producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
+            }
         }
 
         /**
@@ -132,6 +151,11 @@ public final class Upload {
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, id);
                 LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
+            }
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM flight_errors WHERE upload_id = ?")) {
+                preparedStatement.setInt(1, id);
                 preparedStatement.executeUpdate();
             }
 
@@ -187,11 +211,7 @@ public final class Upload {
                 query.executeUpdate();
             }
 
-            if (producer == null) {
-                producer = Configuration.getUploadProducer();
-            }
-
-            producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
+            markedComplete = true;
         }
 
         public void chunkUploaded(int chunkNumber, long chunkSize) throws SQLException {
@@ -253,11 +273,6 @@ public final class Upload {
 
     public LockedUpload getLockedUpload(Connection connection) throws SQLException {
         return new LockedUpload(connection);
-    }
-
-    public static LockedUpload getLockedUpload(Connection connection, int id) throws SQLException {
-        Upload upload = getUploadById(connection, id);
-        return upload.getLockedUpload(connection);
     }
 
     //CHECKSTYLE:OFF

@@ -3,10 +3,7 @@ package org.ngafid.uploads.process.format;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.calculations.TurnToFinal;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.Itinerary;
-import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.*;
 import org.ngafid.uploads.process.DependencyGraph;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.FlightProcessingException;
@@ -17,6 +14,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.ngafid.uploads.process.steps.ComputeStep.required;
@@ -46,8 +44,9 @@ public class FlightBuilder {
             ComputeTurnToFinal::new
     );
 
-    // Flight meta data - see FlightMeta definition for details.
+    // Flight metadata - see FlightMeta definition for details.
     public final FlightMeta meta;
+
     // A list of non-fatal exceptions: issues with the data that don't prevent us from ingesting the data.
     public final ArrayList<MalformedFlightFileException> exceptions = new ArrayList<>();
     /**
@@ -107,11 +106,20 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
-        return Stream.concat(PROCESS_STEPS.stream()
-                        .map(factory -> factory.create(connection, this))
-                        .filter(step -> step.getOutputColumns().stream()
-                                .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
-                ComputeEvent.getAllApplicable(connection, this).stream()).toList();
+        ArrayList<ComputeStep> steps =
+                Stream.concat(PROCESS_STEPS.stream()
+                                .map(factory -> factory.create(connection, this))
+                                .filter(step -> step.getOutputColumns().stream()
+                                        .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
+                        ComputeEvent.getAllApplicable(connection, this).stream()
+                ).collect(Collectors.toCollection(ArrayList::new));
+
+        // Some file processors will compute this, others will not. If we don't have UTC_DATE_TIME, add it as a required step.
+        if (!doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS) || !stringTimeSeries.containsKey(Parameters.UTC_DATE_TIME)) {
+            steps.add(required(ComputeUTCTime::new).create(connection, this));
+        }
+
+        return steps;
     }
 
     /**
@@ -140,10 +148,6 @@ public class FlightBuilder {
 
     public final Flight getFlight() {
         return flight;
-    }
-
-    // TODO: implement this hehe
-    public void validate() {
     }
 
     protected Map<String, Set<String>> getAliases() {

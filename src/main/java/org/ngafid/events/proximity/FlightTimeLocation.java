@@ -1,15 +1,13 @@
 package org.ngafid.events.proximity;
 
-import org.ngafid.common.TimeUtils;
 import org.ngafid.common.filters.Pair;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public final class FlightTimeLocation {
@@ -37,15 +35,14 @@ public final class FlightTimeLocation {
     double minAltMSL;
     double maxAltMSL;
 
-    long[] epochTime;
     double[] altitudeMSL;
     double[] altitudeAGL;
     double[] latitude;
     double[] longitude;
     double[] indicatedAirspeed;
 
-    StringTimeSeries dateSeries;
-    StringTimeSeries timeSeries;
+    StringTimeSeries utc;
+    DoubleTimeSeries epochTime;
     //CHECKSTYLE:ON
 
 
@@ -128,11 +125,11 @@ public final class FlightTimeLocation {
      */
     public boolean getSeriesData(Connection connection) throws SQLException {
         // get the time series data for altitude, latitude and longitude
-        DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
-        DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
-        DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
-        DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
-        DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS");
+        DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
+        DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
+        DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
+        DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
+        DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.IAS);
 
         // check to see if we could get these columns
         if (altMSLSeries == null || altAGLSeries == null || latitudeSeries == null || longitudeSeries == null
@@ -147,29 +144,8 @@ public final class FlightTimeLocation {
 
         // calculate the epoch time for each row as longs so they can most be quickly compared
         // we need to keep track of the date and time series for inserting in the event info
-        dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
-        timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
-        StringTimeSeries utcOffsetSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "UTCOfst");
-
-        // check to see if we could get these columns
-        if (dateSeries == null || timeSeries == null || utcOffsetSeries == null)
-            return false;
-
-        // System.out.println("date length: " + dateSeries.size() + ", time length: " + timeSeries.size() + ", utc
-        // length: " + utcOffsetSeries.size());
-        int length = dateSeries.size();
-
-        epochTime = new long[length];
-        for (int i = 0; i < length; i++) {
-            if (dateSeries.emptyAt(i)
-                    || timeSeries.emptyAt(i)
-                    || utcOffsetSeries.emptyAt(i)) {
-                epochTime[i] = 0;
-                continue;
-            }
-
-            epochTime[i] = TimeUtils.toEpochSecond(dateSeries.get(i), timeSeries.get(i), utcOffsetSeries.get(i));
-        }
+        utc = StringTimeSeries.getStringTimeSeries(connection, flightId, Parameters.UTC_DATE_TIME);
+        epochTime = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.UNIX_TIME_SECONDS);
 
         hasSeriesData = true;
 
@@ -187,23 +163,5 @@ public final class FlightTimeLocation {
 
     public boolean hasSeriesData() {
         return hasSeriesData;
-    }
-
-    public static boolean proximityAlreadyCalculated(Connection connection, FlightTimeLocation first,
-                                                     FlightTimeLocation second) throws SQLException {
-        try (PreparedStatement stmt = connection
-                .prepareStatement("SELECT flight_id FROM events WHERE flight_id = ? AND other_flight_id = ?")) {
-            stmt.setInt(1, first.flightId);
-            stmt.setInt(2, second.flightId);
-
-            // if there was a flight processed entry for this flight it was already processed
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                if (resultSet.next()) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
     }
 }

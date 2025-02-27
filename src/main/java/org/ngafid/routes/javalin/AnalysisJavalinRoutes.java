@@ -351,14 +351,14 @@ public class AnalysisJavalinRoutes {
 
                 final String airframeType = incomingFlight.getAirframeType();
 
-                final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
-                final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
-                final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
-                final DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
-                final DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
+                final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.LATITUDE);
+                final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.LONGITUDE);
+                final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.ALT_AGL);
+                final DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.E1_RPM);
+                final DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.GND_SPD);
 
-                final StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
-                final StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
+                final StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, Parameters.LCL_DATE);
+                final StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, Parameters.LCL_TIME);
 
                 final List<Double> flightGeoAglTaxiing = new ArrayList<>();
                 final List<Double> flightGeoAglTakeOff = new ArrayList<>();

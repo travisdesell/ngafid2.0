@@ -2,7 +2,6 @@ package org.ngafid.uploads;
 
 import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
-import org.ngafid.bin.UploadHelper;
 import org.ngafid.common.Database;
 import org.ngafid.common.SendEmail;
 import org.ngafid.flights.FlightError;
@@ -25,9 +24,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
+/**
+ * Contains a static method processUpload which will process an upload with the supplied uploadId. This upload should
+ * already be fully uploaded to the website.
+ * <p>
+ * Processing an upload has a few steps:
+ * 1. Acquiring a SQL lock for the upload to ensure unique access.
+ * 2. Clearing the upload if it has already been processed (i.e. deleting all flights, events, etc.).
+ * 3. Ingesting the archive (this work is encapsulated in {@link org.ngafid.uploads.process.Pipeline}).
+ * 4. Updating the database with the results, exceptions, etc.
+ */
 public final class ProcessUpload {
 
-    private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
     public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
         LOG.info("processing upload with id: " + uploadId);
@@ -130,15 +139,7 @@ public final class ProcessUpload {
 
         if (extension.equals(".zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
-            try (ZipFile zipFile = new ZipFile(filename) {
-                @Override
-                public void close() throws IOException {
-                    super.close();
-                    LOG.info("We're closing the zip now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
-                    (new Throwable()).printStackTrace();
-                }
-            }; Pipeline pipeline = new Pipeline(connection, upload,
-                    zipFile)) {
+            try (ZipFile zipFile = new ZipFile(filename); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
 
                 flightInfo = pipeline.getFlightInfo();
@@ -243,18 +244,6 @@ public final class ProcessUpload {
                     }
                 }
             }
-        }
-
-        if (status.isProcessed()) {
-            // try {
-            //     // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
-            //     CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
-            //     // CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
-            // } catch (SQLException e) {
-            //     LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
-            //     status = Upload.Status.FAILED_UNKNOWN;
-            //     uploadException = new Exception(e.toString() + "\nFailed computing events...");
-            // }
         }
 
         // ingestion was successful

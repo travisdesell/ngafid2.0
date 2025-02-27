@@ -15,6 +15,9 @@ import static org.ngafid.flights.Airframes.AIRFRAME_DJI;
 import static org.ngafid.flights.Airframes.AIRFRAME_SCAN_EAGLE;
 import static org.ngafid.flights.Parameters.*;
 
+/**
+ * Computes the total amount of fuel over each of the gas tanks an aircraft may have.
+ */
 public class ComputeTotalFuel extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeTotalFuel.class.getName());
 
@@ -26,18 +29,22 @@ public class ComputeTotalFuel extends ComputeStep {
         super(connection, builder);
     }
 
+    @Override
     public Set<String> getRequiredDoubleColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getRequiredStringColumns() {
         return Collections.<String>emptySet();
     }
 
+    @Override
     public Set<String> getRequiredColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getOutputColumns() {
         return OUTPUT_COLUMNS;
     }
@@ -46,6 +53,7 @@ public class ComputeTotalFuel extends ComputeStep {
         return !AIRFRAME_BLACKLIST.contains(airframe);
     }
 
+    @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         double[] totalFuel = null;
 

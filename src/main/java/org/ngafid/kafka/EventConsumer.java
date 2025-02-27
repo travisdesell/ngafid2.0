@@ -54,15 +54,15 @@ public class EventConsumer {
 
     public static void main(String[] args) {
         final ObjectMapper objectMapper = new ObjectMapper();
-        try (KafkaConsumer<String, String> consumer = Event.createConsumer();
-             KafkaProducer<String, Event.EventToCompute> producer = Event.createProducer()) {
+        try (KafkaConsumer<String, String> consumer = Events.createConsumer();
+             KafkaProducer<String, Events.EventToCompute> producer = Events.createProducer()) {
 
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
                 LOG.info("Got " + records.count() + " records for consumer.");
                 Map<Integer, EventDefinition> eventDefinitionMap = getEventDefinitionMap();
                 for (ConsumerRecord<String, String> record : records) {
-                    Event.EventToCompute etc = objectMapper.readValue(record.value(), Event.EventToCompute.class);
+                    Events.EventToCompute etc = objectMapper.readValue(record.value(), Events.EventToCompute.class);
 
                     try (Connection connection = Database.getConnection()) {
                         Flight flight = Flight.getFlight(connection, etc.flightId());
@@ -82,7 +82,13 @@ public class EventConsumer {
                             AbstractEventScanner scanner = getScanner(flight, eventDefinitionMap.get(etc.eventId()));
                             scanner.gatherRequiredColumns(connection, flight);
 
-                            List<org.ngafid.events.Event> events = scanner.scan(flight.getDoubleTimeSeriesMap(), flight.getStringTimeSeriesMap());
+                            // Scanners may emit events of more than one type -- filter the other events out.
+                            List<org.ngafid.events.Event> events = scanner
+                                    .scan(flight.getDoubleTimeSeriesMap(), flight.getStringTimeSeriesMap())
+                                    .stream()
+                                    .filter(e -> e.getEventDefinitionId() == etc.eventId())
+                                    .toList();
+
                             org.ngafid.events.Event.batchInsertion(connection, flight, events);
                         } catch (SQLException e) {
                             // If a sql exception happens, there is likely a bug that needs to addressed or the process should be rebooted. Crash process.

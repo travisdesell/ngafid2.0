@@ -12,12 +12,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-import static org.ngafid.kafka.Configuration.getUploadProducer;
+import static org.ngafid.kafka.Configuration.getUploadProperties;
 
 public enum UploadHelper {
     ;
 
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
+
+    private static KafkaProducer<String, Integer> getUploadProducer() {
+        return new KafkaProducer<>(getUploadProperties());
+    }
 
     private static Options buildCLIOptions() {
         Options options = new Options();

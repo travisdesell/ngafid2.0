@@ -8,9 +8,23 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 
+/**
+ * Utility class for computing MD5 hashes.
+ *
+ * @author Joshua Karns
+ */
 public class MD5 {
     private static final Logger LOG = Logger.getLogger(MD5.class.getName());
 
+    /**
+     * Walks through an input stream and computes the hash over all the bytes. Some of the files we read are larger
+     * than the max java array size so we have to read the stream byte by byte. It is unlikely that this will lead to
+     * profound performance degradation.
+     *
+     * @param is
+     * @return lowercase hex binary hash string
+     * @throws IOException if an exception occurs while reading the stream
+     */
     public static String computeHexHash(InputStream is) throws IOException {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -29,6 +43,12 @@ public class MD5 {
         }
     }
 
+    /**
+     * Compute the MD5 hash for the supplied string.
+     *
+     * @param s string to hash
+     * @return lowercase hex binary hash string
+     */
     public static String computeHexHash(String s) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");

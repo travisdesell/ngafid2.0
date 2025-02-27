@@ -10,6 +10,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 
+/**
+ * Computes the start and end time for the scaneagle airframe.
+ */
 public class ComputeScanEagleStartEndTime extends ComputeStep {
 
     public ComputeScanEagleStartEndTime(Connection connection, FlightBuilder builder) {

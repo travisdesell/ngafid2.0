@@ -6,6 +6,11 @@ import org.apache.kafka.clients.admin.NewTopic;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Enumeration of the kafka topics and their corresponding names.
+ * <p>
+ * This enumeration also contains a main function which can be used to create these topics.
+ */
 public enum Topic {
     UPLOAD("upload"),
     UPLOAD_RETRY("upload-retry"),

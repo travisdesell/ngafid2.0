@@ -21,6 +21,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Flight file processor and flight builder for Scan Eagle data. We can't do a lot with the scan eagle data, so
+ * the only steps we can really apply are simple unit conversions.
+ */
 public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
     private static final Logger LOG = Logger.getLogger(ScanEagleCSVFileProcessor.class.getName());
 

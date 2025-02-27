@@ -33,16 +33,19 @@ import java.util.zip.ZipFile;
  * This wraps up the process of (1) recognizing file types, (2) parsing the files, and (3) processing the data.
  * <p>
  * Files are recognized by their file extensions - the extension is used to create a `FlightFileProcessor` from the list
- * of factories in `this.factories`.
+ * of factories in `this.factories`. We may need to read some data within the file to properly determine how it should be
+ * processed, which factories may do -- see the factory function in {@link CSVFileProcessor} for an example of this.
  * <p>
- * `FlightFlileProcessor` objects handle the task of parsing the data: obtaining meta data and the actual double and
- * string series. These are placed into a flight builder, which is a more general representation of an incomplete
- * flight.
+ * {@link FlightFileProcessor} objects handle the task of parsing the data: obtaining metadata and the actual double and
+ * string series. These are placed into a {@link FlightBuilder}, which is an intermediate representation of a partially
+ * processed flight.
  * <p>
- * `FlightBuilder`s can be specialized and these specializations will specify a set of `ProcessStep`s which will be
- * applied to compute everything we need. `ProcessStep`s all have required input columns and output columns: these
+ * {@link FlightBuilder}s can be specialized and these specializations will specify a set of {@link org.ngafid.uploads.process.steps.ComputeStep}s
+ * which will be applied to compute everything we need. ComputeSteps all have required input columns and output columns: these
  * requirements can be used to form a DAG, traversing it in the proper order will let us compute the steps in the proper
- * order. This process can also be parallelized, see org.ngafid.flights.process.DepdendencyGraph for more on this.
+ * order. This process can also be parallelized, see {@link org.ngafid.uploads.process.DependencyGraph} for more on this.
+ * <p>
+ * This object may open resources, thus it must be created using a try-with statement to ensure they are closed properly.
  *
  * @author Joshua Karns (josh@karns.dev)
  */

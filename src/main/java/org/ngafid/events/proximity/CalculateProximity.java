@@ -23,11 +23,6 @@ public class CalculateProximity {
         return Math.sqrt((lateralDistance * lateralDistance) + (altDiffFt * altDiffFt));
     }
 
-    /*
-     * static String timeSeriesName = "Lcl Time";
-     * static String dateSeriesName = "Lcl Date";
-     */
-
     public static double calculateLateralDistance(double flightLatitude, double flightLongitude,
                                                   double otherFlightLatitude, double otherFlightLongitude) {
 
@@ -55,8 +50,8 @@ public class CalculateProximity {
         newStart1 = startLine - startShift;
         newStart2 = otherStartLine - startShift;
 
-        int newEnd1 = Math.min((endLine + shift), flightInfo.epochTime.length);
-        int newEnd2 = Math.min((otherEndLine + shift), otherInfo.epochTime.length);
+        int newEnd1 = Math.min((endLine + shift), flightInfo.epochTime.size());
+        int newEnd2 = Math.min((otherEndLine + shift), otherInfo.epochTime.size());
         int endShift1 = newEnd1 - endLine;
         int endShift2 = newEnd2 - otherEndLine;
         int endShift = Math.min(endShift1, endShift2);
@@ -76,22 +71,22 @@ public class CalculateProximity {
         ArrayList<Double> rateOfClosure = new ArrayList<Double>();
         int i = (startLine + 1), j = (otherStartLine + 1);
         while (i < endLine && j < otherEndLine) {
-            if (flightInfo.epochTime[i] == 0) {
+            if (flightInfo.epochTime.get(i) == 0) {
                 i++;
                 continue;
             }
 
-            if (otherInfo.epochTime[j] == 0) {
+            if (otherInfo.epochTime.get(j) == 0) {
                 j++;
                 continue;
             }
 
             // Ensure both iterators are for the same time
-            if (flightInfo.epochTime[i] < otherInfo.epochTime[j]) {
+            if (flightInfo.epochTime.get(i) < otherInfo.epochTime.get(j)) {
                 i++;
                 continue;
             }
-            if (otherInfo.epochTime[j] < flightInfo.epochTime[i]) {
+            if (otherInfo.epochTime.get(j) < flightInfo.epochTime.get(i)) {
                 j++;
                 continue;
             }
@@ -119,7 +114,7 @@ public class CalculateProximity {
 
     }
 
-    public static boolean addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
+    public static void addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
 
         for (Event event : eventList) {
 
@@ -129,12 +124,11 @@ public class CalculateProximity {
                     (event.getStartTime().equals(testEvent.getStartTime()) && event.getEndTime().equals(testEvent.getEndTime()));
 
             // Event already in the list, don't add it again
-            if (hasSameFlightIDs && hasSameTimestamps) return false;
+            if (hasSameFlightIDs && hasSameTimestamps) return;
 
         }
 
         // Event not in the list, add it
         eventList.add(testEvent);
-        return true;
     }
 }

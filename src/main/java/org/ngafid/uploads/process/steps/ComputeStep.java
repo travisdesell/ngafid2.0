@@ -9,6 +9,22 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 
+/**
+ * The processing of flights is broken up into small, discrete steps -- a ComputeStep object computes one of these steps.
+ * <p>
+ * The applicability of a step to a given flight is determined by a few things: the required double series, string series,
+ * and valid airframes. Some steps are only applicable to certain aircraft, and every step will have a set of columns
+ * required to compute it.
+ * <p>
+ * Compute steps modify a flight builder object (an intermediate representation of a flight) as they see fit, but the primary output
+ * comes in the form of columns. Steps should generally not mess with anything they are not directly intended to in the flight builder,
+ * e.g. {@link org.ngafid.uploads.process.steps.ComputeUTCTime} computes the start and end time of the flight and
+ * modifies the metadata in the flight builder to do so, but it shouldn't set the airframe name or type.
+ * <p>
+ * So, compute steps have required input columns and output columns. We can use these relationships to form a graph of the compute steps which can then be executed in parallel.
+ * We can also linearize this graph and execute it sequentially while ensuring all dependencies are met. This is done in
+ * {@link org.ngafid.uploads.process.DependencyGraph} -- see it for more details.
+ */
 public abstract class ComputeStep {
 
     public interface Factory {

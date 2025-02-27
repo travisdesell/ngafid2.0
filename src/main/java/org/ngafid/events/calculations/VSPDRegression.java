@@ -6,12 +6,12 @@ import org.ngafid.flights.DoubleTimeSeries.TimeStepCalculation;
 import static org.ngafid.flights.Parameters.VSI_LAG_DIFF;
 
 /**
- * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression
+ * This class is an instance of a {@link TimeStepCalculation} that gets a derived VSI using linear regression
  *
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
  */
 
-public class VSPDRegression implements TimeStepCalculation, Calculation {
+public class VSPDRegression implements TimeStepCalculation {
     static final double FPM_CONV = 60.d;
     private final DoubleTimeSeries altB;
     private final DoubleTimeSeries altBLag;
@@ -102,15 +102,11 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
         return n / d;
     }
 
-    public double compute(int index) {
-        return calculate(index);
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public double calculate(int index) {
+    public double compute(int index) {
         if (index < 1 || index >= altB.size() - 1) {
             return Double.NaN;
         } else {
@@ -124,9 +120,6 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
             yValues[0] = altBLag.get(index);
             yValues[1] = altB.get(index);
             yValues[2] = altBLead.get(index);
-
-            //TODO: filter out bad readings here
-            //possible solution to improve accuracy if research is extended
 
             double yA = average(yValues);
             double xA = average(xValues);
