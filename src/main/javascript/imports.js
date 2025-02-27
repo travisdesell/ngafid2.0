@@ -1,6 +1,7 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import Dropdown from 'react-bootstrap/Dropdown'
 import DropdownButton from 'react-bootstrap/DropdownButton'
 
@@ -272,7 +273,6 @@ class Import extends React.Component {
         const styleStatus = { flex : "0 0 10em" };
         const styleButton = { };
 
-        let statusText = "";
         let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
         let expandIconClasses = "fa ";
 
@@ -285,54 +285,111 @@ class Import extends React.Component {
             expandDivClasses = "m-0";
         }
 
-        let progressBarClasses = "progress-bar";
         let status = importInfo.status;
-        let colorClasses = "";
 
-        if (status == "HASHING") {
-            statusText = "Hashing";
-            progressBarClasses += " bg-warning";
-            colorClasses += " border-warning text-warning";
-        } else if (status == "IMPORTED") {
-            if (importInfo.errorFlights == 0 && importInfo.warningFlights == 0) {
-                statusText = "Imported";
-                progressBarClasses += " bg-success";
-                colorClasses += " border-success text-success";
+        /*
 
-            } else if (importInfo.errorFlights != 0 && importInfo.warningFlights != 0) {
-                statusText = "Imported With Errors and Warnings";
-                progressBarClasses += " bg-danger";
-                colorClasses += " border-danger text-danger ";
+            New Statusses:
 
-            } else if (importInfo.errorFlights != 0) {
-                statusText = "Imported With Errors";
-                progressBarClasses += " bg-danger";
-                colorClasses += " border-danger text-danger ";
+            UPLOADING,
+            UPLOADING_FAILED,
+            UPLOADED,
+            ENQUEUED,
+            PROCESSING,
+            PROCESSED_OK,
+            PROCESSED_WARNING,
+            FAILED_FILE_TYPE,
+            FAILED_AIRCRAFT_TYPE,
+            FAILED_ARCHIVE_TYPE,
+            FAILED_UNKNOWN,
+            DERIVED;                    (Note: Should not be displayed)
 
-            } else if (importInfo.warningFlights != 0) {
-                statusText = "Imported With Warnings";
-                progressBarClasses += " bg-warning";
-                colorClasses += " border-warning text-warning ";
+        */  
+
+        let statusText, colorClasses, statusClasses;
+        const statusStates = {
+            "UPLOADING" : {
+                "statusText" : "Uploading",
+                "colorClasses" : "bg-info",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-info text-info"
+            },
+            "UPLOADING_FAILED" : {
+                "statusText" : "Upload Failed",
+                "colorClasses" : "bg-danger",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            },
+            "UPLOADED" : {
+                "statusText" : "Uploaded",
+                "colorClasses" : "bg-primary",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-primary text-primary"
+            },
+            "ENQUEUED" : {
+                "statusText" : "Enqueued",
+                "colorClasses" : "bg-secondary",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
+            },
+            "PROCESSING" : {
+                "statusText" : "Processing",
+                "colorClasses" : "bg-warning",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-warning text-warning"
+            },
+            "PROCESSED_OK" : {
+                "statusText" : "Processed OK",
+                "colorClasses" : "bg-success",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-success text-success"
+            },
+            "PROCESSED_WARNING" : {
+                "statusText" : "Processed With Warnings",
+                "colorClasses" : "bg-warning",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-warning text-warning"
+            },
+            "FAILED_FILE_TYPE" : {
+                "statusText" : "Failed: File Type",
+                "colorClasses" : "bg-danger",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            },
+            "FAILED_AIRCRAFT_TYPE" : {
+                "statusText" : "Failed: Aircraft Type",
+                "colorClasses" : "bg-danger",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            },
+            "FAILED_ARCHIVE_TYPE" : {
+                "statusText" : "Failed: Archive Type",
+                "colorClasses" : "bg-danger",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            },
+            "FAILED_UNKNOWN" : {
+                "statusText" : "Failed: Unknown",
+                "colorClasses" : "bg-danger",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            },
+            "DERIVED" : {
+                "statusText" : "Derived",
+                "colorClasses" : "bg-info",
+                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-info text-info"
             }
+        };
+        const statusStateUnknownDefaults = {
+            "statusText" : "Unknown",
+            "colorClasses" : "bg-secondary",
+            "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
+        };
 
-        } else if (status == "UPLOADED") {
-            statusText = "Not Yet Imported";
-            progressBarClasses += " bg-info";
-            colorClasses += " border-info text-info";
+        console.log("[EX] Status: ", status);
 
-        } else if (status == "UPLOADING") {
-            statusText = "Uploading";
-
-        } else if (status == "UPLOAD INCOMPLETE") {
-            statusText = "Upload Incomplete";
-            progressBarClasses += " bg-warning";
-            colorClasses += " border-warning text-warning";
-
-        } else if (status == "ERROR") {
-            statusText = "Import Failed";
-            progressBarClasses += " bg-danger";
-            colorClasses += " border-danger text-danger";
+        //Status is listed, apply the status text and classes
+        if (status in statusStates) {
+            statusText = statusStates[status].statusText;
+            colorClasses = statusStates[status].colorClasses;
+            statusClasses = statusStates[status].statusClasses;
+            
+        //Status is not listed, apply the unknown defaults
+        } else {
+            statusText = statusStateUnknownDefaults.statusText;
+            colorClasses = statusStateUnknownDefaults.colorClasses;
+            statusClasses = statusStateUnknownDefaults.statusClasses;
         }
+
 
         let textClasses = "p-1 mr-1 card";
         let cardClasses = (textClasses + colorClasses);
@@ -355,6 +412,7 @@ class Import extends React.Component {
                     {/* RIGHT ELEMENTS */}
                     <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "65%" }}>
 
+                        {/* Flights Uploaded With Non-Critical Issues */}
                         <div
                             className="d-flex flex-row"
                             style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_valid)" }}
@@ -368,6 +426,7 @@ class Import extends React.Component {
                             <div style={{textAlign:"end", width:"100%"}}>{importInfo.validFlights}&nbsp;</div>
                         </div>
 
+                        {/* Flights Uploaded With Warnings */}
                         <div
                             className="d-flex flex-row"
                             style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_warning)" }}
@@ -377,6 +436,7 @@ class Import extends React.Component {
                             <div style={{textAlign:"end", width:"100%"}}>{importInfo.warningFlights}&nbsp;</div>
                         </div>
 
+                        {/* Flights Uploaded With Errors */}
                         <div
                             className="d-flex flex-row"
                             style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_danger)" }}
@@ -386,6 +446,7 @@ class Import extends React.Component {
                             <div style={{textAlign:"end", width:"100%"}}>{importInfo.errorFlights}&nbsp;</div>
                         </div>
 
+                        {/* Total Flights Uploaded */}
                         <div
                             className="d-flex flex-row"
                             style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_info)" }}
@@ -395,8 +456,9 @@ class Import extends React.Component {
                             <div style={{textAlign:"end", width:"100%"}}>{totalFlights}&nbsp;</div>
                         </div>
                         
+                        {/* Upload Status */}
                         <div
-                            className={cardClasses}
+                            className={cardClasses + statusClasses}
                             style={{ ...styleStatus, flex: "0 0 18em", marginLeft: "10px", marginRight: "10px" }}
                         >
                             {statusText}
@@ -407,13 +469,46 @@ class Import extends React.Component {
                     </div>
                 </div>
                 <div className={expandDivClasses} hidden={!expanded}>
-                    <UploadErrors expanded={expanded} uploadErrors={uploadErrors} />
-                    <FlightWarnings expanded={expanded} flightWarnings={flightWarnings} />
-                    <FlightErrors expanded={expanded} flightErrors={flightErrors} />
+                    <div className="d-flex flex-row align-items-stretch ml-3">
+                        {/* Vertical Line */}
+                        <div 
+                            style={{
+                                width: "4px",
+                                backgroundColor: "var(--c_border_alt)",
+                                marginRight: "10px",
+                                borderEndEndRadius: "2px",
+                                borderEndStartRadius: "2px"
+                            }} 
+                        />
+
+                        {/* Container for Warnings/Errors */}
+                        <div className="d-flex flex-column flex-fill mr-4">
+                            <hr style={{borderTop: "4px solid var(--c_border)", borderRadius: "2px", marginTop: "0", marginBottom: "0"}} />
+                            {
+                                (uploadErrors.length == 0 && flightWarnings.length == 0 && flightErrors.length == 0)
+                                ? (
+                                    <div className="d-flex flex-row p-0 mt-1 mb-1" style={{minWidth: "100%", width: "100%"}}>
+                                        <div className="p-1 card border-success" style={{...styleName, minWidth: "100%", width: "100%"}}>
+                                            No Errors or Warnings to Show!
+                                        </div>
+                                    </div>
+                                )
+                                : (
+                                    <div>
+                                        <UploadErrors expanded={expanded} uploadErrors={uploadErrors} />
+                                        <FlightWarnings expanded={expanded} flightWarnings={flightWarnings} />
+                                        <FlightErrors expanded={expanded} flightErrors={flightErrors} />
+                                    </div>
+                                )
+                            }
+
+                            <hr style={{borderTop: "4px solid var(--c_border)", borderRadius: "2px", marginTop: "0", marginBottom: "0"}} />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         );
-        
 
     }
 }
@@ -515,9 +610,5 @@ class ImportsPage extends React.Component {
     }
 }
 
-var importsPage = ReactDOM.render(
-    <ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage} />,
-    document.querySelector('#imports-page')
-);
-
-
+const root = createRoot(document.querySelector('#imports-page'));
+root.render(<ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage}/>);
