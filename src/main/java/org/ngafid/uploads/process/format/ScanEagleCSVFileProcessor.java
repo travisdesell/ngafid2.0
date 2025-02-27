@@ -82,10 +82,6 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
      */
     private void scanEagleSetTailAndID() {
         String[] filenameParts = filename.split("_");
-        meta.startDateTime = filenameParts[0];
-        meta.endDateTime = meta.startDateTime;
-        LOG.log(Level.INFO, "start date: '{0}'", meta.startDateTime);
-        LOG.log(Level.INFO, "end date: '{0}'", meta.startDateTime);
 
         // UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
         meta.suggestedTailNumber = "N" + filenameParts[1] + "ND";

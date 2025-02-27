@@ -43,7 +43,7 @@ public class ComputeTurnToFinal extends ComputeStep {
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         builder.emitTurnToFinals(
                 TurnToFinal.calculateFlightTurnToFinals(
-                        builder.getDoubleTimeSeriesMap(), builder.getItinerary(), builder.meta.airframe, builder.meta.startDateTime
+                        builder.getDoubleTimeSeriesMap(), builder.getItinerary(), builder.meta.airframe, builder.meta.getStartDateTime()
                 )
         );
     }

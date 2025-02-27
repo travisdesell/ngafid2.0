@@ -136,8 +136,8 @@ public class JSONFileProcessor extends FlightFileProcessor {
         List.of(spd, lat, lon, agl, unix).forEach(series -> doubleTimeSeries.put(series.getName(), series));
         stringTimeSeries.put(utc.getName(), utc);
 
-        flightMeta.setStartDateTime(TimeUtils.UTCtoSQL(utc.get(0)));
-        flightMeta.setEndDateTime(TimeUtils.UTCtoSQL(utc.get(utc.size() - 1)));
+        flightMeta.setStartDateTime(OffsetDateTime.parse(utc.get(0), TimeUtils.ISO_8601_FORMAT));
+        flightMeta.setEndDateTime(OffsetDateTime.parse(utc.get(utc.size() - 1), TimeUtils.ISO_8601_FORMAT));
         stream.reset();
         flightMeta.setMd5Hash(MD5.computeHexHash(stream));
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));

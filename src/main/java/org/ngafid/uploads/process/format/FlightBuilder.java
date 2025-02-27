@@ -11,6 +11,7 @@ import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.steps.*;
 
 import java.sql.Connection;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -264,7 +265,7 @@ public class FlightBuilder {
      * @param startDateTime The start date time
      * @return this flight builder
      */
-    public synchronized FlightBuilder setStartDateTime(String startDateTime) {
+    public synchronized FlightBuilder setStartDateTime(OffsetDateTime startDateTime) {
         this.meta.startDateTime = startDateTime;
         return this;
     }
@@ -273,11 +274,11 @@ public class FlightBuilder {
      * Sets the `endDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
      * `meta` object.
      *
-     * @param endDateTime The end date time
+     * @param odt the offset date time the flight ends at
      * @return this flight builder
      */
-    public synchronized FlightBuilder setEndDateTime(String endDateTime) {
-        this.meta.endDateTime = endDateTime;
+    public synchronized FlightBuilder setEndDateTime(OffsetDateTime odt) {
+        this.meta.endDateTime = odt;
         return this;
     }
 

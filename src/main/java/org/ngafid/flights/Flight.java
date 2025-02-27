@@ -2,6 +2,7 @@ package org.ngafid.flights;
 
 import org.ngafid.common.Database;
 import org.ngafid.common.FlightTag;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.common.filters.Filter;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -84,8 +85,8 @@ public class Flight {
         systemId = meta.systemId;
         suggestedTailNumber = meta.suggestedTailNumber;
         md5Hash = meta.md5Hash;
-        startDateTime = meta.startDateTime;
-        endDateTime = meta.endDateTime;
+        startDateTime = TimeUtils.UTCtoSQL(meta.startDateTime);
+        endDateTime = TimeUtils.UTCtoSQL(meta.endDateTime);
 
         this.itinerary = itinerary;
         this.exceptions = exceptions;

@@ -2,6 +2,7 @@ package org.ngafid.events.calculations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ngafid.common.Compression;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.common.airports.Airport;
 import org.ngafid.common.airports.Airports;
 import org.ngafid.common.airports.Runway;
@@ -11,6 +12,7 @@ import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.*;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,7 +37,7 @@ public class TurnToFinal implements Serializable {
     private String flightId;
 
     public final String airportIataCode;
-    public final String flightStartDate;
+    public final OffsetDateTime flightStartDate;
 
     private int nTimesteps;
 
@@ -54,7 +56,7 @@ public class TurnToFinal implements Serializable {
      * @param lat
      * @param lon
      */
-    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, String flightStartDate, double runwayAltitude, double[] altitude, double[] altMSL, double[] roll,
+    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, OffsetDateTime flightStartDate, double runwayAltitude, double[] altitude, double[] altMSL, double[] roll,
                        double[] lat, double[] lon, double[] stallProbability, double[] locProbability) {
         this.flightId = flightId;
         this.runway = runway;
@@ -278,7 +280,7 @@ public class TurnToFinal implements Serializable {
     }
 
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(
-            Map<String, DoubleTimeSeries> doubleTimeSeries, List<Itinerary> itineraries, Airframes.Airframe airframe, String startTime
+            Map<String, DoubleTimeSeries> doubleTimeSeries, List<Itinerary> itineraries, Airframes.Airframe airframe, OffsetDateTime startTime
     ) {
         DoubleTimeSeries latTimeSeries = doubleTimeSeries.get(Parameters.LAT);
         DoubleTimeSeries lonTimeSeries = doubleTimeSeries.get(Parameters.LON);
@@ -417,6 +419,6 @@ public class TurnToFinal implements Serializable {
 
     public TurnToFinalJSON jsonify() {
         return new TurnToFinalJSON(
-                locExceedences, centerLineExceedences, selfDefinedGlideAngle, latitude, longitude, altMSL, altitude, distanceFromRunway, flightId, runway, airportIataCode, flightStartDate, maxRoll, selfDefinedGlidePathDeviations, locProbability, stallProbability);
+                locExceedences, centerLineExceedences, selfDefinedGlideAngle, latitude, longitude, altMSL, altitude, distanceFromRunway, flightId, runway, airportIataCode, flightStartDate.format(TimeUtils.ISO_8601_FORMAT), maxRoll, selfDefinedGlidePathDeviations, locProbability, stallProbability);
     }
 }

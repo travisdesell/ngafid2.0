@@ -198,7 +198,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         StringTimeSeries dateSeries = stringTimeSeries.get(Parameters.UTC_DATE);
         StringTimeSeries timeSeries = stringTimeSeries.get(Parameters.UTC_TIME);
 
-        // G3x do not have UTC Date, use Lcl
+        // G3x do not have UTC Date, use Lcl. UTC_DATE_TIME and UNIX_TIME columns will be computed later on.
         if (dateSeries == null) {
             dateSeries = stringTimeSeries.get(Parameters.LCL_DATE);
             timeSeries = stringTimeSeries.get(Parameters.LCL_TIME);

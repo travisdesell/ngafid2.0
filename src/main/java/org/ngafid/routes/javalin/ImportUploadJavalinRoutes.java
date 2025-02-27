@@ -8,8 +8,6 @@ import jakarta.servlet.MultipartConfigElement;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
 import org.ngafid.common.Database;
-import org.ngafid.common.MD5;
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.FlightWarning;
 import org.ngafid.flights.Tails;
@@ -31,7 +29,6 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.ngafid.bin.WebServer.gson;
 
 public class ImportUploadJavalinRoutes {
@@ -207,47 +204,6 @@ public class ImportUploadJavalinRoutes {
 
                 if (upload.completed()) {
                     locked.complete();
-                    String targetDirectory = upload.getArchiveDirectory();
-                    new File(targetDirectory).mkdirs();
-                    String targetFilename = targetDirectory + "/" + upload.getArchiveFilename();
-
-                    LOG.info("Attempting to write final file to '" + targetFilename + "'");
-                    try (FileOutputStream out = new FileOutputStream(targetFilename)) {
-                        for (int i = 0; i < upload.getNumberChunks(); i++) {
-                            byte[] bytes = Files.readAllBytes(Paths.get(chunkDirectory + "/" + i + ".part"));
-                            out.write(bytes);
-                        }
-
-                        if (!upload.checkSize()) {
-                            LOG.severe("ERROR! Final file had incorrect number of bytes.");
-                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
-                            return;
-                        }
-
-                        String newMd5Hash = null;
-                        try (InputStream is = new FileInputStream(Paths.get(targetFilename).toFile())) {
-                            newMd5Hash = MD5.computeHexHash(is);
-                        } catch (IOException e) {
-                            LOG.severe("Error calculating MD5 hash: " + e.getMessage());
-                            ctx.status(500);
-                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
-                            return;
-                        }
-
-                        if (!newMd5Hash.equals(upload.getMd5Hash())) {
-                            LOG.severe("ERROR! MD5 hashes do not match.");
-                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
-                            return;
-                        }
-
-                        locked.complete();
-
-                        deleteDirectory(new File(chunkDirectory));
-                    } catch (IOException e) {
-                        LOG.severe("Error writing final file: " + e.getMessage());
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error writing final file.")));
-                        return;
-                    }
                 }
             }
 
@@ -356,15 +312,6 @@ public class ImportUploadJavalinRoutes {
                 ctx.status(401);
                 ctx.result("User did not have access to delete this upload.");
                 return;
-            }
-
-            final List<Flight> flights = Flight.getFlightsFromUpload(connection, uploadId);
-
-            // get all flights, delete:
-            // flight warning
-            // flight error
-            for (Flight flight : flights) {
-                flight.remove(connection);
             }
 
             try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {

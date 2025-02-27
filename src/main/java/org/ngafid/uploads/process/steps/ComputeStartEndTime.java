@@ -9,6 +9,7 @@ import org.ngafid.uploads.process.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 /**
@@ -59,10 +60,11 @@ public class ComputeStartEndTime extends ComputeStep {
         while (end >= 0 && utc.emptyAt(end)) {
             end--;
         }
-        var startODT = utc.get(start);
-        var endODT = utc.get(end);
+        var startODT = OffsetDateTime.parse(utc.get(start), TimeUtils.ISO_8601_FORMAT);
+        var endODT = OffsetDateTime.parse(utc.get(end), TimeUtils.ISO_8601_FORMAT);
 
-        builder.setStartDateTime(TimeUtils.UTCtoSQL(startODT));
-        builder.setEndDateTime(TimeUtils.UTCtoSQL(endODT));
+        builder
+                .setStartDateTime(startODT)
+                .setEndDateTime(endODT);
     }
 }

@@ -111,7 +111,7 @@ public final class Upload {
          * @throws SQLException
          */
         private boolean lock(boolean acquire) throws SQLException {
-            String function = acquire ? "GET_LOCK(?, 1)" : "RELEASE_LOCK(?)";
+            String function = acquire ? "GET_LOCK(?, 10)" : "RELEASE_LOCK(?)";
             try (PreparedStatement statement = connection.prepareStatement("SELECT " + function)) {
                 statement.setString(1, lockNameFor(id));
                 LOG.info(statement.toString());
@@ -251,7 +251,8 @@ public final class Upload {
          * @throws SQLException if there is an error in the database
          */
         public void remove() throws SQLException {
-            clearUpload();
+            // We can skip this thanks to ON DELETE CASCADE -- clearing is only if we want to keep the `upload` entry.
+            // clearUpload();
 
             if (kind == Kind.AIRSYNC) {
                 try (PreparedStatement preparedStatement = connection

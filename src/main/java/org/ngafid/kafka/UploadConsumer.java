@@ -51,21 +51,22 @@ public class UploadConsumer {
 
                     try {
                         boolean processedOkay = ProcessUpload.processUpload(record.value());
-                        if (!processedOkay) {
-                            if (record.topic().equals("upload")) {
-                                LOG.info("Processing failed... adding to retry queue");
-                                producer.send(new ProducerRecord<String, Integer>("upload-retry", record.value()));
-                            } else if (record.topic().equals("upload-retry")) {
-                                LOG.info("Processing failed... adding to DLQ");
-                                producer.send(new ProducerRecord<String, Integer>("upload-dlq", record.value()));
-                            }
-                        }
+                        if (processedOkay)
+                            continue;
+
                     } catch (UploadDoesNotExistException e) {
-                        System.out.println("WA");
                         LOG.info("Received message to process upload with id " + record.value() + " but that upload was not found in the database.");
+                        continue;
                     } catch (UploadAlreadyLockedException e) {
-                        System.out.println("Oh sweet!!!");
-                        LOG.info("Upload lock could not be acquired - skipping processing.");
+                        LOG.info("Upload lock could not be acquired.");
+                    }
+
+                    if (record.topic().equals("upload")) {
+                        LOG.info("Processing failed... adding to retry queue");
+                        producer.send(new ProducerRecord<>("upload-retry", record.value()));
+                    } else if (record.topic().equals("upload-retry")) {
+                        LOG.info("Processing failed... adding to DLQ");
+                        producer.send(new ProducerRecord<>("upload-dlq", record.value()));
                     }
                 }
 
