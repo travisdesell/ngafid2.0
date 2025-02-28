@@ -141,7 +141,6 @@ public class JavalinWebServer extends WebServer {
         app.unsafeConfig().jetty.modifyServletContextHandler(
                 handler -> handler.setSessionHandler(createSessionHandler())
         );
-
     }
 
     private static SessionHandler createSessionHandler() {
