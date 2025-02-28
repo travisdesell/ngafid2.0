@@ -1,11 +1,12 @@
 package org.ngafid.accounts;
 
+import java.io.Serializable;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class Fleet {
+public class Fleet implements Serializable {
     private static final Logger LOG = Logger.getLogger(Fleet.class.getName());
     private final String name;
     /**

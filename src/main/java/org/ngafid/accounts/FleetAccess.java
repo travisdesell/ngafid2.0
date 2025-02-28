@@ -1,5 +1,6 @@
 package org.ngafid.accounts;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,7 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-public class FleetAccess {
+public class FleetAccess implements Serializable {
     public static final String MANAGER = "MANAGER";
     public static final String UPLOAD = "UPLOAD";
     public static final String VIEW = "VIEW";
