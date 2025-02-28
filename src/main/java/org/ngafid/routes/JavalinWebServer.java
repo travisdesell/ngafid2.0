@@ -141,4 +141,26 @@ public class JavalinWebServer extends WebServer {
 
     }
 
+    private static SessionHandler fileSessionHandler() {
+        SessionHandler sessionHandler = new SessionHandler();
+        SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
+        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionHandler.setSessionCache(sessionCache);
+        sessionHandler.setHttpOnly(true);
+        return sessionHandler;
+    }
+
+    private static FileSessionDataStore createFileSessionDataStore() {
+        FileSessionDataStore fileSessionDataStore = new FileSessionDataStore();
+        File baseDir = new File(System.getProperty("java.io.tmpdir"));
+        File storeDir = new File(baseDir, "javalin-session-store");
+
+        if (!storeDir.mkdir()) {
+            LOG.severe("Failed to create session store directory: " + storeDir);
+            return null;
+        }
+
+        fileSessionDataStore.setStoreDir(storeDir);
+        return fileSessionDataStore;
+    }
 }
