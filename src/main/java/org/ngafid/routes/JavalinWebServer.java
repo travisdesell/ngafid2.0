@@ -3,11 +3,16 @@ package org.ngafid.routes;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
+import org.eclipse.jetty.server.session.DefaultSessionCache;
+import org.eclipse.jetty.server.session.FileSessionDataStore;
+import org.eclipse.jetty.server.session.SessionCache;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
 import org.ngafid.routes.javalin.*;
 
+import java.io.File;
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
@@ -130,4 +135,10 @@ public class JavalinWebServer extends WebServer {
             exceptionHandler(exception);
         });
     }
+
+    @Override
+    protected void configurePersistentSessions() {
+
+    }
+
 }
