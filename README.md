@@ -133,7 +133,7 @@ export NGAFID_BACKUP_DIR=<path to where backups should be stored>
 export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads"
 # If you don't want the webserver to send emails (exceptions, shutdowns, etc.), set this to false.
 export NGAFID_EMAIL_ENABLED=false
-# If you don't want the webserver to cache persistent sessions, requiring users to log in again after restart, set this to true
+# (Optional) To require users to log in again after restart, set this to true
 #export DISABLE_PERSISTENT_SESSIONS=true
 ```
 
