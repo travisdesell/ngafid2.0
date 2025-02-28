@@ -138,10 +138,13 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configurePersistentSessions() {
+        app.unsafeConfig().jetty.modifyServletContextHandler(
+                handler -> handler.setSessionHandler(createSessionHandler())
+        );
 
     }
 
-    private static SessionHandler fileSessionHandler() {
+    private static SessionHandler createSessionHandler() {
         SessionHandler sessionHandler = new SessionHandler();
         SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
         sessionCache.setSessionDataStore(createFileSessionDataStore());
