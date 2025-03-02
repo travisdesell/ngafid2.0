@@ -3,11 +3,16 @@ package org.ngafid.routes;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
+import org.eclipse.jetty.server.session.DefaultSessionCache;
+import org.eclipse.jetty.server.session.FileSessionDataStore;
+import org.eclipse.jetty.server.session.SessionCache;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
 import org.ngafid.routes.javalin.*;
 
+import java.io.File;
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
@@ -129,5 +134,30 @@ public class JavalinWebServer extends WebServer {
         app.exception(Exception.class, (exception, ctx) -> {
             exceptionHandler(exception);
         });
+    }
+
+    @Override
+    protected void configurePersistentSessions() {
+        app.unsafeConfig().jetty.modifyServletContextHandler(
+                handler -> handler.setSessionHandler(createSessionHandler())
+        );
+    }
+
+    private static SessionHandler createSessionHandler() {
+        SessionHandler sessionHandler = new SessionHandler();
+        SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
+        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionHandler.setSessionCache(sessionCache);
+        sessionHandler.setHttpOnly(true);
+        return sessionHandler;
+    }
+
+    private static FileSessionDataStore createFileSessionDataStore() {
+        FileSessionDataStore fileSessionDataStore = new FileSessionDataStore();
+        File baseDir = new File(System.getProperty("java.io.tmpdir"));
+        File storeDir = new File(baseDir, "javalin-session-store");
+        storeDir.mkdir();
+        fileSessionDataStore.setStoreDir(storeDir);
+        return fileSessionDataStore;
     }
 }
