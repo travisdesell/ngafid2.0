@@ -57,7 +57,8 @@ public interface Parameters {
      * This is called velocity instead of speed because the number actually has a direction associated with it,
      * the sign of the number. If it is > 0, then the aircraft is ascending; likewise a negative value means
      * the aircraft is descending.
-     */ String VSPD = "VSpd";
+     */
+    String VSPD = "VSpd";
     String DENSITY_RATIO = "DensityRatio";
     String OAT = "OAT";
     String BARO_A = "BaroA";
@@ -84,6 +85,28 @@ public interface Parameters {
     String LCL_DATE = "Lcl Date";
     String LCL_TIME = "Lcl Time";
     String UTC_OFFSET = "UTCOfst";
+
+    /**
+     * Column name used for our derived UTC timestamp which uses the ISO 8601 format.
+     * This column contains a time coordinate -- a date, time, and utc timezone offset.
+     * <p>
+     * It should look something like this:
+     * 2007-04-05T12:30−02:00
+     * 2007-04-05T12:30Z
+     * <p>
+     * This date format can be parsed w/ the java LocalDateTime.ISO_OFFSET_DATE_TIME
+     */
+    String UTC_DATE_TIME = "UTC Extended Offset Date Time (ISO 8601)";
+
+    String UTC_DATE = "UTC Date";
+    String UTC_TIME = "UTC Time";
+
+    /**
+     * Column for unix time stamp. This column will be represented with a double, therefore it will contain fractional
+     * time information as well.
+     */
+    String UNIX_TIME_SECONDS = "Unix Time Seconds";
+
     String LATITUDE = "Latitude";
     String LONGITUDE = "Longitude";
     String STALL_PROBABILITY = "PStall";
@@ -116,7 +139,9 @@ public interface Parameters {
         FT_PER_MINUTE("ft/min"),
         DEGREES("degrees"),
         INDEX("index"),
-        RATIO("ratio");
+        RATIO("ratio"),
+        SECONDS("seconds"),
+        UTC_DATE_TIME("ISO 8601 Extended Offset Date Time");
 
         private final String value;
 
@@ -124,6 +149,7 @@ public interface Parameters {
             value = name;
         }
 
+        @Override
         public String toString() {
             return value;
         }

@@ -2,14 +2,21 @@ package org.ngafid.uploads;
 
 import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
-import org.ngafid.bin.UploadHelper;
+import org.ngafid.bin.WebServer;
 import org.ngafid.common.Database;
+import org.ngafid.common.MD5;
 import org.ngafid.common.SendEmail;
 import org.ngafid.flights.FlightError;
 import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.Pipeline;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -25,9 +32,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+
+/**
+ * Contains a static method processUpload which will process an upload with the supplied uploadId. This upload should
+ * already be fully uploaded to the website.
+ * <p>
+ * Processing an upload has a few steps:
+ * 1. Acquiring a SQL lock for the upload to ensure unique access.
+ * 2. Clearing the upload if it has already been processed (i.e. deleting all flights, events, etc.).
+ * 3. Ingesting the archive (this work is encapsulated in {@link org.ngafid.uploads.process.Pipeline}).
+ * 4. Updating the database with the results, exceptions, etc.
+ */
 public final class ProcessUpload {
 
-    private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
     public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
         LOG.info("processing upload with id: " + uploadId);
@@ -38,16 +57,54 @@ public final class ProcessUpload {
             upload = Upload.getUploadById(connection, uploadId);
             if (upload == null)
                 throw new UploadDoesNotExistException(uploadId);
-        }
 
-        return processUpload(upload);
+            // If this is the first time an upload is being processed, it still exists in pieces on the disk -- combine them here.
+
+            return processUpload(connection, upload);
+        }
     }
 
-    private static boolean processUpload(Upload upload) throws SQLException, UploadAlreadyLockedException {
-        try (Connection connection = Database.getConnection();
-             Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
+    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+        Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
+        Path targetDirectory = Paths.get(upload.getArchiveDirectory());
+
+        targetDirectory.toFile().mkdirs();
+        Path targetFilename = Paths.get(targetDirectory + "/" + upload.getArchiveFilename());
+
+        // Chunks have already been combined.
+        if (Files.exists(targetFilename) && Files.isRegularFile(targetFilename)) {
+            return;
+        }
+
+        try (FileOutputStream out = new FileOutputStream(targetFilename.toFile())) {
+            for (int i = 0; i < upload.getNumberChunks(); i++) {
+                byte[] bytes = Files.readAllBytes(Paths.get(chunkDirectory + "/" + i + ".part"));
+                out.write(bytes);
+            }
+
+            if (!upload.checkSize()) {
+                out.close();
+                targetFilename.toFile().delete();
+                throw new IOException("Combined file had incorrect size!");
+            }
+        }
+        try (InputStream is = new FileInputStream(targetFilename.toFile())) {
+            String newMd5Hash = MD5.computeHexHash(is);
+
+            if (!newMd5Hash.equals(upload.getMd5Hash())) {
+                throw new IOException("MD5 hash did not match!");
+            }
+
+            deleteDirectory(chunkDirectory.toFile());
+        }
+    }
+
+    private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
+        try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
+
 
             try {
+                tryCombinePieces(connection, upload, lockedUpload);
                 lockedUpload.updateStatus(Upload.Status.PROCESSING);
 
                 int uploaderId = upload.getUploaderId();
@@ -98,6 +155,7 @@ public final class ProcessUpload {
 
                 return status.isProcessed();
             } catch (Exception e) {
+                lockedUpload.updateStatus(Upload.Status.FAILED_UNKNOWN);
                 e.printStackTrace();
                 return false;
             }
@@ -130,15 +188,7 @@ public final class ProcessUpload {
 
         if (extension.equals(".zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
-            try (ZipFile zipFile = new ZipFile(filename) {
-                @Override
-                public void close() throws IOException {
-                    super.close();
-                    LOG.info("We're closing the zip now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
-                    (new Throwable()).printStackTrace();
-                }
-            }; Pipeline pipeline = new Pipeline(connection, upload,
-                    zipFile)) {
+            try (ZipFile zipFile = new ZipFile(filename); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
 
                 flightInfo = pipeline.getFlightInfo();
@@ -219,7 +269,7 @@ public final class ProcessUpload {
                 uploadProcessedEmail.addFlight(info.filename, info.id, info.length);
 
                 List<MalformedFlightFileException> exceptions = info.exceptions;
-                if (exceptions.size() == 0) {
+                if (exceptions.isEmpty()) {
                     uploadProcessedEmail.flightImportOK(info.filename);
                 }
             }
@@ -237,24 +287,12 @@ public final class ProcessUpload {
             for (FlightInfo info : flightInfo.values()) {
                 List<MalformedFlightFileException> exceptions = info.exceptions;
 
-                if (exceptions.size() > 0) {
+                if (!exceptions.isEmpty()) {
                     for (MalformedFlightFileException exception : exceptions) {
                         uploadProcessedEmail.flightImportWarning(info.filename, exception.getMessage());
                     }
                 }
             }
-        }
-
-        if (status.isProcessed()) {
-            // try {
-            //     // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
-            //     CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
-            //     // CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
-            // } catch (SQLException e) {
-            //     LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
-            //     status = Upload.Status.FAILED_UNKNOWN;
-            //     uploadException = new Exception(e.toString() + "\nFailed computing events...");
-            // }
         }
 
         // ingestion was successful

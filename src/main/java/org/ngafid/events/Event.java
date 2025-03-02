@@ -1,11 +1,13 @@
 package org.ngafid.events;
 
+import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Flight;
 
 import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,8 +22,8 @@ public class Event {
     private int fleetId;
     private int flightId;
     private int eventDefinitionId;
-    private String startTime;
-    private String endTime;
+    private OffsetDateTime startTime;
+    private OffsetDateTime endTime;
     private int startLine;
     private int endLine;
     private Integer otherFlightId = null;
@@ -36,20 +38,31 @@ public class Event {
 
     private List<EventMetaData> metaDataList;
 
+    /**
+     * Start and end time must be formatted according to TimeUtils.ISO_8601. Dates in the derived column Parameters.UTC_DATE_TIME
+     * are formatted in this way.
+     *
+     * @param startTime a date time formatted according to TimeUtils.ISO_8601
+     * @param endTime   a date time formatted according to TimeUtils.ISO_8601
+     * @param startLine
+     * @param endLine
+     * @param defId
+     * @param severity
+     */
     public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity) {
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.startLine = startLine;
-        this.endLine = endLine;
-        this.severity = severity;
-        this.otherFlightId = null;
-        this.eventDefinitionId = defId;
-
-        this.startTime = fixTime(startTime);
-        this.endTime = fixTime(endTime);
+        this(OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT), OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT), startLine, endLine, defId, severity);
     }
 
-    public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity, int flightId, int otherFlightId) {
+    public Event(OffsetDateTime startTime, OffsetDateTime endTime, int startLine, int endLine, int defId, double severity) {
+        this(startTime, endTime, startLine, endLine, defId, severity, 0, null);
+    }
+
+    public Event(OffsetDateTime startTime, OffsetDateTime endTime,
+                 int startLine, int endLine, int defId, double severity, Integer otherFlightId) {
+        this(startTime, endTime, startLine, endLine, defId, severity, -1, otherFlightId);
+    }
+
+    public Event(OffsetDateTime startTime, OffsetDateTime endTime, int startLine, int endLine, int defId, double severity, int flightId, Integer otherFlightId) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
@@ -58,24 +71,6 @@ public class Event {
         this.flightId = flightId;
         this.otherFlightId = otherFlightId;
         this.eventDefinitionId = defId;
-
-        this.startTime = fixTime(startTime);
-        this.endTime = fixTime(endTime);
-        this.metaDataList = new ArrayList<>();
-    }
-
-    public Event(String startTime, String endTime,
-                 int startLine, int endLine, int defId, double severity, Integer otherFlightId) {
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.startLine = startLine;
-        this.endLine = endLine;
-        this.severity = severity;
-        this.otherFlightId = otherFlightId;
-        this.eventDefinitionId = defId;
-
-        this.startTime = fixTime(startTime);
-        this.endTime = fixTime(endTime);
         this.metaDataList = new ArrayList<>();
     }
 
@@ -91,8 +86,8 @@ public class Event {
         this.eventDefinitionId = resultSet.getInt(4);
         this.startLine = resultSet.getInt(5);
         this.endLine = resultSet.getInt(6);
-        this.startTime = resultSet.getString(7);
-        this.endTime = resultSet.getString(8);
+        this.startTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString(7));
+        this.endTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString(8));
         this.severity = resultSet.getDouble(9);
         this.otherFlightId = resultSet.getInt(10);
         if (resultSet.wasNull()) {
@@ -122,8 +117,8 @@ public class Event {
         this.eventDefinitionId = eventDefId;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startTime = OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT);
+        this.endTime = OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT);
         this.severity = severity;
         this.otherFlightId = otherFlightId;
     }
@@ -137,8 +132,8 @@ public class Event {
         this.eventDefinitionId = eventDefinitionId;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startTime = OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT);
+        this.endTime = OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT);
         this.severity = severity;
         this.otherFlightId = otherFlightId;
         this.systemId = systemId;
@@ -329,41 +324,12 @@ public class Event {
         }
     }
 
-    /**
-     * This fixes a date time string to be in the format MYSQL expects.
-     *
-     * @param dateTime is a string of a date time
-     * @return a string of the date time in the format MYSQL expects
-     */
-    public String fixTime(String dateTime) {
-        if (dateTime.contains("/")) {
-            String[] parts = dateTime.split(" ");
-            String date = parts[0];
-            String time = parts[1];
-
-            String[] dateParts = date.split("/");
-            String month = dateParts[0];
-            String day = dateParts[1];
-            String year = dateParts[2];
-
-            if (month.length() == 1) {
-                month = "0" + month;
-            }
-
-            if (day.length() == 1) {
-                day = "0" + day;
-            }
-
-            String fixedDateTime = year + "-" + month + "-" + day + " " + time;
-
-            return fixedDateTime;
-        }
-
-        return dateTime;
+    public void updateEnd(String newEndTime, int newEndLine) {
+        updateEnd(OffsetDateTime.parse(newEndTime, TimeUtils.ISO_8601_FORMAT), newEndLine);
     }
 
-    public void updateEnd(String newEndTime, int newEndLine) {
-        endTime = newEndTime;
+    public void updateEnd(OffsetDateTime newEndDate, int newEndLine) {
+        endTime = newEndDate;
         endLine = newEndLine;
     }
 
@@ -373,6 +339,10 @@ public class Event {
 
     public void setEventDefinitionId(int eventDefinitionId) {
         this.eventDefinitionId = eventDefinitionId;
+    }
+
+    public int getEventDefinitionId() {
+        return eventDefinitionId;
     }
 
     public int getEndLine() {
@@ -404,20 +374,12 @@ public class Event {
         this.startLine = startLine;
     }
 
-    public String getStartTime() {
+    public OffsetDateTime getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getEndTime() {
+    public OffsetDateTime getEndTime() {
         return endTime;
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
     }
 
     public double getSeverity() {
@@ -438,20 +400,6 @@ public class Event {
 
     public void addMetaData(EventMetaData metaData) {
         this.metaDataList.add(metaData);
-    }
-
-    public void updateStatistics(Connection connection, int fltId, int airframeNameId, int eventDefId)
-            throws SQLException {
-        if (this.getStartTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
-                    this.getStartTime(), this.getSeverity(), this.getDuration());
-        } else if (this.getEndTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
-                    this.getEndTime(), this.getSeverity(), this.getDuration());
-        } else {
-            LOG.warning("could not update event statistics for event: " + this);
-            LOG.warning("event start and end time were both null.");
-        }
     }
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
@@ -490,17 +438,9 @@ public class Event {
         preparedStatement.setInt(4, startLine);
         preparedStatement.setInt(5, endLine);
 
-        if (startTime.equals(" ")) {
-            preparedStatement.setString(6, null);
-        } else {
-            preparedStatement.setString(6, startTime);
-        }
+        preparedStatement.setString(6, TimeUtils.UTCtoSQL(startTime));
 
-        if (endTime.equals(" ")) {
-            preparedStatement.setString(7, null);
-        } else {
-            preparedStatement.setString(7, endTime);
-        }
+        preparedStatement.setString(7, TimeUtils.UTCtoSQL(endTime));
 
         preparedStatement.setDouble(8, severity);
 

@@ -6,7 +6,6 @@ import us.dustinj.timezonemap.TimeZoneMap;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -20,6 +19,9 @@ public enum TimeUtils {
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
     private static TimeZoneMap TIME_ZONE_MAP = null;
 
+    public static DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    public static DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private static TimeZoneMap getTimeZoneMap() {
         if (TIME_ZONE_MAP == null)
             TIME_ZONE_MAP = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
@@ -31,51 +33,16 @@ public enum TimeUtils {
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
      *
-     * @param ldt    the LocalDateTime value which will be updated
      * @param offset the bad offset
      * @return the fixed offset
      */
-    public static String updateBadOffset(LocalDateTime ldt, String offset) {
+    public static String updateBadOffset(String offset) {
         // weird input data
         switch (offset) {
-            case "+19:00" -> {
-                ldt = ldt.plusHours(1);
+            case "+19:00", "+23:00", "+22:00", "+21:00", "+20:00" -> {
                 offset = "+18:00";
             }
-            case "+20:00" -> {
-                ldt = ldt.plusHours(2);
-                offset = "+18:00";
-            }
-            case "+21:00" -> {
-                ldt = ldt.plusHours(3);
-                offset = "+18:00";
-            }
-            case "+22:00" -> {
-                ldt = ldt.plusHours(4);
-                offset = "+18:00";
-            }
-            case "+23:00" -> {
-                ldt = ldt.plusHours(5);
-                offset = "+18:00";
-            }
-            case "-19:00" -> {
-                ldt = ldt.minusHours(1);
-                offset = "-18:00";
-            }
-            case "-20:00" -> {
-                ldt = ldt.minusHours(2);
-                offset = "-18:00";
-            }
-            case "-21:00" -> {
-                ldt = ldt.minusHours(3);
-                offset = "-18:00";
-            }
-            case "-22:00" -> {
-                ldt = ldt.minusHours(4);
-                offset = "-18:00";
-            }
-            case "-23:00" -> {
-                ldt = ldt.minusHours(5);
+            case "-19:00", "-22:00", "-23:00", "-21:00", "-20:00" -> {
                 offset = "-18:00";
             }
             default -> {
@@ -96,7 +63,7 @@ public enum TimeUtils {
                 DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
-        offset = updateBadOffset(ldt, offset);
+        offset = updateBadOffset(offset);
 
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(offset.trim());
@@ -125,7 +92,7 @@ public enum TimeUtils {
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
-        offset = updateBadOffset(ldt, offset);
+        offset = updateBadOffset(offset);
 
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(offset);
@@ -149,20 +116,16 @@ public enum TimeUtils {
     }
 
     public static OffsetDateTime convertToOffset(String originalDateTime, String originalOffset, String newOffset) throws UnrecognizedDateTimeFormatException {
-        // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
-
-        // create a LocalDateTime using the date time passed as parameter
         DateTimeFormatter dateTimeFormat = findCorrectFormatter(originalDateTime);
+        return convertToOffset(dateTimeFormat, originalDateTime, originalOffset, newOffset);
+    }
 
+    public static OffsetDateTime convertToOffset(DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
         LOG.info("Date is " + originalDateTime);
-        DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder()
-                .append(dateTimeFormat)
-                .appendOffset("+H:mm:ss", "+00:00:00");
-
-        LocalDateTime ldt = LocalDateTime.parse(originalDateTime + originalOffset, builder.toFormatter());
+        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
         // fix bad offset values
-        originalOffset = updateBadOffset(ldt, originalOffset);
+        originalOffset = updateBadOffset(originalOffset);
 
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
@@ -170,19 +133,9 @@ public enum TimeUtils {
         // create an OffsetDateTime using the parsed offset
         OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
 
-        // print the date time with the parsed offset
-        // System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" +
-        // odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        // System.out.println("with offset: \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-
         ZoneOffset offset2 = ZoneOffset.of(newOffset);
-        OffsetDateTime odt3 = odt.withOffsetSameInstant(offset2);
 
-        // String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        // String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        // System.out.println("with offset (same instant):\t" + newTime);
-
-        return odt3;
+        return odt.withOffsetSameInstant(offset2);
     }
 
     // Date formats WITHOUT TIMEZONE
@@ -288,6 +241,26 @@ public enum TimeUtils {
         }
 
         return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
+    }
+
+    public static DateTimeFormatter findCorrectFormatter(String date, String time) throws UnrecognizedDateTimeFormatException {
+        return findCorrectFormatter(date + " " + time);
+    }
+
+    public static String UTCtoSQL(String timeUTC) {
+        return LocalDateTime.parse(timeUTC, ISO_8601_FORMAT).format(MYSQL_FORMAT);
+    }
+
+    public static String UTCtoSQL(OffsetDateTime odt) {
+        return odt.atZoneSameInstant(ZoneOffset.UTC).format(MYSQL_FORMAT);
+    }
+
+    public static OffsetDateTime parseUTC(String dateTimeString) {
+        return OffsetDateTime.parse(dateTimeString, ISO_8601_FORMAT);
+    }
+
+    public static OffsetDateTime SQLtoOffsetDateTime(String sqlDateTime) {
+        return LocalDateTime.parse(sqlDateTime, MYSQL_FORMAT).atOffset(ZoneOffset.UTC);
     }
 
     public static class UnrecognizedDateTimeFormatException extends Exception {

@@ -4,6 +4,7 @@ import Files.*;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
@@ -19,6 +20,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.ngafid.common.TimeUtils.addMilliseconds;
+import static org.ngafid.flights.Parameters.*;
 
 /**
  * Parses DAT files from DJI flights after converting them to CSV
@@ -187,7 +191,7 @@ public class DATFileProcessor extends FlightFileProcessor {
 
         if (lonRad == null || latRad == null) {
             LOG.log(Level.WARNING, "Could not find GPS(0):Long or GPS(0):Lat in time series map");
-            throw new FatalFlightFileException("No GPS data found in binary.");
+            throw new FatalFlightFileException(": No GPS data found in binary.");
         }
 
         DoubleTimeSeries longDeg = new DoubleTimeSeries("Longitude", "degrees");
@@ -220,42 +224,22 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @throws ParseException - If there is an issue parsing the date and time
      */
     private static void calculateDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String,
-            StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws ParseException {
+            StringTimeSeries> stringTimeSeriesMap, Date startDate) throws ParseException {
         LOG.info("Calculating date time for DAT file");
-        StringTimeSeries localDateSeries = new StringTimeSeries("Lcl Date", "yyyy-mm-dd");
-        StringTimeSeries localTimeSeries = new StringTimeSeries("Lcl Time", "hh:mm:ss");
-        StringTimeSeries utcOfstSeries = new StringTimeSeries("UTCOfst", "hh:mm"); // Always 0
+        StringTimeSeries utc = new StringTimeSeries(UTC_DATE_TIME, Unit.UTC_DATE_TIME);
+        DoubleTimeSeries unix = new DoubleTimeSeries(UNIX_TIME_SECONDS, Unit.SECONDS);
+
         DoubleTimeSeries seconds = doubleTimeSeriesMap.get("offsetTime");
 
-        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
-
-        String[] dateTime = dateTimeStr.split(" ");
-        String date = dateTime[0];
-
-        if (date.split("-")[1].length() == 1) {
-            date = date.substring(0, 5) + "0" + date.substring(5);
-        }
-
-        if (date.split("-")[2].length() == 1) {
-            date = date.substring(0, 8) + "0" + date.substring(8);
-        }
-
-        String time = dateTime[1];
-
-        Date parsedDate = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).parse(date + " " + time);
+        OffsetDateTime startODT = startDate.toInstant().atOffset(ZoneOffset.UTC);
         for (int i = 0; i < seconds.size(); i++) {
-            int millis = (int) (seconds.get(i) * 1000);
-            Date newDate = addMilliseconds(parsedDate, millis);
-
-            localDateSeries.add(lclDateFormat.format(newDate));
-            localTimeSeries.add(lclTimeFormat.format(newDate));
-            utcOfstSeries.add("+00:00");
+            OffsetDateTime odt = startODT.plusSeconds((long) seconds.get(i));
+            unix.add(odt.toEpochSecond());
+            utc.add(odt.format(TimeUtils.ISO_8601_FORMAT));
         }
 
-        stringTimeSeriesMap.put("Lcl Date", localDateSeries);
-        stringTimeSeriesMap.put("Lcl Time", localTimeSeries);
-        stringTimeSeriesMap.put("UTCOfst", utcOfstSeries);
+        doubleTimeSeriesMap.put(unix.getName(), unix);
+        stringTimeSeriesMap.put(utc.getName(), utc);
     }
 
     /**
@@ -264,7 +248,7 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @return The start date and time
      */
-    private static String findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws FatalFlightFileException {
+    private static Date findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws FatalFlightFileException {
         DoubleTimeSeries dateSeries = doubleTimeSeriesMap.get("GPS(0):Date");
         DoubleTimeSeries timeSeries = doubleTimeSeriesMap.get("GPS(0):Time");
         DoubleTimeSeries offsetTime = doubleTimeSeriesMap.get("offsetTime");
@@ -293,9 +277,7 @@ public class DATFileProcessor extends FlightFileProcessor {
                 try {
                     Date parsedDate = dateFormat.parse(year + month + day + hour + minute + second);
                     int currentOffset = (int) (offsetTime.get(colCount) * 1000);
-                    Date newDate = addMilliseconds(parsedDate, -currentOffset);
-
-                    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(newDate);
+                    return addMilliseconds(parsedDate, -currentOffset);
                 } catch (ParseException e) {
                     LOG.log(Level.WARNING, "Could not parse date {0} and time {1} as date", new Object[]{date, time});
                     throw new FatalFlightFileException("Unrecognized date format: '" + date + " " + time + "'");
@@ -715,7 +697,7 @@ public class DATFileProcessor extends FlightFileProcessor {
 
             if (!attributeMap.containsKey("mcID(SN)")) {
                 LOG.info("No DJI Serial number provided in binary.");
-                throw new FlightProcessingException(new FatalFlightFileException("No DJI serial number provided in " +
+                throw new FlightProcessingException(new FatalFlightFileException(filename + ": No DJI serial number provided in " +
                         "binary."));
             }
 
@@ -727,13 +709,13 @@ public class DATFileProcessor extends FlightFileProcessor {
                 calculateLatLonGPS(doubleTimeSeriesMap);
 
                 if (attributeMap.containsKey("dateTime")) {
-                    calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
-                    String dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
+                    var dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
                     calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
                 } else {
-                    throw new FatalFlightFileException("No dateTime provided in binary.");
+                    throw new FatalFlightFileException(filename + ": No dateTime provided in binary.");
                 }
             } catch (CsvValidationException | FatalFlightFileException | IOException e) {
+                LOG.info("Filename: " + filename);
                 e.printStackTrace();
                 throw new FlightProcessingException(e);
             } catch (ParseException e) {

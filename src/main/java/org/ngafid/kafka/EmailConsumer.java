@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+/**
+ * The email consumer monitors the email topic and sends batches of emails found in the topic. This consumer will attempt
+ * to send each email at most twice, after which the emails are placed into a dead letter queue.
+ */
 public class EmailConsumer {
     private static final Logger LOG = Logger.getLogger(EmailConsumer.class.getName());
     private static final ObjectMapper objectMapper = new ObjectMapper();

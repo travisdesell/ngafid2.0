@@ -7,14 +7,9 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Contains an observer and a consumer. The observer watches the database and looks for flights that have finished
- * processing, but have not had an applicable event computed for them. These events to compute are added to the kafka
- * event topic, and the consumer will compute the applicable events.
- * <p>
- * This covers both custom events and normal events, although the consumer will need to be updated in order to properly
- * compute the new custom events.
+ * Utility class for {@link EventObserver} and {@link EventConsumer}.
  */
-public enum Event {
+public enum Events {
     ;
 
     protected record EventToCompute(int flightId, int eventId) {
@@ -31,11 +26,11 @@ public enum Event {
         return props;
     }
 
-    protected static KafkaProducer<String, EventToCompute> createProducer() {
+    static KafkaProducer<String, EventToCompute> createProducer() {
         return new KafkaProducer<>(getProperties());
     }
 
-    protected static KafkaConsumer<String, String> createConsumer() {
+    static KafkaConsumer<String, String> createConsumer() {
         var consumer = new KafkaConsumer<String, String>(getProperties());
         consumer.subscribe(List.of(Topic.EVENT.toString(), Topic.EVENT_RETRY.toString()));
         return consumer;

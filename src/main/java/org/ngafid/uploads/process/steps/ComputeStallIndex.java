@@ -1,7 +1,6 @@
 package org.ngafid.uploads.process.steps;
 
 import org.ngafid.events.calculations.VSPDRegression;
-import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.MalformedFlightFileException;
@@ -16,6 +15,9 @@ import java.util.logging.Logger;
 import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Parameters.*;
 
+/**
+ * Computes the stall index -- see the paper references in {@link org.ngafid.uploads.process.steps.ComputeLOCI} for details.
+ */
 public class ComputeStallIndex extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeStallIndex.class.getName());
 
@@ -26,31 +28,31 @@ public class ComputeStallIndex extends ComputeStep {
         super(connection, builder);
     }
 
+    @Override
     public Set<String> getRequiredDoubleColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getRequiredStringColumns() {
         return Collections.emptySet();
     }
 
+    @Override
     public Set<String> getRequiredColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getOutputColumns() {
         return OUTPUT_COLUMNS;
-    }
-
-    @Override
-    public boolean airframeIsValid(Airframes.Airframe airframe) {
-        return true;
     }
 
     public boolean airframeIsValid(String airframe) {
         return true;
     }
 
+    @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries ias = builder.getDoubleTimeSeries(IAS);
         int length = ias.size();

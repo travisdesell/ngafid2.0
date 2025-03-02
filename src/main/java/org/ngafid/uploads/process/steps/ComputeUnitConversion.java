@@ -9,10 +9,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 
+/**
+ * A generic step to convert units from one type to another. As of right now, this is only being done with simple
+ * conversions that only require a multiplication factor, but it could be extended to support non-linear transformations.
+ */
 public class ComputeUnitConversion extends ComputeStep {
 
     public enum UnitConversion {
-        METERS_TO_FEET(0.0),
+        METERS_TO_FEET(3.28084),
         RADIAN_TO_DEGREE(180 / Math.PI);
 
         private final double value;

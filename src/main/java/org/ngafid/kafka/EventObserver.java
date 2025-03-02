@@ -39,7 +39,7 @@ public class EventObserver {
     }
 
     public static void main(String[] args) {
-        try (KafkaProducer<String, Event.EventToCompute> producer = Event.createProducer()) {
+        try (KafkaProducer<String, Events.EventToCompute> producer = Events.createProducer()) {
 
             while (true) {
                 try (Connection connection = Database.getConnection()) {
@@ -48,7 +48,7 @@ public class EventObserver {
                     for (EventDefinition event : events) {
                         List<Flight> flights = getApplicableFlightsWithoutEvent(connection, event);
                         for (Flight flight : flights) {
-                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), new Event.EventToCompute(flight.getId(), event.getId())));
+                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), new Events.EventToCompute(flight.getId(), event.getId())));
                             flight.insertComputedEvents(connection, List.of(event));
                         }
                     }
