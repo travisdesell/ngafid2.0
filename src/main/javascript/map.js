@@ -44,7 +44,7 @@ var tms_sec = new TileLayer({
     preload: Infinity,
     source : new XYZ({
         url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"}),
-    maxZoom: 13
+    maxZoom: 10
 });
 
 layers.push(tms_sec);
@@ -56,7 +56,7 @@ var tms_enrl = new TileLayer({
     preload: Infinity,
     source : new XYZ({
         url : " http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"}),
-    maxZoom: 13
+    maxZoom: 10
 });
 
 layers.push(tms_enrl);
@@ -68,7 +68,7 @@ var tms_enrh = new TileLayer({
     preload: Infinity,
     source : new XYZ({
         url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"}),
-    maxZoom: 13
+    maxZoom: 10
 });
 
 layers.push(tms_enrh);
@@ -79,7 +79,7 @@ var tms_tac = new TileLayer({
     preload: Infinity,
     source : new XYZ({
         url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"}),
-    maxZoom: 13
+    maxZoom: 10
 });
 
 layers.push(tms_tac);
@@ -98,7 +98,7 @@ function initializeMap() {
         view: new View({
             center: center,
             zoom: 3,       // Initial zoom level when the map loads
-            maxZoom: 13,   // Maximum zoom level the user can zoom to
+            maxZoom: 10,   // Maximum zoom level the user can zoom to
             minZoom: 0
         })
     });
