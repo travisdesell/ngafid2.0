@@ -440,20 +440,6 @@ public class Event {
         this.metaDataList.add(metaData);
     }
 
-    public void updateStatistics(Connection connection, int fltId, int airframeNameId, int eventDefId)
-            throws SQLException {
-        if (this.getStartTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
-                    this.getStartTime(), this.getSeverity(), this.getDuration());
-        } else if (this.getEndTime() != null) {
-            EventStatistics.updateEventStatistics(connection, fltId, airframeNameId, eventDefId,
-                    this.getEndTime(), this.getSeverity(), this.getDuration());
-        } else {
-            LOG.warning("could not update event statistics for event: " + this);
-            LOG.warning("event start and end time were both null.");
-        }
-    }
-
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement("INSERT INTO events (fleet_id, " +
                 "flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, " +
