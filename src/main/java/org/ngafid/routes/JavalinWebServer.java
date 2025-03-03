@@ -174,8 +174,12 @@ public class JavalinWebServer extends WebServer {
             databaseAdaptor.setDriverInfo(metaData.getDriverName(), metaData.getURL());
             databaseAdaptor.setDatasource(Database.getDataSource());
 
+            JDBCSessionDataStore.SessionTableSchema schema = new JDBCSessionDataStore.SessionTableSchema();
+            schema.setTableName("jetty_sessions");
+
             JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
             jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
+            jdbcSessionDataStoreFactory.setSessionTableSchema(schema);
 
 
             return jdbcSessionDataStoreFactory;
