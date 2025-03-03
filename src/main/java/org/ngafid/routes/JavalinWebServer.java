@@ -150,7 +150,7 @@ public class JavalinWebServer extends WebServer {
     private static SessionHandler createSessionHandler() {
         SessionHandler sessionHandler = new SessionHandler();
         SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
-        sessionCache.setSessionDataStore(createFileSessionDataStore());
+//        sessionCache.setSessionDataStore(createFileSessionDataStore());
         sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
         sessionHandler.setSessionCache(sessionCache);
         sessionHandler.setHttpOnly(true);
