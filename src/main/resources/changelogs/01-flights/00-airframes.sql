@@ -33,6 +33,10 @@ INSERT INTO airframes SET airframe = 'Cessna 172S', type_id = 1;
 INSERT INTO airframes SET airframe = 'PA-44-180', type_id = 1;
 INSERT INTO airframes SET airframe = 'Cirrus SR20', type_id = 1;
 
+--changeset josh:airframes-static-unknown labels:flights,airframes
+INSERT INTO airframes SET airframe = 'Unknown', type_id = 1;
+
+
 --changeset josh:fleet-airframes labels:flights,airframes
 CREATE TABLE fleet_airframes (
     fleet_id INT NOT NULL,

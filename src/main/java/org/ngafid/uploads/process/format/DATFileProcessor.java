@@ -263,8 +263,16 @@ public class DATFileProcessor extends FlightFileProcessor {
             int date = (int) dateSeries.get(colCount); // Date is an integer in the format YYYYMMDD
             int time = (int) timeSeries.get(colCount);
 
-            if (!Double.isNaN(date) && !Double.isNaN(time) && date != 0 && time != 0) {
+            if (date != 0 && time != 0) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+
+                String datestr = String.valueOf(date);
+                if (datestr.length() < 8)
+                    continue;
+
+                String timestr = String.valueOf(time);
+                if (timestr.length() < 6)
+                    continue;
 
                 String year = String.valueOf(date).substring(0, 4);
                 String month = String.valueOf(date).substring(4, 6);
