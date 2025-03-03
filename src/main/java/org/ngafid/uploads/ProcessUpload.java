@@ -10,10 +10,7 @@ import org.ngafid.flights.FlightError;
 import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.Pipeline;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,6 +62,7 @@ public final class ProcessUpload {
     }
 
     private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+        LOG.info("Combining pieces");
         Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
         Path targetDirectory = Paths.get(upload.getArchiveDirectory());
 
@@ -88,7 +86,9 @@ public final class ProcessUpload {
                 throw new IOException("Combined file had incorrect size!");
             }
         }
-        try (InputStream is = new FileInputStream(targetFilename.toFile())) {
+
+        LOG.info("Computing md5");
+        try (InputStream is = new BufferedInputStream(new FileInputStream(targetFilename.toFile()))) {
             String newMd5Hash = MD5.computeHexHash(is);
 
             if (!newMd5Hash.equals(upload.getMd5Hash())) {
@@ -97,12 +97,11 @@ public final class ProcessUpload {
 
             deleteDirectory(chunkDirectory.toFile());
         }
+        LOG.info("Done");
     }
 
     private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
-
-
             try {
                 tryCombinePieces(connection, upload, lockedUpload);
                 lockedUpload.updateStatus(Upload.Status.PROCESSING);
