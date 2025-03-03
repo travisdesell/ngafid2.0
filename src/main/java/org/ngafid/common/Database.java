@@ -10,10 +10,14 @@ import java.util.logging.Logger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import javax.sql.DataSource;
+
 public class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
-    private static String dbUser = null, dbPassword = null, dbUrl = null;
+    private static String dbUser = null;
+    private static String dbPassword = null;
+    private static String dbUrl = null;
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
@@ -27,6 +31,10 @@ public class Database {
                 + " active / " + info.getTotalConnections() + " total");
         // new Throwable().printStackTrace();
         return CONNECTION_POOL.getConnection();
+    }
+
+    public static DataSource getDataSource() {
+        return CONNECTION_POOL;
     }
 
     public static boolean dbInfoExists() {
