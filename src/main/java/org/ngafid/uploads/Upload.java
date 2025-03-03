@@ -116,18 +116,21 @@ public final class Upload {
                 statement.setString(1, lockNameFor(id));
                 LOG.info(statement.toString());
                 try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
+                    while (resultSet.next()) {
                         return resultSet.getInt(1) == 1;
-                    } else {
-                        return false;
                     }
                 }
             }
+
+            throw new SQLException("No result set :(");
         }
 
         @Override
         public void close() throws SQLException, UploadAlreadyLockedException {
-            lock(false);
+            boolean released = lock(false);
+            if (!released) {
+                throw new SQLException("Failed to release :(");
+            }
 
             // We don't want to add this upload to the kafka queue while it is still locked, because then processing
             // could fail if it is read from the queue too fast while we still have the lock.
