@@ -39,10 +39,10 @@ public class Flight {
     }
 
     private static final Logger LOG = Logger.getLogger(Flight.class.getName());
-    private static final String FLIGHT_COLUMNS = "id, fleet_id, uploader_id, upload_id, system_id, airframe_id, " +
-            " start_time, end_time, filename, md5_hash, number_rows, status ";
-    private static final String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, " +
-            "airframe_id, start_time, end_time, filename, md5_hash, number_rows, status";
+    private static final String FLIGHT_COLUMNS = " id, fleet_id, uploader_id, upload_id, system_id, airframe_id, " +
+            " flight_data_recorder_id, start_time, end_time, filename, md5_hash, number_rows, status ";
+    private static final String FLIGHT_COLUMNS_TAILS = " id, fleet_id, uploader_id, upload_id, f.system_id, " +
+            " airframe_id, flight_data_recorder_id, start_time, end_time, filename, md5_hash, number_rows, status ";
 
     private final String filename;
     private final String systemId;
@@ -59,6 +59,7 @@ public class Flight {
 
     // Model and type of aircraft.
     private Airframes.Airframe airframe;
+    private FlightDataRecorder flightDataRecorder;
     private String tailNumber;
     private String suggestedTailNumber;
     private FlightStatus status;
@@ -81,6 +82,7 @@ public class Flight {
         filename = meta.filename;
         status = exceptions.isEmpty() ? FlightStatus.SUCCESS : FlightStatus.WARNING;
         airframe = meta.airframe;
+        flightDataRecorder = meta.flightDataRecorder;
 
         systemId = meta.systemId;
         suggestedTailNumber = meta.suggestedTailNumber;
@@ -101,7 +103,7 @@ public class Flight {
             assert series.size() == numberRows;
     }
 
-    public Flight(Connection connection, ResultSet resultSet) throws SQLException {
+    private Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
         uploaderId = resultSet.getInt(3);
@@ -110,16 +112,17 @@ public class Flight {
         systemId = resultSet.getString(5);
 
         airframe = new Airframes.Airframe(connection, resultSet.getInt(6));
+        flightDataRecorder = new FlightDataRecorder(connection, resultSet.getInt(7));
 
         // this will set tailNumber and tailConfirmed
         tailNumber = Tails.getTail(connection, fleetId, systemId);
 
-        startDateTime = resultSet.getString(7);
-        endDateTime = resultSet.getString(8);
-        filename = resultSet.getString(9);
-        md5Hash = resultSet.getString(10);
-        numberRows = resultSet.getInt(11);
-        status = FlightStatus.valueOf(resultSet.getString(12));
+        startDateTime = resultSet.getString(8);
+        endDateTime = resultSet.getString(9);
+        filename = resultSet.getString(10);
+        md5Hash = resultSet.getString(11);
+        numberRows = resultSet.getInt(12);
+        status = FlightStatus.valueOf(resultSet.getString(13));
 
         itinerary = Itinerary.getItinerary(connection, id);
 
@@ -1071,6 +1074,7 @@ public class Flight {
                 Airframes.setAirframeFleet(connection, flight.airframe.getId(), flight.fleetId);
                 Tails.setSuggestedTail(connection, flight.fleetId, flight.systemId, flight.suggestedTailNumber);
                 flight.tailNumber = Tails.getTail(connection, flight.fleetId, flight.systemId);
+                flight.flightDataRecorder = new FlightDataRecorder(connection, flight.flightDataRecorder.getName());
 
                 flight.addBatch(preparedStatement);
             }
@@ -1147,6 +1151,7 @@ public class Flight {
                                 uploader_id,
                                 upload_id,
                                 airframe_id,
+                                flight_data_recorder_id,
                                 system_id,
                                 start_time,
                                 end_time,
@@ -1154,7 +1159,7 @@ public class Flight {
                                 md5_hash,
                                 number_rows,
                                 status
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 Statement.RETURN_GENERATED_KEYS);
     }
@@ -1518,13 +1523,14 @@ public class Flight {
         preparedStatement.setInt(2, uploaderId);
         preparedStatement.setInt(3, uploadId);
         preparedStatement.setInt(4, airframe.getId());
-        preparedStatement.setString(5, systemId);
-        preparedStatement.setString(6, startDateTime);
-        preparedStatement.setString(7, endDateTime);
-        preparedStatement.setString(8, filename);
-        preparedStatement.setString(9, md5Hash);
-        preparedStatement.setInt(10, numberRows);
-        preparedStatement.setString(11, FlightStatus.PROCESSING.toString());
+        preparedStatement.setInt(5, flightDataRecorder.getId());
+        preparedStatement.setString(6, systemId);
+        preparedStatement.setString(7, startDateTime);
+        preparedStatement.setString(8, endDateTime);
+        preparedStatement.setString(9, filename);
+        preparedStatement.setString(10, md5Hash);
+        preparedStatement.setInt(11, numberRows);
+        preparedStatement.setString(12, FlightStatus.PROCESSING.toString());
 
         preparedStatement.addBatch();
     }

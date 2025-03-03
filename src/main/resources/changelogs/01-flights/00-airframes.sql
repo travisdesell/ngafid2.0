@@ -54,3 +54,21 @@ CREATE TABLE sim_aircraft (
     PRIMARY KEY(id),
     FOREIGN KEY(fleet_id) REFERENCES fleet(id)
 );
+
+--changeset josh:flight-data-recorder labels:flights,airframes
+CREATE TABLE flight_data_recorders (
+    id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(256),
+
+    PRIMARY KEY (id),
+    UNIQUE KEY (name),
+    INDEX(name)
+);
+
+INSERT INTO flight_data_recorders SET name = 'G1000';
+INSERT INTO flight_data_recorders SET name = 'G5';
+INSERT INTO flight_data_recorders SET name = 'G3X';
+INSERT INTO flight_data_recorders SET name = 'Bad Elf 2200';
+INSERT INTO flight_data_recorders SET name = 'ScanEagle';
+INSERT INTO flight_data_recorders SET name = 'DJI';
+INSERT INTO flight_data_recorders SET name = 'Parrot SkyController';

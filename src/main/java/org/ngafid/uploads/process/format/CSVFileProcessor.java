@@ -7,6 +7,7 @@ import org.ngafid.common.MD5;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Airframes.AliasKey;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FlightDataRecorder;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
@@ -313,6 +314,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             values.put("airframe_name", "Unknown");
             LOG.severe("!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
         }
+
+        meta.flightDataRecorder = new FlightDataRecorder("G1000");
 
         if (!values.containsKey("system_id")) {
             if (values.containsKey("serial_number")) {

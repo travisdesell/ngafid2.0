@@ -152,7 +152,7 @@ SELECT
     month,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     airframe_id,
     year,
@@ -168,7 +168,7 @@ SELECT
     year,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     fleet_id,
     airframe_id,
@@ -183,7 +183,7 @@ SELECT
     year,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     airframe_id,
     year;
@@ -196,7 +196,7 @@ SELECT
     fleet_id,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     fleet_id;
 
@@ -206,4 +206,4 @@ CREATE VIEW
 SELECT
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly

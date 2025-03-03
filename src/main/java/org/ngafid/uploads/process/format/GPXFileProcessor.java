@@ -2,10 +2,7 @@ package org.ngafid.uploads.process.format;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.ngafid.common.TimeUtils;
-import org.ngafid.flights.Airframes;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Parameters;
-import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.*;
 import org.ngafid.uploads.process.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -150,6 +147,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
                     FlightMeta meta = new FlightMeta();
                     meta.setFilename(this.filename + ":" + start + "-" + end);
                     meta.airframe = new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing"));
+                    meta.flightDataRecorder = new FlightDataRecorder("Bad Elf 2200");
                     meta.setSuggestedTailNumber(nickname);
                     meta.setSystemId(nickname);
 

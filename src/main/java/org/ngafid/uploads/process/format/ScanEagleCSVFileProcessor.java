@@ -1,9 +1,6 @@
 package org.ngafid.uploads.process.format;
 
-import org.ngafid.flights.Airframes;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Parameters;
-import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.*;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
 import org.ngafid.uploads.process.Pipeline;
@@ -54,6 +51,7 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
         super(connection, stream, filename, pipeline);
 
         meta.airframe = new Airframes.Airframe("ScanEagle", new Airframes.Type("UAS Fixed Wing"));
+        meta.flightDataRecorder = new FlightDataRecorder("ScanEagle");
     }
 
     @Override

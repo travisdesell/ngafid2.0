@@ -4,10 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import org.ngafid.common.MD5;
 import org.ngafid.common.TimeUtils;
-import org.ngafid.flights.Airframes;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Parameters;
-import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.*;
 import org.ngafid.uploads.process.*;
 
 import java.io.IOException;
@@ -43,6 +40,8 @@ public class JSONFileProcessor extends FlightFileProcessor {
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         FlightMeta flightMeta = new FlightMeta();
+        flightMeta.flightDataRecorder = new FlightDataRecorder("Parrot Skycontroller");
+
         final Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         final Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 

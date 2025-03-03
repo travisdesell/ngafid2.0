@@ -446,7 +446,7 @@ public class ImportUploadJavalinRoutes {
                 }
             }
         } catch (SQLException e) {
-            LOG.severe(gson.toJson(e));
+            e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }

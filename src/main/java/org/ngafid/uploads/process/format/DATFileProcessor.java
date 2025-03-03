@@ -6,6 +6,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FlightDataRecorder;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
@@ -738,6 +739,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             meta.setUploadId(pipeline.getDerivedUploadId());
             meta.setAirframe("DJI " + attributeMap.get("ACType"), "UAS Rotorcraft");
             meta.setSystemId(attributeMap.get("mcID(SN)"));
+            meta.flightDataRecorder = new FlightDataRecorder("DJI");
 
             LOG.info("Flight builder DA");
             return Stream.of(

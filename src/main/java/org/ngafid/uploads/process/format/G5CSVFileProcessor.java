@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ngafid.common.MD5;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.FlightDataRecorder;
 import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.*;
@@ -104,6 +105,9 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             if (!stringTimeSeries.containsKey(Parameters.LCL_DATE)) {
                 LOG.info("Lcl Date is null (This is G5), calculating local Lcl Date Time from UDT");
                 calculateUTCDateTime(doubleTimeSeries, stringTimeSeries);
+                meta.flightDataRecorder = new FlightDataRecorder("G5");
+            } else {
+                meta.flightDataRecorder = new FlightDataRecorder("G3X");
             }
             List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
             return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();

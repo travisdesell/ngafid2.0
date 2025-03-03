@@ -1,6 +1,7 @@
 package org.ngafid.uploads.process;
 
 import org.ngafid.flights.Airframes;
+import org.ngafid.flights.FlightDataRecorder;
 
 import java.time.OffsetDateTime;
 
@@ -23,6 +24,7 @@ public final class FlightMeta {
     public String suggestedTailNumber;
 
     public Airframes.Airframe airframe = null;
+    public FlightDataRecorder flightDataRecorder = null;
     //CHECKSTYLE:ON
 
     // Default constructor
@@ -43,8 +45,8 @@ public final class FlightMeta {
         this.calculated = other.calculated;
         this.suggestedTailNumber = other.suggestedTailNumber;
 
-        // Deep copy of Airframe, AirframeType  if not null
         this.airframe = other.airframe;
+        this.flightDataRecorder = other.flightDataRecorder;
     }
 
     public int getFleetId() {

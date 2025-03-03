@@ -8,6 +8,7 @@ CREATE TABLE flights (
     upload_id INT NOT NULL,
     system_id VARCHAR(128) NOT NULL,
     airframe_id INT NOT NULL,
+    flight_data_recorder_id INT NOT NULL,
     start_time DATETIME,
     end_time DATETIME,
     filename VARCHAR(256),
@@ -28,6 +29,7 @@ CREATE TABLE flights (
     FOREIGN KEY (uploader_id) REFERENCES user(id),
     FOREIGN KEY (airframe_id) REFERENCES airframes(id),
     FOREIGN KEY (fleet_id, system_id) REFERENCES tails(fleet_id, system_id),
+    FOREIGN KEY (flight_data_recorder_id) REFERENCES flight_data_recorders(id),
     FOREIGN KEY (upload_id) REFERENCES uploads(id)
         ON DELETE CASCADE
 );
