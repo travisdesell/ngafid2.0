@@ -3,16 +3,18 @@ package org.ngafid.routes;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
-import org.eclipse.jetty.server.session.DefaultSessionCache;
-import org.eclipse.jetty.server.session.FileSessionDataStore;
-import org.eclipse.jetty.server.session.SessionCache;
-import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
+import org.ngafid.common.Database;
 import org.ngafid.routes.javalin.*;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
@@ -146,7 +148,8 @@ public class JavalinWebServer extends WebServer {
     private static SessionHandler createSessionHandler() {
         SessionHandler sessionHandler = new SessionHandler();
         SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
-        sessionCache.setSessionDataStore(createFileSessionDataStore());
+//        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
         sessionHandler.setSessionCache(sessionCache);
         sessionHandler.setHttpOnly(true);
         return sessionHandler;
@@ -159,5 +162,27 @@ public class JavalinWebServer extends WebServer {
         storeDir.mkdir();
         fileSessionDataStore.setStoreDir(storeDir);
         return fileSessionDataStore;
+    }
+
+    private static JDBCSessionDataStoreFactory createJDBCDataStore() {
+        DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
+
+        try (Connection connection = Database.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            databaseAdaptor.setDriverInfo(metaData.getDriverName(), metaData.getURL());
+            databaseAdaptor.setDatasource(Database.getDataSource());
+
+            JDBCSessionDataStore.SessionTableSchema schema = new JDBCSessionDataStore.SessionTableSchema();
+            schema.setTableName("jetty_sessions");
+
+            JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
+            jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
+            jdbcSessionDataStoreFactory.setSessionTableSchema(schema);
+
+            return jdbcSessionDataStoreFactory;
+        } catch (SQLException e) {
+            LOG.severe("Failed to get database connection for persistent logins.");
+        }
+        return null;
     }
 }
