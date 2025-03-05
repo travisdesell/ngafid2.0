@@ -1,6 +1,5 @@
 package org.ngafid.events;
 
-import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
@@ -54,10 +53,7 @@ public class LowEndingFuelScanner extends AbstractEventScanner {
 
         double average = (fuelSum / fuelValues);
         if (duration >= 15 && average < threshold) {
-            return List.of(new CustomEvent(
-                    TimeUtils.UTCtoSQL(utc.get(i)),
-                    TimeUtils.UTCtoSQL(endUTC),
-                    i, i + fuelValues, average, null, definition
+            return List.of(new CustomEvent(utc.get(i), endUTC, i, i + fuelValues, average, null, definition
             ));
         } else {
             return List.of();

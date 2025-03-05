@@ -4,7 +4,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.bin.WebServer;
 import org.ngafid.common.MD5;
-import org.ngafid.flights.Flight;
 import org.ngafid.kafka.Configuration;
 import org.ngafid.kafka.Topic;
 import org.ngafid.uploads.airsync.AirSyncImport;
@@ -162,10 +161,9 @@ public final class Upload {
                 preparedStatement.executeUpdate();
             }
 
-            ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, id);
-
-            for (Flight flight : flights) {
-                flight.remove(connection);
+            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM flights WHERE upload_id = ?")) {
+                preparedStatement.setInt(1, id);
+                preparedStatement.executeUpdate();
             }
 
             if (!md5Hash.contains("DERIVED")) {
@@ -175,12 +173,6 @@ public final class Upload {
                         derivedLocked.remove();
                     }
                 }
-            }
-
-            query = "DELETE FROM uploads WHERE md5_hash = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, getDerivedMd5(md5Hash));
-                preparedStatement.executeUpdate();
             }
         }
 

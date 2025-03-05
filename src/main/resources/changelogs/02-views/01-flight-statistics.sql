@@ -108,6 +108,48 @@ GROUP BY
     airframe_id;
 
 
+--changeset josh:fleet-30-day-flight-counts labels:flights,views,materialized-views context:hourly-materialized-view runAlways:true
+CREATE OR REPLACE VIEW
+    v_fleet_30_day_flight_counts AS
+SELECT
+    fleet_id,
+    airframe_id,
+    COUNT(DISTINCT id) as count
+FROM
+    flights
+WHERE
+    DATE_SUB(UTC_DATE(), INTERVAL 30 DAY) <= end_time
+GROUP BY
+    fleet_id,
+    airframe_id;
+
+CREATE TABLE IF NOT EXISTS m_fleet_30_day_flight_counts (
+    fleet_id INT NOT NULL,
+    airframe_id INT NOT NULL,
+    count INT NOT NULL,
+
+    PRIMARY KEY (fleet_id, airframe_id),
+    FOREIGN KEY (fleet_id) REFERENCES fleet(id),
+    FOREIGN KEY (airframe_id) REFERENCES airframes(id)
+);
+
+TRUNCATE TABLE m_fleet_30_day_flight_counts;
+
+INSERT INTO m_fleet_30_day_flight_counts
+SELECT * FROM v_fleet_30_day_flight_counts;
+
+--changeset josh:aggregate-30-day-flight-counts labels:flights,views
+CREATE VIEW
+    v_aggregate_30_day_flight_counts AS
+SELECT
+    airframe_id,
+    SUM(m_fleet_30_day_flight_counts.count) as count
+FROM
+    m_fleet_30_day_flight_counts
+GROUP BY
+    airframe_id;
+
+
 --changeset josh:fleet-monthly-flight-time labels:flights,views,materialized-views context:daily-materialized-view runAlways:true
 CREATE OR REPLACE VIEW
     v_fleet_monthly_flight_time AS
@@ -152,7 +194,7 @@ SELECT
     month,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     airframe_id,
     year,
@@ -168,7 +210,7 @@ SELECT
     year,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     fleet_id,
     airframe_id,
@@ -183,7 +225,7 @@ SELECT
     year,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
     airframe_id,
     year;
@@ -194,16 +236,63 @@ CREATE VIEW
     v_fleet_flight_time AS
 SELECT
     fleet_id,
+    airframe_id,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
 GROUP BY
-    fleet_id;
+    fleet_id,
+    airframe_id;
 
 --changeset josh:aggregate-flight-time labels:flights,views
 CREATE VIEW
     v_aggregate_flight_time AS
 SELECT
+    airframe_id,
     SUM(monthly.flight_time_seconds) as flight_time_seconds
 FROM
-    m_monthly_fleet_flight_time as monthly
+    m_fleet_monthly_flight_time as monthly
+GROUP BY
+    airframe_id;
+
+
+--changeset josh:fleet-30-day-flight-time labels:flights,views,materialized-views context:hourly-materialized-view runAlways:true
+CREATE OR REPLACE VIEW
+    v_fleet_30_day_flight_time AS
+SELECT
+    fleet_id,
+    airframe_id,
+    SUM(TIMESTAMPDIFF(SECOND, start_time, end_time)) as flight_time_seconds
+FROM
+    flights
+WHERE
+    DATE_SUB(UTC_DATE(), INTERVAL 30 DAY) <= end_time
+GROUP BY
+    fleet_id,
+    airframe_id;
+
+CREATE TABLE IF NOT EXISTS m_fleet_30_day_flight_time (
+    fleet_id INT NOT NULL,
+    airframe_id INT NOT NULL,
+    flight_time_seconds INT NOT NULL,
+
+    PRIMARY KEY (fleet_id, airframe_id),
+    FOREIGN KEY (fleet_id) REFERENCES fleet(id),
+    FOREIGN KEY (airframe_id) REFERENCES airframes(id)
+);
+
+TRUNCATE TABLE m_fleet_30_day_flight_time;
+
+INSERT INTO m_fleet_30_day_flight_time
+SELECT * from v_fleet_30_day_flight_time;
+
+--changeset josh:aggregate-30-day-flight-time labels:flights,view
+CREATE VIEW
+    v_aggregate_30_day_flight_time AS
+SELECT
+    airframe_id,
+    SUM(m_fleet_30_day_flight_time.flight_time_seconds) as flight_time_seconds
+FROM
+    m_fleet_30_day_flight_time
+GROUP BY
+    airframe_id;

@@ -8,7 +8,6 @@ import java.time.OffsetDateTime;
  * Utility class used by FlightBuilder to call the Flight constructor, contains all metadata required for a flight.
  */
 public final class FlightMeta {
-    //CHECKSTYLE:OFF
     public int fleetId = -1;
     public int uploaderId = -1;
     public int uploadId = -1;
@@ -23,13 +22,10 @@ public final class FlightMeta {
     public String suggestedTailNumber;
 
     public Airframes.Airframe airframe = null;
-    //CHECKSTYLE:ON
 
-    // Default constructor
     public FlightMeta() {
     }
 
-    // Copy constructor
     public FlightMeta(FlightMeta other) {
         this.fleetId = other.fleetId;
         this.uploaderId = other.uploaderId;

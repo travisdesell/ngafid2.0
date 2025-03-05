@@ -10,8 +10,8 @@ CREATE TABLE fleet (
 
 --changeset josh:fleet-test labels:accounts
 CREATE TABLE test (
-    id int not null AUTO_INCREMENT,
-    primary key (id)
+    id INT NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (id)
 );
 
 --changeset josh:tails labels:accounts

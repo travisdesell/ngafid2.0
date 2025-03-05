@@ -1,5 +1,7 @@
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
@@ -7,6 +9,7 @@ import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.common.Database;
 import org.ngafid.routes.javalin.*;
 
@@ -14,6 +17,7 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -34,7 +38,9 @@ public class JavalinWebServer extends WebServer {
     protected void preInitialize() {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
-            config.jsonMapper(new JavalinGson());
+
+            Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
+            config.jsonMapper(new JavalinGson(gson, false));
         });
     }
 
@@ -70,7 +76,6 @@ public class JavalinWebServer extends WebServer {
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         TagFilterJavalinRoutes.bindRoutes(app);
-        UncategorizedJavalinRoutes.bindRoutes(app);
     }
 
     @Override

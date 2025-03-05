@@ -3,6 +3,7 @@ package org.ngafid.uploads.process;
 import org.ngafid.common.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events.calculations.TurnToFinal;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Flight;
 import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.uploads.Upload;
@@ -239,8 +240,10 @@ public class Pipeline implements AutoCloseable {
             fb.meta.setFleetId(this.upload.fleetId);
             fb.meta.setUploaderId(this.upload.uploaderId);
             fb.meta.setUploadId(this.upload.id);
+            fb.meta.airframe = new Airframes.Airframe(connection, fb.meta.airframe.getName(), fb.meta.airframe.getType());
             return fb.build(connection);
-        } catch (FlightProcessingException e) {
+        } catch (FlightProcessingException | SQLException e) {
+            e.printStackTrace();
             LOG.info("Encountered an irrecoverable issue processing a flight");
             fail(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
             return null;
