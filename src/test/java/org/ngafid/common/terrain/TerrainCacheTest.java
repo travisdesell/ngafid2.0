@@ -9,7 +9,7 @@ import static org.ngafid.common.terrain.TerrainCache.getAltitudeFt;
 public class TerrainCacheTest {
     private void altitudeTest(double latitude, double longitude, double expectedAltitude) {
         try {
-            ///  Expected altitude is doubled because we run max(msl, msl - actual)
+            ///  msl is altitude doubled because we run max(0, msl - fileAltitudeFt)
             double actual = getAltitudeFt(expectedAltitude * 2, latitude, longitude);
             assertEquals(expectedAltitude, actual, 30);
         } catch (Exception e) {
