@@ -729,4 +729,15 @@ html, body {
     z-index: 1000;
 }
 
+
+
+/* Hide Cesium Built-in Fullscreen Button */
+.cesium-viewer-fullscreenContainer {
+    visibility: hidden;
+    display: none;
+}
+.cesium-viewer-timelineContainer {
+    right: 1px !important;
+}
+
 /* #endregion Map & Graph Containers */
