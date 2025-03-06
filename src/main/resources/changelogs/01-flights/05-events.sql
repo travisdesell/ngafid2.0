@@ -8,9 +8,9 @@ CREATE TABLE event_definitions (
     name VARCHAR(64) NOT NULL,
     start_buffer INT,
     stop_buffer INT,
-    column_names VARCHAR(128),
-    condition_json VARCHAR(512),
-    severity_column_names VARCHAR(128),
+    column_names TEXT,
+    condition_json TEXT,
+    severity_column_names TEXT,
     severity_type ENUM('MIN', 'MAX', 'MIN_ABS', 'MAX_ABS'),
     color VARCHAR(6) DEFAULT NULL,
 
