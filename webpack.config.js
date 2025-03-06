@@ -6,7 +6,9 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 const path = require('path');
 
+
 module.exports = {
+
     mode: process.env.NODE_ENV || 'development',
     watch: true,
 
@@ -19,25 +21,14 @@ module.exports = {
         },
     },
     externals: {
-        cesium: "Cesium"
+        cesium: "Cesium",
+        plotly: "Plotly",
     },
-    /*
-    node: {
-        fs: 'empty'
-    },
-    */
-
-
     watchOptions: {
-        aggregateTimeout: 300,
-        poll: 1000,
-        ignored: /node_modules/
-    },
-
-    optimization: {
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
-        splitChunks: false,
+        ignored: [
+            "/node_modules/",
+            path.resolve(__dirname, "src/main/resources/public/dist/"), //<-- Ignore built files so they aren't recompiled
+        ],
     },
 
     cache: {
@@ -83,9 +74,9 @@ module.exports = {
     devtool: "source-map",
 
     output: {
-
-        path: path.resolve(__dirname, "src/main/resources/public/js/"),
-        filename: "[name]-bundle.js"
+        path: path.resolve(__dirname, "src/main/resources/public/dist/js/"),
+        filename: "[name]-bundle.js",
+        publicPath: "/dist/js/",
     },
 
     module: {
@@ -135,15 +126,9 @@ module.exports = {
                 },
             ],
         }),
-        new HtmlPlugin({
-            template: "src/main/resources/public/templates/flights.html",
-        }),
-        new HtmlTagsPlugin({
-            append: false,
-            tags: ["cesium/Widgets/widgets.css", "cesium/Cesium.js"],
-        }),
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
     ]
+
 };

@@ -15,4 +15,5 @@ db/db_info
 email_info.txt
 package-lock.json
 data/*
-src/main/resources/liquidbase.properties
+src/main/resources/liquibase.properties
+src/main/resources/public/dist/*
