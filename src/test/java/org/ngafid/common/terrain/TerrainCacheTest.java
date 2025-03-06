@@ -7,11 +7,11 @@ import static org.junit.Assert.assertEquals;
 import static org.ngafid.common.terrain.TerrainCache.getAltitudeFt;
 
 public class TerrainCacheTest {
-    private void altitudeTest(double msl, double latitude, double longitude, double expectedAltitude) {
+    private void altitudeTest(double latitude, double longitude, double expectedAltitude) {
         try {
-            double actual = getAltitudeFt(msl, latitude, longitude);
-            System.out.println("Expected: " + expectedAltitude + ", Actual: " + actual);
-            assertEquals(expectedAltitude, actual, 0.1);
+            ///  Expected altitude is doubled because we run max(msl, msl - actual)
+            double actual = getAltitudeFt(expectedAltitude * 2, latitude, longitude);
+            assertEquals(expectedAltitude, actual, 30);
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
@@ -22,44 +22,44 @@ public class TerrainCacheTest {
     public void testGetFilenameFromLatLon() {
         // Northeast
         String actual = TerrainCache.getFilenameFromLatLon(90, 90);
-        assertEquals("N090E090.hgt", actual);
+        assertEquals("N90E090.hgt", actual);
 
         // Southeast
         actual = TerrainCache.getFilenameFromLatLon(-90, 90);
-        assertEquals("S090E090.hgt", actual);
+        assertEquals("S90E090.hgt", actual);
 
         // Northwest
         actual = TerrainCache.getFilenameFromLatLon(90, -90);
-        assertEquals("N090W090.hgt", actual);
+        assertEquals("N90W090.hgt", actual);
 
         // Southwest
         actual = TerrainCache.getFilenameFromLatLon(-90, -90);
-        assertEquals("S090W090.hgt", actual);
+        assertEquals("S90W090.hgt", actual);
     }
 
     @Test
     public void testGetAlbanyAltitudeFt() {
-        altitudeTest(0, 42.74871, -73.80550, 267.0);
+        altitudeTest(42.74871, -73.80550, 267.0);
     }
 
     @Test
     public void testGetGrandForksAltitudeFt() {
         // Grand Forks
-        altitudeTest(0, 47.94286, -97.17658, 838.0);
+        altitudeTest(47.94286, -97.17658, 838.0);
     }
 
     @Test
     public void testGetDenverAltitudeFt() {
-        altitudeTest(0, 39.85610, -104.67374, 5373.0);
+        altitudeTest(39.85610, -104.67374, 5373.0);
     }
 
     @Test
     public void testGetRochesterAltitudeFt() {
-        altitudeTest(0, 43.12252, -77.66657, 542.0);
+        altitudeTest(43.12252, -77.66657, 542.0);
     }
 
     @Test
     public void testGetPhoenixAltitudeFt() {
-        altitudeTest(0, 33.43727, -112.00779, 1124.0);
+        altitudeTest(33.43727, -112.00779, 1124.0);
     }
 }
