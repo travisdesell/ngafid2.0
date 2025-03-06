@@ -454,7 +454,6 @@ public class EventStatistics {
 
                 try (PreparedStatement preparedStatement = connection.prepareStatement(query);
                      ResultSet resultSet = preparedStatement.executeQuery()) {
-                    LOG.info(preparedStatement.toString());
                     if (resultSet.next())
                         processedFlights = resultSet.getInt(1);
                     else
@@ -467,9 +466,7 @@ public class EventStatistics {
                         " AND airframe_id = " + airframeNameId;
                 try (PreparedStatement preparedStatement = connection.prepareStatement(query);
                      ResultSet resultSet = preparedStatement.executeQuery()) {
-                    LOG.info(preparedStatement.toString());
                     if (resultSet.next()) {
-                        LOG.info("interesting!");
                         processedFlights = resultSet.getInt(1);
                     } else {
                         processedFlights = 0;
