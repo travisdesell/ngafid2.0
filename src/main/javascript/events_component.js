@@ -61,7 +61,7 @@ class Events extends React.Component {
             // Draw rectangles on plot
         var event = this.state.events[index];
         console.log(event);
-        if (this.props.parent.state.cesiumMapVisible) {
+        if (this.props.parent.state.cesiumFlightEnabled) {
             this.props.parent.addCesiumEventEntity(event);
         }
         // this.props.parent.addCesiumEventEntity(event);
@@ -309,11 +309,18 @@ class Events extends React.Component {
                         }
                         console.log("Event mapped : " + thisFlight.state.eventsMapped[index]);
                         console.log("Flight id " + event.flightId);
-                        if (this.props.parent.state.cesiumMapVisible) {
+                        if (this.props.parent.state.cesiumFlightEnabled) {
                             zoomToCesiumEntityBtn = (
-                                <button id="zoomCesium" data-bs-toggle="button" className={buttonClasses} onClick={() =>  this.props.parent.zoomToEventEntity(event.id, event.flightId)}>
-                                    <i className="fa fa-search-plus"></i>
-                                </button>)
+                                <button
+                                    id="zoomCesium"
+                                    data-bs-toggle="button"
+                                    className={buttonClasses}
+                                    style={{height: "100%", width: "100%", padding: "0"}}
+                                    onClick={() => this.props.parent.zoomToEventEntity(event.id, event.flightId)}
+                                >
+                                    <i className="fa fa-search-plus" style={{lineHeight: "36px"}}/>
+                                </button>
+                            )
                         }
 
                         if (eventMetaData != null) {
@@ -342,10 +349,16 @@ class Events extends React.Component {
                                 <button id={buttonID} className={buttonClasses} style={styleButton}
                                         data-bs-toggle="button" aria-pressed="false"
                                         onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} {eventMetaDataText} {otherFlightText} {otherFlightURL} {rateOfClosureBtn}
+                                    <b>
+                                        {event.eventDefinition.name}
+                                    </b>
+                                    {" — " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} {eventMetaDataText} {otherFlightText} {otherFlightURL} {rateOfClosureBtn}
                                     {rocPlot}
                                 </button>
-                                <div>
+                                <div style={{
+                                    height: "36px",
+                                    width: "36px"
+                                }}>
                                     {zoomToCesiumEntityBtn}
                                 </div>
                             </div>
