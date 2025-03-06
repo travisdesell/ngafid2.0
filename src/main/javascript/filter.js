@@ -1,19 +1,5 @@
 import 'bootstrap';
 import React, { Component, useState, useEffect, useRef, createRef } from "react";
-import ReactDOM from "react-dom";
-import Overlay from 'react-bootstrap/Overlay';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Popover from 'react-bootstrap/Popover';
-import Tooltip from 'react-bootstrap/Tooltip';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import FormGroup from 'react-bootstrap/Form';
-import FormControl from 'react-bootstrap/FormControl';
-import InputGroup from 'react-bootstrap/InputGroup';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
 import { Colors } from "./map.js";
 
 import { timeZones } from "./time_zones.js";
@@ -392,7 +378,7 @@ class Rule extends React.Component {
                         })
                     }
 
-                    <button type="button" className="btn btn-danger btn-sm" onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
+                    <button type="button" className="btn btn-danger btn-sm ml-1" onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
                         <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                     </button>
                 </div>
@@ -463,6 +449,7 @@ class Group extends React.Component {
     }
 
     submitChanges(filter) {
+
         let thisFilter = this;
 
         let submissionData = {
@@ -496,6 +483,7 @@ class Group extends React.Component {
             data : submissionData,
             dataType : 'json',
             timeout : 0, 
+            async: true,
             success : function(response) {
                 if (response === "DUPLICATE_PK") {
                     $('#modify-filter-submit-button').tooltip('show');
@@ -516,9 +504,10 @@ class Group extends React.Component {
                 thisFilter.setState(thisFilter.state);
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
+                console.log("TF: ", thisFilter);
+                console.log("TFP: ", thisFilter.props);
+                thisFilter.props.errorModal.show("Error Loading Flights", errorThrown);
+            }
         });  
     }
 
@@ -529,6 +518,7 @@ class Group extends React.Component {
     }
 
     deleteFilter(name) {
+
         let thisFilter = this;
 
         let submissionData = {
@@ -544,13 +534,13 @@ class Group extends React.Component {
             data : submissionData,
             dataType : 'json',
             timeout : 0, 
+            async: true,
             success : function(response) {
                 thisFilter.setState(thisFilter.state);
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
+                thisFilter.props.errorModal.show("Error Loading Flights", errorThrown);
+            }
         });  
     }
 
@@ -581,6 +571,7 @@ class Group extends React.Component {
             data : submissionData,
             dataType : 'json',
             timeout : 0, 
+            async: true,
             success : function(response) {
                 if (response === "DUPLICATE_PK") {
                     console.log("duplicate pk detected");
@@ -605,9 +596,8 @@ class Group extends React.Component {
             },
 
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
+                thisFilter.props.errorModal.show("Error Loading Flights", errorThrown);
+            }
         });  
     }
 
@@ -779,7 +769,7 @@ class Group extends React.Component {
         if (this.state.showSavePopover) {
             saveCard = (
                 <div className="card m-1 float-right" style={{minWidth : "500px"}}>
-                    <div className="card-header float-left">Save Filter:
+                    <div className="card-header float-left">Save Current Filter:
                         <button type="button" className="mr-1 btn btn-danger btn-sm float-right" onClick={() => this.setState({showSavePopover : false})}>
                             <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                         </button>
@@ -827,80 +817,104 @@ class Group extends React.Component {
                                     <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                                 </button>
                             </div>
-                        <div className="card-body" style={{maxHeight : "400px", overflowY : "auto"}}>
-                            <ul className="list-group" style={{ backgroundColor:"rgba(0,255,0,1.)"}}>
+                        <div className="card-body" style={{maxHeight : "200px", overflowY : "scroll"}}>
                             {
                                 filters.map((filter, index) => {
                                     let initColor = filter.color;
                                     let newColor = JSON.parse(JSON.stringify(this.state.filterColor)); //make copy for each index
+                                    
                                     //Normal
                                     let editButton = ( 
-                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
+                                        <button className="m-1 btn btn-primary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
                                             <i className="fa fa-pencil" aria-hidden="true"></i> 
                                         </button>
                                     );
+                                    let deleteButton = (
+                                        <button className="m-1 btn btn-danger align-right" style={styleButtonSq} onClick={() => this.deleteFilterClicked(filter.name)} title="Delete this filter">
+                                            <i className="fa fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    )
 
                                     let nameField = (
-                                        <div className="col-lg-10">
-                                            <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1', fontSize : '100%', marginRight : '4px', backgroundColor : 'var(--c_tag_badge)', color : 'var(--c_text)'}} title="Filter Info">
-                                                <span className="badge badge-pill badge-primary" style={{...filterPillStyle , backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
-                                                    <i className="fa fa-filter" aria-hidden="true"></i>
-                                                </span>
-                                                <span className="ml-2 font-weight-bold">
-                                                    {filter.name}
-                                                </span>
+                                        <div style={{width: "100%"}} className="d-flex flex-row">
+
+                                            {/* Primary Button (+ Name) */}
+                                            <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{width:"100%", lineHeight : '1', fontSize : '100%', backgroundColor : 'var(--c_tag_badge)', color : 'var(--c_text)'}} title="Filter Info">
+
+                                                <div className="d-flex flex-row">
+                                                    <span className="badge badge-pill badge-primary" style={{...filterPillStyle , backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
+                                                        <i className="fa fa-filter" aria-hidden="true"></i>
+                                                    </span>
+                                                    <span className="ml-2 font-weight-bold pt-1">
+                                                        {filter.name}
+                                                    </span>
+                                                </div>
+
                                             </button>
+                                            
+                                            {/* Editing & Delete Buttons */}
+                                            <div className="d-flex flex-row ml-auto gap-8">
+                                                {editButton}
+                                                {deleteButton}
+                                            </div>
                                         </div>
                                     );
 
                                     if (filter.name == this.state.editingFilter.name) {
+                                        
                                         //When editing 
                                         editButton = (
-                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" title="Submit Changes" data-title="A filter in your fleet already exists with that name! Please choose another name.">
+                                            <button
+                                                className="m-1 btn btn-success align-right"
+                                                id='modify-filter-submit-button'
+                                                onClick={() => this.submitChanges(filter)}
+                                                data-bs-toggle="tooltip"    data-bs-trigger='manual'    data-bs-placement="top"
+                                                data-title="A filter in your fleet already exists with that name! Please choose another name."
+                                                title="Submit Changes"
+                                            >
                                                 <i className='fa fa-check' aria-hidden='true'></i>
                                             </button>
                                         );
 
                                         nameField = (
-                                              <><div className="col-lg-9 input-group mb-3">
-                                                    <div className="input-group-prepend">
-                                                          <button type="button" className="btn btn-outline-secondary" title="Assign a different color to this filter" onClick={(e) => $("#color-picker-filter-mod").click()}>
-                                                              <span className="badge badge-pill badge-primary" style={{...filterPillStyle , backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
-                                                                  <i className="fa fa-filter" aria-hidden="true"></i>
-                                                              </span>
-                                                          </button>
-                                                          <input key="cc-1" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter-mod"/>
+                                            <>
+                                                <div style={{width: "100%"}} className="d-flex flex-row">
+
+                                                    {/* Editing Fields */}
+                                                    <div className="input-group m-1">
+                                                        <div className="input-group-prepend">
+                                                            <button type="button" className="btn btn-outline-secondary" title="Assign a different color to this filter" onClick={(e) => $("#color-picker-filter-mod").click()}>
+                                                                <span className="badge badge-pill badge-primary" style={{...filterPillStyle , backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
+                                                                    <i className="fa fa-filter" aria-hidden="true"></i>
+                                                                </span>
+                                                            </button>
+                                                            <input key="cc-1" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter-mod"/>
+                                                        </div>
+                                                        <input type="text" className="form-control" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                                                     </div>
-                                                    <input type="text" className="form-control" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
-                                              </div>
-                                              <div className="col-lg-1">
-                                                    <button className="m-1 btn btn-outline-danger align-right" style={styleButtonSq} onClick={e => this.setState({editingFilter : {}})} title="Discard Changes">
-                                                        <i className="fa fa-times" aria-hidden="true"></i>
-                                                    </button>
-                                              </div></>
+
+                                                    {/* Editing & Delete Buttons */}
+                                                    <div className="d-flex flex-row">
+                                                        {/* <button className="m-1 btn btn-danger align-right" style={styleButtonSq} onClick={e => this.setState({editingFilter : {}})} title="Discard Changes">
+                                                            <i className="fa fa-times" aria-hidden="true"></i>
+                                                        </button> */}
+                                                        {editButton}
+                                                        {deleteButton}
+                                                    </div>
+                                                </div>
+                                            </>
                                         );
                                     }
 
                                     return (
-                                        <li className="list-group-item" key={index}>
-                                            <div className="container">
+                                            <div key={index} className="container">
                                                 <div className="row justify-content-md-center">
                                                     {nameField}
-                                                    <div className="col-lg-1">
-                                                        {editButton}
-                                                    </div>
-                                                    <div className="col-lg-1">
-                                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.deleteFilterClicked(filter.name)} title="Delete this filter">
-                                                            <i className="fa fa-trash" aria-hidden="true"></i>
-                                                        </button>
-                                                    </div>
                                                 </div>
                                             </div>
-                                        </li>
                                     );
                                 })
                             }
-                        </ul>
                     </div>
                 </div>
             );
@@ -991,7 +1005,7 @@ class Group extends React.Component {
                               Load a Saved Filter
                           </button>
                           <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" title="Filter saved successfully">
-                              Save Filter
+                              Save Current Filter
                           </button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >
                             {this.props.submitButtonName}
@@ -999,7 +1013,7 @@ class Group extends React.Component {
                     </div>
 
                 </div>
-                <div className="container" style={{maxWidth : '100%'}}>
+                <div className="container" style={{maxWidth : '100%', marginRight: "0"}}>
                     <div className="d-flex flex-row-reverse">
                         {saveCard}
                         {loadCard}
@@ -1029,6 +1043,7 @@ class Filter extends React.Component {
                     submitFilter={() => this.props.submitFilter()}
                     setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
                     getSortByColumn={() => {return this.props.getSortByColumn}}
+                    errorModal={this.props.errorModal}
                 />
 
             </div>
