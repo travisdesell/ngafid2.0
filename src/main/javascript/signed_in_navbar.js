@@ -185,7 +185,7 @@ class SignedInNavbar extends React.Component {
                             { 
                                 //only display the filter icon on the navbar if it's being used
                                 this.props.filterVisible ? (
-                                    <button id="filter-toggle-button" className={filterButtonClasses} data-bs-toggle="button" title="Toggle the filter." aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
+                                    <button id="filter-toggle-button" className={filterButtonClasses} data-bs-toggle="button" title="Toggle the Filter" aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
                                         <i className="fa fa-search p-1"></i>
                                     </button>
                                 ) : ( "" )
@@ -193,19 +193,19 @@ class SignedInNavbar extends React.Component {
 
                             {
                                 (this.props.showPlotButton) &&
-                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
+                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button" title="Toggle the Plot" aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
                                     <i className="fa fa-area-chart p-1"></i>
                                 </button>
                             }
 
-                            <button id="cesium-toggle-button" className={cesiumButtonClasses} data-toggle="button" title="Toggle the cesium." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleCesiumMap()}>
+                            <button id="cesium-toggle-button" className={cesiumButtonClasses} data-toggle="button" title="Toggle the Cesium Map" aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleCesium()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
 
                             <div className="input-group m-0">
                                 <div className="input-group-prepend">
-                                    <button id="map-toggle-button" className={mapButtonClasses} data-bs-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()} disabled={this.props.disableMapButton}>
+                                    <button id="map-toggle-button" className={mapButtonClasses} data-bs-toggle="button" title="Toggle the 2D Map" aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()} disabled={this.props.disableMapButton}>
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
