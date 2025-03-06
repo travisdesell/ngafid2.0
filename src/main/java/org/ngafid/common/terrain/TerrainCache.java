@@ -1,11 +1,15 @@
 package org.ngafid.common.terrain;
 
 import java.nio.file.NoSuchFileException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 public final class TerrainCache {
+    private record Coordinate(double latitude, double longitude) {};
 
-    private static final SRTMTile[][] TILES = new SRTMTile[180][360];
+    private static final int MAX_CACHE_SIZE = 1000;
+    private static final Map<Coordinate, SRTMTile> TILE_CACHE = new LinkedHashMap<>();
     public static final String TERRAIN_DIRECTORY;
 
     static {
@@ -80,12 +84,18 @@ public final class TerrainCache {
             throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
         }
 
-        SRTMTile tile = TILES[latIndex][lonIndex];
+        SRTMTile tile = TILE_CACHE.get(new Coordinate(latitude, longitude));
 
         if (tile == null) {
             // System.out.println("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
             tile = new SRTMTile(90 - latIndex, lonIndex - 180);
-            TILES[latIndex][lonIndex] = tile;
+
+            if (TILE_CACHE.size() >= MAX_CACHE_SIZE) {
+                Coordinate firstKey = TILE_CACHE.keySet().iterator().next();
+                TILE_CACHE.remove(firstKey);
+            }
+
+            TILE_CACHE.put(new Coordinate(latitude, longitude), tile);
         }
 
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
