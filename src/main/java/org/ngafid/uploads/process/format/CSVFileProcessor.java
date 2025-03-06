@@ -310,7 +310,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         // This is where we can integrate airframe name input from user.
         // Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
         if (!values.containsKey("airframe_name")) {
-            values.put("airframe_name", "Cessna 172S");
+            values.put("airframe_name", "Unknown");
             LOG.severe("!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
         }
 

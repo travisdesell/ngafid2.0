@@ -1,9 +1,13 @@
 package org.ngafid.common;
 
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 import us.dustinj.timezonemap.TimeZoneMap;
 
+import java.io.IOException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -27,6 +31,19 @@ public enum TimeUtils {
             TIME_ZONE_MAP = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
 
         return TIME_ZONE_MAP;
+    }
+
+    public static class OffsetDateTimeJSONAdapter extends TypeAdapter<OffsetDateTime> {
+
+        @Override
+        public void write(JsonWriter jsonWriter, OffsetDateTime offsetDateTime) throws IOException {
+            jsonWriter.value(TimeUtils.UTCtoSQL(offsetDateTime));
+        }
+
+        @Override
+        public OffsetDateTime read(JsonReader jsonReader) throws IOException {
+            return null;
+        }
     }
 
     /**
@@ -309,5 +326,13 @@ public enum TimeUtils {
         public ArrayList<String> getUtcOffsets() {
             return utcOffsets;
         }
+    }
+
+    public static int getCurrentYearUTC() {
+        return LocalDateTime.now().atOffset(ZoneOffset.UTC).getYear();
+    }
+
+    public static int getCurrentMonthUTC() {
+        return LocalDateTime.now().atOffset(ZoneOffset.UTC).getMonthValue();
     }
 }

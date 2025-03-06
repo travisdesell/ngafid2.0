@@ -261,6 +261,19 @@ not to be recomputed.
 ~/ngafid2.0 $ run/event_helper.sh --help
 ```
 
+## 8. Event Statistics
+
+Event statistics are to be computed and cached occasionally. If you import data and want to see it reflected on the
+website, you must update these cached tables:
+
+```
+mvn liquibase:update -Dliquibase.contexts=daily-materialized-view,hourly-materialized-view
+```
+
+You can set up a timer with `cron` or `systemd` to automatically do this on a schedule. Website features that work on
+event
+statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
+
 ## (Optional) using the backup daemon - works on Linux systems only.
 
 As demonstrated in `init_env.sh`, the NGAFID can be backed up using a configurable set of parameters (i.e. what tables

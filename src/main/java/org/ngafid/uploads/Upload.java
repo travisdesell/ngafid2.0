@@ -4,7 +4,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.bin.WebServer;
 import org.ngafid.common.MD5;
-import org.ngafid.flights.Flight;
 import org.ngafid.kafka.Configuration;
 import org.ngafid.kafka.Topic;
 import org.ngafid.uploads.airsync.AirSyncImport;
@@ -116,18 +115,21 @@ public final class Upload {
                 statement.setString(1, lockNameFor(id));
                 LOG.info(statement.toString());
                 try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
+                    while (resultSet.next()) {
                         return resultSet.getInt(1) == 1;
-                    } else {
-                        return false;
                     }
                 }
             }
+
+            throw new SQLException("No result set :(");
         }
 
         @Override
         public void close() throws SQLException, UploadAlreadyLockedException {
-            lock(false);
+            boolean released = lock(false);
+            if (!released) {
+                throw new SQLException("Failed to release :(");
+            }
 
             // We don't want to add this upload to the kafka queue while it is still locked, because then processing
             // could fail if it is read from the queue too fast while we still have the lock.
@@ -159,10 +161,9 @@ public final class Upload {
                 preparedStatement.executeUpdate();
             }
 
-            ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, id);
-
-            for (Flight flight : flights) {
-                flight.remove(connection);
+            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM flights WHERE upload_id = ?")) {
+                preparedStatement.setInt(1, id);
+                preparedStatement.executeUpdate();
             }
 
             if (!md5Hash.contains("DERIVED")) {
@@ -172,12 +173,6 @@ public final class Upload {
                         derivedLocked.remove();
                     }
                 }
-            }
-
-            query = "DELETE FROM uploads WHERE md5_hash = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, getDerivedMd5(md5Hash));
-                preparedStatement.executeUpdate();
             }
         }
 

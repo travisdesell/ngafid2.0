@@ -29,8 +29,9 @@ public class MD5 {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             DigestInputStream dis = new DigestInputStream(is, md);
-
-            while (dis.read() != -1) { /* * */ }
+            while (dis.read() != -1) {
+                dis.readNBytes(1024 * 1024 * 1024);
+            }
 
             byte[] hash = md.digest();
             return DatatypeConverter.printHexBinary(hash).toLowerCase();

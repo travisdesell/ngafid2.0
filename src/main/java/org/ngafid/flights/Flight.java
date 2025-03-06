@@ -258,111 +258,6 @@ public class Flight {
         }
     }
 
-    public static int getNumFlights(Connection connection, String queryString, int fleetId) throws SQLException {
-        if (fleetId > 0) {
-            queryString += " AND fleet_id = " + fleetId;
-        }
-
-        return getNumFlights(connection, queryString);
-    }
-
-    /**
-     * Gets the total number of flights for a given fleet and queryString. This
-     * method is private to ensure public access doesn't get used in a way that
-     * accidentally exposes a SQL injection surface.
-     *
-     * @param connection  is the database connection
-     * @param queryString is what gets put into the WHERE clause of the query
-     * @return the number of flights for the fleet, given the specified queryString
-     */
-    private static int getNumFlights(Connection connection, String queryString) throws SQLException {
-        String fullQueryString = "SELECT count(id) FROM flights WHERE (" + queryString + ")";
-        LOG.info("getting number of flights with query string: '" + fullQueryString + "'");
-
-        try (PreparedStatement query = connection.prepareStatement(fullQueryString); ResultSet resultSet =
-                query.executeQuery()) {
-            resultSet.next();
-            return resultSet.getInt(1);
-        }
-    }
-
-    /**
-     * Gets the total number of flight hours for a given fleet and filter. If the
-     * filter is null it returns the number of flight hours for the fleet.
-     *
-     * @param connection is the database connection
-     * @param fleetId    is the id of the fleet, if <= 0 it will be for the entire
-     *                   NGAFID
-     * @param filter     the filter to select the flights, can be null.
-     * @return the number of flight hours for the fleet, given the specified filter
-     * (or no filter if the filter is null).
-     */
-    public static long getTotalFlightTime(Connection connection, int fleetId, Filter filter) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
-
-        String queryString;
-        if (fleetId <= 0) {
-            if (filter != null) {
-                queryString =
-                        "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" +
-                                filter.toQueryString(fleetId, parameters) + ")";
-            } else {
-                queryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights";
-            }
-        } else {
-            if (filter != null) {
-                queryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) " + "FROM flights WHERE " +
-                        "fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
-            } else {
-                queryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ?";
-            }
-        }
-
-        try (PreparedStatement query = connection.prepareStatement(queryString)) {
-            prepareFilterQuery(fleetId, filter, parameters, query);
-
-            try (ResultSet resultSet = query.executeQuery()) {
-                LOG.info(query.toString());
-
-                resultSet.next();
-                long diffSeconds = resultSet.getLong(1);
-                System.out.println("total time is: " + diffSeconds);
-
-                return diffSeconds;
-            }
-        }
-    }
-
-    public static long getTotalFlightTime(Connection connection, String queryString) throws SQLException {
-        return getTotalFlightTime(connection, queryString, 0);
-    }
-
-    /**
-     * Gets the total number of flight hours for a given fleet and WHERE clause
-     * query string for the fleet.
-     *
-     * @param connection  is the database connection
-     * @param queryString is the string to put into the query's WHERE clause
-     * @param fleetId     is the id of the fleet, if <= 0 it will be for the entire NGAFID
-     * @return the number of flight hours for the fleet, given the specified
-     * queryString
-     */
-    public static long getTotalFlightTime(Connection connection, String queryString, int fleetId) throws SQLException {
-        String fullQueryString =
-                "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + queryString + ")";
-        LOG.info("getting total flight hours with query string: '" + fullQueryString + "'");
-
-        if (fleetId > 0) fullQueryString += " AND fleet_id = " + fleetId;
-
-        try (PreparedStatement query = connection.prepareStatement(fullQueryString); ResultSet resultSet =
-                query.executeQuery()) {
-            LOG.info(query.toString());
-
-            resultSet.next();
-            return resultSet.getLong(1);
-        }
-    }
-
     public static ArrayList<Flight> getFlightsSorted(Connection connection, int fleetId, Filter filter,
                                                      int currentPage, int pageSize, String orderingParameter,
                                                      boolean isAscending) throws SQLException {
@@ -556,24 +451,6 @@ public class Flight {
         return getFlightsFromDb(connection, queryString);
     }
 
-    public static int[] getFlightNumbers(Connection connection, int fleetId, Filter filter) throws SQLException {
-        String queryString = "SELECT id FROM flights WHERE fleet_id = " + fleetId + " AND airframe_id=1";
-
-        int[] nums = new int[getNumFlights(connection, fleetId, filter)];
-
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
-            int i = 0;
-
-            while (resultSet.next()) {
-                nums[i] = resultSet.getInt(1);
-                i++;
-            }
-
-            return nums;
-        }
-    }
-
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition) throws SQLException {
         return getFlights(connection, extraCondition, 0);
     }
@@ -599,7 +476,6 @@ public class Flight {
         }
     }
 
-    // Added to use in pitch_db
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE id = " + flightId;
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =

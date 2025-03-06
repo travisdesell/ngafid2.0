@@ -126,14 +126,18 @@ public class Event {
     public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine,
                  String startTime, String endTime, double severity, Integer otherFlightId, String systemId,
                  String tail, String tagName) {
+        this(id, fleetId, flightId, eventDefinitionId, startLine, endLine, OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT), OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT), severity, otherFlightId, systemId, tail, tagName);
+    }
+
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, OffsetDateTime startTime, OffsetDateTime endTime, double severity, Integer otherFlightId, String systemId, String tail, String tagName) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
         this.eventDefinitionId = eventDefinitionId;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.startTime = OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT);
-        this.endTime = OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT);
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.severity = severity;
         this.otherFlightId = otherFlightId;
         this.systemId = systemId;
@@ -296,7 +300,7 @@ public class Event {
                     }
 
                     Event event = new Event(eventId, fleetId, flightId, definitionId, startLine,
-                            endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail, tag);
+                            endLine, TimeUtils.SQLtoOffsetDateTime(eventStartTime), TimeUtils.SQLtoOffsetDateTime(eventEndTime), severity, otherFlightId, systemId, tail, tag);
 
                     int airframeId = eventSet.getInt(9);
                     String airframe = airframeIds.get(airframeId);
