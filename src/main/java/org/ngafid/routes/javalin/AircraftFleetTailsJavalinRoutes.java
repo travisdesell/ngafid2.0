@@ -137,6 +137,7 @@ public class AircraftFleetTailsJavalinRoutes {
     }
 
     private static void postUpdateTail(Context ctx) {
+
         final String systemId = Objects.requireNonNull(ctx.formParam("systemId"));
         final String tail = Objects.requireNonNull(ctx.formParam("tail"));
 
@@ -153,12 +154,62 @@ public class AircraftFleetTailsJavalinRoutes {
 
             Tails.updateTail(connection, fleetId, systemId, tail);
 
-            ctx.json(new UpdateTailResponse(fleetId, systemId, tail, 1));
+            final int TAIL_CONFIRMED = 1;
+            ctx.json(new UpdateTailResponse(fleetId, systemId, tail, TAIL_CONFIRMED)).status(200);
 
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
+
+    }
+
+    private static void getAllAircraft(Context ctx) {
+        
+        /*
+            Fetch all of the Aircraft Names
+        */
+
+        /*
+            TODO: Implement...
+        */
+
+        ctx.json("NOT_IMPLEMENTED").status(501);
+
+    }
+
+    private static void setSystemIDAircraft(Context ctx) {
+
+        /*
+            Map System ID to Aircraft ID
+
+            Request Body:
+            {
+                "system_id": "Aircraft System ID",
+                "aircraft_id": "Aircraft ID"
+            }
+        */
+
+        /*
+            TODO: Implement...
+        */
+
+        ctx.json("NOT_IMPLEMENTED").status(501);
+
+    }
+
+    private static void getSystemIDAircraft(Context ctx) {
+
+        /*
+            Fetch existing Aircraft System ID to Aircraft ID Mappings
+        */
+
+        /*
+            TODO: Implement...
+        */
+
+        ctx.json("NOT_IMPLEMENTED").status(501);
+
     }
 
 
@@ -169,5 +220,10 @@ public class AircraftFleetTailsJavalinRoutes {
         app.get("/protected/sim_acft", AircraftFleetTailsJavalinRoutes::getSimAircraft);
         app.post("/protected/sim_acft", AircraftFleetTailsJavalinRoutes::postSimAircraft);
         app.post("/protected/update_tail", AircraftFleetTailsJavalinRoutes::postUpdateTail);
+
+        app.get("/protected/all_aircraft", AircraftFleetTailsJavalinRoutes::getAllAircraft);
+        app.post("/protected/set_system_id_aircraft", AircraftFleetTailsJavalinRoutes::setSystemIDAircraft);
+        app.get("/protected/get_system_id_aircraft", AircraftFleetTailsJavalinRoutes::getSystemIDAircraft);
+
     }
 }
