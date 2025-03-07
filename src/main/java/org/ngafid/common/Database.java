@@ -77,10 +77,10 @@ public class Database {
         config.setUsername(dbUser);
         config.setPassword(dbPassword);
         config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "64");
-        config.addDataSourceProperty("prepStmtCacheSize", "64");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "512");
+        config.addDataSourceProperty("prepStmtCacheSize", "256");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         config.setMaximumPoolSize(32);
+        config.setMinimumIdle(1);
         config.setMaxLifetime(60000);
         CONNECTION_POOL = new HikariDataSource(config);
     }
