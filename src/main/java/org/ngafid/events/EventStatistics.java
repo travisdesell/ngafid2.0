@@ -255,7 +255,7 @@ public class EventStatistics {
      * @throws SQLException if the table is empty
      */
     public static int getTotalEventCount(Connection connection, int fleetId) throws SQLException {
-        return getEventCount(connection, "v_fleet_total_event_count", "fleet_id = " + fleetId);
+        return getEventCount(connection, "v_fleet_total_event_counts", "fleet_id = " + fleetId);
     }
 
     public static class FlightCounts {
