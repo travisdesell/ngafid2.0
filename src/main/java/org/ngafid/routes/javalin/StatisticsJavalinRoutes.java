@@ -56,7 +56,7 @@ public class StatisticsJavalinRoutes {
         }
 
         boolean aggregate() {
-            return this.fleetId > 0;
+            return this.fleetId <= 0;
         }
 
         Double flightTime() throws SQLException {

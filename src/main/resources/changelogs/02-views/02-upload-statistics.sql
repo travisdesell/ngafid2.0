@@ -110,6 +110,4 @@ SELECT
     SUM(monthly.warning_count) as warning_count,
     SUM(monthly.error_count) as error_count
 FROM
-    m_fleet_monthly_upload_counts as monthly
-GROUP BY
-    year;
+    m_fleet_monthly_upload_counts as monthly;
