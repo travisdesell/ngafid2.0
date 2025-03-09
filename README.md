@@ -102,7 +102,7 @@ particular, if you are using a database other than mysql you will have to tweak 
 Once you have done this, you can create the database tables by running the following:
 
 ```
-~/ngafid2.0 $ mvn liquibase:update
+~/ngafid2.0 $ run/liquibase/update
 ```
 
 ## 3. Configure the environment
@@ -267,12 +267,12 @@ Event statistics are to be computed and cached occasionally. If you import data 
 website, you must update these cached tables:
 
 ```
-mvn liquibase:update -Dliquibase.contexts=daily-materialized-view,hourly-materialized-view
+$ run/liquibase/daily-materialized-views
+$ run/liquibase/hourly-materialized-views
 ```
 
 You can set up a timer with `cron` or `systemd` to automatically do this on a schedule. Website features that work on
-event
-statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
+event statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
 
 ## (Optional) using the backup daemon - works on Linux systems only.
 
