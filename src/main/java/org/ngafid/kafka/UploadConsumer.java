@@ -105,21 +105,24 @@ public class UploadConsumer implements AutoCloseable {
             if (result == null)
                 return;
 
-            if (result.retry) {
-                if (result.record.topic().equals("upload")) {
-                    LOG.info("Processing failed... adding to retry queue");
-                    producer.send(new ProducerRecord<>("upload-retry", result.record.value()));
-                } else if (result.record.topic().equals("upload-retry")) {
-                    LOG.info("Processing failed... adding to DLQ");
-                    producer.send(new ProducerRecord<>("upload-dlq", result.record.value()));
+            if (result.record != null) {
+                if (result.retry) {
+                    if (result.record.topic().equals("upload")) {
+                        LOG.info("Processing failed... adding to retry queue");
+                        producer.send(new ProducerRecord<>("upload-retry", result.record.value()));
+                    } else if (result.record.topic().equals("upload-retry")) {
+                        LOG.info("Processing failed... adding to DLQ");
+                        producer.send(new ProducerRecord<>("upload-dlq", result.record.value()));
+                    }
                 }
+
+                var offsetMap = Map.of(
+                        new TopicPartition(result.record.topic(), result.record.partition()),
+                        new OffsetAndMetadata(result.record.offset()));
+
+                consumer.commitSync(offsetMap);
             }
 
-            var offsetMap = Map.of(
-                    new TopicPartition(result.record.topic(), result.record.partition()),
-                    new OffsetAndMetadata(result.record.offset()));
-
-            consumer.commitSync(offsetMap);
             consumer.resume(consumer.paused());
 
         } catch (InterruptedException e) {
@@ -173,6 +176,7 @@ public class UploadConsumer implements AutoCloseable {
 
                     } catch (UploadDoesNotExistException e) {
                         LOG.info("Received message to process upload with id " + record.value() + " but that upload was not found in the database.");
+                        resultQueue.put(new RecordResult(null, false));
                         continue;
                     } catch (UploadAlreadyLockedException e) {
                         LOG.info("Upload lock could not be acquired.");

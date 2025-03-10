@@ -136,7 +136,6 @@ public class FlightBuilder {
      */
     public FlightBuilder build(Connection connection) throws FlightProcessingException {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
-        FlightProcessingException[] exception = new FlightProcessingException[]{null};
 
         // We can process individual steps in parallel as well, but it might not be worth the overhead.
         // dg.computeParallel();

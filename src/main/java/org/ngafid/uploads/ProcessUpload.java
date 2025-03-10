@@ -1,5 +1,6 @@
 package org.ngafid.uploads;
 
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.ZipFile;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
@@ -187,7 +187,7 @@ public final class ProcessUpload {
 
         if (extension.equals(".zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
-            try (ZipFile zipFile = new ZipFile(filename); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
+            try (ZipFile zipFile = ZipFile.builder().setFile(filename).get(); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
 
                 flightInfo = pipeline.getFlightInfo();

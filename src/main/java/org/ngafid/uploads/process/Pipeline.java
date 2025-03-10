@@ -1,5 +1,8 @@
 package org.ngafid.uploads.process;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.ngafid.common.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events.calculations.TurnToFinal;
@@ -10,12 +13,10 @@ import org.ngafid.uploads.Upload;
 import org.ngafid.uploads.UploadException;
 import org.ngafid.uploads.process.format.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -26,8 +27,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
@@ -86,7 +85,7 @@ public class Pipeline implements AutoCloseable {
     private final ZipFile zipFile;
 
     // ZipFileSystem
-    private FileSystem derivedFileSystem = null;
+    private ZipArchiveOutputStream derivedArchive = null;
     private Upload derivedUpload = null;
 
     // Maps lowercase file extension to the relevent FileProcessor. In the future, these may themselves have to do some
@@ -120,8 +119,10 @@ public class Pipeline implements AutoCloseable {
      */
     @Override
     public void close() throws IOException {
-        if (derivedFileSystem != null)
-            derivedFileSystem.close();
+        if (derivedArchive != null) {
+            derivedArchive.finish();
+            derivedArchive.close();
+        }
     }
 
     /**
@@ -139,7 +140,7 @@ public class Pipeline implements AutoCloseable {
 
         var processHandle = pool.submit(() -> this.getValidFilesStream()
                 .parallel()
-                .forEach((ZipEntry ze) -> {
+                .forEach((ZipArchiveEntry ze) -> {
                     try (Connection connection = Database.getConnection()) {
                         List<FlightBuilder> fbuilders = this
                                 .parse(this.create(ze))
@@ -175,8 +176,8 @@ public class Pipeline implements AutoCloseable {
      *
      * @return stream of `ZipEntry`s
      */
-    private Stream<? extends ZipEntry> getValidFilesStream() {
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+    private Stream<ZipArchiveEntry> getValidFilesStream() {
+        var entries = zipFile.getEntries();
         return StreamSupport.stream(
                         Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
                         false)
@@ -191,7 +192,7 @@ public class Pipeline implements AutoCloseable {
      * @param entry The zip entry to create a FlightFileProcessor for.
      * @return A FlightFileProcessor if the file extension is supported, otherwise `null`.
      */
-    private FlightFileProcessor create(ZipEntry entry) {
+    private FlightFileProcessor create(ZipArchiveEntry entry) {
         String filename = entry.getName();
 
         int index = filename.lastIndexOf('.');
@@ -294,20 +295,17 @@ public class Pipeline implements AutoCloseable {
      * <p>
      * This method is synchronized so there is only a single thread mutating the derivedFileSystem at once.
      */
-    public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
-        if (derivedFileSystem == null) {
+    public synchronized void addDerivedFile(File convertedOnDisk, String filename, byte[] data) throws IOException, SQLException {
+        if (derivedArchive == null) {
             derivedUpload = Upload.createDerivedUpload(connection, upload);
-            derivedFileSystem = derivedUpload.getZipFileSystem(Map.of("create", "true"));
+            derivedArchive = derivedUpload.getArchiveOutputStream();
         }
 
-        Path zipFileSystemPath = derivedFileSystem.getPath(filename);
-        Path parentPath = zipFileSystemPath.getParent();
-
-        if (parentPath != null && !Files.exists(parentPath)) {
-            Files.createDirectories(parentPath);
+        try (InputStream bis = new ByteArrayInputStream(data)) {
+            var entry = new ZipArchiveEntry(convertedOnDisk, filename);
+            entry.setMethod(ZipArchiveEntry.DEFLATED);
+            derivedArchive.addRawArchiveEntry(entry, bis);
         }
-
-        Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 
     public Map<String, ProcessUpload.FlightInfo> getFlightInfo() {

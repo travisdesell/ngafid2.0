@@ -1,5 +1,7 @@
 package org.ngafid.uploads;
 
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.bin.WebServer;
@@ -10,14 +12,14 @@ import org.ngafid.uploads.airsync.AirSyncImport;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -701,13 +703,18 @@ public final class Upload {
         return Paths.get(getArchiveDirectory(), getArchiveFilename());
     }
 
-    public FileSystem getZipFileSystem() throws IOException {
-        return getZipFileSystem(Map.of());
-    }
+    public ZipArchiveOutputStream getArchiveOutputStream() throws IOException {
+        Path path = getArchivePath();
+        Path parent = path.getParent();
+        if (!Files.exists(parent)) {
+            Files.createDirectories(parent);
+        }
 
-    public FileSystem getZipFileSystem(Map<String, String> env) throws IOException {
-        Files.createDirectories(getArchivePath().getParent());
-        return FileSystems.newFileSystem(URI.create("jar:" + getArchivePath().toUri()), env);
+        var zos = new ZipArchiveOutputStream(path.toFile());
+        zos.setLevel(ZipArchiveOutputStream.DEFAULT_COMPRESSION);
+        zos.setMethod(ZipArchiveOutputStream.DEFLATED);
+        zos.setUseZip64(Zip64Mode.AsNeeded);
+        return zos;
     }
 
     public int getFleetId() {

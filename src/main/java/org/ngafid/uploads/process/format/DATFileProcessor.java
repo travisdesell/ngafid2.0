@@ -103,10 +103,10 @@ public class DATFileProcessor extends FlightFileProcessor {
 
         byte[] allBytes = Files.readAllBytes(convertedCSV.toPath());
 
+        pipeline.addDerivedFile(convertedCSV, filename + ".csv", allBytes);
+
         // After we read all of the bytes into bis, delete this temp file.
         convertedCSV.delete();
-
-        pipeline.addDerivedFile(filename + ".csv", allBytes);
 
         InputStream bis = new ByteArrayInputStream(allBytes);
 
