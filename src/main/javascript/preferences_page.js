@@ -44,7 +44,12 @@ class PreferencesPage extends React.Component {
 
     render() {
         let adminContent = "";
-        let userName = this.state.fullName + "'s Preferences";
+        let userNameDisplay = (
+            this.state.fullName.replace(/\s/g, '').length > 0
+            ? `${this.state.fullName}'s Preferences`
+            : "Your Preferences"
+        );
+        console.log("FULL NAME: " + `'${this.state.fullName}'`);
 
         if (this.props.isAdmin) {
             if (this.state.airsyncEnabled) {
@@ -73,7 +78,7 @@ class PreferencesPage extends React.Component {
                         <div className="col" style={{padding:"0 0 0 0"}}>
                             <div className="card">
                                 <h5 className="card-header">
-                                    {this.state.fullName}'s Preferences:
+                                    {userNameDisplay}
                                 </h5>
                                 <MetricViewerSettings
                                     isVertical={false}
@@ -89,10 +94,9 @@ class PreferencesPage extends React.Component {
                                             <h6 className="card-header">
                                                 Your Email Preferences:
                                             </h6>
-                                            <div className="form-group">
+                                            <div className="form-group my-4 px-4">
                                                 <div className="d-flex">
-                                                    <EmailSettingsTableUser isAdmin={isAdmin}></EmailSettingsTableUser>
-                                                <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
+                                                    <EmailSettingsTableUser isAdmin={isAdmin}/>
                                                 </div>
                                             </div>
                                         </div>
