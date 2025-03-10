@@ -3,17 +3,14 @@ package org.ngafid.kafka;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
 import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.uploads.UploadAlreadyLockedException;
 import org.ngafid.uploads.UploadDoesNotExistException;
 
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -105,6 +102,8 @@ public class UploadConsumer implements AutoCloseable {
             if (result == null)
                 return;
 
+            consumer.resume(consumer.paused());
+
             if (result.record != null) {
                 if (result.retry) {
                     if (result.record.topic().equals("upload")) {
@@ -116,14 +115,8 @@ public class UploadConsumer implements AutoCloseable {
                     }
                 }
 
-                var offsetMap = Map.of(
-                        new TopicPartition(result.record.topic(), result.record.partition()),
-                        new OffsetAndMetadata(result.record.offset()));
-
-                consumer.commitSync(offsetMap);
+                consumer.commitSync();
             }
-
-            consumer.resume(consumer.paused());
 
         } catch (InterruptedException e) {
             // Indicates a SQL exception on the consumer thread -- we should terminate.
