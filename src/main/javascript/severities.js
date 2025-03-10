@@ -659,7 +659,7 @@ class SeveritiesPage extends React.Component {
                 <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
-                        <div className="col-lg-12">
+                        <div className="col-lg-12" style={{paddingBottom: "128"}}>
                             <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Severities"
