@@ -68,8 +68,6 @@ public class ComputeEvent extends ComputeStep {
      */
     public static List<ComputeEvent> getAllApplicable(Connection connection, FlightBuilder fb) {
         // We will mark these event definitions as having been computed (or attempted) in the
-        LOG.info("fleet id = " + fb.meta.fleetId);
-        LOG.info("airframe id = " + fb.meta.airframe.getId());
         var applicableEvents = ALL_EVENT_DEFS.stream()
                 .filter(def -> def.getFleetId() == 0 || def.getFleetId() == fb.meta.fleetId)
                 .filter(def -> def.getAirframeNameId() == 0 || def.getAirframeNameId() == fb.meta.airframe.getId())

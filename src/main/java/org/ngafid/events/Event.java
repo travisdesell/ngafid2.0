@@ -159,8 +159,6 @@ public class Event {
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query); ResultSet resultSet =
                 preparedStatement.executeQuery()) {
-            LOG.info(preparedStatement.toString());
-
             ArrayList<Event> allEvents = new ArrayList<Event>();
             while (resultSet.next()) allEvents.add(new Event(resultSet));
 
@@ -202,9 +200,6 @@ public class Event {
         PreparedStatement preparedStatement;
 
         if (eventName.equals("ANY Event")) {
-
-            LOG.info("[EX] Getting ALL events for fleet with ID: " + fleetId);
-
             query = "SELECT id FROM event_definitions WHERE fleet_id = 0 OR fleet_id = ? ORDER BY name";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, fleetId);
@@ -276,7 +271,6 @@ public class Event {
                     current++;
                 }
 
-                LOG.info(eventsStatement.toString());
                 ResultSet eventSet = eventsStatement.executeQuery();
                 while (eventSet.next()) {
                     int eventId = eventSet.getInt(1);
@@ -323,7 +317,6 @@ public class Event {
             preparedStatement.setInt(1, eventDefinitionId);
             preparedStatement.setInt(2, flightId);
             preparedStatement.setInt(3, flightId);
-            LOG.info(preparedStatement.toString());
             preparedStatement.executeUpdate();
         }
     }
@@ -416,7 +409,6 @@ public class Event {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Event event : events) {
                 event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
-                LOG.info(preparedStatement.toString());
             }
 
             preparedStatement.executeBatch();

@@ -86,7 +86,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         if (metainfo.charAt(0) != '#' && metainfo.charAt(0) != '{') {
             if (metainfo.startsWith("DID_")) {
-                LOG.info("CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
                 return true;
             } else {
                 throw new FatalFlightFileException(
@@ -141,12 +140,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
             String[] values = firstLine.split(",");
 
             if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
-                LOG.info("Creating G5 CSV file processor");
                 _factory = G5CSVFileProcessor::new;
             } else if (airframeIsScanEagle(headerLines.get(0))) {
                 _factory = ScanEagleCSVFileProcessor::new;
             } else {
-                LOG.info("Creating normal CSV file processor");
                 _factory = CSVFileProcessor::new;
             }
         }
@@ -172,8 +169,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @rreturn Stream of FlightBuilder objects representing parsed flights.
      */
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
-        LOG.info("Parsing " + this.meta.filename);
-
         // Ensure we read from the beginning of the stream when we compute the hash, and reset it afterward.
         try {
             stream.reset();
@@ -289,7 +284,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throw new FatalFlightFileException("Stream ended prematurely -- cannot process file.", e);
         }
 
-        LOG.info("Parsing " + fileInformation);
         String[] infoParts = fileInformation.split(",");
 
         HashMap<String, String> values = new HashMap<>(infoParts.length * 2);

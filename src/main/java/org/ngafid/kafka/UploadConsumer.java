@@ -1,22 +1,14 @@
 package org.ngafid.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.common.filters.Pair;
 import org.ngafid.uploads.ProcessUpload;
-import org.ngafid.uploads.UploadAlreadyLockedException;
 import org.ngafid.uploads.UploadDoesNotExistException;
 
 import java.sql.SQLException;
-import java.time.Duration;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -35,7 +27,7 @@ import java.util.logging.Logger;
  * The messages are simply upload IDs. Unless the upload has been deleted from the database, the upload will be re-imported.
  * Uploads should be restricted from deletion on the front end if the upload status is PROCESSING.
  */
-public class UploadConsumer implements AutoCloseable {
+public class UploadConsumer extends DisjointConsumer<String, Integer> {
     private static final Logger LOG = Logger.getLogger(UploadConsumer.class.getName());
 
     private static long MAX_POLL_INTERVAL_MS = 15 * 1000;
@@ -43,10 +35,15 @@ public class UploadConsumer implements AutoCloseable {
     private static long N_RECORDS = 1;
 
     public static void main(String[] args) {
+        Properties props = Configuration.getUploadProperties();
+        props.put("max.poll.records", String.valueOf(N_RECORDS));
+        props.put("max.poll.interval.ms", String.valueOf(MAX_POLL_INTERVAL_MS));
 
+        var consumer = new KafkaConsumer<String, Integer>(props);
+        var producer = new KafkaProducer<String, Integer>(props);
 
-        try (UploadConsumer consumer = new UploadConsumer()) {
-            consumer.run();
+        try (UploadConsumer uploadConsumer = new UploadConsumer(consumer, producer)) {
+            uploadConsumer.run();
         } catch (Exception e) {
             LOG.severe("Error in fleet consumer:");
             LOG.severe(e.getMessage());
@@ -54,136 +51,42 @@ public class UploadConsumer implements AutoCloseable {
         }
     }
 
-    ArrayBlockingQueue<ConsumerRecord<String, Integer>> taskQueue = new ArrayBlockingQueue<>(2);
-    ArrayBlockingQueue<RecordResult> resultQueue = new ArrayBlockingQueue<>(2);
-    AtomicBoolean done = new AtomicBoolean(false);
-    Worker worker = new Worker(Thread.currentThread(), taskQueue, resultQueue, done);
-    Thread workerThread = new Thread(worker);
-
-    KafkaConsumer<String, Integer> consumer;
-    KafkaProducer<String, Integer> producer;
-
-    private UploadConsumer() {
-        Properties props = Configuration.getUploadProperties();
-        props.put("max.poll.records", String.valueOf(N_RECORDS));
-        props.put("max.poll.interval.ms", String.valueOf(MAX_POLL_INTERVAL_MS));
-
-        workerThread.start();
-
-        consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Set.of("upload", "upload-retry"));
-
-        producer = new KafkaProducer<>(props);
+    protected UploadConsumer(KafkaConsumer<String, Integer> consumer, KafkaProducer<String, Integer> producer) {
+        super(Thread.currentThread(), consumer, producer);
     }
 
     @Override
-    public void close() throws Exception {
-        consumer.close();
-        producer.close();
+    protected String getTopicName() {
+        return Topic.UPLOAD.toString();
     }
 
-    private void run() {
-
-        while (!done.get()) {
-            ConsumerRecords<String, Integer> records = consumer.poll(Duration.ofMillis(MAX_POLL_INTERVAL_MS / 2));
-
-            // If we are paused
-            if (!consumer.paused().isEmpty()) {
-                pausedStep();
-            } else if (!records.isEmpty()) {
-                step(records);
-            }
-        }
+    @Override
+    protected String getRetryTopicName() {
+        return Topic.UPLOAD_RETRY.toString();
     }
 
-    private void pausedStep() {
+    @Override
+    protected String getDLTTopicName() {
+        return Topic.UPLOAD_DLQ.toString();
+    }
+
+    @Override
+    protected long getMaxPollIntervalMS() {
+        return MAX_POLL_INTERVAL_MS;
+    }
+
+    @Override
+    protected Pair<ConsumerRecord<String, Integer>, Boolean> process(ConsumerRecord<String, Integer> record) {
         try {
-            var result = resultQueue.poll(MAX_POLL_INTERVAL_MS / 2, TimeUnit.MILLISECONDS);
-            if (result == null)
-                return;
-
-            consumer.resume(consumer.paused());
-
-            if (result.record != null) {
-                if (result.retry) {
-                    if (result.record.topic().equals("upload")) {
-                        LOG.info("Processing failed... adding to retry queue");
-                        producer.send(new ProducerRecord<>("upload-retry", result.record.value()));
-                    } else if (result.record.topic().equals("upload-retry")) {
-                        LOG.info("Processing failed... adding to DLQ");
-                        producer.send(new ProducerRecord<>("upload-dlq", result.record.value()));
-                    }
-                }
-
-                consumer.commitSync();
-            }
-
-        } catch (InterruptedException e) {
-            // Indicates a SQL exception on the consumer thread -- we should terminate.
-            done.set(true);
+            var processedOkay = ProcessUpload.processUpload(record.value());
+            return new Pair<>(record, !processedOkay);
+        } catch (SQLException e) {
+            mainThread.interrupt();
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (UploadDoesNotExistException e) {
+            return new Pair<>(null, false);
         }
     }
 
-    private void step(ConsumerRecords<String, Integer> records) {
-        // Pull all fleets and subscribe to them
-        if (records.count() != 1)
-            throw new RuntimeException("Expected only one record but received " + records.count());
-
-        for (ConsumerRecord<String, Integer> record : records) {
-            LOG.info("Processing upload " + record.value());
-            LOG.info("    offset / " + record.offset());
-            LOG.info("    timestamp / " + record.timestamp());
-
-            try {
-                taskQueue.put(record);
-                consumer.pause(consumer.assignment());
-            } catch (InterruptedException e) {
-                done.set(true);
-                workerThread.interrupt();
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
-    record RecordResult(ConsumerRecord<String, Integer> record, boolean retry) {
-    }
-
-    record Worker(Thread mainThread, BlockingQueue<ConsumerRecord<String, Integer>> taskQueue,
-                  BlockingQueue<RecordResult> resultQueue,
-                  AtomicBoolean done) implements Runnable {
-
-        @Override
-        public void run() {
-            while (!done.get()) {
-                try {
-                    var record = taskQueue.take();
-
-                    LOG.info("Processing upload " + record.value());
-                    LOG.info("    offset / " + record.offset());
-                    LOG.info("    timestamp / " + record.timestamp());
-
-                    boolean processedOkay = false;
-                    try {
-                        processedOkay = ProcessUpload.processUpload(record.value());
-
-                    } catch (UploadDoesNotExistException e) {
-                        LOG.info("Received message to process upload with id " + record.value() + " but that upload was not found in the database.");
-                        resultQueue.put(new RecordResult(null, false));
-                        continue;
-                    } catch (UploadAlreadyLockedException e) {
-                        LOG.info("Upload lock could not be acquired.");
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        mainThread.interrupt();
-                        throw new RuntimeException(e);
-                    }
-
-                    resultQueue.put(new RecordResult(record, !processedOkay));
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
-            }
-        }
-    }
 }

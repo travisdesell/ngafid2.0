@@ -27,9 +27,8 @@ public class Database {
 
     public static Connection getConnection() throws SQLException {
         var info = CONNECTION_POOL.getHikariPoolMXBean();
-        LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
-                + " active / " + info.getTotalConnections() + " total");
-        // new Throwable().printStackTrace();
+        // LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
+        //         + " active / " + info.getTotalConnections() + " total");
         return CONNECTION_POOL.getConnection();
     }
 

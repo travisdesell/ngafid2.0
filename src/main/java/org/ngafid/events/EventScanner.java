@@ -60,7 +60,6 @@ public class EventScanner extends AbstractEventScanner {
     public List<Event> scan(Map<String, DoubleTimeSeries> doubleSeries,
                             Map<String, StringTimeSeries> stringSeries) {
         StringTimeSeries utcSeries = stringSeries.get(Parameters.UTC_DATE_TIME);
-        DoubleTimeSeries unixTimeSeries = doubleSeries.get(Parameters.UNIX_TIME_SECONDS);
 
         reset();
 
@@ -109,8 +108,6 @@ public class EventScanner extends AbstractEventScanner {
                     startTime = utcSeries.get(i);
                     startLine = lineNumber;
                     severity = definition.getSeverity(doubleSeries, i);
-
-                    LOG.info("start date time: " + startTime + ", start line number: " + startLine);
                 }
 
                 endLine = lineNumber;

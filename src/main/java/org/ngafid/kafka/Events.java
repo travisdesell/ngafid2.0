@@ -12,6 +12,9 @@ import java.util.Properties;
 public enum Events {
     ;
 
+    public static final long MAX_POLL_INTERVAL_MS = 30 * 1000;
+    public static final long N_RECORDS = 5;
+
     protected record EventToCompute(int flightId, int eventId) {
     }
 
@@ -20,13 +23,16 @@ public enum Events {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
-        props.put("value.serializer", "org.ngafid.kafka.JsonSerializer");
+        props.put("max.poll.records", String.valueOf(N_RECORDS));
+        props.put("max.poll.interval.ms", String.valueOf(MAX_POLL_INTERVAL_MS));
+
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("json.deserializer.type", EventToCompute.class.getName());
         return props;
     }
 
-    static KafkaProducer<String, EventToCompute> createProducer() {
+    static KafkaProducer<String, String> createProducer() {
         return new KafkaProducer<>(getProperties());
     }
 

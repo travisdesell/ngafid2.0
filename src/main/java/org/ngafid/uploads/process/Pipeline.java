@@ -272,8 +272,6 @@ public class Pipeline implements AutoCloseable {
             validFlightsCount.incrementAndGet();
         }
 
-        LOG.info("FLIGHT STATUS = " + flight.getStatus());
-
         flightInfo.put(flight.getFilename(),
                 new ProcessUpload.FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 

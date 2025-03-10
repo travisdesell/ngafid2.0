@@ -240,8 +240,6 @@ public class Flight {
         try (PreparedStatement query = connection.prepareStatement(queryStr)) {
             prepareFilterQuery(fleetId, filter, parameters, query);
 
-            LOG.info(query.toString());
-
             try (ResultSet resultSet = query.executeQuery()) {
                 resultSet.next();
                 return resultSet.getInt(1);
@@ -324,7 +322,6 @@ public class Flight {
                 }
             }
 
-            LOG.info(query.toString());
             try (ResultSet resultSet = query.executeQuery()) {
                 ArrayList<Flight> flights = new ArrayList<>();
                 while (resultSet.next()) {
@@ -382,8 +379,6 @@ public class Flight {
 
         queryString = (constraints != null && !constraints.isEmpty()) ? (queryString + constraints) : queryString;
 
-        LOG.info(queryString);
-
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
 
@@ -392,8 +387,6 @@ public class Flight {
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
             setQueryParameters(parameters, query);
-
-            LOG.info(query.toString());
 
             try (ResultSet resultSet = query.executeQuery()) {
                 ArrayList<Flight> flights = new ArrayList<>();
@@ -408,8 +401,6 @@ public class Flight {
 
     private static void setQueryParameters(ArrayList<Object> parameters, PreparedStatement query) throws SQLException {
         for (int i = 0; i < parameters.size(); i++) {
-            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
-
             if (parameters.get(i) instanceof String) {
                 query.setString(i + 2, (String) parameters.get(i));
             } else if (parameters.get(i) instanceof Double) {
@@ -446,8 +437,6 @@ public class Flight {
                 "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " +
                         fleetId + " LIMIT " + lowerId + ", " + (upperId - lowerId);
 
-        LOG.info(queryString);
-
         return getFlightsFromDb(connection, queryString);
     }
 
@@ -461,11 +450,8 @@ public class Flight {
 
         if (limit > 0) queryString += " LIMIT 100";
 
-        LOG.info(queryString);
-
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
                 query.executeQuery()) {
-            LOG.info(query.toString());
 
             ArrayList<Flight> flights = new ArrayList<>();
             while (resultSet.next()) {
@@ -840,7 +826,7 @@ public class Flight {
             }
 
             queryString.append("WHERE id = ").append(flightTag.hashCode());
-            LOG.info("Query String Update: " + queryString);
+
             try (PreparedStatement query = connection.prepareStatement(queryString.toString())) {
                 query.executeUpdate();
             }
@@ -1057,15 +1043,6 @@ public class Flight {
 
     public List<MalformedFlightFileException> getExceptions() {
         return exceptions;
-    }
-
-    public void remove(Connection connection) throws SQLException {
-        String query = "DELETE FROM flights WHERE id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, this.id);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
     }
 
     /**
