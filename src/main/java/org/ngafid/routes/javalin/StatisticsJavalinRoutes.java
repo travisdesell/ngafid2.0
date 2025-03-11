@@ -181,8 +181,9 @@ public class StatisticsJavalinRoutes {
             String[] stats;
 
             String fullPath = ctx.path();
-            String wildcardPath = fullPath.replaceFirst("^/protected/statistics/", "");
-
+            String wildcardPath = fullPath.replaceFirst("^/protected/statistics/" + (aggregate ? "aggregate/" : ""), "");
+            LOG.info("wcp = " + wildcardPath);
+            LOG.info("agg = " + aggregate);
             if (!wildcardPath.isEmpty()) {
                 stats = wildcardPath.split("/");
             } else {
@@ -190,6 +191,7 @@ public class StatisticsJavalinRoutes {
             }
 
             for (String stat : stats) {
+                LOG.info("stat = " + stat);
                 statistics.put(stat, StatFetcher.function_map.get(stat).execute(fetcher));
             }
 
@@ -384,13 +386,12 @@ public class StatisticsJavalinRoutes {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
 
-        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
-        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
-        app.post("/protected/event_counts", ctx -> postEventCounts(ctx, false));
-
         app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
         app.post("/protected/statistics/aggregate/event_counts", ctx -> postEventCounts(ctx, true));
         app.post("/protected/statistics/all_event_counts", ctx -> postEventCounts(ctx, true));
+
+        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
+        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
 
         app.get("/protected/event_statistics", StatisticsJavalinRoutes::getEventStatistics);
         app.post("/protected/monthly_event_counts", StatisticsJavalinRoutes::postMonthlyEventCounts);
