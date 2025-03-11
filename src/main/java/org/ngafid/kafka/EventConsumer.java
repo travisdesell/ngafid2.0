@@ -31,8 +31,20 @@ public class EventConsumer extends DisjointConsumer<String, String> {
         new EventConsumer(Thread.currentThread(), consumer, producer).run();
     }
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private Map<Integer, EventDefinition> eventDefinitionMap;
+
     protected EventConsumer(Thread mainThread, KafkaConsumer<String, String> consumer, KafkaProducer<String, String> producer) {
         super(mainThread, consumer, producer);
+    }
+
+    @Override
+    protected void preProcess(ConsumerRecords<String, String> records) {
+        try {
+            eventDefinitionMap = getEventDefinitionMap();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static AbstractEventScanner getScanner(Flight flight, EventDefinition def) {
@@ -62,8 +74,6 @@ public class EventConsumer extends DisjointConsumer<String, String> {
         }
     }
 
-    final ObjectMapper objectMapper = new ObjectMapper();
-    Map<Integer, EventDefinition> eventDefinitionMap;
 
     @Override
     protected Pair<ConsumerRecord<String, String>, Boolean> process(ConsumerRecord<String, String> record) {
@@ -85,7 +95,7 @@ public class EventConsumer extends DisjointConsumer<String, String> {
             EventDefinition def = eventDefinitionMap.get(etc.eventId());
             if (def == null) {
                 LOG.info("Cannot compute event with definition id " + etc.eventId() + " for flight " + etc.flightId() + " because there is no event with that definition in the database.");
-                return new Pair<>(null, false);
+                return new Pair<>(record, false);
             }
 
             try {
@@ -108,7 +118,7 @@ public class EventConsumer extends DisjointConsumer<String, String> {
                 // Some other exception happened...
                 e.printStackTrace();
                 LOG.info("A required column was not available so the event could not be computed: " + e.getMessage());
-                return new Pair<>(null, false);
+                return new Pair<>(record, false);
             } catch (Exception e) {
                 e.printStackTrace();
                 // Retry
@@ -121,19 +131,6 @@ public class EventConsumer extends DisjointConsumer<String, String> {
             mainThread.interrupt();
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    protected void step(ConsumerRecords<String, String> records) {
-        try {
-            eventDefinitionMap = getEventDefinitionMap();
-        } catch (SQLException e) {
-            done.set(true);
-            workerThread.interrupt();
-            throw new RuntimeException(e);
-        }
-
-        super.step(records);
     }
 
     @Override
@@ -153,7 +150,7 @@ public class EventConsumer extends DisjointConsumer<String, String> {
 
     @Override
     protected long getMaxPollIntervalMS() {
-        return 15 * 1000;
+        return Events.MAX_POLL_INTERVAL_MS;
     }
 
 }

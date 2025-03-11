@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class UploadConsumer extends DisjointConsumer<String, Integer> {
     private static final Logger LOG = Logger.getLogger(UploadConsumer.class.getName());
 
-    private static long MAX_POLL_INTERVAL_MS = 15 * 1000;
+    private static long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
     // This should not be modified.
     private static long N_RECORDS = 1;
 
@@ -78,6 +78,10 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
     @Override
     protected Pair<ConsumerRecord<String, Integer>, Boolean> process(ConsumerRecord<String, Integer> record) {
         try {
+            LOG.info("Processing upload " + record.value());
+            LOG.info("    offset / " + record.offset());
+            LOG.info("    timestamp / " + record.timestamp());
+
             var processedOkay = ProcessUpload.processUpload(record.value());
             return new Pair<>(record, !processedOkay);
         } catch (SQLException e) {
@@ -85,7 +89,7 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
             e.printStackTrace();
             throw new RuntimeException(e);
         } catch (UploadDoesNotExistException e) {
-            return new Pair<>(null, false);
+            return new Pair<>(record, false);
         }
     }
 

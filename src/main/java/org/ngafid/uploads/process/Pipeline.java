@@ -194,6 +194,7 @@ public class Pipeline implements AutoCloseable {
      */
     private FlightFileProcessor create(ZipArchiveEntry entry) {
         String filename = entry.getName();
+        LOG.info("Creating flight builder for file: '" + filename + "'");
 
         int index = filename.lastIndexOf('.');
         String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
@@ -238,6 +239,7 @@ public class Pipeline implements AutoCloseable {
      */
     public FlightBuilder build(Connection connection, FlightBuilder fb) {
         try {
+            LOG.info("Building flight file '" + fb.meta.filename + "'");
             fb.meta.setFleetId(this.upload.fleetId);
             fb.meta.setUploaderId(this.upload.uploaderId);
             fb.meta.setUploadId(this.upload.id);
@@ -265,6 +267,7 @@ public class Pipeline implements AutoCloseable {
      */
     public FlightBuilder finalize(FlightBuilder builder) {
         Flight flight = builder.getFlight();
+        LOG.info("Finalizing flight file '" + flight.getFilename() + "'");
 
         if (flight.getStatus().equals("WARNING")) {
             warningFlightsCount.incrementAndGet();
@@ -282,7 +285,7 @@ public class Pipeline implements AutoCloseable {
      * Add an upload exception to the flightError map for the given filename.
      */
     public void fail(String filename, Exception e) {
-        LOG.info("Encountered an irrecoverable issue processing a flight");
+        LOG.info("Encountered an irrecoverable issue processing flight file '" + filename + "'");
         e.printStackTrace();
         this.flightErrors.put(filename, new UploadException(e.getMessage(), e, filename));
     }

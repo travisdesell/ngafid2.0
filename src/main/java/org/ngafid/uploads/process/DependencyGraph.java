@@ -334,6 +334,8 @@ public class DependencyGraph {
                 } else {
                     LOG.finer("Optional step " + step.getClass().getName() +
                             " has been disabled because:\n\t" + reason);
+                    if (e != null)
+                        exceptions.add(new MalformedFlightFileException(reason));
                 }
                 for (var child : requiredBy)
                     child.disableChildren(null);

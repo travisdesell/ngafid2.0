@@ -12,8 +12,8 @@ import java.util.Properties;
 public enum Events {
     ;
 
-    public static final long MAX_POLL_INTERVAL_MS = 30 * 1000;
-    public static final long N_RECORDS = 5;
+    public static final long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
+    public static final long N_RECORDS = 50;
 
     protected record EventToCompute(int flightId, int eventId) {
     }

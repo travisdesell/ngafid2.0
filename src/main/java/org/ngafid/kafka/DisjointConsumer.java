@@ -3,15 +3,16 @@ package org.ngafid.kafka;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.jetbrains.annotations.NotNull;
 import org.ngafid.common.filters.Pair;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -33,11 +34,13 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
     private static final Logger LOG = Logger.getLogger(UploadConsumer.class.getName());
 
     protected final Thread mainThread;
-    protected final ArrayBlockingQueue<ConsumerRecords<K, V>> taskQueue = new ArrayBlockingQueue<>(1);
-    protected final ArrayBlockingQueue<RecordsResult<K, V>> resultQueue = new ArrayBlockingQueue<>(1);
+    protected final LinkedBlockingQueue<ConsumerRecords<K, V>> taskQueue = new LinkedBlockingQueue<>();
+    protected final LinkedBlockingQueue<RecordsResult<K, V>> resultQueue = new LinkedBlockingQueue<>();
     protected final AtomicBoolean done = new AtomicBoolean(false);
+    protected final AtomicBoolean workerProcessing = new AtomicBoolean(false);
     protected final Worker worker;
     protected final Thread workerThread;
+    protected boolean paused = false;
 
     private final KafkaConsumer<K, V> consumer;
     private final KafkaProducer<K, V> producer;
@@ -59,17 +62,57 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
         producer.close();
     }
 
+    private void commit(RecordsResult<K, V> result) {
+        // ConsumerRecords are sorted by topic partition, thus in the event of multiple records from the same partition,
+        // we will commit 1 past the highest offset from a given partition we see.
+        Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>(result.records.size());
+        for (int i = 0; i < result.records.size(); i++) {
+            var record = result.records.get(i);
+            var retry = result.retry[i];
+
+            offsets.put(
+                    new TopicPartition(record.topic(), record.partition()),
+                    new OffsetAndMetadata(record.offset() + 1)
+            );
+
+            if (retry) {
+                if (record.topic().equals(getTopicName())) {
+                    LOG.info("Processing failed... adding to retry queue '" + getRetryTopicName() + "'");
+                    producer.send(new ProducerRecord<>(getRetryTopicName(), record.value()));
+                } else if (record.topic().equals(getRetryTopicName())) {
+                    LOG.info("Processing failed... adding to DLQ '" + getDLTTopicName() + "'");
+                    producer.send(new ProducerRecord<>(getDLTTopicName(), record.value()));
+                }
+            }
+        }
+
+        consumer.commitSync(offsets);
+    }
+
     protected void run() {
         try {
             while (!done.get()) {
-                LOG.info("Polling...");
-                if (consumer.paused().isEmpty()) {
-                    step(consumer.poll(Duration.ofMillis(getMaxPollIntervalMS())));
+                LOG.info("Polling topics: [" + String.join(", ", consumer.subscription()) + "]");
+
+                long consumerWaitTimeMS, resultQueueWaitTimeMS;
+                if (workerProcessing.get()) {
+                    consumerWaitTimeMS = 1000;
+                    resultQueueWaitTimeMS = (long) (getMaxPollIntervalMS() * 0.75);
                 } else {
-                    // Very short timeout since we expect to receive no records
-                    var _norecords = consumer.poll(Duration.ofMillis(1));
-                    pausedStep();
+                    consumerWaitTimeMS = (long) (getMaxPollIntervalMS() * 0.75);
+                    resultQueueWaitTimeMS = 1000;
                 }
+
+                var records = consumer.poll(Duration.ofMillis(consumerWaitTimeMS));
+                if (!records.isEmpty()) {
+                    taskQueue.put(records);
+                }
+
+                var result = resultQueue.poll(resultQueueWaitTimeMS, TimeUnit.MILLISECONDS);
+                if (result == null)
+                    continue;
+
+                commit(result);
             }
         } catch (Exception e) {
             done.set(true);
@@ -79,36 +122,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
         }
     }
 
-    private void pausedStep() {
-        try {
-            var result = resultQueue.poll(getMaxPollIntervalMS() / 2, TimeUnit.MILLISECONDS);
-            if (result == null)
-                return;
-
-            consumer.resume(consumer.paused());
-
-            for (int i = 0; i < result.retry.length; i++) {
-                var retry = result.retry[i];
-                var record = result.records.get(i);
-                if (record != null) {
-                    if (retry) {
-                        if (record.topic().equals(getTopicName())) {
-                            LOG.info("Processing failed... adding to retry queue");
-                            producer.send(new ProducerRecord<>(getRetryTopicName(), record.value()));
-                        } else if (record.topic().equals(getRetryTopicName())) {
-                            LOG.info("Processing failed... adding to DLQ");
-                            producer.send(new ProducerRecord<>(getDLTTopicName(), record.value()));
-                        }
-                    }
-                }
-            }
-
-            consumer.commitSync();
-
-        } catch (InterruptedException e) {
-            // Indicates a SQL exception on the consumer thread -- we should terminate.
-            done.set(true);
-        }
+    protected void preProcess(ConsumerRecords<K, V> records) {
     }
 
     protected abstract String getTopicName();
@@ -116,18 +130,6 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
     protected abstract String getRetryTopicName();
 
     protected abstract String getDLTTopicName();
-
-    protected void step(ConsumerRecords<K, V> records) {
-        // Pull all fleets and subscribe to them
-        try {
-            taskQueue.put(records);
-            consumer.pause(consumer.assignment());
-        } catch (InterruptedException e) {
-            done.set(true);
-            workerThread.interrupt();
-            throw new RuntimeException(e);
-        }
-    }
 
     protected abstract long getMaxPollIntervalMS();
 
@@ -141,7 +143,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
      */
     protected abstract Pair<ConsumerRecord<K, V>, Boolean> process(ConsumerRecord<K, V> record);
 
-    protected record RecordsResult<K, V>(List<ConsumerRecord<K, V>> records, boolean[] retry) {
+    protected record RecordsResult<K, V>(@NotNull List<ConsumerRecord<K, V>> records, boolean[] retry) {
     }
 
     protected final class Worker implements Runnable {
@@ -153,22 +155,21 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
             while (!done.get()) {
                 try {
                     var records = taskQueue.take();
+                    workerProcessing.set(true);
                     var recordList = new ArrayList<ConsumerRecord<K, V>>(records.count());
 
                     boolean[] retry = new boolean[records.count()];
                     int i = 0;
 
+                    preProcess(records);
                     for (var record : records) {
-                        LOG.info("Processing upload " + record.value());
-                        LOG.info("    offset / " + record.offset());
-                        LOG.info("    timestamp / " + record.timestamp());
-
                         var result = process(record);
                         recordList.add(result.first());
                         retry[i++] = result.second();
                     }
 
                     resultQueue.put(new RecordsResult<K, V>(recordList, retry));
+                    workerProcessing.set(false);
                 } catch (InterruptedException e) {
                     // Ignore -- read done to see if we should stop.
                 }
