@@ -3,40 +3,45 @@ package org.ngafid.common.terrain;
 import java.nio.file.NoSuchFileException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 
 public final class TerrainCache {
-    private record Coordinate(double latitude, double longitude) {};
-
-    private static final int MAX_CACHE_SIZE = 2;
+    public static final String TERRAIN_DIRECTORY;
+    private static final int MAX_CACHE_SIZE;
+    private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
+    
 
     // Load factor is arbitrary because we always remove the eldest entry
-    private static final Map<Coordinate, SRTMTile> TILE_CACHE = new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {;
+    private static final Map<Coordinate, SRTMTile> TILE_CACHE = new ConcurrentHashMap<>(new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<Coordinate, SRTMTile> eldest) {
             return size() > MAX_CACHE_SIZE;
         }
-    };
-
-    public static final String TERRAIN_DIRECTORY;
+    });
+    
 
     static {
         // TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
         if (System.getenv("TERRAIN_DIRECTORY") == null) {
-            System.err.println("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export TERRAIN_DIRECTORY=<path_to_terrain_data>");
+            LOG.severe("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
+            LOG.severe("Please add the following to your ~/.bash_rc or ~/.profile file:");
+            LOG.severe("export TERRAIN_DIRECTORY=<path_to_terrain_data>");
             System.exit(1);
         }
 
         TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
         //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
+        
+        if (System.getenv("MAX_CACHE_SIZE") == null) {
+            
+        }
     }
 
     private TerrainCache() {
         throw new UnsupportedOperationException("Utility class");
     }
-
 
     //each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
     //the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
@@ -53,7 +58,7 @@ public final class TerrainCache {
         ilongitude /= 6;
         ilongitude += 1;
 
-        // System.out.println("iLatitude: " + ilatitude + ", iLongitude: " + ilongitude);
+        // LOG.info("iLatitude: " + ilatitude + ", iLongitude: " + ilongitude);
 
         //note that ascii 65 == 'A'
         directory += Character.toString((char) (65 + ilatitude)) + ilongitude;
@@ -82,13 +87,13 @@ public final class TerrainCache {
         int latIndex = -((int) Math.ceil(latitude) - 91);
         int lonIndex = (int) Math.floor(longitude) + 180;
 
-        //System.out.println("lat_index: " + latIndex + ", lon_index: " + lonIndex);
+        //LOG.info("lat_index: " + latIndex + ", lon_index: " + lonIndex);
 
         if (latIndex < 0 || lonIndex < 0 || latIndex >= 180 || lonIndex >= 360) {
-            System.err.println("ERROR: getting tile for latitude: " + latitude + " and longitude: " + longitude);
-            System.err.println("tile[" + latIndex + "][" + lonIndex + "] does not exist!");
-            System.err.println("latitude should be >= -90 and <= 90");
-            System.err.println("longitude should be >= -180 and <= 180");
+            LOG.severe("ERROR: getting tile for latitude: " + latitude + " and longitude: " + longitude);
+            LOG.severe("tile[" + latIndex + "][" + lonIndex + "] does not exist!");
+            LOG.severe("latitude should be >= -90 and <= 90");
+            LOG.severe("longitude should be >= -180 and <= 180");
             throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
         }
 
@@ -96,14 +101,14 @@ public final class TerrainCache {
         SRTMTile tile = TILE_CACHE.getOrDefault(coordinate, null);
 
         if (tile == null) {
-            // System.out.println("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
+            // LOG.info("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
             tile = new SRTMTile(90 - latIndex, lonIndex - 180);
             TILE_CACHE.put(coordinate, tile);
         }
 
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
 
-        //System.out.println("msl: " + msl + ", terrain: " + altitudeFt + ", agl: " + Math.max(0.0, msl - altitudeFt));
+        //LOG.info("msl: " + msl + ", terrain: " + altitudeFt + ", agl: " + Math.max(0.0, msl - altitudeFt));
         //return (int)altitudeFt;
         return (int) Math.max(0, msl - altitudeFt);
 
@@ -112,29 +117,29 @@ public final class TerrainCache {
     public static void main(String[] arguments) throws NoSuchFileException, TerrainUnavailableException {
         //albany airport - should be 267 ft
         double test = getAltitudeFt(0, 42.74871, -73.80550);
-        System.out.println("albany airport altitude: " + test + ", should be 267 ft");
+        LOG.info("albany airport altitude: " + test + ", should be 267 ft");
         test = getAltitudeFt(0, 42.74911111094814, -73.80197222206861);
-        System.out.println("albany airport (2) altitude: " + test + ", should be 267 ft");
+        LOG.info("albany airport (2) altitude: " + test + ", should be 267 ft");
 
         //grand forks airport - should be 838 ft
         test = getAltitudeFt(0, 47.94286, -97.17658);
-        System.out.println("grand forks airport altitude: " + test + ", should be 838 ft");
+        LOG.info("grand forks airport altitude: " + test + ", should be 838 ft");
         test = getAltitudeFt(0, 47.94727777751542, -97.17377777794896);
-        System.out.println("grand forks airport (2) altitude: " + test + ", should be 838 ft");
+        LOG.info("grand forks airport (2) altitude: " + test + ", should be 838 ft");
 
         //denver airport - should be 5373 ft
         test = getAltitudeFt(0, 39.85610, -104.67374);
-        System.out.println("denver airport altitude: " + test + ", should be 5373 ft");
+        LOG.info("denver airport altitude: " + test + ", should be 5373 ft");
         test = getAltitudeFt(0, 39.86166666671349, -104.67316666709075);
-        System.out.println("denver airport (2) altitude: " + test + ", should be 5373 ft");
+        LOG.info("denver airport (2) altitude: " + test + ", should be 5373 ft");
 
         //rochester airport - should be 542 ft
         test = getAltitudeFt(0, 43.12252, -77.66657);
-        System.out.println("rochester airport altitude: " + test + ", should be 542 ft");
+        LOG.info("rochester airport altitude: " + test + ", should be 542 ft");
 
         //phoenix airport - should be 1124 ft
         test = getAltitudeFt(0, 33.43727, -112.00779);
-        System.out.println("phoenix airport altitude: " + test + ", should be 1124 ft");
+        LOG.info("phoenix airport altitude: " + test + ", should be 1124 ft");
 
         /*
         double endLat = 42.85;
@@ -183,12 +188,12 @@ public final class TerrainCache {
                     image.setRGB(x, y, new Color(altitude, altitude, altitude).getRGB());
                 } catch (Exception e) {
                     e.printStackTrace();
-                    System.out.println("altitude: " + altitude);
+                    LOG.info("altitude: " + altitude);
                     System.exit(1);
                 }
             }
         }
-        System.out.println("max altitude: " + max);
+        LOG.info("max altitude: " + max);
 
         File imageFile = new File("output.png");
         try {
@@ -198,6 +203,9 @@ public final class TerrainCache {
         }
         */
 
+    }
+
+    private record Coordinate(double latitude, double longitude) {
     }
 
 }
