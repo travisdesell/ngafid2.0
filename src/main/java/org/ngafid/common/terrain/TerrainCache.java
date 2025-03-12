@@ -3,7 +3,6 @@ package org.ngafid.common.terrain;
 import java.nio.file.NoSuchFileException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 
@@ -13,14 +12,14 @@ public final class TerrainCache {
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
     
 
-    // Load factor is arbitrary because we always remove the eldest entry
-    private static final Map<Coordinate, SRTMTile> TILE_CACHE = new ConcurrentHashMap<>(new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<Coordinate, SRTMTile> eldest) {
-            return size() > MAX_CACHE_SIZE;
-        }
-    });
-    
+     private static final ThreadLocal<LinkedHashMap<Coordinate, SRTMTile>> THREAD_LOCAL_TILE_CACHE =
+        // Load factor is arbitrary because we always remove the eldest entry
+        ThreadLocal.withInitial(() -> new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Coordinate, SRTMTile> eldest) {
+                return size() > MAX_CACHE_SIZE;
+            }
+        });
 
     static {
         // TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
@@ -102,12 +101,12 @@ public final class TerrainCache {
         }
 
         Coordinate coordinate = new Coordinate(latitude, longitude);
-        SRTMTile tile = TILE_CACHE.getOrDefault(coordinate, null);
+        SRTMTile tile = THREAD_LOCAL_TILE_CACHE.get().getOrDefault(coordinate, null);
 
         if (tile == null) {
             // LOG.info("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
             tile = new SRTMTile(90 - latIndex, lonIndex - 180);
-            TILE_CACHE.put(coordinate, tile);
+            THREAD_LOCAL_TILE_CACHE.get().put(coordinate, tile);
         }
 
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
