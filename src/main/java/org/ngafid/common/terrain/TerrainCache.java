@@ -9,7 +9,15 @@ public final class TerrainCache {
     private record Coordinate(double latitude, double longitude) {};
 
     private static final int MAX_CACHE_SIZE = 2;
-    private static final Map<Coordinate, SRTMTile> TILE_CACHE = new LinkedHashMap<>();
+
+    // Load factor is arbitrary because we always remove the eldest entry
+    private static final Map<Coordinate, SRTMTile> TILE_CACHE = new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {;
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Coordinate, SRTMTile> eldest) {
+            return size() > MAX_CACHE_SIZE;
+        }
+    };
+
     public static final String TERRAIN_DIRECTORY;
 
     static {
@@ -90,15 +98,6 @@ public final class TerrainCache {
         if (tile == null) {
             // System.out.println("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
             tile = new SRTMTile(90 - latIndex, lonIndex - 180);
-
-            if (TILE_CACHE.size() >= MAX_CACHE_SIZE) {
-                Coordinate firstKey = TILE_CACHE.keySet().iterator().next();
-            }
-
-            TILE_CACHE.put(coordinate, tile);
-        } else {
-            // Make the tile the most recently used
-            tile = TILE_CACHE.remove(coordinate);
             TILE_CACHE.put(coordinate, tile);
         }
 
