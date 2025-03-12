@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 
 public final class TerrainCache {
     public static final String TERRAIN_DIRECTORY;
-    private static final int MAX_CACHE_SIZE;
+    private static int MAX_CACHE_SIZE;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
     
 
@@ -35,7 +35,11 @@ public final class TerrainCache {
         //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
         
         if (System.getenv("MAX_CACHE_SIZE") == null) {
-            
+            LOG.warning("ERROR: 'MAX_CACHE_SIZE' environment variable not specified at runtime. Setting default to 357 (1GB).");
+
+            // Each tile is 2.8 MB, so 1000 tiles is 2.8 GB. Make the default 1GB
+            // 1 GB / 2.8 MB = 357 tiles
+            MAX_CACHE_SIZE = 357;
         }
     }
 
