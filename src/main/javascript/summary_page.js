@@ -29,6 +29,7 @@ let targetValues = [
     "numberFleets",
     "numberUsers",
     "uploads",
+    "uploadsOK",    //(Uploads Processed)
     "uploadsNotImported",
     "uploadsWithError",
     "flightsWithWarning",
@@ -653,11 +654,11 @@ export default class SummaryPage extends React.Component {
                                         style={{backgroundColor: "var(--c_valid)", color: "white"}}
                                     >
                                         <i className="fa fa-fw fa-check" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsOK, integerOptions)}
                                     </span>
                                 </td>
                                 <td style={{paddingBottom: "6"}}>
-                                    &nbsp;{pluralize(this.state.statistics.uploads, "Upload")} Processed
+                                    &nbsp;{pluralize(this.state.statistics.uploadsOK, "Upload")} Processed
                                 </td>
                             </tr>
 
@@ -685,7 +686,7 @@ export default class SummaryPage extends React.Component {
                                         className="badge"
                                         style={{backgroundColor: "var(--c_warning)", color: "white"}}
                                     >
-                                        <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                        <i className="fa fa-fw fa-hourglass" aria-hidden="true"/>
                                         &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
                                     </span>
                                 </td>
@@ -758,7 +759,7 @@ export default class SummaryPage extends React.Component {
                                         className="badge"
                                         style={{backgroundColor: "var(--c_warning)", color: "white"}}
                                     >
-                                        <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                        <i className="fa fa-fw fa-hourglass" aria-hidden="true"/>
                                         &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
                                     </span>
                                 </td>

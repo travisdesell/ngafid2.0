@@ -33,9 +33,35 @@ public class StatisticsJavalinRoutes {
             T execute(StatFetcher f) throws SQLException;
         }
 
-        static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+        static Map<String, StatFunction<Object>> function_map = Map.ofEntries(
+            
+            //Stat Functions -- Fleet Info
+            Map.entry("flightTime", StatFetcher::flightTime),
+            Map.entry("yearFlightTime", StatFetcher::yearFlightTime),
+            Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+            Map.entry("numberAircraft", StatFetcher::numberAircraft),
+            Map.entry("numberUsers", StatFetcher::numberUsers),
+            Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights),
+            Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights),
 
-                Map.entry("numberFlights", StatFetcher::numberFlights), Map.entry("numberAircraft", StatFetcher::numberAircraft), Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights), Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights), Map.entry("totalEvents", StatFetcher::totalEvents), Map.entry("yearEvents", StatFetcher::yearEvents), Map.entry("monthEvents", StatFetcher::monthEvents), Map.entry("numberFleets", StatFetcher::numberFleets), Map.entry("numberUsers", StatFetcher::numberUsers), Map.entry("uploads", StatFetcher::uploads), Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported), Map.entry("uploadsWithError", StatFetcher::uploadsWithError), Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning), Map.entry("flightsWithError", StatFetcher::flightsWithError));
+            //Stat Functions -- Events
+            Map.entry("totalEvents", StatFetcher::totalEvents),
+            Map.entry("yearEvents", StatFetcher::yearEvents),
+            Map.entry("monthEvents", StatFetcher::monthEvents),
+            Map.entry("numberFleets", StatFetcher::numberFleets),
+            
+            //Stat Functions -- Uploads
+            Map.entry("uploads", StatFetcher::uploads),
+            Map.entry("uploadsOK", StatFetcher::uploadsOK),
+            Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported),
+            Map.entry("uploadsWithError", StatFetcher::uploadsWithError),
+            
+            //Stat Functions -- Flights
+            Map.entry("numberFlights", StatFetcher::numberFlights),
+            Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning),
+            Map.entry("flightsWithError", StatFetcher::flightsWithError)/*,*/
+
+        );
 
         final Connection connection;
         final User user;
@@ -152,6 +178,10 @@ public class StatisticsJavalinRoutes {
 
         Integer uploads() throws SQLException {
             return getUploadCounts().count();
+        }
+
+        Integer uploadsOK() throws SQLException {
+            return getUploadCounts().okUploadCount();
         }
 
         Integer uploadsNotImported() throws SQLException {
