@@ -192,7 +192,23 @@ public class StatisticsJavalinRoutes {
 
             for (String stat : stats) {
                 LOG.info("stat = " + stat);
-                statistics.put(stat, StatFetcher.function_map.get(stat).execute(fetcher));
+
+                if (stat.equals("event_counts")) {
+                    LOG.info("Read in 'event_counts' stat in postStatistic, skipping...");
+                    continue;
+                }
+
+                StatFetcher.StatFunction<Object> function = StatFetcher.function_map.get(stat);
+                if (function == null) {
+
+                    String failureMessage = "Invalid statistic (failed to fetch Stat Function): " + stat;
+                    LOG.severe(failureMessage);
+                    ctx.status(400);
+                    ctx.result(failureMessage);
+                    return;
+                }
+
+                statistics.put(stat, function.execute(fetcher));
             }
 
             ctx.json(statistics);

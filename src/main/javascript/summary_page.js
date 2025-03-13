@@ -60,19 +60,37 @@ function formatDurationAsync(seconds) {
     }
 }
 
-function fetchStatistic(stat, aggregate, success) {
+function fetchStatistic(stat, aggregate, successResponseHandler) {
+
     let route;
     if (aggregate)
         route = "/protected/statistics/aggregate";
     else
         route = "/protected/statistics";
 
+    let urlTarget = `${route}/${stat}`;
+
+    console.log(`Fetching Stat: '${stat}' from '${urlTarget}'`);
+
+    const errorResponseHandler = function (jqXHR, textStatus, errorThrown) {
+        console.log(jqXHR);
+        console.log(textStatus);
+        console.log(errorThrown);
+        errorModal.show("Error Loading Statistic", errorThrown);
+    }
+
     $.ajax({
         type: "POST",
-        url: `${route}/${stat}`,
+        url: urlTarget,
         dataType: "json",
-        success: success
+        success: successResponseHandler,
+        // success: function(response) {
+
+        //     console.log("[EX] Response: ", response);
+        // },
+        error: errorResponseHandler,
     });
+
 }
 
 class Notifications extends React.Component {
@@ -99,22 +117,32 @@ class Notifications extends React.Component {
     }
 
     fetchStatistics() {
-        let notifications = this;
-        for (let [i, notif] of this.state.notifications.entries()) {
-            if (Object.hasOwn(notif, "name")) {
-                fetchStatistic(notif.name, false,
-                    function (response) {
-                        if (response.err_msg) {
-                            errorModal.show(response.err_title, response.err_msg);
-                            return;
-                        }
 
-                        notifications.state.notifications[i].count = response[notif.name];
+        const notifications = this;
+        const successResponseHandler = function (response) {
 
-                        notifications.setState(notifications.state);
-                    }
-                );
+            console.log(`Got successful response for fetched stat: ${response}`);
+
+            //Response has an error, exit
+            if (response.err_msg) {
+                errorModal.show(response.err_title, response.err_msg);
+                return;
             }
+
+            //Update the notification count
+            notifications.state.notifications[i].count = response[notif.name];
+            notifications.setState(notifications.state);
+
+        }
+
+        console.log("Notifications -- Fetching Statistics...");
+
+        for (let [i, notif] of this.state.notifications.entries()) {
+
+            //Notification has a 'name' property, fetch the statistic
+            if (Object.hasOwn(notif, "name"))
+                fetchStatistic(notif.name, false, successResponseHandler);
+
         }
     }
 
@@ -124,9 +152,13 @@ class Notifications extends React.Component {
                 <tbody>
                 {
                     this.state.notifications.map((info, index) => {
-                        if (info.count == 0) {
+
+                        //No notifications, don't display counter
+                        if (info.count == 0)
                             return;
-                        } else {
+                        
+                        //Has notifications, display counter
+                        else
                             return (
                                 <tr key={index}>
                                     <td style={{textAlign: "right", paddingBottom: "6"}}>
@@ -138,7 +170,7 @@ class Notifications extends React.Component {
                                     <td style={{paddingBottom: "6", color: "var(--c_text)"}}>&nbsp;{info.message}</td>
                                 </tr>
                             );
-                        }
+                        
                     })
                 }
                 </tbody>
@@ -390,9 +422,12 @@ export default class SummaryPage extends React.Component {
         if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
         else endDate += this.state.endMonth;
 
-        var submission_data = {
+        const submissionData = {
             startDate: startDate + "-01",
-            endDate: endDate + "-28"
+            endDate: endDate + "-28",
+            toString : function() {
+                return JSON.stringify(this);
+            }
         };
 
         $("#loading").show();
@@ -405,19 +440,27 @@ export default class SummaryPage extends React.Component {
         else
             route = "/protected/statistics/event_counts";
 
+        console.log(`Got date change, fetching event counts from '${route}' with date data: '${submissionData}'`);
+
         $.ajax({
             type: "POST",
             url: route,
-            data: submission_data,
+            data: submissionData,
             dataType: "text",
+            async: true,
             success: function (response) {
-                $("#loading").hide();
-                if (response) {
-                    response = JSON.parse(response);
-                } else {
-                    response = {};
-                }
 
+                $("#loading").hide();
+
+                //Response is not empty, parse it
+                if (response)
+                    response = JSON.parse(response);
+
+                //Response is empty, set it to an empty object
+                else
+                    response = {};
+
+                //Response has an error, exit
                 if (response.err_msg) {
                     errorModal.show(response.err_title, response.err_msg);
                     return;
@@ -426,32 +469,40 @@ export default class SummaryPage extends React.Component {
                 page.state.eventCounts = response;
                 page.displayPlots(page.state.airframe);
                 page.setState({datesChanged: false});
+
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
                 errorModal.show("Error Loading Uploads", errorThrown);
-            },
-            async: true
+            }
         });
     }
 
     fetchStatistics() {
-        let page = this;
+
+        const page = this;
+        const successResponseHandler = function (response) {
+
+            console.log(`Got successful response for fetched stat: ${JSON.stringify(response)}`);
+
+            //Response has an error, exit
+            if (response.err_msg) {
+                errorModal.show(response.err_title, response.err_msg);
+                return;
+            }
+
+            page.setState({statistics: {...page.state.statistics, ...response}});
+
+        }
+
+        console.log("SummaryPage -- Fetching Statistics...");
 
         for (var stat of targetValues) {
-            fetchStatistic(stat, this.props.aggregate,
-                function (response) {
-                    if (response.err_msg) {
-                        errorModal.show(response.err_title, response.err_msg);
-                        return;
-                    }
-
-                    page.setState({statistics: {...page.state.statistics, ...response}});
-                }
-            );
+            fetchStatistic(stat, this.props.aggregate, successResponseHandler);
         }
+
     }
 
     airframeChange(airframe) {
@@ -562,6 +613,111 @@ export default class SummaryPage extends React.Component {
         );
     }
 
+    UploadsSummaryAggregate() {
+     
+        console.log("Rendering Uploads Summary Aggregate...");
+
+        //Modifes a string to be plural if the supplied is not 1
+        const pluralize = (count, stringIn) => {
+            return (count === 1 ? stringIn : stringIn + "s");
+        }
+
+        return (
+            <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
+                <h4 className="card-header">Uploads</h4>
+                <div className="card-body">
+                    <table className="row">
+                        <tbody className="col-sm-6">
+
+                            {/* (Total) Uploads */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_info)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                        &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploads, "Upload")}
+                                </td>
+                            </tr>
+
+                            {/* Uploads Processed */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_valid)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-check" aria-hidden="true"/>
+                                        &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploads, "Upload")} Processed
+                                </td>
+                            </tr>
+
+                            {/* ⚠ Empty Row for Formatting */}
+                            <tr style={{opacity: 0.00, userSelect: "none"}}>
+                                <td>
+                                    <span className="badge">
+                                        <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                        &nbsp;
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    PLACEHOLDER ROW
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                        <tbody className="col-sm-6">
+
+                            {/* Uploads Waiting */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_warning)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import
+                                </td>
+                            </tr>
+
+                            {/* Uploads with Errors */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_danger)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+
+    }
+
     UploadsSummary() {
 
         let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithError);
@@ -582,38 +738,46 @@ export default class SummaryPage extends React.Component {
 
                         <tr>
                             <td style={{textAlign: "right"}}>
-                                        <span className="badge"
-                                              style={{backgroundColor: "var(--c_info)", color: "white"}}>
-                                            <i className="fa fa-fw fa-upload" aria-hidden="true"/>
-                                            &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
-                                        </span>
+                                <span
+                                    className="badge"
+                                    style={{backgroundColor: "var(--c_info)", color: "white"}}
+                                >
+                                    <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                    &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                </span>
                             </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.uploads, "Upload")}</td>
-                        </tr>
-
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                        <span className="badge"
-                                              style={{backgroundColor: "var(--c_warning)", color: "white"}}>
-                                            <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
-                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
-                                        </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting
-                                Import
+                            <td style={{paddingBottom: "6"}}>
+                                &nbsp;{pluralize(this.state.statistics.uploads, "Upload")}
                             </td>
                         </tr>
 
                         <tr>
                             <td style={{textAlign: "right"}}>
-                                        <span className="badge"
-                                              style={{backgroundColor: "var(--c_danger)", color: "white"}}>
-                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
-                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
-                                        </span>
+                                <span
+                                    className="badge"
+                                    style={{backgroundColor: "var(--c_warning)", color: "white"}}
+                                >
+                                    <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                    &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
+                                </span>
                             </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with
-                                Errors
+                            <td style={{paddingBottom: "6"}}>
+                                &nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style={{textAlign: "right"}}>
+                                <span
+                                    className="badge"
+                                    style={{backgroundColor: "var(--c_danger)", color: "white"}}
+                                >
+                                    <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                    &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
+                                </span>
+                            </td>
+                            <td style={{paddingBottom: "6"}}>
+                                &nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors
                             </td>
                         </tr>
 
@@ -621,61 +785,73 @@ export default class SummaryPage extends React.Component {
 
                         <tbody className="col-sm-6">
 
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                        <span className="badge"
-                                              style={{backgroundColor: "var(--c_valid)", color: "white"}}>
-                                            {
-                                                (hasWarnings)
-                                                    ? <i className="fa fa-fw fa-check"
-                                                         style={{alignContent: "center", color: "var(--c_warning)"}}
-                                                         title="Flights with non-critical Warnings are included as Valid flights."/>
-                                                    : <i className="fa fa-fw fa-check"
-                                                         style={{alignContent: "center", color: "white"}}
-                                                         title="No Flights in this Fleet have Warnings."/>
-                                            }
-                                            &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
-                                        </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.numberFlights, "Flight")} Valid</td>
-                        </tr>
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_valid)", color: "white"}}
+                                    >
+                                        {
+                                            (hasWarnings)
+                                                ? <i className="fa fa-fw fa-check"
+                                                    style={{alignContent: "center", color: "var(--c_warning)"}}
+                                                    title="Flights with non-critical Warnings are included as Valid flights."/>
+                                                : <i className="fa fa-fw fa-check"
+                                                    style={{alignContent: "center", color: "white"}}
+                                                    title="No Flights in this Fleet have Warnings."/>
+                                        }
+                                        &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.numberFlights, "Flight")}
+                                    &nbsp;Valid
+                                </td>
+                            </tr>
 
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                        <span className="badge"
-                                              style={{backgroundColor: "var(--c_warning)", color: "white"}}>
-                                            <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
-                                            &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
-                                        </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.flightsWithWarning, "Flight")} with
-                                Warnings
-                            </td>
-                        </tr>
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_warning)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                        &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.flightsWithWarning, "Flight")} with Warnings
+                                </td>
+                            </tr>
 
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span className="badge"
-                                          style={{backgroundColor: "var(--c_danger)", color: "white"}}>
-                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_danger)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
                                         &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
-                                        </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.flightsWithError, "Flight")} with
-                                Errors
-                            </td>
-                        </tr>
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.flightsWithError, "Flight")} with Errors
+                                </td>
+                            </tr>
 
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                        <span className="badge"
-                                              style={{backgroundColor: "var(--c_info)", color: "white"}}>
-                                            <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
-                                            &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
-                                        </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(totalFlights, "Flight")} Imported</td>
-                        </tr>
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                    <span
+                                        className="badge"
+                                        style={{backgroundColor: "var(--c_info)", color: "white"}}
+                                    >
+                                        <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
+                                        &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
+                                    </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(totalFlights, "Flight")} Imported
+                                </td>
+                            </tr>
 
                         </tbody>
                     </table>
@@ -689,11 +865,17 @@ export default class SummaryPage extends React.Component {
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
                 <div style={{flex: "0 0 auto"}}>
-                    <SignedInNavbar activePage={"aggregate"} darkModeOnClickAlt={() => {
-                        this.displayPlots(this.state.airframe);
-                    }} waitingUserCount={waitingUserCount} fleetManager={fleetManager}
-                                    unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
-                                    plotMapHidden={plotMapHidden}/>
+                    <SignedInNavbar
+                        activePage={this.props.aggregate ? "aggregate" : "welcome"}
+                        darkModeOnClickAlt={() => {
+                            this.displayPlots(this.state.airframe);
+                        }}
+                        waitingUserCount={waitingUserCount}
+                        fleetManager={fleetManager}
+                        unconfirmedTailsCount={unconfirmedTailsCount}
+                        modifyTailsAccess={modifyTailsAccess}
+                        plotMapHidden={plotMapHidden}
+                    />
                 </div>
 
                 <div style={{overflowY: "auto", flex: "1 1 auto"}}>
@@ -702,7 +884,7 @@ export default class SummaryPage extends React.Component {
                             <div className="col-6">{this.FlightSummary()}</div>
                             <div className="col-6" style={{display: "flex", flexDirection: "column"}}>
                                 {this.EventSummary()}
-                                {!this.props.aggregate && this.UploadsSummary()}
+                                {this.props.aggregate ? this.UploadsSummaryAggregate() : this.UploadsSummary()}
                                 {this.props.aggregate && this.ParticipationSummary()}
                             </div>
                         </div>
