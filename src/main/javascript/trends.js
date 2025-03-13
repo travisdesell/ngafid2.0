@@ -905,6 +905,7 @@ class TrendsPage extends React.Component {
         };
 
         const activePageName = (this.state.aggregatePage ? "aggregate_trends" : "trends");
+        const timeHeaderTitle = (this.state.aggregatePage ? "Aggregate Event Trends" : "Event Trends");
 
         return (
             <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
@@ -919,7 +920,7 @@ class TrendsPage extends React.Component {
                         <div className="col-lg-12">
                             <div className="card mb-2 m-2">
                                 <TimeHeader
-                                    name="Event Trends"
+                                    name={timeHeaderTitle}
                                     airframes={airframes}
                                     airframe={this.state.airframe}
                                     startYear={this.state.startYear} 

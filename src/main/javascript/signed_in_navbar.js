@@ -235,7 +235,7 @@ class SignedInNavbar extends React.Component {
                         {aggregateView ?
                             <li className="nav-item dropdown">
                                 <a className={"nav-link dropdown-toggle" + (aggregateActive ? " active" : "")} style={aggregateActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i className="fa fa-fw fa-calendar-check-o" aria-hidden="true"/>
+                                    <i className="fa fa-fw fa-calendar" aria-hidden="true"/>
                                     &nbsp;Aggregate View
                                 </a>
                                 <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
