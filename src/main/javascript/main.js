@@ -169,7 +169,7 @@ class MainContent extends React.Component {
         let loggedOutCards = ["Welcome", "Create Account", "Awaiting Access", "Dashboard", "Profile", "Manage Fleet"];
 
         if (newName == "Create Account" && typeof mainCards['create_account'].state.fleets == 'undefined') {
-            var submission_data = {};   
+            var submissionData = {};   
 
             $('#loading').show();
             console.log("showing loading spinner!");
@@ -177,7 +177,7 @@ class MainContent extends React.Component {
             $.ajax({
                 type: 'POST',
                 url: './get_fleet_names',
-                data : submission_data,
+                data : submissionData,
                 dataType : 'json',
                 success : function(response) {
                     console.log("received response: ");
@@ -207,7 +207,7 @@ class MainContent extends React.Component {
 
 
         } else if (loggedOutCards.indexOf(newName) < 0 && typeof mainCards[ucNewName].state[ucNewName] == 'undefined') {
-            var submission_data = {};   
+            var submissionData = {};   
 
             $('#loading').show();
             console.log("showing loading spinner!");
@@ -215,7 +215,7 @@ class MainContent extends React.Component {
             $.ajax({
                 type: 'POST',
                 url: './protected/get_' + ucNewName,
-                data : submission_data,
+                data : submissionData,
                 dataType : 'json',
                 success : function(response) {
                     console.log("received response: ");
