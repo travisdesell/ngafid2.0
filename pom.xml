@@ -187,6 +187,13 @@
             <version>4.5</version>
         </dependency>
 
+        <!-- Parquet file processing-->
+        <dependency>
+            <groupId>org.parquet</groupId>
+            <artifactId>parquet-reader</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
         <dependency>
             <groupId>org.apache.commons</groupId>

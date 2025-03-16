@@ -9,12 +9,17 @@ import org.ngafid.common.MD5;
 import org.ngafid.common.SendEmail;
 import org.ngafid.flights.FlightError;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.ParquetPipeline;
 import org.ngafid.uploads.process.Pipeline;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -61,7 +66,7 @@ public final class ProcessUpload {
         }
     }
 
-    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+    private static void tryCombinePieces1(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
         LOG.info("Combining pieces");
         Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
         Path targetDirectory = Paths.get(upload.getArchiveDirectory());
@@ -99,6 +104,69 @@ public final class ProcessUpload {
         }
         LOG.info("Done");
     }
+
+
+
+    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+        Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR, String.valueOf(upload.fleetId),
+                String.valueOf(upload.uploaderId), upload.identifier);
+        Path targetDirectory = Paths.get(upload.getArchiveDirectory());
+
+
+        Files.createDirectories(targetDirectory);
+        Path targetFilename = targetDirectory.resolve(upload.getArchiveFilename());
+
+
+        if (Files.exists(targetFilename) && Files.isRegularFile(targetFilename)) {
+            LOG.info("File already combined: " + targetFilename);
+            return;
+        }
+
+        LOG.info("Combining chunks for upload ID: " + upload.getId());
+        long startTime = System.nanoTime();
+
+        try (FileOutputStream out = new FileOutputStream(targetFilename.toFile());
+             DigestInputStream md5Stream = new DigestInputStream(new BufferedInputStream(new FileInputStream(targetFilename.toFile())),
+                     MessageDigest.getInstance("MD5"))) {
+            byte[] buffer = new byte[8192]; // 8 KB buffer
+            int bytesRead;
+
+            for (int i = 0; i < upload.getNumberChunks(); i++) {
+                Path chunkPath = chunkDirectory.resolve(i + ".part");
+
+                try (InputStream in = Files.newInputStream(chunkPath)) {
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, bytesRead);
+                        md5Stream.getMessageDigest().update(buffer, 0, bytesRead); // Update hash while writing
+                    }
+                }
+                LOG.info("Processed chunk " + i);
+            }
+
+            long elapsedTime = (System.nanoTime() - startTime) / 1_000_000;
+            LOG.info("File combined in " + elapsedTime + " ms");
+
+
+            if (!upload.checkSize()) {
+                Files.delete(targetFilename);
+                throw new IOException("Combined file size mismatch!");
+            }
+
+            // Compute MD5 hash and verify
+            String computedMd5 = DatatypeConverter.printHexBinary(md5Stream.getMessageDigest().digest());
+            if (!computedMd5.equalsIgnoreCase(upload.getMd5Hash())) {
+                throw new IOException("MD5 hash mismatch!");
+            }
+
+
+            deleteDirectory(chunkDirectory.toFile());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException("MD5 algorithm not found", e);
+        }
+    }
+
+
+
 
     private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
@@ -170,7 +238,7 @@ public final class ProcessUpload {
         String filename = upload.getArchivePath().toString();
         LOG.info("processing: '" + filename + "'");
 
-        String extension = filename.substring(filename.length() - 4);
+        String extension = filename.substring(filename.lastIndexOf('.') + 1);
         LOG.info("extension: '" + extension + "'");
 
         Upload.Status status = Upload.Status.PROCESSED_OK;
@@ -185,7 +253,7 @@ public final class ProcessUpload {
         int warningFlights = 0;
         int errorFlights = 0;
 
-        if (extension.equals(".zip")) {
+        if (extension.equals("zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
             try (ZipFile zipFile = ZipFile.builder().setFile(filename).get(); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
@@ -216,10 +284,37 @@ public final class ProcessUpload {
                 uploadException = new Exception(e + ", could not read from zip file: please delete this " +
                         "upload and re-upload.");
             }
+
+
+        }
+
+        else if (extension.equals("parquet")) {
+            try {
+                LOG.info("Processing Parquet file: " + filename);
+                System.out.println("Processing Parquet file: " + filename);
+
+
+                // Create ParquetPipeline instance and execute processing
+                Path parquetFilePath = Paths.get(filename);
+                ParquetPipeline parquetPipeline = new ParquetPipeline(connection, upload, parquetFilePath);
+                parquetPipeline.execute();
+
+
+                System.out.println("Successfully processed file: " + filename);
+                LOG.info("Successfully processed Parquet file.");
+
+            } catch (Exception e) {
+                LOG.severe("Error processing Parquet file: " + e.getMessage());
+                e.printStackTrace();
+
+                UploadError.insertError(connection, uploadId, "Error processing Parquet file.");
+                status = Upload.Status.FAILED_ARCHIVE_TYPE;
+                uploadException = new Exception(e + ", error processing Parquet file.");
+            }
         } else {
             // insert an upload error for this upload
             status = Upload.Status.FAILED_ARCHIVE_TYPE;
-            UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
+            UploadError.insertError(connection, uploadId, "Uploaded file was not a zip or a parquet file.");
 
             uploadException = new Exception("Uploaded file was not a zip file.");
         }

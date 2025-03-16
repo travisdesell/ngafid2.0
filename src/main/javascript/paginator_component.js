@@ -111,12 +111,14 @@ class Paginator extends React.Component {
                 var filename = file.webkitRelativePath || file.fileName || file.name;
 
                 const isZip = file['type'].includes("zip");
-                console.log("isZip: " + isZip);
+                const isParquet = filename.endsWith(".parquet");
+
+                console.log("isZip: " + isZip, "isParquet: " + isParquet);
 
                 if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
                     errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
-                } else if (!isZip) {
-                    errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
+                } else if (!isZip && !isParquet) {
+                    errorModal.show("Malformed Filename", "Uploaded files must be zip files or a parquet file. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
                     uploadsPageRef.addUpload(file);
                 }
