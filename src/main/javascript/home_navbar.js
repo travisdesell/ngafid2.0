@@ -43,6 +43,16 @@ class HomeNavbar extends React.Component {
 
     render() {
 
+        /*
+            NOTE:
+            
+            The 'hideButtons' attribute is directly supplied by the HTML <script> tag
+            (e.g. <script src="home_navbar.js" hideButtons="true"></script>).
+            
+            If the 'hideButtons' attribute is not supplied, then the default value is false.
+        */
+        const hideButtons = document.currentScript.getAttribute('hideButtons') ?? false;
+
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:"var(--c_navbar_bg)"}}>
                 
@@ -51,17 +61,22 @@ class HomeNavbar extends React.Component {
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
-                <div className="collapse navbar-collapse" id="navbarNavDropdown">
-                    <ul className="navbar-nav mr-auto">
-                    </ul>
+                {
+                    hideButtons
+                    ? <div></div>
+                    :
+                    <div className="collapse navbar-collapse" id="navbarNavDropdown">
+                        <ul className="navbar-nav mr-auto">
+                        </ul>
 
-                    <ul className="navbar-nav">
-                        <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
-                        <NavLink name={"Create Account"} href="/create_account"/>
-                    </ul>
-                </div>
+                        <ul className="navbar-nav">
+                            <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
+                            <NavLink name={"Create Account"} href="/create_account"/>
+                        </ul>
+                    </div>
+                }
 
-                <div>
+                <div className='ml-auto'>
                     &nbsp;<DarkModeToggle/>
                 </div>
 
@@ -76,3 +91,4 @@ var navbar = ReactDOM.render(
 );
 
 export { navbar };
+

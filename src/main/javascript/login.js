@@ -72,7 +72,6 @@ class LoginModal extends React.Component {
                     loginModal.state.valid.errorMessage = true;
                     loginModal.state.errorMessage = response.message;
                     loginModal.setState(loginModal.state);
-                    navbar.logOut();
                     return false;
                 }
 

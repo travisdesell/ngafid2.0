@@ -223,7 +223,7 @@ public class AccountJavalinRoutes {
         Map<String, Object> scopes = new HashMap<String, Object>();
 
         LOG.info("template file: '" + templateFile + "'");
-
+        
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
     }
@@ -266,20 +266,28 @@ public class AccountJavalinRoutes {
     }
 
     private static void postForgotPassword(Context ctx) {
+
         try (Connection connection = Database.getConnection()) {
+
             final String email = ctx.formParam("email");
             if (User.exists(connection, email)) {
+
                 LOG.info("User exists. Sending reset password email.");
                 User.sendPasswordResetEmail(connection, email);
-                ctx.json(new ForgotPasswordResponse("A password reset link has been sent to your registered email address. Please click on it to reset your password.", true));
+                ctx.json(new ForgotPasswordResponse("A password reset link has been sent to your registered email address. Please click on it to reset your password.", true)).status(200);
+
             } else {
+
                 LOG.info("User with email : " + email + " doesn't exist.");
-                ctx.json(new ForgotPasswordResponse("User doesn't exist in database", false));
+                ctx.json(new ForgotPasswordResponse("User doesn't exist in database", false)).status(200);
+
             }
+
         } catch (SQLException e) {
             LOG.severe(e.toString());
-            ctx.json(new ForgotPasswordResponse(e.toString(), false));
+            ctx.json(new ForgotPasswordResponse(e.toString(), false)).status(500);
         }
+
     }
 
 

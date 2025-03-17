@@ -4,6 +4,7 @@ import ReactDOM from "react-dom";
 
 import {errorModal} from "./error_modal.js";
 
+
 class CreateAccountCard extends React.Component {
     constructor(props) {
         super(props);
@@ -427,7 +428,7 @@ class CreateAccountCard extends React.Component {
         console.log("rendering with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
 
         return (
-            
+
             <div className="card mb-1" style={{...bgStyle, margin:"1em"}}>
                 <h5 className="card-header" style={fgStyle}>
                     Create an NGAFID Account

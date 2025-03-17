@@ -96,7 +96,7 @@ class RollSlider extends React.Component {
             <div className="col-auto" style={{textAlign: 'center', margin: 'auto'}}
                   >
                 Minimum Roll Value = {getValue()}&deg;  <br/>
-                {min}&deg; <input  id="rollSlider" type="range" min={min} max={max} value={getValue()} className="slider" id="rollSlider" onChange={(val) => onChange(val)}
+                {min}&deg; <input  id="rollSlider" type="range" min={min} max={max} value={getValue()} className="slider" onChange={(val) => onChange(val)}
                         style={{margin: 'auto', verticalAlign: 'middle'}}/> {max}&deg;
                 <br/>
                 <div style={{ margin: "auto", width: "83%", backgroundImage: "linear-gradient(90deg, rgb(0, 255, 0), 55%, rgb(255, 255, 0), 66%, rgb(255, 0, 0))", height: "4px" }}></div>
