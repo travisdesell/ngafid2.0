@@ -93,50 +93,50 @@ public enum UploadHelper {
                 for (String v : cmd.getOptionValues("fleet"))
                     ids.add(Integer.parseInt(v));
 
-            for (Integer id : ids)
-                enqueueFleetUploads(id);
+            enqueueFleetUploads(ids);
         } else if (cmd.hasOption("upload")) {
             if (ids.isEmpty())
                 for (String v : cmd.getOptionValues("upload"))
                     ids.add(Integer.parseInt(v));
 
-            for (Integer id : ids)
-                enqueueUpload(id);
+            enqueueUploads(ids);
         } else {
             formatter.printHelp("ngafid-upload-utility", options);
         }
     }
 
 
-    static private void enqueueUpload(int uploadId) {
+    static private void enqueueUploads(List<Integer> uploadIds) {
         try (KafkaProducer<String, Integer> producer = getUploadProducer()) {
-            producer.send(new ProducerRecord<>("upload", uploadId));
+            for (Integer uploadId : uploadIds)
+                producer.send(new ProducerRecord<>("upload", uploadId));
         }
     }
 
-    static private void enqueueFleetUploads(int fleetId) throws SQLException {
+    static private void enqueueFleetUploads(List<Integer> fleetIds) throws SQLException {
         try (Connection connection = Database.getConnection();
              KafkaProducer<String, Integer> producer = getUploadProducer()) {
+            for (Integer fleetId : fleetIds) {
+                // Step through the fleets uploads in pages of 1K, adding them to the upload topic as we do.
+                int idCursor = 0;
+                while (true) {
+                    try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM uploads WHERE fleet_id = ?  AND id > ? LIMIT 1000")) {
+                        statement.setInt(1, fleetId);
+                        statement.setInt(2, idCursor);
 
-            // Step through the fleets uploads in pages of 1K, adding them to the upload topic as we do.
-            int idCursor = 0;
-            while (true) {
-                try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM uploads WHERE fleet_id = ?  AND id > ? LIMIT 1000")) {
-                    statement.setInt(1, fleetId);
-                    statement.setInt(2, idCursor);
+                        try (ResultSet resultSet = statement.executeQuery()) {
+                            int nRows = 0;
+                            while (resultSet.next()) {
+                                int uploadId = resultSet.getInt(1);
+                                LOG.info("Added upload id = " + uploadId + " to `upload` topic.");
+                                producer.send(new ProducerRecord<>("upload", uploadId));
+                                idCursor = Math.max(uploadId, idCursor);
+                                nRows += 1;
+                            }
 
-                    try (ResultSet resultSet = statement.executeQuery()) {
-                        int nRows = 0;
-                        while (resultSet.next()) {
-                            int uploadId = resultSet.getInt(1);
-                            LOG.info("Added upload id = " + uploadId + " to `upload` topic.");
-                            producer.send(new ProducerRecord<>("upload", uploadId));
-                            idCursor = Math.max(uploadId, idCursor);
-                            nRows += 1;
+                            if (nRows == 0)
+                                break;
                         }
-
-                        if (nRows == 0)
-                            break;
                     }
                 }
             }
