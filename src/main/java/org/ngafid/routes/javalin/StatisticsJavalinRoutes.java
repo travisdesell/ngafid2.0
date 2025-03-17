@@ -386,12 +386,12 @@ public class StatisticsJavalinRoutes {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
 
-        app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
         app.post("/protected/statistics/aggregate/event_counts", ctx -> postEventCounts(ctx, true));
+        app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
         app.post("/protected/statistics/all_event_counts", ctx -> postEventCounts(ctx, true));
 
-        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
         app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
+        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
 
         app.get("/protected/event_statistics", StatisticsJavalinRoutes::getEventStatistics);
         app.post("/protected/monthly_event_counts", StatisticsJavalinRoutes::postMonthlyEventCounts);
