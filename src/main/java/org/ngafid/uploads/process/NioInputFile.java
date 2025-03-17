@@ -19,7 +19,6 @@ public class NioInputFile implements InputFile {
     public NioInputFile(Path file) {
         path = file;
     }
-
     @Override
     public long getLength() throws IOException {
         if (length == -1) {

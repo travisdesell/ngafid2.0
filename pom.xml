@@ -8,11 +8,19 @@
     <name>ngafid</name>
     <url>http://maven.apache.org</url>
 
-    <properties>
-        <!--
-        <maven.compiler.source>1.9</maven.compiler.source>
-        <maven.compiler.target>1.9</maven.compiler.target>
-        -->
+    <!--
+<modules>
+   <module>parquet_reader</module>
+   <module>src/main/java/org/ngafid/upload</module>
+</modules>
+   -->
+
+
+<properties>
+   <!--
+   <maven.compiler.source>1.9</maven.compiler.source>
+   <maven.compiler.target>1.9</maven.compiler.target>
+   -->
         <kotlin.version>1.9.10</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
@@ -187,13 +195,6 @@
             <version>4.5</version>
         </dependency>
 
-        <!-- Parquet file processing-->
-        <dependency>
-            <groupId>org.parquet</groupId>
-            <artifactId>parquet-reader</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -205,6 +206,31 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.17.0</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.parquet</groupId>
+            <artifactId>parquet-reader</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-servlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-webapp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-util</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>
