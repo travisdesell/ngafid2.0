@@ -6,10 +6,16 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.common.Database;
 import org.ngafid.uploads.UploadDoesNotExistException;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.ngafid.kafka.Configuration.getUploadProperties;
@@ -28,16 +34,24 @@ public enum UploadHelper {
 
         Option input = new Option("f", "fleet", true, "Fleet ID for which all uploads should be added to the processing queue");
         input.setRequired(false);
+        input.setArgs(Option.UNLIMITED_VALUES);
+        input.setOptionalArg(true);
         options.addOption(input);
 
-        Option output = new Option("u", "upload", true, "Upload ID that should be added to the processing queue");
-        output.setRequired(false);
-        options.addOption(output);
+        Option upload = new Option("u", "upload", true, "Upload ID that should be added to the processing queue");
+        upload.setRequired(false);
+        upload.setArgs(Option.UNLIMITED_VALUES);
+        upload.setOptionalArg(true);
+        options.addOption(upload);
+
+        Option file = new Option("F", "file", true, "File from which to read IDs");
+        file.setRequired(false);
+        options.addOption(file);
 
         return options;
     }
 
-    public static void main(String[] arguments) throws SQLException, UploadDoesNotExistException {
+    public static void main(String[] arguments) throws SQLException, UploadDoesNotExistException, IOException {
         Options options = buildCLIOptions();
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -51,10 +65,43 @@ public enum UploadHelper {
             System.exit(1);
         }
 
+        File file = cmd.hasOption("file") ? new File(cmd.getOptionValue("file")) : null;
+        List<Integer> ids = new ArrayList<>();
+
+        if (file != null) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] split = line.split(" ");
+                    for (String chunk : split) {
+                        chunk = chunk.trim();
+                        if (chunk.isEmpty())
+                            continue;
+                        try {
+                            int id = Integer.parseInt(chunk);
+                            ids.add(id);
+                        } catch (NumberFormatException e) {
+                            System.out.println("Error parsing integer: '" + chunk + "'");
+                        }
+                    }
+                }
+            }
+        }
+
         if (cmd.hasOption("fleet")) {
-            enqueueFleetUploads(Integer.parseInt(cmd.getOptionValue("fleet")));
+            if (ids.isEmpty())
+                for (String v : cmd.getOptionValues("fleet"))
+                    ids.add(Integer.parseInt(v));
+
+            for (Integer id : ids)
+                enqueueFleetUploads(id);
         } else if (cmd.hasOption("upload")) {
-            enqueueUpload(Integer.parseInt(cmd.getOptionValue("upload")));
+            if (ids.isEmpty())
+                for (String v : cmd.getOptionValues("upload"))
+                    ids.add(Integer.parseInt(v));
+
+            for (Integer id : ids)
+                enqueueUpload(id);
         } else {
             formatter.printHelp("ngafid-upload-utility", options);
         }
