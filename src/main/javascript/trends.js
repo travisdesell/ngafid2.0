@@ -917,8 +917,8 @@ class TrendsPage extends React.Component {
                 <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
-                        <div className="col-lg-12">
-                            <div className="card mb-2 m-2">
+                        <div className="col-lg-12" style={{paddingBottom: "64"}}>
+                            <div className="card m-2">
                                 <TimeHeader
                                     name={timeHeaderTitle}
                                     airframes={airframes}
