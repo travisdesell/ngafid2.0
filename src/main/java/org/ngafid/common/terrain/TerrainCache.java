@@ -10,13 +10,17 @@ public final class TerrainCache {
     public static final String TERRAIN_DIRECTORY;
     private static int MAX_CACHE_SIZE;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
-    
+
 
      private static final ThreadLocal<LinkedHashMap<Coordinate, SRTMTile>> THREAD_LOCAL_TILE_CACHE =
         // Load factor is arbitrary because we always remove the eldest entry
         ThreadLocal.withInitial(() -> new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Coordinate, SRTMTile> eldest) {
+                if (MAX_CACHE_SIZE <= 0) {
+                    return false;
+                }
+
                 return size() > MAX_CACHE_SIZE;
             }
         });
@@ -32,7 +36,7 @@ public final class TerrainCache {
 
         TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
         //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
-        
+
         if (System.getenv("MAX_CACHE_SIZE") == null) {
             LOG.warning("ERROR: 'MAX_CACHE_SIZE' environment variable not specified at runtime. Setting default to 357 (1GB).");
 
