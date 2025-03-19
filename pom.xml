@@ -208,7 +208,7 @@
             <version>3.17.0</version>
         </dependency>
 
-
+        <!-- Parquet file processor  -->
         <dependency>
             <groupId>org.parquet</groupId>
             <artifactId>parquet-reader</artifactId>

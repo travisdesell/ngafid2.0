@@ -106,7 +106,9 @@ public final class ProcessUpload {
     }
 
 
-
+    /*
+    I will remove this
+     */
     private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
         Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR, String.valueOf(upload.fleetId),
                 String.valueOf(upload.uploaderId), upload.identifier);
@@ -123,7 +125,6 @@ public final class ProcessUpload {
         }
 
         LOG.info("Combining chunks for upload ID: " + upload.getId());
-        long startTime = System.nanoTime();
 
         try (FileOutputStream out = new FileOutputStream(targetFilename.toFile());
              DigestInputStream md5Stream = new DigestInputStream(new BufferedInputStream(new FileInputStream(targetFilename.toFile())),
@@ -140,11 +141,10 @@ public final class ProcessUpload {
                         md5Stream.getMessageDigest().update(buffer, 0, bytesRead); // Update hash while writing
                     }
                 }
-                LOG.info("Processed chunk " + i);
+               // LOG.info("Processed chunk " + i);
             }
 
-            long elapsedTime = (System.nanoTime() - startTime) / 1_000_000;
-            LOG.info("File combined in " + elapsedTime + " ms");
+
 
 
             if (!upload.checkSize()) {
