@@ -21,7 +21,6 @@ import org.ngafid.accounts.User;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.Database;
 import org.ngafid.flights.*;
-import org.ngafid.accounts.*;
 
 public class PostSummaryStatistics implements Route {
     private static final Logger LOG = Logger.getLogger(PostSummaryStatistics.class.getName());

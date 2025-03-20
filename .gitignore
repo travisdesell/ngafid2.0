@@ -1,11 +1,5 @@
 .DS_Store
 .idea
-*.class
-connect_db.sh
-db/dbinfo
-dbinfo.php
-db/dbinfo.php
-node_modules
 target/*
 src/main/resources/public/js/*
 .cache-loader/*
@@ -15,4 +9,10 @@ db/db_info
 email_info.txt
 package-lock.json
 data/*
-src/main/resources/liquidbase.properties
+ngafid-db/src/liquibase.properties
+ngafid-core/target/*
+ngafid-www/target/*
+ngafid-data-processor/target/*
+ngafid-frontend/node_modules
+ngafid-frontend/package-json.lock
+ngafid-static/public/js/*
