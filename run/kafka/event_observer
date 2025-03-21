@@ -1,0 +1,1 @@
+mvn exec:java -pl ngafid-data-processor -Dexec.mainClass="org.ngafid.processor.EventObserver" -Dexec.args="$*"

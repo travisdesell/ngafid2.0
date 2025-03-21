@@ -1,0 +1,7 @@
+#sh run_extract_flights.sh -f 10 -o ./test_flight
+
+ARGUMENTS="$@"
+
+echo "command line args are: '$ARGUMENTS'"
+
+mvn exec:java -pl ngafid-core -Dexec.mainClass="org.ngafid.core.bin.ExtractFlights" -Dexec.args="$ARGUMENTS"

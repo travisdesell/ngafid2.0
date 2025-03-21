@@ -230,18 +230,18 @@ terminals:
 The upload consumer simply processes uploaded files from the `upload` topic:
 
 ```shell
-~/ngafid2.0 $ run/upload_consumer.sh
+~/ngafid2.0 $ run/upload_consumer
 ```
 
 The event consumer and event observer work in concert: the event observer looks for uncomputed events in fully imported
 flights and places them into the `event` topic. Then, the event consumer computes those events.
 
 ```shell
-~/ngafid2.0 $ run/event_consumer.sh
+~/ngafid2.0 $ run/event_consumer
 ```
 
 ```shell
-~/ngafid2.0 $ run/event_observer.sh
+~/ngafid2.0 $ run/event_observer
 ```
 
 ## 7. Workflow
