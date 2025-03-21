@@ -68,7 +68,7 @@ module.exports = {
     devtool: "source-map",
 
     output: {
-        path: path.resolve(__dirname, "../ngafid-static/public/js/"),
+        path: path.resolve(__dirname, "../ngafid-static/js/"),
         filename: "[name]-bundle.js"
     },
 
