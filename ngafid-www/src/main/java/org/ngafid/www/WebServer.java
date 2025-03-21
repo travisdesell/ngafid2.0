@@ -9,10 +9,8 @@ import com.google.gson.stream.JsonWriter;
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.util.ConvertToHTML;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -127,8 +125,7 @@ public abstract class WebServer {
 
     protected void configureLogging() {
         try {
-            ClassLoader classLoader = WebServer.class.getClassLoader();
-            final InputStream logConfig = classLoader.getResourceAsStream("resources/log.properties");
+            final InputStream logConfig = Files.newInputStream(new File("resources/log.properties").toPath());
             LogManager.getLogManager().readConfiguration(logConfig);
         } catch (Exception e) {
             e.printStackTrace();
