@@ -13,7 +13,7 @@ public enum Configuration {
     public static Properties getProperties() {
         Properties props = new Properties();
         try {
-            props.load(new FileReader("src/main/resources/connect-standalone.properties"));
+            props.load(new FileReader("resources/connect-standalone.properties"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
