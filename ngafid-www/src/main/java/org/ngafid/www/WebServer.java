@@ -128,7 +128,7 @@ public abstract class WebServer {
     protected void configureLogging() {
         try {
             ClassLoader classLoader = WebServer.class.getClassLoader();
-            final InputStream logConfig = classLoader.getResourceAsStream("resources/logging.properties");
+            final InputStream logConfig = classLoader.getResourceAsStream("resources/log.properties");
             LogManager.getLogManager().readConfiguration(logConfig);
         } catch (Exception e) {
             e.printStackTrace();
