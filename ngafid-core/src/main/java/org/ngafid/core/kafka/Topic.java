@@ -37,7 +37,7 @@ public enum Topic {
     public static void main(String[] args) throws Exception {
         try (AdminClient adminClient = AdminClient.create(Configuration.getProperties())) {
             List<NewTopic> newTopics = Arrays.stream(Topic.values())
-                    .map(topic -> new NewTopic(topic.toString(), 1, (short) 1))
+                    .map(topic -> new NewTopic(topic.toString(), 6, (short) 1))
                     .toList();
             adminClient.createTopics(newTopics);
         }
