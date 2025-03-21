@@ -14,6 +14,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Scans the database for flights with missing rows from the `flight_processed` table and adds the appropriate events
+ * to the event topic.
+ * <p>
+ * The event definitions in this program are automatically refreshed periodically, so in the event that event definitions
+ * are modified in the database this program does not need to be restarted to detect it.
+ */
 public class EventObserver {
 
     private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event) throws SQLException {

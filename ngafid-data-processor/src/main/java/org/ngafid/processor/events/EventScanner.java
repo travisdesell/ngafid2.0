@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Used to scan a flight for an event.
+ * Scans a flight for a normal event, i.e. an event defined with a `Conditional`.
  */
 public class EventScanner extends AbstractEventScanner {
     private static final Logger LOG = Logger.getLogger(EventScanner.class.getName());

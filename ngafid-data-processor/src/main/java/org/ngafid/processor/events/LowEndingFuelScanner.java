@@ -13,6 +13,9 @@ import java.util.Map;
 import static org.ngafid.core.event.CustomEvent.LOW_FUEL_EVENT_THRESHOLDS;
 import static org.ngafid.core.flights.Parameters.*;
 
+/**
+ * Scans the end of a flight for low fuel. Will create a max of one event.
+ */
 public class LowEndingFuelScanner extends AbstractEventScanner {
     private final Airframes.Airframe airframe;
 

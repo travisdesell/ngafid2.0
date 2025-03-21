@@ -15,6 +15,13 @@ import java.util.Map;
 import static org.ngafid.core.flights.Parameters.UNIX_TIME_SECONDS;
 import static org.ngafid.core.flights.Parameters.UTC_DATE_TIME;
 
+/**
+ * Abstract definition of an event scanner. An event scanner is exactly what it sounds like -- it scans flight data for
+ * events. This is not done directly on a Flight object so that non-finalized flights can be scanned as a part of the
+ * flight processing pipeline. Each event that is applicable to a flight will have a scanner created for it, and this
+ * for this scanner a ComputeEvent object will be created and this will be added to the DependencyGraph that will be
+ * resolved while processing the flight data. See `Pipeline` for more details.
+ */
 public abstract class AbstractEventScanner {
 
     protected final EventDefinition definition;

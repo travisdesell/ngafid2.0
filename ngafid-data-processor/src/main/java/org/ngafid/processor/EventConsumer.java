@@ -28,6 +28,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * The `event` and `event-retry` topics contain events that need to be computed. Most often this should be proximity
+ * events, however in the event that we change an event definition and it needs to be re-computed this daemon will
+ * do that computation as well.
+ * <p>
+ * Note that this daemon does NOT scan the database for events that need to be computed -- this is the role of the
+ * event observer, which will scan the database for non-computed events and add them to the event topic.
+ * <p>
+ * You may also manually add events to the queue using the EventHelper program in `ngafid-core`.
+ */
 public class EventConsumer extends DisjointConsumer<String, String> {
 
     private static final Logger LOG = Logger.getLogger(EventConsumer.class.getName());

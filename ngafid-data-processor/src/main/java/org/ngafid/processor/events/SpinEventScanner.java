@@ -14,6 +14,10 @@ import static org.ngafid.core.event.CustomEvent.getHighAltitudeSpin;
 import static org.ngafid.core.event.CustomEvent.getLowAltitudeSpin;
 import static org.ngafid.core.flights.Parameters.*;
 
+/**
+ * Scans a flight for both HIGH and LOW altitude spins. This scanner technically searches for two event definitions,
+ * this care needs to be taken to prevent duplicate event computation.
+ */
 public class SpinEventScanner extends AbstractEventScanner {
     private static final double ALT_AGL_LIMIT = 250;
     private static final int STOP_DELAY = 1;

@@ -20,6 +20,8 @@ import static org.ngafid.processor.steps.ComputeStep.required;
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic
  * meta information like the type of aircraft, the start and end time of the flight, etc. The actual flight data is
  * stored in the `doubleTimeSeries` and `stringTimeSeries` fields.
+ * <p>
+ * The flight builder also determines which compute steps are applied to the flight (see `FlightBuilder::gatherSteps`).
  *
  * @author Joshua Karns (josh@karns.dev)
  */
