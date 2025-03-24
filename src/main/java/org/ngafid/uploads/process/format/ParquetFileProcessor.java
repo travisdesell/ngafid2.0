@@ -49,6 +49,7 @@ public class ParquetFileProcessor {
             while ((record = reader.read()) != null) {
                 FlightMeta flightMeta = new FlightMeta();
 
+                Log.info("Processing metadata for flight " + counter);
                 processMetaData(record, flightMeta);
 
                 Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
@@ -58,7 +59,9 @@ public class ParquetFileProcessor {
 
                 flightBuilders.add(new FlightBuilder(flightMeta, doubleTimeSeries, stringTimeSeries));
                 counter++;
-                if (counter > 5) {break;}
+
+                // How many flights we are processing (testing)
+                //  if (counter > 175) break;
 
             }
         } catch (IOException e) {
@@ -70,13 +73,6 @@ public class ParquetFileProcessor {
 
         return flightBuilders.stream();
     }
-
-
-
-
-
-
-
 
     private void populateTimeSeries(GenericRecord record, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
 
@@ -102,7 +98,6 @@ public class ParquetFileProcessor {
             }
         }
 
-
         // Populate Double Time Series
         doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, "second", new ArrayList<>(timeValues)));
         doubleTimeSeries.put(Parameters.LATITUDE, new DoubleTimeSeries(Parameters.LATITUDE, "degree", new ArrayList<>(latitudeValues)));
@@ -114,9 +109,8 @@ public class ParquetFileProcessor {
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", new ArrayList<>(utcDateTimes)));
     }
 
-
     /**
-     * Extracts full column data instead of row-wise extraction.
+     * Extracts full column data
      */
     private void extractColumns(GenericRecord record,
                                 List<String> timeValues,
@@ -181,7 +175,7 @@ public class ParquetFileProcessor {
         String modeSCode = getString(metadataRecord, "mode_s_code");
         String primaryKey = getString(metadataRecord, "primary_key"); // Get primary key
 
-        flightMeta.systemId = (modeSCode != null && !modeSCode.isEmpty()) ? modeSCode : null;
+        flightMeta.systemId = (modeSCode != null && !modeSCode.isEmpty()) ? modeSCode : "Unknown";
         flightMeta.airframe = new Airframes.Airframe(
                 (aircraftType != null && !aircraftType.isEmpty()) ? aircraftType : "Unknown",
                 new Airframes.Type("Fixed Wing")
@@ -195,18 +189,6 @@ public class ParquetFileProcessor {
                 ", primary_key=" + primaryKey);
     }
 
-
-
-    /**
-     * Converts a timestamp in milliseconds to OffsetDateTime.
-     * @param timestamp The timestamp in milliseconds.
-     * @return OffsetDateTime or null if invalid.
-     */
-    private OffsetDateTime convertToOffsetDateTime(long timestamp) {
-        if (timestamp <= 0) return null;
-        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
-    }
-
     /**
      * Extracts a String field from the record.
      * @param record The GenericRecord
@@ -216,17 +198,6 @@ public class ParquetFileProcessor {
     private String getString(GenericRecord record, String fieldName) {
         Object value = record.get(fieldName);
         return value != null ? value.toString() : null;
-    }
-
-    /**
-     * Extracts a Long field from the record.
-     * @param record The GenericRecord
-     * @param fieldName The field to extract
-     * @return Long value or 0L if missing
-     */
-    private long getLong(GenericRecord record, String fieldName) {
-        Object value = record.get(fieldName);
-        return value instanceof Number ? ((Number) value).longValue() : 0L;
     }
 
     /**
@@ -252,5 +223,4 @@ public class ParquetFileProcessor {
 
         return MD5.computeHexHash(systemId + airframeName + primaryKey);
     }
-
 }

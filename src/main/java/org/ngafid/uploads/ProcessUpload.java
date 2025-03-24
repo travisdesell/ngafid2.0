@@ -12,14 +12,10 @@ import org.ngafid.uploads.process.MalformedFlightFileException;
 import org.ngafid.uploads.process.ParquetPipeline;
 import org.ngafid.uploads.process.Pipeline;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -66,7 +62,7 @@ public final class ProcessUpload {
         }
     }
 
-    private static void tryCombinePieces1(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
         LOG.info("Combining pieces");
         Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
         Path targetDirectory = Paths.get(upload.getArchiveDirectory());
@@ -104,69 +100,6 @@ public final class ProcessUpload {
         }
         LOG.info("Done");
     }
-
-
-    /*
-    I will remove this
-     */
-    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
-        Path chunkDirectory = Paths.get(WebServer.NGAFID_UPLOAD_DIR, String.valueOf(upload.fleetId),
-                String.valueOf(upload.uploaderId), upload.identifier);
-        Path targetDirectory = Paths.get(upload.getArchiveDirectory());
-
-
-        Files.createDirectories(targetDirectory);
-        Path targetFilename = targetDirectory.resolve(upload.getArchiveFilename());
-
-
-        if (Files.exists(targetFilename) && Files.isRegularFile(targetFilename)) {
-            LOG.info("File already combined: " + targetFilename);
-            return;
-        }
-
-        LOG.info("Combining chunks for upload ID: " + upload.getId());
-
-        try (FileOutputStream out = new FileOutputStream(targetFilename.toFile());
-             DigestInputStream md5Stream = new DigestInputStream(new BufferedInputStream(new FileInputStream(targetFilename.toFile())),
-                     MessageDigest.getInstance("MD5"))) {
-            byte[] buffer = new byte[8192]; // 8 KB buffer
-            int bytesRead;
-
-            for (int i = 0; i < upload.getNumberChunks(); i++) {
-                Path chunkPath = chunkDirectory.resolve(i + ".part");
-
-                try (InputStream in = Files.newInputStream(chunkPath)) {
-                    while ((bytesRead = in.read(buffer)) != -1) {
-                        out.write(buffer, 0, bytesRead);
-                        md5Stream.getMessageDigest().update(buffer, 0, bytesRead); // Update hash while writing
-                    }
-                }
-               // LOG.info("Processed chunk " + i);
-            }
-
-
-
-
-            if (!upload.checkSize()) {
-                Files.delete(targetFilename);
-                throw new IOException("Combined file size mismatch!");
-            }
-
-            // Compute MD5 hash and verify
-            String computedMd5 = DatatypeConverter.printHexBinary(md5Stream.getMessageDigest().digest());
-            if (!computedMd5.equalsIgnoreCase(upload.getMd5Hash())) {
-                throw new IOException("MD5 hash mismatch!");
-            }
-
-
-            deleteDirectory(chunkDirectory.toFile());
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException("MD5 algorithm not found", e);
-        }
-    }
-
-
-
 
     private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
@@ -298,6 +231,11 @@ public final class ProcessUpload {
                 Path parquetFilePath = Paths.get(filename);
                 ParquetPipeline parquetPipeline = new ParquetPipeline(connection, upload, parquetFilePath);
                 parquetPipeline.execute();
+                flightInfo = parquetPipeline.getFlightInfo();
+                flightErrors = parquetPipeline.getFlightErrors();
+                errorFlights = flightErrors.size();
+                warningFlights = parquetPipeline.getWarningFlightsCount();
+                validFlights = parquetPipeline.getValidFlightsCount();
 
 
                 System.out.println("Successfully processed file: " + filename);
