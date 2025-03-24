@@ -4,13 +4,14 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.ngafid.common.SendEmail;
 import org.ngafid.flights.Tails;
 
+import java.io.Serializable;
 import java.sql.*;
 import java.util.Date;
 import java.util.*;
 import java.util.logging.Logger;
 
 
-public final class User {
+public final class User implements Serializable {
     private static final Logger LOG = Logger.getLogger(User.class.getName());
 
     /**
@@ -955,6 +956,5 @@ public final class User {
             LOG.info(query.toString());
             query.executeUpdate();
         }
-
     }
 }

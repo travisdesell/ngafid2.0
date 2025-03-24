@@ -14,6 +14,9 @@ import static org.ngafid.flights.Airframes.AIRFRAME_DJI;
 import static org.ngafid.flights.Airframes.AIRFRAME_SCAN_EAGLE;
 import static org.ngafid.flights.Parameters.*;
 
+/**
+ * Computes a double time series that contains the altitude above sea level 10 seconds ago (i.e. alt msl lagged by 10 seconds).
+ */
 public class ComputeLaggedAltMSL extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL);
     private static final Set<String> OUTPUT_COLUMNS = Set.of(ALT_MSL_LAG_DIFF);

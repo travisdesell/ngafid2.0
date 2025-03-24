@@ -93,7 +93,7 @@ class TrendsPage extends React.Component {
     }
 
     fetchMonthlyEventCounts() {
-        var submission_data = {
+        var submissionData = {
             startDate : this.startDate() + "-01",
             endDate : this.endDate() + "-28",
             aggregatePage : this.props.aggregate_page
@@ -107,7 +107,7 @@ class TrendsPage extends React.Component {
             $.ajax({
                 type: 'POST',
                 url: '/protected/monthly_event_counts',
-                data : submission_data,
+                data : submissionData,
                 dataType : 'json',
                 success : function(response) {
 
@@ -904,20 +904,23 @@ class TrendsPage extends React.Component {
             maximumFractionDigits: 2 
         };
 
+        const activePageName = (this.state.aggregatePage ? "aggregate_trends" : "trends");
+        const timeHeaderTitle = (this.state.aggregatePage ? "Aggregate Event Trends" : "Event Trends");
+
         return (
             <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
                 <div style={{flex:"0 0 auto"}}>
-                    <SignedInNavbar activePage={"trends"} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                    <SignedInNavbar activePage={activePageName} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
                 </div>
 
                 <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
-                        <div className="col-lg-12">
-                            <div className="card mb-2 m-2">
+                        <div className="col-lg-12" style={{paddingBottom: "64"}}>
+                            <div className="card m-2">
                                 <TimeHeader
-                                    name="Event Trends"
+                                    name={timeHeaderTitle}
                                     airframes={airframes}
                                     airframe={this.state.airframe}
                                     startYear={this.state.startYear} 

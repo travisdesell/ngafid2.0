@@ -13,6 +13,9 @@ import static java.util.Map.entry;
 import static org.ngafid.flights.Airframes.*;
 import static org.ngafid.flights.Parameters.Unit;
 
+/**
+ * Computes engine divergence values, based on the engine type.
+ */
 public class ComputeDivergence extends ComputeStep {
 
     private record DivergenceConfig(List<String> parameters, String output) {
@@ -62,6 +65,7 @@ public class ComputeDivergence extends ComputeStep {
 
     private Set<String> requiredDoubleColumns = null;
 
+    @Override
     public Set<String> getRequiredDoubleColumns() {
         if (requiredDoubleColumns == null) {
 
@@ -80,16 +84,19 @@ public class ComputeDivergence extends ComputeStep {
         return requiredDoubleColumns;
     }
 
+    @Override
     public Set<String> getRequiredStringColumns() {
         return Collections.emptySet();
     }
 
+    @Override
     public Set<String> getRequiredColumns() {
         return getRequiredDoubleColumns();
     }
 
     private Set<String> outputColumns = null;
 
+    @Override
     public Set<String> getOutputColumns() {
         if (outputColumns == null) {
 
@@ -153,6 +160,7 @@ public class ComputeDivergence extends ComputeStep {
         builder.addTimeSeries(variance);
     }
 
+    @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         List<DivergenceConfig> configs = CONFIG_MAP.get(builder.meta.airframe.getName());
 

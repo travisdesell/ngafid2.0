@@ -388,6 +388,7 @@ public class EventJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             ctx.json(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
         } catch (SQLException e) {
+            e.printStackTrace();
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }

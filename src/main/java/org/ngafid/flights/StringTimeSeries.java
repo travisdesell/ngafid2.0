@@ -181,8 +181,7 @@ public final class StringTimeSeries {
     }
 
     public boolean emptyAt(int i) {
-        String value = get(i).strip();
-        return value == null || value.isEmpty();
+        return get(i).isEmpty();
     }
 
     public String getName() {
@@ -219,17 +218,18 @@ public final class StringTimeSeries {
         return null;
     }
 
-    public String[] getLastValidAndIndex() {
+    public int getLastValidIndex() {
         int position = timeSeries.size() - 1;
         while (position >= 0) {
             String current = timeSeries.get(position);
-            if (current.equals("")) {
+            if (current.isEmpty()) {
                 position--;
             } else {
-                return new String[]{current, String.valueOf(position)};
+                return position;
             }
         }
-        return null;
+
+        return -1;
     }
 
     public int size() {
@@ -284,7 +284,7 @@ public final class StringTimeSeries {
         return newSeries;
     }
 
-    public StringTimeSeries subSeries(int from, int until) throws SQLException {
+    public StringTimeSeries subSeries(int from, int until) {
         StringTimeSeries newSeries = new StringTimeSeries(name.getName(), dataType.getName());
 
         for (int i = from; i < until; i++)

@@ -13,10 +13,28 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
+/**
+ * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of {@link org.ngafid.events.EventScanner}.
+ * <p>
+ * When adding a custom event, you may have to modify the private factory methods contained within this class to properly
+ * compute the event upon ingestion.
+ */
 public class ComputeEvent extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeEvent.class.getName());
+
+    /**
+     * All event definitions contained within the database, populated within a static initialization block.
+     */
     private static final List<EventDefinition> ALL_EVENT_DEFS = new ArrayList<>();
+
+    /**
+     * Maps fleet id to event definitions that are particular to that fleet.
+     */
     private static final Map<Integer, List<EventDefinition>> FLEET_EVENT_DEFS = new HashMap<>();
+
+    /**
+     * Event definitions for use over every fleet.
+     */
     private static final List<EventDefinition> ALL_FLEET_EVENT_DEFS = new ArrayList<>();
 
     static {
@@ -37,6 +55,17 @@ public class ComputeEvent extends ComputeStep {
         }
     }
 
+    /**
+     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied flight builder,
+     * i.e. all the required columns are available.
+     * <p>
+     * Some additional logic is required specifically for custom events, as custom events use subclasses of ComputeEvent
+     * to perform custom compuations.
+     *
+     * @param connection database connection
+     * @param fb         flight builder
+     * @return list of ComputeEvent objects that can be properly computed for the supplied flight builder.
+     */
     public static List<ComputeEvent> getAllApplicable(Connection connection, FlightBuilder fb) {
         // We will mark these event definitions as having been computed (or attempted) in the
         var applicableEvents = ALL_EVENT_DEFS.stream()
@@ -49,6 +78,15 @@ public class ComputeEvent extends ComputeStep {
                 .toList();
     }
 
+    /**
+     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed before
+     * the flight is inserted into the database (namely proximity events), and this function will return null in that case.
+     *
+     * @param connection
+     * @param fb
+     * @param def
+     * @return a ComputeEvent object if successful, or null if the event cannot be computed during initial ingestion.
+     */
     private static ComputeEvent factory(Connection connection, FlightBuilder fb, EventDefinition def) {
         var scanner = scannerFactory(fb, def);
         if (scanner != null)
@@ -66,6 +104,16 @@ public class ComputeEvent extends ComputeStep {
         }
     }
 
+    /**
+     * Creates an event scanner (see {@link org.ngafid.events.AbstractEventScanner} and {@link org.ngafid.events.EventScanner})
+     * to search for an event with the supplied event definition.
+     * <p>
+     * Normal events use a common event scanner, whereas custom events must use custom event scanners.
+     *
+     * @param builder
+     * @param definition
+     * @return
+     */
     private static AbstractEventScanner scannerFactory(FlightBuilder builder, EventDefinition definition) {
         if (definition.getId() > 0) {
             return new EventScanner(definition);
@@ -82,19 +130,23 @@ public class ComputeEvent extends ComputeStep {
     protected final EventDefinition definition;
     private final AbstractEventScanner scanner;
 
+    private final HashSet<String> requiredDoubleColumns = new HashSet<>();
+
     public ComputeEvent(Connection connection, FlightBuilder fb, EventDefinition def, AbstractEventScanner scanner) {
         super(connection, fb);
         definition = def;
         this.scanner = scanner;
+
+        requiredDoubleColumns.addAll(definition.getColumnNames());
+        requiredDoubleColumns.add(Parameters.UNIX_TIME_SECONDS);
     }
 
     @Override
     public Set<String> getRequiredDoubleColumns() {
-        var cols = new HashSet<>(definition.getColumnNames());
-        return cols;
+        return requiredDoubleColumns;
     }
 
-    private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(Parameters.LCL_DATE, Parameters.LCL_TIME, Parameters.UTC_OFFSET);
+    private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(Parameters.UTC_DATE_TIME);
 
     @Override
     public Set<String> getRequiredStringColumns() {
@@ -119,6 +171,13 @@ public class ComputeEvent extends ComputeStep {
         return builder.meta.airframe.getType().getName().equals("Fixed Wing");
     }
 
+    /**
+     * Simply applies the event scanner to the supplied time series.
+     *
+     * @throws SQLException
+     * @throws MalformedFlightFileException
+     * @throws FatalFlightFileException
+     */
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         builder.emitEvents(scanner.scan(builder.getDoubleTimeSeriesMap(), builder.getStringTimeSeriesMap()));

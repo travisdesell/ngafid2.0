@@ -102,7 +102,7 @@ particular, if you are using a database other than mysql you will have to tweak 
 Once you have done this, you can create the database tables by running the following:
 
 ```
-~/ngafid2.0 $ mvn liquibase:update
+~/ngafid2.0 $ run/liquibase/update
 ```
 
 ## 3. Configure the environment
@@ -133,6 +133,8 @@ export NGAFID_BACKUP_DIR=<path to where backups should be stored>
 export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads"
 # If you don't want the webserver to send emails (exceptions, shutdowns, etc.), set this to false.
 export NGAFID_EMAIL_ENABLED=false
+# (Optional) To require users to log in again after restart, set this to true
+#export DISABLE_PERSISTENT_SESSIONS=true
 ```
 
 and run
@@ -258,6 +260,19 @@ not to be recomputed.
 ```
 ~/ngafid2.0 $ run/event_helper.sh --help
 ```
+
+## 8. Event Statistics
+
+Event statistics are to be computed and cached occasionally. If you import data and want to see it reflected on the
+website, you must update these cached tables:
+
+```
+$ run/liquibase/daily-materialized-views
+$ run/liquibase/hourly-materialized-views
+```
+
+You can set up a timer with `cron` or `systemd` to automatically do this on a schedule. Website features that work on
+event statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
 
 ## (Optional) using the backup daemon - works on Linux systems only.
 

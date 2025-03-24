@@ -1,6 +1,0 @@
-#mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFile"
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFilePitch"
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFileRoll"
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFileLongAc"
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFileLatAc"
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFileVerAc"

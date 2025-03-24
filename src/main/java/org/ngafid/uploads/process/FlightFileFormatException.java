@@ -1,5 +1,8 @@
 package org.ngafid.uploads.process;
 
+/**
+ * An exception indicating that a file extension or format is not recognized or otherwise supported.
+ */
 public class FlightFileFormatException extends Exception {
     private static final long serialVersionUID = 124311;
 

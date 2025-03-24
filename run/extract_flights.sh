@@ -4,4 +4,4 @@ ARGUMENTS="$@"
 
 echo "command line args are: '$ARGUMENTS'"
 
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ExtractFlights" -Dexec.args="$ARGUMENTS"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.bin.ExtractFlights" -Dexec.args="$ARGUMENTS"

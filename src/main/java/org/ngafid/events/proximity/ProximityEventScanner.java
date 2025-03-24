@@ -1,6 +1,7 @@
 package org.ngafid.events.proximity;
 
 import org.ngafid.common.Database;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.events.*;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
@@ -11,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +39,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
     }
 
     public List<Event> scanFlightPair(Connection connection, Flight flight, FlightTimeLocation flightInfo, Flight otherFlight, FlightTimeLocation otherFlightInfo) throws SQLException, NullPointerException {
-
         ArrayList<Event> eventList = new ArrayList<>();
         String startTime = null;
         String endTime = null;
@@ -71,23 +72,23 @@ public class ProximityEventScanner extends AbstractEventScanner {
         final int SKIP_SECONDS = 30;
         int i = SKIP_SECONDS, j = SKIP_SECONDS;
 
-        while (i < flightInfo.epochTime.length && j < otherFlightInfo.epochTime.length) {
+        while (i < flightInfo.epochTime.size() && j < otherFlightInfo.epochTime.size()) {
             // Skip entries where the epoch time was 0 (the date/time was null)
-            if (flightInfo.epochTime[i] == 0) {
+            if (flightInfo.epochTime.get(i) == 0) {
                 i++;
                 continue;
             }
-            if (otherFlightInfo.epochTime[j] == 0) {
+            if (otherFlightInfo.epochTime.get(j) == 0) {
                 j++;
                 continue;
             }
 
             // Ensure both iterators are for the same time
-            if (flightInfo.epochTime[i] < otherFlightInfo.epochTime[j]) {
+            if (flightInfo.epochTime.get(i) < otherFlightInfo.epochTime.get(j)) {
                 i++;
                 continue;
             }
-            if (otherFlightInfo.epochTime[j] < flightInfo.epochTime[i]) {
+            if (otherFlightInfo.epochTime.get(j) < flightInfo.epochTime.get(i)) {
                 j++;
                 continue;
             }
@@ -116,8 +117,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
                 if (startTime == null) {
 
                     // Start tracking a new exceedence
-                    startTime = flightInfo.dateSeries.get(i) + " " + flightInfo.timeSeries.get(i);
-                    otherStartTime = otherFlightInfo.dateSeries.get(j) + " " + otherFlightInfo.timeSeries.get(j);
+                    startTime = flightInfo.utc.get(i);
+                    otherStartTime = otherFlightInfo.utc.get(j);
 
                     startLine = i;
                     otherStartLine = j;
@@ -128,8 +129,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
                 endLine = i;
                 otherEndLine = j;
-                endTime = flightInfo.dateSeries.get(i) + " " + flightInfo.timeSeries.get(i);
-                otherEndTime = otherFlightInfo.dateSeries.get(j) + " " + otherFlightInfo.timeSeries.get(j);
+                endTime = flightInfo.utc.get(i);
+                otherEndTime = otherFlightInfo.utc.get(j);
 
                 // New closest proximity this time, update the severity
                 if (distanceFt < severity) {
@@ -161,7 +162,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
                 } else {
                     // Had enough triggers to reach the start count, create the event
                     LOG.info("(A) Creating events for flights with IDs : " + flight.getId() + " and " + otherFlight.getId());
-                    emitProximityEventPair(flight, flightInfo, otherFlight, otherFlightInfo, eventList, startTime, endTime, otherStartTime, otherEndTime, startLine, endLine, otherStartLine, otherEndLine, severity, lateralDistance, verticalDistance);
+                    emitProximityEventPair(flight, flightInfo, otherFlight, otherFlightInfo, eventList, TimeUtils.parseUTC(startTime), TimeUtils.parseUTC(endTime), TimeUtils.parseUTC(otherStartTime), TimeUtils.parseUTC(otherEndTime), startLine, endLine, otherStartLine, otherEndLine, severity, lateralDistance, verticalDistance);
                 }
 
                 // Reset the event values
@@ -185,13 +186,13 @@ public class ProximityEventScanner extends AbstractEventScanner {
         // An event was still going when one flight ended, create it and add it to the list...
         if (startTime != null) {
             LOG.info("(B) Creating events for flights with IDs : " + flight.getId() + " and " + otherFlight.getId());
-            emitProximityEventPair(flight, flightInfo, otherFlight, otherFlightInfo, eventList, startTime, endTime, otherStartTime, otherEndTime, startLine, endLine, otherStartLine, otherEndLine, severity, lateralDistance, verticalDistance);
+            emitProximityEventPair(flight, flightInfo, otherFlight, otherFlightInfo, eventList, TimeUtils.parseUTC(startTime), TimeUtils.parseUTC(endTime), TimeUtils.parseUTC(otherStartTime), TimeUtils.parseUTC(otherEndTime), startLine, endLine, otherStartLine, otherEndLine, severity, lateralDistance, verticalDistance);
         }
 
         return eventList;
     }
 
-    private void emitProximityEventPair(Flight flight, FlightTimeLocation flightInfo, Flight otherFlight, FlightTimeLocation otherFlightInfo, ArrayList<Event> eventList, String startTime, String endTime, String otherStartTime, String otherEndTime, int startLine, int endLine, int otherStartLine, int otherEndLine, double severity, double lateralDistance, double verticalDistance) {
+    private void emitProximityEventPair(Flight flight, FlightTimeLocation flightInfo, Flight otherFlight, FlightTimeLocation otherFlightInfo, ArrayList<Event> eventList, OffsetDateTime startTime, OffsetDateTime endTime, OffsetDateTime otherStartTime, OffsetDateTime otherEndTime, int startLine, int endLine, int otherStartLine, int otherEndLine, double severity, double lateralDistance, double verticalDistance) {
         Event event = new Event(startTime, endTime, startLine, endLine, super.definition.getId(), severity,
                 flight.getId(), otherFlight.getId());
         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine,

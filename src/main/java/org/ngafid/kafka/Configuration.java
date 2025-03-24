@@ -1,11 +1,12 @@
 package org.ngafid.kafka;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Contains static methods to generate properties used for instantiating Kafka producers / consumers.
+ */
 public enum Configuration {
     ;
 
@@ -34,7 +35,5 @@ public enum Configuration {
         return props;
     }
 
-    public static KafkaProducer<String, Integer> getUploadProducer() {
-        return new KafkaProducer<>(getUploadProperties());
-    }
+
 }

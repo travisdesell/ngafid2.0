@@ -44,7 +44,7 @@ CREATE TABLE uploads (
     n_warning_flights INT DEFAULT 0,
     n_error_flights INT DEFAULT 0,
     
-    contains_rotorcraft TINYINT(1) NOT NULL DEFAULT 0,
+    contains_rotorcraft INT NOT NULL DEFAULT 0,
 
     PRIMARY KEY (id),
      UNIQUE KEY (uploader_id, md5_hash),

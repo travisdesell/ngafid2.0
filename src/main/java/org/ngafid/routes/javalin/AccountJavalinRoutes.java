@@ -171,6 +171,7 @@ public class AccountJavalinRoutes {
 
         // Set the session attribute for this user so it will be considered logged in.
         ctx.sessionAttribute("user", null);
+        ctx.req().getSession().invalidate();
         LOG.info("removed user '" + user.getEmail() + "' from the session.");
 
         ctx.json(new LogoutResponse(true, false, false, "Successfully logged out.", null));

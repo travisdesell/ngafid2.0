@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.bin.UploadHelper" -Dexec.args="$@"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.bin.UploadHelper" -Dexec.args="$*"

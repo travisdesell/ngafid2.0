@@ -15,31 +15,39 @@ import java.util.logging.Logger;
 
 import static org.ngafid.flights.Parameters.*;
 
+/**
+ * Computes the itinerary for the flight. We represent the itinerary as a list of {@link org.ngafid.flights.Itinerary} objects,
+ * where each object represents a single visit to an airport.
+ */
 public class ComputeItinerary extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeItinerary.class.getName());
 
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE,
             RUNWAY_DISTANCE, GND_SPD, E1_RPM);
     private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
-    // This is a fake column; never actually created.
+    // This is a fake column; never actually created, but for steps that rely on the itinerary they can use this dummy column.
     private static final Set<String> OUTPUT_COLUMNS = Set.of("_itinerary");
 
     public ComputeItinerary(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 
+    @Override
     public Set<String> getRequiredDoubleColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getRequiredStringColumns() {
         return REQUIRED_STRING_COLUMNS;
     }
 
+    @Override
     public Set<String> getRequiredColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getOutputColumns() {
         return OUTPUT_COLUMNS;
     }
@@ -48,6 +56,7 @@ public class ComputeItinerary extends ComputeStep {
         return true;
     }
 
+    @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries groundSpeed = builder.getDoubleTimeSeries(GND_SPD);
         DoubleTimeSeries rpm = builder.getDoubleTimeSeries(E1_RPM);
@@ -66,7 +75,7 @@ public class ComputeItinerary extends ComputeStep {
             String airport = nearestAirportTS.get(i);
             String runway = nearestRunwayTS.get(i);
 
-            if (airport != null && !airport.equals("")) {
+            if (airport != null && !airport.isEmpty()) {
                 // We've gotten close to an airport, so create a stop if there
                 // isn't one. If there is one, update the runway being visited.
                 // If the airport is a new airport (this shouldn't happen really),
@@ -107,18 +116,9 @@ public class ComputeItinerary extends ComputeStep {
                 itinerary.add(currentItinerary);
         }
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // setting and determining itinerary type
-        int itinerarySize = itinerary.size();
         for (Itinerary value : itinerary) {
             value.determineType();
         }
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // LOG.info("Itinerary:");
-        // for (int i = 0; i < itinerary.size(); i++) {
-        // LOG.info(itinerary.get(i).toString());
-        // }
 
         builder.setItinerary(itinerary);
     }

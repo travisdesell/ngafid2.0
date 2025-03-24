@@ -8,8 +8,6 @@ import jakarta.servlet.MultipartConfigElement;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
 import org.ngafid.common.Database;
-import org.ngafid.common.MD5;
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.FlightWarning;
 import org.ngafid.flights.Tails;
@@ -31,7 +29,6 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.ngafid.bin.WebServer.gson;
 
 public class ImportUploadJavalinRoutes {
@@ -80,11 +77,14 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static void getUpload(Context ctx) {
-        LOG.info("Retrieving upload: " + ctx.formParams("uploadId") + " " + ctx.formParams("md5Hash"));
+
+        int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("uploadId")));
+        LOG.log(Level.INFO, "Retrieving upload: {0} {1}", new Object[]{uploadId, ctx.formParams("md5Hash")});
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         Upload upload;
 
+        //Attempt to retrieve the upload from the database
         try (Connection connection = Database.getConnection()) {
             upload = Upload.getUploadById(connection, Integer.parseInt(Objects.requireNonNull(ctx.formParam("uploadId"))), ctx.formParam("md5Hash"));
         } catch (SQLException e) {
@@ -94,12 +94,14 @@ public class ImportUploadJavalinRoutes {
             return;
         }
 
+        //Upload was not found, return 404
         if (upload == null) {
             ctx.status(404);
             ctx.result("Upload not found");
             return;
         }
 
+        //User did not have access to download the uploaded file, return 401
         if (!user.hasUploadAccess(upload.getFleetId())) {
             LOG.severe("INVALID ACCESS: user did not have upload or manager access this fleet.");
             ctx.status(401);
@@ -107,28 +109,38 @@ public class ImportUploadJavalinRoutes {
             return;
         }
 
+        //Build the file path
         File file = new File(String.format("%s/%d/%d/%d__%s", WebServer.NGAFID_ARCHIVE_DIR, upload.getFleetId(), upload.getUploaderId(), upload.getId(), upload.getFilename()));
-        LOG.info("File: " + file.getAbsolutePath());
+        LOG.log(Level.INFO, "File: {0}", file.getAbsolutePath());
+
+        //File was found, attempt to send the file to the client
         if (file.exists()) {
+
             ctx.contentType("application/zip");
             ctx.header("Content-Disposition", "attachment; filename=" + upload.getFilename());
 
             try (InputStream buffInputStream = new BufferedInputStream(new FileInputStream(file)); OutputStream outputStream = ctx.outputStream()) {
+
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 while ((bytesRead = buffInputStream.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, bytesRead);
                 }
 
+                //Successful download
                 LOG.log(Level.INFO, "%s file sent", file.getName());
+                ctx.status(200);
+
             } catch (IOException e) {
                 LOG.severe(e.toString());
             }
+
         } else {
             LOG.severe(String.format("File not found: %s", file.getName()));
             ctx.status(404);
             ctx.result("File was not found on server");
         }
+
     }
 
     private static void postUpload(Context ctx) {
@@ -192,47 +204,6 @@ public class ImportUploadJavalinRoutes {
 
                 if (upload.completed()) {
                     locked.complete();
-                    String targetDirectory = upload.getArchiveDirectory();
-                    new File(targetDirectory).mkdirs();
-                    String targetFilename = targetDirectory + "/" + upload.getArchiveFilename();
-
-                    LOG.info("Attempting to write final file to '" + targetFilename + "'");
-                    try (FileOutputStream out = new FileOutputStream(targetFilename)) {
-                        for (int i = 0; i < upload.getNumberChunks(); i++) {
-                            byte[] bytes = Files.readAllBytes(Paths.get(chunkDirectory + "/" + i + ".part"));
-                            out.write(bytes);
-                        }
-
-                        if (!upload.checkSize()) {
-                            LOG.severe("ERROR! Final file had incorrect number of bytes.");
-                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "An error occurred while merging the chunks. The final file size was incorrect. Please try again.")));
-                            return;
-                        }
-
-                        String newMd5Hash = null;
-                        try (InputStream is = new FileInputStream(Paths.get(targetFilename).toFile())) {
-                            newMd5Hash = MD5.computeHexHash(is);
-                        } catch (IOException e) {
-                            LOG.severe("Error calculating MD5 hash: " + e.getMessage());
-                            ctx.status(500);
-                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error calculating MD5 hash.")));
-                            return;
-                        }
-
-                        if (!newMd5Hash.equals(upload.getMd5Hash())) {
-                            LOG.severe("ERROR! MD5 hashes do not match.");
-                            ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "MD5 hash mismatch. File corruption might have occurred during upload.")));
-                            return;
-                        }
-
-                        locked.complete();
-
-                        deleteDirectory(new File(chunkDirectory));
-                    } catch (IOException e) {
-                        LOG.severe("Error writing final file: " + e.getMessage());
-                        ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "Error writing final file.")));
-                        return;
-                    }
                 }
             }
 
@@ -343,20 +314,16 @@ public class ImportUploadJavalinRoutes {
                 return;
             }
 
-            final List<Flight> flights = Flight.getFlightsFromUpload(connection, uploadId);
-
-            // get all flights, delete:
-            // flight warning
-            // flight error
-            for (Flight flight : flights) {
-                flight.remove(connection);
-            }
-
             try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
                 locked.remove();
             }
 
             Tails.removeUnused(connection);
+
+            //Removed Successfully
+            LOG.log(Level.INFO, "Upload removed successfully: {0}", uploadId);
+            ctx.json(uploadId).status(200);
+
         } catch (Exception e) {
             LOG.info(e.getMessage());
             ctx.json(new ErrorResponse(e)).status(500);
@@ -485,7 +452,8 @@ public class ImportUploadJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
+        app.post("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
+        // app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
         app.post("/protected/new_upload", ImportUploadJavalinRoutes::postNewUpload);
         app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
         app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
