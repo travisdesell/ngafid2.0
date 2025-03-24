@@ -117,6 +117,7 @@ class SignedInNavbar extends React.Component {
             filterButtonClasses += " active";
 
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        let cesiumButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
 
         const buttonStyle = { minWidth: "2.5em", minHeight: "2.5em" };
@@ -204,6 +205,11 @@ class SignedInNavbar extends React.Component {
                                     <i className="fa fa-area-chart p-1"></i>
                                 </button>
                             }
+
+                            <button id="cesium-toggle-button" className={cesiumButtonClasses} data-toggle="button" title="Toggle the cesium." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleCesiumMap()}>
+                                <i className="fa fa-globe p-1"></i>
+                            </button>
+
 
                             <div className="input-group m-0">
                                 <div className="input-group-prepend">

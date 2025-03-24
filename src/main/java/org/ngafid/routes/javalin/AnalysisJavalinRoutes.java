@@ -569,7 +569,7 @@ public class AnalysisJavalinRoutes {
 
         app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
 
-        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
+//        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 
         app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
         app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);

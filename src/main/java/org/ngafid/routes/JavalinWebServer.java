@@ -76,6 +76,7 @@ public class JavalinWebServer extends WebServer {
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         TagFilterJavalinRoutes.bindRoutes(app);
+        CesiumDataJavalinRoutes.bindRoutes(app);
     }
 
     @Override
