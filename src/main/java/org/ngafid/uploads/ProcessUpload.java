@@ -9,6 +9,7 @@ import org.ngafid.common.MD5;
 import org.ngafid.common.SendEmail;
 import org.ngafid.flights.FlightError;
 import org.ngafid.uploads.process.MalformedFlightFileException;
+import org.ngafid.uploads.process.ParquetPipeline;
 import org.ngafid.uploads.process.Pipeline;
 
 import java.io.*;
@@ -170,7 +171,7 @@ public final class ProcessUpload {
         String filename = upload.getArchivePath().toString();
         LOG.info("processing: '" + filename + "'");
 
-        String extension = filename.substring(filename.length() - 4);
+        String extension = filename.substring(filename.lastIndexOf('.') + 1);
         LOG.info("extension: '" + extension + "'");
 
         Upload.Status status = Upload.Status.PROCESSED_OK;
@@ -185,7 +186,7 @@ public final class ProcessUpload {
         int warningFlights = 0;
         int errorFlights = 0;
 
-        if (extension.equals(".zip")) {
+        if (extension.equals("zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
             try (ZipFile zipFile = ZipFile.builder().setFile(filename).get(); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
@@ -216,10 +217,42 @@ public final class ProcessUpload {
                 uploadException = new Exception(e + ", could not read from zip file: please delete this " +
                         "upload and re-upload.");
             }
+
+
+        }
+
+        else if (extension.equals("parquet")) {
+            try {
+                LOG.info("Processing Parquet file: " + filename);
+                System.out.println("Processing Parquet file: " + filename);
+
+
+                // Create ParquetPipeline instance and execute processing
+                Path parquetFilePath = Paths.get(filename);
+                ParquetPipeline parquetPipeline = new ParquetPipeline(connection, upload, parquetFilePath);
+                parquetPipeline.execute();
+                flightInfo = parquetPipeline.getFlightInfo();
+                flightErrors = parquetPipeline.getFlightErrors();
+                errorFlights = flightErrors.size();
+                warningFlights = parquetPipeline.getWarningFlightsCount();
+                validFlights = parquetPipeline.getValidFlightsCount();
+
+
+                System.out.println("Successfully processed file: " + filename);
+                LOG.info("Successfully processed Parquet file.");
+
+            } catch (Exception e) {
+                LOG.severe("Error processing Parquet file: " + e.getMessage());
+                e.printStackTrace();
+
+                UploadError.insertError(connection, uploadId, "Error processing Parquet file.");
+                status = Upload.Status.FAILED_ARCHIVE_TYPE;
+                uploadException = new Exception(e + ", error processing Parquet file.");
+            }
         } else {
             // insert an upload error for this upload
             status = Upload.Status.FAILED_ARCHIVE_TYPE;
-            UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
+            UploadError.insertError(connection, uploadId, "Uploaded file was not a zip or a parquet file.");
 
             uploadException = new Exception("Uploaded file was not a zip file.");
         }
