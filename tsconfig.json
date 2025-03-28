@@ -5,9 +5,14 @@
         "jsx": "react",
         "strict": true,
         "skipLibCheck": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "baseUrl": "./types",
     },
     "exclude": [
         "node_modules"
+    ],
+    "include": [
+        "src",
+        "types"
     ]
 }

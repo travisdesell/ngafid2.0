@@ -64,7 +64,34 @@ public abstract class WebServer {
         }
     }
 
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
+
+    public static class OffsetDateTimeTypeAdapter extends TypeAdapter<java.time.OffsetDateTime> {
+        @Override
+        public void write(final JsonWriter jsonWriter, final java.time.OffsetDateTime localDate) throws IOException {
+            if (localDate == null) {
+                jsonWriter.nullValue();
+                return;
+            }
+            jsonWriter.value(localDate.toString());
+        }
+
+        @Override
+        public java.time.OffsetDateTime read(final JsonReader jsonReader) throws IOException {
+            if (jsonReader.peek() == JsonToken.NULL) {
+                jsonReader.nextNull();
+                return null;
+            }
+            return java.time.OffsetDateTime.parse(jsonReader.nextString());
+        }
+    }
+    
+
+    public static final Gson gson = new GsonBuilder()
+        .serializeSpecialFloatingPointValues()
+        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+        // .registerTypeAdapter(ZonedDateTime.class, new ZonedDateTimeTypeAdapter())
+        .registerTypeAdapter(java.time.OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
+        .create();
 
     static {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");

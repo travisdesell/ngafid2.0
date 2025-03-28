@@ -7,19 +7,21 @@ import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
 import {errorModal} from "./error_modal";
-// establish set of RGB values to combine //
+
+//Establish set of RGB values to combine
 let BG_values = ["00", "55", "AA", "FF"];
-let R_values = ["FF", "D6", "AB", "80"];                            // heavier on the red for "warmer" colors
+let R_values = ["FF", "D6", "AB", "80"];        //<-- Heavier on the red for "warmer" colors
 
 
-// populate hashmap of event definition IDs to RGB values
-var eventColorScheme = {};
+//Populate hashmap of event definition IDs to RGB values
+const eventColorScheme = {};
 const LOWEST_EVENT_ID = -7;
 const HIGHEST_EVENT_ID = 70;
 const ABS_EVENT_ID = Math.abs(LOWEST_EVENT_ID);
 
 for (let d = LOWEST_EVENT_ID; d < HIGHEST_EVENT_ID; d++) {
-    // iterate through RGB permutations (up to 64)
+
+    //Iterate through RGB permutations (up to 64)
     let green = (d + ABS_EVENT_ID) % 4;
     let blue = Math.trunc((d + ABS_EVENT_ID) / 4) % 4;
     let red = Math.trunc((d + ABS_EVENT_ID) / 16) % 4;
@@ -28,48 +30,54 @@ for (let d = LOWEST_EVENT_ID; d < HIGHEST_EVENT_ID; d++) {
 }
 
 
-//save the event definitions after the first event load so we can reuse them and not
-//have to keep sending them from the server
+/*
+    Save the Event Definitions after the first event
+    load so we can reuse them and not have to keep
+    sending them from the server
+*/
 global.eventDefinitionsLoaded = false;
 global.eventDefinitions = null;
 
 class Events extends React.Component {
+
     constructor(props) {
+
         super(props);
 
-        console.log("constructing Events, props.events:");
-        console.log(props.events);
+        console.log("Constructing Events, props.events:", props.events);
 
         let definitionsPresent = [];
 
         for (let i = 0; i < props.events.length; i++) {
-            if (!definitionsPresent.includes(props.events[i].eventDefinition)) {
-                definitionsPresent.push(props.events[i].eventDefinition);
-            }
 
-            // assign color scheme to events, based on definition ID
+            //Present definitions don't include the current event's definition, add it to the list
+            if (!definitionsPresent.includes(props.events[i].eventDefinition))
+                definitionsPresent.push(props.events[i].eventDefinition);
+
+            //Assign color scheme to events based on definition ID
             props.events[i].color = eventColorScheme[props.events[i].eventDefinitionId];
+
         }
 
         this.state = {
             events : props.events,
             definitions : definitionsPresent
         };
+
     }
 
     updateEventDisplay(index, toggle) {
-            // Draw rectangles on plot
-        var event = this.state.events[index];
-        console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
+
+        //Draw rectangles on plot
+        let event = this.state.events[index];
         let shapes = global.plotlyLayout.shapes;
+        console.log(`Drawing plotly rectangle from ${event.startLine} to ${event.endLine}`);
 
         let update = {
             id: event.id,
             type: 'rect',
-            // x-reference is assigned to the x-values
-            xref: 'x',
-            // y-reference is assigned to the plot paper [0,1]
-            yref: 'paper',
+            xref: 'x',      //<-- x-reference is assigned to the x-values
+            yref: 'paper',  //<-- y-reference is assigned to the plot paper [0, 1]
             x0: event.startLine - 1,
             y0: 0,
             x1: event.endLine + 1,
@@ -83,50 +91,60 @@ class Events extends React.Component {
 
         let found = false;
         for (let i = 0; i < shapes.length; i++) {
-            if (shapes[i].id == event.id) {
-                if (toggle) {
-                    shapes.splice(i, 1);
-                    found = true;
-                } else {
-                    shapes[i] = update;
-                    found = true;
-                    break;
-                }
+
+            //Shape's ID doesn't match the event's ID, skip
+            if (shapes[i].id != event.id)
+                continue;
+
+            //Mark as found
+            found = true;
+
+            //Toggling, remove the shape
+            if (toggle) {
+
+                shapes.splice(i, 1);
+                
+            //Otherwise, update the shape
+            } else {
+                shapes[i] = update;
+                found = true;
+                break;
             }
+
         }
 
-        if (!found && toggle) {
+        //Not found and toggling, add the shape
+        if (!found && toggle)
             shapes.push(update);
-        }
 
         Plotly.relayout('plot', global.plotlyLayout);
 
 
-        // Toggle visibility of clicked event's Feature //
+        /* Toggle visibility of clicked event's Feature */
 
-        // create eventStyle & hiddenStyle
-        var eventStyle = new Style({                                                   // create style getter methods**
+        //Create eventStyle & hiddenStyle
+        let eventStyle = new Style({            // create style getter methods**
             stroke: new Stroke({
                 color: event.color,
                 width: 7
             })
         });
 
-        var outlineStyle = new Style({                                                   // create style getter methods**
+        let outlineStyle = new Style({          // create style getter methods**
             stroke: new Stroke({
                 color: "#000000",
                 width: 8
             })
         });
 
-        var hiddenStyle = new Style({
+        let hiddenStyle = new Style({
             stroke: new Stroke({
                 color: [0,0,0,0],
                 width: 3
             })
         });
 
-        // get event info from flight
+        //Get Event info from Flight
         let flight = this.props.parent;
         let eventMapped = flight.state.eventsMapped[index];
         let pathVisible = flight.state.pathVisible;
@@ -134,121 +152,141 @@ class Events extends React.Component {
         let eventOutline = flight.state.eventOutlines[index];
         event = eventPoints[index];                                 //override event var w/ event Feature
 
-        //toggle eventLayer style
-        if (!eventMapped) {                             // if event hidden
+        /* Toggle eventLayer style */
+
+        //Event is hidden, show it
+        if (!eventMapped) {
+
             event.setStyle(eventStyle);
             eventOutline.setStyle(outlineStyle);
             flight.state.eventsMapped[index] = !eventMapped;
 
-            // center map view on event location
+            //Center map view on event location
             let coords = event.getGeometry().getFirstCoordinate();
-            if (coords.length > 0 && pathVisible) {
-                map.getView().setCenter(coords);
-            }
 
-        } else {                                        // if event displayed
+            //Path is visible, center on event
+            if (coords.length > 0 && pathVisible)
+                map.getView().setCenter(coords);
+
+        //Otherwise, hide it
+        } else {
+
             event.setStyle(hiddenStyle);
             eventOutline.setStyle(hiddenStyle);
             flight.state.eventsMapped[index] = !eventMapped;
+
         }
+
     }
 
     changeColor(e, index) {
+
         this.state.events[index].color = e.target.value;
         this.setState({
             events : this.state.events
         });
         this.updateEventDisplay(index, false);
+
     }
     
-
     eventClicked(index) {
+
         this.updateEventDisplay(index, true);
+
     }
 
     getEventMetaData(eventId) {
 
-        var eventMetaData = null;
-        var submissionData = {
+        const submissionData = {
             eventId : eventId
         };
+
+        let eventMetaData = null;
+
         $.ajax({
             type: 'POST',
             url: '/protected/event_metadata',
             data : submissionData,
             dataType : 'json',
+            async: false,
             success : function(response) {
                 eventMetaData =  response;
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Event Metadata ", errorThrown);
             },
-            async: false
         })
-        console.log("Event MetaData : ");
-        console.log(eventMetaData);
+
+        console.log("Event MetaData: ", eventMetaData);
 
         return eventMetaData;
 
     }
 
-   
     render() {
-        let cellClasses = "d-flex flex-row p-1";
-        let cellStyle = { "overflowX" : "auto" };
-        let buttonClasses = "m-1 btn btn-outline-secondary";
+
+        const cellClasses = "d-flex flex-row p-1";
+        const cellStyle = { "overflowX" : "auto" };
+        const buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 0 10em"
         };
 
-        let eventType = "type";
-
-        let eventTypeSet = new Set();
-        let eventTypeButtons = [];
-        let thisFlight = this.props.parent;
+        const eventTypeSet = new Set();
+        const eventTypeButtons = [];
 
         this.state.events.map((event, index) => {
+
+            //Event definition not in set, add it to set and create button
             if (!eventTypeSet.has(event.eventDefinitionId)) {
-                // add new eventDef to types set
+
+                //Add new eventDef to types set
                 eventTypeSet.add(event.eventDefinitionId);
 
-                // create new button for toggle
-                let type =
-                        (
-                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-bs-toggle="button" aria-pressed="false" key={index}
-                                        onClick={() =>
-                                            {
-                                                let flight = this.props.parent;
-                                                let eventsMapped = flight.state.eventsMapped;
-                                                let displayStatus = false;
-                                                let displayStatusSet = false;
+                //Create new button for toggle
+                let type = (
+                    <button
+                        className={buttonClasses}
+                        style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}}
+                        data-bs-toggle="button"
+                        aria-pressed="false"
+                        key={index}
+                        title={GetDescription(event.eventDefinition.name)}
+                        onClick={() =>
+                            {
+                                const flight = this.props.parent;
+                                const eventsMapped = flight.state.eventsMapped;
+                                const displayStatus = false;
+                                const displayStatusSet = false;
 
-                                                // update eventDisplay for every event concerned
-                                                for (let e = 0; e < this.state.events.length; e++) {
-                                                    if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
-                                                        // ensure unified display
-                                                        if (!displayStatusSet) {
-                                                            displayStatus = !eventsMapped[e];
-                                                            displayStatusSet = true;
-                                                        }
-                                                        // eventsMapped[e] = displayStatus;
-                                                        // this.updateEventDisplay(e);
+                                //Update eventDisplay for every event concerned
+                                for (let e = 0; e < this.state.events.length; e++) {
 
-                                                        if (eventsMapped[e] != displayStatus) {
-                                                            document.getElementById("_" + flight.props.flightInfo.id + e).click();
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    title={GetDescription(event.eventDefinition.name)}>
+                                    //Event definition IDs are different, skip
+                                    if (this.state.events[e].eventDefinitionId != event.eventDefinitionId)
+                                        continue;
 
-                                <b>{event.eventDefinition.name}</b>
-                            </button>
-                        );
+                                    //Display status not set, set it
+                                    if (!displayStatusSet) {
+                                        displayStatus = !eventsMapped[e];
+                                        displayStatusSet = true;
+                                    }
+                                    
+                                    //Display status is different, update
+                                    if (eventsMapped[e] != displayStatus)
+                                        document.getElementById("_" + flight.props.flightInfo.id + e).click();
+                                    
+                                }
+                            }
+                        }
+                    >
+                        <b>
+                            {event.eventDefinition.name}
+                        </b>
+                    </button>
+                );
                 eventTypeButtons.push(type);
-
-                console.log(eventColorScheme);
+                console.log("Event Color Scheme: ", eventColorScheme);
             }
         })
 
@@ -278,36 +316,63 @@ class Events extends React.Component {
 
                 {
                     this.state.events.map((event, index) => {
-                        let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
+
+                        const buttonID = `_${this.props.parent.props.flightInfo.id}${index}`;
+
                         let otherFlightText = "";
                         let otherFlightURL = "";
+                        let otherFlightLink = "";
+
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
-                        let eventMetaDataText = "";
-                        var eventMetaData = this.getEventMetaData(event.id);
 
-                        if (event.eventDefinitionId == -1) {
-                            var rocPlotData = this.getRateOfClosureData(event);
+                        let eventMetaDataText = "";
+                        const eventMetaData = this.getEventMetaData(event.id);
+
+                        const EVENT_ID_PROXIMITY = -1;
+
+                        //Event is a proximity event, get the rate of closure data
+                        if (event.eventDefinitionId == EVENT_ID_PROXIMITY) {
+
+                            const rocPlotData = this.getRateOfClosureData(event);
                             
                             otherFlightText = ", other flight id: ";
-                            otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
-
+                            otherFlightURL = `./flight?flight_id=${event.flightId}&flight_id=${event.otherFlightId}`;
+                            otherFlightLink = (
+                                <a href={otherFlightURL}>
+                                    {event.otherFlightId}
+                                </a>
+                            );
+                            
+                            //Rate of closure data is available...
                             if (rocPlotData != null) {
-                                rateOfClosureBtn = ( <button id="rocButton" data-bs-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
-                                    <i className="fa fa-area-chart p-1" ></i></button>   );
-                                if (!event.rocPlotVisible) {
-                                    rocPlot = (<div id={event.id + "-rocPlot"}></div>);
-                                }
+
+                                //...Create button
+                                rateOfClosureBtn = (
+                                    <button id="rocButton" data-bs-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
+                                        <i className="fa fa-area-chart p-1"/>
+                                    </button>
+                                );
+
+                                //...Event doesn't have a visible ROC plot, create one
+                                if (!event.rocPlotVisible)
+                                    rocPlot = (
+                                        <div id={event.id + "-rocPlot"}></div>
+                                    );
+
                             }
 
                         }
 
+                        //Event has metadata, display it
                         if (eventMetaData != null) {
+
                             eventMetaDataText = " , ";
                             eventMetaData.map((item) => {
                                 eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
                             })
                             eventMetaDataText = eventMetaDataText.substring(0, eventMetaDataText.length - 2);
+
                         } 
 
                         return (
@@ -316,12 +381,18 @@ class Events extends React.Component {
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                    <button id={buttonID} className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                        <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} {eventMetaDataText} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
-                                        {rocPlot}
-                                    </button>
+                                <button id={buttonID} className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                    <b>
+                                        {event.eventDefinition.name}
+                                    </b>
+                                    {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)}
+                                    { eventMetaDataText }
+                                    { otherFlightText }
+                                    { otherFlightURL }
+                                    { rateOfClosureBtn }
+                                    { rocPlot }
+                                </button>
                             </div>
-
                         );
                     })
                 }
@@ -332,14 +403,18 @@ class Events extends React.Component {
     }
 
     displayRateOfClosurePlot(data, event) {
-        var id = event.id + "-rocPlot";
+
+        const id = `${event.id}-rocPlot`;
+
+        //Plot is not visible, create it
         if (!event.rocPlotVisible) {
-            var trace = {
+
+            const trace = {
                 x : data.x,
                 y : data.y,
                 type : "scatter",
             }
-            var layout = {
+            const layout = {
                 shapes: [
                     {
                         type: 'rect',
@@ -364,37 +439,49 @@ class Events extends React.Component {
                     }
                 }
             }
+
             Plotly.newPlot(id, [trace], layout)
             event.rocPlotVisible = true
             $("#"+id).show();
+
+        //Plot is visible, hide it
         } else {
+
             event.rocPlotVisible = false;
             $("#"+id).hide();
+
         }
+
     };
 
 
     getRateOfClosureData(event) {
-        var eventId = event.id;
-        var rocPlotData = null;
-        console.log("Calculating Rate of Closure")
-        var submissionData = {
+
+        const eventId = event.id;
+        console.log("Fetching Rate of Closure Data for event: ", eventId);
+
+        const submissionData = {
             eventId : eventId
         };
+
+        let rocPlotData = null;
+
         $.ajax({
             type: 'POST',
             url: '/protected/rate_of_closure',
             data : submissionData,
             dataType : 'json',
+            async: false,
             success : function(response) {
-                rocPlotData =  response;
+                rocPlotData = response;
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Rate of closure ", errorThrown);
+                errorModal.show("Error Loading Rate of Closure ", errorThrown);
             },
-            async: false
         })
+
         return rocPlotData;
+
     };
 
 }

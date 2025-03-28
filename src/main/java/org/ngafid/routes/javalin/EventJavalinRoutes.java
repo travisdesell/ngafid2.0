@@ -347,6 +347,9 @@ public class EventJavalinRoutes {
     }
 
     private static void postEvents(Context ctx) {
+
+        LOG.info("[EX] POST /protected/events");
+
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
         final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("eventDefinitionsLoaded")));

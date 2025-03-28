@@ -36,7 +36,8 @@
         "ts-loader": "^9.5.2",
         "typescript": "^5.8.2",
         "webpack": "^5.98.0",
-        "webpack-cli": "^4.10.0",
+        "webpack-bundle-analyzer": "^4.10.2",
+        "webpack-cli": "^6.0.1",
         "webpack-dev-server": "^5.1.0"
     },
     "dependencies": {
@@ -50,7 +51,6 @@
         "moment": "^2.29.1",
         "ol": "^5.3.3",
         "ol-layerswitcher": "^3.8.3",
-        "plotly": "^1.0.6",
         "plotly.js": "^3.0.0",
         "process": "^0.11.10",
         "react-bootstrap": "^2.7.0",

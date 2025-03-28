@@ -1,4 +1,5 @@
 import "bootstrap";
+import { createRoot } from 'react-dom/client';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
@@ -428,6 +429,13 @@ class FlightsPage extends React.Component {
 	};
 
 	this.navRef = React.createRef();
+
+  }
+
+  componentDidMount() {
+    
+    this.displayPlot();
+    this.resolveDisplay();
 
   }
 
@@ -1461,26 +1469,26 @@ class FlightsPage extends React.Component {
  
           	<div
           	id="plot-map-div"
-          	className="d-flex flex-column col m-0"
+          	className="col d-flex flex-column m-0"
           	style={{ minWidth:"45%", maxWidth:"45%", minHeight:"100%", maxHeight:"100%", padding:"0.50em 0 1.00em 0.50em"}}
           	>
               	<div id="plot-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", overflow:"hidden" }}>
                   	<div id="plot" style={{minHeight:"100%", maxHeight:"100%"}}/>
-                  	<div className="map-graph-expand-button btn btn-outline-secondary d-flex align-items-center justify-content-center" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("plot-container")}>
-                      	<i className="fa fa-expand p-1"/>
+                  	<div className="d-flex btn btn-outline-secondary align-items-center justify-content-center map-graph-expand-button" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("plot-container")}>
+                      	<i className="p-1 fa fa-expand"/>
                   	</div>
               	</div>
  
               	<div id="map-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", marginTop:"0.50em", overflow:"hidden"}}>
                   	<div id="map" style={{minHeight:"100%", maxHeight:"100%"}}/>
-                  	<div className="map-graph-expand-button btn btn-outline-secondary" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("map-container")}>
-                      	<i className="fa fa-expand p-1"/>
+                  	<div className="btn btn-outline-secondary map-graph-expand-button" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("map-container")}>
+                      	<i className="p-1 fa fa-expand"/>
                   	</div>
               	</div>
  
           	</div>
  
-          	<div className="p-0 m-2 d-flex flex-column col" style={{width:"100%", overflowX:"hidden"}}>
+          	<div className="col d-flex flex-column m-2 p-0" style={{width:"100%", overflowX:"hidden"}}>
  
               	<div>
                   	<Filter
@@ -1496,7 +1504,7 @@ class FlightsPage extends React.Component {
                   	/>
               	</div>
  
-              	<div id="flights-card-container" className="mb-2 card" style={{overflowY:"scroll", flex:"1 1 auto", border:"1px solid var(--c_border_alt)", borderRadius:"0.25em", marginTop:"0.50em"}}>
+              	<div id="flights-card-container" className="card mb-2" style={{overflowY:"scroll", flex:"1 1 auto", border:"1px solid var(--c_border_alt)", borderRadius:"0.25em", marginTop:"0.50em"}}>
                   	<FlightsCard
                       	parent={this}
                       	layers={this.state.layers}
@@ -1571,13 +1579,9 @@ class FlightsPage extends React.Component {
 
 
 
-var flightsPage = ReactDOM.render(
-	<FlightsPage />,
-	document.querySelector("#flights-page")
-  );
- 
-  initializeMap();
-  flightsPage.displayPlot();
-  flightsPage.resolveDisplay();
- 
-  console.log("rendered flightsCard!");
+/* Render the component to the DOM */
+const container = document.querySelector('#flights-page');
+const root = createRoot(container);
+root.render(<FlightsPage />);
+
+console.log("Rendered Flights Page");

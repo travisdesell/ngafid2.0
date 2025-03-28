@@ -1,5 +1,7 @@
 const webpack = require('webpack');
 const path = require('path');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 
 module.exports = {
     mode: process.env.NODE_ENV || 'development',
@@ -36,7 +38,11 @@ module.exports = {
 
         /*
             * ❌ - Not converted to TypeScript
+            * 🧪 - Conversion in progress...
             * ✔️ - Converted to TypeScript
+            
+            (Non-exhaustive list of JS files needed for conversion,
+            only includes the entry points for the webpack build)
         */
 
         /* ❌ */ aggregate: "./src/main/javascript/aggregate.js",
@@ -123,6 +129,9 @@ module.exports = {
         }),
         new webpack.ProvidePlugin({
             process: 'process/browser',
-        })
+        }),
+
+        /* Uncomment to enable bundle analyzer (defaults to port 8888) */
+        //  new BundleAnalyzerPlugin(),
     ],
 };

@@ -505,8 +505,8 @@ public class AnalysisJavalinRoutes {
 
     private static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
-        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.formParam("time_index")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.formParam("timeIndex")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data

@@ -6,7 +6,7 @@ import 'bootstrap';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { errorModal } from './error_modal';
+import { errorModal } from './error_modal'; 
 import SignedInNavbar from './signed_in_navbar';
 import $ from 'jquery';
 
@@ -270,7 +270,7 @@ class UpdatePasswordPage extends React.Component<UpdatePasswordPageProps, Update
                 </div>
 
                 <div style={{ overflowY: 'auto', flex: '1 1 auto' }}>
-                    <div className="card mb-1 m-2">
+                    <div className="card m-2 mb-1">
                         <h5 className="card-header" style={fgStyle}>
                             Update Password
                         </h5>
@@ -284,7 +284,7 @@ class UpdatePasswordPage extends React.Component<UpdatePasswordPageProps, Update
                                                 Current Password
                                             </label>
                                         </div>
-                                        <div className="p-2 flex-fill">
+                                        <div className="flex-fill p-2">
                                             <input
                                                 type="password"
                                                 className="form-control"
@@ -304,7 +304,7 @@ class UpdatePasswordPage extends React.Component<UpdatePasswordPageProps, Update
                                             New Password
                                         </label>
                                     </div>
-                                    <div className="p-2 flex-fill">
+                                    <div className="flex-fill p-2">
                                         <input
                                             type="password"
                                             className="form-control"
@@ -315,7 +315,7 @@ class UpdatePasswordPage extends React.Component<UpdatePasswordPageProps, Update
                                             value={newPassword}
                                         />
                                     </div>
-                                    <div className="p-2 flex-fill">
+                                    <div className="flex-fill p-2">
                                         <input
                                             type="password"
                                             className="form-control"
@@ -330,7 +330,7 @@ class UpdatePasswordPage extends React.Component<UpdatePasswordPageProps, Update
 
                                 <div className="d-flex">
                                     <div className="p-2" style={formHeaderStyle} />
-                                    <div className="p-2 flex-fill">
+                                    <div className="flex-fill p-2">
                                         <span style={validationMessageStyle} hidden={passwordValidationHidden}>
                                             {passwordValidationMessage}
                                         </span>

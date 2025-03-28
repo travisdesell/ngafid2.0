@@ -341,13 +341,30 @@ class Rule extends React.Component {
 
             return (
                 <div style={{display: "flex", flexDirection: "row"}}>
-                    <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.props.setFilter(ruleChange(this.props.getFilter(), this.props.treeIndex, this.props.rules, inputs, event))} style={{flexBasis:"180px", flexShrink:0, marginRight:5}} value={inputs[0]}>
+                    <select
+                        id="stateSelect"
+                        type="select"
+                        className="form-control"
+                        onChange={
+                            (event) => this.props.setFilter(ruleChange(this.props.getFilter(), this.props.treeIndex, this.props.rules, inputs, event))
+                        }
+                        style={{flexBasis:"180px", flexShrink:0, marginRight:5}}
+                        value={inputs[0]}
+                    >
 
                         <option value="Select Rule">Select Rule</option>
                         { 
                             this.props.rules.map((ruleInfo, index) => {
                                 //console.log("adding rule: " + ruleInfo.name + ", with value: " + index);
-                                return ( <option value={ruleInfo.name} key={"rule-" + index}>{ruleInfo.name}</option> );
+                                return (
+                                    <option
+                                        value={ruleInfo.name}
+                                        // key={"rule-" + index}
+                                        key={`rule-${index}-${ruleInfo.name}`}
+                                    >
+                                        {ruleInfo.name}
+                                    </option>
+                                );
                             })
                         }
                     </select>

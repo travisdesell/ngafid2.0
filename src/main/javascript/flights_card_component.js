@@ -18,7 +18,7 @@ import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 //import Draw from 'ol/interaction/Draw.js';
 
 import { Filter } from './filter.js';
-import { Flight } from './flight_component.js';
+import { Flight } from './flight_component.tsx';
 
 import Plotly from 'plotly.js';
 
