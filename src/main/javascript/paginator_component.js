@@ -199,9 +199,10 @@ class Paginator extends React.Component {
                  }}
             >
 
-                <div className="row m-0 p-2 d-flex flex-column">
+            	<div className="row m-0 p-2 d-flex flex-column">
 
-                    <div className="d-flex flex-row flex-wrap" style={{rowGap: "0.50em"}}>
+
+                	<div className="d-flex flex-row flex-wrap" style={{rowGap:"0.50em"}}>
 
                         <div className="row" style={{alignContent: "start", marginLeft: "0em", marginRight: "auto"}}>
 

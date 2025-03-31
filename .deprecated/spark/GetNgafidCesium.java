@@ -1,4 +1,4 @@
-package org.ngafid.routes.spark;
+package org.ngafid.routes;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -130,7 +130,7 @@ public class GetNgafidCesium implements Route {
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
             Map<String, Object> flights = new HashMap<String, Object>();
-
+            String cesiumData = "";
             for (String flightIdNew : flightIdsAll) {
                 Flight incomingFlight = Flight.getFlight(connection, Integer.parseInt(flightIdNew));
                 int flightIdNewInteger = Integer.parseInt(flightIdNew);
@@ -280,12 +280,13 @@ public class GetNgafidCesium implements Route {
                 CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb,
                         flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes,
                         flightCruiseTimes, flightAglTimes, airframeType);
-
+                cesiumData = "var cesium_data_new = " + gson.toJson(cr) + ";\n";
                 flights.put(flightIdNew, cr);
 
             }
 
             scopes.put(CESIUM_DATA, gson.toJson(flights));
+            scopes.put("cesium_data_js", gson.toJson(cesiumData));
 
             // This is for webpage section
             String resultString = "";

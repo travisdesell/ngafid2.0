@@ -1,4 +1,9 @@
 const webpack = require('webpack');
+const HtmlPlugin = require("html-webpack-plugin");
+const HtmlTagsPlugin = require("html-webpack-tags-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+
+
 const path = require('path');
 
 module.exports = {
@@ -13,6 +18,15 @@ module.exports = {
             events: require.resolve('events/'),
         },
     },
+    externals: {
+        cesium: "Cesium"
+    },
+    /*
+    node: {
+        fs: 'empty'
+    },
+    */
+
 
     watchOptions: {
         aggregateTimeout: 300,
@@ -51,6 +65,7 @@ module.exports = {
         imports: "./src/main/javascript/imports.js",
         manage_events: "./src/main/javascript/manage_events.js",
         manage_fleet: "./src/main/javascript/manage_fleet.js",
+         ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
         reset_password: "./src/main/javascript/reset_password.js",
         severities: "./src/main/javascript/severities.js",
         system_ids: "./src/main/javascript/system_ids.js",
@@ -68,6 +83,7 @@ module.exports = {
     devtool: "source-map",
 
     output: {
+
         path: path.resolve(__dirname, "src/main/resources/public/js/"),
         filename: "[name]-bundle.js"
     },
@@ -110,6 +126,24 @@ module.exports = {
         }),
         new webpack.ProvidePlugin({
             process: 'process/browser',
-        })
-    ],
+        }),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: "node_modules/cesium/Build/Cesium",
+                    to: "cesium",
+                },
+            ],
+        }),
+        new HtmlPlugin({
+            template: "src/main/resources/public/templates/flights.html",
+        }),
+        new HtmlTagsPlugin({
+            append: false,
+            tags: ["cesium/Widgets/widgets.css", "cesium/Cesium.js"],
+        }),
+        new webpack.DefinePlugin({
+            CESIUM_BASE_URL: JSON.stringify("/cesium"),
+        }),
+    ]
 };
