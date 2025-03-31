@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
+import org.ngafid.common.APILogger;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.common.Database;
 import org.ngafid.routes.javalin.*;
@@ -18,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -50,6 +52,15 @@ public class JavalinWebServer extends WebServer {
 
         app.unsafeConfig().requestLogger.http((ctx, ms) -> {
             LOG.info(ctx.method() + " " + ctx.path() + " took " + ms + "ms");
+            String method = String.valueOf(ctx.method());
+            String url = ctx.url();
+            String path = ctx.path();
+            String statusCode = String.valueOf(ctx.status());
+            String ip = ctx.ip();
+            String referer = ctx.header("Referer");
+            if (path.startsWith("/protected")) {
+                APILogger.logRequest(method, url, path, statusCode, ip, referer);
+            }
         });
     }
 
