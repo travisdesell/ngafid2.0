@@ -58,6 +58,10 @@ public class EventStatistics {
     private final int airframeNameId;
     private final String airframeName;
     private ArrayList<AirframeStatistics> events;
+    
+    public int getAirframeNameId() { return airframeNameId; }
+    public String getAirframeName() { return airframeName; }
+    public ArrayList<AirframeStatistics> getEvents() { return events; }
 
     public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId)
             throws SQLException, JsonProcessingException {
@@ -543,6 +547,29 @@ public class EventStatistics {
         private double aggAvgSeverity;
         private double aggMinSeverity;
         private double aggMaxSeverity;
+        
+        // Add getters for Jackson serialization
+        public String getRowName() { return rowName; }
+        public int getFlightsWithoutError() { return flightsWithoutError; }
+        public int getFlightsWithEvent() { return flightsWithEvent; }
+        public int getTotalEvents() { return totalEvents; }
+        public double getAvgEvents() { return avgEvents; }
+        public double getAvgDuration() { return avgDuration; }
+        public double getMinDuration() { return minDuration; }
+        public double getMaxDuration() { return maxDuration; }
+        public double getAvgSeverity() { return avgSeverity; }
+        public double getMinSeverity() { return minSeverity; }
+        public double getMaxSeverity() { return maxSeverity; }
+        public int getAggFlightsWithoutError() { return aggFlightsWithoutError; }
+        public int getAggFlightsWithEvent() { return aggFlightsWithEvent; }
+        public int getAggTotalEvents() { return aggTotalEvents; }
+        public double getAggAvgEvents() { return aggAvgEvents; }
+        public double getAggAvgDuration() { return aggAvgDuration; }
+        public double getAggMinDuration() { return aggMinDuration; }
+        public double getAggMaxDuration() { return aggMaxDuration; }
+        public double getAggAvgSeverity() { return aggAvgSeverity; }
+        public double getAggMinSeverity() { return aggMinSeverity; }
+        public double getAggMaxSeverity() { return aggMaxSeverity; }
 
         EventRow(String rowName) {
             this.rowName = rowName;
@@ -686,6 +713,14 @@ public class EventStatistics {
         private final String humanReadable;
         private final int eventId;
         private final List<EventRow> monthStats = new ArrayList<EventRow>();
+        
+        // Add getters for Jackson serialization
+        public String getEventName() { return eventName; }
+        public int getTotalFlights() { return totalFlights; }
+        public int getProcessedFlights() { return processedFlights; }
+        public String getHumanReadable() { return humanReadable; }
+        public int getEventId() { return eventId; }
+        public List<EventRow> getMonthStats() { return monthStats; }
 
         AirframeStatistics(Connection connection, EventDefinition eventDefinition, int fleetId) throws SQLException {
             this.eventId = eventDefinition.getId();
@@ -861,8 +896,28 @@ public class EventStatistics {
             this.aggregateTotalEventsCounts = aggregateTotalEventsCounts;
         }
 
+        public int[] getFlightsWithEventCounts() {
+            return flightsWithEventCounts;
+        }
+
+        public int[] getTotalFlightsCounts() {
+            return totalFlightsCounts;
+        }
+
+        public int[] getTotalEventsCounts() {
+            return totalEventsCounts;
+        }
+
         public int[] getAggregateFlightsWithEventCounts() {
             return aggregateFlightsWithEventCounts;
+        }
+        
+        public int[] getAggregateTotalFlightsCounts() {
+            return aggregateTotalFlightsCounts;
+        }
+        
+        public int[] getAggregateTotalEventsCounts() {
+            return aggregateTotalEventsCounts;
         }
     }
 
@@ -882,6 +937,18 @@ public class EventStatistics {
             this.airframeName = airframeName;
             this.eventName = eventName;
             this.dates = dates;
+        }
+        
+        public String getAirframeName() {
+            return airframeName;
+        }
+        
+        public String getEventName() {
+            return eventName;
+        }
+        
+        public List<String> getDates() {
+            return dates;
         }
     }
 
@@ -935,6 +1002,10 @@ public class EventStatistics {
 
         public List<String> getNames() {
             return names;
+        }
+        
+        public String getAirframeName() {
+            return airframeName;
         }
     }
 

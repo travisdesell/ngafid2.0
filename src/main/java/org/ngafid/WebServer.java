@@ -36,7 +36,19 @@ public abstract class WebServer {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
         NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR");
         MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR");
+        
+        // Configure ObjectMapper for Jackson serialization
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        
+        // Include non-null values only to prevent null fields from being serialized
+        objectMapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
+        
+        // Use field-based serialization instead of reflection for better performance
+        objectMapper.setVisibility(com.fasterxml.jackson.annotation.PropertyAccessor.FIELD, 
+                                  com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY);
+        objectMapper.setVisibility(com.fasterxml.jackson.annotation.PropertyAccessor.GETTER, 
+                                  com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY);
 
         SimpleModule module = new SimpleModule();
         module.addSerializer(LocalDateTime.class, new JsonSerializer<>() {

@@ -29,14 +29,11 @@ public class JavalinWebServer extends WebServer {
     protected void preInitialize() {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
-            config.jsonMapper(new JavalinJackson().updateMapper(
-                    objectMapper -> objectMapper
-                            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-                            .setSerializationInclusion(JsonInclude.Include.ALWAYS)
-                            .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-                            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-                            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-            ));
+            // Use the shared objectMapper from WebServer class for consistent serialization
+            config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
+                // Copy configuration from the existing objectMapper to ensure consistency
+                return WebServer.objectMapper;
+            }));
         });
     }
 

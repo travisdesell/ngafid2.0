@@ -27,7 +27,7 @@ public final class StoredFilter {
 
     /**
      * Default constructor
-     * This constructor can also be used to instatiate an object that can be interpreted by GSON to get a JSON object
+     * This constructor can also be used to instantiate an object that can be interpreted by Jackson to get a JSON object
      *
      * @param name   is the common name given by the user
      * @param filter is the filter in JSON form

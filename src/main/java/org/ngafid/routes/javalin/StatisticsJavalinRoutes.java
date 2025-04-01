@@ -408,13 +408,22 @@ public class StatisticsJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            LOG.severe("Airframe Map: " + Airframes.getIdToNameMap(connection, fleetId));
+            
+            // Get airframe map and ensure it's not empty
+            HashMap<Integer, String> airframeMap = Airframes.getIdToNameMap(connection, fleetId);
+            LOG.info("Airframe Map size: " + airframeMap.size());
+            
+            // If fleet airframe map is empty, get global map as fallback
+            if (airframeMap.isEmpty()) {
+                LOG.info("Fleet airframe map was empty, getting global map");
+                airframeMap = Airframes.getIdToNameMap(connection);
+            }
+            
             scopes.put("events_js",
-                    // "var eventStats = JSON.parse('" + objectMapper.writeValueAsString(eventStatistics) + "');\n"
                     "var eventDefinitions = JSON.parse('" +
                             objectMapper.writeValueAsString(EventDefinition.getAll(connection)) + "');\n" +
                             "var airframeMap = JSON.parse('" +
-                            objectMapper.writeValueAsString(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
+                            objectMapper.writeValueAsString(airframeMap) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
