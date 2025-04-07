@@ -12,10 +12,16 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.Airframes.AIRFRAME_CESSNA_172S;
 import static org.ngafid.flights.Flight.calculateLOCI;
 import static org.ngafid.flights.Parameters.*;
 
+/**
+ * Computes the loss of control index. The following work goes into detail about this and the stall index:
+ * <p>
+ * Aidan LaBella, Joshua Karns, Farhad Akhbardeh, Andrew Walton, Zechariah Morgan, Brandon Wild, Mark Dusenbury and
+ * Travis Desell. Optimized Flight Safety Event Detection in the National General Aviation Flight Information Database.
+ * In The 37th ACM/SIGAPP Symposium on Applied Computing (SAC '22). Online. April 25-29, 2022.
+ */
 public class ComputeLOCI extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeLOCI.class.getName());
 
@@ -25,31 +31,33 @@ public class ComputeLOCI extends ComputeStep {
         super(connection, builder);
     }
 
+    @Override
     public Set<String> getRequiredDoubleColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getRequiredStringColumns() {
         return Collections.emptySet();
     }
 
+    @Override
     public Set<String> getRequiredColumns() {
         return REQUIRED_DOUBLE_COLUMNS;
     }
 
+    @Override
     public Set<String> getOutputColumns() {
         return Collections.emptySet();
     }
 
     @Override
     public boolean airframeIsValid(Airframes.Airframe airframe) {
-        return true;
+        // Cessna 172 or any variant should work.
+        return airframe.getName().contains("C172");
     }
 
-    public boolean airframeIsValid(String airframe) {
-        return airframe.equals(AIRFRAME_CESSNA_172S);
-    }
-
+    @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries hdg = builder.getDoubleTimeSeries(HDG);
         DoubleTimeSeries hdgLagged = hdg.lag(YAW_RATE_LAG);

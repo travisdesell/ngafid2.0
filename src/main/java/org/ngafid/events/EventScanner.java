@@ -59,39 +59,28 @@ public class EventScanner extends AbstractEventScanner {
     @Override
     public List<Event> scan(Map<String, DoubleTimeSeries> doubleSeries,
                             Map<String, StringTimeSeries> stringSeries) {
-        StringTimeSeries dateSeries = stringSeries.get(Parameters.LCL_DATE);
-        StringTimeSeries timeSeries = stringSeries.get(Parameters.LCL_TIME);
+        StringTimeSeries utcSeries = stringSeries.get(Parameters.UTC_DATE_TIME);
 
         reset();
 
         List<Event> eventList = new ArrayList<>();
 
-        // skip the first 30 seconds as that is usually the FDR being initialized
-        for (int i = 30; i < dateSeries.size(); i++) {
-            // for (i = 0; i < doubleSeries[0].size(); i++) {
+        for (int i = 30; i < utcSeries.size(); i++) {
             lineNumber = i;
-
-            // LOG.info("Pre-set conditional: " + conditional.toString());
 
             conditional.reset();
             for (Map.Entry<String, DoubleTimeSeries> entry : doubleSeries.entrySet()) {
                 conditional.set(entry.getKey(), entry.getValue().get(i));
             }
-            // LOG.info("Post-set conditional: " + conditional.toString());
 
             boolean result = conditional.evaluate();
-
-            // LOG.info(conditional + ", result: " + result);
 
             if (!result) {
                 if (startTime != null) {
                     // we're tracking an event, so increment the stopCount
                     stopCount++;
-                    LOG.info("stopCount: " + stopCount + " with on line: " + lineNumber);
 
                     if (stopCount == stopBuffer) {
-                        System.err.println("Stop count (" + stopCount + ") reached the stop buffer (" + stopBuffer
-                                + "), new event created!");
 
                         if (startCount >= startBuffer) {
                             // we had enough triggers to reach the start count so create the event
@@ -116,14 +105,13 @@ public class EventScanner extends AbstractEventScanner {
 
                 // startTime is null if an exceedence is not being tracked
                 if (startTime == null) {
-                    startTime = dateSeries.get(i) + " " + timeSeries.get(i);
+                    startTime = utcSeries.get(i);
                     startLine = lineNumber;
                     severity = definition.getSeverity(doubleSeries, i);
-
-                    LOG.info("start date time: " + startTime + ", start line number: " + startLine);
                 }
+
                 endLine = lineNumber;
-                endTime = dateSeries.get(i) + " " + timeSeries.get(i);
+                endTime = utcSeries.get(i);
                 severity = definition.getSeverity(doubleSeries, severity, i);
 
                 // increment the startCount, reset the endCount

@@ -25,11 +25,11 @@
 
     /* Scrollbar Colors */
     --c_scrollbar_bg_light: #f0f0f0;
-    --c_scrollbar_bg_dark: #333;
+    --c_scrollbar_bg_dark: #222222;
     --c_scrollbar_bg: var(--c_scrollbar_bg_light);
 
     --c_scrollbar_thumb_light: #cdcdcd;
-    --c_scrollbar_thumb_dark: #222222;
+    --c_scrollbar_thumb_dark: #666;
     --c_scrollbar_thumb: var(--c_scrollbar_thumb_light);
 
     scrollbar-color: var(--c_scrollbar_thumb) var(--c_scrollbar_bg);
@@ -96,6 +96,10 @@
     --c_card_bg_alt_dark: rgba(40, 40, 40, 1.00);
     --c_card_bg_alt: var(--c_bg_alt_light);
 
+    --c_card_tab_light: rgb(238, 238, 253);
+    --c_card_tab_dark: rgb(50, 50, 50);
+    --c_card_tab: var(--c_card_tab_light);
+
     /* Table Colors */
     --c_row_bg_light : #FFFFFF00;
     --c_row_bg_dark : #00000000;
@@ -152,6 +156,11 @@
     --c_entry_bg_dark: rgba(40, 40, 40, 0.90);
     --c_entry_bg: var(--c_entry_bg_light);
 
+    /* Mode Color */
+    --c_mode_light: white;
+    --c_mode_dark: black;
+    --c_mode: var(--c_mode_light);
+
 }
 
 .dark-theme {
@@ -185,6 +194,7 @@
     --c_card_header_bg : var(--c_card_header_bg_dark);
     --c_card_bg : var(--c_card_bg_dark);
     --c_card_bg_alt : var(--c_card_bg_alt_dark);
+    --c_card_tab : var(--c_card_tab_dark);
 
     --c_row_bg : var(--c_row_bg_dark);
     --c_row_bg_alt : var(--c_row_bg_alt_dark);
@@ -202,6 +212,8 @@
     --c_plotly_grid : var(--c_plotly_grid_dark);
 
     --c_entry_bg: var(--c_entry_bg_dark);
+
+    --c_mode: var(--c_mode_dark);
 
 }
 

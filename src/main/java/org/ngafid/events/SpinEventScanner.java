@@ -37,8 +37,8 @@ public class SpinEventScanner extends AbstractEventScanner {
         DoubleTimeSeries latAc = doubleTimeSeries.get(LAT_AC);
         DoubleTimeSeries altAGL = doubleTimeSeries.get(ALT_AGL);
 
-        StringTimeSeries dateSeries = stringTimeSeries.get(LCL_DATE);
-        StringTimeSeries timeSeries = stringTimeSeries.get(LCL_TIME);
+        DoubleTimeSeries unixTime = doubleTimeSeries.get(UNIX_TIME_SECONDS);
+        StringTimeSeries utcSeries = stringTimeSeries.get(UTC_DATE_TIME);
 
         boolean airspeedIsLow = false;
         boolean spinStartFound = false;
@@ -79,22 +79,14 @@ public class SpinEventScanner extends AbstractEventScanner {
 
                     if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
                         if (!spinStartFound) {
-                            String start = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
-                            String end = dateSeries.get(i) + " " + timeSeries.get(i);
-
-                            currentEvent = new CustomEvent(start, end, lowAirspeedIndex, i, maxNormAc, null);
-
+                            currentEvent = new CustomEvent(utcSeries.get(lowAirspeedIndex), utcSeries.get(i), lowAirspeedIndex, i, maxNormAc, null);
                             spinStartFound = true;
                         }
                     }
 
                     if (spinStartFound && (lowAirspeedIndexDiff > 3 && lowAirspeedIndexDiff <= 30)) {
-                        // System.out.println("Looking for end of spin");
-
                         if (instIAS > 50 && normAcRel < AC_NORMAL && latAcRel < AC_NORMAL) {
-                            String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-                            currentEvent.updateEnd(endTime, i);
-
+                            currentEvent.updateEnd(utcSeries.get(i), i);
                             ++endSpinSeconds;
                         }
                     }

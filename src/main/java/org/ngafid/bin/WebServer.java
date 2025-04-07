@@ -17,6 +17,7 @@ import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -41,6 +42,7 @@ public abstract class WebServer {
     protected final int maxThreads = 32;
     protected final int minThreads = 2;
     protected final int timeOutMillis = 1000 * 60 * 5;
+    protected final Map<String, String> environment = System.getenv();
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -96,6 +98,12 @@ public abstract class WebServer {
         configureRoutes();
         configureAuthChecks();
         configureExceptions();
+
+        if (environment.containsKey("DISABLE_PERSISTENT_SESSIONS") && environment.get("DISABLE_PERSISTENT_SESSIONS").equalsIgnoreCase("true")) {
+            LOG.info("Persistent sessions are disabled.");
+        } else {
+            configurePersistentSessions();
+        }
     }
 
     protected void preInitialize() {
@@ -116,6 +124,8 @@ public abstract class WebServer {
     protected abstract void configureAuthChecks();
 
     protected abstract void configureExceptions();
+
+    protected abstract void configurePersistentSessions();
 
     protected void exceptionHandler(Exception exception) {
         LOG.severe("Exception: " + exception);
@@ -165,9 +175,6 @@ public abstract class WebServer {
         String staticFiles = getEnvironmentVariable("WEBSERVER_STATIC_FILES");
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
 
-        // The application uses Gson to generate JSON representations of Java objects.
-        // This should be used by your Ajax Routes to generate JSON for the HTTP
-        // response to Ajax requests.
         WebServer webserver = new JavalinWebServer(port, staticFiles);
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();

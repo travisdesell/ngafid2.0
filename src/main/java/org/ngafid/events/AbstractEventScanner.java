@@ -10,19 +10,19 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static org.ngafid.flights.Parameters.LCL_DATE;
-import static org.ngafid.flights.Parameters.LCL_TIME;
+import static org.ngafid.flights.Parameters.UNIX_TIME_SECONDS;
+import static org.ngafid.flights.Parameters.UTC_DATE_TIME;
 
 public abstract class AbstractEventScanner {
 
     protected final EventDefinition definition;
 
     protected List<String> getRequiredDoubleColumns() {
-        return List.of();
+        return List.of(UNIX_TIME_SECONDS);
     }
 
     protected List<String> getRequiredStringColumns() {
-        return List.of(LCL_DATE, LCL_TIME);
+        return List.of(UTC_DATE_TIME);
     }
 
     public AbstractEventScanner(EventDefinition eventDefinition) {

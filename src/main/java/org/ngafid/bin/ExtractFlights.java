@@ -1,25 +1,15 @@
 package org.ngafid.bin;
 
-import java.sql.Connection;
-
-import java.util.Arrays;
-import java.util.ArrayList;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
+import org.apache.commons.cli.*;
 import org.ngafid.common.Database;
 import org.ngafid.flights.Flight;
 
-public final class ExtractFlights {
-    private ExtractFlights() {
-        throw new UnsupportedOperationException("Utility class not meant to be instantiated");
-    }
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public enum ExtractFlights {
+    ;
 
     public static void main(String[] arguments) throws Exception {
         Connection connection = Database.getConnection();

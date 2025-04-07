@@ -1,6 +1,5 @@
 package org.ngafid.events;
 
-import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
@@ -8,7 +7,6 @@ import org.ngafid.flights.StringTimeSeries;
 import java.util.List;
 import java.util.Map;
 
-import static org.eclipse.jetty.http2.hpack.HpackDecoder.LOG;
 import static org.ngafid.events.CustomEvent.LOW_FUEL_EVENT_THRESHOLDS;
 import static org.ngafid.flights.Parameters.*;
 
@@ -33,41 +31,30 @@ public class LowEndingFuelScanner extends AbstractEventScanner {
         }
 
         DoubleTimeSeries fuel = doubleTimeSeries.get(TOTAL_FUEL);
-        StringTimeSeries date = stringTimeSeries.get(LCL_DATE);
-        StringTimeSeries time = stringTimeSeries.get(LCL_TIME);
+        DoubleTimeSeries unixtime = doubleTimeSeries.get(UNIX_TIME_SECONDS);
+        StringTimeSeries utc = stringTimeSeries.get(UTC_DATE_TIME);
 
-        String[] lastValidDateAndIndex = date.getLastValidAndIndex();
-        int i = Integer.parseInt(lastValidDateAndIndex[1]);
+        int i = unixtime.getLastValidIndex();
+        double endTime = unixtime.get(i);
+        String endUTC = utc.get(i);
 
-        String endTime = lastValidDateAndIndex[0] + " " + time.getLastValid();
-
-        String currentTime = endTime;
+        double currentTime;
         double duration = 0;
         double fuelSum = 0;
         int fuelValues = 0;
 
         for (; duration <= 15 && i >= 0; i--) {
-            currentTime = date.get(i) + " " + time.get(i);
+            currentTime = unixtime.get(i);
             fuelSum += fuel.get(i);
             fuelValues++;
 
-            if (currentTime.equals(" ")) {
-                continue;
-            }
-
-            try {
-                duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime);
-            } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {
-                LOG.info("Could not parse date: " + currentTime);
-                LOG.info(e.getMessage());
-                e.printStackTrace();
-                return List.of();
-            }
+            duration = endTime - currentTime;
         }
 
         double average = (fuelSum / fuelValues);
         if (duration >= 15 && average < threshold) {
-            return List.of(new CustomEvent(currentTime, endTime, i, i + fuelValues, average, null, definition));
+            return List.of(new CustomEvent(utc.get(i), endUTC, i, i + fuelValues, average, null, definition
+            ));
         } else {
             return List.of();
         }

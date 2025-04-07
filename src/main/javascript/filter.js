@@ -817,7 +817,7 @@ class Group extends React.Component {
                                     <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                                 </button>
                             </div>
-                        <div className="card-body" style={{maxHeight : "200px", overflowY : "scroll"}}>
+                        <div className="card-body" style={{maxHeight : "200px", overflowY : "auto"}}>
                             {
                                 filters.map((filter, index) => {
                                     let initColor = filter.color;

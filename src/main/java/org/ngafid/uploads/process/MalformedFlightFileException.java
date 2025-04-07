@@ -1,5 +1,8 @@
 package org.ngafid.uploads.process;
 
+/**
+ * Thrown when the format of a file is incorrect or malformed
+ */
 public class MalformedFlightFileException extends Exception {
     public MalformedFlightFileException(String message) {
         super(message);

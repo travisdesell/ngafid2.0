@@ -1,8 +1,10 @@
 package org.ngafid.uploads.process.format;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.*;
 import org.w3c.dom.Document;
@@ -18,10 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -44,14 +47,13 @@ public class GPXFileProcessor extends FlightFileProcessor {
             List<FlightBuilder> flights = parseFlights(filename, stream);
 
             return flights.stream();
-        } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException
-                 | FlightAlreadyExistsException e) {
+        } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException e) {
             throw new RuntimeException(e);
         }
     }
 
     public List<FlightBuilder> parseFlights(String entry, InputStream stream) throws SQLException,
-            MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+            MalformedFlightFileException, IOException, FatalFlightFileException {
         List<FlightBuilder> flights = new ArrayList<>();
         // BE-GPS-2200
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -69,23 +71,13 @@ public class GPXFileProcessor extends FlightFileProcessor {
             Node dataNode = l.item(0);
             int len = dataNode.getChildNodes().getLength();
 
-            DoubleTimeSeries lat = new DoubleTimeSeries("Latitude", "degrees", len);
-            DoubleTimeSeries lon = new DoubleTimeSeries("Longitude", "degrees", len);
-            DoubleTimeSeries msl = new DoubleTimeSeries("AltMSL", "ft", len);
-            DoubleTimeSeries spd = new DoubleTimeSeries("GndSpd", "kt", len);
-            ArrayList<Timestamp> timestamps = new ArrayList<Timestamp>(len);
-            StringTimeSeries localDateSeries = new StringTimeSeries("Lcl Date", "yyyy-mm-dd");
-            StringTimeSeries localTimeSeries = new StringTimeSeries("Lcl Time", "hh:mm:ss");
-            StringTimeSeries utcOfstSeries = new StringTimeSeries("UTCOfst", "hh:mm");
-            // ss.SSSSSSXXX
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+            DoubleTimeSeries lat = new DoubleTimeSeries(Parameters.LATITUDE, Parameters.Unit.DEGREES, len);
+            DoubleTimeSeries lon = new DoubleTimeSeries(Parameters.LONGITUDE, Parameters.Unit.DEGREES, len);
+            DoubleTimeSeries msl = new DoubleTimeSeries(Parameters.ALT_MSL, Parameters.Unit.FT, len);
+            DoubleTimeSeries spd = new DoubleTimeSeries(Parameters.GND_SPD, Parameters.Unit.KNOTS, len);
+            DoubleTimeSeries unix = new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS, len);
+            StringTimeSeries utc = new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME);
 
-            SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
-
-            // NodeList serialNumberNodes =
-            // doc.getElementsByTagName("badelf:modelSerialNumber");
-            // String serialNumber = serialNumberNodes.item(0).getTextContent();
             NodeList nicknameNodes = doc.getElementsByTagName("badelf:modelNickname");
             if (nicknameNodes.item(0) == null)
                 throw new FatalFlightFileException("GPX file is missing necessary metadata (modelNickname).");
@@ -112,26 +104,9 @@ public class GPXFileProcessor extends FlightFileProcessor {
             }
 
             for (int i = 0; i < dates.getLength(); i++) {
-                Date parsedDate = dateFormat.parse(dates.item(i).getTextContent());
-                timestamps.add(new Timestamp(parsedDate.getTime()));
-                Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
-
-                int offsetMS = cal.getTimeZone().getOffset(parsedDate.getTime());
-                String sign = offsetMS < 0 ? "-" : "+";
-                offsetMS = offsetMS < 0 ? -offsetMS : offsetMS;
-
-                int offsetSEC = offsetMS / 1000;
-                int offsetMIN = offsetSEC / 60;
-                int offsetHRS = offsetMIN / 60;
-                offsetMIN %= 60;
-
-                String offsetHrsStr = (offsetHRS < 10 ? "0" : "") + offsetHRS;
-                String offsetMinStr = (offsetMIN < 10 ? "0" : "") + offsetMIN;
-                // This should look like +HH:mm
-                utcOfstSeries.add(sign + offsetHrsStr + ":" + offsetMinStr);
-
-                localDateSeries.add(lclDateFormat.format(parsedDate));
-                localTimeSeries.add(lclTimeFormat.format(parsedDate));
+                OffsetDateTime date = OffsetDateTime.parse(dates.item(i).getTextContent(), DateTimeFormatter.ISO_DATE_TIME);
+                unix.add(date.toEpochSecond());
+                utc.add(date.format(TimeUtils.ISO_8601_FORMAT));
 
                 Node spdNode = spdnodes.item(i);
                 // Convert m / s to knots
@@ -152,11 +127,11 @@ public class GPXFileProcessor extends FlightFileProcessor {
             }
 
             int start = 0;
-            for (int end = 1; end < timestamps.size(); end++) {
+            for (int end = 1; end < utc.size(); end++) {
                 // 1 minute delay -> new flight.
-                if (timestamps.get(end).getTime() - timestamps.get(end - 1).getTime() > 60000
-                        || end == localTimeSeries.size() - 1) {
-                    if (end == localTimeSeries.size() - 1) {
+                if (unix.get(end) - unix.get(end - 1) > 60000
+                        || end == utc.size() - 1) {
+                    if (end == utc.size() - 1) {
                         end += 1;
                     }
 
@@ -165,24 +140,12 @@ public class GPXFileProcessor extends FlightFileProcessor {
                         continue;
                     }
 
-                    StringTimeSeries localTime = localTimeSeries.subSeries(start, end);
-                    StringTimeSeries localDate = localDateSeries.subSeries(start, end);
-                    StringTimeSeries offset = utcOfstSeries.subSeries(start, end);
-                    DoubleTimeSeries nlat = lat.subSeries(start, end);
-                    DoubleTimeSeries nlon = lon.subSeries(start, end);
-                    DoubleTimeSeries nmsl = msl.subSeries(start, end);
-                    DoubleTimeSeries nspd = spd.subSeries(start, end);
-
+                    final int lo = start, hi = end;
                     HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
-                    doubleSeries.put("GndSpd", nspd);
-                    doubleSeries.put("Longitude", nlon);
-                    doubleSeries.put("Latitude", nlat);
-                    doubleSeries.put("AltMSL", nmsl);
+                    List.of(spd, lon, lat, msl, unix).forEach(series -> doubleSeries.put(series.getName(), series.subSeries(lo, hi)));
 
                     HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
-                    stringSeries.put("Lcl Date", localDate);
-                    stringSeries.put("Lcl Time", localTime);
-                    stringSeries.put("UTCOfst", offset);
+                    stringSeries.put(utc.getName(), utc.subSeries(start, end));
 
                     FlightMeta meta = new FlightMeta();
                     meta.setFilename(this.filename + ":" + start + "-" + end);
@@ -195,7 +158,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
                 }
             }
 
-        } catch (ParserConfigurationException | SAXException | ParseException e) {
+        } catch (ParserConfigurationException | SAXException e) {
             throw new FatalFlightFileException("Could not parse GPX data file: " + e.getMessage());
         }
 

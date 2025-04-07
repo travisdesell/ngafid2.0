@@ -2,18 +2,19 @@ package org.ngafid.uploads.process;
 
 import org.ngafid.flights.Airframes;
 
+import java.time.OffsetDateTime;
+
 /**
- * Utility class used by FlightBuilder to call the Flight constructor.
- **/
+ * Utility class used by FlightBuilder to call the Flight constructor, contains all metadata required for a flight.
+ */
 public final class FlightMeta {
-    //CHECKSTYLE:OFF
     public int fleetId = -1;
     public int uploaderId = -1;
     public int uploadId = -1;
     public int processingStatus = 0;
 
-    public String startDateTime;
-    public String endDateTime;
+    public OffsetDateTime startDateTime;
+    public OffsetDateTime endDateTime;
     public String md5Hash;
     public String systemId;
     public String filename;
@@ -21,13 +22,10 @@ public final class FlightMeta {
     public String suggestedTailNumber;
 
     public Airframes.Airframe airframe = null;
-    //CHECKSTYLE:ON
 
-    // Default constructor
     public FlightMeta() {
     }
 
-    // Copy constructor
     public FlightMeta(FlightMeta other) {
         this.fleetId = other.fleetId;
         this.uploaderId = other.uploaderId;
@@ -69,28 +67,20 @@ public final class FlightMeta {
         this.uploadId = uploadId;
     }
 
-    public int getProcessingStatus() {
-        return processingStatus;
-    }
-
-    public void setProcessingStatus(int processingStatus) {
-        this.processingStatus = processingStatus;
-    }
-
-    public String getStartDateTime() {
+    public OffsetDateTime getStartDateTime() {
         return startDateTime;
     }
 
-    public void setStartDateTime(String startDateTime) {
-        this.startDateTime = startDateTime;
+    public void setStartDateTime(OffsetDateTime odt) {
+        this.startDateTime = odt;
     }
 
-    public String getEndDateTime() {
+    public OffsetDateTime getEndDateTime() {
         return endDateTime;
     }
 
-    public void setEndDateTime(String endDateTime) {
-        this.endDateTime = endDateTime;
+    public void setEndDateTime(OffsetDateTime odt) {
+        this.endDateTime = odt;
     }
 
     public String getMd5Hash() {

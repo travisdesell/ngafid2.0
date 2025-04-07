@@ -1,19 +1,23 @@
 package org.ngafid.common;
 
-import java.io.*;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
+import javax.sql.DataSource;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
 public class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
-    private static String dbUser = null, dbPassword = null, dbUrl = null;
+    private static String dbUser = null;
+    private static String dbPassword = null;
+    private static String dbUrl = null;
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
@@ -23,10 +27,13 @@ public class Database {
 
     public static Connection getConnection() throws SQLException {
         var info = CONNECTION_POOL.getHikariPoolMXBean();
-        LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
-                + " active / " + info.getTotalConnections() + " total");
-        // new Throwable().printStackTrace();
+        // LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
+        //         + " active / " + info.getTotalConnections() + " total");
         return CONNECTION_POOL.getConnection();
+    }
+
+    public static DataSource getDataSource() {
+        return CONNECTION_POOL;
     }
 
     public static boolean dbInfoExists() {
@@ -69,10 +76,10 @@ public class Database {
         config.setUsername(dbUser);
         config.setPassword(dbPassword);
         config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "64");
-        config.addDataSourceProperty("prepStmtCacheSize", "64");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "512");
+        config.addDataSourceProperty("prepStmtCacheSize", "256");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         config.setMaximumPoolSize(32);
+        config.setMinimumIdle(1);
         config.setMaxLifetime(60000);
         CONNECTION_POOL = new HikariDataSource(config);
     }

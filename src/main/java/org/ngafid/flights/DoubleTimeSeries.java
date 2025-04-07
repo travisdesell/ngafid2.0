@@ -561,7 +561,7 @@ public class DoubleTimeSeries {
         return newSeries;
     }
 
-    public DoubleTimeSeries subSeries(int from, int until) throws SQLException {
+    public DoubleTimeSeries subSeries(int from, int until) {
         DoubleTimeSeries newSeries = new DoubleTimeSeries(name.getName(), dataType.getName(), until - from);
         newSeries.size = until - from;
         System.arraycopy(data, from, newSeries.data, 0, until - from);
@@ -570,6 +570,14 @@ public class DoubleTimeSeries {
 
     public Pair<Double, Double> getMinMax() {
         return new Pair<>(min, max);
+    }
+
+    public int getLastValidIndex() {
+        int i = size - 1;
+        while (i >= 0 && Double.isNaN(data[i])) {
+            i--;
+        }
+        return i;
     }
 
     public interface TimeStepCalculation {

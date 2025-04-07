@@ -2,10 +2,7 @@ package org.ngafid.flights;
 
 import org.ngafid.common.Database;
 import org.ngafid.common.FlightTag;
-import org.ngafid.common.MutableDouble;
-import org.ngafid.common.airports.Airport;
-import org.ngafid.common.airports.Airports;
-import org.ngafid.common.airports.Runway;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.common.filters.Filter;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -88,8 +85,8 @@ public class Flight {
         systemId = meta.systemId;
         suggestedTailNumber = meta.suggestedTailNumber;
         md5Hash = meta.md5Hash;
-        startDateTime = meta.startDateTime;
-        endDateTime = meta.endDateTime;
+        startDateTime = TimeUtils.UTCtoSQL(meta.startDateTime);
+        endDateTime = TimeUtils.UTCtoSQL(meta.endDateTime);
 
         this.itinerary = itinerary;
         this.exceptions = exceptions;
@@ -243,8 +240,6 @@ public class Flight {
         try (PreparedStatement query = connection.prepareStatement(queryStr)) {
             prepareFilterQuery(fleetId, filter, parameters, query);
 
-            LOG.info(query.toString());
-
             try (ResultSet resultSet = query.executeQuery()) {
                 resultSet.next();
                 return resultSet.getInt(1);
@@ -258,111 +253,6 @@ public class Flight {
 
         if (filter != null) {
             setQueryParameters(parameters, query);
-        }
-    }
-
-    public static int getNumFlights(Connection connection, String queryString, int fleetId) throws SQLException {
-        if (fleetId > 0) {
-            queryString += " AND fleet_id = " + fleetId;
-        }
-
-        return getNumFlights(connection, queryString);
-    }
-
-    /**
-     * Gets the total number of flights for a given fleet and queryString. This
-     * method is private to ensure public access doesn't get used in a way that
-     * accidentally exposes a SQL injection surface.
-     *
-     * @param connection  is the database connection
-     * @param queryString is what gets put into the WHERE clause of the query
-     * @return the number of flights for the fleet, given the specified queryString
-     */
-    private static int getNumFlights(Connection connection, String queryString) throws SQLException {
-        String fullQueryString = "SELECT count(id) FROM flights WHERE (" + queryString + ")";
-        LOG.info("getting number of flights with query string: '" + fullQueryString + "'");
-
-        try (PreparedStatement query = connection.prepareStatement(fullQueryString); ResultSet resultSet =
-                query.executeQuery()) {
-            resultSet.next();
-            return resultSet.getInt(1);
-        }
-    }
-
-    /**
-     * Gets the total number of flight hours for a given fleet and filter. If the
-     * filter is null it returns the number of flight hours for the fleet.
-     *
-     * @param connection is the database connection
-     * @param fleetId    is the id of the fleet, if <= 0 it will be for the entire
-     *                   NGAFID
-     * @param filter     the filter to select the flights, can be null.
-     * @return the number of flight hours for the fleet, given the specified filter
-     * (or no filter if the filter is null).
-     */
-    public static long getTotalFlightTime(Connection connection, int fleetId, Filter filter) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
-
-        String queryString;
-        if (fleetId <= 0) {
-            if (filter != null) {
-                queryString =
-                        "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" +
-                                filter.toQueryString(fleetId, parameters) + ")";
-            } else {
-                queryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights";
-            }
-        } else {
-            if (filter != null) {
-                queryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) " + "FROM flights WHERE " +
-                        "fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
-            } else {
-                queryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ?";
-            }
-        }
-
-        try (PreparedStatement query = connection.prepareStatement(queryString)) {
-            prepareFilterQuery(fleetId, filter, parameters, query);
-
-            try (ResultSet resultSet = query.executeQuery()) {
-                LOG.info(query.toString());
-
-                resultSet.next();
-                long diffSeconds = resultSet.getLong(1);
-                System.out.println("total time is: " + diffSeconds);
-
-                return diffSeconds;
-            }
-        }
-    }
-
-    public static long getTotalFlightTime(Connection connection, String queryString) throws SQLException {
-        return getTotalFlightTime(connection, queryString, 0);
-    }
-
-    /**
-     * Gets the total number of flight hours for a given fleet and WHERE clause
-     * query string for the fleet.
-     *
-     * @param connection  is the database connection
-     * @param queryString is the string to put into the query's WHERE clause
-     * @param fleetId     is the id of the fleet, if <= 0 it will be for the entire NGAFID
-     * @return the number of flight hours for the fleet, given the specified
-     * queryString
-     */
-    public static long getTotalFlightTime(Connection connection, String queryString, int fleetId) throws SQLException {
-        String fullQueryString =
-                "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + queryString + ")";
-        LOG.info("getting total flight hours with query string: '" + fullQueryString + "'");
-
-        if (fleetId > 0) fullQueryString += " AND fleet_id = " + fleetId;
-
-        try (PreparedStatement query = connection.prepareStatement(fullQueryString); ResultSet resultSet =
-                query.executeQuery()) {
-            LOG.info(query.toString());
-
-            resultSet.next();
-            return resultSet.getLong(1);
         }
     }
 
@@ -432,7 +322,6 @@ public class Flight {
                 }
             }
 
-            LOG.info(query.toString());
             try (ResultSet resultSet = query.executeQuery()) {
                 ArrayList<Flight> flights = new ArrayList<>();
                 while (resultSet.next()) {
@@ -490,8 +379,6 @@ public class Flight {
 
         queryString = (constraints != null && !constraints.isEmpty()) ? (queryString + constraints) : queryString;
 
-        LOG.info(queryString);
-
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
 
@@ -500,8 +387,6 @@ public class Flight {
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
             setQueryParameters(parameters, query);
-
-            LOG.info(query.toString());
 
             try (ResultSet resultSet = query.executeQuery()) {
                 ArrayList<Flight> flights = new ArrayList<>();
@@ -516,8 +401,6 @@ public class Flight {
 
     private static void setQueryParameters(ArrayList<Object> parameters, PreparedStatement query) throws SQLException {
         for (int i = 0; i < parameters.size(); i++) {
-            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
-
             if (parameters.get(i) instanceof String) {
                 query.setString(i + 2, (String) parameters.get(i));
             } else if (parameters.get(i) instanceof Double) {
@@ -554,27 +437,7 @@ public class Flight {
                 "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " +
                         fleetId + " LIMIT " + lowerId + ", " + (upperId - lowerId);
 
-        LOG.info(queryString);
-
         return getFlightsFromDb(connection, queryString);
-    }
-
-    public static int[] getFlightNumbers(Connection connection, int fleetId, Filter filter) throws SQLException {
-        String queryString = "SELECT id FROM flights WHERE fleet_id = " + fleetId + " AND airframe_id=1";
-
-        int[] nums = new int[getNumFlights(connection, fleetId, filter)];
-
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
-            int i = 0;
-
-            while (resultSet.next()) {
-                nums[i] = resultSet.getInt(1);
-                i++;
-            }
-
-            return nums;
-        }
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition) throws SQLException {
@@ -587,11 +450,8 @@ public class Flight {
 
         if (limit > 0) queryString += " LIMIT 100";
 
-        LOG.info(queryString);
-
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
                 query.executeQuery()) {
-            LOG.info(query.toString());
 
             ArrayList<Flight> flights = new ArrayList<>();
             while (resultSet.next()) {
@@ -602,7 +462,6 @@ public class Flight {
         }
     }
 
-    // Added to use in pitch_db
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE id = " + flightId;
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
@@ -967,7 +826,7 @@ public class Flight {
             }
 
             queryString.append("WHERE id = ").append(flightTag.hashCode());
-            LOG.info("Query String Update: " + queryString);
+
             try (PreparedStatement query = connection.prepareStatement(queryString.toString())) {
                 query.executeUpdate();
             }
@@ -1062,47 +921,6 @@ public class Flight {
         double rollComp = roll.get(index) * COMP_CONV;
         double ctComp = Math.sin(rollComp) * 32.2;
         return Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
-    }
-
-    public static void getNearbyLandingAreas(DoubleTimeSeries latitudeTS, DoubleTimeSeries longitudeTS,
-                                             DoubleTimeSeries altitudeAGLTS, StringTimeSeries nearestAirportTS,
-                                             DoubleTimeSeries airportDistanceTS, StringTimeSeries nearestRunwayTS,
-                                             DoubleTimeSeries runwayDistanceTS, double maxAirportDistanceFt,
-                                             double maxRunwayDistanceFt) {
-        for (int i = 0; i < latitudeTS.size(); i++) {
-            double latitude = latitudeTS.get(i);
-            double longitude = longitudeTS.get(i);
-            double altitudeAGL = altitudeAGLTS.get(i);
-
-            MutableDouble airportDistance = new MutableDouble();
-            Airport airport = null;
-            if (altitudeAGL <= 2000) {
-                airport = Airports.getNearestAirportWithin(latitude, longitude, maxAirportDistanceFt, airportDistance);
-            }
-
-            if (airport == null) {
-                nearestAirportTS.add("");
-                airportDistanceTS.add(Double.NaN);
-                nearestRunwayTS.add("");
-                runwayDistanceTS.add(Double.NaN);
-
-                // System.out.println(latitude + ", " + longitude + ", null, null, null, null");
-            } else {
-                nearestAirportTS.add(airport.iataCode);
-                airportDistanceTS.add(airportDistance.getValue());
-
-                MutableDouble runwayDistance = new MutableDouble();
-                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, maxRunwayDistanceFt,
-                        runwayDistance);
-                if (runway == null) {
-                    nearestRunwayTS.add("");
-                    runwayDistanceTS.add(Double.NaN);
-                } else {
-                    nearestRunwayTS.add(runway.getName());
-                    runwayDistanceTS.add(runwayDistance.getValue());
-                }
-            }
-        }
     }
 
     public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights)
@@ -1225,15 +1043,6 @@ public class Flight {
 
     public List<MalformedFlightFileException> getExceptions() {
         return exceptions;
-    }
-
-    public void remove(Connection connection) throws SQLException {
-        String query = "DELETE FROM flights WHERE id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, this.id);
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-        }
     }
 
     /**

@@ -303,6 +303,12 @@ class ManageFleetPage extends React.Component {
                                     </thead>
                                     <tbody>
                                         {
+                                            (fleetUsers.length === 0)
+                                            ?
+                                            <tr>
+                                                <td className="font-italic" style={{padding:"16px 12px", color: "var(--c_text_alt)"}}>No users found...</td>
+                                            </tr>
+                                            :
                                             fleetUsers.map((fleetUser, index) => {
                                                 return (
                                                     <FleetUserRow

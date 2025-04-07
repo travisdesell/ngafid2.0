@@ -423,7 +423,7 @@ class SeveritiesPage extends React.Component {
 
         let severitiesPage = this;
 
-        var submission_data = {
+        var submissionData = {
             startDate : startDate + "-01",
             endDate : endDate + "-28",
             eventNames : JSON.stringify(eventNames),
@@ -433,7 +433,7 @@ class SeveritiesPage extends React.Component {
         $.ajax({
             type: 'POST',
             url: '/protected/all_severities',
-            data : submission_data,
+            data : submissionData,
             dataType : 'json',
             success : function(response) {
                 console.log("Received response <all_severities>: ", this.data, response);
@@ -517,7 +517,7 @@ class SeveritiesPage extends React.Component {
         let severitiesPage = this;
 
 
-        var submission_data = {
+        var submissionData = {
             startDate : startDate + "-01",
             endDate : endDate + "-28",
             eventName : eventName,
@@ -527,7 +527,7 @@ class SeveritiesPage extends React.Component {
         $.ajax({
             type: 'POST',
             url: '/protected/severities',
-            data : submission_data,
+            data : submissionData,
             dataType : 'json',
             success : function(response) {
                 console.log("Received response <severities>: ", this.data, response);
@@ -659,7 +659,7 @@ class SeveritiesPage extends React.Component {
                 <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
-                        <div className="col-lg-12">
+                        <div className="col-lg-12" style={{paddingBottom: "128"}}>
                             <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Severities"

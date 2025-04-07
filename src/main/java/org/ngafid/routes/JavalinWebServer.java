@@ -1,13 +1,24 @@
 package org.ngafid.routes;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
+import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.accounts.User;
 import org.ngafid.bin.WebServer;
+import org.ngafid.common.TimeUtils;
+import org.ngafid.common.Database;
 import org.ngafid.routes.javalin.*;
 
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
@@ -27,7 +38,9 @@ public class JavalinWebServer extends WebServer {
     protected void preInitialize() {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
-            config.jsonMapper(new JavalinGson());
+
+            Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
+            config.jsonMapper(new JavalinGson(gson, false));
         });
     }
 
@@ -63,7 +76,6 @@ public class JavalinWebServer extends WebServer {
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         TagFilterJavalinRoutes.bindRoutes(app);
-        UncategorizedJavalinRoutes.bindRoutes(app);
         CesiumDataJavalinRoutes.bindRoutes(app);
     }
 
@@ -130,5 +142,53 @@ public class JavalinWebServer extends WebServer {
         app.exception(Exception.class, (exception, ctx) -> {
             exceptionHandler(exception);
         });
+    }
+
+    @Override
+    protected void configurePersistentSessions() {
+        app.unsafeConfig().jetty.modifyServletContextHandler(
+                handler -> handler.setSessionHandler(createSessionHandler())
+        );
+    }
+
+    private static SessionHandler createSessionHandler() {
+        SessionHandler sessionHandler = new SessionHandler();
+        SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
+//        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
+        sessionHandler.setSessionCache(sessionCache);
+        sessionHandler.setHttpOnly(true);
+        return sessionHandler;
+    }
+
+    private static FileSessionDataStore createFileSessionDataStore() {
+        FileSessionDataStore fileSessionDataStore = new FileSessionDataStore();
+        File baseDir = new File(System.getProperty("java.io.tmpdir"));
+        File storeDir = new File(baseDir, "javalin-session-store");
+        storeDir.mkdir();
+        fileSessionDataStore.setStoreDir(storeDir);
+        return fileSessionDataStore;
+    }
+
+    private static JDBCSessionDataStoreFactory createJDBCDataStore() {
+        DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
+
+        try (Connection connection = Database.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            databaseAdaptor.setDriverInfo(metaData.getDriverName(), metaData.getURL());
+            databaseAdaptor.setDatasource(Database.getDataSource());
+
+            JDBCSessionDataStore.SessionTableSchema schema = new JDBCSessionDataStore.SessionTableSchema();
+            schema.setTableName("jetty_sessions");
+
+            JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
+            jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
+            jdbcSessionDataStoreFactory.setSessionTableSchema(schema);
+
+            return jdbcSessionDataStoreFactory;
+        } catch (SQLException e) {
+            LOG.severe("Failed to get database connection for persistent logins.");
+        }
+        return null;
     }
 }

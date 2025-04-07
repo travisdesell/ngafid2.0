@@ -163,13 +163,21 @@ class SignedInNavbar extends React.Component {
                 );
             }
 
-        //let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
+
+        //Highlight Active Page on Navbar
+        console.log(`Active Page: '${this.props.activePage}'`);
+
+        let homeActive = (this.props.activePage === "welcome");
+
         const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
         let eventsActive = (eventPageNames.includes(this.props.activePage));
+
+        const aggregatePageNames = ["aggregate", "aggregate_trends"];
+        let aggregateActive = (aggregatePageNames.includes(this.props.activePage));
+
         let analysisActive = (this.props.activePage === "ttf");
         let accountsActive = (this.props.activePage === "account");
 
-        //console.log("[EX] ACTIVE PAGE", this.props.activePage);
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:"var(--c_navbar_bg)"}}>
@@ -228,12 +236,13 @@ class SignedInNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink icon={"fa-home"} name={"Home"} active={this.props.activePage==="welcome" || this.props.activePage==="aggregate"} href="/protected/welcome"/>
+                        <NavLink icon={"fa-home"} name={"Home"} active={homeActive} href="/protected/welcome"/>
 
                         {aggregateView ?
                             <li className="nav-item dropdown">
-                                <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Aggregate View
+                                <a className={"nav-link dropdown-toggle" + (aggregateActive ? " active" : "")} style={aggregateActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i className="fa fa-fw fa-calendar" aria-hidden="true"/>
+                                    &nbsp;Aggregate View
                                 </a>
                                 <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                     <DropdownLink name={"Aggregate Dashboard"} hidden={false} href="/protected/aggregate"/>
