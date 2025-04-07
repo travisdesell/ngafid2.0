@@ -1736,7 +1736,7 @@ class FlightsPage extends React.Component {
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false"
                                 >
-                                    Resolution Scale
+                                    Resolution Scale: {this.state.cesiumResolutionScale * 100}%
                                 </button>
                                 <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                     {
