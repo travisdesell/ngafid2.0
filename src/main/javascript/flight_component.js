@@ -1063,8 +1063,9 @@ class Flight extends React.Component {
     }
 
     render() {
+
         let buttonClasses = "p-1 expand-import-button btn btn-outline-secondary d-flex align-items-center justify-content-center";
-        let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let cesiumControlButtonClasses = "p-1 btn btn-primary d-flex align-items-center justify-content-center";
         //const styleButton = { minWidth:"2.25em", minHeight:"2.25em" };'
 
         const buttonSize = "1.75em";
@@ -1151,14 +1152,14 @@ class Flight extends React.Component {
                 </div>
             );
             toggleCameraButton = (
-                <button className={buttonClasses + " ml-1 mt-1 mb-1 mr-0"} style={{flex : "0 0 10em"}} aria-pressed="false" onClick={() => this.props.cesiumFlightTrackedSet(flightId)}>
+                <button className={`${cesiumControlButtonClasses} ml-1 mt-1 mb-1 mr-0`} style={{flex : "0 0 10em"}} aria-pressed="false" onClick={() => this.props.cesiumFlightTrackedSet(flightId)}>
                     <i className="fa fa-camera mr-2"/>
                     Track Flight
                 </button>
 
             );
             jumpToStartButton = (
-                <button className={buttonClasses + " ml-1 mt-1 mb-1 mr-0"} style={{flex : "0 0 10em"}} aria-pressed="false" onClick={() => this.props.cesiumJumpToFlightStart(flightId)}>
+                <button className={`${cesiumControlButtonClasses} ml-1 mt-1 mb-1 mr-0`} style={{flex : "0 0 10em"}} aria-pressed="false" onClick={() => this.props.cesiumJumpToFlightStart(flightId)}>
                     <i className="fa fa-play mr-2"/>
                     Jump to Start
                 </button>
