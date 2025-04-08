@@ -97,6 +97,8 @@ public class EventConsumer extends DisjointConsumer<String, String> {
                 return new Pair<>(record, false);
             }
 
+            /*
+
 // Logging block for debugging flight content
             Log.info("Event Consumer.");
             Log.info("Event Consumer.Preparing to compute events for flight: " + flight.getFilename());
@@ -121,6 +123,8 @@ public class EventConsumer extends DisjointConsumer<String, String> {
                 Log.info("DoubleTimeSeries [" + name + "] value at middle index (" + middleIndex + "): " + valueAtMiddle);
             }
 
+             */
+
 
             EventDefinition def = eventDefinitionMap.get(etc.eventId());
             if (def == null) {
@@ -131,11 +135,7 @@ public class EventConsumer extends DisjointConsumer<String, String> {
             try {
                 clearExistingEvents(connection, flight, eventDefinitionMap.get(etc.eventId()));
                 AbstractEventScanner scanner = getScanner(flight, eventDefinitionMap.get(etc.eventId()));
-                Log.info("!!! Before gather required columns");
                 scanner.gatherRequiredColumns(connection, flight);
-                Log.info("!!! After gather required columns");
-
-
 
                 // Scanners may emit events of more than one type -- filter the other events out.
                 List<org.ngafid.events.Event> events = scanner

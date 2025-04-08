@@ -62,7 +62,7 @@ public class ParquetFileProcessor {
                 counter++;
 
                 // How many flights we are processing (testing)
-                  if (counter > 5) break;
+                  if (counter > 10) break;
 
             }
         } catch (IOException e) {

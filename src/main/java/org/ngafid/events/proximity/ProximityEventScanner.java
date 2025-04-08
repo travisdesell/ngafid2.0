@@ -30,18 +30,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
     public ProximityEventScanner(Flight flight, EventDefinition eventDefinition) {
         super(eventDefinition);
         this.flight = flight;
-        // Set the column names to only include what we need
-        TreeSet<String> requiredColumns = new TreeSet<>();
-        requiredColumns.add(Parameters.ALT_AGL);
-        requiredColumns.add(Parameters.LATITUDE);
-        requiredColumns.add(Parameters.LONGITUDE);
-        requiredColumns.add(Parameters.ALT_MSL);
-        requiredColumns.add(Parameters.IAS);
-        requiredColumns.add(Parameters.UNIX_TIME_SECONDS);
-        requiredColumns.add(Parameters.UTC_DATE_TIME);
-
-        //definition.setColumnNames(requiredColumns);
-
         try (Connection connection = Database.getConnection()) {
             this.gatherRequiredColumns(connection, flight);
         } catch (Exception e) {
