@@ -954,7 +954,7 @@ class Group extends React.Component {
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}>Add Rule</button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}>Add Group</button>
                         <button type="button" className="btn btn-danger btn-sm" onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
-                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
+                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/> {this.props.treeIndex==="root" ? "Clear All" : "Delete Group"}
                         </button>
                     </div>
                 </div>
@@ -1032,7 +1032,7 @@ class Filter extends React.Component {
 
     render() {
         return (
-            <div hidden={!this.props.filterVisible}>
+            <div>
                 <Group
                     treeIndex="root" 
                     submitButtonName={this.props.submitButtonName}
