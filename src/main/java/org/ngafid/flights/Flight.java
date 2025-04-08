@@ -94,6 +94,11 @@ public class Flight {
 
         this.stringTimeSeries = new HashMap<>(stringTimeSeries);
         this.doubleTimeSeries = new HashMap<>(doubleTimeSeries);
+        // Should we add this since the numberRows is never initialized?
+        if (!doubleTimeSeries.isEmpty()) {
+            numberRows = doubleTimeSeries.values().iterator().next().size();
+        }
+
 
         for (var series : doubleTimeSeries.values())
             assert series.size() == numberRows;

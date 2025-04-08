@@ -1,5 +1,6 @@
 package org.ngafid.events.proximity;
 
+import org.jline.utils.Log;
 import org.ngafid.common.filters.Pair;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
@@ -9,8 +10,11 @@ import org.ngafid.flights.StringTimeSeries;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 public final class FlightTimeLocation {
+    private static final Logger LOG = Logger.getLogger(FlightTimeLocation.class.getName());
+
     //CHECKSTYLE:OFF
     // set to true if the flight has the required time series values and a start and
     // end date time
@@ -47,49 +51,51 @@ public final class FlightTimeLocation {
 
 
     public FlightTimeLocation(Connection connection, Flight flight) throws SQLException {
+        LOG.info("Creating FlightTimeLocation for Flight ID: " + flight.getId());
         this.fleetId = flight.getFleetId();
         this.flightId = flight.getId();
         this.airframeNameId = flight.getAirframeNameId();
         this.startDateTime = flight.getStartDateTime();
         this.endDateTime = flight.getEndDateTime();
 
-        // first check and see if the flight had a start and end time, if not we cannot process it
-        // System.out.println("Getting info for flight with start date time: " + startDateTime + " and end date time: "
-        // + endDateTime);
+        LOG.info("Flight details - Fleet ID: " + fleetId + ", Airframe ID: " + airframeNameId + 
+                 ", Start: " + startDateTime + ", End: " + endDateTime);
 
         if (startDateTime == null || endDateTime == null) {
-            // flight didnt have a start or end time
+            LOG.warning("Flight " + flightId + " missing start or end time");
             valid = false;
             return;
         }
 
-        // then check and see if this was actually a flight (RPM > 800)
         Pair<Double, Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
         Pair<Double, Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
 
-        if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
-                || (minMaxRPM2 == null && minMaxRPM1.second() < 800) // RPM2 is null, RPM1 is < 800 (RPM1 would not be
-                // null as well)
-                || (minMaxRPM1 == null && minMaxRPM2.second() < 800) // RPM1 is null, RPM2 is < 800 (RPM2 would not be
-                // null as well)
-                || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800
-                && minMaxRPM2.second() < 800))) { // RPM1 and RPM2 < 800
-            // couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
-            valid = false;
-            return;
+        LOG.info("RPM values - E1: " + (minMaxRPM1 != null ? minMaxRPM1.second() : "null") + 
+                 ", E2: " + (minMaxRPM2 != null ? minMaxRPM2.second() : "null"));
+
+
+        //Parquet files do not have rpm data, skip this check.
+        Log.info("File name is" + flight.getFilename());
+        if (!flight.getFilename().endsWith(".parquet")) {
+            if ((minMaxRPM1 == null && minMaxRPM2 == null)
+                    || (minMaxRPM2 == null && minMaxRPM1.second() < 800)
+                    || (minMaxRPM1 == null && minMaxRPM2.second() < 800)
+                    || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800
+                    && minMaxRPM2.second() < 800))) {
+                LOG.warning("Flight " + flightId + " failed RPM validation");
+                valid = false;
+                return;
+            }
         }
 
-        // then check and see if this flight had a latitude and longitude, if not we cannot calculate adjacency
         Pair<Double, Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
         Pair<Double, Double> minMaxLongitude = DoubleTimeSeries.getMinMax(connection, flightId, "Longitude");
 
-        // if (minMaxLatitude != null) System.out.println("min max latitude: " + minMaxLatitude.first() + ", " +
-        // minMaxLatitude.second());
-        // if (minMaxLongitude != null) System.out.println("min max longitude: " + minMaxLongitude.first() + ", " +
-        // minMaxLongitude.second());
+        LOG.info("Position bounds - Latitude: " + (minMaxLatitude != null ? minMaxLatitude.first() + " to " + minMaxLatitude.second() : "null") + 
+                 ", Longitude: " + (minMaxLongitude != null ? minMaxLongitude.first() + " to " + minMaxLongitude.second() : "null"));
 
         if (minMaxLatitude == null || minMaxLongitude == null) {
-            // flight didn't have latitude or longitude
+            LOG.warning("Flight " + flightId + " missing latitude or longitude data");
             valid = false;
             return;
         }
@@ -99,11 +105,12 @@ public final class FlightTimeLocation {
         minLongitude = minMaxLongitude.first();
         maxLongitude = minMaxLongitude.second();
 
-        // then check and see if this flight had alt MSL, if not we cannot calculate adjacency
         Pair<Double, Double> minMaxAltMSL = DoubleTimeSeries.getMinMax(connection, flightId, "AltMSL");
 
+        LOG.info("Altitude bounds - MSL: " + (minMaxAltMSL != null ? minMaxAltMSL.first() + " to " + minMaxAltMSL.second() : "null"));
+
         if (minMaxAltMSL == null) {
-            // flight didn't have alt MSL
+            LOG.warning("Flight " + flightId + " missing altitude MSL data");
             valid = false;
             return;
         }
@@ -111,8 +118,8 @@ public final class FlightTimeLocation {
         minAltMSL = minMaxAltMSL.first();
         maxAltMSL = minMaxAltMSL.second();
 
-        // this flight had the necessary values and time series to calculate adjacency
         valid = true;
+        LOG.info("FlightTimeLocation successfully created for Flight ID: " + flightId);
     }
 
     /**
@@ -124,17 +131,19 @@ public final class FlightTimeLocation {
      * @throws SQLException sql exception
      */
     public boolean getSeriesData(Connection connection) throws SQLException {
-        // get the time series data for altitude, latitude and longitude
+        LOG.info("Getting series data for Flight ID: " + flightId);
+        
         DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
         DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
         DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
         DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
         DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.IAS);
 
-        // check to see if we could get these columns
         if (altMSLSeries == null || altAGLSeries == null || latitudeSeries == null || longitudeSeries == null
-                || indicatedAirspeedSeries == null)
+                || indicatedAirspeedSeries == null) {
+            LOG.warning("Missing required time series data for Flight ID: " + flightId);
             return false;
+        }
 
         altitudeMSL = altMSLSeries.innerArray();
         altitudeAGL = altAGLSeries.innerArray();
@@ -142,19 +151,22 @@ public final class FlightTimeLocation {
         longitude = longitudeSeries.innerArray();
         indicatedAirspeed = indicatedAirspeedSeries.innerArray();
 
-        // calculate the epoch time for each row as longs so they can most be quickly compared
-        // we need to keep track of the date and time series for inserting in the event info
         utc = StringTimeSeries.getStringTimeSeries(connection, flightId, Parameters.UTC_DATE_TIME);
         epochTime = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.UNIX_TIME_SECONDS);
 
         hasSeriesData = true;
-
+        LOG.info("Successfully retrieved all series data for Flight ID: " + flightId + 
+                 " - Data points: " + altitudeMSL.length);
         return true;
     }
 
     public boolean hasRegionOverlap(FlightTimeLocation other) {
-        return other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude
+
+        boolean overlap = other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude
                 && other.maxLongitude >= this.minLongitude && other.minLongitude <= this.maxLongitude;
+        LOG.info("Region overlap check - Flight " + this.flightId + " vs " + other.flightId + ": " + overlap);
+        //return overlap;
+        return true;
     }
 
     public boolean isValid() {

@@ -1,5 +1,6 @@
 package org.ngafid.events.proximity;
 
+import org.jline.utils.Log;
 import org.ngafid.common.Database;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.*;
@@ -13,9 +14,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static org.ngafid.events.proximity.CalculateProximity.*;
@@ -31,14 +30,35 @@ public class ProximityEventScanner extends AbstractEventScanner {
     public ProximityEventScanner(Flight flight, EventDefinition eventDefinition) {
         super(eventDefinition);
         this.flight = flight;
+        // Set the column names to only include what we need
+        TreeSet<String> requiredColumns = new TreeSet<>();
+        requiredColumns.add(Parameters.ALT_AGL);
+        requiredColumns.add(Parameters.LATITUDE);
+        requiredColumns.add(Parameters.LONGITUDE);
+        requiredColumns.add(Parameters.ALT_MSL);
+        requiredColumns.add(Parameters.IAS);
+        requiredColumns.add(Parameters.UNIX_TIME_SECONDS);
+        requiredColumns.add(Parameters.UTC_DATE_TIME);
+
+        //definition.setColumnNames(requiredColumns);
+
+        try (Connection connection = Database.getConnection()) {
+            this.gatherRequiredColumns(connection, flight);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load required columns for proximity scanner");
+        }
+
     }
 
     @Override
     protected List<String> getRequiredDoubleColumns() {
-        return List.of(Parameters.ALT_MSL, Parameters.ALT_AGL, Parameters.LATITUDE, Parameters.LONGITUDE, Parameters.IAS);
+        LOG.info("Getting required double columns for ProximityEventScanner");
+        return List.of(Parameters.ALT_AGL, Parameters.LATITUDE, Parameters.LONGITUDE);
     }
 
     public List<Event> scanFlightPair(Connection connection, Flight flight, FlightTimeLocation flightInfo, Flight otherFlight, FlightTimeLocation otherFlightInfo) throws SQLException, NullPointerException {
+        LOG.info("Proximity event. ScanFlight pair");
         ArrayList<Event> eventList = new ArrayList<>();
         String startTime = null;
         String endTime = null;
@@ -65,9 +85,11 @@ public class ProximityEventScanner extends AbstractEventScanner {
         final int stopBuffer = 30;
 
         if (!flightInfo.hasRegionOverlap(otherFlightInfo) || !otherFlightInfo.getSeriesData(connection)) {
+            LOG.info("No region overlap or missing series data - Flight IDs: " + flight.getId() + " and " + otherFlight.getId());
             return List.of();
         }
 
+        LOG.info("Found region overlap - Flight IDs: " + flight.getId() + " and " + otherFlight.getId());
         // Skip the first 30 seconds as it is usually the FDR being initialized
         final int SKIP_SECONDS = 30;
         int i = SKIP_SECONDS, j = SKIP_SECONDS;
@@ -112,7 +134,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
                     (flightInfo.indicatedAirspeed[i] > minAirspeed) && (otherFlightInfo.indicatedAirspeed[j] > minAirspeed);
 
             if (distanceCheck && altitudeCheck && airspeedCheck) {
-
+                LOG.info("Proximity condition met - Distance: " + distanceFt + "ft, Altitude AGL: " + flightInfo.altitudeAGL[i] + "m, Airspeed: " + flightInfo.indicatedAirspeed[i] + "kt");
                 // If an exceedence is not being tracked, startTime is null
                 if (startTime == null) {
 
@@ -189,6 +211,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
             emitProximityEventPair(flight, flightInfo, otherFlight, otherFlightInfo, eventList, TimeUtils.parseUTC(startTime), TimeUtils.parseUTC(endTime), TimeUtils.parseUTC(otherStartTime), TimeUtils.parseUTC(otherEndTime), startLine, endLine, otherStartLine, otherEndLine, severity, lateralDistance, verticalDistance);
         }
 
+        LOG.info("Finished scanFlightPair - Found " + eventList.size() + " events");
         return eventList;
     }
 
@@ -221,8 +244,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
     }
 
     public List<Event> processFlight(Connection connection, Flight flight) throws SQLException {
-
-        LOG.info("Processing flight: " + flight.getId() + ", " + flight.getFilename());
+        LOG.info("Starting processFlight - Flight ID: " + flight.getId() + ", Filename: " + flight.getFilename());
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
@@ -231,8 +253,13 @@ public class ProximityEventScanner extends AbstractEventScanner {
         // Get enough information about the flight to determine if we can calculate adjacencies with it
         FlightTimeLocation flightInfo = new FlightTimeLocation(connection, flight);
         boolean hasSeriesData = flightInfo.getSeriesData(connection), gotSeriesData = flightInfo.hasSeriesData(), isValid = flightInfo.isValid();
+
+        if (flight.getFilename().contains("parquet")){
+            isValid = true;
+        }
+
         if (!hasSeriesData || !gotSeriesData || !isValid) {
-            LOG.info("Flight is invalid for some reason " + hasSeriesData + ", " + gotSeriesData + ", " + isValid);
+            LOG.warning("Flight validation failed - hasSeriesData: " + hasSeriesData + ", gotSeriesData: " + gotSeriesData + ", isValid: " + isValid);
             return List.of();
         }
 
@@ -240,22 +267,25 @@ public class ProximityEventScanner extends AbstractEventScanner {
                 "start_time <= '" + flightInfo.endDateTime + "' AND end_time >= " +
                 "'" + flightInfo.startDateTime + "')");
 
-        LOG.info("Found " + potentialFlights.size() + " potential time matched flights.");
+        LOG.info("Found " + potentialFlights.size() + " potential time matched flights for Flight ID: " + flight.getId());
 
         List<Event> allEvents = new ArrayList<>();
         for (Flight otherFlight : potentialFlights) {
-            LOG.info("Scanning flight pair");
+            LOG.info("Scanning flight pair - Flight IDs: " + flight.getId() + " and " + otherFlight.getId());
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));
         }
 
+        LOG.info("Finished processFlight - Total events found: " + allEvents.size());
         return allEvents;
     }
 
     @Override
     public List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) throws SQLException {
         try (Connection connection = Database.getConnection()) {
-            return processFlight(connection, flight);
+            List<Event> events = processFlight(connection, flight);
+            LOG.info("Completed scan method - Found " + events.size() + " events");
+            return events;
         }
     }
 }

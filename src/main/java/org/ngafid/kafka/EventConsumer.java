@@ -6,11 +6,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.jline.utils.Log;
 import org.ngafid.common.ColumnNotAvailableException;
 import org.ngafid.common.Database;
 import org.ngafid.common.filters.Pair;
 import org.ngafid.events.*;
 import org.ngafid.events.proximity.ProximityEventScanner;
+import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 
 import java.sql.Connection;
@@ -18,6 +20,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class EventConsumer extends DisjointConsumer<String, String> {
@@ -48,7 +51,9 @@ public class EventConsumer extends DisjointConsumer<String, String> {
     }
 
     private static AbstractEventScanner getScanner(Flight flight, EventDefinition def) {
+
         if (def.getId() > 0) {
+            LOG.info("GET Scanner GENERIC Event SCANNer.Airframe id: " + def.getId());
             return new EventScanner(def);
         } else {
             return switch (def.getId()) {
@@ -89,8 +94,33 @@ public class EventConsumer extends DisjointConsumer<String, String> {
             Flight flight = Flight.getFlight(connection, etc.flightId());
             if (flight == null) {
                 LOG.info("Cannot compute event with definition id " + etc.eventId() + " for flight " + etc.flightId() + " because the flight does not exist in the database. Assuming this was a stale request");
-                return new Pair<>(null, false);
+                return new Pair<>(record, false);
             }
+
+// Logging block for debugging flight content
+            Log.info("Event Consumer.");
+            Log.info("Event Consumer.Preparing to compute events for flight: " + flight.getFilename());
+            Log.info("Event Consumer. Flight ID: " + flight.getId());
+            Log.info("Event Consumer. Number of rows: " + flight.getNumberRows());
+            Log.info("Event Consumer. DoubleTimeSeries keys: " + flight.getDoubleTimeSeriesMap().keySet());
+            Log.info("Event Consumer. StringTimeSeries keys: " + flight.getStringTimeSeriesMap().keySet());
+
+            int middleIndex = flight.getNumberRows() / 2;
+            Log.info("Event Consumer. Middle index for sample values: " + middleIndex);
+
+// Log middle values from each DoubleTimeSeries
+            for (Map.Entry<String, DoubleTimeSeries> entry : flight.getDoubleTimeSeriesMap().entrySet()) {
+                String name = entry.getKey();
+                DoubleTimeSeries series = entry.getValue();
+
+                double valueAtMiddle = Double.NaN;
+                if (series.size() > middleIndex) {
+                    valueAtMiddle = series.get(middleIndex);
+                }
+
+                Log.info("DoubleTimeSeries [" + name + "] value at middle index (" + middleIndex + "): " + valueAtMiddle);
+            }
+
 
             EventDefinition def = eventDefinitionMap.get(etc.eventId());
             if (def == null) {
@@ -101,7 +131,11 @@ public class EventConsumer extends DisjointConsumer<String, String> {
             try {
                 clearExistingEvents(connection, flight, eventDefinitionMap.get(etc.eventId()));
                 AbstractEventScanner scanner = getScanner(flight, eventDefinitionMap.get(etc.eventId()));
+                Log.info("!!! Before gather required columns");
                 scanner.gatherRequiredColumns(connection, flight);
+                Log.info("!!! After gather required columns");
+
+
 
                 // Scanners may emit events of more than one type -- filter the other events out.
                 List<org.ngafid.events.Event> events = scanner

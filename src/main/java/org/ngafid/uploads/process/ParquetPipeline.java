@@ -1,6 +1,7 @@
 package org.ngafid.uploads.process;
 
 import org.apache.parquet.io.InputFile;
+import org.jline.utils.Log;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Flight;
 import org.ngafid.uploads.Upload;
@@ -87,7 +88,18 @@ public class ParquetPipeline {
             }
 
             if (!flights.isEmpty()) {
+
+                for (Flight flight : flights) {
+                    Log.info("Parquet pipeline");
+                    LOG.info("Preparing to insert flight: " + flight.getFilename());
+                    LOG.info("  Flight ID (pre-insert): " + flight.getId());
+                    LOG.info("  Number of rows: " + flight.getNumberRows());
+                    LOG.info("  DoubleTimeSeries keys: " + flight.getDoubleTimeSeriesMap().keySet());
+                    LOG.info("  StringTimeSeries keys: " + flight.getStringTimeSeriesMap().keySet());
+                }
                 Flight.batchUpdateDatabase(connection, flights);
+            }else{
+                LOG.severe("Flights are empty!!!");
             }
 
         } catch (Exception e) {

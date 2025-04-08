@@ -16,9 +16,6 @@ import org.ngafid.uploads.process.FlightMeta;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -57,11 +54,15 @@ public class ParquetFileProcessor {
 
                 populateTimeSeries(record, doubleTimeSeries, stringTimeSeries);
 
+                int numberRows = doubleTimeSeries.get(Parameters.UNIX_TIME_SECONDS).size();
+                LOG.info("Number of rows for flight " + counter + ": " + numberRows);
+
+
                 flightBuilders.add(new FlightBuilder(flightMeta, doubleTimeSeries, stringTimeSeries));
                 counter++;
 
                 // How many flights we are processing (testing)
-                //  if (counter > 175) break;
+                  if (counter > 5) break;
 
             }
         } catch (IOException e) {
@@ -70,54 +71,70 @@ public class ParquetFileProcessor {
         } catch (FatalFlightFileException e) {
             throw new RuntimeException(e);
         }
-
         return flightBuilders.stream();
     }
 
     private void populateTimeSeries(GenericRecord record, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
 
         // Collect data for each time series
-        List<String> timeValues = new ArrayList<>();
-        List<String> latitudeValues = new ArrayList<>();
-        List<String> longitudeValues = new ArrayList<>();
-        List<String> speedValues = new ArrayList<>();
-        List<String> accelerationValues = new ArrayList<>();
+        List<Double> timeValues = new ArrayList<>();
+        List<Double> latitudeValues = new ArrayList<>();
+        List<Double> longitudeValues = new ArrayList<>();
+        List<Double> speedValues = new ArrayList<>();
+        List<Double> accelerationValues = new ArrayList<>();
+        List<Double> altitudeValues = new ArrayList<>();
         List<String> utcDateTimes = new ArrayList<>();
 
-        extractColumns(record, timeValues, latitudeValues, longitudeValues, speedValues, accelerationValues);
+        extractColumns(record,
+                timeValues,
+                latitudeValues,
+                longitudeValues,
+                altitudeValues,
+                speedValues,
+                accelerationValues);
 
         // Convert Unix timestamps to UTC DateTime
-        for (String time : timeValues) {
+        for (Double unixTime : timeValues) {
             try {
-                double unixTime = Double.parseDouble(time);
                 String utcDateTime = TimeUtils.convertUnixTimeToUTCDateTime(unixTime);
                 utcDateTimes.add(utcDateTime);
             } catch (NumberFormatException e) {
-                LOG.warning("Skipping invalid Unix time: " + time);
-                utcDateTimes.add("");  // Add empty value if conversion fails
+                LOG.warning("Skipping invalid Unix time: " + unixTime);
+                utcDateTimes.add("Error");  // Add empty value if conversion fails
             }
         }
 
         // Populate Double Time Series
-        doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, "second", new ArrayList<>(timeValues)));
-        doubleTimeSeries.put(Parameters.LATITUDE, new DoubleTimeSeries(Parameters.LATITUDE, "degree", new ArrayList<>(latitudeValues)));
-        doubleTimeSeries.put(Parameters.LONGITUDE, new DoubleTimeSeries(Parameters.LONGITUDE, "degree", new ArrayList<>(longitudeValues)));
-        doubleTimeSeries.put(Parameters.GND_SPD, new DoubleTimeSeries(Parameters.GND_SPD, "kt", new ArrayList<>(speedValues)));
-        doubleTimeSeries.put(Parameters.LAT_AC, new DoubleTimeSeries(Parameters.LAT_AC, "m/s²", new ArrayList<>(accelerationValues)));
+        doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, "second", toPrimitiveArray(timeValues), timeValues.size()));
+        doubleTimeSeries.put(Parameters.LATITUDE, new DoubleTimeSeries(Parameters.LATITUDE, "degree", toPrimitiveArray(latitudeValues), latitudeValues.size()));
+        doubleTimeSeries.put(Parameters.LONGITUDE, new DoubleTimeSeries(Parameters.LONGITUDE, "degree",  toPrimitiveArray(longitudeValues), longitudeValues.size()));
+        doubleTimeSeries.put(Parameters.GND_SPD, new DoubleTimeSeries(Parameters.GND_SPD, "kt", toPrimitiveArray(speedValues), speedValues.size()));
+
+
+        // Note! IAS and LAT_AC are the same values
+        doubleTimeSeries.put(Parameters.IAS, new DoubleTimeSeries(Parameters.IAS, "kt", toPrimitiveArray(accelerationValues), accelerationValues.size()));
+        doubleTimeSeries.put(Parameters.LAT_AC, new DoubleTimeSeries(Parameters.LAT_AC, "m/s", toPrimitiveArray(accelerationValues), accelerationValues.size()));
+
+        // Note! ALT_AGL and ALT_MSL are the same values
+        doubleTimeSeries.put(Parameters.ALT_AGL, new DoubleTimeSeries(Parameters.ALT_AGL, "m",toPrimitiveArray(altitudeValues), altitudeValues.size()));
+        doubleTimeSeries.put(Parameters.ALT_MSL, new DoubleTimeSeries(Parameters.ALT_MSL, "m",toPrimitiveArray(altitudeValues), altitudeValues.size()));
 
         // Store UTC_DATE_TIME in String Time Series
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", new ArrayList<>(utcDateTimes)));
+        doubleTimeSeries.put(Parameters.ALT_AGL, new DoubleTimeSeries(Parameters.ALT_AGL, "m", toPrimitiveArray(altitudeValues), altitudeValues.size()));
+
     }
 
     /**
-     * Extracts full column data
+     * Extracts full column data from the parquet files.
      */
     private void extractColumns(GenericRecord record,
-                                List<String> timeValues,
-                                List<String> latitudeValues,
-                                List<String> longitudeValues,
-                                List<String> speedValues,
-                                List<String> accelerationValues) {
+                                List<Double> timeValues,
+                                List<Double> latitudeValues,
+                                List<Double> longitudeValues,
+                                List<Double> altitudeValues,
+                                List<Double> speedValues,
+                                List<Double> accelerationValues) {
 
         List<?> pointsList = (List<?>) record.get("points");
         if (pointsList == null || pointsList.isEmpty()) {
@@ -138,31 +155,28 @@ public class ParquetFileProcessor {
             }
 
             // Collect values for each column
-
             // Parquet files have time values in milliseconds, convert them to seconds.
             String rawTime = getStringOrNaN(element, "time");
 
             try {
                 double timeValue = Double.parseDouble(rawTime);
                 double timeInSeconds = (timeValue > 32503680000L) ? timeValue / 1000 : timeValue;
-                timeValues.add(String.valueOf((long) timeInSeconds));
+                timeValues.add(timeInSeconds);
             } catch (NumberFormatException e) {
                 LOG.warning("Invalid time format, setting as NaN: " + rawTime);
-                timeValues.add("NaN");
+
             }
 
-            latitudeValues.add(getStringOrNaN(element, "latitude"));
-            longitudeValues.add(getStringOrNaN(element, "longitude"));
-            speedValues.add(getStringOrNaN(element, "speed"));
-            accelerationValues.add(getStringOrNaN(element, "acceleration"));
+            latitudeValues.add(Double.valueOf(getStringOrNaN(element, "latitude")));
+            longitudeValues.add(Double.valueOf(getStringOrNaN(element, "longitude")));
+            altitudeValues.add(Double.valueOf(getStringOrNaN(element, "altitude")));
+            speedValues.add(Double.valueOf(getStringOrNaN(element, "speed")));
+            accelerationValues.add(Double.valueOf(getStringOrNaN(element, "acceleration")));
         }
     }
 
     /**
      * Processes metadata from the first Parquet record.
-     */
-    /**
-     * Processes metadata for a single flight, modifying the provided `FlightMeta` instance.
      */
     private void processMetaData(GenericRecord metadataRecord, FlightMeta flightMeta) throws FatalFlightFileException {
         if (metadataRecord == null) {
@@ -181,7 +195,6 @@ public class ParquetFileProcessor {
                 new Airframes.Type("Fixed Wing")
         );
 
-        // Compute hash with primary key
         flightMeta.md5Hash = computeMD5Hash(flightMeta, primaryKey);
 
         LOG.info("Processed metadata: airframe=" + flightMeta.airframe.getName() +
@@ -221,6 +234,16 @@ public class ParquetFileProcessor {
         String systemId = (meta.systemId != null) ? meta.systemId : "UNKNOWN_SYSTEM";
         String airframeName = (meta.airframe.getName() != null) ? meta.airframe.getName() : "UNKNOWN_AIRFRAME";
 
-        return MD5.computeHexHash(systemId + airframeName + primaryKey);
+        return MD5.computeHexHash(systemId + airframeName + primaryKey+ "sdfd");
+    }
+    /**
+    Converts list to primitive array
+     */
+    public static double[] toPrimitiveArray(List<Double> list) {
+        double[] array = new double[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            array[i] = list.get(i);
+        }
+        return array;
     }
 }

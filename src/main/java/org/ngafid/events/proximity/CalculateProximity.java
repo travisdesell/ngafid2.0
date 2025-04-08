@@ -15,30 +15,41 @@ public class CalculateProximity {
     public static double calculateDistance(double flightLatitude, double flightLongitude, double flightAltitude,
                                            double otherFlightLatitude, double otherFlightLongitude,
                                            double otherFlightAltitude) {
+        LOG.info("Calculating distance between flights - Flight 1: (" + flightLatitude + ", " + flightLongitude + ", " + flightAltitude + 
+                 "), Flight 2: (" + otherFlightLatitude + ", " + otherFlightLongitude + ", " + otherFlightAltitude + ")");
 
         double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,
                 otherFlightLatitude, otherFlightLongitude);
         double altDiffFt = Math.abs(flightAltitude - otherFlightAltitude);
 
-        return Math.sqrt((lateralDistance * lateralDistance) + (altDiffFt * altDiffFt));
+        double totalDistance = Math.sqrt((lateralDistance * lateralDistance) + (altDiffFt * altDiffFt));
+        LOG.info("Calculated total distance: " + totalDistance + "ft (lateral: " + lateralDistance + "ft, vertical: " + altDiffFt + "ft)");
+        return totalDistance;
     }
 
     public static double calculateLateralDistance(double flightLatitude, double flightLongitude,
                                                   double otherFlightLatitude, double otherFlightLongitude) {
+        LOG.info("Calculating lateral distance between flights - Flight 1: (" + flightLatitude + ", " + flightLongitude + 
+                 "), Flight 2: (" + otherFlightLatitude + ", " + otherFlightLongitude + ")");
 
-        return Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,
+        double distance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,
                 otherFlightLatitude, otherFlightLongitude);
-
+        LOG.info("Calculated lateral distance: " + distance + "ft");
+        return distance;
     }
 
     public static double calculateVerticalDistance(double flightAltitude, double otherFlightAltitude) {
+        LOG.info("Calculating vertical distance between flights - Flight 1: " + flightAltitude + "m, Flight 2: " + otherFlightAltitude + "m");
 
-        return Math.abs(flightAltitude - otherFlightAltitude);
-
+        double distance = Math.abs(flightAltitude - otherFlightAltitude);
+        LOG.info("Calculated vertical distance: " + distance + "m");
+        return distance;
     }
 
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo,
                                                   int startLine, int endLine, int otherStartLine, int otherEndLine) {
+        LOG.info("Calculating rate of closure - Flight 1: " + flightInfo.flightId + " (lines " + startLine + "-" + endLine + 
+                 "), Flight 2: " + otherInfo.flightId + " (lines " + otherStartLine + "-" + otherEndLine + ")");
 
         int shift = 5;
         int newStart1 = Math.max((startLine - shift), 0);
@@ -67,6 +78,8 @@ public class CalculateProximity {
         double previousDistance = calculateDistance(flightInfo.latitude[startLine], flightInfo.longitude[startLine],
                 flightInfo.altitudeMSL[startLine], otherInfo.latitude[otherStartLine],
                 otherInfo.longitude[otherStartLine], otherInfo.altitudeMSL[otherStartLine]);
+
+        LOG.info("Initial distance: " + previousDistance + "ft");
 
         ArrayList<Double> rateOfClosure = new ArrayList<Double>();
         int i = (startLine + 1), j = (otherStartLine + 1);
@@ -107,6 +120,8 @@ public class CalculateProximity {
             roc[k] = rateOfClosure.get(k);
         }
 
+        LOG.info("Calculated rate of closure array with " + roc.length + " values");
+
         // Leave in to verify how things work in these edge cases
         if (startShift < 5 || endShift < 5) System.exit(1);
 
@@ -115,20 +130,21 @@ public class CalculateProximity {
     }
 
     public static void addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
+        LOG.info("Checking if event exists in list - Flight IDs: " + testEvent.getFlightId() + " and " + testEvent.getOtherFlightId());
 
         for (Event event : eventList) {
-
             boolean hasSameFlightIDs =
                     (event.getFlightId() == testEvent.getFlightId() && event.getOtherFlightId() == testEvent.getOtherFlightId());
             boolean hasSameTimestamps =
                     (event.getStartTime().equals(testEvent.getStartTime()) && event.getEndTime().equals(testEvent.getEndTime()));
 
-            // Event already in the list, don't add it again
-            if (hasSameFlightIDs && hasSameTimestamps) return;
-
+            if (hasSameFlightIDs && hasSameTimestamps) {
+                LOG.info("Event already exists in list - skipping");
+                return;
+            }
         }
 
-        // Event not in the list, add it
+        LOG.info("Adding new event to list");
         eventList.add(testEvent);
     }
 }
