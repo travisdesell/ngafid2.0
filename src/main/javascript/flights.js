@@ -25,7 +25,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import { cesiumFlightsSelected } from "./cesium_buttons.js";
 
 function invalidString(str) {
-  return str == null || str.length < 0 || /^\s*$/.test(str);
+    return str == null || str.length < 0 || /^\s*$/.test(str);
 }
 
 /*
@@ -35,7 +35,8 @@ var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
 // var tagNames = ["Tag A", "Tag B"];
-var rules = [
+
+const rules = [
 
     {
         name: "Has Any Event(s)",
@@ -382,8 +383,8 @@ const sortableColumns = new Map();
 
 sortableColumns.set("Flight ID", "id");
 sortableColumns.set(
-  "Flight Length (Number of Valid Data Points)",
-  "number_rows"
+    "Flight Length (Number of Valid Data Points)",
+    "number_rows"
 );
 sortableColumns.set("Start Date and Time", "start_time");
 sortableColumns.set("End Date and Time", "end_time");
@@ -401,16 +402,25 @@ const CESIUM_RESOLUTION_PASSTHROUGH = "Default";
 const CESIUM_RESOLUTION_SCALE_DEFAULT = 1.00;
 const CESIUM_FLIGHT_TRACKED_NONE = undefined;
 
+const PAGE_ORIENTATION = Object.freeze({
+    COLUMN: Symbol("column"),
+    ROW: Symbol("row"),
+})
+
 class FlightsPage extends React.Component {
 
     constructor(props) {
 
         super(props);
 
+        //Define reference for the Plotly plot container
+        this.plotContainerRef = React.createRef();
+
         this.state = {
 
-            containerVisibleCount : 0,
-            containerExpanded : CONTAINER_EXPANDED_NONE,
+            plotInitialized: false,
+            containerExpanded: CONTAINER_EXPANDED_NONE,
+            pageOrientation: PAGE_ORIENTATION.COLUMN,
             filterVisible: true,
             filterSelected: true,
             plotVisible: false,
@@ -443,11 +453,84 @@ class FlightsPage extends React.Component {
             cesiumFlightTracked: CESIUM_FLIGHT_TRACKED_NONE,
             cesiumFlightTrackerDisplayHovered: false,
 
-                
+
         };
 
         this.cesiumRef = React.createRef();
         this.navRef = React.createRef();
+
+    }
+
+
+    componentDidMount() {
+
+        console.log("Got Component Mount");
+
+        //Initialize the map
+        initializeMap();
+
+        //Initialize Plotly plot
+        this.initializePlot();
+
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+
+        console.log("Got Component Update");
+
+        //Plot visibility updated...
+        if (this.state.plotVisible !== prevState.plotVisible) {
+
+            console.log("Plot visibility changed to: ", this.state.plotVisible);
+
+            //Plot is visible, initialize it
+            if (this.state.plotVisible)
+                this.initializePlot();
+
+            //Otherwise, purge the plot
+            else
+                this.cleanupPlot();
+
+        }
+
+        //Update map size
+        map.updateSize();
+
+    }
+
+    componentWillUnmount() {
+
+        //Clean up the Plotly plot
+        this.cleanupPlot();
+
+    }
+
+    initializePlot() {
+
+        const plotElement = document.getElementById("plot");
+
+        console.log("Initializing plot...");
+        console.log("Plot element: ", plotElement);
+
+        //Plot not flagged with Plotly class, initialize it
+        if (plotElement && !plotElement.classList.contains("has-plotly-plot"))
+            this.displayPlot();
+
+    }
+
+    cleanupPlot() {
+
+        try {
+
+            //Plot is visible, purge it
+            if (this.plotContainerRef.current && this.state.plotInitialized) {
+                Plotly.purge(this.plotContainerRef.current);
+                this.setState({ plotInitialized: false });
+            }
+
+        } catch (error) {
+            console.error("Plot cleanup error:", error);
+        }
 
     }
 
@@ -531,13 +614,17 @@ class FlightsPage extends React.Component {
         this.state.sortingOrder = order;
         this.setState(this.state);
         this.submitFilter(true);
-        
+
     }
 
     getSortingOrder() {
         return this.state.sortingOrder;
     }
 
+
+    /*
+        Cesium (Visibility) Methods
+    */
     addCesiumEventEntity(event, flightId) {
         this.cesiumRef.current.addEventEntity(event, flightId);
     }
@@ -547,93 +634,12 @@ class FlightsPage extends React.Component {
     }
 
     addCesiumFlight(flightId, color) {
-        
+
         console.log("add cesium flight");
         console.log("in showCesium flight id from flight component " + flightId);
-        
-        this.cesiumRef.current.addFlightEntity(flightId, color);  
+
+        this.cesiumRef.current.addFlightEntity(flightId, color);
         this.showCesiumMap();
-
-    }
-
-    showCesiumMap() {
-        
-        //Mark the toggle button active
-        if (!$("#cesium-toggle-button").hasClass("active")) {
-            $("#cesium-toggle-button").addClass("active");
-            $("#cesium-toggle-button").attr("aria-pressed", true);
-        }
-
-        this.state.cesiumVisible = true;
-        this.setState(this.state);
-
-        this.resolveDisplay();
-
-    }
-
-    showMap() {
-
-        if (this.state.mapVisible)
-            return;
-
-        console.log("in flight.js showmap");
-
-        if ( !$("#map-toggle-button").hasClass("active") ) {
-            $("#map-toggle-button").addClass("active");
-            $("#map-toggle-button").attr("aria-pressed", true);
-        }
-
-        this.state.mapVisible = true;
-        this.setState(this.state);
-
-        this.resolveDisplay();
-        this.resolveDisplay();  //TODO: Fix the map inexplicably freezing when toggling unless this is called twice
-
-    }
-
-    hideMap() {
-
-        if (!this.state.mapVisible)
-            return;
-
-        if ($("#map-toggle-button").hasClass("active")) {
-            $("#map-toggle-button").removeClass("active");
-            $("#map-toggle-button").attr("aria-pressed", false);
-        }
-
-        this.state.mapVisible = false;
-        this.setState(this.state);
-
-        this.resolveDisplay();
-
-    }
-
-    hideCesiumMap() {
-
-        if (!this.state.cesiumVisible)
-            return;
-        
-        //Mark the toggle button inactive
-        if ($("#cesium-toggle-button").hasClass("active")) {
-            $("#cesium-toggle-button").removeClass("active");
-            $("#cesium-toggle-button").attr("aria-pressed", false);
-        }
-
-        this.setState({ cesiumVisible: false }, () => {
-            this.resolveDisplay();
-        });
-
-    }
-
-    toggleMap() {
-
-        //Minimize any expanded container
-        this.expandContainer(CONTAINER_EXPANDED_NONE);
-
-        if (this.state.mapVisible)
-            this.hideMap();
-        else
-            this.showMap();
 
     }
 
@@ -649,39 +655,93 @@ class FlightsPage extends React.Component {
 
     }
 
+    hideCesiumMap() {
+
+        //Cesium is already hidden, exit
+        if (!this.state.cesiumVisible)
+            return;
+
+        this.setState({ cesiumVisible: false });
+
+    }
+
+    showCesiumMap() {
+
+        //Cesium is already visible, exit
+        if (this.state.cesiumVisible)
+            return;
+
+        this.setState({ cesiumVisible: true });
+
+    }
+
+
+
+    /*
+        Map Visibility Methods
+    */
+    showMap() {
+
+        //Map is already visible, exit
+        if (this.state.mapVisible)
+            return;
+
+        this.setState({ mapVisible: true });
+
+    }
+
+    hideMap() {
+
+        //Map is already hidden, exit
+        if (!this.state.mapVisible)
+            return;
+
+        this.setState({ mapVisible: false });
+
+    }
+
+    toggleMap() {
+
+        console.log("Toggle Map triggered...");
+
+        //Minimize any expanded container
+        this.expandContainer(CONTAINER_EXPANDED_NONE);
+
+        if (this.state.mapVisible)
+            this.hideMap();
+        else
+            this.showMap();
+
+    }
+
+
+    /*
+        Plot Visibility Methods
+    */
     showPlot() {
 
-        //Plot is already visible
+        console.log("Show Plot triggered...");
+
+        //Plot is already visible, exit
         if (this.state.plotVisible)
             return;
 
-        if (!$("#plot-toggle-button").hasClass("active")) {
-            $("#plot-toggle-button").addClass("active");
-            $("#plot-toggle-button").attr("aria-pressed", true);
-        }
+        this.setState({ plotVisible: true });
 
-        this.state.plotVisible = true;
-        this.setState(this.state);
-
-        this.resolveDisplay();
+        //Resize the plot
+        Plotly.Plots.resize("plot");
 
     }
 
     hidePlot() {
 
-        //Plot is already hidden
+        console.log("Hide Plot triggered...");
+
+        //Plot is already hidden, exit
         if (!this.state.plotVisible)
             return;
 
-        if ($("#plot-toggle-button").hasClass("active")) {
-            $("#plot-toggle-button").removeClass("active");
-            $("#plot-toggle-button").attr("aria-pressed", false);
-        }
-
-        this.state.plotVisible = false;
-        this.setState(this.state);
-
-        this.resolveDisplay();
+        this.setState({ plotVisible: false });
 
     }
 
@@ -695,9 +755,32 @@ class FlightsPage extends React.Component {
         else
             this.showPlot();
 
+    }
+
+
+    /*
+        Misc. Visibility Methods
+    */
+    toggleOrientation() {
+
+        //In column mode, switch to row mode
+        if (this.state.pageOrientation === PAGE_ORIENTATION.COLUMN)
+            this.state.pageOrientation = PAGE_ORIENTATION.ROW;
+
+        //Otherwise, switch to column mode
+        else
+            this.state.pageOrientation = PAGE_ORIENTATION.COLUMN;
+
+        console.log("Switching page orientation to: ", this.state.pageOrientation);
+
+        //Update the state
+        this.setState(this.state);
+
+        //Perform display resolution
         this.resolveDisplay();
 
     }
+
 
     toggleFilter() {
 
@@ -713,7 +796,7 @@ class FlightsPage extends React.Component {
     }
 
     expandContainer(targetContainerName) {
-        
+
         let newExpandedContainerValue;
 
         //Already expanded, so collapse
@@ -733,185 +816,70 @@ class FlightsPage extends React.Component {
 
     resolveDisplayExpanded() {
 
-        console.log("Handling Expanded Display State...");
+        const { containerExpanded } = this.state;
 
+        console.log(`Resolving display for expanded container: ${containerExpanded}`);
 
-        //Make plot-map-div fill the screen
-        $("#plot-map-div").css("padding", "0.5em");
+        //Hide all containers initially
+        this.setState({
+            plotVisible: false,
+            cesiumVisible: false,
+            mapVisible: false,
+        }, () => {
 
-        $("#plot-map-div").css("height", "100%");
-        $("#plot-map-div").css("min-height", "100%");
-        $("#plot-map-div").css("max-height", "100%");
+            //Show only the expanded container, trigger resize methods
+            switch (containerExpanded) {
 
-        $("#plot-map-div").css("width", "100%");
-        $("#plot-map-div").css("min-width", "100%");
-        $("#plot-map-div").css("max-width", "100%");
+                case "plot-container":
+                    this.setState({ plotVisible: true }, () => {
+                        Plotly.Plots.resize("plot");
+                    });
+                    break;
 
-        //Check if the plot display is expanded
-        let plotVisible = (this.state.containerExpanded === "plot-container");
+                case "cesium-container":
+                    this.setState({ cesiumVisible: true }, () => {
+                        /* ... */
+                    });
+                    break;
 
-        //Check if the cesium display is expanded
-        let cesiumVisible = (this.state.containerExpanded === "cesium-container");
+                case "map-container":
+                    this.setState({ mapVisible: true }, () => {
+                        map.updateSize();
+                    });
+                    break;
+            }
 
-        //Check if the map display is expanded
-        let mapVisible = (this.state.containerExpanded === "map-container");
-
-        //...
-        if (plotVisible) {
-
-            $("#map-container").hide();
-            $("#cesium-container").hide();
-
-            $("#plot").show();
-            Plotly.Plots.resize("plot");
-
-            $("#plot-container").css("height", "100%");
-            $("#plot-container").css("min-height", "100%");
-            $("#plot-container").css("max-height", "100%");
-
-        }
-
-        //...
-        if (cesiumVisible) {
-
-            $("#plot-container").hide();
-            $("#map-container").hide();
-
-            $("#cesium-container").css("height", "100%");
-            $("#cesium-container").css("min-height", "100%");
-            $("#cesium-container").css("max-height", "100%");
-            $("#cesium-container").show();
-
-        }
-
-        //...
-        if (mapVisible) {
-
-            $("#plot-container").hide();
-            $("#cesium-container").hide();
-
-            $("#map-container").css("margin-top", "0");
-
-            $("#map-container").css("height", "100%");
-            $("#map-container").css("min-height", "100%");
-            $("#map-container").css("max-height", "100%");
-
-            $("#map").show();
-            map.updateSize();
-
-        }
-
+        });
+        
     }
 
     resolveDisplay() {
 
-        console.log(`Container Expanded: ${this.state.containerExpanded}`);
+        const { containerExpanded } = this.state;
 
-        //Container already expanded, run the 'expanded' display logic
-        if (this.state.containerExpanded) {
+        //A container is expanded, perform expanded layout resolution instead
+        if (containerExpanded) {
             this.resolveDisplayExpanded();
             return;
-
-        //Clear the expanded display
-        } else {
-            
-            //Reset the padding
-            $("#plot-map-div").css("padding", "0.50em 0 "+(0.50 * this.containerVisibleCount)+"em 0.50em");
-
-            //Reset the height and width
-            $("#plot-map-div").css("height", "auto");
-            $("#plot-map-div").css("min-height", "auto");
-            $("#plot-map-div").css("max-height", "auto");
-
-            $("#plot-map-div").css("width", "auto");
-            $("#plot-map-div").css("min-width", "auto");
-            $("#plot-map-div").css("max-width", "auto");
-
         }
-        
 
-        const { filterVisible, plotVisible, cesiumVisible, mapVisible } = this.state;
-        
-        //Count how many are visible in the “plot” column
-        this.containerVisibleCount = [plotVisible, cesiumVisible, mapVisible].reduce((acc, val) => acc + val, 0);
+        //Normal layout calculations
+        const { plotVisible, cesiumVisible, mapVisible } = this.state;
 
-        console.log("[EX] Container Visible Count: ", this.containerVisibleCount);
-
-        //No containers visible, hide #plot-map-div
-        if (this.containerVisibleCount === 0)
-            $("#plot-map-div").css("display", "none");
-        else
-            $("#plot-map-div").css("display", "flex");
-
-        //One panel visible -> Half height, otherwise fit all panels
-        const PANEL_HEIGHT_PERCENT_HALF =  50;
-        const PANEL_HEIGHT_PERCENT_FULL = 100;
-        let panelHeight;
-        if (this.containerVisibleCount <= 1)
-            panelHeight = PANEL_HEIGHT_PERCENT_HALF;
-        else
-            panelHeight = (PANEL_HEIGHT_PERCENT_FULL / this.containerVisibleCount);
-
-        console.log("[EX] Visible Count, Panel Height: ", this.containerVisibleCount, panelHeight);
-
-        //1. Plot Container
+        //Plot marked as visible, resize and show it
         if (plotVisible) {
 
-            $("#plot-container").show();
-            $("#plot-container").css("height", panelHeight + "%");
-            $("#plot-container").css("min-height", panelHeight + "%");
-            $("#plot-container").css("max-height", panelHeight + "%");
-            
-            $("#plot").show();
+            console.log("Plot is visible, resizing...");
+
+            //...Display plot div
+            $("plot").show();
+
+            //...Resize plot
             Plotly.Plots.resize("plot");
 
-        } else {
-
-            $("#plot").hide();
-            $("#plot-container").hide();
-
         }
 
-        //2. Cesium Container
-        if (cesiumVisible) {
-
-            $("#cesium-container").show();
-            $("#cesium-container").css("height", panelHeight + "%");
-            $("#cesium-container").css("min-height", panelHeight + "%");
-            $("#cesium-container").css("max-height", panelHeight + "%");
-
-        } else {
-
-            $("#cesium-container").hide();
-
-        }
-
-        //3. Map Container
-        if (mapVisible) {
-
-            $("#map-container").show();
-            $("#map-container").css("height", panelHeight + "%");
-            $("#map-container").css("min-height", panelHeight + "%");
-            $("#map-container").css("max-height", panelHeight + "%");
-
-            $("#map").show();
-            map.updateSize();
-
-        } else {
-
-            $("#map").hide();
-            $("#map-container").hide();
-
-        }
-
-        //Apply margin to the flights card container if the filter is visible   [EX]
-        $("#flights-card-container").css("margin-top", filterVisible ? "0.50em" : "0.00em");
-
-        //Display the plot and map containers if they are visible
-        $("#plot-container").css("display", plotVisible ? "block" : "none");
-        $("#cesium-container").css("display", cesiumVisible ? "block" : "none");
-        $("#map-container").css("display", mapVisible ? "block" : "none");
-        
+        this.setState(this.state);
     }
 
     setFilter(filter) {
@@ -926,22 +894,22 @@ class FlightsPage extends React.Component {
 
         let storedFilters = [];
 
-            $.ajax({
-                type: "GET",
-                url: "/protected/stored_filters",
-                dataType: "json",
-                async: false,
-                success: function (response) {
-                    console.log("received filters response: ");
-                    console.log(response);
+        $.ajax({
+            type: "GET",
+            url: "/protected/stored_filters",
+            dataType: "json",
+            async: false,
+            success: function (response) {
+                console.log("received filters response: ");
+                console.log(response);
 
-                    storedFilters = response;
-                },
-                error: function (jqXHR, textStatus, errorThrown) { /* ... */ },
-            });
+                storedFilters = response;
+            },
+            error: function (jqXHR, textStatus, errorThrown) { /* ... */ },
+        });
 
         return storedFilters;
-        
+
     }
 
 
@@ -973,8 +941,8 @@ class FlightsPage extends React.Component {
                         }
                     ]
                 });
-            
-            //Attempt to recursively transform nested filters...
+
+                //Attempt to recursively transform nested filters...
             } else if (filter.filters) {
                 newFilters.push({
                     ...filter,
@@ -991,7 +959,7 @@ class FlightsPage extends React.Component {
     };
 
     submitFilter(resetCurrentPage = false) {
-            
+
         console.log(
             "Submitting filter! "
             + "currentPage: " + this.state.currentPage
@@ -1036,7 +1004,7 @@ class FlightsPage extends React.Component {
             timeout: 0, //set timeout to be unlimited for slow queries
             async: true,
             success: function (response) {
-                
+
                 console.log("'Get Flights' response:", response);
 
                 $("#loading").hide();
@@ -1056,7 +1024,7 @@ class FlightsPage extends React.Component {
                         "Please try a different query."
                     );
 
-                //Response is valid, update the flights
+                    //Response is valid, update the flights
                 } else {
 
                     flightsPage.setState({
@@ -1065,7 +1033,7 @@ class FlightsPage extends React.Component {
                         numberPages: response.numberPages,
                     });
                 }
-                
+
             },
             error: function (jqXHR, textStatus, errorThrown) {
 
@@ -1128,7 +1096,7 @@ class FlightsPage extends React.Component {
 
                         let flight = thisFlight.state.flights[i];
                         if (flight.id == flightId) {
-                                
+
                             //If the flight already has tags, add the new tag to the list
                             if (flight.tags != null && flight.tags.length > 0)
                                 flight.tags.push(response);
@@ -1144,7 +1112,7 @@ class FlightsPage extends React.Component {
                     thisFlight.setState(thisFlight.state);
 
                 } else {
-                        
+
                     errorModal.show(
                         "Error creating tag",
                         "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name"
@@ -1163,7 +1131,7 @@ class FlightsPage extends React.Component {
      */
 
     editTag(newTag, currentTag) {
-            
+
         console.log("submitting edit for tag: " + currentTag.hashId);
 
         console.log("current tag");
@@ -1173,10 +1141,10 @@ class FlightsPage extends React.Component {
         console.log(newTag);
 
         var submissionData = {
-        tag_id: currentTag.hashId,
-        name: newTag.name,
-        description: newTag.description,
-        color: newTag.color,
+            tag_id: currentTag.hashId,
+            name: newTag.name,
+            description: newTag.description,
+            color: newTag.color,
         };
 
         let thisFlight = this;
@@ -1276,7 +1244,7 @@ class FlightsPage extends React.Component {
 
             console.log(tag);
 
-            if (tag==null)
+            if (tag == null)
                 return resolve(null);
 
             if (tagId == null) {
@@ -1320,10 +1288,10 @@ class FlightsPage extends React.Component {
         }
 
         var submissionData = {
-            flight_id : flightId,
-            tag_id : tagId,
-            permanent : isPermanent,
-            all : (tagId == -2)
+            flight_id: flightId,
+            tag_id: tagId,
+            permanent: isPermanent,
+            all: (tagId == -2)
         };
 
         let thisFlight = this;
@@ -1341,40 +1309,40 @@ class FlightsPage extends React.Component {
 
                     console.log("received response: ");
                     console.log(response);
-            
+
                     //Permanently deleting a tag
                     if (isPermanent) {
-            
+
                         console.log("permanent deletion of tag with id: " + tagId);
                         for (var i = 0; i < thisFlight.state.flights.length; i++) {
                             let flight = thisFlight.state.flights[i];
                             if (flight.id == flightId) {
                                 let tags = flight.tags;
-                                tags.splice(tags.indexOf(response.tag)-1, 1);
+                                tags.splice(tags.indexOf(response.tag) - 1, 1);
                             }
                         }
-                    
-                    //Clearing all tags from a flight
+
+                        //Clearing all tags from a flight
                     } else if (response.allTagsCleared) {
-            
+
                         for (var i = 0; i < thisFlight.state.flights.length; i++) {
                             let flight = thisFlight.state.flights[i];
                             if (flight.id == flightId) {
                                 flight.tags = [];
                             }
                         }
-            
-                    //Removing a tag from a flight
+
+                        //Removing a tag from a flight
                     } else {
-            
+
                         for (var i = 0; i < thisFlight.state.flights.length; i++) {
                             let flight = thisFlight.state.flights[i];
                             if (flight.id == flightId) {
                                 let tags = flight.tags;
-                                tags.splice(tags.indexOf(response.tag)-1, 1);
+                                tags.splice(tags.indexOf(response.tag) - 1, 1);
                             }
                         }
-                        
+
                     }
                     thisFlight.setState(thisFlight.state);
 
@@ -1383,7 +1351,7 @@ class FlightsPage extends React.Component {
                 error: function (jqXHR, textStatus, errorThrown) {
                     reject(errorThrown);
                 },
-                
+
             });
 
         });
@@ -1447,8 +1415,8 @@ class FlightsPage extends React.Component {
         confirmModal.show(
             "Confirm action",
             "Are you sure you would like to remove all the tags from flight #" +
-                flightId +
-                "?",
+            flightId +
+            "?",
             () => {
                 this.removeTag(flightId, -2, false);
             }
@@ -1497,129 +1465,49 @@ class FlightsPage extends React.Component {
 
     displayPlot() {
 
-        let styles = getComputedStyle(document.documentElement);
-        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
-        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
-        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+        //Configure Plotly Styles & Config
+        const styles = getComputedStyle(document.documentElement);
+        const plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        const plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        const plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
         global.plotlyLayout = {
             shapes: [],
-            plot_bgcolor : "transparent",
-            paper_bgcolor : plotBgColor,
-            font : {
-                color : plotTextColor
+            plot_bgcolor: "transparent",
+            paper_bgcolor: plotBgColor,
+            font: {
+                color: plotTextColor
             },
-            xaxis : {
-                gridcolor : plotGridColor
+            xaxis: {
+                gridcolor: plotGridColor
             },
-            yaxis : {
-                gridcolor : plotGridColor
+            yaxis: {
+                gridcolor: plotGridColor
             },
-            margin : {
-                l : 60,
-                r : 40,
-                b : 40,
-                t : 40,
+            margin: {
+                l: 60,
+                r: 40,
+                b: 40,
+                t: 40,
             }
         };
+        const plotlyConfig = { responsive: true };
 
-        const plotlyConfig = {responsive: true};
 
-        let plotElement = $("#plot");
-        console.log("Plot Element: ", plotElement, plotElement.children.length);
+        //Get plot div element
+        const plotElement = $("#plot");
 
-        if (plotElement.hasClass("has-plotly-plot")) {
+        //Plot div already flagged with Plotly class, update it
+        if (plotElement.hasClass("has-plotly-plot"))
             Plotly.update("plot", [], global.plotlyLayout);
-        } else {
+
+        //Otherwise, create a new plot
+        else {
+
             plotElement.addClass("has-plotly-plot");
             console.log("Creating new plot...");
             Plotly.newPlot("plot", [], global.plotlyLayout, plotlyConfig);
+
         }
-
-        if (map == null)
-            initializeMap();
-
-        var myPlot = document.getElementById("plot");
-        console.log("myPlot:");
-        console.log(myPlot);
-
-        myPlot.on("plotly_hover", function (data) {
-
-            var xaxis = data.points[0].xaxis,
-                yaxis = data.points[0].yaxis;
-
-            /*
-            var infotext = data.points.map(function(d) {
-                return ('width: '+xaxis.l2p(d.x)+', height: '+yaxis.l2p(d.y));
-            });
-            */
-
-            //console.log("in hover!");
-            //console.log(data);
-
-            let x = data.points[0].x;
-            //console.log("x: " + x);
-
-            map.getLayers().forEach(function (layer) {
-
-                if (layer instanceof VectorLayer) {
-
-                    if ("flightState" in layer) {
-                        //console.log("VECTOR layer:");
-
-                        var hiddenStyle = new Style({
-                        stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 1.5,
-                        }),
-                        image: new Circle({
-                            radius: 5,
-                            stroke: new Stroke({
-                            color: [0, 0, 0, 0],
-                            width: 2,
-                            }),
-                        }),
-                        });
-
-                        var visibleStyle = new Style({
-                        stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 1.5,
-                        }),
-                        image: new Circle({
-                            radius: 5,
-                            stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 2,
-                            }),
-                        }),
-                        });
-
-                        if (layer.getVisible()) {
-                        if (x < layer.flightState.state.points.length) {
-                            console.log(
-                            "need to draw point at: " + layer.flightState.state.points[x]
-                            );
-                            layer.flightState.state.trackingPoint.setStyle(visibleStyle);
-                            layer.flightState.state.trackingPoint
-                            .getGeometry()
-                            .setCoordinates(layer.flightState.state.points[x]);
-                        } else {
-                            console.log(
-                            "not drawing point x: " +
-                                x +
-                                " >= points.length: " +
-                                layer.flightState.state.points.length
-                            );
-                            layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
-                        }
-                        }
-                    }
-
-                }
-
-            });
-            
-        });
 
     }
 
@@ -1648,10 +1536,159 @@ class FlightsPage extends React.Component {
         let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
         const CESIUM_RESOLUTION_SCALE_OPTIONS = [CESIUM_RESOLUTION_PASSTHROUGH, 0.50, 1.00, 2.00, 4.00];
 
-        let flightTracker = (
-            <div 
-                className="btn btn-outline-secondary" 
-                id="flightTracerDisplay" 
+
+        //Oritentation Resolution
+        const doGraphicsContainer = (this.state.plotVisible || this.state.cesiumVisible || this.state.mapVisible);
+
+        const isColumnMode = (this.state.pageOrientation === PAGE_ORIENTATION.COLUMN);
+        const MAIN_CONTENT_CONTAINER_FLEX_TYPE = (isColumnMode ? "row" : "column"); //<-- This is reversed on purpose
+
+        const SEARCH_CONTAINER_SIZE_PERCENTAGE = 55;
+        const GRAPHICS_CONTAINER_SIZE_PERCENTAGE = (100 - SEARCH_CONTAINER_SIZE_PERCENTAGE);
+
+        //Layout debugging stuff
+        const CONTAINER_DEBUGGING = false;
+        const CONTAINER_BACKGROUND_COLOR_ALPHA = (CONTAINER_DEBUGGING ? 0.50 : 0.00);
+
+
+        //Search Filter
+        const searchFilters = (
+            <div
+                id="search-filters"
+                style={{ flex: "0 0 auto" }}
+            >
+                <Filter
+                    submitButtonName="Apply Current Filter"
+                    submitFilter={(resetCurrentPage = true) => { this.submitFilter(resetCurrentPage); }}
+                    rules={rules}
+                    filters={this.state.filters}
+                    getFilter={() => { return this.state.filters; }}
+                    setFilter={(filter) => this.setFilter(filter)}
+                    setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
+                    getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
+                    errorModal={errorModal}
+                />
+            </div>
+        );
+
+        //Search Results
+        const searchResults = (
+            <div
+                id="flights-card-container"
+                className="card d-flex"
+                style={{ overflowY: "scroll", flex: "1 1 auto", border: "1px solid var(--c_border_alt)", borderRadius: "0.25em" }}
+            >
+                <FlightsCard
+                    parent={this}
+                    layers={this.state.layers}
+                    flights={this.state.flights}
+                    navBar={this.navRef}
+                    ref={(elem) => (this.flightsRef = elem)}
+                    showMap={() => { this.showMap(); }}
+                    hideMap={() => this.hideMap()}
+                    showPlot={() => { this.showPlot(); }}
+                    setAvailableLayers={(plotLayers) => { this.setAvailableLayers(plotLayers); }}
+                    setFlights={(flights) => { this.setState({ flights: flights, }); }}
+                    updateNumberPages={(numberPages) => { this.setState({ numberPages: numberPages, }); }}
+                    addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
+                    removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
+                    deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
+                    getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId)}
+                    associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
+                    clearTags={(flightId) => this.clearTags(flightId)}
+                    editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
+                    showCesium={(flightId, color) => { this.addCesiumFlight(flightId, color); }}
+                    addCesiumFlightPhase={(phase, flightId) => { this.addCesiumFlightPhase(phase, flightId); }}
+                    addCesiumEventEntity={(event, flightId) => { this.addCesiumEventEntity(event, flightId); }}
+                    removeCesiumFlight={(flightId) => { this.removeCesiumFlight(flightId); }}
+                    zoomToEventEntity={(eventId, flightId) => { this.zoomToEventEntity(eventId, flightId) }}
+                    cesiumFlightTrackedSet={(flightId) => { this.cesiumFlightTrackedSet(flightId) }}
+                    cesiumJumpToFlightStart={(flightId) => { this.cesiumRef.current.cesiumJumpToFlightStart(flightId) }}
+                />
+            </div>
+        );
+
+        //Search Paginator
+        const searchPaginator = (
+            <div
+                id="search-paginator"
+                style={{ flex: "0 0 auto" }}
+            >
+                <Paginator
+                    submitFilter={(resetCurrentPage) => { this.submitFilter(resetCurrentPage); }}
+                    items={this.state.flights}
+                    itemName="flights"
+                    rules={sortableColumns}
+                    currentPage={this.state.currentPage}
+                    numberPages={this.state.numberPages}
+                    pageSize={this.state.pageSize}
+                    setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                    getSortingColumn={() => this.getSortingColumn()}
+                    setSortingOrder={(order) => this.setSortingOrder(order)}
+                    getSortingOrder={() => this.getSortingOrder()}
+                    sortOptions={sortableColumnsHumanReadable}
+                    updateCurrentPage={(currentPage) => { this.state.currentPage = currentPage; }}
+                    updateItemsPerPage={(pageSize) => { this.state.pageSize = pageSize; }}
+                    location="Bottom"
+                />
+            </div>
+        );
+
+        //Search Container
+        const SEARCH_CONTAINER_WIDTH = doGraphicsContainer ? (isColumnMode ? `${SEARCH_CONTAINER_SIZE_PERCENTAGE}%` : "100%") : "100%";
+        const SEARCH_CONTAINER_HEIGHT = doGraphicsContainer ? (isColumnMode ? "100%" : `${SEARCH_CONTAINER_SIZE_PERCENTAGE}%`) : "100%";
+        const doSearchDisplay = (this.state.containerExpanded === CONTAINER_EXPANDED_NONE);
+        console.log(`doSearchDisplay: ${doSearchDisplay}, ${this.state.containerExpanded}`);
+        const searchContainer = (
+            <div
+                className={`${doSearchDisplay ? "d-flex" : "d-none"} flex-column`}
+                style={{
+                    padding: "0.5em", gap: "0.5em", flex: "1 0 0",
+                    minWidth: SEARCH_CONTAINER_WIDTH, maxWidth: SEARCH_CONTAINER_WIDTH, width: SEARCH_CONTAINER_WIDTH,
+                    minHeight: SEARCH_CONTAINER_HEIGHT, maxHeight: SEARCH_CONTAINER_HEIGHT, height: SEARCH_CONTAINER_HEIGHT,
+                    backgroundColor: `rgba(0, 0, 255, ${CONTAINER_BACKGROUND_COLOR_ALPHA})`
+                }}>
+                {this.state.filterVisible && searchFilters}
+                {searchResults}
+                {searchPaginator}
+            </div>
+        )
+
+
+
+        let plotGraphicItem, cesiumGraphicItem, mapGraphicItem;
+
+        //Plot Graphic Item
+        const plotDiv = (<div id="plot" className="h-100"></div>);
+        plotGraphicItem = (
+            <div
+                id="plot-container"
+                ref={this.plotContainerRef}
+                className={`card ${this.state.plotVisible ? "d-flex" : "d-none"}`}
+                style={{
+                    overflow: "hidden",
+                    borderColor: "var(--c_border_alt)",
+                    position: "relative",
+                    flex: "1 1 0",
+                    maxHeight: "100%",
+                }}
+            >
+                {plotDiv}
+                <div
+                    className="map-graph-expand-button btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                    style={{ position: "absolute", top: "0", left: "0" }}
+                    onClick={() => this.expandContainer("plot-container")}
+                >
+                    <i className="fa fa-expand p-1" />
+                </div>
+            </div>
+        );
+
+        //Cesium Flight Tracker Button
+        let cesiumFlightTrackerButton = (
+            <div
+                className="btn btn-outline-secondary"
+                id="flightTracerDisplay"
                 onClick={() => this.cesiumFlightTrackedClear()}
                 onMouseEnter={() => this.setState({ flightTrackerHovered: true })}
                 onMouseLeave={() => this.setState({ flightTrackerHovered: false })}
@@ -1662,186 +1699,190 @@ class FlightsPage extends React.Component {
                 />
                 Tracked Flight: {this.state.cesiumFlightsSelected ?? "(None)"}
             </div>
-          );
+        );
+
+        //Cesium Graphic Item
+        const ITEM_WIDTH = "100%";
+        const ITEM_HEIGHT = "100%";
+        cesiumGraphicItem = (
+            <div
+                id="cesium-container"
+                className={`card ${this.state.cesiumVisible ? "d-flex" : "d-none"}`}
+                style={{
+                    overflow: "hidden",
+                    borderColor: "var(--c_border_alt)",
+                    position: "relative",
+                    flex: "1 1 0",
+                    width: ITEM_WIDTH,
+                    height: ITEM_HEIGHT,
+                }}
+            >
+                {/* Main Cesium Content */}
+                <CesiumPage
+                    parent={this}
+                    setRef={this.cesiumRef}
+                    flights={this.state.flights}
+                    errorModal={errorModal}
+                    cesiumResolutionScale={this.state.cesiumResolutionScale}
+                    cesiumResolutionUseDefault={this.state.cesiumResolutionUseDefault}
+                />
+
+                {/* Additional Cesium Controls */}
+                <div style={{ position: "absolute", top: "0", left: "0" }} className="d-flex align-items-center justify-content-center gap-1">
+
+                    {/* Expand Cesium Button */}
+                    <div
+                        className="map-graph-expand-button btn btn-outline-secondary"
+                        onClick={() => this.expandContainer("cesium-container")}
+                    >
+                        <i className="fa fa-expand p-1" />
+                    </div>
+
+                    {/* Dropdown Menu to Change Resolution Scale */}
+                    <div className="dropdown mr-1">
+                        <button
+                            className="btn btn-outline-secondary dropdown-toggle"
+                            type="button"
+                            id="dropdownMenuButton"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                        >
+                            Resolution Scale: {this.state.cesiumResolutionScale * 100}%
+                        </button>
+                        <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            {
+                                CESIUM_RESOLUTION_SCALE_OPTIONS.map((resolutionScale) => (
+                                    <li key={resolutionScale}>
+                                        <a
+                                            className="dropdown-item"
+                                            href="#"
+                                            onClick={() => this.setCesiumResolution(resolutionScale)}
+                                        >
+                                            {resolutionScale === CESIUM_RESOLUTION_PASSTHROUGH ? CESIUM_RESOLUTION_PASSTHROUGH : `${resolutionScale * 100}%`}
+                                        </a>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </div>
+
+                    {/* Tracked Flight Indicator Button */}
+                    {cesiumFlightTrackerButton}
+
+                </div>
+            </div>
+        );
+
+        //Map Graphic Item
+        const mapDiv = (<div id="map" className="map h-100" style={{minHeight: "500px"}}></div>);
+        mapGraphicItem = (
+            <div
+                id="map-container"
+                className={`card ${this.state.mapVisible ? "d-flex" : "d-none"}`}
+                style={{
+                    overflow: "hidden",
+                    borderColor: "var(--c_border_alt)",
+                    position: "relative",
+                    flex: "1 1 0",
+                    height: "100%",
+                    width: "100%",
+                }}
+            >
+                {mapDiv}
+                <div className="map-graph-expand-button btn btn-outline-secondary"
+                    style={{ position: "absolute", top: "0", left: "0" }}
+                    onClick={() => this.expandContainer("map-container")}>
+                    <i className="fa fa-expand p-1" />
+                </div>
+            </div>
+        );
+
+        //Fake "constants" for the graphics container expanded condition
+        let GRAPHICS_CONTAINER_WIDTH, GRAPHICS_CONTAINER_HEIGHT, GRAPHICS_CONTAINER_FLEX_TYPE, GRAPHICS_CONTAINER_PADDING;
+
+        //Graphics Container [Expanded]
+        if (this.state.containerExpanded) {
+
+            GRAPHICS_CONTAINER_WIDTH = "100%"
+            GRAPHICS_CONTAINER_HEIGHT = "100%"
+            GRAPHICS_CONTAINER_FLEX_TYPE = "column"
+            GRAPHICS_CONTAINER_PADDING = "0.5em 0.5em 0.5em 0.5em"    //Padding on all sides
+
+            //Graphics Container [Normal]
+        } else {
+
+            GRAPHICS_CONTAINER_WIDTH = (isColumnMode ? `${GRAPHICS_CONTAINER_SIZE_PERCENTAGE}%` : "100%");
+            GRAPHICS_CONTAINER_HEIGHT = (isColumnMode ? "100%" : `${GRAPHICS_CONTAINER_SIZE_PERCENTAGE}%`);
+            GRAPHICS_CONTAINER_FLEX_TYPE = (isColumnMode ? "column" : "row");
+            GRAPHICS_CONTAINER_PADDING = (isColumnMode
+                ? "0.5em 0.0em 0.5em 0.5em"     //Column View -> No padding on the right
+                : "0.5em 0.5em 0.0em 0.5em"     //Row View -> No padding on the bottom
+            );
+
+        }
+
+        const doGraphicsDisplay = (this.state.plotVisible || this.state.cesiumVisible || this.state.mapVisible);
+        const graphicsContainer = (
+            <div
+                className={`${doGraphicsDisplay ? "d-flex" : "d-none"} flex-${GRAPHICS_CONTAINER_FLEX_TYPE} flex-fill`}
+                style={{
+                    flex: "1 0 0", gap: "0.5em", padding: GRAPHICS_CONTAINER_PADDING,
+                    minWidth: GRAPHICS_CONTAINER_WIDTH, maxWidth: GRAPHICS_CONTAINER_WIDTH, width: GRAPHICS_CONTAINER_WIDTH,
+                    minHeight: GRAPHICS_CONTAINER_HEIGHT, maxHeight: GRAPHICS_CONTAINER_HEIGHT, height: GRAPHICS_CONTAINER_HEIGHT,
+                    backgroundColor: `rgba(0, 255, 0, ${CONTAINER_BACKGROUND_COLOR_ALPHA})`
+                }}
+            >
+                {plotGraphicItem}
+                {cesiumGraphicItem}
+                {mapGraphicItem}
+            </div>
+        );
+
 
         return (
-            <div style={{overflowY:"hidden", overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{ overflowY: "hidden", overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh", maxHeight: "100vh", maxWidth: "100vw", width: "100vw" }}>
 
-            <div style={{flex:"0 0 auto"}}>
-                <SignedInNavbar
-                    activePage="flights"
-                    selectableLayers={this.state.selectableLayers}
-                    filterVisible={true}
-                    plotVisible={this.state.plotVisible}
-                    showCesiumButton={true}
-                    cesiumVisible={this.state.cesiumVisible}
-                    mapVisible={this.state.mapVisible}
-                    filterSelected={this.state.filterSelected}
-                    plotSelected={this.state.plotSelected}
-                    mapSelected={this.state.mapSelected}
-                    mapStyle={this.state.mapStyle}
-                    togglePlot={() => this.togglePlot()}
-                    toggleFilter={() => this.toggleFilter()}
-                    toggleCesium={() => this.toggleCesium()}
-                    toggleMap={() => this.toggleMap()}
-                    mapSelectChanged={(style) => this.mapSelectChanged(style)}
-                    mapLayerChanged={(style) => this.mapLayerChanged(style)}
-                    waitingUserCount={waitingUserCount}
-                    fleetManager={fleetManager}
-                    ref={this.navRef}
-                    unconfirmedTailsCount={unconfirmedTailsCount}
-                    modifyTailsAccess={modifyTailsAccess}
-                    darkModeOnClickAlt={()=>{this.displayPlot();}}
-                />
-            </div>
+                {/* Navbar */}
+                <div className="d-flex flex-shrink-1">
+                    <SignedInNavbar
+                        activePage="flights"
+                        selectableLayers={this.state.selectableLayers}
+                        showFlightPageOrientationButton={true}
+                        filterVisible={true}
+                        showMapButton={true}
+                        showPlotButton={true}
+                        plotVisible={this.state.plotVisible}
+                        showCesiumButton={true}
+                        cesiumVisible={this.state.cesiumVisible}
+                        mapVisible={this.state.mapVisible}
+                        filterSelected={this.state.filterSelected}
+                        plotSelected={this.state.plotSelected}
+                        mapSelected={this.state.mapSelected}
+                        mapStyle={this.state.mapStyle}
+                        toggleOrientation={() => this.toggleOrientation()}
+                        togglePlot={() => this.togglePlot()}
+                        toggleFilter={() => this.toggleFilter()}
+                        toggleCesium={() => this.toggleCesium()}
+                        toggleMap={() => this.toggleMap()}
+                        mapSelectChanged={(style) => this.mapSelectChanged(style)}
+                        mapLayerChanged={(style) => this.mapLayerChanged(style)}
+                        waitingUserCount={waitingUserCount}
+                        fleetManager={fleetManager}
+                        ref={this.navRef}
+                        unconfirmedTailsCount={unconfirmedTailsCount}
+                        modifyTailsAccess={modifyTailsAccess}
+                        darkModeOnClickAlt={() => { this.displayPlot(); }}
+                    />
+                </div>
 
-            <div className="d-flex flex-row" style={{overflowY:"auto", overflowX:"hidden", flex:"1 1 auto"}}>
+                {/* Main Content Subcontainer */}
+                <div className={`d-flex flex-${MAIN_CONTENT_CONTAINER_FLEX_TYPE}`} style={{ overflowY: "auto", overflowX: "hidden", flex: "1 1 auto", }}>
 
-                <div id="plot-map-div" className="flex-column col m-0" style={{ minWidth:"45%", maxWidth:"45%", minHeight:"100%", maxHeight:"100%", padding:"0.50em 0 "+(0.50 * this.containerVisibleCount)+"em 0.50em", gap: "0.50em"}}>
-
-                    {/* Plot container */}
-                    <div id="plot-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", overflow:"hidden", borderColor:"var(--c_border_alt)"}}>
-                        <div id="plot" style={{minHeight:"100%", maxHeight:"100%"}}/>
-                        <div className="map-graph-expand-button btn btn-outline-secondary d-flex align-items-center justify-content-center" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("plot-container")}>
-                            <i className="fa fa-expand p-1"/>
-                        </div>
-                    </div>
-                                    
-                    {/* Cesium container */}
-                    <div id="cesium-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", overflow:"hidden", borderColor:"var(--c_border_alt)"}}>
-                        <CesiumPage
-                            parent={this}
-                            setRef={this.cesiumRef}
-                            flights={this.state.flights}
-                            errorModal={errorModal}
-                            cesiumResolutionScale={this.state.cesiumResolutionScale}
-                            cesiumResolutionUseDefault={this.state.cesiumResolutionUseDefault}
-                        />
-                        <div style={{position:"absolute", top:"0", left:"0"}} className="d-flex align-items-center justify-content-center gap-1">
-
-                            {/* Expand Cesium Button */}
-                            <div
-                                className="map-graph-expand-button btn btn-outline-secondary"
-                                onClick={() => this.expandContainer("cesium-container")}
-                            >
-                                <i className="fa fa-expand p-1"/>
-                            </div>
-
-                            {/* Dropdown Menu to Change Resolution Scale */}
-                            <div className="dropdown mr-1">
-                                <button
-                                    className="btn btn-outline-secondary dropdown-toggle"
-                                    type="button"
-                                    id="dropdownMenuButton"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false"
-                                >
-                                    Resolution Scale: {this.state.cesiumResolutionScale * 100}%
-                                </button>
-                                <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    {
-                                        CESIUM_RESOLUTION_SCALE_OPTIONS.map((resolutionScale) => (
-                                            <li key={resolutionScale}>
-                                                <a
-                                                    className="dropdown-item"
-                                                    href="#"
-                                                    onClick={() => this.setCesiumResolution(resolutionScale)}
-                                                >
-                                                    {resolutionScale===CESIUM_RESOLUTION_PASSTHROUGH ? CESIUM_RESOLUTION_PASSTHROUGH : `${resolutionScale*100}%`}
-                                                </a>
-                                            </li>
-                                        ))
-                                    }
-                                </ul>
-                            </div>
-
-                            {/* Tracked Flight Indicator */}
-                            {flightTracker}
-
-                        </div>
-                    </div>
-
-                    {/* Map container */}
-                    <div id="map-container" className="card" style={{ width:"100%", minHeight:"50%", maxHeight:"50%", overflow:"hidden", borderColor:"var(--c_border_alt)"}}>
-                        <div id="map" style={{minHeight:"100%", maxHeight:"100%"}}/>
-                        <div className="map-graph-expand-button btn btn-outline-secondary" style={{position:"absolute", top:"0", left:"0"}} onClick={()=>this.expandContainer("map-container")}>
-                            <i className="fa fa-expand p-1"/>
-                        </div>
-                    </div>
+                    {graphicsContainer}
+                    {searchContainer}
 
                 </div>
 
-                <div className="p-0 m-2 d-flex flex-column col" style={{width:"100%", overflowX:"hidden"}}>
-
-                    <div>
-                        <Filter
-                            filterVisible={this.state.filterVisible}
-                            submitButtonName="Apply Current Filter"
-                            submitFilter={(resetCurrentPage=true) => {this.submitFilter(resetCurrentPage);}}
-                            rules={rules}
-                            filters={this.state.filters}
-                            getFilter={() => {return this.state.filters;}}
-                            setFilter={(filter) => this.setFilter(filter)}
-                            setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
-                            getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
-                            errorModal={errorModal}
-                        />
-                    </div>
-
-                    <div id="flights-card-container" className="mb-2 card" style={{overflowY:"scroll", flex:"1 1 auto", border:"1px solid var(--c_border_alt)", borderRadius:"0.25em", marginTop:"0.50em"}}>
-                        <FlightsCard
-                            parent={this}
-                            layers={this.state.layers}
-                            flights={this.state.flights}
-                            navBar={this.navRef}
-                            ref={(elem) => (this.flightsRef = elem)}
-                            showMap={() => { this.showMap(); }}
-                            hideMap={()=> this.hideMap()}
-                            showPlot={() => { this.showPlot(); }}
-                            setAvailableLayers={(plotLayers) => { this.setAvailableLayers(plotLayers); }}
-                            setFlights={(flights) => {  this.setState({ flights: flights, });  }}
-                            updateNumberPages={(numberPages) => {  this.setState({ numberPages: numberPages, });  }}
-                            addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color) }
-                            removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm) }
-                            deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
-                            getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId) }
-                            associateTag={(tagId, flightId) => this.associateTag(tagId, flightId) }
-                            clearTags={(flightId) => this.clearTags(flightId)}
-                            editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
-                            showCesium={(flightId, color) => {this.addCesiumFlight(flightId, color);}}
-                            addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
-                            addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
-                            removeCesiumFlight={(flightId) => {this.removeCesiumFlight(flightId);}}
-                            zoomToEventEntity={(eventId, flightId) => {this.zoomToEventEntity(eventId, flightId)}}
-                            cesiumFlightTrackedSet={(flightId) => {this.cesiumFlightTrackedSet(flightId)}}
-                            cesiumJumpToFlightStart={(flightId) => {this.cesiumRef.current.cesiumJumpToFlightStart(flightId)}}
-                        />
-                    </div>
-
-                    <div style={{ width:"100%", bottom:"0", alignSelf:"center" }}>
-                        <Paginator
-                            submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
-                            items={this.state.flights}
-                            itemName="flights"
-                            rules={sortableColumns}
-                            currentPage={this.state.currentPage}
-                            numberPages={this.state.numberPages}
-                            pageSize={this.state.pageSize}
-                            setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
-                            getSortingColumn={() => this.getSortingColumn()}
-                            setSortingOrder={(order) => this.setSortingOrder(order)}
-                            getSortingOrder={() => this.getSortingOrder()}
-                            sortOptions={sortableColumnsHumanReadable}
-                            updateCurrentPage={(currentPage) => {this.state.currentPage = currentPage;}}
-                            updateItemsPerPage={(pageSize) => {this.state.pageSize = pageSize;}}
-                            location="Bottom"
-                        />
-                    </div>
-
-                </div>
-
-            </div>
-                
             </div>
         );
 
@@ -1850,14 +1891,9 @@ class FlightsPage extends React.Component {
 
 
 
-var flightsPage = ReactDOM.render(
+const flightsPage = ReactDOM.render(
     <FlightsPage />,
     document.querySelector("#flights-page")
 );
-
-
-initializeMap();
-flightsPage.displayPlot();
-flightsPage.resolveDisplay();
 
 console.log("rendered flightsCard!");

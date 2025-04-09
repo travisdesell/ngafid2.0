@@ -37,6 +37,8 @@ class Flight extends React.Component {
         console.log(color);
 
         this.state = {
+
+            filterAddButtonHovered : false,
             pathVisible : false,
             pageIndex : props.pageIndex,
             mapLoaded : false,
@@ -1220,11 +1222,18 @@ class Flight extends React.Component {
                             <div style={{ flexBasis: "32.5%", whiteSpace: "nowrap" }}>
                                 <div className={`${firstCellClasses} d-flex flex-row`} style={{ height: "100%" }}>
                                     <div className="d-flex flex-column" style={{ alignItems: "start" }}>
-                                        <a href={'/protected/flight?flight_id=' + flightInfo.id}>
-                                            <i className="fa fa-plane p-1">
+
+                                        {/* Filter Add Button */}
+                                        <a 
+                                            href={'/protected/flight?flight_id=' + flightInfo.id}
+                                            onMouseEnter={() => this.setState({ filterAddButtonHovered: true })}
+                                            onMouseLeave={() => this.setState({ filterAddButtonHovered: false })}
+                                        >
+                                            <i className={`fa ${this.state.filterAddButtonHovered ? "fa-search" : "fa-plane"}  p-1`}>
                                                 &nbsp;{flightInfo.id}
                                             </i>
                                         </a>
+
                                         <div>
                                             ◦&nbsp;
                                             {

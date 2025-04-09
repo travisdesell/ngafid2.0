@@ -9,9 +9,9 @@ import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar.js";
 import { map, styles, layers, Colors, initializeMap } from "./map.js";
 
-import {Group, Vector as VectorLayer} from 'ol/layer.js';
-import {Vector as VectorSource} from 'ol/source.js';
-import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
+import { Group, Vector as VectorLayer } from 'ol/layer.js';
+import { Vector as VectorSource } from 'ol/source.js';
+import { Circle, Fill, Icon, Stroke, Style } from 'ol/style.js';
 
 import { FlightsCard } from './flights_card_component.js';
 
@@ -19,10 +19,10 @@ import { errorModal } from "./error_modal.js";
 import { confirmModal } from "./confirm_modal.js";
 
 import Plotly from 'plotly.js';
-import {CesiumButtons} from "./cesium_buttons";
+import { CesiumButtons } from "./cesium_buttons";
 
 global.plotlyLayout = {
-    shapes : []
+    shapes: []
 };
 
 function invalidString(str) {
@@ -34,31 +34,31 @@ class FlightPage extends React.Component {
         super(props);
 
         this.state = {
-            filterVisible : false,
+            filterVisible: false,
             //filterSelected : false,
-            plotVisible : false,
-            plotSelected : false,
-            mapVisible : false,
-            mapSelected : false,
-            mapStyle : "Road",
-            filterRef : React.createRef(),
-            flightsRef : React.createRef(),
-            navRef : React.createRef(),
-            flights : flights, //start out with the provided flight
+            plotVisible: false,
+            plotSelected: false,
+            mapVisible: false,
+            mapSelected: false,
+            mapStyle: "Road",
+            filterRef: React.createRef(),
+            flightsRef: React.createRef(),
+            navRef: React.createRef(),
+            flights: flights, //start out with the provided flight
         };
 
 
     }
 
-   mapSelectChanged(style) {
+    mapSelectChanged(style) {
         for (var i = 0, ii = layers.length; i < ii; ++i) {
             console.log("setting layer " + i + " to:" + (styles[i] === style));
             layers[i].setVisible(styles[i] === style);
         }
 
-        console.log("map style changed to: '" +  style + "'!");
+        console.log("map style changed to: '" + style + "'!");
         this.setState({
-            mapStyle : style
+            mapStyle: style
         });
     }
 
@@ -66,55 +66,55 @@ class FlightPage extends React.Component {
         console.log("changing selectable layers on navbar");
         console.log(plotLayers);
 
-        this.setState({selectableLayers : plotLayers});
+        this.setState({ selectableLayers: plotLayers });
     }
 
 
     showMap() {
         if (this.state.mapVisible) return;
-    
+
         if (!$("#map-toggle-button").hasClass("active")) {
-          $("#map-toggle-button").addClass("active");
-          $("#map-toggle-button").attr("aria-pressed", true);
+            $("#map-toggle-button").addClass("active");
+            $("#map-toggle-button").attr("aria-pressed", true);
         }
-    
+
         this.state.mapVisible = true;
         this.setState(this.state);
-    
+
         $("#plot-map-div").css("height", "50%");
         $("#map").show();
-    
+
         if (this.state.plotVisible) {
-          $("#map").css("width", "50%");
-          map.updateSize();
-          $("#plot").css("width", "50%");
-          Plotly.Plots.resize("plot");
+            $("#map").css("width", "50%");
+            map.updateSize();
+            $("#plot").css("width", "50%");
+            Plotly.Plots.resize("plot");
         } else {
-          $("#map").css("width", "100%");
-          map.updateSize();
+            $("#map").css("width", "100%");
+            map.updateSize();
         }
 
     }
-    
-      hideMap() {
+
+    hideMap() {
         if (!this.state.mapVisible) return;
-    
+
         if ($("#map-toggle-button").hasClass("active")) {
-          $("#map-toggle-button").removeClass("active");
-          $("#map-toggle-button").attr("aria-pressed", false);
+            $("#map-toggle-button").removeClass("active");
+            $("#map-toggle-button").attr("aria-pressed", false);
         }
-    
+
         this.state.mapVisible = false;
         this.setState(this.state);
-    
+
         $("#map").hide();
-    
+
         if (this.state.plotVisible) {
-          $("#plot").css("width", "100%");
-          var update = { width: "100%" };
-          Plotly.Plots.resize("plot");
+            $("#plot").css("width", "100%");
+            var update = { width: "100%" };
+            Plotly.Plots.resize("plot");
         } else {
-          $("#plot-map-div").css("height", "0%");
+            $("#plot-map-div").css("height", "0%");
         }
 
     }
@@ -130,50 +130,50 @@ class FlightPage extends React.Component {
     showPlot() {
 
         if (this.state.plotVisible) return;
-    
+
         if (!$("#plot-toggle-button").hasClass("active")) {
-          $("#plot-toggle-button").addClass("active");
-          $("#plot-toggle-button").attr("aria-pressed", true);
-        }
-    
-        this.state.plotVisible = true;
-        this.setState(this.state);
-    
-        $("#plot").show();
-        $("#plot-map-div").css("height", "50%");
-    
-        if (this.state.mapVisible) {
-          $("#map").css("width", "50%");
-          map.updateSize();
-          $("#plot").css("width", "50%");
-          Plotly.Plots.resize("plot");
-        } else {
-          $("#plot").css("width", "100%");
-          Plotly.Plots.resize("plot");
+            $("#plot-toggle-button").addClass("active");
+            $("#plot-toggle-button").attr("aria-pressed", true);
         }
 
-    }    
+        this.state.plotVisible = true;
+        this.setState(this.state);
+
+        $("#plot").show();
+        $("#plot-map-div").css("height", "50%");
+
+        if (this.state.mapVisible) {
+            $("#map").css("width", "50%");
+            map.updateSize();
+            $("#plot").css("width", "50%");
+            Plotly.Plots.resize("plot");
+        } else {
+            $("#plot").css("width", "100%");
+            Plotly.Plots.resize("plot");
+        }
+
+    }
 
     hidePlot() {
 
         if (!this.state.plotVisible) return;
-    
+
         if ($("#plot-toggle-button").hasClass("active")) {
-          $("#plot-toggle-button").removeClass("active");
-          $("#plot-toggle-button").attr("aria-pressed", false);
+            $("#plot-toggle-button").removeClass("active");
+            $("#plot-toggle-button").attr("aria-pressed", false);
         }
-    
+
         this.state.plotVisible = false;
         this.setState(this.state);
-    
+
         $("#plot").hide();
-    
+
         if (this.state.mapVisible) {
-          $("#map").css("width", "100%");
-          $("#map").css("height", "100%");
-          map.updateSize();
+            $("#map").css("width", "100%");
+            $("#map").css("height", "100%");
+            map.updateSize();
         } else {
-          $("#plot-map-div").css("height", "0%");
+            $("#plot-map-div").css("height", "0%");
         }
 
     }
@@ -190,7 +190,7 @@ class FlightPage extends React.Component {
     toggleFilter() {
         console.log("toggling filterVisible to: " + !this.state.filterVisible);
         this.setState({
-            filterVisible : !this.state.filterVisible
+            filterVisible: !this.state.filterVisible
         });
     }
 
@@ -207,15 +207,15 @@ class FlightPage extends React.Component {
     addTag(flightId, name, description, color) {
         if (invalidString(name) || invalidString(description)) {
             errorModal.show("Error creating tag!",
-                            "Please ensure the name and description fields are correctly filled out!");
+                "Please ensure the name and description fields are correctly filled out!");
             return;
         }
 
         var submissionData = {
-            name : name,
-            description : description,
-            color : color,
-            id : flightId
+            name: name,
+            description: description,
+            color: color,
+            id: flightId
         };
         console.log("Creating a new tag for flight # " + this.state.flightId);
 
@@ -224,9 +224,9 @@ class FlightPage extends React.Component {
         $.ajax({
             type: 'POST',
             url: '/protected/create_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
                 if (response != "ALREADY_EXISTS") {
@@ -245,7 +245,7 @@ class FlightPage extends React.Component {
                     errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
                 }
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
             },
             async: true
         });
@@ -255,7 +255,7 @@ class FlightPage extends React.Component {
      * Calls the server using ajax-json to notify it of the new tag change
      */
     editTag(newTag, currentTag) {
-        console.log("submitting edit for tag: "+currentTag.hashId);
+        console.log("submitting edit for tag: " + currentTag.hashId);
 
         console.log("current tag");
         console.log(currentTag);
@@ -264,10 +264,10 @@ class FlightPage extends React.Component {
         console.log(newTag);
 
         var submissionData = {
-            tag_id : currentTag.hashId,
-            name : newTag.name,
-            description : newTag.description,
-            color : newTag.color
+            tag_id: currentTag.hashId,
+            name: newTag.name,
+            description: newTag.description,
+            color: newTag.color
         };
 
         let thisFlight = this;
@@ -275,9 +275,9 @@ class FlightPage extends React.Component {
         $.ajax({
             type: 'POST',
             url: '/protected/edit_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
                 if (response != "NOCHANGE") {
@@ -303,7 +303,7 @@ class FlightPage extends React.Component {
                 }
                 thisFlight.setState(thisFlight.state);
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
             },
             async: true
         });
@@ -315,21 +315,21 @@ class FlightPage extends React.Component {
         let tags = [];
 
         var submissionData = {
-            id : flightId
+            id: flightId
         };
 
         $.ajax({
             type: 'POST',
             url: '/protected/get_unassociated_tags',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
                 tags = response;
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
             },
             async: false
         });
@@ -343,25 +343,25 @@ class FlightPage extends React.Component {
     deleteTag(flightId, tagId) {
 
         return new Promise((resolve, reject) => {
-    
+
             let tag = this.state.flights.find(
                 (flight) => (flight.id == flightId)
             ).tags.find(
                 (tag) => (tag.hashId == tagId)
             );
-    
+
             console.log(tag);
-            if (tag==null)
+            if (tag == null)
                 return resolve(null);
-    
-            if (tagId == null) { 
+
+            if (tagId == null) {
                 errorModal.show(
                     "Please select a tag to delete first!",
                     "You did not select a tag to delete"
                 );
                 return resolve(null);
             }
-    
+
             console.log("delete tag invoked!");
             confirmModal.show(
                 "Confirm Delete Tag: '" + tag.name + "'",
@@ -371,10 +371,10 @@ class FlightPage extends React.Component {
                     return resolve(confirmResult);
                 }
             );
-    
+
         });
-    
-      }
+
+    }
 
     /**
      * removes a tag from a flight, either permanent or just from one flight
@@ -391,10 +391,10 @@ class FlightPage extends React.Component {
         }
 
         var submissionData = {
-            flight_id : flightId,
-            tag_id : tagId,
-            permanent : isPermanent,
-            all : (tagId == -2)
+            flight_id: flightId,
+            tag_id: tagId,
+            permanent: isPermanent,
+            all: (tagId == -2)
         };
 
         let thisFlight = this;
@@ -411,40 +411,40 @@ class FlightPage extends React.Component {
 
                     console.log("received response: ");
                     console.log(response);
-            
+
                     //Permanently deleting a tag
                     if (isPermanent) {
-            
+
                         console.log("permanent deletion of tag with id: " + tagId);
                         for (var i = 0; i < thisFlight.state.flights.length; i++) {
                             let flight = thisFlight.state.flights[i];
                             if (flight.id == flightId) {
                                 let tags = flight.tags;
-                                tags.splice(tags.indexOf(response.tag)-1, 1);
+                                tags.splice(tags.indexOf(response.tag) - 1, 1);
                             }
                         }
-                    
-                    //Clearing all tags from a flight
+
+                        //Clearing all tags from a flight
                     } else if (response.allTagsCleared) {
-            
+
                         for (var i = 0; i < thisFlight.state.flights.length; i++) {
                             let flight = thisFlight.state.flights[i];
                             if (flight.id == flightId) {
                                 flight.tags = [];
                             }
                         }
-            
-                    //Removing a tag from a flight
+
+                        //Removing a tag from a flight
                     } else {
-            
+
                         for (var i = 0; i < thisFlight.state.flights.length; i++) {
                             let flight = thisFlight.state.flights[i];
                             if (flight.id == flightId) {
                                 let tags = flight.tags;
-                                tags.splice(tags.indexOf(response.tag)-1, 1);
+                                tags.splice(tags.indexOf(response.tag) - 1, 1);
                             }
                         }
-                        
+
                     }
                     thisFlight.setState(thisFlight.state);
 
@@ -465,11 +465,11 @@ class FlightPage extends React.Component {
      * @param id the tag id to associate
      */
     associateTag(tagId, flightId) {
-        console.log("associating tag #"+tagId+" with flight #"+flightId);
+        console.log("associating tag #" + tagId + " with flight #" + flightId);
 
         var submissionData = {
-            id : flightId,
-            tag_id : tagId
+            id: flightId,
+            tag_id: tagId
         };
 
         let thisFlight = this;
@@ -477,9 +477,9 @@ class FlightPage extends React.Component {
         $.ajax({
             type: 'POST',
             url: '/protected/associate_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
                 for (var i = 0; i < thisFlight.state.flights.length; i++) {
@@ -494,7 +494,7 @@ class FlightPage extends React.Component {
                 }
                 thisFlight.setState(thisFlight.state);
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
             },
             async: true
         });
@@ -506,22 +506,22 @@ class FlightPage extends React.Component {
      */
     clearTags(flightId) {
         confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #" + flightId + "?",
-                          () => {this.removeTag(flightId, -2, false)});
+            () => { this.removeTag(flightId, -2, false) });
     }
 
     /**
      * Handles clearing all selected flights for multiple flight replays
      */
-     clearCesiumFlights() {
-         cesiumFlightsSelected.forEach((removedFlight) => {
-             console.log("Removed " + removedFlight);
-             let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
-             toggleButton.click();
-         });
+    clearCesiumFlights() {
+        cesiumFlightsSelected.forEach((removedFlight) => {
+            console.log("Removed " + removedFlight);
+            let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
+            toggleButton.click();
+        });
 
-         if (cesiumFlightsSelected.length > 0) {
-             this.clearCesiumFlights();
-         }
+        if (cesiumFlightsSelected.length > 0) {
+            this.clearCesiumFlights();
+        }
     }
 
     displayPlot() {
@@ -532,108 +532,108 @@ class FlightPage extends React.Component {
         let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
         global.plotlyLayout = {
             shapes: [],
-            plot_bgcolor : "transparent",
-            paper_bgcolor : plotBgColor,
-            font : {
-                color : plotTextColor
+            plot_bgcolor: "transparent",
+            paper_bgcolor: plotBgColor,
+            font: {
+                color: plotTextColor
             },
-            xaxis : {
-                gridcolor : plotGridColor
+            xaxis: {
+                gridcolor: plotGridColor
             },
-            yaxis : {
-                gridcolor : plotGridColor
+            yaxis: {
+                gridcolor: plotGridColor
             },
-            margin : {
-                l : 40,
-                r : 40,
-                b : 40,
-                t : 40,
+            margin: {
+                l: 40,
+                r: 40,
+                b: 40,
+                t: 40,
             }
         };
-    
-    
+
+
         Plotly.newPlot("plot", [], global.plotlyLayout);
-    
+
         if (map == null)
             initializeMap();
-    
+
         var myPlot = document.getElementById("plot");
         console.log("myPlot:");
         console.log(myPlot);
-    
+
         myPlot.on("plotly_hover", function (data) {
-        var xaxis = data.points[0].xaxis,
-            yaxis = data.points[0].yaxis;
-    
-        /*
-                var infotext = data.points.map(function(d) {
-                    return ('width: '+xaxis.l2p(d.x)+', height: '+yaxis.l2p(d.y));
-                });
-                */
-    
-        //console.log("in hover!");
-        //console.log(data);
-        let x = data.points[0].x;
-    
-        //console.log("x: " + x);
-    
-        map.getLayers().forEach(function (layer) {
-            if (layer instanceof VectorLayer) {
-            if ("flightState" in layer) {
-                //console.log("VECTOR layer:");
-    
-                var hiddenStyle = new Style({
-                stroke: new Stroke({
-                    color: layer.flightState.state.color,
-                    width: 1.5,
-                }),
-                image: new Circle({
-                    radius: 5,
-                    stroke: new Stroke({
-                    color: [0, 0, 0, 0],
-                    width: 2,
-                    }),
-                }),
-                });
-    
-                var visibleStyle = new Style({
-                stroke: new Stroke({
-                    color: layer.flightState.state.color,
-                    width: 1.5,
-                }),
-                image: new Circle({
-                    radius: 5,
-                    stroke: new Stroke({
-                    color: layer.flightState.state.color,
-                    width: 2,
-                    }),
-                }),
-                });
-    
-                if (layer.getVisible()) {
-                if (x < layer.flightState.state.points.length) {
-                    console.log(
-                    "need to draw point at: " + layer.flightState.state.points[x]
-                    );
-                    layer.flightState.state.trackingPoint.setStyle(visibleStyle);
-                    layer.flightState.state.trackingPoint
-                    .getGeometry()
-                    .setCoordinates(layer.flightState.state.points[x]);
-                } else {
-                    console.log(
-                    "not drawing point x: " +
-                        x +
-                        " >= points.length: " +
-                        layer.flightState.state.points.length
-                    );
-                    layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+            var xaxis = data.points[0].xaxis,
+                yaxis = data.points[0].yaxis;
+
+            /*
+                    var infotext = data.points.map(function(d) {
+                        return ('width: '+xaxis.l2p(d.x)+', height: '+yaxis.l2p(d.y));
+                    });
+                    */
+
+            //console.log("in hover!");
+            //console.log(data);
+            let x = data.points[0].x;
+
+            //console.log("x: " + x);
+
+            map.getLayers().forEach(function (layer) {
+                if (layer instanceof VectorLayer) {
+                    if ("flightState" in layer) {
+                        //console.log("VECTOR layer:");
+
+                        var hiddenStyle = new Style({
+                            stroke: new Stroke({
+                                color: layer.flightState.state.color,
+                                width: 1.5,
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                stroke: new Stroke({
+                                    color: [0, 0, 0, 0],
+                                    width: 2,
+                                }),
+                            }),
+                        });
+
+                        var visibleStyle = new Style({
+                            stroke: new Stroke({
+                                color: layer.flightState.state.color,
+                                width: 1.5,
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                stroke: new Stroke({
+                                    color: layer.flightState.state.color,
+                                    width: 2,
+                                }),
+                            }),
+                        });
+
+                        if (layer.getVisible()) {
+                            if (x < layer.flightState.state.points.length) {
+                                console.log(
+                                    "need to draw point at: " + layer.flightState.state.points[x]
+                                );
+                                layer.flightState.state.trackingPoint.setStyle(visibleStyle);
+                                layer.flightState.state.trackingPoint
+                                    .getGeometry()
+                                    .setCoordinates(layer.flightState.state.points[x]);
+                            } else {
+                                console.log(
+                                    "not drawing point x: " +
+                                    x +
+                                    " >= points.length: " +
+                                    layer.flightState.state.points.length
+                                );
+                                layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+                            }
+                        }
+                    }
                 }
-                }
-            }
-            }
+            });
         });
-        });
-    
+
     }
 
     render() {
@@ -641,17 +641,17 @@ class FlightPage extends React.Component {
         if (this.state.mapVisible || this.state.plotVisible) {
             console.log("rendering half");
             style = {
-                overflow : "auto",
-                overflowX : "hidden",
-                height : "calc(50%)",
+                overflow: "auto",
+                overflowX: "hidden",
+                height: "calc(50%)",
                 padding: "5",
                 direction: "rtl"
             };
         } else {
             style = {
-                overflow : "auto",
-                overflowX : "hidden",
-                height : "calc(100%)",
+                overflow: "auto",
+                overflowX: "hidden",
+                height: "calc(100%)",
                 padding: "5",
                 direction: "rtl"
             };
@@ -660,9 +660,9 @@ class FlightPage extends React.Component {
         style.padding = "5";
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{ overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh" }}>
 
-                <div style={{flex:"0 0 auto"}}>
+                <div style={{ flex: "0 0 auto" }}>
                     <SignedInNavbar
                         activePage="flights"
                         filterVisible={this.state.filterVisible}
@@ -681,11 +681,11 @@ class FlightPage extends React.Component {
                         ref={elem => this.navRef = elem}
                         unconfirmedTailsCount={unconfirmedTailsCount}
                         modifyTailsAccess={modifyTailsAccess}
-                        darkModeOnClickAlt={()=>{this.displayPlot();}}
+                        darkModeOnClickAlt={() => { this.displayPlot(); }}
                     />
                 </div>
 
-                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                <div style={{ overflowY: "auto", flex: "1 1 auto" }}>
 
                     {/* <div
                         id="plot-map-div"
@@ -704,38 +704,38 @@ class FlightPage extends React.Component {
                     </div> */}
 
                     <div
-                     id="plot-map-div"
-                     className="d-flex flex-row row m-0"
-                     style={{minHeight:"50%", maxHeight:"50%", padding:"0.50em"}}
+                        id="plot-map-div"
+                        className="d-flex flex-row row m-0"
+                        style={{ minHeight: "50%", maxHeight: "50%", padding: "0.50em" }}
                     >
                         <div
-                        id="plot"
-                        className="card"
-                        style={{ display: "none", width:"100%", minHeight:"100%", maxHeight:"100%", overflow:"hidden" }}
+                            id="plot"
+                            className="card"
+                            style={{ display: "none", width: "100%", minHeight: "100%", maxHeight: "100%", overflow: "hidden" }}
                         />
 
                         <div
-                        id="map"
-                        className="card map"
-                        style={{ display: "none", width:"100%", minHeight:"100%", maxHeight:"100%", overflow:"hidden" }}
+                            id="map"
+                            className="card map"
+                            style={{ display: "none", width: "100%", minHeight: "100%", maxHeight: "100%", overflow: "hidden" }}
                         />
                     </div>
 
                     <div style={style}>
-                        <div style={{direction: "ltr"}}>
+                        <div style={{ direction: "ltr" }}>
 
                             <FlightsCard
                                 parent={this}
                                 flights={this.state.flights}
                                 navBar={this.navRef}
                                 ref={elem => this.flightsRef = elem}
-                                showMap={() => {this.showMap();}}
-                                showPlot={() => {this.showPlot();}}
-                                getFilterQuery={() => {return this.getQuery();}}
-                                setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
+                                showMap={() => { this.showMap(); }}
+                                showPlot={() => { this.showPlot(); }}
+                                getFilterQuery={() => { return this.getQuery(); }}
+                                setAvailableLayers={(plotLayers) => { this.setAvailableLayers(plotLayers); }}
                                 setFlights={(flights) => {
                                     this.setState({
-                                        flights : flights
+                                        flights: flights
                                     });
                                 }}
 
@@ -750,7 +750,7 @@ class FlightPage extends React.Component {
 
                             <div className="card mb-1 border-secondary">
                                 <div className="row m-0 p-2">
-                                    <div className="col-12" style={{userSelect:"none"}}>
+                                    <div className="col-12" style={{ userSelect: "none" }}>
                                         <div className="float-right">
                                             <CesiumButtons location="Bottom"></CesiumButtons>
                                         </div>
@@ -758,7 +758,7 @@ class FlightPage extends React.Component {
                                 </div>
                             </div>
                         </div>
-                    
+
                     </div>
                 </div>
             </div>
