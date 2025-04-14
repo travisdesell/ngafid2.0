@@ -389,6 +389,7 @@ class Rule extends React.Component {
 
 
 class Group extends React.Component {
+    
     constructor(props) {
         super(props);
 
@@ -938,7 +939,7 @@ class Group extends React.Component {
             <div className="card border-secondary" style={{margin:0, width:"100%"}}>
                 <div className="d-flex justify-content-between">
 
-                    <div className="p-2">
+                    <div className="p-2 d-flex flex-row justify-content-center align-items-center">
                         <div className="btn-group btn-group-toggle" data-bs-toggle="buttons">
                             <label className={"btn btn-outline-primary btn-sm " + andActive} onClick={() => this.props.setFilter(andClicked(this.props.getFilter(), this.props.treeIndex))}>
                                 <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andChecked} />AND
@@ -947,6 +948,17 @@ class Group extends React.Component {
                                 <input type="radio" name="options" id="option2" autoComplete="off" defaultChecked={!andChecked} />OR
                             </label> 
                         </div>
+
+                        {/* Indicate Flight ID Filter Group */}
+                        {
+                            this.props.isFlightIdGroup &&
+                            <div className="ml-4 d-flex flex-row align-items-center ml-2 p-2 rounded" style={{backgroundColor: "#FFFFFF22"}}>
+                                <i className="fa fa-search" style={{fontSize:"1.25em", userSelect:"none", opacity: "0.75"}}/>
+                                <div className="ml-2 font-weight-bold" style={{fontSize:"1.00em", userSelect:"none", opacity: "0.76"}}>
+                                    Flight ID Filter Group
+                                </div>
+                            </div>
+                        }
 
                     </div>
 
@@ -963,6 +975,7 @@ class Group extends React.Component {
                     this.props.filters.filters.map((filterInfo, index) => {
                         
                         if (filterInfo.type === "GROUP") {
+
                             return (
                                 <div className="p-2" key={this.props.treeIndex + "," + index}>
                                     <Group
@@ -975,10 +988,13 @@ class Group extends React.Component {
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                         setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
                                         getSortByColumn={() => {return this.props.getSortByColumn}}
+                                        isFlightIdGroup={filterInfo.isFlightIdGroup}
                                     />
-                                </div>);
+                                </div>
+                            );
 
                         } else if (filterInfo.type === "RULE") {
+
                             return (
                                 <div className="p-2" key={this.props.treeIndex + "," + index}>
                                     <Rule
@@ -990,8 +1006,11 @@ class Group extends React.Component {
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                     />
-                                </div>);
+                                </div>
+                            );
+
                         }
+
                     })
                 }
 

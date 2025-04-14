@@ -1225,9 +1225,10 @@ class Flight extends React.Component {
 
                                         {/* Filter Add Button */}
                                         <a 
-                                            href={'/protected/flight?flight_id=' + flightInfo.id}
+                                            href={"#"}
                                             onMouseEnter={() => this.setState({ filterAddButtonHovered: true })}
                                             onMouseLeave={() => this.setState({ filterAddButtonHovered: false })}
+                                            onClick={() => this.props.onAddFilter(this.props.flightInfo.id)}
                                         >
                                             <i className={`fa ${this.state.filterAddButtonHovered ? "fa-search" : "fa-plane"}  p-1`}>
                                                 &nbsp;{flightInfo.id}

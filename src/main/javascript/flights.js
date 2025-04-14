@@ -942,12 +942,16 @@ class FlightsPage extends React.Component {
                     ]
                 });
 
-                //Attempt to recursively transform nested filters...
+            //Attempt to recursively transform nested filters...
             } else if (filter.filters) {
-                newFilters.push({
-                    ...filter,
-                    filters: transformAirframeEventsCountFilter(filter.filters)
-                });
+
+                // newFilters.push({
+                //     ...filter,
+                //     filters: transformAirframeEventsCountFilter(filter.filters)
+                // });
+                
+                newFilters.push(filter);
+
             } else {
                 newFilters.push(filter);
             }
@@ -1531,6 +1535,59 @@ class FlightsPage extends React.Component {
 
     }
 
+    handleAddFilter = (flightId) => {
+
+        const newRule = {
+            type: "RULE",
+            inputs: ["Flight ID", "=", flightId.toString()]
+        };
+
+        //Find or create the special OR group for Flight IDs
+        let filters = { ...this.state.filters };
+        let flightIdGroup = filters.filters.find(
+            f => f.type === "GROUP" && f.condition === "OR" && f.isFlightIdGroup
+        );
+
+        //No OR group exists, create new one
+        if (!flightIdGroup) {
+            
+            flightIdGroup = {
+                type: "GROUP",
+                condition: "OR",
+                isFlightIdGroup: true, //<-- Identifier for the special group
+                filters: [newRule]
+            };
+            filters.filters.push(flightIdGroup);
+
+        //Otherwise, add to existing OR group
+        } else {
+
+            //Check if a rule for this flight ID already exists
+            const FLIGHT_RULE_ID_INDEX = 2;
+            const existingRule = flightIdGroup.filters.find(
+                f => (f.type === "RULE") && (f.inputs[FLIGHT_RULE_ID_INDEX] === flightId.toString())
+            );
+
+            //No existing rule found, add the new rule
+            if (!existingRule)
+                flightIdGroup.filters.push(newRule);
+
+        }
+
+        //Clear the special group if it's empty
+        if (flightIdGroup.filters.length === 0)
+            filters.filters = filters.filters.filter(f => f !== flightIdGroup);
+
+        this.setFilter(filters);
+
+    };
+
+    findFlightIdGroup = (filters) => {
+        return filters.filters.find(
+          f => f.type === "GROUP" && f.condition === "OR" && f.isFlightIdGroup
+        );
+      };
+
     render() {
 
         let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
@@ -1604,6 +1661,7 @@ class FlightsPage extends React.Component {
                     zoomToEventEntity={(eventId, flightId) => { this.zoomToEventEntity(eventId, flightId) }}
                     cesiumFlightTrackedSet={(flightId) => { this.cesiumFlightTrackedSet(flightId) }}
                     cesiumJumpToFlightStart={(flightId) => { this.cesiumRef.current.cesiumJumpToFlightStart(flightId) }}
+                    onAddFilter={this.handleAddFilter}
                 />
             </div>
         );

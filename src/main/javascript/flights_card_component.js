@@ -93,7 +93,7 @@ class FlightsCard extends React.Component {
                                         associateTag={this.props.associateTag}
                                         clearTags={this.props.clearTags}
                                         editTag={this.props.editTag}
-                                        
+                                        onAddFilter={this.props.onAddFilter}
                                     />
                                 );
                             }
