@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.logging.LogManager;
@@ -64,7 +65,33 @@ public abstract class WebServer {
         }
     }
 
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
+    public static class OffsetDateTimeTypeAdapter extends TypeAdapter<OffsetDateTime> {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+
+        @Override
+        public void write(final JsonWriter jsonWriter, final OffsetDateTime offsetDateTime) throws IOException {
+            if (offsetDateTime == null) {
+                jsonWriter.nullValue();
+                return;
+            }
+            jsonWriter.value(formatter.format(offsetDateTime));
+        }
+
+        @Override
+        public OffsetDateTime read(final JsonReader jsonReader) throws IOException {
+            if (jsonReader.peek() == JsonToken.NULL) {
+                jsonReader.nextNull();
+                return null;
+            }
+            return OffsetDateTime.parse(jsonReader.nextString(), formatter);
+        }
+    }
+
+    public static final Gson gson = new GsonBuilder()
+        .serializeSpecialFloatingPointValues()
+        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+        .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
+        .create();
 
     static {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
