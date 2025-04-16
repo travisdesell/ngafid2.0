@@ -12,7 +12,7 @@ import { Circle, Fill, Icon, Stroke, Style } from "ol/style.js";
 import { errorModal } from "./error_modal.js";
 import { confirmModal } from "./confirm_modal.js";
 
-import { Filter } from './filter.js';
+import { Filter, isValidFilter } from './filter.js';
 import { Paginator } from './paginator_component.js';
 import { FlightsCard } from './flights_card_component.js';
 import Plotly from 'plotly.js';
@@ -405,7 +405,7 @@ const CESIUM_FLIGHT_TRACKED_NONE = undefined;
 const PAGE_ORIENTATION = Object.freeze({
     COLUMN: Symbol("column"),
     ROW: Symbol("row"),
-})
+});
 
 class FlightsPage extends React.Component {
 
@@ -471,6 +471,59 @@ class FlightsPage extends React.Component {
 
         //Initialize Plotly plot
         this.initializePlot();
+
+        //Check for filter in URL and load if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterParam = urlParams.get('filter');
+        
+        //Found a filter in the URL, try to load it
+        if (filterParam) {
+
+            try {
+                
+                //Double decode for URL components
+                let decodedFilter = decodeURIComponent(filterParam);
+
+                console.log("Decoded filter:", decodedFilter);
+                
+                // Strict validation with fallback
+                let parsedFilter;
+                try {
+
+                    parsedFilter = JSON.parse(decodedFilter);
+
+                } catch (e) {
+
+                    throw new Error("Malformed filter structure");
+
+                }
+                
+                //Did not get 'filters' key in the parsed filter
+                if (!parsedFilter?.filters)
+                    throw new Error("Missing 'filters' key in parsed filter");
+                    
+                //Did not interpret 'filters' as an array
+                if (!Array.isArray(parsedFilter.filters))
+                    throw new Error("Loaded 'filters' value is not an array");
+    
+                //Validate filter
+                const autoSubmitFilter = isValidFilter(parsedFilter, rules);
+
+                this.setState({ filters: parsedFilter }, () => {
+
+                    //Flagged as valid, automatically submit the filter
+                    if (autoSubmitFilter)
+                        this.submitFilter(true);
+
+                });
+    
+            } catch (error) {
+
+                console.error("Filter load error:", error);
+
+            }
+
+        }
 
     }
 
@@ -911,57 +964,7 @@ class FlightsPage extends React.Component {
         return storedFilters;
 
     }
-
-
-    transformHasAnyEvent(filters) {
-
-        let newFilters = [];
-        filters.forEach((filter) => {
-
-            if (filter.inputs && filter.inputs[0] === "Has Any Event(s)") {
-
-                console.log("Rebuilding filter for 'Has Any Event(s)' as 'Event Count' > 0 for all events for the given airframe...");
-
-                let airframe = filter.inputs[1];
-                newFilters.push({
-                    type: "GROUP",
-                    condition: "AND",
-                    filters: [
-                        {
-                            type: "RULE",
-                            inputs: ["Airframe", "is", airframe]
-                        },
-                        {
-                            type: "GROUP",
-                            condition: "OR",
-                            filters: eventNames.map((eventName) => ({
-                                type: "RULE",
-                                inputs: ["Event Count", eventName, ">", "0"]
-                            }))
-                        }
-                    ]
-                });
-
-            //Attempt to recursively transform nested filters...
-            } else if (filter.filters) {
-
-                // newFilters.push({
-                //     ...filter,
-                //     filters: transformAirframeEventsCountFilter(filter.filters)
-                // });
-                
-                newFilters.push(filter);
-
-            } else {
-                newFilters.push(filter);
-            }
-
-        });
-
-        return newFilters;
-
-    };
-
+    
     submitFilter(resetCurrentPage = false) {
 
         console.log(
@@ -983,7 +986,6 @@ class FlightsPage extends React.Component {
 
         //Transform the 'Has Any Event(s)' filter
         let originalFilters = this.state.filters.filters;
-        this.state.filters.filters = this.transformHasAnyEvent(this.state.filters.filters);
 
         var submissionData = {
             filterQuery: JSON.stringify(this.state.filters),
@@ -1028,7 +1030,7 @@ class FlightsPage extends React.Component {
                         "Please try a different query."
                     );
 
-                    //Response is valid, update the flights
+                //Response is valid, update the flights
                 } else {
 
                     flightsPage.setState({
@@ -1582,11 +1584,55 @@ class FlightsPage extends React.Component {
 
     };
 
-    findFlightIdGroup = (filters) => {
-        return filters.filters.find(
-          f => f.type === "GROUP" && f.condition === "OR" && f.isFlightIdGroup
-        );
-      };
+
+    copyFilterURL = () => {
+
+        //Create a deep copy of the filters
+        let filtersIn = JSON.parse(JSON.stringify(this.state.filters));
+        console.log("Filters In: ", filtersIn);
+
+        //Recursively cull empty filter groups
+        const filterCull = (filtersIn) => {
+
+            filtersIn.filters = filtersIn.filters.filter((filter) => {
+
+                //Filter is a group...
+                if (filter.type === "GROUP") {
+                    
+                    //Recursively cull empty groups
+                    filterCull(filter);
+
+                    //Remove empty groups (i.e. 'filters' array is empty)
+                    return (filter.filters.length > 0);
+
+                }
+
+                //Keep all other filters
+                return true;
+
+            });
+
+        };
+
+        filterCull(filtersIn);
+
+        //Convert the filters to a JSON string
+        let filterJsonString = JSON.stringify(filtersIn);
+        console.log("Filter JSON String: ", filterJsonString);
+        
+        //Encode the filter string
+        let encodedFilter = encodeURIComponent(filterJsonString);
+        console.log("Encoded Filter: ", encodedFilter);
+    
+        //Construct the full URL
+        const fullURL = `${window.location.origin}${window.location.pathname}?filter=${encodedFilter}`;
+        
+        //Copy the URL to the clipboard
+        navigator.clipboard.writeText(fullURL)
+            .then(() => alert(`Copied current filter as a shareable URL!\n\n(URL Length: ${fullURL.length})`))
+            .catch(console.error);
+
+    };
 
     render() {
 
@@ -1624,6 +1670,7 @@ class FlightsPage extends React.Component {
                     setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
                     getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
                     errorModal={errorModal}
+                    copyFilterURL={() => this.copyFilterURL()}
                 />
             </div>
         );
