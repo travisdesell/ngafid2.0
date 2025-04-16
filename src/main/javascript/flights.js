@@ -38,6 +38,7 @@ var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 
 const rules = [
 
+    /*
     {
         name: "Has Any Event(s)",
         conditions: [
@@ -48,6 +49,7 @@ const rules = [
             }
         ]
     },
+    */
 
     {
         name: "Airframe",
