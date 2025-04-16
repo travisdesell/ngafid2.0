@@ -386,17 +386,13 @@ class CesiumPage extends React.Component {
     
     zoomToEventEntity(eventId, flightId) {
 
-        var eventEntity = this.state.activeEventEntites[eventId];
-        if (this.state.currentZoomedEntity == eventEntity) {
-            console.log("zoom to flight");
-            var flightEntity = this.state.activePhaseEntities[flightId]["default"][1];
-            this.viewer.zoomTo(flightEntity);
-            this.state.currentZoomedEntity = flightEntity;
-        } else {
-            this.viewer.zoomTo(eventEntity);
-            this.state.currentZoomedEntity = eventEntity;     
-        }
-       
+        const eventEntity = this.state.activeEventEntites[eventId];
+
+        console.log(`Zooming to event entity: (Event ID: ${eventId}, Flight ID: ${flightId})`);
+
+        this.viewer.zoomTo(eventEntity);
+        this.state.currentZoomedEntity = eventEntity;     
+
         this.setState(this.state);
     }
 
