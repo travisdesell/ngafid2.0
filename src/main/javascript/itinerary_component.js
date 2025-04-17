@@ -134,7 +134,7 @@ class Itinerary extends React.Component {
                     {
                         this.props.itinerary.map((stop, index) => {
 
-                            const identifier = stop.airport;
+                            let identifier = stop.airport;
 
                             //Got runway, add it to the identifier
                             if (stop.runway != null)

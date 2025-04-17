@@ -90,6 +90,7 @@ class Flight extends React.Component {
             dataType : 'json',
             success : function(response) {
                 console.log("received response events data :");
+                console.log("received response events data :");
                 console.log(response);
 
                 if (!global.eventDefinitionsLoaded) {
@@ -212,6 +213,7 @@ class Flight extends React.Component {
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
+                    console.log("received response double series name : ");
                     console.log("received response double series name : ");
                     console.log(response);
 
@@ -503,6 +505,32 @@ class Flight extends React.Component {
         return cesiumData;
     }
 
+    getCesiumData(flightId) {
+
+        var cesiumData = null;
+        var submissionData = {
+            "flightId" : flightId
+        };
+
+        $.ajax({
+            type : 'POST',
+            url : '/protected/cesium_data',
+            traditional : true,
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log(response)
+                cesiumData = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log(errorThrown);
+            },
+            async: false
+        });
+
+        return cesiumData;
+    }
+
     cesiumClicked() {        
 
         var flightId = this.props.flightInfo.id;
@@ -549,7 +577,11 @@ class Flight extends React.Component {
 
     replayClicked() {
 
-        let URL = "/protected/ngafid_cesium_old?flight_id=" + (this.props.flightInfo.id).toString();
+        /*
+            This functionality is deprecated.
+        */
+
+        const URL = "/protected/ngafid_cesium_old?flight_id=" + (this.props.flightInfo.id).toString();
         window.open(URL);
     }
 
@@ -1062,6 +1094,20 @@ class Flight extends React.Component {
         this.props.zoomToEventEntity(eventId, flightId);
     }
 
+    addCesiumFlightPhase(phase) {
+        this.props.addCesiumFlightPhase(phase);
+    }
+
+    addCesiumEventEntity(event) {
+        console.log("Adding event to Cesium");
+        console.log(event);
+        this.props.addCesiumEventEntity(event, this.props.flightInfo.id);
+    }
+
+    zoomToEventEntity(eventId, flightId) {
+        this.props.zoomToEventEntity(eventId, flightId);
+    }
+
     render() {
 
         let buttonClasses = "p-1 expand-import-button btn btn-outline-secondary d-flex align-items-center justify-content-center";
@@ -1378,6 +1424,7 @@ class Flight extends React.Component {
 
                                     {tagPills}
 
+
                                 </div>
                             </div>
 
@@ -1408,7 +1455,7 @@ class Flight extends React.Component {
                                                 <i className="fa fa-exclamation p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} disabled={true} title={"The external replay system is deprecated.\nCesium flight replays can now be viewed on this page with the globe buttons."} onClick={() => this.replayClicked()}>
+                                            <button className={buttonClasses} style={styleButton} disabled={true} title={"The external replay system is deprecated.\nCesium flight replays can now be viewed on this page with the globe buttons."}>
                                                 <i className="fa fa-video-camera p-1"/>
                                             </button>
 
@@ -1457,7 +1504,7 @@ class Flight extends React.Component {
                             )
                         })
                     }
-
+                    
                 </div>
             </div>
         );
@@ -1466,3 +1513,4 @@ class Flight extends React.Component {
 
 
 export { Flight };
+

@@ -56,7 +56,7 @@ module.exports = {
         imports: "./src/main/javascript/imports.js",
         manage_events: "./src/main/javascript/manage_events.js",
         manage_fleet: "./src/main/javascript/manage_fleet.js",
-         ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
+        ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
         reset_password: "./src/main/javascript/reset_password.js",
         severities: "./src/main/javascript/severities.js",
         system_ids: "./src/main/javascript/system_ids.js",
