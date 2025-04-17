@@ -203,9 +203,13 @@ class SignedInNavbar extends React.Component {
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget}  style={{marginLeft:"1px", height:"100%", border: "1px solid rgb(108, 117, 125)"}}
-                                    value={this.props.mapStyle}
-                                    onChange={event => this.props.mapSelectChanged(event.target.value)}>
+                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} style={{
+                                    marginLeft: "1px",
+                                    height: "100%",
+                                    border: "1px solid rgb(108, 117, 125)"
+                                }}
+                                        value={this.props.mapStyle}
+                                        onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
                                     <option value="Aerial">Aerial</option>
                                     <option value="AerialWithLabels">Aerial with labels</option>
@@ -215,6 +219,7 @@ class SignedInNavbar extends React.Component {
                                     <option value="TerminalAreaCharts">Terminal Area Charts</option>
                                     <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
                                     <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
+                                    <option value="HelicopterCharts">Helicopter Charts</option>
                                 </select>
                             </div>
                         </ul>

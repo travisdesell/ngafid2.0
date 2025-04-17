@@ -266,6 +266,7 @@ def run_server():
     logging.info(f"  - Terminal Area Charts: {base_url}/terminal-area/{{z}}/{{x}}/{{-y}}.png")
     logging.info(f"  - IFR Enroute Low Charts: {base_url}/ifr-enroute-low/{{z}}/{{x}}/{{-y}}.png")
     logging.info(f"  - IFR Enroute High Charts: {base_url}/ifr-enroute-high/{{z}}/{{x}}/{{-y}}.png")
+    logging.info(f"  - Helicopter Charts: {base_url}/helicopter/{{z}}/{{x}}/{{-y}}.png")
     logging.info(f"\nTiles are being served on: {base_url}\n")
 
     try:
@@ -291,7 +292,7 @@ def initial_download():
     or does not exist.
     """
     charts_dir = "./services/chart_processor/charts"
-    required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high"]
+    required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high","helicopter"]
 
     # Check if the charts directory exists
     if not os.path.exists(charts_dir):

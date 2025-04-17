@@ -84,6 +84,19 @@ var tms_tac = new TileLayer({
 
 layers.push(tms_tac);
 
+
+styles.push('HelicopterCharts');
+var heli = new TileLayer({
+    visible: false,
+    preload: Infinity,
+    source : new XYZ({
+        url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"}),
+    maxZoom: 10
+});
+
+
+layers.push(heli);
+
 var center = fromLonLat([-97.0329, 47.9253]);
 
 layers[2].setVisible(true);

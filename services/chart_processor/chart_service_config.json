@@ -68,7 +68,11 @@
         }  ,
         "TERMINAL_AREA_SET": {
             "base_url": "https://aeronav.faa.gov/visual/{date}/All_Files/Terminal.zip"     
-        }   
+        },
+        "HELICOPTER": {
+              "base_url": "https://aeronav.faa.gov/visual/{date}/heli_files/",
+              "areas": ["Balt-Wash_Heli","Boston_Heli","Chicago_Heli","Dallas-Ft_Worth_Heli","Detroit_Heli", "Houston_Heli","Los_Angeles_Heli", "New_York_Heli", "US_Gulf_Coast_Heli"]
+      }
     }
   }
   

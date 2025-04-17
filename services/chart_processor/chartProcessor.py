@@ -77,6 +77,7 @@ class ChartType(Enum):
     TERMINAL_AREA = "terminal_area"
     IFR_ENROUTE_LOW = "ifr_enroute_low"
     IFR_ENROUTE_HIGH = "ifr_enroute_high"
+    HELICOPTER = "helicopter"
 
 configuration_file = "./services/chart_processor/chart_service_config.json"
 
@@ -280,8 +281,8 @@ def crop_tifs(shape_file_paths, tifs_path, cropped_tifs_path):
             "gdalwarp",
             "-cutline", shp_file_path,
             "-crop_to_cutline",
-            "-dstalpha",
-            "-dstnodata", "0",
+       #     "-dstalpha",
+       #     "-dstnodata", "0",
             tif_file_path,
             cropped_tif_path
         ]
@@ -328,6 +329,36 @@ def convert_to_rgba(cropped_tifs_path, output_tifs_path):
                 logging.info(f"Failed to convert {input_tif} to RGBA: {e}")
 
 
+def convert_to_rgb(cropped_tifs_path, output_tifs_path):
+    """
+    Converts palette-based TIFs to true RGB (3-band) without transparency.
+    Strips out alpha that may exist in color table.
+    """
+    os.makedirs(output_tifs_path, exist_ok=True)
+
+    for file_name in os.listdir(cropped_tifs_path):
+        if file_name.endswith(".tif"):
+            input_tif = os.path.join(cropped_tifs_path, file_name)
+            output_tif = os.path.join(output_tifs_path, file_name)
+
+            command = [
+                "gdal_translate",
+                "-of", "GTiff",
+                "-expand", "rgb",  # ✅ Force RGB, drops any alpha band
+                "-co", "COMPRESS=LZW",
+                "-co", "TILED=YES",
+                input_tif,
+                output_tif
+            ]
+
+            try:
+                subprocess.run(command, check=True)
+                logging.info(f"Converted {input_tif} to RGB (no transparency)")
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Failed to convert {file_name} to RGB: {e}")
+
+
+
 def reproject_tifs(input_tifs_path, reprojected_tifs_path):
     """
     Reprojects tif files to EPSG:3857 system.
@@ -347,7 +378,7 @@ def reproject_tifs(input_tifs_path, reprojected_tifs_path):
                 "gdalwarp",
                 "-t_srs", "EPSG:3857",  # Reproject to Web Mercator
                 "-dstnodata", "0",
-              #  "-co", "TILED=YES",     # Enable tiling for efficiency
+                #  "-co", "TILED=YES",     # Enable tiling for efficiency
                 input_tif,
                 output_tif
             ]
@@ -357,7 +388,6 @@ def reproject_tifs(input_tifs_path, reprojected_tifs_path):
                 logging.info(f"Successfully reprojected {input_tif} to {output_tif}")
             except subprocess.CalledProcessError as e:
                 logging.info(f"Failed to reproject {input_tif}: {e}")
-
 
 def create_virtual_raster(reprojected_tifs_path, virtual_raster_path):
     """
@@ -396,7 +426,7 @@ def generate_tiles(virtual_raster_path, tiles_output_path):
     os.makedirs(tiles_output_path, exist_ok=True)
     command = [
         "gdal2tiles.py",
-        "--zoom=0-10",
+        "--zoom=0-11",
         virtual_raster_path,
         tiles_output_path
     ]
@@ -534,6 +564,30 @@ def process_enroute_high(chart_date):
     generate_tiles(paths["virtual_raster_path"], paths["charts_output_path"])
     logging.info("IFR Enroute High Charts processing completed.")
 
+
+def process_helicopter(chart_date):
+    """
+    Processing steps for Helicopter.
+    :param chart_date: date when the chart is released / scheduled to be updated.
+    :return: none
+    """
+    paths = get_chart_paths("helicopter")
+    clean_resources([
+        paths["cropped_tifs_path"],
+        paths["reprojected_tifs_path"],
+        os.path.dirname(paths["virtual_raster_path"]),
+        paths["rgb_tifs_path"],
+    ])
+    logging.info("\n\n*** Processing Helicopter Charts ***\n")
+    download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.HELICOPTER)
+    crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
+    convert_to_rgb(paths["cropped_tifs_path"], paths["rgb_tifs_path"])
+    reproject_tifs(paths["rgb_tifs_path"], paths["reprojected_tifs_path"])
+
+    create_virtual_raster(paths["reprojected_tifs_path"], paths["virtual_raster_path"])
+    generate_tiles(paths["virtual_raster_path"], paths["charts_output_path"])
+    logging.info("IFR HELICOPTER processing completed.")
+
 if __name__ == "__main__":
 
     logging.info("\n\n*** Start processing charts *** \n")
@@ -547,5 +601,6 @@ if __name__ == "__main__":
     process_sectional(chart_date)
     process_enroute_low(chart_date)
     process_enroute_high(chart_date)
+    process_helicopter(chart_date)
 
     logging.info("\n\n*** End processing charts *** \n")
