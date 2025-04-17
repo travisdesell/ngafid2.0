@@ -19,8 +19,8 @@ class ErrorModal extends React.Component {
     }
 
     show(title, message) {
-        this.state.title = title;
-        this.state.message = message;
+        this.state.title = String(title);
+        this.state.message = String(message);
         this.setState(this.state);
 
         $("#error-modal").modal('show');
