@@ -34,23 +34,17 @@ for (i = 0; i < ii; ++i) {
         source: new BingMaps({
             key: 'At3fIeQ6GJzbuGZpfWYkVjMDuzTuhYeFjHTzkraUafn06HMY3Eq1hDvZUlqq5Ysf',
             imagerySet: styles[i]
-            // use maxZoom 19 to see stretched tiles instead of the BingMaps
-            // "no photos at this zoom level" tiles
-            // maxZoom: 19
         })
     }));
 }
-
-//modified from chartbundle: http://wms.chartbundle.com/charts/tms.html
-//http://wms.chartbundle.com/charts/tms.js.txt
 
 styles.push('SectionalCharts');
 var tms_sec = new TileLayer({
     visible: false,
     preload: Infinity,
-    source: new XYZ({
-        url: "https://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{-y}.png"
-    })
+    source : new XYZ({
+        url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"}),
+    maxZoom: 10
 });
 
 layers.push(tms_sec);
@@ -60,9 +54,9 @@ styles.push('IFREnrouteLowCharts');
 var tms_enrl = new TileLayer({
     visible: false,
     preload: Infinity,
-    source: new XYZ({
-        url: "https://wms.chartbundle.com/tms/1.0.0/enrl/{z}/{x}/{-y}.png"
-    })
+    source : new XYZ({
+        url : " http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"}),
+    maxZoom: 10
 });
 
 layers.push(tms_enrl);
@@ -72,9 +66,9 @@ styles.push('IFREnrouteHighCharts');
 var tms_enrh = new TileLayer({
     visible: false,
     preload: Infinity,
-    source: new XYZ({
-        url: "https://wms.chartbundle.com/tms/1.0.0/enrh/{z}/{x}/{-y}.png"
-    })
+    source : new XYZ({
+        url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"}),
+    maxZoom: 10
 });
 
 layers.push(tms_enrh);
@@ -83,12 +77,25 @@ styles.push('TerminalAreaCharts');
 var tms_tac = new TileLayer({
     visible: false,
     preload: Infinity,
-    source: new XYZ({
-        url: "https://wms.chartbundle.com/tms/1.0.0/tac/{z}/{x}/{-y}.png"
-    })
+    source : new XYZ({
+        url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"}),
+    maxZoom: 10
 });
 
 layers.push(tms_tac);
+
+
+styles.push('HelicopterCharts');
+var heli = new TileLayer({
+    visible: false,
+    preload: Infinity,
+    source : new XYZ({
+        url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"}),
+    maxZoom: 10
+});
+
+
+layers.push(heli);
 
 var center = fromLonLat([-97.0329, 47.9253]);
 
@@ -106,7 +113,9 @@ function initializeMap() {
         loadTilesWhileInteracting: true,
         view: new View({
             center: center,
-            zoom: 9
+            zoom: 3,       // Initial zoom level when the map loads
+            maxZoom: 10,   // Maximum zoom level the user can zoom to
+            minZoom: 0
         })
     });
 
@@ -136,26 +145,6 @@ if (container == null) {
 
     overlays = [overlay];
 }
-
-
-/*
-    var layer = new ol.layer.Tile({
-        source: new ol.source.OSM()
-    });
-
-    var center = ol.proj.fromLonLat([-97.0329, 47.9253]);
-    console.log("center:");
-    console.log(center);
-
-    var map = new ol.Map({
-        target: 'map',
-        layers: [ layer ],
-        view: new ol.View({
-            center: center,
-            zoom: 12
-        })
-    });
-*/
 
 var Colors = {};
 Colors.names = {

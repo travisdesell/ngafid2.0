@@ -10,10 +10,8 @@ import org.ngafid.accounts.EmailType;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.JavalinWebServer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
+
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.OffsetDateTime;
@@ -24,6 +22,9 @@ import java.util.logging.Logger;
 
 import static org.ngafid.common.SendEmail.sendAdminEmails;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 /**
  * The entry point for the NGAFID web server.
@@ -32,6 +33,8 @@ import static org.ngafid.common.SendEmail.sendAdminEmails;
  */
 public abstract class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
+
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
@@ -105,6 +108,144 @@ public abstract class WebServer {
         // }));
     }
 
+    /**
+     * Checks if Python dependencies are satisfied.
+     * Activates python virtual environment and runs chartServer.py script using bash command.
+     * The method runs on a separate thread so that it doesn't interfere with the NGAFID server
+     * Tread management is managed using Executor Service.
+     */
+    protected void startChartServer() {
+        if (!checkChartsDependenciesAndEnvironment()) {
+            return;
+        }
+
+        String venvActivatePath = "./services/chart_processor/python_venv/bin/activate";
+        String chartServerScriptPath = "./services/chart_processor/chartServer.py";
+
+        executorService.submit(() -> { // Run asynchronously
+            try {
+                String absoluteScriptPath = new File(chartServerScriptPath).getCanonicalPath();
+                String command = "source " + venvActivatePath + " && python " + absoluteScriptPath;
+                ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
+
+                processBuilder.directory(new File(System.getProperty("user.dir")));
+                processBuilder.redirectErrorStream(true);
+
+                Process process = processBuilder.start();
+
+                // Read logs in the same thread
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("[Chart Server] " + line);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error reading chart server logs: " + e.getMessage());
+                }
+
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    System.err.println("Chart server terminated with exit code: " + exitCode);
+                } else {
+                    System.out.println("Chart server started successfully with PID: " + process.pid());
+                }
+
+            } catch (Exception e) {
+                System.err.println("Failed to start chart server: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Checks for Python 3 and GDAL (gdalwarp) are installed.
+     * Verifies the existence of a Python virtual environment (python_venv). If not found, it creates one.
+     * Installs required Python dependencies from requirements.txt into the virtual environment.
+     * @return true if requirements are satisfied and the system can run chart processor.
+     */
+    protected boolean checkChartsDependenciesAndEnvironment() {
+        String venvActivatePath = "./services/chart_processor/python_venv/bin/activate";
+        String venvPath = "./services/chart_processor/python_venv";
+        String systemPythonPath = "python3";
+        String requirementsPath = "./services/chart_processor/requirements.txt";
+
+        try {
+            // Check if python3 is installed
+            ProcessBuilder checkPython = new ProcessBuilder("bash", "-c", "which python3");
+            checkPython.redirectErrorStream(true);
+            Process pythonProcess = checkPython.start();
+            int pythonExitCode = pythonProcess.waitFor();
+
+            if (pythonExitCode != 0) {
+                System.err.println("Error: python3 is not installed.");
+                return false;
+            }
+
+            // Check if gdalwarp is installed
+            ProcessBuilder checkGdalwarp = new ProcessBuilder("bash", "-c", "which gdalwarp");
+            checkGdalwarp.redirectErrorStream(true);
+            Process gdalwarpProcess = checkGdalwarp.start();
+            int gdalwarpExitCode = gdalwarpProcess.waitFor();
+
+            if (gdalwarpExitCode != 0) {
+                System.err.println("Error: gdalwarp not found. Please install it before running the script.");
+                System.err.println("On macOS: brew install gdal");
+                System.err.println("On Linux: sudo apt-get install gdal-bin");
+                System.err.println("On Windows: Download from https://www.gisinternals.com/ or install via OSGeo4W");
+                return false;
+            }
+
+            // Check if virtual environment exists
+            File venvActivateFile = new File(venvActivatePath);
+
+            if (!venvActivateFile.exists()) {
+                System.out.println("Virtual environment not found. Creating a new one...");
+
+                // Create virtual environment
+                ProcessBuilder createVenv = new ProcessBuilder(systemPythonPath, "-m", "venv", venvPath);
+                createVenv.redirectErrorStream(true);
+                Process venvProcess = createVenv.start();
+                int venvExitCode = venvProcess.waitFor();
+                if (venvExitCode != 0) {
+                    System.err.println("Failed to create virtual environment. Exit code: " + venvExitCode);
+                    return false;
+                }
+            }
+
+            // Install required dependencies into the virtual environment
+            File requirementsFile = new File(requirementsPath);
+            if (requirementsFile.exists()) {
+                System.out.println("Installing dependencies from requirements.txt...");
+                ProcessBuilder installDeps = new ProcessBuilder(venvPath + "/bin/pip", "install", "--upgrade", "-r", requirementsPath);
+                installDeps.redirectErrorStream(true);
+                Process installProcess = installDeps.start();
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(installProcess.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        // Comment this out / remove when the chart service system is tested and stable.
+                        System.out.println(line);
+                    }
+                }
+
+                int installExitCode = installProcess.waitFor();
+                if (installExitCode != 0) {
+                    System.err.println("Failed to install dependencies. Exit code: " + installExitCode);
+                    return false;
+                }
+            } else {
+                System.err.println("Error: requirements.txt not found in ./services/chart_processor/. Cannot install dependencies.");
+                return false;
+            }
+
+            return true;
+
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Dependency check and activation failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+
     public WebServer(int port, String staticFilesLocation) {
         this.port = port;
         this.staticFilesLocation = staticFilesLocation;
@@ -126,11 +267,19 @@ public abstract class WebServer {
         configureAuthChecks();
         configureExceptions();
 
+
+       
+
         if (environment.containsKey("DISABLE_PERSISTENT_SESSIONS") && environment.get("DISABLE_PERSISTENT_SESSIONS").equalsIgnoreCase("true")) {
             LOG.info("Persistent sessions are disabled.");
         } else {
             configurePersistentSessions();
-        }
+        } 
+        // Chart service
+        executorService.submit(this::startChartServer);
+      
+      
+
     }
 
     protected void preInitialize() {

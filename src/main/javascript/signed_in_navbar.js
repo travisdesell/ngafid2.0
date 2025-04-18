@@ -250,6 +250,7 @@ class SignedInNavbar extends React.Component {
                                         <option value="TerminalAreaCharts">Terminal Area Charts</option>
                                         <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
                                         <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
+                                        <option value="HelicopterCharts">Helicopter Charts</option>
                                     </select>
                                 </div>
                             }
