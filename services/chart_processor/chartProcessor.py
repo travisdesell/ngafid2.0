@@ -426,7 +426,7 @@ def generate_tiles(virtual_raster_path, tiles_output_path):
     os.makedirs(tiles_output_path, exist_ok=True)
     command = [
         "gdal2tiles.py",
-        "--zoom=0-11",
+        "--zoom=0-10",
         virtual_raster_path,
         tiles_output_path
     ]
