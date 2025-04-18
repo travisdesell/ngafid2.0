@@ -2,20 +2,15 @@ import 'bootstrap';
 import React, { useState, useEffect } from 'react';
 import ReactDOM from "react-dom";
 
-
 import $ from 'jquery';
-import { redraw } from 'plotly.js';
 window.jQuery = $;
 window.$ = $;
 
-
 export { EmailSettingsTableUser, EmailSettingsTableManager }
-
-
 
 /*
 ------------------------------------
-            USER SETTINGS           
+            USER SETTINGS
 ------------------------------------
 */
 
@@ -34,7 +29,6 @@ class EmailSettingsTableUser extends React.Component {
     componentDidMount() {
         this.getUserEmailPreferences();
     }
-
 
     //Update user email preferences
     updateUserEmailPreferences = (updatedSettings) => {
@@ -62,16 +56,21 @@ class EmailSettingsTableUser extends React.Component {
                 console.log('Error updating email preferences:', errorThrown);
                 this.setState({ disableFetching: false });
             }
-        
         });
-
     }
 
     //Fetch user email preferences
     getUserEmailPreferences = () => {
+
+        let submissionData = {
+            handleFetchType : "HANDLE_FETCH_USER"
+        };
+
         $.ajax({
             type: 'GET',
-            url: '/protected/email_preferences/HANDLE_FETCH_USER',
+            url: '/protected/email_preferences',
+            data: submissionData,
+            dataType: 'json',
             async: true,
 
             success: (response) => {
@@ -81,7 +80,7 @@ class EmailSettingsTableUser extends React.Component {
 
                 let emailTypesIn = response.emailTypesKeys;
                 let emailTypesUserIn = response.emailTypesUser;
-    
+
                 //Filter out email types marked as HIDDEN or FORCED
                 emailTypesIn = emailTypesIn.filter(
                     type => (
@@ -89,239 +88,94 @@ class EmailSettingsTableUser extends React.Component {
                         && (type.includes("FORCED") !== true)
                     )
                 );
-            
-                if (this.props.isAdmin) {   //For admins...
-            
-                    //...sort the ADMIN email types to the end of the list
+
+                if (this.props.isAdmin) {
                     let emailTypesAdmin = emailTypesIn.filter(
                         type => (type.includes("ADMIN") === true)
                     );
-            
                     emailTypesIn = emailTypesIn.filter(
                         type => (type.includes("ADMIN") !== true)
                     );
-            
                     emailTypesIn = emailTypesIn.concat(emailTypesAdmin);
-            
-                } else {    //For non-admins
-            
-                    //...filter out the ADMIN email types
+                } else {
                     emailTypesIn = emailTypesIn.filter(
                         type => (type.includes("ADMIN") !== true)
                     );
-            
                 }
 
                 this.setState({
                     emailTypes: emailTypesIn,
                     settings: emailTypesUserIn
                 });
-
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error getting upset data:");
                 console.log(errorThrown);
             },
-
         });
-
     }
 
     handleCheckboxChange = (type) => {
-    
         this.setState(
             prevState => {
-
-                //Map over the previous settings and make a new array
                 let prevStateSettings = (prevState.settings || []);
                 const updatedSettings = {
                     ...prevStateSettings,
                     [type]: !prevStateSettings[type]
                 };
-
                 return { settings: updatedSettings };
-
             },
             () => {
-                //Deliver updated preferences
                 this.updateUserEmailPreferences(this.state.settings);
             }
-
         );
-
     };
 
-    render() { 
-
-        //Remove underscores and capitalize the email types
-        const emailTypesFormatted = this.state.emailTypes.map(
-            type => type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-        );
-
-        //Containerize the formatted and unformatted email types
-        const emailTypesCombined = this.state.emailTypes.map(
-            (type, index) => {
-                return {
-                    formatted: emailTypesFormatted[index],
-                    unformatted: type
-                };
-            }
-        );
-
-
+    render() {
         return (
-
-            <div className="d-flex flex-row w-100 justify-content-center">
-                {
-                    emailTypesCombined.map((type, typeIndex) => (
-
-                        <div
-                            key={typeIndex}
-                            className="d-flex flex-row flex-grow-1 justify-content-start rounded align-middle p-2 m-1"
-                            style={{ backgroundColor: "var(--c_card_tab)" }}
-                        >
-
-                            {/* Email Type Checkbox */}
-                            <div className="d-flex align-middle pl-1">
+            <table style={{
+                width: "100%",
+                textAlign: "center",
+                borderCollapse: "separate",
+                borderSpacing: "16px 16px"
+            }}>
+                <thead>
+                <tr>
+                    {
+                        this.state.emailTypes.map((type, index) => (
+                            <th key={index} style={{textAlign: "center"}}>
+                                {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </th>
+                        ))
+                    }
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    {
+                        this.state.emailTypes.map((type, typeIndex) => (
+                            <td key={typeIndex} style={{ textAlign: "center" }}>
                                 <input
                                     type="checkbox"
-                                    checked={
-                                        (this.state.settings && this.state.settings[type.unformatted])
-                                        ? this.state.settings[type.unformatted]
-                                        : false
-                                    }
-                                    onChange={
-                                        this.state.disableFetching
-                                        ? () => undefined
-                                        : () => this.handleCheckboxChange(type.unformatted)
-                                    }
-                                    style={{ width: "24px", height: "24px" }}
+                                    checked={(this.state.settings && this.state.settings[type]) ? this.state.settings[type] : false}
+                                    onChange={this.state.disableFetching ? () => undefined : () => this.handleCheckboxChange(type)}
+                                    style={{ scale: "2.00" }}
                                 />
-                            </div>
-
-                            {/* Email Type Name */}
-                            <div className="font-weight-bold align-middle ml-4">
-                                {
-                                    // type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())\
-                                    type.formatted.replace("ADMIN", "")
-                                }
-                            </div>
-                            
-                            {/* Email Admin Flag */}
-                            <div className="d-flex ml-auto">
-                                {
-                                    (type.formatted.includes("ADMIN"))
-                                    &&
-                                    <i style={{color: "var(--c_text_alt)"}}>
-                                        (Admin)
-                                    </i>
-                                }
-                            </div>
-
-                        </div>
-                    ))
-                }
-            </div>
-
+                            </td>
+                        ))
+                    }
+                </tr>
+                </tbody>
+            </table>
         )
-
     }
-
 };
-
-
-
 
 /*
 ----------------------------------------
-            MANAGER SETTINGS            
+            MANAGER SETTINGS
 ----------------------------------------
 */
-
-const ToggleButtonColumnManager = ({disableFetching, updateUserEmailPreferences, fleetUsers, refreshFleetUsers, emailTypes, emailTypeIndex}) => {
-
-    //Set default state
-    const [doClear, setDoClear] = useState(true);
-    const emailTypeTarget = emailTypes[emailTypeIndex];
-
-    useEffect(() => {
-
-        let clear = true;
-        for(let i = 0 ; i < fleetUsers.length ; i++) {
-
-            let userCurrent = fleetUsers[i];
-            let userEmailPreferenceCurrent = userCurrent.emailTypesUser;
-
-            //Preferences aren't defined, continue
-            if (!userEmailPreferenceCurrent) {
-                continue;
-            }
-
-            //Found unchecked, iterate count
-            if (userEmailPreferenceCurrent[emailTypeTarget] !== true) {
-                clear = false;
-                break;
-            }
-
-        }
-
-        setDoClear( clear );
-
-    }, [fleetUsers, emailTypeTarget, emailTypeIndex]);
-
-    //Ensure the checkboxes reflect their new states
-    const applyToggle = () => {
-
-        const updatedUsers = fleetUsers.map(user => {
-
-            return {
-                ...user,
-                emailTypesUser: {
-                    ...user.emailTypesUser,
-                    [emailTypeTarget]: !doClear
-                }
-            };
-
-        });
-
-        refreshFleetUsers(updatedUsers);
-
-        updatedUsers.forEach(user => {
-            updateUserEmailPreferences(user, updatedUsers);
-        });
-
-    };
-
-    //Clearing --> Render Unchecking Box
-    if (doClear) {
-        return (
-            <div>
-                <button
-                    onClick={disableFetching ? ()=>undefined : applyToggle}
-                    style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0", color: "var(--c_text_alt)", backgroundColor: "var(--c_button_bg)"}}
-                    title="Uncheck All"
-                >
-                    <i className="fa fa-square-o fa-lg" style={{color: "var(--c_button)"}}/>
-                </button>
-            </div>
-        );
-    }
-
-    //Not Clearing --> Render Checking Box
-    return (
-        <div>
-            <button
-                onClick={disableFetching ? ()=> undefined : applyToggle}
-                style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0", color: "var(--c_text_alt)", backgroundColor: "var(--c_button_bg)"}}
-                title="Check All"
-            >
-                <i style={{color:"#2e7ce2"}} className="fa fa-check-square fa-lg"/>
-            </button>
-        </div>
-    );
-
-}
-
 
 class EmailSettingsTableManager extends React.Component {
 
@@ -339,9 +193,7 @@ class EmailSettingsTableManager extends React.Component {
         this.getUserEmailPreferences();
     }
 
-    //Update user email preferences
     updateUserEmailPreferences = (fleetUser, updatedSettings) => {
-
         let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.id === fleetUser.id).emailTypesUser;
 
         var submissionData = {
@@ -359,81 +211,38 @@ class EmailSettingsTableManager extends React.Component {
             data: submissionData,
             dataType: 'json',
             async: true,
-
-            success: (response) => {
-                console.log('Preferences updated successfully!'/*, response*/);
-                this.setState({ disableFetching: false });  
-            },
-            error: (jqXHR, textStatus, errorThrown) => {
+            success: () => this.setState({ disableFetching: false }),
+            error: (_, __, errorThrown) => {
                 console.log('Error updating preferences:', errorThrown);
-                this.setState({ disableFetching: false });  
+                this.setState({ disableFetching: false });
             }
-
         });
-    
     }
 
-    //Fetch user email preferences
     getUserEmailPreferences = () => {
-
         let fleetUsers = this.state.fleetUsers;
-        let fleetUsersEmailSettings = [];
 
         fleetUsers.forEach(userTarget => {
+            let submissionData = {
+                handleFetchType : "HANDLE_FETCH_MANAGER",
+                fleetUserID : userTarget.id,
+                fleetID: userTarget.fleet.id
+            };
+
             $.ajax({
                 type: 'GET',
-                url: '/protected/email_preferences/HANDLE_FETCH_MANAGER/' + userTarget.id + '/' + userTarget.fleet.id,
+                url: '/protected/email_preferences',
+                data: submissionData,
+                dataType : 'json',
                 async: true,
-
                 success : (response) => {
-
-                    console.log("got user pref response");
-
                     let emailTypesUserIn = response.emailTypesUser;
-                    let emailTypesKeysIn = response.emailTypesKeys;
-
-                    //Filter out email types marked as HIDDEN or FORCED
-                    emailTypesKeysIn = emailTypesKeysIn.filter(
-                        type => (
-                            (type.includes("HIDDEN") !== true)
-                            && (type.includes("FORCED") !== true)
-                        )
+                    let emailTypesKeysIn = response.emailTypesKeys.filter(type =>
+                        !type.includes("HIDDEN") && !type.includes("FORCED") && !type.includes("ADMIN")
                     );
 
-                    if (userTarget.isAdmin) {   //For admins...
-
-                        /*
-
-                        ----------------------------------------------------------
-                        Management for Admin email types will be disabled for now.
-                        ----------------------------------------------------------
-
-                        //...sort the ADMIN email types to the end of the list
-                        let emailTypesKeysAdmin = emailTypesKeys.filter(
-                            type => (type.includes("ADMIN") === true)
-                        );
-
-                        emailTypesIn = emailTypesIn.filter(
-                            type => (type.includes("ADMIN") !== true)
-                        );
-
-                        emailTypesIn = emailTypesIn.concat(emailTypesKeysAdmin);
-
-                        */
-
-                    } else {    //For non-admins
-
-                        //...filter out the ADMIN email types
-                        emailTypesKeysIn = emailTypesKeysIn.filter(
-                            type => (type.includes("ADMIN") !== true)
-                        );
-
-                    }
-
                     this.setState(prevState => {
-
                         const fleetUsers = prevState.fleetUsers.map(userCurrent => {
-
                             if (userCurrent.id === userTarget.id) {
                                 return {
                                     ...userCurrent,
@@ -442,40 +251,23 @@ class EmailSettingsTableManager extends React.Component {
                                 };
                             }
                             return userCurrent;
-
                         });
 
                         return {
                             emailTypes : emailTypesKeysIn,
                             fleetUsers
                         };
-
                     });
-
-                    fleetUsersEmailSettings.push({
-                        id: userTarget.id,
-                        emailTypesUser: emailTypesUserIn,
-                        emailTypesKeys: emailTypesKeysIn
-                    });
-
                 },
-                error: (jqXHR, textStatus, errorThrown) => {
-                    console.log("Error getting upset data:");
-                    console.log(errorThrown);
-                },
-
+                error: (_, __, errorThrown) => console.log("Error getting upset data:", errorThrown)
             });
-
         });
-
     }
-   
-    handleCheckboxChange = (userTarget, type) => {
 
+    handleCheckboxChange = (userTarget, type) => {
         this.setState(
             prevState => {
                 const fleetUsers = prevState.fleetUsers.map(user => {
-
                     if (user.id === userTarget.id) {
                         return {
                             ...user,
@@ -485,20 +277,12 @@ class EmailSettingsTableManager extends React.Component {
                             }
                         };
                     }
-
                     return user;
-
                 });
-
                 return { fleetUsers };
             },
-            () => {
-                //Deliver updated preferences
-                this.updateUserEmailPreferences(userTarget, this.state.fleetUsers);
-            }
-        
+            () => this.updateUserEmailPreferences(userTarget, this.state.fleetUsers)
         );
-
     };
 
     refreshFleetUsers = (updatedUsers) => {
@@ -506,78 +290,68 @@ class EmailSettingsTableManager extends React.Component {
     };
 
     render() {
-
         return (
-            <table style={{
-            width:"100%",
-            borderCollapse: "collapse",
-            color:"var(--c_text)"
-            }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                    <tr>
-                        <th style={{padding:"12px 12px"}}>
-                            Email
-                        </th>
-                        {
-                            this.state.emailTypes.map((type, index) => (
-                                <th key={index}>
-                                    <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}>
-                                        <ToggleButtonColumnManager
-                                            disableFetching={this.state.disableFetching}
-                                            updateUserEmailPreferences={this.updateUserEmailPreferences}
-                                            fleetUsers={this.state.fleetUsers}
-                                            refreshFleetUsers = {this.refreshFleetUsers}
-                                            emailTypes={this.state.emailTypes}
-                                            emailTypeIndex={index}
-                                        />
-                                        {
-                                            type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                                        }
-                                    </div>
-                                </th>
-                            ))
-                        }
-                    </tr>
-                </thead>
-
-                <tbody>
-                    <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
+                <tr>
+                    <th style={{padding: "0 12px"}}>Email</th>
                     {
-                        (this.state.fleetUsers.length === 0)
-                        ?
-                        <tr>
-                            <td colSpan={this.state.emailTypes.length + 1} className="font-italic" style={{padding:"16px 12px", color: "var(--c_text_alt)"}}>No users found...</td>
-                        </tr>
-                        :
-                        this.state.fleetUsers.map((userCurrent, settingIndex) => (
-                            <tr key={settingIndex} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
-                                <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
-                                {
-                                    this.state.emailTypes.map((type, typeIndex) => (
-                                        <td key={typeIndex}>
-                                            <input
-                                                type="checkbox"
-                                                checked={
-                                                    (userCurrent.emailTypesUser && userCurrent.emailTypesUser[type])
-                                                    ? userCurrent.emailTypesUser[type]
-                                                    : false
-                                                }
-                                                onChange={
-                                                    this.state.disableFetching
-                                                    ? () => undefined
-                                                    : () => this.handleCheckboxChange(userCurrent, type)
-                                                }
-                                            />
-                                        </td>
-                                    ))
-                                }
-                            </tr>
+                        this.state.emailTypes.map((type, index) => (
+                            <th key={index}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: "20px 0px",
+                                    margin: "-7px",
+                                    gap: "8px",
+                                    width: "95%"
+                                }}>
+                                    <ToggleButtonColumnManager
+                                        disableFetching={this.state.disableFetching}
+                                        updateUserEmailPreferences={this.updateUserEmailPreferences}
+                                        fleetUsers={this.state.fleetUsers}
+                                        refreshFleetUsers={this.refreshFleetUsers}
+                                        emailTypes={this.state.emailTypes}
+                                        emailTypeIndex={index}
+                                    />
+                                    {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </div>
+                            </th>
                         ))
                     }
-                </tbody>
+                </tr>
+                </thead>
+                <tbody>
+                <tr style={{border: "solid", borderColor: "#00004411", borderWidth: "2px 0px"}}></tr>
+                {
+                    this.state.fleetUsers
+                        .filter(userCurrent => userCurrent.fleetAccess.accessType !== "DENIED")
+                        .map((userCurrent, settingIndex) => {
+                            const rowStyle = {
+                                backgroundColor: (settingIndex % 2 === 0) ? '#FFFFFF00' : '#00000009'
+                            };
 
+                            return (
+                                <tr key={settingIndex} style={{...rowStyle, border: "solid", borderColor: "#00004411", borderWidth: "1px 0px"}}>
+                                    <td style={{padding: "16px 12px"}}>{userCurrent.email}</td>
+                                    {
+                                        this.state.emailTypes.map((type, typeIndex) => (
+                                            <td key={typeIndex}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={(userCurrent.emailTypesUser && userCurrent.emailTypesUser[type]) ? userCurrent.emailTypesUser[type] : false}
+                                                    onChange={this.state.disableFetching ? () => undefined : () => this.handleCheckboxChange(userCurrent, type)}
+                                                    style={{scale: "2.00"}}
+                                                />
+                                            </td>
+                                        ))
+                                    }
+                                </tr>
+                            );
+                        })
+                }
+                </tbody>
             </table>
         );
     }
-
-};
+}
