@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.accounts.EmailType"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.accounts.EmailType" -Dexec.args="$*"

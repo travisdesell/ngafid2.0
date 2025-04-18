@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.GenerateBulkCSVS" -Dexec.args="$*"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.bin.GenerateBulkCSVS" -Dexec.args="$*"

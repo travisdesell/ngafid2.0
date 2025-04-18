@@ -1,20 +1,22 @@
 package org.ngafid.uploads.process;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.ngafid.common.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events.calculations.TurnToFinal;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Flight;
 import org.ngafid.uploads.ProcessUpload;
 import org.ngafid.uploads.Upload;
 import org.ngafid.uploads.UploadException;
 import org.ngafid.uploads.process.format.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -25,24 +27,25 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
  * This wraps up the process of (1) recognizing file types, (2) parsing the files, and (3) processing the data.
  * <p>
  * Files are recognized by their file extensions - the extension is used to create a `FlightFileProcessor` from the list
- * of factories in `this.factories`.
+ * of factories in `this.factories`. We may need to read some data within the file to properly determine how it should be
+ * processed, which factories may do -- see the factory function in {@link CSVFileProcessor} for an example of this.
  * <p>
- * `FlightFlileProcessor` objects handle the task of parsing the data: obtaining meta data and the actual double and
- * string series. These are placed into a flight builder, which is a more general representation of an incomplete
- * flight.
+ * {@link FlightFileProcessor} objects handle the task of parsing the data: obtaining metadata and the actual double and
+ * string series. These are placed into a {@link FlightBuilder}, which is an intermediate representation of a partially
+ * processed flight.
  * <p>
- * `FlightBuilder`s can be specialized and these specializations will specify a set of `ProcessStep`s which will be
- * applied to compute everything we need. `ProcessStep`s all have required input columns and output columns: these
+ * {@link FlightBuilder}s can be specialized and these specializations will specify a set of {@link org.ngafid.uploads.process.steps.ComputeStep}s
+ * which will be applied to compute everything we need. ComputeSteps all have required input columns and output columns: these
  * requirements can be used to form a DAG, traversing it in the proper order will let us compute the steps in the proper
- * order. This process can also be parallelized, see org.ngafid.flights.process.DepdendencyGraph for more on this.
+ * order. This process can also be parallelized, see {@link org.ngafid.uploads.process.DependencyGraph} for more on this.
+ * <p>
+ * This object may open resources, thus it must be created using a try-with statement to ensure they are closed properly.
  *
  * @author Joshua Karns (josh@karns.dev)
  */
@@ -82,7 +85,7 @@ public class Pipeline implements AutoCloseable {
     private final ZipFile zipFile;
 
     // ZipFileSystem
-    private FileSystem derivedFileSystem = null;
+    private ZipArchiveOutputStream derivedArchive = null;
     private Upload derivedUpload = null;
 
     // Maps lowercase file extension to the relevent FileProcessor. In the future, these may themselves have to do some
@@ -116,8 +119,10 @@ public class Pipeline implements AutoCloseable {
      */
     @Override
     public void close() throws IOException {
-        if (derivedFileSystem != null)
-            derivedFileSystem.close();
+        if (derivedArchive != null) {
+            derivedArchive.finish();
+            derivedArchive.close();
+        }
     }
 
     /**
@@ -135,7 +140,7 @@ public class Pipeline implements AutoCloseable {
 
         var processHandle = pool.submit(() -> this.getValidFilesStream()
                 .parallel()
-                .forEach((ZipEntry ze) -> {
+                .forEach((ZipArchiveEntry ze) -> {
                     try (Connection connection = Database.getConnection()) {
                         List<FlightBuilder> fbuilders = this
                                 .parse(this.create(ze))
@@ -171,8 +176,8 @@ public class Pipeline implements AutoCloseable {
      *
      * @return stream of `ZipEntry`s
      */
-    private Stream<? extends ZipEntry> getValidFilesStream() {
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+    private Stream<ZipArchiveEntry> getValidFilesStream() {
+        var entries = zipFile.getEntries();
         return StreamSupport.stream(
                         Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
                         false)
@@ -187,8 +192,9 @@ public class Pipeline implements AutoCloseable {
      * @param entry The zip entry to create a FlightFileProcessor for.
      * @return A FlightFileProcessor if the file extension is supported, otherwise `null`.
      */
-    private FlightFileProcessor create(ZipEntry entry) {
+    private FlightFileProcessor create(ZipArchiveEntry entry) {
         String filename = entry.getName();
+        LOG.info("Creating flight builder for file: '" + filename + "'");
 
         int index = filename.lastIndexOf('.');
         String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
@@ -233,11 +239,14 @@ public class Pipeline implements AutoCloseable {
      */
     public FlightBuilder build(Connection connection, FlightBuilder fb) {
         try {
+            LOG.info("Building flight file '" + fb.meta.filename + "'");
             fb.meta.setFleetId(this.upload.fleetId);
             fb.meta.setUploaderId(this.upload.uploaderId);
             fb.meta.setUploadId(this.upload.id);
+            fb.meta.airframe = new Airframes.Airframe(connection, fb.meta.airframe.getName(), fb.meta.airframe.getType());
             return fb.build(connection);
-        } catch (FlightProcessingException e) {
+        } catch (FlightProcessingException | SQLException e) {
+            e.printStackTrace();
             LOG.info("Encountered an irrecoverable issue processing a flight");
             fail(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
             return null;
@@ -258,14 +267,13 @@ public class Pipeline implements AutoCloseable {
      */
     public FlightBuilder finalize(FlightBuilder builder) {
         Flight flight = builder.getFlight();
+        LOG.info("Finalizing flight file '" + flight.getFilename() + "'");
 
         if (flight.getStatus().equals("WARNING")) {
             warningFlightsCount.incrementAndGet();
         } else {
             validFlightsCount.incrementAndGet();
         }
-
-        LOG.info("FLIGHT STATUS = " + flight.getStatus());
 
         flightInfo.put(flight.getFilename(),
                 new ProcessUpload.FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
@@ -277,7 +285,7 @@ public class Pipeline implements AutoCloseable {
      * Add an upload exception to the flightError map for the given filename.
      */
     public void fail(String filename, Exception e) {
-        LOG.info("Encountered an irrecoverable issue processing a flight");
+        LOG.info("Encountered an irrecoverable issue processing flight file '" + filename + "'");
         e.printStackTrace();
         this.flightErrors.put(filename, new UploadException(e.getMessage(), e, filename));
     }
@@ -288,20 +296,17 @@ public class Pipeline implements AutoCloseable {
      * <p>
      * This method is synchronized so there is only a single thread mutating the derivedFileSystem at once.
      */
-    public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
-        if (derivedFileSystem == null) {
+    public synchronized void addDerivedFile(File convertedOnDisk, String filename, byte[] data) throws IOException, SQLException {
+        if (derivedArchive == null) {
             derivedUpload = Upload.createDerivedUpload(connection, upload);
-            derivedFileSystem = derivedUpload.getZipFileSystem(Map.of("create", "true"));
+            derivedArchive = derivedUpload.getArchiveOutputStream();
         }
 
-        Path zipFileSystemPath = derivedFileSystem.getPath(filename);
-        Path parentPath = zipFileSystemPath.getParent();
-
-        if (parentPath != null && !Files.exists(parentPath)) {
-            Files.createDirectories(parentPath);
+        try (InputStream bis = new ByteArrayInputStream(data)) {
+            var entry = new ZipArchiveEntry(convertedOnDisk, filename);
+            entry.setMethod(ZipArchiveEntry.DEFLATED);
+            derivedArchive.addRawArchiveEntry(entry, bis);
         }
-
-        Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 
     public Map<String, ProcessUpload.FlightInfo> getFlightInfo() {

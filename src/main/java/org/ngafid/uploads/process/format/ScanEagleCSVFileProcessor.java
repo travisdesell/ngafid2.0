@@ -21,6 +21,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Flight file processor and flight builder for Scan Eagle data. We can't do a lot with the scan eagle data, so
+ * the only steps we can really apply are simple unit conversions.
+ */
 public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
     private static final Logger LOG = Logger.getLogger(ScanEagleCSVFileProcessor.class.getName());
 
@@ -78,10 +82,6 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
      */
     private void scanEagleSetTailAndID() {
         String[] filenameParts = filename.split("_");
-        meta.startDateTime = filenameParts[0];
-        meta.endDateTime = meta.startDateTime;
-        LOG.log(Level.INFO, "start date: '{0}'", meta.startDateTime);
-        LOG.log(Level.INFO, "end date: '{0}'", meta.startDateTime);
 
         // UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
         meta.suggestedTailNumber = "N" + filenameParts[1] + "ND";

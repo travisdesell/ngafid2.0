@@ -1,5 +1,7 @@
 package org.ngafid.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.common.Database;
@@ -38,8 +40,10 @@ public class EventObserver {
         return Flight.getFlights(connection, extraCondition);
     }
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     public static void main(String[] args) {
-        try (KafkaProducer<String, Event.EventToCompute> producer = Event.createProducer()) {
+        try (KafkaProducer<String, String> producer = Events.createProducer()) {
 
             while (true) {
                 try (Connection connection = Database.getConnection()) {
@@ -48,10 +52,12 @@ public class EventObserver {
                     for (EventDefinition event : events) {
                         List<Flight> flights = getApplicableFlightsWithoutEvent(connection, event);
                         for (Flight flight : flights) {
-                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), new Event.EventToCompute(flight.getId(), event.getId())));
+                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), objectMapper.writeValueAsString(new Events.EventToCompute(flight.getId(), event.getId()))));
                             flight.insertComputedEvents(connection, List.of(event));
                         }
                     }
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
                 }
 
                 try {

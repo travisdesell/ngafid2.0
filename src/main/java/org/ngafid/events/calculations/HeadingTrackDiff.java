@@ -6,7 +6,6 @@ import org.ngafid.common.Database;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,7 +21,7 @@ public class HeadingTrackDiff implements DoubleTimeSeries.TimeStepCalculation {
     private final Flight flight;
     private static final Logger LOG = Logger.getLogger(HeadingTrackDiff.class.getName());
 
-    public HeadingTrackDiff(Flight flight, Connection connection) throws IOException, SQLException {
+    public HeadingTrackDiff(Flight flight, Connection connection) throws SQLException {
         this.flight = flight;
 
         this.hdg = DoubleTimeSeries.getDoubleTimeSeries(connection, this.flight.getId(), HDG);

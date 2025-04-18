@@ -3,6 +3,8 @@ package org.ngafid.accounts;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.ngafid.bin.WebServer;
 import org.ngafid.common.Database;
 import org.ngafid.uploads.Upload;
@@ -10,16 +12,18 @@ import org.ngafid.uploads.airsync.AirSyncEndpoints;
 import org.ngafid.uploads.airsync.AirSyncImport;
 
 import javax.net.ssl.HttpsURLConnection;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -452,7 +456,7 @@ public class AirSyncFleet extends Fleet {
 
         //CHECKSTYLE:OFF
         Upload upload = null;
-        FileSystem zipFile = null;
+        ZipArchiveOutputStream zipFile = null;
         List<AirSyncAircraft> aircraft;
         private int filesAdded = 0;
         //CHECKSTYLE:ON
@@ -469,9 +473,9 @@ public class AirSyncFleet extends Fleet {
             return upload;
         }
 
-        FileSystem getZipFile() throws IOException {
+        ZipArchiveOutputStream getZipFile() throws IOException {
             if (zipFile == null) {
-                zipFile = upload.getZipFileSystem(Map.of("create", "true"));
+                zipFile = upload.getArchiveOutputStream();
             }
 
             return zipFile;
@@ -480,7 +484,13 @@ public class AirSyncFleet extends Fleet {
         void addFileToUpload(Connection connection, AirSyncImport imp, byte[] data) throws IOException, SQLException {
             var uploadResult = getUpload(connection);
             imp.setUploadId(uploadResult.id);
-            Files.write(getZipFile().getPath("/" + imp.getFilename()), data);
+
+            try (InputStream bis = new ByteArrayInputStream(data)) {
+                var entry = new ZipArchiveEntry(imp.getFilename());
+                entry.setMethod(ZipArchiveOutputStream.DEFLATED);
+                zipFile.addRawArchiveEntry(entry, bis);
+            }
+
             filesAdded += 1;
 
             if (filesAdded >= 128) {

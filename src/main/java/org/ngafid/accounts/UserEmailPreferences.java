@@ -1,11 +1,12 @@
 package org.ngafid.accounts;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-public class UserEmailPreferences {
+public class UserEmailPreferences implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
     private static final HashMap<Integer, User> USERS = new HashMap<>();

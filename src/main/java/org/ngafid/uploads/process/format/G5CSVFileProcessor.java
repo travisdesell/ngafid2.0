@@ -1,22 +1,23 @@
 package org.ngafid.uploads.process.format;
 
 import org.jetbrains.annotations.NotNull;
+import org.ngafid.common.MD5;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.*;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -27,7 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * File processor for Garmin G5 (and G3x, I think).
+ * File processor for Garmin G5 G3X. These flight data recorders are a bit different from the G1000, and require a bit of
+ * additional processing. First, a single file may contain data for many separate flights. This is detected by scanning
+ * for large gaps in time in the date column.
  *
  * @author Joshua Karns
  * @author Roman Kozulia
@@ -78,11 +81,8 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
                     flightDataBuilder.append(cell);
                 }
             }
-            // Calculate MD5 hash and convert to hex
-            byte[] flightHash = md.digest(flightDataBuilder.toString().getBytes(StandardCharsets.UTF_8));
-            String result = DatatypeConverter.printHexBinary(flightHash).toLowerCase();
-            LOG.info("Md5 hash calculated: " + result);
-            return result;
+
+            return MD5.computeHexHash(flightDataBuilder.toString());
         } catch (NoSuchAlgorithmException e) {
             throw new FlightProcessingException(e);
         }
@@ -90,8 +90,6 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
-        LOG.info("Parsing " + this.meta.filename);
-
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
@@ -100,18 +98,17 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         try {
-            //G3x does have Local date time,
-            if (stringTimeSeries.get("Lcl Date") == null)
-            {
+            // G3x does have Local date time,
+            if (!stringTimeSeries.containsKey(Parameters.LCL_DATE)) {
                 LOG.info("Lcl Date is null (This is G5), calculating local Lcl Date Time from UDT");
-                calculateLocalDateTimeAndOffset(doubleTimeSeries, stringTimeSeries);
+                calculateUTCDateTime(doubleTimeSeries, stringTimeSeries);
             }
             List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
             return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
-        } catch (FlightFileFormatException | TimeUtils.UnrecognizedDateTimeFormatException | NullPointerException e) {
+        } catch (MalformedFlightFileException | TimeUtils.UnrecognizedDateTimeFormatException |
+                 NullPointerException e) {
             throw new FlightProcessingException(e);
         }
-
     }
 
     /**
@@ -167,22 +164,10 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             int toIndex = (i == splitIndices.size() - 1) ? rows.size() : splitIndices.get(i + 1);
 
             Map<String, DoubleTimeSeries> segmentDoubleSeries = new HashMap<>();
-            for (Map.Entry<String, DoubleTimeSeries> entry : doubleTimeSeries.entrySet()) {
-                try {
-                    segmentDoubleSeries.put(entry.getKey(), entry.getValue().subSeries(fromIndex, toIndex));
-                } catch (SQLException e) {
-                    LOG.warning("Error slicing DoubleTimeSeries for segment from " + fromIndex + " to " + toIndex);
-                }
-            }
+            doubleTimeSeries.forEach((k, v) -> segmentDoubleSeries.put(k, v.subSeries(fromIndex, toIndex)));
 
             Map<String, StringTimeSeries> segmentStringSeries = new HashMap<>();
-            for (Map.Entry<String, StringTimeSeries> entry : stringTimeSeries.entrySet()) {
-                try {
-                    segmentStringSeries.put(entry.getKey(), entry.getValue().subSeries(fromIndex, toIndex));
-                } catch (SQLException e) {
-                    LOG.warning("Error slicing StringTimeSeries for segment from " + fromIndex + " to " + toIndex);
-                }
-            }
+            stringTimeSeries.forEach((k, v) -> segmentStringSeries.put(k, v.subSeries(fromIndex, toIndex)));
 
             List<String[]> flightRows = rows.subList(fromIndex, toIndex);
             String md5Hash = calculateMd5Hash(flightRows);
@@ -203,18 +188,18 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * @param splitIntervalInMinutes - max time difference between rows.
      * @return
      */
-    public List<Integer> splitCSVIntoFlightIndices(Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes) throws FlightFileFormatException, TimeUtils.UnrecognizedDateTimeFormatException {
+    public List<Integer> splitCSVIntoFlightIndices(Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes) throws TimeUtils.UnrecognizedDateTimeFormatException {
 
         List<Integer> splitIndices = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
-        StringTimeSeries dateSeries = stringTimeSeries.get("UTC Date");
-        StringTimeSeries timeSeries = stringTimeSeries.get("UTC Time");
+        StringTimeSeries dateSeries = stringTimeSeries.get(Parameters.UTC_DATE);
+        StringTimeSeries timeSeries = stringTimeSeries.get(Parameters.UTC_TIME);
 
-        // G3x do not have UTC Date, use Lcl
+        // G3x do not have UTC Date, use Lcl. UTC_DATE_TIME and UNIX_TIME columns will be computed later on.
         if (dateSeries == null) {
-            dateSeries = stringTimeSeries.get("Lcl Date");
-            timeSeries = stringTimeSeries.get("Lcl Time");
+            dateSeries = stringTimeSeries.get(Parameters.LCL_DATE);
+            timeSeries = stringTimeSeries.get(Parameters.LCL_TIME);
         }
 
         DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), timeSeries.get(dateSeries.size() / 2));
@@ -257,30 +242,52 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
 
 
     /**
-     * G5 data recorder do not have local date time fields.
-     * This method uses Latitude and Longitude and UTC Date Time (present in G5)
-     * to calculate Local Date/Time and Offset.
-     *
-     * @return
+     * Computes the UTC_DATE_TIME column and UNIX_TIME_SECONDS column using the UTC Date and UTC Time found in the G5
+     * logs.
      */
-    private void calculateLocalDateTimeAndOffset(
-
+    private void calculateUTCDateTime(
             Map<String, DoubleTimeSeries> doubleTimeSeries,
-            Map<String, StringTimeSeries> stringTimeSeries) throws TimeUtils.UnrecognizedDateTimeFormatException {
+            Map<String, StringTimeSeries> stringTimeSeries) throws TimeUtils.UnrecognizedDateTimeFormatException, MalformedFlightFileException {
 
-        StringTimeSeries utcDateSeries = stringTimeSeries.get("UTC Date");
-        StringTimeSeries utcTimeSeries = stringTimeSeries.get("UTC Time");
-        DoubleTimeSeries latitudeSeries = doubleTimeSeries.get("Latitude");
-        DoubleTimeSeries longitudeSeries = doubleTimeSeries.get("Longitude");
+        StringTimeSeries utcDateSeries = stringTimeSeries.get(Parameters.UTC_DATE);
+        StringTimeSeries utcTimeSeries = stringTimeSeries.get(Parameters.UTC_TIME);
 
-        if (Stream.of(utcTimeSeries, utcTimeSeries, latitudeSeries, longitudeSeries).anyMatch(Objects::isNull)) {
-            throw new NullPointerException("Need UTC Date, UTC Time, Latitude, and Longitude to import G5 / G3X data.");
+        if (Stream.of(utcTimeSeries, utcTimeSeries).anyMatch(Objects::isNull)) {
+            throw new NullPointerException("Need UTC Date and UTC Time to compute UTC_DATE_TIME for G5.");
         }
 
-        TimeUtils.LocalDateTimeResult localDateTimeResult = TimeUtils.calculateLocalDateTimeFromTimeSeries(
-                utcDateSeries, utcTimeSeries, latitudeSeries, longitudeSeries);
-        stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", "yyyy-MM-dd", localDateTimeResult.getLocalDates()));
-        stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", "HH:mm:ss", localDateTimeResult.getLocalTimes()));
-        stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm", localDateTimeResult.getUtcOffsets()));
+        DoubleTimeSeries unixtime = new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
+        StringTimeSeries timestampSeries = new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+
+        // Determine formatter
+        DateTimeFormatter formatter = null;
+        for (int i = 0; i < utcDateSeries.size(); i++) {
+            if (utcDateSeries.get(i).isEmpty() || utcTimeSeries.get(i).isEmpty()) {
+                continue;
+            }
+
+            formatter = TimeUtils.findCorrectFormatter(utcDateSeries.get(i), utcTimeSeries.get(i));
+            break;
+        }
+
+        if (formatter == null) {
+            throw new MalformedFlightFileException("Could not find a single valid date.");
+        }
+
+        for (int i = 0; i < utcDateSeries.size(); i++) {
+            if (utcDateSeries.get(i).isEmpty() || utcTimeSeries.get(i).isEmpty()) {
+                unixtime.add(Double.NaN);
+                timestampSeries.add("");
+                continue;
+            }
+
+            LocalDateTime local = LocalDateTime.parse(utcDateSeries.get(i) + " " + utcTimeSeries.get(i), formatter);
+            OffsetDateTime odt = OffsetDateTime.of(local, ZoneOffset.UTC);
+            timestampSeries.add(odt.format(TimeUtils.ISO_8601_FORMAT));
+            unixtime.add(odt.toEpochSecond());
+        }
+
+        stringTimeSeries.put(Parameters.UTC_DATE_TIME, timestampSeries);
+        doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, unixtime);
     }
 }

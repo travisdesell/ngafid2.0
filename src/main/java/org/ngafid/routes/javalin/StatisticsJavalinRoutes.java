@@ -2,20 +2,22 @@ package org.ngafid.routes.javalin;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.common.Database;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
+import org.ngafid.common.Database;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventStatistics;
-import org.ngafid.flights.*;
+import org.ngafid.flights.Airframes;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightStatistics;
+import org.ngafid.flights.Tails;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.Navbar;
-import org.ngafid.uploads.Upload;
+import org.ngafid.uploads.UploadStatistics;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,9 +33,35 @@ public class StatisticsJavalinRoutes {
             T execute(StatFetcher f) throws SQLException;
         }
 
-        static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+        static Map<String, StatFunction<Object>> function_map = Map.ofEntries(
+            
+            //Stat Functions -- Fleet Info
+            Map.entry("flightTime", StatFetcher::flightTime),
+            Map.entry("yearFlightTime", StatFetcher::yearFlightTime),
+            Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+            Map.entry("numberAircraft", StatFetcher::numberAircraft),
+            Map.entry("numberUsers", StatFetcher::numberUsers),
+            Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights),
+            Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights),
 
-                Map.entry("numberFlights", StatFetcher::numberFlights), Map.entry("numberAircraft", StatFetcher::numberAircraft), Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights), Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights), Map.entry("totalEvents", StatFetcher::totalEvents), Map.entry("yearEvents", StatFetcher::yearEvents), Map.entry("monthEvents", StatFetcher::monthEvents), Map.entry("numberFleets", StatFetcher::numberFleets), Map.entry("numberUsers", StatFetcher::numberUsers), Map.entry("uploads", StatFetcher::uploads), Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported), Map.entry("uploadsWithError", StatFetcher::uploadsWithError), Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning), Map.entry("flightsWithError", StatFetcher::flightsWithError));
+            //Stat Functions -- Events
+            Map.entry("totalEvents", StatFetcher::totalEvents),
+            Map.entry("yearEvents", StatFetcher::yearEvents),
+            Map.entry("monthEvents", StatFetcher::monthEvents),
+            Map.entry("numberFleets", StatFetcher::numberFleets),
+            
+            //Stat Functions -- Uploads
+            Map.entry("uploads", StatFetcher::uploads),
+            Map.entry("uploadsOK", StatFetcher::uploadsOK),
+            Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported),
+            Map.entry("uploadsWithError", StatFetcher::uploadsWithError),
+            
+            //Stat Functions -- Flights
+            Map.entry("numberFlights", StatFetcher::numberFlights),
+            Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning),
+            Map.entry("flightsWithError", StatFetcher::flightsWithError)/*,*/
+
+        );
 
         final Connection connection;
         final User user;
@@ -54,43 +82,38 @@ public class StatisticsJavalinRoutes {
         }
 
         boolean aggregate() {
-            return this.fleetId > 0;
+            return this.fleetId <= 0;
         }
 
-        LocalDate thirtyDaysAgo() {
-            return LocalDate.now().minusDays(30);
+        Double flightTime() throws SQLException {
+            if (aggregate()) {
+                return FlightStatistics.getAggregateTotalFlightTime(connection, 0);
+            } else {
+                return FlightStatistics.getTotalFlightTime(connection, fleetId, 0);
+            }
         }
 
-        LocalDate firstOfMonth() {
-            return LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        Double yearFlightTime() throws SQLException {
+            if (aggregate()) {
+                return FlightStatistics.getAggregateCurrentYearFlightTime(connection, 0);
+            } else {
+                return FlightStatistics.getCurrentYearFlightTime(connection, fleetId, 0);
+            }
         }
 
-        LocalDate firstOfYear() {
-            return LocalDate.now().with(TemporalAdjusters.firstDayOfYear());
-        }
-
-        String lastThirtyDaysQuery() {
-            return "start_time >= '" + thirtyDaysAgo().toString() + "'";
-        }
-
-        String yearQuery() {
-            return "start_time >= '" + firstOfYear().toString() + "'";
-        }
-
-        Long flightTime() throws SQLException {
-            return Flight.getTotalFlightTime(connection, fleetId, null);
-        }
-
-        Long yearFlightTime() throws SQLException {
-            return Flight.getTotalFlightTime(connection, yearQuery(), fleetId);
-        }
-
-        Long monthFlightTime() throws SQLException {
-            return Flight.getTotalFlightTime(connection, lastThirtyDaysQuery(), fleetId);
+        Double monthFlightTime() throws SQLException {
+            if (aggregate()) {
+                return FlightStatistics.getAggregate30DayFlightTime(connection, 0);
+            }
+            return FlightStatistics.get30DayFlightTime(connection, fleetId, 0);
         }
 
         Integer numberFlights() throws SQLException {
-            return Flight.getNumFlights(connection, fleetId);
+            if (aggregate()) {
+                return FlightStatistics.getAggregateTotalFlightCount(connection, 0);
+            } else {
+                return FlightStatistics.getTotalFlightCount(connection, fleetId, 0);
+            }
         }
 
         Integer numberAircraft() throws SQLException {
@@ -98,23 +121,43 @@ public class StatisticsJavalinRoutes {
         }
 
         Integer yearNumberFlights() throws SQLException {
-            return Flight.getNumFlights(connection, yearQuery(), fleetId);
+            if (aggregate()) {
+                return FlightStatistics.getAggregateCurrentYearFlightCount(connection, 0);
+            } else {
+                return FlightStatistics.getCurrentYearFlightCount(connection, fleetId, 0);
+            }
         }
 
         Integer monthNumberFlights() throws SQLException {
-            return Flight.getNumFlights(connection, lastThirtyDaysQuery(), fleetId);
+            if (aggregate()) {
+                return FlightStatistics.getAggregate30DayFlightCount(connection, 0);
+            } else {
+                return FlightStatistics.get30DayFlightCount(connection, fleetId, 0);
+            }
         }
 
         Integer totalEvents() throws SQLException {
-            return EventStatistics.getEventCount(connection, fleetId, null, null);
+            if (aggregate()) {
+                return EventStatistics.getAggregateTotalEventCount(connection);
+            } else {
+                return EventStatistics.getTotalEventCount(connection, fleetId);
+            }
         }
 
         Integer yearEvents() throws SQLException {
-            return EventStatistics.getEventCount(connection, fleetId, firstOfYear(), null);
+            if (aggregate()) {
+                return EventStatistics.getAggregateCurrentYearEventCount(connection);
+            } else {
+                return EventStatistics.getCurrentYearEventCount(connection, fleetId);
+            }
         }
 
         Integer monthEvents() throws SQLException {
-            return EventStatistics.getEventCount(connection, fleetId, firstOfMonth(), null);
+            if (aggregate()) {
+                return EventStatistics.getAggregateCurrentMonthEventCount(connection);
+            } else {
+                return EventStatistics.getCurrentMonthEventCount(connection, fleetId);
+            }
         }
 
         Integer numberFleets() throws SQLException {
@@ -125,40 +168,38 @@ public class StatisticsJavalinRoutes {
             return User.getNumberUsers(connection, fleetId);
         }
 
+        private UploadStatistics.UploadCounts getUploadCounts() throws SQLException {
+            if (aggregate()) {
+                return UploadStatistics.getAggregateUploadCounts(connection);
+            } else {
+                return UploadStatistics.getUploadCounts(connection, fleetId);
+            }
+        }
+
         Integer uploads() throws SQLException {
-            return Upload.getNumUploads(connection, fleetId, "");
+            return getUploadCounts().count();
+        }
+
+        Integer uploadsOK() throws SQLException {
+            return getUploadCounts().okUploadCount();
         }
 
         Integer uploadsNotImported() throws SQLException {
-            return Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'");
+            var counts = getUploadCounts();
+            return counts.count() - (counts.okUploadCount() + counts.warningUploadCount() + counts.errorUploadCount());
         }
 
         Integer uploadsWithError() throws SQLException {
-            return Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'");
+            return getUploadCounts().errorUploadCount();
         }
 
         Integer flightsWithWarning() throws SQLException {
-            return FlightWarning.getCount(connection, fleetId);
+            return getUploadCounts().warningUploadCount();
         }
 
         Integer flightsWithError() throws SQLException {
-            return FlightError.getCount(connection, fleetId);
+            return getUploadCounts().errorUploadCount();
         }
-    }
-
-    record SummaryStatistics(boolean aggregate,
-
-                             int numberFlights, int numberAircraft, int yearNumberFlights, int monthNumberFlights,
-                             int totalEvents, int yearEvents, int monthEvents, int numberUsers,
-
-                             // These should be null if `aggregate` is false.
-                             Integer numberFleets,
-
-                             // Null if aggregate is true
-                             Integer uploads, Integer uploadsNotImported, Integer uploadsWithError,
-                             Integer flightsWithWarning, Integer flightsWithError,
-
-                             long flightTime, long yearFlightTime, long monthFlightTime) {
     }
 
     private static void postStatistic(Context ctx, boolean aggregate) {
@@ -170,8 +211,9 @@ public class StatisticsJavalinRoutes {
             String[] stats;
 
             String fullPath = ctx.path();
-            String wildcardPath = fullPath.replaceFirst("^/protected/statistics/", "");
-
+            String wildcardPath = fullPath.replaceFirst("^/protected/statistics/" + (aggregate ? "aggregate/" : ""), "");
+            LOG.info("wcp = " + wildcardPath);
+            LOG.info("agg = " + aggregate);
             if (!wildcardPath.isEmpty()) {
                 stats = wildcardPath.split("/");
             } else {
@@ -179,66 +221,29 @@ public class StatisticsJavalinRoutes {
             }
 
             for (String stat : stats) {
-                statistics.put(stat, StatFetcher.function_map.get(stat).execute(fetcher));
+                LOG.info("stat = " + stat);
+
+                if (stat.equals("event_counts")) {
+                    LOG.info("Read in 'event_counts' stat in postStatistic, skipping...");
+                    continue;
+                }
+
+                StatFetcher.StatFunction<Object> function = StatFetcher.function_map.get(stat);
+                if (function == null) {
+
+                    String failureMessage = "Invalid statistic (failed to fetch Stat Function): " + stat;
+                    LOG.severe(failureMessage);
+                    ctx.status(400);
+                    ctx.result(failureMessage);
+                    return;
+                }
+
+                statistics.put(stat, function.execute(fetcher));
             }
 
             ctx.json(statistics);
         } catch (SQLException e) {
             e.printStackTrace();
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    private static void postSummaryStatistics(Context ctx, boolean aggregate) {
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = aggregate ? -1 : user.getFleetId();
-
-        if (!user.hasViewAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to view events for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to view events for this fleet.");
-            return;
-        }
-
-        // check to see if the user has access to view aggregate information
-        if (aggregate && !user.hasAggregateView()) {
-            LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate dashboard.");
-            ctx.status(401);
-            ctx.result("User did not have aggregate access to view aggregate dashboard.");
-            return;
-        }
-
-        LocalDate firstOfMonth = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
-        LocalDate firstOfYear = LocalDate.now().with(TemporalAdjusters.firstDayOfYear());
-        LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
-
-        String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays + "'";
-        String yearQuery = "start_time >= '" + firstOfYear + "'";
-
-        try (Connection connection = Database.getConnection()) {
-            final int numberFlights = Flight.getNumFlights(connection, fleetId);
-            final int numberAircraft = Tails.getNumberTails(connection, fleetId);
-            final long flightTime = Flight.getTotalFlightTime(connection, fleetId, null);
-            final int yearNumberFlights = Flight.getNumFlights(connection, yearQuery, fleetId);
-            final long yearFlightTime = Flight.getTotalFlightTime(connection, yearQuery, fleetId);
-            final int monthNumberFlights = Flight.getNumFlights(connection, lastThirtyDaysQuery, fleetId);
-            final long monthFlightTime = Flight.getTotalFlightTime(connection, lastThirtyDaysQuery, fleetId);
-
-            final int totalEvents = EventStatistics.getEventCount(connection, fleetId, null, null);
-            final int yearEvents = EventStatistics.getEventCount(connection, fleetId, firstOfYear, null);
-            final int monthEvents = EventStatistics.getEventCount(connection, fleetId, firstOfMonth, null);
-
-            final int numberFleets = aggregate ? Fleet.getNumberFleets(connection) : null;
-
-            final int numberUsers = User.getNumberUsers(connection, fleetId);
-            final int uploads = Upload.getNumUploads(connection, fleetId, "");
-            final int uploadsNotImported = Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'");
-            final int uploadsWithError = Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'");
-            final int flightsWithWarning = FlightWarning.getCount(connection, fleetId);
-            final int flightsWithError = FlightError.getCount(connection, fleetId);
-
-            ctx.json(new SummaryStatistics(aggregate, numberFlights, numberAircraft, yearNumberFlights, monthNumberFlights, totalEvents, yearEvents, monthEvents, numberUsers, numberFleets, uploads, uploadsNotImported, uploadsWithError, flightsWithWarning, flightsWithError, flightTime, yearFlightTime, monthFlightTime));
-        } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
@@ -349,6 +354,8 @@ public class StatisticsJavalinRoutes {
             Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             ctx.json(eventCountsMap);
         } catch (SQLException e) {
+            e.printStackTrace();
+            LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
@@ -393,6 +400,8 @@ public class StatisticsJavalinRoutes {
                 ctx.json(map.get(eventName));
             }
         } catch (SQLException e) {
+            e.printStackTrace();
+            LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
@@ -423,15 +432,12 @@ public class StatisticsJavalinRoutes {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
 
-        app.post("/protected/statistics/summary", ctx -> postSummaryStatistics(ctx, false));
-        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
-        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
-        app.post("/protected/event_counts", ctx -> postEventCounts(ctx, false));
-
-        app.post("/protected/statistics/aggregate/summary", ctx -> postSummaryStatistics(ctx, true));
-        app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
         app.post("/protected/statistics/aggregate/event_counts", ctx -> postEventCounts(ctx, true));
+        app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
         app.post("/protected/statistics/all_event_counts", ctx -> postEventCounts(ctx, true));
+
+        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
+        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
 
         app.get("/protected/event_statistics", StatisticsJavalinRoutes::getEventStatistics);
         app.post("/protected/monthly_event_counts", StatisticsJavalinRoutes::postMonthlyEventCounts);

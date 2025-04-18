@@ -1,34 +1,49 @@
 package org.ngafid.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.common.filters.Pair;
 import org.ngafid.uploads.ProcessUpload;
-import org.ngafid.uploads.UploadAlreadyLockedException;
 import org.ngafid.uploads.UploadDoesNotExistException;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
  * Kafka consumer that reads messages from the `upload` and `upload-retry` topics.
  * <p>
+ * The design of this consumer is more sophisticated than the other consumers in order to handle the potentially long
+ * processing time of individual messages (i.e. uploads). The consumer needs to communicate with the Kafka broker
+ * every MAX_POLL_INTERVAL_MS or else risk being kicked out of the pool. However, if this value is very high it will take
+ * a while for a new UploadConsumer to be admitted to the pool.
+ * <p>
+ * The consumer poll method is what sends a heartbeat message to the broker. We ensure this happens every MAX_POLL_INTERVAL_MS / 2 milliseconds
+ * by using a separate processing thread to do the actual processing. While this thread is processing an upload, the main
+ * thread will pause all topics / partitions thereby ensuring calls to poll return nothing. Once the processing has finished,
+ * the consumer will un-pause the paused topics and partitions and obtain another task etc.
+ * <p>
  * The messages are simply upload IDs. Unless the upload has been deleted from the database, the upload will be re-imported.
  * Uploads should be restricted from deletion on the front end if the upload status is PROCESSING.
  */
-public class UploadConsumer {
+public class UploadConsumer extends DisjointConsumer<String, Integer> {
     private static final Logger LOG = Logger.getLogger(UploadConsumer.class.getName());
+
+    private static long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
+    // This should not be modified.
+    private static long N_RECORDS = 1;
 
     public static void main(String[] args) {
         Properties props = Configuration.getUploadProperties();
-        props.put("max.poll.records", "1");
-        props.put("max.poll.interval.ms", "360000");
-        try {
-            fleetUploadConsumerMain(props);
+        props.put("max.poll.records", String.valueOf(N_RECORDS));
+        props.put("max.poll.interval.ms", String.valueOf(MAX_POLL_INTERVAL_MS));
+
+        var consumer = new KafkaConsumer<String, Integer>(props);
+        var producer = new KafkaProducer<String, Integer>(props);
+
+        try (UploadConsumer uploadConsumer = new UploadConsumer(consumer, producer)) {
+            uploadConsumer.run();
         } catch (Exception e) {
             LOG.severe("Error in fleet consumer:");
             LOG.severe(e.getMessage());
@@ -36,41 +51,46 @@ public class UploadConsumer {
         }
     }
 
-    private static void fleetUploadConsumerMain(Properties props) throws SQLException {
-        try (KafkaConsumer<String, Integer> consumer = new KafkaConsumer<>(props);
-             KafkaProducer<String, Integer> producer = new KafkaProducer<>(props)) {
-            consumer.subscribe(List.of("upload", "upload-retry"));
+    protected UploadConsumer(KafkaConsumer<String, Integer> consumer, KafkaProducer<String, Integer> producer) {
+        super(Thread.currentThread(), consumer, producer);
+    }
 
-            while (true) {
-                // Pull all fleets and subscribe to them
-                ConsumerRecords<String, Integer> records = consumer.poll(10000);
-                for (ConsumerRecord<String, Integer> record : records) {
-                    LOG.info("Processing upload " + record.value());
-                    LOG.info("    offset / " + record.offset());
-                    LOG.info("    timestamp / " + record.timestamp());
+    @Override
+    protected String getTopicName() {
+        return Topic.UPLOAD.toString();
+    }
 
-                    try {
-                        boolean processedOkay = ProcessUpload.processUpload(record.value());
-                        if (!processedOkay) {
-                            if (record.topic().equals("upload")) {
-                                LOG.info("Processing failed... adding to retry queue");
-                                producer.send(new ProducerRecord<String, Integer>("upload-retry", record.value()));
-                            } else if (record.topic().equals("upload-retry")) {
-                                LOG.info("Processing failed... adding to DLQ");
-                                producer.send(new ProducerRecord<String, Integer>("upload-dlq", record.value()));
-                            }
-                        }
-                    } catch (UploadDoesNotExistException e) {
-                        System.out.println("WA");
-                        LOG.info("Received message to process upload with id " + record.value() + " but that upload was not found in the database.");
-                    } catch (UploadAlreadyLockedException e) {
-                        System.out.println("Oh sweet!!!");
-                        LOG.info("Upload lock could not be acquired - skipping processing.");
-                    }
-                }
+    @Override
+    protected String getRetryTopicName() {
+        return Topic.UPLOAD_RETRY.toString();
+    }
 
-                consumer.commitSync();
-            }
+    @Override
+    protected String getDLTTopicName() {
+        return Topic.UPLOAD_DLQ.toString();
+    }
+
+    @Override
+    protected long getMaxPollIntervalMS() {
+        return MAX_POLL_INTERVAL_MS;
+    }
+
+    @Override
+    protected Pair<ConsumerRecord<String, Integer>, Boolean> process(ConsumerRecord<String, Integer> record) {
+        try {
+            LOG.info("Processing upload " + record.value());
+            LOG.info("    offset / " + record.offset());
+            LOG.info("    timestamp / " + record.timestamp());
+
+            var processedOkay = ProcessUpload.processUpload(record.value());
+            return new Pair<>(record, !processedOkay);
+        } catch (SQLException e) {
+            mainThread.interrupt();
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (UploadDoesNotExistException e) {
+            return new Pair<>(record, false);
         }
     }
+
 }

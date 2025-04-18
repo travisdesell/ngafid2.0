@@ -351,14 +351,13 @@ public class AnalysisJavalinRoutes {
 
                 final String airframeType = incomingFlight.getAirframeType();
 
-                final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
-                final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
-                final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
-                final DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
-                final DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
+                final DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.LATITUDE);
+                final DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.LONGITUDE);
+                final DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.ALT_AGL);
+                final DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.E1_RPM);
+                final DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, Parameters.GND_SPD);
 
-                final StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
-                final StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
+                final StringTimeSeries utc = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, Parameters.UTC_DATE_TIME);
 
                 final List<Double> flightGeoAglTaxiing = new ArrayList<>();
                 final List<Double> flightGeoAglTakeOff = new ArrayList<>();
@@ -377,7 +376,7 @@ public class AnalysisJavalinRoutes {
                 int countPostTakeoff = 0;
                 int sizePreClimb = 0;
                 int countPostCruise = 0;
-                int dateSize = date.size();
+                int dateSize = utc.size();
 
                 // Calculate the taxiing phase
                 for (int i = 0; i < altAgl.size(); i++) {
@@ -387,7 +386,7 @@ public class AnalysisJavalinRoutes {
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
-                        flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                        flightTaxiingTimes.add(utc.get(i));
 
                         if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
                             break;
@@ -405,7 +404,7 @@ public class AnalysisJavalinRoutes {
                                 flightGeoAglTakeOff.add(longitude.get(i));
                                 flightGeoAglTakeOff.add(latitude.get(i));
                                 flightGeoAglTakeOff.add(altAgl.get(i));
-                                flightTakeOffTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                                flightTakeOffTimes.add(utc.get(i));
 
                                 initCounter++;
                             } else if (takeoffCounter > 15) {
@@ -428,7 +427,7 @@ public class AnalysisJavalinRoutes {
                                 flightGeoAglClimb.add(longitude.get(i));
                                 flightGeoAglClimb.add(latitude.get(i));
                                 flightGeoAglClimb.add(altAgl.get(i));
-                                flightClimbTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                                flightClimbTimes.add(utc.get(i));
 
                                 initCounter++;
                             }
@@ -451,7 +450,7 @@ public class AnalysisJavalinRoutes {
                             flightGeoAglCruise.add(longitude.get(i));
                             flightGeoAglCruise.add(latitude.get(i));
                             flightGeoAglCruise.add(altAgl.get(i));
-                            flightCruiseTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                            flightCruiseTimes.add(utc.get(i));
                         }
                         countPostCruise++;
                     }
@@ -464,7 +463,7 @@ public class AnalysisJavalinRoutes {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
-                        flightAglTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                        flightAglTimes.add(utc.get(i));
                     }
                 }
 
@@ -570,7 +569,7 @@ public class AnalysisJavalinRoutes {
 
         app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
 
-        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
+//        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 
         app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
         app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);

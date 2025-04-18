@@ -18,12 +18,13 @@ CREATE TABLE flights (
     PRIMARY KEY (id),
     UNIQUE KEY (fleet_id, md5_hash),
     INDEX (fleet_id),
-    INDEX (uploader_id),
-    INDEX (system_id),
-    INDEX (airframe_id),
-    INDEX (start_time),
-    INDEX (end_time),
+    INDEX (fleet_id, upload_id),
+    INDEX (fleet_id, system_id),
+    INDEX (fleet_id, airframe_id),
+    INDEX (fleet_id, start_time),
+    INDEX (fleet_id, end_time),
     INDEX (fleet_id, start_time, end_time),
+    INDEX (start_time, end_time),
     FOREIGN KEY (fleet_id) REFERENCES fleet(id),
     FOREIGN KEY (uploader_id) REFERENCES user(id),
     FOREIGN KEY (airframe_id) REFERENCES airframes(id),
@@ -31,6 +32,9 @@ CREATE TABLE flights (
     FOREIGN KEY (upload_id) REFERENCES uploads(id)
         ON DELETE CASCADE
 );
+
+--changeset josh:flights-index-upload-id labels:flight
+ALTER TABLE flights ADD INDEX upload_id_index(upload_id);
 
 --changeset josh:airsync-imports-flight-fk labels:flights
 ALTER TABLE airsync_imports ADD CONSTRAINT fk_airsync_imports_flight_id
@@ -54,7 +58,7 @@ CREATE TABLE flight_processed (
     sum_severity DOUBLE DEFAULT 0.0,
     min_severity DOUBLE DEFAULT 1e256,
     max_severity DOUBLE DEFAULT -1e256,
-    had_error TINYINT(1) DEFAULT 0,
+    had_error INT DEFAULT 0,
 
     PRIMARY KEY(flight_id, event_definition_id),
     INDEX (fleet_id),
