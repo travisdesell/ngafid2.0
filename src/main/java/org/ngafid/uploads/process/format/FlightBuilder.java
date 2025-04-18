@@ -1,5 +1,6 @@
 package org.ngafid.uploads.process.format;
 
+import org.jline.utils.Log;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.calculations.TurnToFinal;
@@ -110,8 +111,20 @@ public class FlightBuilder {
         ArrayList<ComputeStep> steps =
                 Stream.concat(PROCESS_STEPS.stream()
                                 .map(factory -> factory.create(connection, this))
-                                .filter(step -> step.getOutputColumns().stream()
-                                        .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
+                                .peek(step -> {
+                                    for (String output : step.getOutputColumns()) {
+                                        if (doubleTimeSeries.containsKey(output)) {
+                                            LOG.warning("Skipping step " + step.getClass().getSimpleName() + " because output " + output + " already exists in doubleTimeSeries.");
+                                        }
+                                        if (stringTimeSeries.containsKey(output)) {
+                                            LOG.warning("Skipping step " + step.getClass().getSimpleName() + " because output " + output + " already exists in stringTimeSeries.");
+                                        }
+                                    }
+                                })
+                                .filter(step ->
+                                        step.getOutputColumns().stream()
+                                                .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))
+                                ),
                         ComputeEvent.getAllApplicable(connection, this).stream()
                 ).collect(Collectors.toCollection(ArrayList::new));
 
@@ -141,7 +154,67 @@ public class FlightBuilder {
         // dg.computeParallel();
         dg.computeSequential();
 
+        //// Check time series, why it is empty?
+
+        // Sanity check: peek into the data before creating the Flight
+        DoubleTimeSeries unixTimeSeries = doubleTimeSeries.get(Parameters.UNIX_TIME_SECONDS);
+        if (unixTimeSeries != null) {
+            LOG.info("UNIX_TIME_SECONDS size = " + unixTimeSeries.size());
+            double[] values = Arrays.copyOf(unixTimeSeries.innerArray(), unixTimeSeries.size());
+
+            LOG.info("First 5 UNIX_TIME_SECONDS values: " + Arrays.toString(Arrays.copyOf(values, Math.min(5, values.length))));
+        } else {
+            LOG.warning("UNIX_TIME_SECONDS time series is missing!");
+        }
+
+// Peek into another sample series
+        DoubleTimeSeries altitude = doubleTimeSeries.get(Parameters.ALT_AGL);
+        if (altitude != null) {
+            double[] altValues = Arrays.copyOf(altitude.innerArray(), altitude.size());
+
+            LOG.info("First 5 ALT_AGL values: " + Arrays.toString(Arrays.copyOf(altValues, Math.min(5, altValues.length))));
+        } else {
+            LOG.warning("ALT_AGL time series is missing!");
+        }
+
+
+
+// Itinerary
+        LOG.info("Itinerary count: " + itinerary.size());
+        if (!itinerary.isEmpty()) {
+            LOG.info("First itinerary: " + itinerary.get(0));
+        }
+
+// Exceptions
+        LOG.info("Exceptions count: " + exceptions.size());
+        exceptions.stream().limit(3).forEach(ex -> LOG.warning("Exception: " + ex.getMessage()));
+
+
         flight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
+
+        Log.info("Flight Builder");
+        LOG.info("Flight Builder.Preparing to insert flight: " + flight.getFilename());
+        LOG.info(" Flight Builder. Flight ID (pre-insert): " + flight.getId());
+        LOG.info(" Flight Builder. Number of rows: " + flight.getNumberRows());
+        LOG.info(" Flight Builder. DoubleTimeSeries keys: " + flight.getDoubleTimeSeriesMap().keySet());
+        LOG.info(" Flight Builder. StringTimeSeries keys: " + flight.getStringTimeSeriesMap().keySet());
+
+        int middleIndex = flight.getNumberRows() / 2;
+        LOG.info(" Flight Builder. Middle index for sample values: " + middleIndex);
+
+         // Log middle values from each DoubleTimeSeries
+        for (Map.Entry<String, DoubleTimeSeries> entry : flight.getDoubleTimeSeriesMap().entrySet()) {
+            String name = entry.getKey();
+            DoubleTimeSeries series = entry.getValue();
+
+            double valueAtMiddle = Double.NaN;
+            if (series.size() > middleIndex) {
+                valueAtMiddle = series.get(middleIndex);
+            }
+
+            LOG.info(" DoubleTimeSeries [" + name + "] value at middle index (" + middleIndex + "): " + valueAtMiddle);
+        }
+
 
         return this;
     }
