@@ -90,10 +90,10 @@ public abstract class WebServer {
     }
 
     public static final Gson gson = new GsonBuilder()
-        .serializeSpecialFloatingPointValues()
-        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
-        .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
-        .create();
+            .serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+            .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
+            .create();
 
     static {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
@@ -159,6 +159,7 @@ public abstract class WebServer {
      * Checks for Python 3 and GDAL (gdalwarp) are installed.
      * Verifies the existence of a Python virtual environment (python_venv). If not found, it creates one.
      * Installs required Python dependencies from requirements.txt into the virtual environment.
+     *
      * @return true if requirements are satisfied and the system can run chart processor.
      */
     protected boolean checkChartsDependenciesAndEnvironment() {

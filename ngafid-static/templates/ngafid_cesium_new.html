@@ -10,12 +10,30 @@
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
-    <link rel="stylesheet" href="/Widgets/widgets.css" />
+    <link rel="stylesheet" href="/Widgets/widgets.css"/>
     <script>
         var plotMapHidden = true;
-        {{{navbar_js}}}
-        {{{events_js}}}
-        {{{cesium_data_js}}}
+        {
+            {
+                {
+                    navbar_js
+                }
+            }
+        }
+        {
+            {
+                {
+                    events_js
+                }
+            }
+        }
+        {
+            {
+                {
+                    cesium_data_js
+                }
+            }
+        }
     </script>
 
     <style>
@@ -140,16 +158,16 @@
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 </head>
 <body>
-    <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
-        <div class='modal-dialog modal-lg' role='document'>
-            <div id='error-modal-content'>
-            </div>
+<div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
+    <div class='modal-dialog modal-lg' role='document'>
+        <div id='error-modal-content'>
         </div>
     </div>
+</div>
 
 
-    <div id = "cesium_page"></div>
-    <button id="toggle-camera"></button>
-    <script src="/dist/js/ngafid_cesium-bundle.js"></script>
+<div id="cesium_page"></div>
+<button id="toggle-camera"></button>
+<script src="/js/ngafid_cesium-bundle.js"></script>
 </body>
 </html>

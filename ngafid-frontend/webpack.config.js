@@ -1,7 +1,14 @@
 const webpack = require('webpack');
+const HtmlPlugin = require("html-webpack-plugin");
+const HtmlTagsPlugin = require("html-webpack-tags-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+
+
 const path = require('path');
 
+
 module.exports = {
+
     mode: process.env.NODE_ENV || 'development',
     watch: true,
 
@@ -13,17 +20,15 @@ module.exports = {
             events: require.resolve('events/'),
         },
     },
-
-    watchOptions: {
-        aggregateTimeout: 300,
-        poll: 1000,
-        ignored: /node_modules/
+    externals: {
+        cesium: "Cesium",
+        plotly: "Plotly",
     },
-
-    optimization: {
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
-        splitChunks: false,
+    watchOptions: {
+        ignored: [
+            "/node_modules/",
+            path.resolve(__dirname, "src/main/resources/public/dist/"), //<-- Ignore built files so they aren't recompiled
+        ],
     },
 
     cache: {
@@ -51,6 +56,7 @@ module.exports = {
         imports: "./src/imports.js",
         manage_events: "./src/manage_events.js",
         manage_fleet: "./src/manage_fleet.js",
+        ngafid_cesium: __dirname + "/src/ngafid_cesium.js",
         reset_password: "./src/reset_password.js",
         severities: "./src/severities.js",
         system_ids: "./src/system_ids.js",
@@ -69,7 +75,8 @@ module.exports = {
 
     output: {
         path: path.resolve(__dirname, "../ngafid-static/js/"),
-        filename: "[name]-bundle.js"
+        filename: "[name]-bundle.js",
+        publicPath: "/js/",
     },
 
     module: {
@@ -110,6 +117,18 @@ module.exports = {
         }),
         new webpack.ProvidePlugin({
             process: 'process/browser',
-        })
-    ],
+        }),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: "node_modules/cesium/Build/Cesium",
+                    to: "cesium",
+                },
+            ],
+        }),
+        new webpack.DefinePlugin({
+            CESIUM_BASE_URL: JSON.stringify("/cesium"),
+        }),
+    ]
+
 };

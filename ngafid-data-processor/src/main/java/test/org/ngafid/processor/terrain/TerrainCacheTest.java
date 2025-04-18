@@ -1,4 +1,4 @@
-package org.ngafid.common.terrain;
+package test.org.ngafid.processor.terrain..terrain;
 
 import org.junit.Assert;
 import org.junit.Test;
