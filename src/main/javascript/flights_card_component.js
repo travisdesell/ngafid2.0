@@ -72,7 +72,7 @@ class FlightsCard extends React.Component {
                                         showPlot={() => {this.props.showPlot();}} 
                                         showMap={() => {this.props.showMap();}} 
                                         hideMap={() => {this.props.hideMap();}}
-                                        showCesiumPage={(flightId, color)=>{this.props.showCesiumPage(flightId, color);}} 
+                                        showCesiumPage={(flightId, color)=>{this.props.showCesium(flightId, color);}} 
                                         removeCesiumFlight={(flightId) => {this.props.removeCesiumFlight(flightId);}}
                                         flightInfo={flightInfo} 
                                         navBar={this.props.navBar} 
@@ -80,7 +80,8 @@ class FlightsCard extends React.Component {
                                         addCesiumFlightPhase={(phase, flightId) => {this.props.addCesiumFlightPhase(phase, flightId);}}
                                         addCesiumEventEntity={(event, flightId) => {this.props.addCesiumEventEntity(event, flightId);}}
                                         zoomToEventEntity={(eventId, flightId) => {this.props.zoomToEventEntity(eventId, flightId)}}
-                                        toggleCamera={(flightId) => {this.props.toggleCamera(flightId);}}
+                                        cesiumFlightTrackedSet={(flightId) => {this.props.cesiumFlightTrackedSet(flightId);}}
+                                        cesiumJumpToFlightStart={(flightId) => {this.props.cesiumJumpToFlightStart(flightId)}}
                                         updateParentState={(newFlights) => this.props.setFlights(newFlights)} 
                                         setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
                                         parent={this} layers={this.props.layers} key={flightInfo.id}
@@ -91,6 +92,7 @@ class FlightsCard extends React.Component {
                                         associateTag={this.props.associateTag}
                                         clearTags={this.props.clearTags}
                                         editTag={this.props.editTag}
+                                        onAddFilter={this.props.onAddFilter}
                                     />
                                 );
                             }

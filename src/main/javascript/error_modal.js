@@ -19,43 +19,19 @@ class ErrorModal extends React.Component {
     }
 
     show(title, message) {
-        this.state.title = title;
-        this.state.message = message;
+        this.state.title = String(title);
+        this.state.message = String(message);
         this.setState(this.state);
 
         $("#error-modal").modal('show');
     }
 
     render() {
-        let formGroupStyle = {
-            marginBottom: '8px'
-        };
 
-        let formHeaderStyle = {
-            width: '150px',
-            flex: '0 0 150px'
-        };
-
-        let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'right'
-        };
-
-        let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        console.log("rendering error modal with error title: '" + this.state.title + "' and message: " + this.state.message);
-
+        console.log(`Rendering Error Modal with error title: '${this.state.title}' and message: '${this.state.message}'`);
 
         return (
-            <div className='modal-content'>
+            <div className='modal-content position-absolute top-100 start-50'>
                 <div className='modal-header'>
                     <h5 id='error-modal-title' className='modal-title'>Server Error</h5>
                     <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
@@ -74,6 +50,7 @@ class ErrorModal extends React.Component {
                 </div>
             </div>
         );
+
     }
 }
 

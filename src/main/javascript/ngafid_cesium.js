@@ -189,33 +189,36 @@ class CesiumPage extends React.Component {
         return entity;
     }
  
-    addPhaseEntity( phase, flightId) {
+    addPhaseEntity(phase, flightId) {
 
-        var positionArr = null;
-        if (phase == "Show Taxiing") {
-            phase = "Taxiing";
-            positionArr = this.state.flightData[flightId].flightGeoAglTaxiing;
-        } else if (phase == "Show Takeoff") {
-            phase = "Takeoff"
-            positionArr = this.state.flightData[flightId].flightGeoAglTakeOff;
-        } else if (phase == "Show Climb") {
-            phase = "Climb"
-            positionArr = this.state.flightData[flightId].flightGeoAglClimb;
-        } else if (phase == "Show Cruise to Final") {
-            phase = "Cruise"
-            positionArr = this.state.flightData[flightId].flightGeoAglCruise;
-        } else if (phase == "Show Full Flight") {
-            console.log("adding full flight");
-            phase = "FullFlight"
-            positionArr = this.state.flightData[flightId].flightGeoInfoAgl;
-        }
+        let positionKey = "";
+        let positionArr = null;
+        
+        console.log("Adding phase entity for: ", phase);
+       
+        const keyMap = {
+            "Taxiing" : "flightGeoAglTaxiing",
+            "Takeoff" : "flightGeoAglTakeOff",
+            "Climb" : "flightGeoAglClimb",
+            "Cruise to Final" : "flightGeoAglCruise",
+            "Full Flight" : "flightGeoInfoAgl"
+        };
 
+        //Get the position key for the phase
+        positionKey = keyMap[phase];
+
+        //Get the position array for the phase
+        positionArr = this.state.flightData[flightId][positionKey];
+
+        //Phase is already active, remove the entities
         if (phase in this.state.activePhaseEntities[flightId]) {
             
             for (let entity of this.state.activePhaseEntities[flightId][phase]) {
                 this.viewer.entities.remove(entity);
             }
             delete this.state.activePhaseEntities[flightId][phase];
+
+        //Phase is not active, add the entities
         } else {
             var geoFlightLoadAgl = this.getLoadAGLEntity(phase, positionArr, flightId);
             var geoFlightLineTaxi = this.getFlightLineEntity(phase, positionArr);
@@ -224,7 +227,9 @@ class CesiumPage extends React.Component {
             this.viewer.entities.add(geoFlightLineTaxi);
             this.viewer.entities.add(geoFlightKeepGround);
             this.state.activePhaseEntities[flightId][phase] = [geoFlightLoadAgl, geoFlightLineTaxi, geoFlightKeepGround];
-        }       
+        }
+        
+        //Trigger state update
         this.setState(this.state);
         
     }
@@ -349,16 +354,26 @@ class CesiumPage extends React.Component {
 
     }
 
-    toggleCamera(flightId) {
+    cesiumFlightTrackedSet(flightId) {
 
-        console.log("Toggle camera for : " + flightId);
+        console.log("cesiumFlightTrackedSet -- Toggling camera for flight: " + flightId);
         
+        //Clear current tracked entity form the viewer first
+        this.viewer.trackedEntity = null;
+
+        //Flight found in activePhaseEntities, set the tracked entity to the flight entity
         if (flightId in this.state.activePhaseEntities) {
+
             var flightReplayEntity = this.state.activePhaseEntities[flightId]["default"][0];
             this.viewer.trackedEntity = flightReplayEntity;
+
+        //Flight not found in activePhaseEntities, log error
+        } else {
+            console.log("cesiumFlightTrackedSet -- Flight not found in activePhaseEntities: ", flightId);
         }
 
     }
+
     zoomToEntity() {
 
         if (Object.keys(this.state.activePhaseEntities) != 0) {
@@ -371,17 +386,13 @@ class CesiumPage extends React.Component {
     
     zoomToEventEntity(eventId, flightId) {
 
-        var eventEntity = this.state.activeEventEntites[eventId];
-        if (this.state.currentZoomedEntity == eventEntity) {
-            console.log("zoom to flight");
-            var flightEntity = this.state.activePhaseEntities[flightId]["default"][1];
-            this.viewer.zoomTo(flightEntity);
-            this.state.currentZoomedEntity = flightEntity;
-        } else {
-            this.viewer.zoomTo(eventEntity);
-            this.state.currentZoomedEntity = eventEntity;     
-        }
-       
+        const eventEntity = this.state.activeEventEntites[eventId];
+
+        console.log(`Zooming to event entity: (Event ID: ${eventId}, Flight ID: ${flightId})`);
+
+        this.viewer.zoomTo(eventEntity);
+        this.state.currentZoomedEntity = eventEntity;     
+
         this.setState(this.state);
     }
 
@@ -467,6 +478,53 @@ class CesiumPage extends React.Component {
                
     }
 
+    componentDidUpdate(prevProps) {
+        
+        //Change in resolution scale
+        if (prevProps.cesiumResolutionScale !== this.props.cesiumResolutionScale) {
+
+            console.log("Cesium resolution scale updated: " + this.props.cesiumResolutionScale);
+
+            this.viewer.resolutionScale = this.props.cesiumResolutionScale;
+            this.viewer.resize();
+        }
+
+        //Change in use of browser recommended resolution
+        if (prevProps.cesiumResolutionUseDefault !== this.props.cesiumResolutionUseDefault) {
+
+            console.log("Cesium resolution use default updated: " + this.props.cesiumResolutionUseDefault);
+
+            this.viewer.useBrowserRecommendedResolution = this.props.cesiumResolutionUseDefault;
+            this.viewer.resize();
+        }
+
+    }
+
+
+    cesiumJumpToFlightStart(flightId) {
+
+        /*
+            Set the Cesium Viewer playhead position
+            to the start of the selected flight
+        */
+    
+        console.log("Jumping to flight start: " + flightId);
+    
+        let flightData = this.state.flightData;
+        let viewer = this.viewer;
+    
+        //Get the flight start time
+        let flightStartTime = JulianDate.fromIso8601(flightData[flightId].startTime);
+        let flightEndTime = JulianDate.fromIso8601(flightData[flightId].endTime);
+    
+        //Set the viewer clock start time to the flight start time
+        viewer.clock.startTime = flightStartTime.clone();
+        viewer.clock.currentTime = flightStartTime.clone();
+        viewer.clock.shouldAnimate = true;
+        viewer.timeline.zoomTo(flightStartTime.clone(), flightEndTime.clone());
+    
+    }
+
     render() {
 
            return (
@@ -485,26 +543,26 @@ class CesiumPage extends React.Component {
                                 style={{
                                     position: "relative",
                                 }}
+                                useBrowserRecommendedResolution = {this.props.cesiumResolutionUseDefault}
+                                resolutionScale={this.props.cesiumResolutionScale}
                         >
-                        <Clock/>
-                           <Scene
+                            <Clock/>
+                            <Scene
                                 ref={e => {
                                     this.scene = e ? e.cesiumElement : undefined;
                                 }}
-                            >
-                            </Scene>
+                            />
                             <SkyAtmosphere
                                 hueShift={0.0}
                                 saturationShift={0.0}
                                 brightnessShift={0.0}
-                            ></SkyAtmosphere>
+                            />
                             <Globe
                                 depthTestAgainstTerrain = {true}
                                 atmosphereHueShift={0.0}
                                 atmosphereSaturationShift={0.0}
                                 atmosphereBrightnessShift={0.0}
-                            >
-                            </Globe>
+                            />
                         </Viewer>
                     </div>
                 </div>
@@ -512,4 +570,5 @@ class CesiumPage extends React.Component {
     };
 }
 
-export default (props => <CesiumPage ref={props.setRef} />)
+
+export default (props => <CesiumPage ref={props.setRef} {...props} />);

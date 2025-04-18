@@ -29,7 +29,7 @@
     --c_scrollbar_bg: var(--c_scrollbar_bg_light);
 
     --c_scrollbar_thumb_light: #cdcdcd;
-    --c_scrollbar_thumb_dark: #333;
+    --c_scrollbar_thumb_dark: #666;
     --c_scrollbar_thumb: var(--c_scrollbar_thumb_light);
 
     scrollbar-color: var(--c_scrollbar_thumb) var(--c_scrollbar_bg);
@@ -739,6 +739,17 @@ html, body {
     margin-top: auto;
     height: 47px;
     z-index: 1000;
+}
+
+
+
+/* Hide Cesium Built-in Fullscreen Button */
+.cesium-viewer-fullscreenContainer {
+    visibility: hidden;
+    display: none;
+}
+.cesium-viewer-timelineContainer {
+    right: 1px !important;
 }
 
 /* #endregion Map & Graph Containers */

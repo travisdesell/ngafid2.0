@@ -295,7 +295,7 @@ class Paginator extends React.Component {
                             {
                                 //Show Cesium buttons on the Flights page
                                 (PAGE_FLIGHTS) &&
-                                <div className="ml-4">
+                                <div className="d-flex ml-32">
                                     <CesiumButtons location={this.props.location}/>
                                 </div>
                             }

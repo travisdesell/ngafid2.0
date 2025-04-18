@@ -73,7 +73,7 @@ class TraceButtons extends React.Component {
     }
 
     render() {
-        let cellClasses = "d-flex flex-row p-1";
+        let cellClasses = "d-flex flex-row pb-1";
         let cellStyle = { "overflowX" : "auto" };
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
@@ -83,38 +83,51 @@ class TraceButtons extends React.Component {
         let parentFlight = this.state.parentFlight;
 
         return (
-            //<div className="m-1" style={{overflowX:"auto", maxWidth:"58vw"}}>
-            <div className="m-1" style={{overflowX:"auto", width:"99%"}}>
-                <b className={"p-1"} style={{marginBottom:"0"}}>Flight Parameters:</b>
-                <div className={cellClasses} style={cellStyle}>
-                    {
-                        parentFlight.state.commonTraceNames.map((traceName, index) => {
-                            let ariaPressed = parentFlight.state.traceVisibility[traceName];
-                            let active = "";
-                            if (ariaPressed) active = " active";
+            
+            <div className="w-100">
 
-                            return (
-                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
-                                    {traceName}
-                                </button>
-                            );
-                        })
-                    }
-                </div>
-                <div className={cellClasses} style={cellStyle}>
-                    {
-                        parentFlight.state.uncommonTraceNames.map((traceName, index) => {
-                            let ariaPressed = parentFlight.state.traceVisibility[traceName];
-                            let active = "";
-                            if (ariaPressed) active = " active";
+                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"} style={{marginBottom:"0"}}>
+                    <div className="d-flex flex-column mr-3" style={{width: "16px", minWidth:"16px", maxWidth:"16px", height: "16px"}}>
+                        <i className='fa fa-area-chart ml-2' style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
+                    </div>
+                    <div style={{fontSize: "0.75em"}}>
+                        Parameters
+                    </div>
+                </b>
 
-                            return (
-                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
-                                    {traceName}
-                                </button>
-                            );
-                        })
-                    }
+                <div className="p-1" style={{overflowX:"auto"}}>
+
+                    <div className={cellClasses} style={cellStyle}>
+                        {
+                            parentFlight.state.commonTraceNames.map((traceName, index) => {
+                                let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                                let active = "";
+                                if (ariaPressed) active = " active";
+
+                                return (
+                                    <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                        {traceName}
+                                    </button>
+                                );
+                            })
+                        }
+                    </div>
+                    <div className={cellClasses} style={cellStyle}>
+                        {
+                            parentFlight.state.uncommonTraceNames.map((traceName, index) => {
+                                let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                                let active = "";
+                                if (ariaPressed) active = " active";
+
+                                return (
+                                    <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                        {traceName}
+                                    </button>
+                                );
+                            })
+                        }
+                    </div>
+
                 </div>
             </div>
         );

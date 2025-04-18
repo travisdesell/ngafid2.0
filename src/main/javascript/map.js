@@ -3,9 +3,9 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import Overlay from 'ol/Overlay';
-import {Map, View} from 'ol';
+import { Map, View } from 'ol';
 import BingMaps from 'ol/source/BingMaps.js';
-import {fromLonLat, toLonLat} from 'ol/proj.js';
+import { fromLonLat, toLonLat } from 'ol/proj.js';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ.js';
 
@@ -104,6 +104,9 @@ layers[2].setVisible(true);
 var map = null;
 
 function initializeMap() {
+
+    console.log("Initializing map instance...");
+
     map = new Map({
         target: 'map',
         layers: layers,
@@ -115,15 +118,23 @@ function initializeMap() {
             minZoom: 0
         })
     });
+
+    console.log("Initialized map instance: ", map);
+
 }
 var container = document.getElementById('popup');
 var content = document.getElementById('popup-content');
 var closer = document.getElementById('popup-closer');
 let overlays;
 var overlay;
+
+//Container is null, set overlays to empty array
 if (container == null) {
     overlays = [];
+
+//Otherwise, create new overlay
 } else {
+
     overlay = new Overlay({
         element: container,
         autoPan: true,
@@ -131,6 +142,7 @@ if (container == null) {
             duration: 250
         }
     });
+
     overlays = [overlay];
 }
 
@@ -181,20 +193,20 @@ Colors.names = {
     yellow: "#ffff00"
 };
 
-Colors.random = function() {
+Colors.random = function () {
     var result;
     var count = 0;
     for (var prop in this.names)
-        if (Math.random() < 1/++count)
+        if (Math.random() < 1 / ++count)
             result = prop;
     return result;
 };
 
-Colors.randomValue = function() {
+Colors.randomValue = function () {
     var result;
     var count = 0;
     for (var prop in this.names)
-        if (Math.random() < 1/++count)
+        if (Math.random() < 1 / ++count)
             result = this.names[prop];
     return result;
 };
