@@ -53,13 +53,14 @@ public class JavalinWebServer extends WebServer {
         app.unsafeConfig().requestLogger.http((ctx, ms) -> {
             LOG.info(ctx.method() + " " + ctx.path() + " took " + ms + "ms");
             String method = String.valueOf(ctx.method());
-            String url = ctx.url();
             String path = ctx.path();
-            String statusCode = String.valueOf(ctx.status());
+            String status = String.valueOf(ctx.status());
+            int statusCode = Integer.parseInt(status.split(" ")[0]);
             String ip = ctx.ip();
+            String parsedIp = ip.replace("[", "").replace("]", "");
             String referer = ctx.header("Referer");
             if (path.startsWith("/protected")) {
-                APILogger.logRequest(method, url, path, statusCode, ip, referer);
+                APILogger.logRequest(method, path, statusCode, parsedIp, referer);
             }
         });
     }

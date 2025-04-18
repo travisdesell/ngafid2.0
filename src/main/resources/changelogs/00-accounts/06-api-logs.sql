@@ -4,12 +4,10 @@
 CREATE TABLE api_logs (
   id INT NOT NULL AUTO_INCREMENT,
   method VARCHAR(10),
-  url TEXT,
-  path VARCHAR(512),
-  status_code VARCHAR(10),
-  ip VARCHAR(45),
+  path VARCHAR(2048),
+  status_code INT,
+  ip VARBINARY(16),  -- supports both IPv4 and IPv6
   referer TEXT,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
   PRIMARY KEY (id)
 );
