@@ -199,9 +199,10 @@ class Paginator extends React.Component {
                  }}
             >
 
-                <div className="row m-0 p-2 d-flex flex-column">
+            	<div className="row m-0 p-2 d-flex flex-column">
 
-                    <div className="d-flex flex-row flex-wrap" style={{rowGap: "0.50em"}}>
+
+                	<div className="d-flex flex-row flex-wrap" style={{rowGap:"0.50em"}}>
 
                         <div className="row" style={{alignContent: "start", marginLeft: "0em", marginRight: "auto"}}>
 
@@ -294,7 +295,7 @@ class Paginator extends React.Component {
                             {
                                 //Show Cesium buttons on the Flights page
                                 (PAGE_FLIGHTS) &&
-                                <div className="ml-4">
+                                <div className="d-flex ml-32">
                                     <CesiumButtons location={this.props.location}/>
                                 </div>
                             }

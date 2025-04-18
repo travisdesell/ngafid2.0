@@ -5,7 +5,7 @@
 
 
     <link rel="stylesheet" href="/css/theme-preload.css">
-    <script src="/js/theme_preload-bundle.js"></script>
+    <script src="/dist/js/theme_preload-bundle.js"></script>
     
 
     <meta charset="utf-8">
@@ -23,6 +23,7 @@
         var plotMapHidden = true;
         {{{navbar_js}}}
         {{{events_js}}}
+        {{{cesium_data_js}}}
     </script>
 
     <style>
@@ -119,11 +120,19 @@
             left: 10px;
         }
 
+
         #toggle-path-color {
             z-index: 0;
             position: absolute;
             top: 8px;
             left: 215px;
+        }
+
+        #events-dropdown {
+            z-index: 0;
+            position: absolute;
+            top: 10px;
+            left: 800px;
         }
     </style>
 
@@ -139,15 +148,21 @@
     <!-- Controling the flight phase in cesium page -->
     <div id="toolbar">
         <select class="cesium-button" id="dropdown">
-            <option value="0">Select Flight Phase</option>
-            <option value="1">Show Taxiing</option>
-            <option value="2">Show Takeoff</option>
-            <option value="3">Show Climb</option>
-            <option value="4">Show Cruise to Final</option>
-            <option value="5">Show Full Flight</option>
+            <option value="0">Flight Phase</option>
+            <option value="1">Taxiing</option>
+            <option value="2">Takeoff</option>
+            <option value="3">Climb</option>
+            <option value="4">Cruise to Final</option>
+            <option value="5">Full Flight</option>
         </select>
     </div>
 
+    <!-- <div id="events-dropdown" class="cesium-button"> -->
+    <!--     <div id = "events-dropdown-content"> -->
+    <!--         Events -->
+    <!--     </div> -->
+    <!-- </div> -->
+    
     <div id="toggle-path-color">
         <select class="cesium-button" id="color-options">
             <option value="0">Select Current Flight Path Color</option>
@@ -163,7 +178,6 @@
         </select>
          <button class="cesium-button" onClick="toggleAirframeLockCamera()">Toggle Camera</button>
                 <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
-
     </div>
 
 <!--        <script src = "src/main/javascript/cesium_page.js">-->
@@ -185,7 +199,10 @@
 
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
+
         var scopes = {{{ cesium_data }}};
+        console.log("Cesium data");
+        console.log(scopes);
         var keys = Object.keys(scopes);
         var today = new Date();
 
@@ -246,6 +263,8 @@
 
                     positionPropertyList[i].addSample(time, position);
                 }
+                console.log("Position Property");
+                console.log(positionPropertyList);
             }
         }
 
@@ -300,7 +319,6 @@
         async function loadModel(airframe) {
             const pathColor = Cesium.Color.fromRandom();
             const model = airframeModels[airframe];
-
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
@@ -329,6 +347,7 @@
                 let flightId = keys[i];
                 let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
                 let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
+
                 var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
                     name: "NGAFID CESIUM DEMO: " + keys[i],
@@ -572,6 +591,54 @@
             }
         }
 
+        function addEventOptions() {
+            var eventsDropdown = document.getElementById("events-dropdown");
+            eventData = {}
+            var uniqueEventNames = [];
+            var eventCheckBox = "";
+            for (var i = 0; i < keys.length; i++ ) {
+                let flightId = keys[i];
+                let events = scopes[flightId].events;
+
+                for (var j = 0; j < events.length; j++) {
+                    console.log("event")
+                    console.log(events[j]);
+                    console.log(Object.keys(events[j]))
+                    var eventName = events[j]["eventDefinitionName"];
+                    if (!(eventName in eventData)) {
+                        eventData[eventName] = []
+                        uniqueEventNames.push(eventName);
+                    }
+                    var eventDetails = {}
+                    for ( const [key, value] of Object.entries( events[j])) {
+                        // console.log(key);
+                        eventDetails[key] = value;
+                    }
+                    eventData[eventName].push(eventDetails);
+                }
+            }
+            var content = document.createTextNode(eventCheckBox);
+            eventsDropdown.insertAdjacentText("afterbegin", content);
+            console.log(eventCheckBox);
+            console.log(eventData);
+
+            uniqueEventNames.map((eventName, index) => {
+                console.log(eventName);
+                console.log(index);
+                eventCheckBox += `<div key=${index} className="form-check">
+                    <input className="form-check-input" type="checkbox" value=${eventName} id=${index} onChange="onclickEventHandler(event)"></input>
+                    <label className="form-check-label">
+                        ${eventName}
+                    </label>
+                </div>`
+            });
+            <!-- eventsDropdown.innerHTML = eventCheckBox; -->
+            console.log(eventCheckBox);
+
+        }
+
+        <!-- addEventOptions(); -->
+
         // Apply full flight phase
         function applyNgafidStyleEntire() {
 
@@ -628,6 +695,7 @@
         var entityToggleIndex = 0;
 
         function toggleAirframeLockCamera() {
+
             // Will intentionally go to trackedEntities.length + 1 to set to null
             viewer.trackedEntity = trackedEntities[entityToggleIndex++];
 
@@ -730,13 +798,18 @@
         Cesium.knockout.track(viewModel);
         // Model bind to the DOM elements
         var toolbar = document.getElementById('toolbar');
+        var eventsDropdown = document.getElementById('events-dropdown');
         Cesium.knockout.applyBindings(viewModel, toolbar);
+        // Cesium.knockout.applyBindings(viewModel, eventsDropdown);
+
 
         // Make globe view to 3D skyAtmosphere with HSB parameters.
         // This can be use in ngafid flight on different altitutes
         function subscribeParameter(name, globeName) {
             Cesium.knockout.getObservable(viewModel, name).subscribe(
                 function (newValue) {
+                    console.log("Regarding 3D");
+                    console.log(newValue);
                     skyAtmosphere[name] = newValue;
                     globe[globeName] = newValue;
                 }
@@ -756,7 +829,7 @@
 
     </script>
 
-<!--    <script src="/js/ngafid_cesium-bundle.js"></script>-->
+<!--    <script src="/dist/js/ngafid_cesium-bundle.js"></script>-->
 
 </body>
 </html>

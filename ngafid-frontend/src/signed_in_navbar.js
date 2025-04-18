@@ -114,16 +114,14 @@ class SignedInNavbar extends React.Component {
 
         let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
 
-        let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        let filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
-        if (this.props.filterVisible)
-            filterButtonClasses += " active";
-
+        let cesiumButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.cesiumVisible && "active"}`;
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
 
         const buttonStyle = {minWidth: "2.5em", minHeight: "2.5em"};
-
+        const buttonStyleSmall = { width: "2.40em", height: "2.40em", fontSize: "0.8em" };
 
         var uploadsButton = "";
         var importsButton = "";
@@ -202,55 +200,73 @@ class SignedInNavbar extends React.Component {
                 <div className="collapse navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
 
-                        <ul className="navbar-nav mr-auto" hidden={this.props.plotMapHidden}>
-                            {
-                                //only display the filter icon on the navbar if it's being used
-                                this.props.filterVisible ? (
-                                    <button id="filter-toggle-button" className={filterButtonClasses}
-                                            data-bs-toggle="button" title="Toggle the filter."
-                                            aria-pressed={this.props.filterSelected} style={buttonStyle}
-                                            onClick={() => this.props.toggleFilter()}>
-                                        <i className="fa fa-search p-1"></i>
-                                    </button>
-                                ) : ("")
-                            }
+                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center" hidden={this.props.plotMapHidden}>
 
+                            {/* Flight Page Orientation Button */}
                             {
-                                (this.props.showPlotButton) &&
-                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button"
-                                        title="Toggle the plot." aria-pressed="false" style={buttonStyle}
-                                        onClick={() => this.props.togglePlot()}>
-                                    <i className="fa fa-area-chart p-1"></i>
+                                (this.props.showFlightPageOrientationButton) &&
+                                <button
+                                    id="flight-page-orientation-button"
+                                    className="p-1 expand-import-button btn btn-outline-secondary text-center mr-1"
+                                    data-bs-toggle="button"
+                                    title="Toggle the Flight Page Orientation"
+                                    aria-pressed="false"
+                                    style={buttonStyleSmall}
+                                    onClick={() => this.props.toggleOrientation()}
+                                >
+                                    <i className="fa fa-arrows-h p-1"/>
                                 </button>
                             }
 
-                            <div className="input-group m-0">
-                                <div className="input-group-prepend">
-                                    <button id="map-toggle-button" className={mapButtonClasses} data-bs-toggle="button"
-                                            title="Toggle the map." aria-pressed="false" style={buttonStyle}
-                                            onClick={() => this.props.toggleMap()}
-                                            disabled={this.props.disableMapButton}>
-                                        <i className="fa fa-map-o p-1"></i>
-                                    </button>
-                                </div>
-                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} style={{
-                                    marginLeft: "1px",
-                                    height: "100%",
-                                    border: "1px solid rgb(108, 117, 125)"
-                                }}
+                            {/* Filter Button */}
+                            {
+                                (this.props.filterVisible) &&
+                                <button id="filter-toggle-button" className={filterButtonClasses} data-bs-toggle="button" title="Toggle the Filter" aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
+                                    <i className="fa fa-search p-1"/>
+                                </button>
+                            }
+
+                            {/* Plot Button */}
+                            {
+                                (this.props.showPlotButton) &&
+                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button" title="Toggle the Plot" aria-pressed={this.props.plotVisible} style={buttonStyle} onClick={() => this.props.togglePlot()}>
+                                    <i className="fa fa-area-chart p-1"/>
+                                </button>
+                            }
+
+                            {/* Cesium Button */}
+                            {
+                                (this.props.showCesiumButton) &&
+                                <button id="cesium-toggle-button" className={cesiumButtonClasses} data-toggle="button" title="Toggle the Cesium Map" aria-pressed={this.props.cesiumVisible} style={buttonStyle} onClick={() => this.props.toggleCesium()}>
+                                    <i className="fa fa-globe p-1"/>
+                                </button>
+                            }
+
+                            {/* Map Button and Menu */}
+                            {
+                                (this.props.showMapButton) &&
+                                <div className="input-group m-0 h-100">
+                                    <div className="input-group-prepend">
+                                        <button id="map-toggle-button" className={mapButtonClasses} data-bs-toggle="button" title="Toggle the 2D Map" aria-pressed={this.props.mapVisible} style={buttonStyle} onClick={() => this.props.toggleMap()} disabled={this.props.disableMapButton}>
+                                            <i className="fa fa-map-o p-1"/>
+                                        </button>
+                                    </div>
+                                    <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget}  style={{marginLeft:"1px", height:"100%", minHeight: "100%", maxHeight: "100%", border: "1px solid rgb(108, 117, 125)"}}
                                         value={this.props.mapStyle}
                                         onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
-                                    <option value="Aerial">Aerial</option>
-                                    <option value="AerialWithLabels">Aerial with labels</option>
-                                    <option value="Road">Road (static)</option>
-                                    <option value="RoadOnDemand">Road (dynamic)</option>
-                                    <option value="SectionalCharts">Sectional Charts</option>
-                                    <option value="TerminalAreaCharts">Terminal Area Charts</option>
-                                    <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
-                                    <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
-                                </select>
-                            </div>
+                                        <option value="Aerial">Aerial</option>
+                                        <option value="AerialWithLabels">Aerial with labels</option>
+                                        <option value="Road">Road (static)</option>
+                                        <option value="RoadOnDemand">Road (dynamic)</option>
+                                        <option value="SectionalCharts">Sectional Charts</option>
+                                        <option value="TerminalAreaCharts">Terminal Area Charts</option>
+                                        <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
+                                        <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
+                                        <option value="HelicopterCharts">Helicopter Charts</option>
+                                    </select>
+                                </div>
+                            }
                         </ul>
 
                     </ul>
@@ -364,9 +380,13 @@ class SignedInNavbar extends React.Component {
 }
 
 SignedInNavbar.defaultProps = {
-    disableMapButton: false,
-    showPlotButton: true,
-    plotMapHidden: false,
+    showFlightPageOrientationButton : false,
+    filterVisible : false,
+    showPlotButton : false,
+    showCesiumButton : false,
+    showMapButton : false,
+    disableMapButton : false,
+    plotMapHidden : true,
 }
 
 export default SignedInNavbar;

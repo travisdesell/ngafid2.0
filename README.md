@@ -212,7 +212,7 @@ Note that depending on your kafka installation, these programs may actually be s
 Next, run the following script to create the appropriate kafka topics:
 
 ```
-~/ngafid2.0 $ run/create_topics.sh
+~/ngafid2.0 $ run/kafka/create_topics.sh
 ```
 
 You should then be able to compile and run the webserver by running `run/webserver.sh`
@@ -230,18 +230,18 @@ terminals:
 The upload consumer simply processes uploaded files from the `upload` topic:
 
 ```shell
-~/ngafid2.0 $ run/upload_consumer
+~/ngafid2.0 $ run/kafka/upload_consumer
 ```
 
 The event consumer and event observer work in concert: the event observer looks for uncomputed events in fully imported
 flights and places them into the `event` topic. Then, the event consumer computes those events.
 
 ```shell
-~/ngafid2.0 $ run/event_consumer
+~/ngafid2.0 $ run/kafka/event_consumer
 ```
 
 ```shell
-~/ngafid2.0 $ run/event_observer
+~/ngafid2.0 $ run/kafka/event_observer
 ```
 
 ## 7. Workflow
@@ -250,7 +250,7 @@ If you modify the upload processing code in some way and want to re-add an uploa
 the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue:
 
 ```
-~/ngafid2.0 $ run/upload_helper.sh --help
+~/ngafid2.0 $ run/kafka/upload_helper --help
 ```
 
 Similarly, if you modify a custom-event computation you can use the `EventHelper` to remove events from the database.
@@ -258,7 +258,7 @@ The event observer will pick up on this and enqueue them for re-computation. You
 not to be recomputed.
 
 ```
-~/ngafid2.0 $ run/event_helper.sh --help
+~/ngafid2.0 $ run/kafka/event_helper --help
 ```
 
 ## 8. Event Statistics
@@ -350,3 +350,7 @@ http://sysadminsjourney.com/content/2010/02/01/apache-modproxy-error-13permissio
 to fix:
 
 sudo /usr/sbin/setsebool -P httpd_can_network_connect 1
+
+
+## Chart Processing Service
+[Chart Processing Service Documentation](services/chart_processor/README.md)

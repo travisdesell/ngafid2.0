@@ -261,6 +261,7 @@ class Tags extends React.Component {
      * Renders the Tags component
      */
     render() {
+
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
         let vcellStyle = { "overflowY" : "visible"};
@@ -443,10 +444,17 @@ class Tags extends React.Component {
 
 
         return (
-            <div className="m-1">
-                <div>
-                    <b className="m-1" style={{styleButton}}>Flight Tags:</b>
-                </div>
+            <div className="w-100">
+
+                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"} style={{marginBottom:"0"}}>
+                    <div className="d-flex flex-column mr-3" style={{width: "16px", minWidth:"16px", maxWidth:"16px", height: "16px"}}>
+                        <i className='fa fa-plus ml-2' style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
+                    </div>
+                    <div style={{fontSize: "0.75em"}}>
+                        Tags
+                    </div>
+                </b>
+
                 {tagStat} 
                 <div className="flex-row m-1 mb-2">
                     {addDrop}{addForm}

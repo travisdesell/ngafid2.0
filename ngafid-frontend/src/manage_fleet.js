@@ -4,9 +4,7 @@ import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-
 import { EmailSettingsTableManager } from "./email_settings.js";
-
 
 class AccessCheck extends React.Component {
     constructor(props) {
@@ -25,16 +23,13 @@ class AccessCheck extends React.Component {
 
         let radioId = lcType + "AccessRadio" + userId;
 
-        //console.log("rendering check " + checkType + " with access: " + userAccess);
-
         return (
-            <div className="form-check form-check-inline" style={{marginRight:"1.5em"}}>
+            <div className="form-check form-check-inline">
                 <input className="form-check-input" type="radio" name={"accessRadios" + userId} id={radioId} value={ucType} checked={ucType == userAccess} onChange={() => fleetUserRow.checkRadio(ucType)}/>
                 <label className="form-check-label" htmlFor={radioId}>
                     {slcType}
                 </label>
             </div>
-
         );
     }
 }
@@ -44,8 +39,8 @@ class FleetUserRow extends React.Component {
         super(props);
 
         let fleetUser = props.fleetUser;
-
         fleetUser.fleetAccess.originalAccess = fleetUser.fleetAccess.accessType;
+
         this.state = {
             fleetUser : fleetUser,
             waitingUserCount : this.props.waitingUserCount,
@@ -55,15 +50,12 @@ class FleetUserRow extends React.Component {
     }
 
     checkRadio(newRadio) {
-        //console.log("changing " + this.state.fleetUser.email + " access to " + newRadio);
         this.state.fleetUser.fleetAccess.accessType = newRadio;
         this.setState(this.state);
     }
 
     updateUserAccess(fleetUser) {
-        console.log("updating user access for:");
-        console.log(fleetUser);
-
+        console.log("updating user access for:", fleetUser);
         $("#loading").show();
 
         var submissionData = {
@@ -83,7 +75,6 @@ class FleetUserRow extends React.Component {
                 $('#loading').hide();
 
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
@@ -91,45 +82,38 @@ class FleetUserRow extends React.Component {
                 let previousAccess = fleetUser.fleetAccess.originalAccess;
                 let newAccess = fleetUser.fleetAccess.accessType;
 
-                console.log("previousAccess: " + previousAccess + ", newAccess: " + newAccess);
-
                 if (newAccess == "WAITING" && previousAccess != "WAITING") {
-                    console.log("incrementing waiting!");
                     fleetUserRow.props.incrementWaiting();
                 } else if (newAccess != "WAITING" && previousAccess == "WAITING") {
-                    console.log("decrementing waiting!");
                     fleetUserRow.props.decrementWaiting();
                 }
 
-                //update the fleetUser's new original access (so the update button will be disabled unless the access is changed again)
                 fleetUser.fleetAccess.originalAccess = newAccess;
                 fleetUserRow.state.fleetUser = fleetUser;
                 fleetUserRow.setState(fleetUser);
-            },   
+
+                fleetUserRow.props.onAccessChange();
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
                 errorModal.show("Error Loading Uploads", errorThrown);
-            },   
+            },
             async: true
-        });  
-
+        });
     }
 
     render() {
         let fleetUser = this.state.fleetUser;
         let accessType = fleetUser.fleetAccess.accessType;
-
-        console.log("rendering " + fleetUser.email + " with access " + accessType);
+        const { rowStyle } = this.props;
 
         let buttonClasses = "btn btn-outline-secondary";
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
 
-        console.log("Setting Index", this.settingIndex);
-
         return (
-            <tr userid={fleetUser.id} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(this.state.settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
+            <tr userid={fleetUser.id} style={rowStyle}>
                 <td scope="row" style={{padding: "15 12 15 12"}}>{fleetUser.email}</td>
-                <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {this.state.fleetUser.lastName}</td>
+                <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {fleetUser.lastName}</td>
                 <td style={{padding: "15 12 15 12"}}>
                     <AccessCheck checkType="MANAGER" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
                     <AccessCheck checkType="UPLOAD" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
@@ -137,7 +121,6 @@ class FleetUserRow extends React.Component {
                     <AccessCheck checkType="WAITING" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
                     <AccessCheck checkType="DENIED" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
                 </td>
-
                 <td>
                     <button className={buttonClasses} style={{padding : "2 6 2 6"}} disabled={buttonDisabled} onClick={() => this.updateUserAccess(fleetUser)}>
                         Update
@@ -154,37 +137,43 @@ class ManageFleetPage extends React.Component {
 
         this.state = {
             user : this.props.user,
+            fleetUsers: [],
             waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            showDeniedUsers: false
         };
+    }
 
-        console.log("constructed ManageFleetPage");
+    componentDidMount() {
+        this.sortAndSetUsers();
+    }
+
+    sortAndSetUsers() {
+        const { user } = this.state;
+        if (user && user.fleet && Array.isArray(user.fleet.users)) {
+            const sortedUsers = [...user.fleet.users].sort((a, b) =>
+                a.fleetAccess.accessType === "DENIED" ? 1 : -1
+            );
+            this.setState({ fleetUsers: sortedUsers });
+        } else {
+            console.warn("User data or fleet users array is missing.");
+        }
     }
 
     setUser(user) {
-        console.log("set manage fleet card user");
-        console.log(user);
-        this.setState({
-            user : user
-        });
+        this.setState({ user: user });
     }
 
     incrementWaiting() {
-        console.log("incrementing waiting on page!");
-        this.setState({
-            waitingUserCount : (this.state.waitingUserCount + 1)
-        });
+        this.setState({ waitingUserCount : (this.state.waitingUserCount + 1) });
     }
 
     decrementWaiting() {
-        console.log("decrementing waiting on page!");
-        this.setState({
-            waitingUserCount : (this.state.waitingUserCount - 1)
-        });
+        this.setState({ waitingUserCount : (this.state.waitingUserCount - 1) });
     }
 
     sendEmail = (email) => {
-        const {user} = this.state;
+        const { user } = this.state;
         var submissionData = {
             email : email,
             fleetName: user.fleet.name,
@@ -197,19 +186,14 @@ class ManageFleetPage extends React.Component {
             data: submissionData,
             dataType: 'json',
             success: (response) => {
-                console.log('Email Invite sent successfully:', response);
-
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
                 alert('Email invite sent to ' + email + '.');
-                $('#inviteEmail').val(' ');
-
+                $('#inviteEmail').val('');
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                console.error('Failed to send email invite:');
                 errorModal.show("Error Sending Invite");
             },
             async: true
@@ -227,148 +211,117 @@ class ManageFleetPage extends React.Component {
         this.sendEmail(email);
     };
 
-
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {opacity : 0.8};
-        const fgStyle = {opacity : 1.0};
+        const bgStyle = { opacity: 0.8 };
+        const fgStyle = { opacity: 1.0 };
+        const grayoutStyle = { backgroundColor: '#d3d3d3' };
 
-        let user = "";
-        let fleetName = "";
-        let fleetUsers = []
-        if (typeof this.state.user != 'undefined') {
-            user = this.state.user;
-            fleetName = user.fleet.name;
-
-            if (typeof user.fleet.users != 'undefined') {
-                fleetUsers = user.fleet.users;
-            }
-        }
+        let user = this.state.user;
+        let fleetName = user?.fleet?.name || "";
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div>
+                <SignedInNavbar
+                    activePage="account"
+                    waitingUserCount={this.state.waitingUserCount}
+                    fleetManager={fleetManager}
+                    unconfirmedTailsCount={this.state.unconfirmedTailsCount}
+                    modifyTailsAccess={modifyTailsAccess}
+                    plotMapHidden={plotMapHidden}
+                />
 
-                <div style={{flex:"0 0 auto"}}>
-                    <SignedInNavbar
-                        activePage="account"
-                        waitingUserCount={this.state.waitingUserCount}
-                        fleetManager={fleetManager}
-                        unconfirmedTailsCount={this.state.unconfirmedTailsCount}
-                        modifyTailsAccess={modifyTailsAccess}
-                        plotMapHidden={plotMapHidden}
-                    />
-                </div>
+                <div className="card-body" hidden={hidden}>
+                    <div className="row ml-1 mb-2 invite align-items-center" style={{...bgStyle}}>
+                        <p style={{...fgStyle, marginBottom: "0", marginRight: "10px"}}>
+                            Invite user to {fleetName}:
+                        </p>
 
-                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
-                    <div className="card mb-1 m-2">
-                        <h5 className="card-header" style={fgStyle}>
-                            Manage {fleetName} Users
-                        </h5>
+                        <form
+                            onSubmit={this.handleSubmit}
+                            className="d-flex align-items-center"
+                            style={{marginRight: "10px"}}
+                        >
+                            <input
+                                id="inviteEmail"
+                                type="email"
+                                placeholder="Enter user email"
+                                name="email"
+                                pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                                title="Please enter a valid email address"
+                                required
+                                className="form-control"
+                                style={{marginRight: "10px"}}
+                            />
+                            <button className="btn btn-primary" type="submit">
+                                Invite
+                            </button>
+                        </form>
 
-                        <div className="card-body" style={fgStyle}>
+                        <div className="d-flex align-items-center">
+                            <button
+                                className="btn btn-outline-primary"
+                                onClick={() => this.setState({showDeniedUsers: !this.state.showDeniedUsers})}
+                                style={{
 
-                            {/* INVITE USER */}
-                            <div style={{ display:"flex", alignItems:"start", width:"100%" }}>
-                                <p style={{...fgStyle, marginTop:"0.4em", marginRight:"1em" }}>
-                                    Invite user to {fleetName}:
-                                </p>
-                                <form onSubmit={this.handleSubmit} style={{ display:"flex", alignItems:"baseline" }}>
-                                    <input
-                                        id="inviteEmail"
-                                        className="form-control"
-                                        type="email"
-                                        placeholder="Enter user email"
-                                        name="email"
-                                        pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
-                                        title="Please enter a valid email address"
-                                        required
-                                    />
-                                    <button className="btn btn-primary ml-1 mb-2" type="submit">Invite</button>
-                                </form>
-                            </div>
+                                    lineHeight: "1.5",
+                                    fontSize: "1rem",
+                                    transform: "translateY(-8px)"
+                                }}
+                            >
+                                {this.state.showDeniedUsers ? "Hide Denied Users" : "Show Denied Users"}
+                            </button>
 
-                            <div className="card card-alt">
-                                <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
-                                    Fleet Access Preferences
-                                </h6>
-                                <table style={{borderCollapse: "collapse", width:"100%", color:"var(--c_text)", backgroundColor:"var(--c_card_bg_alt) !important"}}>
-                                    <thead>
-                                        <tr>
-                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Email </div></th>
-                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Name </div></th>
-                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Access Level </div></th>
-                                            <th scope="col"/>
-                                        </tr>
-                                        <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
-                                    </thead>
-                                    <tbody>
-                                        {
-                                            (fleetUsers.length === 0)
-                                            ?
-                                            <tr>
-                                                <td className="font-italic" style={{padding:"16px 12px", color: "var(--c_text_alt)"}}>No users found...</td>
-                                            </tr>
-                                            :
-                                            fleetUsers.map((fleetUser, index) => {
-                                                return (
-                                                    <FleetUserRow
-                                                        key={fleetUser.id}
-                                                        settingIndex={index}
-                                                        fleetUser={fleetUser}
-                                                        incrementWaiting={() => {this.incrementWaiting();}}
-                                                        decrementWaiting={() => {this.decrementWaiting();}}
-                                                    />
-                                                );
-
-                                            })
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <br/>
-                            
-                            <div className="card-alt card">
-                                <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
-                                    Fleet Email Preferences
-                                </h6>
-                                <div className="form-group d-flex" style={{marginBottom:"0"}}>
-                                    <EmailSettingsTableManager fleetUsers={fleetUsers}/>
-                                </div>
-                            </div>
 
                         </div>
+                    </div>
 
+
+                    <div className="card mb-1" style={bgStyle}>
+                        <h5 className="card-header" style={fgStyle}>Manage {fleetName} Users</h5>
+
+                        <div className="card-body" style={fgStyle}>
+                            <table className="table">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Access Level</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {
+                                    this.state.fleetUsers
+                                        .filter(user => this.state.showDeniedUsers || user.fleetAccess.accessType !== "DENIED")
+                                        .map((fleetUser, index) => {
+                                            const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayoutStyle : {};
+                                            return (
+                                                <FleetUserRow
+                                                    key={fleetUser.id}
+                                                    fleetUser={fleetUser}
+                                                    rowStyle={rowStyle}
+                                                    incrementWaiting={() => this.incrementWaiting()}
+                                                    decrementWaiting={() => this.decrementWaiting()}
+                                                    onAccessChange={() => this.sortAndSetUsers()}
+                                                />
+                                            );
+                                        })
+                                }
+                                </tbody>
+                            </table>
+
+                            <h6 className="card-header" style={{padding: "16px 12px", margin: "0px 0px"}}>Fleet Email
+                                Preferences</h6>
+                            <div className="form-group">
+                                <div className="d-flex">
+                                    {this.state.fleetUsers.length > 0 && (
+                                        <EmailSettingsTableManager fleetUsers={this.state.fleetUsers}/>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <style jsx="true">
-                    {`
-                        .invite p {
-                          margin-right: 10px;
-                          margin-bottom: auto;
-                          margin-top: auto;
-                        }
-                        .invite form {
-                          margin-bottom: auto !important;
-                          margin-top: auto !important;
-                        }
-                        .invite input {
-                          border: 1px solid grey;
-                          border-radius: 5px;
-                          padding: 5px;
-                          background-color: transparent;
-                          outline: none;
-                          transition: border-color 0.2s ease;
-                        }
-                        .invite input:focus {
-                          border-color: #007bff;
-                        }
-                        .table>tbody>tr>td,
-                        .table>tbody>tr>th {
-                            border-top: none;
-                        }
-                   `}
-                </style>
             </div>
         );
     }
