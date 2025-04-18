@@ -1,14 +1,15 @@
 [Unit]
-Description=NGAFID Web Server Service
+Description=NGAFID Upload Consumer
 After=network-online.target kafka.service
 PartOf=ngafid.target
 
 [Service]
 Type=simple
 User=www
-Group=www
+Group=ngafid
 WorkingDirectory=/opt/ngafid/ngafid2.0
-ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/webserver'
+Environment=PARALLELISM=2
+ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/kafka/upload_consumer'
 
 [Install]
 WantedBy=ngafid.target

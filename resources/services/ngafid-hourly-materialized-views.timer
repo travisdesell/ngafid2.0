@@ -1,0 +1,9 @@
+[Unit]
+Description=NGAFID Hourly Materialized View Timer
+
+[Timer]
+OnUnitActiveSec=1h
+Unit=ngafid-hourly-materialized-views.service
+
+[Install]
+WantedBy=ngafid.target

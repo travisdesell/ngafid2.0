@@ -1,0 +1,8 @@
+[Unit]
+Description=NGAFID Services Target
+After=network-online.target kafka.service
+Wants=ngafid-www.service ngafid-email-consumer.service ngafid-event-consumer.service ngafid-event-observer.service ngafid-upload-consumer.service
+AllowIsolate=No
+
+[Install]
+WantedBy=multi-user.target

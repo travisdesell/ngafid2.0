@@ -1,5 +1,5 @@
 [Unit]
-Description=NGAFID Web Server Service
+Description=NGAFID Event Observer
 After=network-online.target kafka.service
 PartOf=ngafid.target
 
@@ -8,7 +8,7 @@ Type=simple
 User=www
 Group=www
 WorkingDirectory=/opt/ngafid/ngafid2.0
-ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/webserver'
+ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/kafka/event_observer'
 
 [Install]
 WantedBy=ngafid.target
