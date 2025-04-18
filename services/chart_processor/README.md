@@ -4,15 +4,15 @@
 ## Objective
 At the time when this service was created, there were no service available that would let us serve aeronautical charts as a tile pyramid. 
 In the past a service called "Chartbundle" was used, but when it stopped working there was a need to create our own.
-The VFR Chart Processing Service checks daily if the charts are due to update, and they are, a script will start downloading, and processing scripts.
-The service combines individual charts into one raster and serves them as tile pyramid that allows zoom functionality.
+The VFR Chart Processing Service checks daily if the charts are due to update, and if they are, a script will start downloading, and processing scripts.
+The service combines individual charts into one raster chart and serves it as tile pyramid that allows zoom functionality.
 
 ## Chart update schedule 
 
 FAA publishes their digital aeronautical charts every 28/56 days.
 The schedule can be found here: https://www.faa.gov/air_traffic/flight_info/aeronav/productcatalog/doles/
 
-The schedule is stored under the update_schedule key in the JSON config file - chart_service_config_json. It consists of a list of years, each containing an array of release dates in MM-DD-YYYY format:
+The schedule is stored locally under the update_schedule key in the JSON config file - chart_service_config_json. It consists of a list of years, each containing an array of release dates in MM-DD-YYYY format:
 
 ```
 "update_schedule": [
