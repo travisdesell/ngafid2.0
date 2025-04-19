@@ -9,7 +9,7 @@ import java.net.InetAddress;
 
 public class APILogger {
     public static void logRequest(String method, String path, int statusCode, String ipString, String referer) {
-        String sql = "INSERT INTO api_logs (method, path, status_code, ip, referer, timestamp) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO api_logs (method, path, status_code, ip, referer) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -21,7 +21,6 @@ public class APILogger {
             byte[] ipBytes = InetAddress.getByName(ipString).getAddress();
             ps.setBytes(4, ipBytes);
             ps.setString(5, referer);
-            ps.setTimestamp(6, java.sql.Timestamp.from(Instant.now()));
 
             ps.executeUpdate();
         } catch (SQLException | UnknownHostException e) {
