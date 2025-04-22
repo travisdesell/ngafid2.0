@@ -31,7 +31,7 @@ import sys
 import platform
 
 """Configure logging. Log files will be rotating if the size will reach 10 MB"""""
-log_file = "./services/chart_processor/chart_server.log"
+log_file = "ngafid-chart-processor/chart_server.log"
 log_dir = os.path.dirname(log_file)
 
 os.makedirs(log_dir, exist_ok=True)
@@ -53,7 +53,7 @@ logging.basicConfig(
 )
 
 
-configuration_file = "./services/chart_processor/chart_service_config.json"
+configuration_file = "ngafid-chart-processor/chart_service_config.json"
 
 stop_event = threading.Event()
 def parse_arguments():
@@ -148,7 +148,7 @@ def run_chart_processor(date):
     try:
         logging.info(f"Running chartProcessor.py with --chart_date={date}")
         result = subprocess.run(
-            ["python3", "./services/chart_processor/chartProcessor.py", "--chart_date", date],
+            ["python3", "ngafid-chart-processor/chartProcessor.py", "--chart_date", date],
             text=True,
             check=True
         )
@@ -222,7 +222,8 @@ class TileRequestHandler(SimpleHTTPRequestHandler):
     Custom handler to serve tiles from the charts directory.
     """
 
-    BASE_DIR = os.path.abspath("./services/chart_processor/charts")  # Static base directory
+    BASE_PATH = os.getenv("NGAFID_CHART_PROCESSOR_PATH", "ngafid-chart-processor")
+    BASE_DIR = os.path.abspath(f"{BASE_PATH}/charts")  # Static base directory
 
     def translate_path(self, path):
         """Translate the path to serve files from the BASE_DIR."""
@@ -291,7 +292,8 @@ def initial_download():
     Perform the initial download of charts if the charts directory is empty, missing specific subdirectories,
     or does not exist.
     """
-    charts_dir = "./services/chart_processor/charts"
+    base_path = os.getenv("NGAFID_CHART_PROCESSOR_PATH", "ngafid-chart-processor")
+    charts_dir = f"{base_path}/charts"
     required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high","helicopter"]
 
     # Check if the charts directory exists

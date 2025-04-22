@@ -37,7 +37,7 @@ def check_dependencies():
 
 
 """Configure logging. Log files will be rotating if the size will reach 10 MB"""""
-log_file = "./services/chart_processor/chart_processor.log"
+log_file = "ngafid-chart-processor/chart_processor.log"
 log_dir = os.path.dirname(log_file)
 
 os.makedirs(log_dir, exist_ok=True)
@@ -79,7 +79,7 @@ class ChartType(Enum):
     IFR_ENROUTE_HIGH = "ifr_enroute_high"
     HELICOPTER = "helicopter"
 
-configuration_file = "./services/chart_processor/chart_service_config.json"
+configuration_file = "ngafid-chart-processor/chart_service_config.json"
 
 def validate_date(date_str):
     """
@@ -177,14 +177,15 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
                 for file_name in os.listdir(temp_dir):
                     if file_name.endswith(".tif"):
                         input_tif = os.path.join(temp_dir, file_name)
-                        if chart_type in [ChartType.IFR_ENROUTE_LOW, ChartType.IFR_ENROUTE_HIGH]:
+                        
                         # For IFR_ENROUTE_LOW or IFR_ENROUTE_HIGH, convert to lowercase
+                        if chart_type in [ChartType.IFR_ENROUTE_LOW, ChartType.IFR_ENROUTE_HIGH]:
                             base_name, ext = os.path.splitext(file_name)
                             file_name = f"{base_name.lower()}{ext}"  # Lowercase name
 
                         output_tif = os.path.join(tifs_path, file_name)
 
-                        os.rename(input_tif, output_tif)
+                        shutil.move(input_tif, output_tif)
                         logging.info(f"Moved {input_tif} to {output_tif}")
 
         except requests.RequestException as e:
@@ -466,7 +467,7 @@ def get_chart_paths(chart_type):
     :return: dictionary with paths to directories needed for tif file processing.
     """
     """Returns paths for a given chart type."""
-    base_path = "./services/chart_processor"
+    base_path = os.getenv("NGAFID_CHART_PROCESSOR_PATH", "ngafid-chart-processor/")
     temp_file_path = os.path.join(base_path, "temp_files")
 
     return {

@@ -15,5 +15,6 @@ ngafid-www/target/*
 ngafid-data-processor/target/*
 ngafid-frontend/node_modules
 ngafid-frontend/package-json.lock
-ngafid-static/public/js/*
+ngafid-static/js/*
 ngafid-chart-processor/charts/*
+ngafid-db/target/*
