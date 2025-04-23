@@ -1,0 +1,9 @@
+[Unit]
+Description=NGAFID Daily Materialized View Timer
+
+[Timer]
+OnUnitActiveSec=24h
+Unit=ngafid-daily-materialized-views.service
+
+[Install]
+WantedBy=ngafid.target

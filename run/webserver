@@ -1,0 +1,1 @@
+mvn exec:java -pl ngafid-www -Dexec.mainClass="org.ngafid.www.WebServer"

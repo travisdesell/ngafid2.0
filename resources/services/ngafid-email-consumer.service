@@ -1,0 +1,14 @@
+[Unit]
+Description=NGAFID Email Consumer
+After=network-online.target kafka.service
+PartOf=ngafid.target
+
+[Service]
+Type=simple
+User=www
+Group=ngafid
+WorkingDirectory=/opt/ngafid/ngafid2.0
+ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/kafka/email_consumer'
+
+[Install]
+WantedBy=ngafid.target

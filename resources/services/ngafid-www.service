@@ -1,0 +1,14 @@
+[Unit]
+Description=NGAFID Web Server Service
+After=network-online.target kafka.service
+PartOf=ngafid.target
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/opt/ngafid/ngafid2.0
+ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/webserver'
+
+[Install]
+WantedBy=ngafid.target
