@@ -21,13 +21,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+            
+      - name: List files
+        run: ls -R
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: ngafid-frontend/package-lock.json
+          cache-dependency-path: './ngafid-frontend/package-lock.json'
 
       - name: Install dependencies
         working-directory: ngafid-frontend
