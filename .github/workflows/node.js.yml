@@ -48,4 +48,4 @@ jobs:
 
       - name: Run tests
         working-directory: ngafid-frontend
-        run: npm test
+        run: npm run test --if-present
