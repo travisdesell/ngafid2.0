@@ -1,27 +1,29 @@
-package org.ngafid.routes.javalin;
+package org.ngafid.www.routes;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.google.gson.Gson;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.common.Database;
-import org.ngafid.bin.WebServer;
-import org.ngafid.accounts.User;
-import org.ngafid.events.Event;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.WebServer;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
-import static org.ngafid.bin.WebServer.gson;
+
+import static org.ngafid.www.WebServer.gson;
 
 public class CesiumDataJavalinRoutes {
 
@@ -360,7 +362,7 @@ public class CesiumDataJavalinRoutes {
             }
 
             // Calculate the cruise to final phase
-            int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) -9;
+            int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) - 9;
             sizePreClimb = preClimb / 3;
 
             for (int i = 0; i < altAgl.size(); i++) {
