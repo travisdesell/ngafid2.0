@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node_modules/.bin/webpack --mode development",
     "build": "NODE_ENV=production node_modules/.bin/webpack --mode production --no-watch",
     "start:dev": "node_modules/.bin/webpack serve",
