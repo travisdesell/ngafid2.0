@@ -25,12 +25,21 @@ jobs:
       - name: List files
         run: ls -R
 
+      - name: Check for package-lock.json
+        run: |
+          if [ -f ngafid-frontend/package-lock.json ]; then
+            echo "✅ Found package-lock.json"
+          else
+            echo "❌ Failed to find package-lock.json"
+            exit 1
+          fi
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: './ngafid-frontend/package-lock.json'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install dependencies
         working-directory: ngafid-frontend
