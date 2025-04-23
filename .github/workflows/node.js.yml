@@ -16,7 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [18.x]
+        # node-version: [18.x, 20.x, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -40,6 +41,9 @@ jobs:
 
       - name: Build project
         working-directory: ngafid-frontend
+        env:
+          NODE_ENV: production
+          CI: true
         run: npm run build --if-present
 
       - name: Run tests

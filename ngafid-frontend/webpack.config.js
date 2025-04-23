@@ -7,10 +7,14 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require('path');
 
 
+const isCI   = !!process.env.CI;
+const isProd = (process.env.NODE_ENV === 'production');
+const doWatch = (!isCI && !isProd);
+
 module.exports = {
 
     mode: process.env.NODE_ENV || 'development',
-    watch: true,
+    watch: doWatch,
 
     resolve: {
         fallback: {
@@ -71,7 +75,7 @@ module.exports = {
         theme_preload: "./src/theme_preload.js",
     },
 
-    devtool: "source-map",
+    devtool: (process.env.CI ? false : 'source-map'),
 
     output: {
         path: path.resolve(__dirname, "../ngafid-static/js/"),
