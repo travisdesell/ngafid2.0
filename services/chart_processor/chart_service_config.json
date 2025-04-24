@@ -1,0 +1,83 @@
+{
+
+  "server_config": {
+    "host": "localhost",
+    "port": 8187,
+    "directories": {
+      "sectional_charts": "sectional",
+      "terminal_area_charts": "charts_final/terminal_area",
+      "ifr_enroute_low_charts": "charts_final/ifr_enroute_low",
+      "ifr_enroute_high_charts": "charts_final/ifr_enroute_high"
+    },
+    "chart_processor": "chartProcessor.py"
+  },
+  "paths": {
+    "charts": "./services/chart_processor/charts",
+    "tifs_original": "./services/chart_processor/tifs_original",
+    "temp_files": "./services/chart_processor/temp_files"
+  },
+  "update_schedule": [
+      {
+        "year": 2024,
+        "dates": ["12-26-2024"]
+      },
+      {
+        "year": 2025,
+        "dates": ["02-20-2025", "04-17-2025", "06-12-2025", "08-07-2025", "10-02-2025", "11-27-2025"]
+      },
+      {
+        "year": 2026,
+        "dates": ["01-22-2026", "03-19-2026", "05-14-2026", "07-11-2026", "09-03-2026", "10-29-2026", "12-24-2026"]
+      },
+      {
+        "year": 2027,
+        "dates": ["02-18-2027", "04-15-2027", "06-10-2027", "08-05-2027", "09-30-2027", "11-25-2027"]
+      },
+      {
+        "year": 2028,
+        "dates": ["01-20-2028", "03-16-2028", "05-11-2028", "07-06-2028", "08-31-2028", "10-26-2028", "12-21-2028"]
+      }
+    ],
+
+    "chart_files": {
+        "SECTIONAL": {
+            "base_url": "https://aeronav.faa.gov/visual/{date}/sectional-files/",
+            "areas": ["Albuquerque", "Anchorage","Atlanta", "Bethel", "Billings", "Brownsville", "Cape_Lisburne", "Charlotte", "Cheyenne", "Chicago", "Cincinnati", "Cold_Bay", "Dallas-Ft_Worth", "Dawson", "Denver", "Detroit", "El_Paso", "Fairbanks", "Great_Falls", "Green_Bay", "Halifax", "Hawaiian_Islands", "Houston", "Jacksonville", "Juneau", "Kansas_City", "Ketchikan", "Klamath_Falls", "Kodiak", "Lake_Huron", "Las_Vegas", "Los_Angeles", "McGrath", "Memphis", "Miami", "Montreal", "New_Orleans", "New_York", "Nome", "Omaha", "Phoenix", "Point_Barrow", "St_Louis", "Salt_Lake_City", "San_Antonio", "San_Francisco", "Seattle", "Seward" ,"Twin_Cities", "Washington", "Western_Aleutian_Islands", "Wichita"]
+        },
+        "TERMINAL_AREA": {
+            "base_url": "https://aeronav.faa.gov/visual/{date}/tac-files/",
+            "areas": ["Anchorage-Fairbanks_TAC", "Atlanta_TAC","Baltimore-Washington_TAC","Boston_TAC", "Charlotte_TAC", "Chicago_TAC","Cincinnati_TAC", "Cleveland_TAC", "Dallas-Ft_Worth_TAC", "Denver_TAC", "Detroit_TAC", "Houston_TAC", "Kansas_City_TAC", "Las_Vegas_TAC", "Los_Angeles_TAC", "Memphis_TAC", "Miami_TAC", "Minneapolis-St_Paul_TAC", "New_Orleans_TAC", "New_York_TAC", "Philadelphia_TAC", "Phoenix_TAC", "Pittsburgh_TAC", "Puerto_Rico-VI_TAC","Salt_Lake_City_TAC",  "St_Louis_TAC", "San_Diego_TAC", "San_Francisco_TAC", "Seattle_TAC", "Tampa-Orlando_TAC"]
+        },
+        "IFR_ENROUTE_LOW": {
+            "base_url": "https://aeronav.faa.gov/enroute/{date}/",
+            "areas": [
+              "enr_l01", "enr_l02", "enr_l03", "enr_l04", "enr_l05",
+              "enr_l06", "enr_l07", "enr_l08", "enr_l09", "enr_l10",
+              "enr_l11", "enr_l12", "enr_l13", "enr_l14", "enr_l15",
+              "enr_l16", "enr_l17", "enr_l18", "enr_l19", "enr_l20",
+              "enr_l21", "enr_l22", "enr_l23", "enr_l24", "enr_l25",
+              "enr_l26", "enr_l27", "enr_l28", "enr_l29", "enr_l30",
+              "enr_l31", "enr_l32", "enr_l33", "enr_l34", "enr_l35", "enr_l36",
+              "enr_akl01", "enr_akl02", "enr_akl03", "enr_akl04"
+            ]
+        },
+        "IFR_ENROUTE_HIGH": {
+            "base_url": "https://aeronav.faa.gov/enroute/{date}/",
+            "areas": [
+              "enr_h01", "enr_h02", "enr_h03", "enr_h04", "enr_h05",
+              "enr_h06", "enr_h07", "enr_h08", "enr_h09", "enr_h10",
+              "enr_h11", "enr_h12",
+              "enr_akh01", "enr_akh02",
+              "enr_p01", "enr_p02"
+            ]
+        }  ,
+        "TERMINAL_AREA_SET": {
+            "base_url": "https://aeronav.faa.gov/visual/{date}/All_Files/Terminal.zip"     
+        },
+        "HELICOPTER": {
+              "base_url": "https://aeronav.faa.gov/visual/{date}/heli_files/",
+              "areas": ["Balt-Wash_Heli","Boston_Heli","Chicago_Heli","Dallas-Ft_Worth_Heli","Detroit_Heli", "Houston_Heli","Los_Angeles_Heli", "New_York_Heli", "US_Gulf_Coast_Heli"]
+      }
+    }
+  }
+  
