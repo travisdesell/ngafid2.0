@@ -148,7 +148,7 @@ FROM
     ON
         flights.id = e.flight_id
 WHERE
-    DATE_SUB(UTC_DATE(), INTERVAL 30 DAY) <= e.end_time
+    (CURRENT_DATE - INTERVAL '30' DAY) <= e.end_time
 GROUP BY
     fleet_id,
     event_definition_id,

@@ -83,9 +83,9 @@ CREATE TABLE event_metadata_keys (
     PRIMARY KEY(id)
 );
 
---changeset josh:event-metadata-keys-static labels:flights,events
-INSERT INTO event_metadata_keys (name) VALUES ("lateral_distance");
-INSERT INTO event_metadata_keys (name) VALUES ("vertical_distance");
+--changeset josh:event-static-metadata-keys labels:flights,events
+INSERT INTO event_metadata_keys (name) VALUES ('lateral_distance');
+INSERT INTO event_metadata_keys (name) VALUES ('vertical_distance');
 
 --changeset josh:event-metadata labels:flights,events
 CREATE TABLE event_metadata (

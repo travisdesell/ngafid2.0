@@ -3,6 +3,7 @@ package org.ngafid.core.accounts;
 import java.io.Serializable;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -192,7 +193,7 @@ public class Fleet implements Serializable {
     }
 
     /**
-     * Populates the list of users with access to this fleet
+     * Populates the list of users with access to this fleet, except for user with id `populatorId`
      *
      * @param connection  is a connection to the mysql database.
      * @param populatorId is the id of the user whose populating the list of user
@@ -244,5 +245,9 @@ public class Fleet implements Serializable {
 
     public String toString() {
         return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
+    }
+
+    public List<User> getUsers() {
+        return Collections.unmodifiableList(users);
     }
 }
