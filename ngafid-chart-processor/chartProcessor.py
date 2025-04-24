@@ -37,7 +37,7 @@ def check_dependencies():
 
 
 """Configure logging. Log files will be rotating if the size will reach 10 MB"""""
-log_file = "ngafid-chart-processor/chart_processor.log"
+log_file = "ngafid-chart-processor/log"
 log_dir = os.path.dirname(log_file)
 
 os.makedirs(log_dir, exist_ok=True)
@@ -107,6 +107,12 @@ def parse_arguments():
         type=validate_date,
         help="The date for which to process charts (format: MM-DD-YYYY)."
     )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Config file path",
+        default="ngafid-chart-processor/chart_service_config.default.json"
+    )
     return parser.parse_args()
 
 # Load configuration
@@ -129,7 +135,17 @@ def load_config(config_path=configuration_file):
             raise ValueError(f"Error parsing JSON in {config_path}: {e}")
 
 # Load the configuration file
-CONFIG = load_config()
+CONFIG = load_config(parse_arguments().config)
+# Extract required paths from config (raise error if missing)
+try:
+    PATHS = CONFIG["paths"]
+    TIFS_ORIGINAL_DIR = os.path.abspath(PATHS["tifs_original"])
+    TEMP_FILES_DIR = os.path.abspath(PATHS["temp_files"])
+    CHARTS_DIR = os.path.abspath(PATHS["charts"])
+except KeyError as e:
+    logging.error(f"Missing required path in configuration: {e}")
+    raise ValueError(f"Missing required path in configuration: {e}")
+
 
 def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
     """
@@ -177,15 +193,14 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
                 for file_name in os.listdir(temp_dir):
                     if file_name.endswith(".tif"):
                         input_tif = os.path.join(temp_dir, file_name)
-                        
-                        # For IFR_ENROUTE_LOW or IFR_ENROUTE_HIGH, convert to lowercase
                         if chart_type in [ChartType.IFR_ENROUTE_LOW, ChartType.IFR_ENROUTE_HIGH]:
+                        # For IFR_ENROUTE_LOW or IFR_ENROUTE_HIGH, convert to lowercase
                             base_name, ext = os.path.splitext(file_name)
                             file_name = f"{base_name.lower()}{ext}"  # Lowercase name
 
                         output_tif = os.path.join(tifs_path, file_name)
 
-                        shutil.move(input_tif, output_tif)
+                        os.rename(input_tif, output_tif)
                         logging.info(f"Moved {input_tif} to {output_tif}")
 
         except requests.RequestException as e:
@@ -462,22 +477,17 @@ def clean_resources(paths):
 
 def get_chart_paths(chart_type):
     """
-    Generates files paths to directories for different tif file processes.
-    :param chart_type: Type of the chart being processed.
-    :return: dictionary with paths to directories needed for tif file processing.
+    Generates file paths to directories for different TIF processing stages.
+    Uses paths loaded from config.
     """
-    """Returns paths for a given chart type."""
-    base_path = os.getenv("NGAFID_CHART_PROCESSOR_PATH", "ngafid-chart-processor/")
-    temp_file_path = os.path.join(base_path, "temp_files")
-
     return {
-        "tifs_path": os.path.join(base_path, "tifs_original", chart_type),
-        "shapes_path": os.path.join(base_path, "shape_files", chart_type),
-        "charts_output_path": os.path.join(base_path, "charts", chart_type.replace("_", "-")),
-        "cropped_tifs_path": os.path.join(temp_file_path, "cropped_tifs"),
-        "reprojected_tifs_path": os.path.join(temp_file_path, "reprojected_tifs"),
-        "rgb_tifs_path": os.path.join(temp_file_path, "cropped_rgb_tifs"),
-        "virtual_raster_path": os.path.join(temp_file_path, "virtual_raster", "combined.vrt"),
+        "tifs_path": os.path.join(TIFS_ORIGINAL_DIR, chart_type),
+        "shapes_path": os.path.join("./resources/shape_files", chart_type),  # keep hardcoded
+        "charts_output_path": os.path.join(CHARTS_DIR, chart_type.replace("_", "-")),
+        "cropped_tifs_path": os.path.join(TEMP_FILES_DIR, "cropped_tifs"),
+        "reprojected_tifs_path": os.path.join(TEMP_FILES_DIR, "reprojected_tifs"),
+        "rgb_tifs_path": os.path.join(TEMP_FILES_DIR, "cropped_rgb_tifs"),
+        "virtual_raster_path": os.path.join(TEMP_FILES_DIR, "virtual_raster", "combined.vrt"),
     }
 
 def process_sectional(chart_date):
