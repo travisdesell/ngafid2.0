@@ -16,7 +16,9 @@ VALUES (0, 'test@email.com', 'aaaaaaaaaaaaaaaaaaaa', 'John', 'Doe', '123 House R
 --changeset josh:make-dummy-fleet-access labels:accounts,fleet
 INSERT INTO fleet_access
 VALUES (0, 0, 'VIEW'),
-       (1, 0, 'MANAGER');
+       (1, 0, 'MANAGER'),
+       (0, 1, 'WAITING'),
+       (1, 1, 'WAITING');
 
 --changeset josh:make-dummy-airsync-info labels:accounts,fleet
 INSERT INTO airsync_fleet_info

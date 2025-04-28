@@ -160,6 +160,8 @@ public class Fleet implements Serializable {
 
                 return fleet;
             }
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new AccountException("Cannot create name with duplicate name", e.getMessage());
         }
     }
 
@@ -249,5 +251,13 @@ public class Fleet implements Serializable {
 
     public List<User> getUsers() {
         return Collections.unmodifiableList(users);
+    }
+
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof Fleet otherFleet)) {
+            return false;
+        }
+
+        return id == otherFleet.getId() && name.equals(otherFleet.getName());
     }
 }

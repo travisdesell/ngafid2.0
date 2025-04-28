@@ -8,6 +8,9 @@ CREATE TABLE fleet (
     PRIMARY KEY (id)
 );
 
+--changeset josh:fleet-unique-name labels:accounts
+ALTER TABLE fleet ADD UNIQUE (fleet_name);
+
 --changeset josh:fleet-test labels:accounts
 CREATE TABLE test (
     id INT NOT NULL AUTO_INCREMENT,
