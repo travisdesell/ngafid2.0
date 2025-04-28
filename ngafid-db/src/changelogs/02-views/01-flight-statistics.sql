@@ -118,7 +118,7 @@ SELECT
 FROM
     flights
 WHERE
-    DATE_SUB(UTC_DATE(), INTERVAL 30 DAY) <= end_time
+    (CURRENT_DATE - INTERVAL '30' DAY) <= end_time
 GROUP BY
     fleet_id,
     airframe_id;
@@ -266,7 +266,7 @@ SELECT
 FROM
     flights
 WHERE
-    DATE_SUB(UTC_DATE(), INTERVAL 30 DAY) <= end_time
+    (CURRENT_DATE - INTERVAL '30' DAY) <= end_time
 GROUP BY
     fleet_id,
     airframe_id;

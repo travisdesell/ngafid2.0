@@ -3,6 +3,7 @@ package org.ngafid.core.accounts;
 import java.io.Serializable;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -159,6 +160,8 @@ public class Fleet implements Serializable {
 
                 return fleet;
             }
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new AccountException("Cannot create name with duplicate name", e.getMessage());
         }
     }
 
@@ -192,7 +195,7 @@ public class Fleet implements Serializable {
     }
 
     /**
-     * Populates the list of users with access to this fleet
+     * Populates the list of users with access to this fleet, except for user with id `populatorId`
      *
      * @param connection  is a connection to the mysql database.
      * @param populatorId is the id of the user whose populating the list of user
@@ -244,5 +247,17 @@ public class Fleet implements Serializable {
 
     public String toString() {
         return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
+    }
+
+    public List<User> getUsers() {
+        return Collections.unmodifiableList(users);
+    }
+
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof Fleet otherFleet)) {
+            return false;
+        }
+
+        return id == otherFleet.getId() && name.equals(otherFleet.getName());
     }
 }

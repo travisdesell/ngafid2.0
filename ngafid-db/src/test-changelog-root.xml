@@ -5,10 +5,11 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <!-- 
+    <!--
         These sql scripts will be executed top to bottom in the order they are listed here.
     -->
 
-    <includeAll path="changelogs" relativeToChangelogFile="true"/>
+    <includeAll path="changelogs" relativeToChangelogFile="true" contextFilter="schema"/>
+    <includeAll path="test-data-changelogs" relativeToChangelogFile="true" contextFilter="test-data"/>
 
 </databaseChangeLog>
