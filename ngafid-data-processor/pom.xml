@@ -11,6 +11,7 @@
 
     <groupId>org.ngafid.processor</groupId>
     <artifactId>ngafid-data-processor</artifactId>
+    <packaging>war</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>ngafid-data-processor</name>
 

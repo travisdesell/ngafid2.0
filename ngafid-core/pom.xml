@@ -8,11 +8,13 @@
         <artifactId>ngafid</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <groupId>org.ngafid.core</groupId>
+
     <artifactId>ngafid-core</artifactId>
+    <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>ngafid-core</name>
     <url>http://maven.apache.org</url>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
