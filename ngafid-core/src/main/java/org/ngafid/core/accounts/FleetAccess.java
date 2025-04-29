@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -150,7 +149,6 @@ public class FleetAccess implements Serializable {
      * @return The fleet access object if it exists in the database, null otherwise.
      * @throws SQLException If there was a query/database problem.
      */
-
     public static FleetAccess get(Connection connection, int userId, int fleetId) throws SQLException {
         try (PreparedStatement query = connection
                 .prepareStatement(
@@ -178,7 +176,6 @@ public class FleetAccess implements Serializable {
      * @throws AccountException If the user already has access to this fleet in
      *                          the database.
      */
-
     public static FleetAccess create(Connection connection, int userId, int fleetId, String accessType)
             throws SQLException, AccountException {
         if (FleetAccess.get(connection, userId, fleetId) != null) {
@@ -208,7 +205,6 @@ public class FleetAccess implements Serializable {
      * @param fleetId    is the fleet id
      * @param accessType is the new access type
      */
-
     public static void update(Connection connection, int userId, int fleetId, String accessType) throws SQLException {
         try (PreparedStatement query = connection
                 .prepareStatement("UPDATE fleet_access SET type = ? WHERE user_id = ? AND fleet_id = ?")) {
@@ -219,5 +215,12 @@ public class FleetAccess implements Serializable {
             LOG.info(query.toString());
             query.executeUpdate();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FleetAccess fa)) return false;
+
+        return this.userId == fa.userId && this.fleetId == fa.fleetId && this.accessType.equals(fa.accessType);
     }
 }

@@ -7,8 +7,8 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.*;
 import org.ngafid.core.util.SendEmail;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
 import org.ngafid.www.MustacheHandler;
+import org.ngafid.www.Navbar;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -566,7 +566,7 @@ public class AccountJavalinRoutes {
                 FleetAccess.update(connection, fleetUserId, fleetId, accessType);
                 user.updateFleet(connection);
                 ctx.json(new UpdateUserAccess());
-            } catch (SQLException e) {
+            } catch (SQLException | AccountException e) {
                 ctx.json(new ErrorResponse(e)).status(500);
             }
         }

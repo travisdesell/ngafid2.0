@@ -13,7 +13,7 @@ import org.ngafid.core.flights.Tails;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.core.uploads.UploadError;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
+import org.ngafid.www.Navbar;
 
 import java.io.*;
 import java.nio.file.Files;

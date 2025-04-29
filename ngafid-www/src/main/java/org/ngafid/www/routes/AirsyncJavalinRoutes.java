@@ -9,8 +9,8 @@ import org.ngafid.core.airsync.AirSyncImport;
 import org.ngafid.core.airsync.AirSyncImportResponse;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
 import org.ngafid.routes.PaginationResponse;
+import org.ngafid.www.Navbar;
 
 import java.io.IOException;
 import java.sql.Connection;

@@ -10,7 +10,7 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Tail;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
+import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

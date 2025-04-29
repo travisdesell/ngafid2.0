@@ -6,7 +6,7 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
+import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
 import java.util.*;

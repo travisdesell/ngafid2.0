@@ -1,15 +1,14 @@
-package org.ngafid.routes;
+package org.ngafid.www;
+
+import io.javalin.http.Context;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.FleetAccess;
+import org.ngafid.core.accounts.User;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import io.javalin.http.Context;
-import org.ngafid.core.Database;
-
-import org.ngafid.core.accounts.FleetAccess;
-import org.ngafid.core.accounts.User;
 
 public class Navbar {
     public static String getJavascript(Context ctx) {
@@ -22,12 +21,12 @@ public class Navbar {
         boolean hasUploadAccess = false;
         int unconfirmedTailsCount = 0;
 
-        if (user != null && user.getFleetAccessType().equals(FleetAccess.MANAGER)) {
-            fleetManager = true;
-            waitingUserCount = user.getWaitingUserCount();
-        }
-
         try (Connection connection = Database.getConnection()) {
+            if (user != null && user.getFleetAccessType().equals(FleetAccess.MANAGER)) {
+                fleetManager = true;
+                waitingUserCount = user.getWaitingUserCount(connection);
+            }
+
             int fleetId = -1;
 
             if ((fleetId = user.getFleetId()) > 0) {

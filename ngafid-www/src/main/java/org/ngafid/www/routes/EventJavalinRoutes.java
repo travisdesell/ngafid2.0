@@ -13,8 +13,8 @@ import org.ngafid.core.event.EventMetaData;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
 import org.ngafid.www.EventStatistics;
+import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

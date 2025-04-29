@@ -22,6 +22,9 @@ CREATE TABLE user (
     PRIMARY KEY(id)
 );
 
+--changeset josh:user-unique-email labels:accounts,users
+ALTER TABLE user ADD CONSTRAINT unique_email UNIQUE (email);
+
 --changeset josh:user-preferences labels:accounts,users
 CREATE TABLE user_preferences (
     user_id INT NOT NULL,
