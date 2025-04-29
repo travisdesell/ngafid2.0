@@ -1,2 +1,2 @@
 #!/bin/bash
-mvn liquibase:update -Dliquibase.contexts=daily-materialized-view
+mvn -pl ngafid-db liquibase:update -Dliquibase.contexts=daily-materialized-view

@@ -1,0 +1,2 @@
+#!/bin/bash
+mvn -pl ngafid-db liquibase:clearCheckSums

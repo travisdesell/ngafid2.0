@@ -1,2 +1,2 @@
 #!/bin/bash
-mvn liquibase:update
+mvn -pl ngafid-db liquibase:update
