@@ -1,3 +1,17 @@
+# About this Repository
+
+The NGAFID2.0 is an open source flight data management tool. The project is broken up into several modules:
+
+- `ngafid-chart-processor`: Python service which downloads and transforms charts from the FAA for use in maps on the
+  website.
+- `ngafid-core`: Core Java NGAFID code shared among other modules, mostly contains object relational mapping and
+  business logic.
+- `ngafid-data-processor`: Flight data processing code.
+- `ngafid-db`: Database schema, written in liquibase formatted SQL.
+- `ngafid-frontend`: React frontend.
+- `ngafid-static`: Directory from which static files are served.
+- `ngafid-www`: Java backend for the web application.
+
 # Steps for running the NGAFID2.0 website
 
 ## 0. Requirements
@@ -16,7 +30,7 @@ You will need the following software packages:
 ~/ $ git clone git@github.com:travisdesell/ngafid2.0
 ```
 
-Afterwards, we need to install a JAR file dependency to where Maven fetches your dependencies from.
+Afterward, we need to install a JAR file dependency to where Maven fetches your dependencies from.
 Running Maven will not be possible without running this script.
 
 ```
@@ -202,11 +216,8 @@ Note that depending on your kafka installation, these programs may actually be s
 `zookeeper-server-start.sh`) -- the following works for kafka installed via Brew on MacOS:
 
 ```
-# Launch Zookeeper -- required for Kafka server
-~/ngafid2.0 $ zookeeper-server-start src/main/resources/zookeeper-{mac,linux}.properties
-
-# Launch this in a separate terminal
-~/ngafid2.0 $ kafka-server-start src/main/resources/server-{mac,linux}.properties
+# Launch kafka kraft 
+~/ngafid2.0 $ kafka-server-start resources/reconfig-server.properties
 ```
 
 Next, run the following script to create the appropriate kafka topics:
@@ -351,6 +362,6 @@ to fix:
 
 sudo /usr/sbin/setsebool -P httpd_can_network_connect 1
 
-
 ## Chart Processing Service
+
 [Chart Processing Service Documentation](services/chart_processor/README.md)
