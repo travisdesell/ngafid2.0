@@ -75,7 +75,7 @@ def handle_exit_signal(signum, frame):
     sys.exit(0)
 
 # Load configuration
-def load_config(config_path=configuration_file):
+def load_config(config_path):
     """Load configuration values from the JSON file."""
     if not os.path.exists(config_path):
         logging.error(f"Configuration file {config_path} not found.")
@@ -295,6 +295,12 @@ def parse_arguments():
         "--test-date",
         type=str,
         help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Config file path",
+        default="ngafid-chart-processor/chart_service_config.default.json"
     )
     return parser.parse_args()
 

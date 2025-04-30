@@ -9,10 +9,11 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
+    <name>ngafid-core</name>
     <artifactId>ngafid-core</artifactId>
+    <groupId>org.ngafid.core</groupId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>ngafid-core</name>
     <url>http://maven.apache.org</url>
 
     <dependencies>

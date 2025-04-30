@@ -111,12 +111,15 @@ def parse_arguments():
         "--config",
         type=str,
         help="Config file path",
-        default="ngafid-chart-processor/chart_service_config.default.json"
+        default="ngafid-chart-processor/chart_service_config.json"
     )
-    return parser.parse_args()
+    logging.info(f"{sys.argv}")
+    parsed = parser.parse_args()
+    logging.info(f"Parsed args: {parsed}")
+    return parsed
 
 # Load configuration
-def load_config(config_path=configuration_file):
+def load_config(config_path):
     """
     Load the configuration from the JSON file.
     :param config_path: Path to the Json configuration file
@@ -142,6 +145,7 @@ try:
     TIFS_ORIGINAL_DIR = os.path.abspath(PATHS["tifs_original"])
     TEMP_FILES_DIR = os.path.abspath(PATHS["temp_files"])
     CHARTS_DIR = os.path.abspath(PATHS["charts"])
+    logging.info(f"paths = {PATHS}")
 except KeyError as e:
     logging.error(f"Missing required path in configuration: {e}")
     raise ValueError(f"Missing required path in configuration: {e}")
@@ -171,8 +175,9 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
     for area in areas:
         zip_url = f"{base_url}{area}.zip"
         try:
+            os.makedirs(TEMP_FILES_DIR, exist_ok=True)
             # Create a temporary directory for extraction
-            with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory(dir=TEMP_FILES_DIR) as temp_dir:
                 zip_path = os.path.join(temp_dir, f"{area}.zip")
 
                 # Download the ZIP file
@@ -225,7 +230,7 @@ def download_terminal_area_set(base_url, date, save_path):
 
     try:
         # Create a temporary directory for extraction
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory(dir=TEMP_FILES_DIR) as temp_dir:
             zip_path = os.path.join(temp_dir, "Terminal.zip")
 
             # Download the ZIP file
@@ -482,7 +487,7 @@ def get_chart_paths(chart_type):
     """
     return {
         "tifs_path": os.path.join(TIFS_ORIGINAL_DIR, chart_type),
-        "shapes_path": os.path.join("./resources/shape_files", chart_type),  # keep hardcoded
+        "shapes_path": os.path.join("resources/shape_files", chart_type),  # keep hardcoded
         "charts_output_path": os.path.join(CHARTS_DIR, chart_type.replace("_", "-")),
         "cropped_tifs_path": os.path.join(TEMP_FILES_DIR, "cropped_tifs"),
         "reprojected_tifs_path": os.path.join(TEMP_FILES_DIR, "reprojected_tifs"),
@@ -493,6 +498,7 @@ def get_chart_paths(chart_type):
 def process_sectional(chart_date):
     """Processing steps for sectional charts."""
     paths = get_chart_paths("sectional")
+    logging.info(paths)
     clean_resources([
         paths["cropped_tifs_path"],
         paths["reprojected_tifs_path"],
@@ -519,6 +525,7 @@ def process_terminal_area(chart_date):
     :return: none
     """
     paths = get_chart_paths("terminal_area")
+    logging.info(paths)
     clean_resources([
         paths["cropped_tifs_path"],
         paths["reprojected_tifs_path"],
