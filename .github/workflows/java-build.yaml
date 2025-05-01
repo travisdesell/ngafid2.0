@@ -28,7 +28,7 @@ jobs:
         run: run/setup_dat_importing
 
       - name: Maven Compile
-        run: mvn clean compile -DskipTests war:war
+        run: mvn clean install -DskipTests
 
       - name: Maven Test
         run: mvn test

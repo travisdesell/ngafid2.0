@@ -14,7 +14,7 @@
         <module>ngafid-data-processor</module>
         <module>ngafid-db</module>
     </modules>
-    
+
     <properties>
         <kotlin.version>1.9.10</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
