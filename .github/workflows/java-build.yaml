@@ -25,7 +25,7 @@ jobs:
             ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
       - name: Setup DAT2CSV
-        run: mvn install:install-file initialize -Dfile=src/main/resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+        run: run/setup_dat_importing
 
       - name: Maven Compile
         run: mvn clean compile -DskipTests war:war
