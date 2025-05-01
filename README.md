@@ -364,4 +364,4 @@ sudo /usr/sbin/setsebool -P httpd_can_network_connect 1
 
 ## Chart Processing Service
 
-[Chart Processing Service Documentation](services/chart_processor/README.md)
+[Chart Processing Service Documentation](ngafid-chart-processor/README.md)
