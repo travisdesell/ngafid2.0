@@ -71,9 +71,11 @@ public class Navbar {
 
         final boolean isAdmin = (user != null && user.isAdmin());
         final boolean hasAggregateView = (user != null && user.hasAggregateView());
+        final boolean hasStatusView = (user != null && user.hasStatusView());
 
         return "var admin = " + isAdmin + ";"
             + "var aggregateView = " + hasAggregateView + ";"
+            + "var hasStatusView = " + hasStatusView + ";"
             + "var fleetManager = " + fleetManager + ";"
             + "var waitingUserCount = " + waitingUserCount + ";"
             + "var modifyTailsAccess = " + modifyTailsAccess + ";"
