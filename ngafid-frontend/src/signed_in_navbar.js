@@ -9,8 +9,15 @@ import {DarkModeToggle} from "./dark_mode_toggle.js";
 
 var activePage = "";
 
+
+
+
 class NavLink extends React.Component {
+
     render() {
+
+        console.log("Rendering navlink: '" + this.props.name + "'");
+
         const name = this.props.name;
         const hidden = this.props.hidden;
         const icon = this.props.icon;
@@ -19,11 +26,13 @@ class NavLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "#!";
+        //Handle undefined href
+        if (typeof href == 'undefined')
+            href = "#!";
 
-        //make onClick an empty function if its not defined
-        if (typeof onClick == 'undefined') onClick = function () {
-        };
+        //onClick is undefined, make it an empty function
+        if (typeof onClick == 'undefined')
+            onClick = () => { /*...*/ };
 
         const classNames = (active ? "nav-item active" : "nav-item");
         const isCurrent = (active ? (<span className="sr-only">(current)</span>) : "");
@@ -63,13 +72,15 @@ class DropdownLink extends React.Component {
 
 
 class SignedInNavbar extends React.Component {
+    
     constructor(props) {
+
         super(props);
 
-        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (() => {
-        });
+        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (() => {});
 
         this.infoTarget = React.createRef();
+
     }
 
     attemptLogIn() {
@@ -113,6 +124,7 @@ class SignedInNavbar extends React.Component {
             unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
 
         let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
+        console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
 
         let filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
@@ -186,22 +198,20 @@ class SignedInNavbar extends React.Component {
         let analysisActive = (this.props.activePage === "ttf");
         let accountsActive = (this.props.activePage === "account");
 
-
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
-                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="../../src/main">NGAFID</a>
+                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
-                <div className="collapse navbar-collapse" id="navbarNavDropdown">
+                <div className="navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
 
-                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center"
-                            hidden={this.props.plotMapHidden}>
+                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center" hidden={this.props.plotMapHidden}>
 
                             {/* Flight Page Orientation Button */}
                             {
@@ -289,9 +299,18 @@ class SignedInNavbar extends React.Component {
 
                     </ul>
 
-                    <ul className="navbar-nav">
+                    <ul className="navbar-nav" id="navbarPageButtons">
+
+                        {/* Home Button */}
                         <NavLink icon={"fa-home"} name={"Home"} active={homeActive} href="/protected/welcome"/>
 
+                        {/* Status Button */}
+                        {hasStatusView ?
+                            <NavLink icon={"fa-info-circle"} name={"Status"} href="/protected/status"/>
+                            : ""
+                        }
+
+                        {/* Aggregate View Dropdown */}
                         {aggregateView ?
                             <li className="nav-item dropdown">
                                 <a className={"nav-link dropdown-toggle" + (aggregateActive ? " active" : "")}
@@ -311,6 +330,7 @@ class SignedInNavbar extends React.Component {
                             </li> : ""
                         }
 
+                        {/* Events Dropdown */}
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")}
                                style={eventsActive ? {color: "var(--c_text)"} : {}} href="#!"
@@ -337,7 +357,8 @@ class SignedInNavbar extends React.Component {
                                 }
                             </div>
                         </li>
-
+                        
+                        {/* Analysis Dropdown */}
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")}
                                style={analysisActive ? {color: "var(--c_text)"} : {}} href="#!"
@@ -353,34 +374,47 @@ class SignedInNavbar extends React.Component {
                             </div>
                         </li>
 
+                        {/* Flights Dropdown */}
                         <NavLink icon={"fa-plane"} name={"Flights"} active={this.props.activePage === "flights"}
                                  href="/protected/flights"/>
 
+                        {/* Imports Button */}
                         {importsButton}
+
+                        {/* Uploads Button */}
                         {uploadsButton}
 
+                        {/* Account Dropdown */}
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")}
-                               style={accountsActive ? {color: "var(--c_text)"} : {}} href="#!"
-                               id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
-                               aria-expanded="false">
+                            <a
+                                className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")}
+                                style={accountsActive ? {color: "var(--c_text)"} : {}} href="#!"
+                                id="navbarDropdownMenuLink"
+                                role="button"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
                                 <i className="fa fa-fw fa-user" aria-hidden="true"/>
-                                &nbsp;{"Account" + accountNotifications}{accountsActive ? (
-                                <span className="sr-only">(current)</span>) : ""}
+                                &nbsp;{"Account" + accountNotifications}
+                                {
+                                    accountsActive
+                                    ? (<span className="sr-only">(current)</span>)
+                                    : ""
+                                }
                             </a>
-                            <div className="dropdown-menu dropdown-menu-right text-right"
-                                 aria-labelledby="navbarDropdownMenuLink">
-                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden}
-                                              href="/protected/manage_fleet"/>
-                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden}
-                                              href="/protected/system_ids"/>
-                                <div className="dropdown-divider" hidden={manageHidden}></div>
-                                <DropdownLink name={"Update Password"} hidden={false}
-                                              href="/protected/update_password"/>
+                            <div
+                                className="dropdown-menu dropdown-menu-right text-right"
+                                aria-labelledby="navbarDropdownMenuLink"
+                            >
+                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
+                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden} href="/protected/system_ids"/>
+                                <div className="dropdown-divider" hidden={manageHidden}/>
+                                <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
-                                <div className="dropdown-divider"></div>
+                                <div className="dropdown-divider"/>
                                 <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>
-                                <div className="dropdown-divider"></div>
+                                <div className="dropdown-divider"/>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>
                         </li>
