@@ -45,7 +45,7 @@ class ErrorModal extends React.Component {
 
         const { title, message } = this.state;
 
-        console.log(`Rendering Error Modal with error title: '${title}' and message: '${message}'`);
+        console.warn(`Rendering Error Modal with error title: '${title}' and message: '${message}'`);
 
         return (
             <div className='modal-content'>
