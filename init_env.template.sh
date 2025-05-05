@@ -1,15 +1,20 @@
 
 
     # ------------------------------------------------------------------------------ #
+    # NGAFID - Environment Variables Template                                        #
+    #                                                                                #
+    # Last Updated: 5/2/25                                                           #
+    # ------------------------------------------------------------------------------ #
+    # ✂ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
+    #                                                                                #
     # This file is a template for setting up the environment variables for NGAFID.   #
     # Please make a copy called 'init_env.sh' and modify it according to your setup. #
     #                                                                                #
-    # Last Updated: 5/2/25                                                           #       
     # ------------------------------------------------------------------------------ #
 
 
 #Absolute path
-export NGAFID_REPO=NGAFID_REPO  #<-- ❗ Set this to the absolute path of your ngafid repo. This is the directory where you cloned the ngafid repo.
+export NGAFID_REPO=<⚠ /Set/Path/Here ⚠>  #<-- ❗ Set this to the absolute path of your ngafid repo. This is the directory where you cloned the ngafid repo.
 
 
 #Database
