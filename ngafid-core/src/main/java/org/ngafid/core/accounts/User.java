@@ -1,6 +1,6 @@
 package org.ngafid.core.accounts;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.core.util.SendEmail;
 

@@ -1,6 +1,6 @@
 package org.ngafid.core.accounts;
 
-import com.google.common.collect.Lists;
+import org.apache.commons.collections4.ListUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -529,7 +529,7 @@ public class AirSyncFleet extends Fleet {
                 if (allImports.isEmpty()) return;
             }
 
-            for (var chunk : Lists.partition(allImports, 32)) {
+            for (var chunk : ListUtils.partition(allImports, 32)) {
                 var errors = new ArrayList<IOException>();
                 var downloads = chunk.parallelStream().map(imp -> {
                     try {

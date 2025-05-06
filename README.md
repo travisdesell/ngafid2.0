@@ -187,17 +187,16 @@ $NGAFID_DATA_FOLDER
 ```
 
 ## 5. Running the webserver
-
-First, we need maven to fetch all of the java dependencies:
-
-```
-~/ngafid2.0 $ mvn install
-```
-
-Next we need to initialize node. You'll need npm installed for this, then run:
+You need Maven installed to run the following script which will build the java modules:
 
 ```
-~/ngafid2.0 $ npm install
+~/ngafid2.0 $ run/build 
+```
+
+Next we need to initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
+
+```
+~/ngafid2.0/ngafid-frontend $ npm install
 ```
 
 This will download the javascript dependencies.
@@ -205,15 +204,11 @@ This will download the javascript dependencies.
 Then, in order to compile the javascript and automatically recompile whenever you change one of the files:
 
 ```
-~/ngafid2.0 $ npm run watch
+~/ngafid2.0/ngafid-frontend $ npm run watch
 ```
 
-Before we run the actual webserver, we need to launch Kafka so the webserver can produce messages. Change the properties
-file path you use here depending on what platform you're on. Note that these will need to be launched in separate
-terminals and be ran persistently while the data processing daemon or web server is up:
-
-Note that depending on your kafka installation, these programs may actually be shell scripts (e.g.
-`zookeeper-server-start.sh`) -- the following works for kafka installed via Brew on MacOS:
+Next, to launch the web server we must first initialize and start Kafka. Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart), using `ngafid2.0/resource/reconfig-server.properties`.
+Now, launch Kafka:
 
 ```
 # Launch kafka kraft 
@@ -229,7 +224,7 @@ Next, run the following script to create the appropriate kafka topics:
 You should then be able to compile and run the webserver by running `run/webserver.sh`
 
 ```
-~/ngafid2.0 $ run/webserver.sh
+~/ngafid2.0 $ run/webserver
 ```
 
 ## 6. Data Processing

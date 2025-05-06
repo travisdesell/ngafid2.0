@@ -1,2 +1,3 @@
-mvn compile
-mvn install
+#!/bin/bash
+# We add skip assembly to skip generating jars w/ their dependencies which takes some time. use the `package` script.
+mvn install -pl '!ngafid-db' -Dmaven.test.skip=true -Dassembly.skipAssembly=true
