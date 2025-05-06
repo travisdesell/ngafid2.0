@@ -33,9 +33,10 @@ public class StatusJavalinRoutes {
             Map.entry("flight-processing", List.of("ngafid-upload-consumer@0", "ngafid-upload-consumer@1", "ngafid-upload-consumer@2")),
             Map.entry("kafka", List.of("kafka.service")),
             Map.entry("chart-service", List.of("ngafid-chart-service.service")),
+            Map.entry("event-processing", List.of("ngafid-event-consumer.service")),
 
             // Depends on database used. In prod we use mysql
-            Map.entry("db", List.of("mysqld.service"))
+            Map.entry("database", List.of("mysqld.service"))
     );
 
     /**
