@@ -17,7 +17,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -87,6 +86,7 @@ public class JavalinWebServer extends WebServer {
         StatisticsJavalinRoutes.bindRoutes(app);
         TagFilterJavalinRoutes.bindRoutes(app);
         CesiumDataJavalinRoutes.bindRoutes(app);
+        StatusJavalinRoutes.bindRoutes(app);
     }
 
     @Override

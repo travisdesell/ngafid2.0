@@ -31,7 +31,7 @@ public class EmailConsumer {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
-        props.put("value.serializer", "org.ngafid.kafka.JsonSerializer");
+        props.put("value.serializer", "org.ngafid.core.kafka.JsonSerializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("json.deserializer.type", SendEmail.Email.class.getName());
 

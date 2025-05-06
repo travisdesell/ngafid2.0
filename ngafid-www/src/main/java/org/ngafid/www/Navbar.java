@@ -1,15 +1,14 @@
 package org.ngafid.www;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
+import io.javalin.http.Context;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
 
-import io.javalin.http.Context;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class Navbar {
 
@@ -39,7 +38,7 @@ public class Navbar {
 
             //Found user Fleet ID...
             if ((user != null) && (fleetId = user.getFleetId()) > 0) {
-                
+
                 String sql = "SELECT EXISTS(SELECT fleet_id FROM airsync_fleet_info WHERE fleet_id = ?)";
                 try (PreparedStatement query = connection.prepareStatement(sql)) {
 
@@ -59,7 +58,7 @@ public class Navbar {
                 }
 
             }
-            
+
         } catch (SQLException e) {
 
             /*
@@ -71,17 +70,17 @@ public class Navbar {
 
         final boolean isAdmin = (user != null && user.isAdmin());
         final boolean hasAggregateView = (user != null && user.hasAggregateView());
-        final boolean hasStatusView = (user != null && user.hasStatusView());
+        final boolean hasStatusView = true;
 
         return "var admin = " + isAdmin + ";"
-            + "var aggregateView = " + hasAggregateView + ";"
-            + "var hasStatusView = " + hasStatusView + ";"
-            + "var fleetManager = " + fleetManager + ";"
-            + "var waitingUserCount = " + waitingUserCount + ";"
-            + "var modifyTailsAccess = " + modifyTailsAccess + ";"
-            + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
-            + "var airSyncEnabled = " + airSyncEnabled + ";"
-            + "var isUploader = " + hasUploadAccess + ";";
+                + "var aggregateView = " + hasAggregateView + ";"
+                + "var hasStatusView = " + hasStatusView + ";"
+                + "var fleetManager = " + fleetManager + ";"
+                + "var waitingUserCount = " + waitingUserCount + ";"
+                + "var modifyTailsAccess = " + modifyTailsAccess + ";"
+                + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
+                + "var airSyncEnabled = " + airSyncEnabled + ";"
+                + "var isUploader = " + hasUploadAccess + ";";
 
     }
 

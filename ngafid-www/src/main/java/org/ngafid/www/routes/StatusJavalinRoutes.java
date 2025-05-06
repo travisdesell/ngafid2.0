@@ -1,14 +1,21 @@
 package org.ngafid.www.routes;
 
 import io.javalin.http.Context;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ngafid.www.Navbar;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 public class StatusJavalinRoutes {
+    private static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
     public enum ServiceStatus {
         OK,
@@ -30,6 +37,12 @@ public class StatusJavalinRoutes {
             // Depends on database used. In prod we use mysql
             Map.entry("db", List.of("mysqld.service"))
     );
+
+    /**
+     * Maps service API name to a pair of the corresponding status and a long representing the nano-time of when it was fetched.
+     * The time value is used for cache expiration, to prevent excessive opening of subprocesses
+     */
+    private static final ConcurrentHashMap<String, Pair<ServiceStatusResult, Long>> SERVICE_STATUS_CACHE = new ConcurrentHashMap<>();
 
     private static ServiceStatusResult checkSystemdService(String apiName, String serviceName) {
         // Command we are running is:
@@ -96,22 +109,55 @@ public class StatusJavalinRoutes {
     private record ServiceStatusResult(ServiceStatus status, String message) {
     }
 
-    private static void getStatus(Context ctx) {
+    private static void getServiceStatus(Context ctx) {
         String service = ctx.pathParam("service-name");
+
+        Pair<ServiceStatusResult, Long> cachedStatus = SERVICE_STATUS_CACHE.getOrDefault(service, null);
+        if (cachedStatus != null) {
+            if (System.nanoTime() - cachedStatus.getRight() > TimeUnit.SECONDS.toNanos(60)) {
+                try {
+                    SERVICE_STATUS_CACHE.remove(service);
+                } catch (NullPointerException e) {
+                    // Ignore. Will occur if the key is already removed by a different thread.
+                }
+            } else {
+                ctx.json(cachedStatus.getLeft());
+                return;
+            }
+        }
 
         List<String> serviceNames = SERVICE_NAME_TO_SYSTEMD_SERVICE.getOrDefault(service, null);
         if (serviceNames != null) {
+            ServiceStatusResult result;
             if (serviceNames.size() == 1) {
-                ctx.json(checkSystemdService(service, serviceNames.get(0)));
+                result = checkSystemdService(service, serviceNames.getFirst());
             } else {
-                ctx.json(checkSystemdTemplateService(service, serviceNames));
+                result = checkSystemdTemplateService(service, serviceNames);
             }
+
+            SERVICE_STATUS_CACHE.put(service, new ImmutablePair<>(result, System.nanoTime()));
+            ctx.json(result);
         } else {
             ctx.json("No service with name '" + service + "'");
         }
     }
 
+    /**
+     * Fetches status page
+     */
+    private static void getStatus(Context ctx) {
+        final String templateFile = "status_page.html";
+
+        Map<String, Object> scopes = Map.of("navbar_js", Navbar.getJavascript(ctx));
+
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
+
+    }
+
     public static void bindRoutes(io.javalin.Javalin app) {
-        app.get("/status/{service-name}", StatusJavalinRoutes::getStatus);
+        // These are non-privileged routes.
+        app.get("/status/{service-name}", StatusJavalinRoutes::getServiceStatus);
+        app.get("/status", StatusJavalinRoutes::getStatus);
     }
 }

@@ -428,33 +428,6 @@ public class StatisticsJavalinRoutes {
         }
     }
 
-
-    private static void getStatus(Context ctx) {
-
-        final String templateFile = "status_page.html";
-
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-
-        //User doesn't have access to view the status page, exit
-        if (!user.hasStatusView()) {
-
-            LOG.severe("INVALID ACCESS: User does not have access to view the site statuses.");
-            ctx.status(401);
-            ctx.result("User does not have access to view the site statuses.");
-
-            return;
-
-        }
-
-        Map<String, Object> scopes = new HashMap<>();
-
-        scopes.put("navbar_js", Navbar.getJavascript(ctx));
-
-        ctx.header("Content-Type", "text/html; charset=UTF-8");        
-        ctx.render(templateFile, scopes);
-
-    }
-
     public static void bindRoutes(Javalin app) {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
@@ -468,8 +441,5 @@ public class StatisticsJavalinRoutes {
 
         app.get("/protected/event_statistics", StatisticsJavalinRoutes::getEventStatistics);
         app.post("/protected/monthly_event_counts", StatisticsJavalinRoutes::postMonthlyEventCounts);
-
-        app.get("/protected/status", StatisticsJavalinRoutes::getStatus);
-
     }
 }
