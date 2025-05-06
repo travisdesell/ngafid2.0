@@ -1,12 +1,12 @@
 <html>
 <head>
 
-
     <link rel="stylesheet" href="/css/theme-preload.css">
+    <link rel="stylesheet" href="../../ngafid-frontend/src/index.css">
     <script src="/js/theme_preload-bundle.js"></script>
 
 
-    <title>Update Profile - NGAFID</title>
+    <title>Status - NGAFID</title>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -16,13 +16,16 @@
 
     <script>
         var plotMapHidden = true;
+            {{{numPages_js}}}
+            {{{index_js}}}
             {{{navbar_js}}}
-            {{{user_js}}}
+            {{{imports_js}}}
+            {{{fleet_info_js}}}
     </script>
 
 </head>
 <body>
-<div id="profile-page"></div>
+<div id="status-page"></div>
 
 <div id="loading" style="display: none;">
     <div id="loading-image" class="fa fa-spinner" alt="Loading..."></div>
@@ -37,7 +40,7 @@
 </div>
 
 <!-- Load our javascript. -->
-<script src="/js/update_profile-bundle.js"></script>
+<script src="/js/status-bundle.js"></script>
 
 </body>
 </html>

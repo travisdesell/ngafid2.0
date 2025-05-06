@@ -11,12 +11,17 @@ const isCI   = !!process.env.CI;
 const isProd = (process.env.NODE_ENV === 'production');
 const doWatch = (!isCI && !isProd);
 
+
+const { join } = require('path');
+
+
 module.exports = {
 
     mode: process.env.NODE_ENV || 'development',
     watch: doWatch,
 
     resolve: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx'],
         fallback: {
             fs: false,
             path: false,
@@ -73,6 +78,7 @@ module.exports = {
         uploads: "./src/uploads.js",
         welcome: "./src/welcome.js",
         theme_preload: "./src/theme_preload.js",
+        status: "./src/status_page.tsx",
     },
 
     devtool: (process.env.CI ? false : 'source-map'),
@@ -86,12 +92,18 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/,
+                // test: /\.(js|jsx)$/,
+                test: /\.[jt]sx?$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
                         cacheDirectory: true,
+                        presets: [
+                            '@babel/preset-env',
+                            '@babel/preset-react',
+                            '@babel/preset-typescript'
+                        ]
                     }
                 },
                 include: path.resolve('src')
@@ -107,8 +119,12 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                use: ["style-loader", "css-loader"]
-            }
+                use: [
+                    'style-loader',      //<-- Injects styles into the DOM
+                    'css-loader',        //<-- Resolves @import/URL
+                    'postcss-loader',    //<-- Runs Tailwind & PostCSS
+                ],
+            },
         ]
     },
 
@@ -133,6 +149,6 @@ module.exports = {
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
-    ]
+    ],
 
 };

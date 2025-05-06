@@ -123,6 +123,13 @@ public final class User implements Serializable {
     }
 
     /**
+     * @return true if admin / has aggregate view access
+     */
+    public boolean hasStatusView() {
+        return isAdmin() || hasAggregateView();
+    }
+
+    /**
      * @param connection A connection to the database.
      * @return the user's email preferences
      */
