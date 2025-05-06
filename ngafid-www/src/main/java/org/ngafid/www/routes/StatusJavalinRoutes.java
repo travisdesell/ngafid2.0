@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 public class StatusJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
+    private static final Logger LOG = Logger.getLogger(StatusJavalinRoutes.class.getName());
 
     public enum ServiceStatus {
         OK,
