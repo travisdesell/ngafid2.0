@@ -1,0 +1,1 @@
+java -cp ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.core.kafka.EmailConsumer "$@"

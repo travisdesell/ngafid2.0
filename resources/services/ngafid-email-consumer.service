@@ -8,7 +8,7 @@ Type=simple
 User=www
 Group=ngafid
 WorkingDirectory=/opt/ngafid/ngafid2.0
-ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/kafka/email_consumer'
+ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/prod/kafka/email_consumer'
 
 [Install]
 WantedBy=ngafid.target
