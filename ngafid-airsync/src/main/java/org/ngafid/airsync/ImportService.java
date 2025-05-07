@@ -1,6 +1,6 @@
 package org.ngafid.airsync;
 
-import org.codehaus.plexus.util.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ngafid.core.Database;
 import org.ngafid.core.uploads.Upload;
 

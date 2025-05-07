@@ -15,6 +15,10 @@
     <version>1.0-SNAPSHOT</version>
     <name>ngafid-www</name>
 
+    <properties>
+        <javalin.version>6.6.0</javalin.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.ngafid.core</groupId>
@@ -25,6 +29,33 @@
             <groupId>org.ngafid.airsync</groupId>
             <artifactId>ngafid-airsync</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Javalin Webserver -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>${javalin.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.module</groupId>
+                    <artifactId>jackson-module-kotlin</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.google.code.gson</groupId>
+                    <artifactId>gson</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin-rendering</artifactId>
+            <version>6.4.0</version>
         </dependency>
     </dependencies>
 

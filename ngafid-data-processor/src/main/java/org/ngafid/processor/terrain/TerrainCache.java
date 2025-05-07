@@ -9,7 +9,8 @@ import java.nio.file.NoSuchFileException;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
-public final class TerrainCache {
+public enum TerrainCache {
+    ;
     public static final String TERRAIN_DIRECTORY;
     private static int MAX_CACHE_SIZE;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
@@ -49,13 +50,9 @@ public final class TerrainCache {
                 );
     }
 
-    private TerrainCache() {
-        throw new UnsupportedOperationException("Utility class");
-    }
-
-    //each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
-    //the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
-    //numbers start at 01, which corresponds to W180 ... W175, 02 is W174 ... 169, etc
+    // each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
+    // the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
+    // numbers start at 01, which corresponds to W180 ... W175, 02 is W174 ... 169, etc
     public static String getDirectoryFromLatLon(int latitude, int longitude) {
         String directory = "";
         if (latitude < 0) {
