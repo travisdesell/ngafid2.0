@@ -28,13 +28,16 @@ public final class AirSyncAircraft {
     private static final LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
     private static final String TIMESTAMP_UPLOADED = "";
     private static final Logger LOG = Logger.getLogger(AirSyncAircraft.class.getName());
-    private final int id;
-    private final String tailNumber;
+
+    public final int id;
+    public final String tailNumber;
+    public final String accountToken;
+
     private AirSyncFleet fleet;
 
     @JsonCreator
-    public static AirSyncAircraft create(@JsonProperty("id") int id, @JsonProperty("tailNumber") String tailNumber) {
-        return new AirSyncAircraft(id, tailNumber);
+    public static AirSyncAircraft create(@JsonProperty("id") int id, @JsonProperty("tailNumber") String tailNumber, @JsonProperty("account_token") String accountToken) {
+        return new AirSyncAircraft(id, tailNumber, accountToken);
     }
 
     /**
@@ -43,9 +46,10 @@ public final class AirSyncAircraft {
      * @param id         the Aircraft's id
      * @param tailNumber the Aircraft's tail number
      */
-    private AirSyncAircraft(int id, String tailNumber) {
+    private AirSyncAircraft(int id, String tailNumber, String accountToken) {
         this.id = id;
         this.tailNumber = tailNumber;
+        this.accountToken = accountToken;
     }
 
     /**
@@ -153,40 +157,6 @@ public final class AirSyncAircraft {
         return page;
     }
 
-    public String getAirSyncFleetName() {
-        try {
-            byte[] respRaw = getBytes();
-            LOG.info(new String(respRaw));
-            List<AirSyncAircraftAccountInfo> info = OBJECT_MAPPER.readValue(respRaw, new TypeReference<List<AirSyncAircraftAccountInfo>>() {
-            });
-
-            if (info.size() != 1) {
-                LOG.severe("AirSync aircraft appears for multiple fleets. We do not support this functionality " +
-                        "currently...");
-                System.exit(1);
-            }
-
-            return info.get(0).name;
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    private byte[] getBytes() throws IOException {
-        AirSyncAuth authentication = fleet.getAuth();
-        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" +
-                "/accounts").openConnection();
-        netConnection.setRequestMethod("GET");
-        netConnection.setDoOutput(true);
-        netConnection.setRequestProperty("Authorization", authentication.bearerString());
-
-        byte[] respRaw;
-        try (InputStream is = netConnection.getInputStream()) {
-            respRaw = is.readAllBytes();
-        }
-        return respRaw;
-    }
-
     /**
      * Gets ALL imports for this Aircraft
      *
@@ -255,19 +225,5 @@ public final class AirSyncAircraft {
             return getImports(connection, airSyncFleet);
         }
     }
-
-    //CHECKSTYLE:OFF
-    static class AirSyncAircraftAccountInfo {
-        public String accountToken;
-        public String name;
-
-        @JsonCreator
-        public static AirSyncAircraftAccountInfo create(@JsonProperty("account_token") String accountToken, @JsonProperty("name") String name) {
-            var info = new AirSyncAircraftAccountInfo();
-            info.accountToken = accountToken;
-            info.name = name;
-            return info;
-        }
-    }
-    //CHECKSTYLE:ON
 }
+

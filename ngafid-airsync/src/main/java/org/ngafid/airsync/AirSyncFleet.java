@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 
@@ -382,9 +381,16 @@ public class AirSyncFleet extends Fleet {
 
             LOG.info("airsync fleet name is uhhhh " + airsyncFleetName);
 
-            this.aircraft =
-                    aircrafts.stream().filter(a -> a.getAirSyncFleetName()
-                            .equals(airsyncFleetName)).collect(Collectors.toList());
+            List<AirSyncAccount> accounts = AirSyncAccount.getAirSyncAccounts(this);
+            AirSyncAccount account = accounts.stream().filter(ac -> ac.name.equals(airsyncFleetName)).findFirst().orElse(null);
+            if (account == null) {
+                this.aircraft = List.of();
+            } else {
+
+                this.aircraft = aircrafts.stream()
+                        .filter(aircraft -> aircraft.accountToken.equals(account.accountToken))
+                        .toList();
+            }
         }
 
         return this.aircraft;
