@@ -33,7 +33,7 @@ public final class TerrainCache {
 
             // Each tile is 2.8 MB, so 1000 tiles is 2.8 GB. Make the default 1GB
             // 1 GB / 2.8 MB = 357 tiles
-            MAX_CACHE_SIZE = 10;
+            MAX_CACHE_SIZE = 357;
         }
 
         TILE_CACHE = CacheBuilder.newBuilder()
