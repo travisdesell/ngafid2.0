@@ -19,30 +19,20 @@
 
 </head>
 <body>
-    <div id='navbar'></div>
 
-    <div id="loading" style="display:none">
-        <img id="loading-image" src="/images/ajax-loader.gif" alt="Loading..." />
-    </div>
-
-    <div id="login-modal" class='modal' tabIndex='-1' role='dialog'>
-        <div class='modal-dialog modal-lg' role='document'>
-            <div id='login-modal-content'>
+    <div class="m-2 card">
+        <div class="p-2 card border-warning text-warning">
+            <div class="d-flex flex-row" style="align-items: center;">
+                <i class="fa fa-exclamation-triangle" aria-hidden="true" style="margin-right: 12; margin-left: 4"></i>
+                <b>
+                    Server migration in progress!
+                </b>
             </div>
+            Logins and account creation have been disabled until the migration is complete. Please check back later.
+            <br/>
         </div>
     </div>
 
-    <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
-        <div class='modal-dialog modal-lg' role='document'>
-            <div id='error-modal-content'>
-            </div>
-        </div>
-    </div>
-
-    <div id="create-account-card" style="overflow-y: hidden;"></div>
-
-    <!-- Load our javascript. -->
-    <script src="/js/create_account-bundle.js"></script>
 
 </body>
 </html>

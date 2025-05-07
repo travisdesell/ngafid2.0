@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
-import { loginModal } from "./login.js";
+// import { loginModal } from "./login.js";
 
 import { DarkModeToggle } from "./dark_mode_toggle.js";
 
@@ -37,8 +37,8 @@ class NavLink extends React.Component {
 
 class HomeNavbar extends React.Component {
     attemptLogIn() {
-        console.log("showing login modal!");
-        loginModal.show();
+        // console.log("showing login modal!");
+        // loginModal.show();
     }
 
     render() {
@@ -56,8 +56,8 @@ class HomeNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
-                        <NavLink name={"Create Account"} href="/create_account"/>
+                        {/* <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
+                        <NavLink name={"Create Account"} href="/create_account"/> */}
                     </ul>
                 </div>
 
