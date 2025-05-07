@@ -1,1 +1,1 @@
-java -XX:MaxRAMPercentage=25.0 -cp ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.core.airsync.AirSync
+java -XX:MaxRAMPercentage=25.0 -cp ngafid-airsync/target/ngafid-airsync-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.airsync.ImportService

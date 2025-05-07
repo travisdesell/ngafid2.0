@@ -21,8 +21,13 @@
             <artifactId>ngafid-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.4.8-jre</version>
+        </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>

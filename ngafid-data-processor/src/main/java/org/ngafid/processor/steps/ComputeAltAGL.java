@@ -7,7 +7,6 @@ import org.ngafid.processor.format.FlightBuilder;
 import org.ngafid.processor.terrain.TerrainCache;
 import org.ngafid.processor.terrain.TerrainUnavailableException;
 
-import java.nio.file.NoSuchFileException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -77,7 +76,7 @@ public class ComputeAltAGL extends ComputeStep {
             try {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
                 altitudeAGLTS.add(altitudeAGL);
-            } catch (NoSuchFileException | TerrainUnavailableException e) {
+            } catch (TerrainUnavailableException e) {
                 altitudeAGLTS.add(Double.NaN);
             }
         }

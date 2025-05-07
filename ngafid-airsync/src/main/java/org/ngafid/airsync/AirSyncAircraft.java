@@ -1,16 +1,13 @@
-package org.ngafid.core.accounts;
+package org.ngafid.airsync;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import org.ngafid.core.airsync.AirSync;
-import org.ngafid.core.airsync.AirSyncEndpoints;
-import org.ngafid.core.airsync.AirSyncImport;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
@@ -20,12 +17,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 /**
  * Represents an Aircraft that is AirSync compatibile
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class AirSyncAircraft {
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
-
     // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
     private static final LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
     private static final String TIMESTAMP_UPLOADED = "";
@@ -33,6 +31,11 @@ public final class AirSyncAircraft {
     private final int id;
     private final String tailNumber;
     private AirSyncFleet fleet;
+
+    @JsonCreator
+    public static AirSyncAircraft create(@JsonProperty("id") int id, @JsonProperty("tailNumber") String tailNumber) {
+        return new AirSyncAircraft(id, tailNumber);
+    }
 
     /**
      * Private constructor, for instantiation within this class.
@@ -140,9 +143,8 @@ public final class AirSyncAircraft {
         resp = resp.replaceAll("file_url", "fileUrl");
         resp = resp.replaceAll("timestamp_uploaded", "timestampUploaded");
 
-        Type target = new TypeToken<List<AirSyncImport>>() {
-        }.getType();
-        List<AirSyncImport> page = GSON.fromJson(resp, target);
+        List<AirSyncImport> page = OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncImport>>() {
+        });
 
         // initialize the imports
         for (AirSyncImport i : page)
@@ -154,10 +156,9 @@ public final class AirSyncAircraft {
     public String getAirSyncFleetName() {
         try {
             byte[] respRaw = getBytes();
-
-            List<AirSyncAircraftAccountInfo> info = GSON.fromJson(new String(respRaw),
-                    new TypeToken<List<AirSyncAircraftAccountInfo>>() {
-                    }.getType());
+            LOG.info(new String(respRaw));
+            List<AirSyncAircraftAccountInfo> info = OBJECT_MAPPER.readValue(respRaw, new TypeReference<List<AirSyncAircraftAccountInfo>>() {
+            });
 
             if (info.size() != 1) {
                 LOG.severe("AirSync aircraft appears for multiple fleets. We do not support this functionality " +
@@ -236,7 +237,7 @@ public final class AirSyncAircraft {
                 continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
                 imports.addAll(page);
             } catch (Exception e) {
-                AirSync.handleAirSyncAPIException(e, authentication);
+                ImportService.handleAirSyncAPIException(e, authentication);
             }
         }
 
@@ -259,6 +260,14 @@ public final class AirSyncAircraft {
     static class AirSyncAircraftAccountInfo {
         public String accountToken;
         public String name;
+
+        @JsonCreator
+        public static AirSyncAircraftAccountInfo create(@JsonProperty("account_token") String accountToken, @JsonProperty("name") String name) {
+            var info = new AirSyncAircraftAccountInfo();
+            info.accountToken = accountToken;
+            info.name = name;
+            return info;
+        }
     }
     //CHECKSTYLE:ON
 }

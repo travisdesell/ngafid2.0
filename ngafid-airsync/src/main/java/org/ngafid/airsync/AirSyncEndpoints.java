@@ -1,4 +1,4 @@
-package org.ngafid.core.airsync;
+package org.ngafid.airsync;
 
 public interface AirSyncEndpoints {
     // This will be the default page size when getting imports;

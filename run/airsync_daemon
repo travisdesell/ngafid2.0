@@ -1,1 +1,1 @@
-mvn exec:java -pl ngafid-core -Dexec.mainClass="org.ngafid.core.airsync.AirSync" -Dexec.args="$@"
+mvn exec:java -pl ngafid-airsync -Dexec.mainClass="org.ngafid.airsync.ImportService" -Dexec.args="$@"

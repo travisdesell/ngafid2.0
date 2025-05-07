@@ -1,10 +1,11 @@
-package org.ngafid.core.airsync;
+package org.ngafid.airsync;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.ngafid.core.Database;
-import org.ngafid.core.accounts.AirSyncAircraft;
-import org.ngafid.core.accounts.AirSyncFleet;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.uploads.Upload;
 
@@ -22,9 +23,34 @@ import java.util.logging.Logger;
 /**
  * This class represents an Import from the airsync servers in the NGAFID
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class AirSyncImport {
     private static final Logger LOG = Logger.getLogger(AirSyncImport.class.getName());
     public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+
+    @JsonCreator
+    public static AirSyncImport create(@JsonProperty("id") int id, @JsonProperty("aircraftId") int aircraftId, @JsonProperty("origin") String origin,
+                                       @JsonProperty("destination") String destination, @JsonProperty("timeStart") String timeStart, @JsonProperty("timeEnd") String timeEnd,
+                                       @JsonProperty("fileUrl") String fileUrl, @JsonProperty("timestampUploaded") String timestampUploaded) {
+        AirSyncImport imp = new AirSyncImport();
+        imp.id = id;
+        imp.aircraftId = aircraftId;
+        imp.origin = origin;
+        imp.destination = destination;
+        imp.timeStart = timeStart;
+        imp.timeEnd = timeEnd;
+        imp.fileUrl = fileUrl;
+        imp.timestampUploaded = timestampUploaded;
+
+        imp.localDateTimeUpload = LocalDateTime.parse(imp.timestampUploaded, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        imp.localDateTimeStart = LocalDateTime.parse(imp.timeStart, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        imp.localDateTimeEnd = LocalDateTime.parse(imp.timeEnd, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        return imp;
+    }
+
+    private AirSyncImport() {
+    }
 
     /*
      * The airsync uploader should be the same across all fleets!
@@ -32,7 +58,7 @@ public final class AirSyncImport {
      * instance's database! See db/update_tables.php for more info.
      */
     private static int AIRSYNC_UPLOADER_ID = -1;
-    private final int id;
+    private int id;
     private int uploadId;
     private int aircraftId;
     private byte[] data;

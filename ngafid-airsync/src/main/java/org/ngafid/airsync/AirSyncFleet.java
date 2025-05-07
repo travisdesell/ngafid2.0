@@ -1,20 +1,18 @@
-package org.ngafid.core.accounts;
+package org.ngafid.airsync;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections4.ListUtils;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.ngafid.core.Database;
-import org.ngafid.core.airsync.AirSyncEndpoints;
-import org.ngafid.core.airsync.AirSyncImport;
+import org.ngafid.core.accounts.Fleet;
+import org.ngafid.core.accounts.User;
 import org.ngafid.core.uploads.Upload;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.sql.*;
 import java.time.Duration;
@@ -26,6 +24,8 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 /**
  * This is a representation of an AirSync enabled fleet in the NGAFID
  */
@@ -33,7 +33,6 @@ public class AirSyncFleet extends Fleet {
     // 1 Day
     private static final int DEFAULT_TIMEOUT = 1440;
     private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
-    private static final Gson GSON = AirSyncImport.GSON;
     private static AirSyncFleet[] fleets = null;
     private final AirSyncAuth authCreds;
     private final String airsyncFleetName;
@@ -376,13 +375,12 @@ public class AirSyncFleet extends Fleet {
 
             String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
 
-            Type target = new TypeToken<List<AirSyncAircraft>>() {
-            }.getType();
-            System.out.println(resp);
-
-            List<AirSyncAircraft> aircrafts = GSON.fromJson(resp, target);
+            List<AirSyncAircraft> aircrafts = OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncAircraft>>() {
+            });
             for (AirSyncAircraft a : aircrafts)
                 a.initialize(this);
+
+            LOG.info("airsync fleet name is uhhhh " + airsyncFleetName);
 
             this.aircraft =
                     aircrafts.stream().filter(a -> a.getAirSyncFleetName()
@@ -462,6 +460,10 @@ public class AirSyncFleet extends Fleet {
 
         AirSyncFleetUpdater() throws IOException {
             aircraft = getAircraft();
+
+            for (AirSyncAircraft a : aircraft) {
+                LOG.info(OBJECT_MAPPER.writeValueAsString(a));
+            }
         }
 
         Upload getUpload(Connection connection) throws SQLException {
@@ -483,25 +485,34 @@ public class AirSyncFleet extends Fleet {
         void addFileToUpload(Connection connection, AirSyncImport imp, byte[] data) throws IOException, SQLException {
             var uploadResult = getUpload(connection);
             imp.setUploadId(uploadResult.id);
+            getZipFile();
 
             try (InputStream bis = new ByteArrayInputStream(data)) {
                 var entry = new ZipArchiveEntry(imp.getFilename());
-                entry.setMethod(ZipArchiveOutputStream.DEFLATED);
-                zipFile.addRawArchiveEntry(entry, bis);
+                LOG.info("Filename: " + imp.getFilename());
+                entry.setSize(data.length);
+                zipFile.putArchiveEntry(entry);
+                zipFile.write(data);
+                zipFile.closeArchiveEntry();
             }
 
             filesAdded += 1;
 
-            if (filesAdded >= 128) {
+            if (filesAdded >= ARCHIVE_MAX_SIZE) {
                 try (Upload.LockedUpload locked = uploadResult.getLockedUpload(connection)) {
                     locked.complete();
                 }
 
                 // Create new upload + Zip file
-                uploadResult = Upload.createAirsyncUpload(connection, getId());
+                zipFile.finish();
                 zipFile.close();
+
+                upload = null;
+                getUpload(connection);
+
                 zipFile = null;
                 getZipFile();
+
                 filesAdded = 0;
             }
         }
@@ -525,6 +536,12 @@ public class AirSyncFleet extends Fleet {
                         return left.getUploadTime().compareTo(right.getUploadTime());
                     }
                 });
+
+                LOG.info("All imports for aircraft " + OBJECT_MAPPER.writeValueAsString(ac));
+
+                for (AirSyncImport imp : allImports) {
+                    LOG.info(OBJECT_MAPPER.writeValueAsString(imp));
+                }
 
                 if (allImports.isEmpty()) return;
             }
@@ -564,7 +581,10 @@ public class AirSyncFleet extends Fleet {
                     locked.complete();
                 }
             }
-            if (zipFile != null) zipFile.close();
+            if (zipFile != null) {
+                zipFile.finish();
+                zipFile.close();
+            }
         }
 
     }

@@ -1,8 +1,4 @@
-package org.ngafid.core.accounts;
-
-import com.google.gson.Gson;
-import org.ngafid.core.airsync.AirSyncEndpoints;
-import org.ngafid.core.airsync.AirSyncImport;
+package org.ngafid.airsync;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -12,6 +8,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 /**
  * This class represents the authentication information for an AirSync-enabled fleet
  * The pertinent information should be stored in the database
@@ -19,7 +17,6 @@ import java.util.Base64;
 public class AirSyncAuth {
     private static final long BEARER_CERT_EXP_TIME = 3600;
     //CHECKSTYLE:ON
-    private static final Gson GSON = AirSyncImport.GSON;
     private final byte[] hash;
     private AccessToken accessToken;
     private LocalDateTime issueTime;
@@ -65,7 +62,7 @@ public class AirSyncAuth {
 
                 String resp = new String(respRaw).replaceAll("access_token", "accessToken");
 
-                this.accessToken = GSON.fromJson(resp, AccessToken.class);
+                this.accessToken = OBJECT_MAPPER.reader().readValue(resp, AccessToken.class);
                 this.issueTime = LocalDateTime.now();
             }
         } catch (IOException ie) {
@@ -74,15 +71,6 @@ public class AirSyncAuth {
 
             System.exit(1);
         }
-    }
-
-    /**
-     * Accessor method for the time this auth was last issued.
-     *
-     * @return the last issue time as a LocalDateTime object.
-     */
-    public LocalDateTime getIssueTime() {
-        return issueTime;
     }
 
     /**
@@ -101,7 +89,7 @@ public class AirSyncAuth {
      * This represents the access token that is used to access AirSync
      */
     //CHECKSTYLE:OFF
-    class AccessToken {
+    private static class AccessToken {
         public String accessToken;
     }
 }

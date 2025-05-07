@@ -4,12 +4,13 @@ import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.airsync.AirSyncImport;
 import org.ngafid.core.kafka.Configuration;
 import org.ngafid.core.kafka.Topic;
 import org.ngafid.core.util.MD5;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -523,7 +524,7 @@ public final class Upload {
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
+        uploadQuery.setInt(2, -1);
 
         ResultSet resultSet = uploadQuery.executeQuery();
 
@@ -548,7 +549,7 @@ public final class Upload {
             query += " " + condition;
 
         try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
-            uploadQuery.setInt(1, AirSyncImport.getUploaderId());
+            uploadQuery.setInt(1, -1);
 
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
                 resultSet.next();
@@ -581,7 +582,7 @@ public final class Upload {
         PreparedStatement uploadQuery = connection.prepareStatement(query);
 
         uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
+        uploadQuery.setInt(2, -1);
 
         for (int i = 0; i < types.length; i++) {
             uploadQuery.setString(i + 3, types[i].toString());
@@ -622,7 +623,7 @@ public final class Upload {
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
+        uploadQuery.setInt(2, -1);
 
         for (int i = 0; i < types.length; i++) {
             uploadQuery.setString(i + 3, types[i].toString());
@@ -710,10 +711,10 @@ public final class Upload {
             Files.createDirectories(parent);
         }
 
-        var zos = new ZipArchiveOutputStream(path.toFile());
+        var zos = new ZipArchiveOutputStream(new BufferedOutputStream(new FileOutputStream(path.toFile())));
         zos.setLevel(ZipArchiveOutputStream.DEFAULT_COMPRESSION);
         zos.setMethod(ZipArchiveOutputStream.DEFLATED);
-        zos.setUseZip64(Zip64Mode.AsNeeded);
+        zos.setUseZip64(Zip64Mode.Always);
         return zos;
     }
 

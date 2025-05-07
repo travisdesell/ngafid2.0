@@ -21,8 +21,13 @@
             <artifactId>ngafid-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.ngafid.airsync</groupId>
+            <artifactId>ngafid-airsync</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>
