@@ -53,6 +53,21 @@
             <!-- </div> -->
             {{/messages}}
 
+
+
+            <div class="m-2 card">
+                <div class="p-2 card border-warning text-warning">
+                    <div class="d-flex flex-row" style="align-items: center;">
+                        <i class="fa fa-exclamation-triangle" aria-hidden="true" style="margin-right: 12; margin-left: 4"></i>
+                        <b>
+                            Server migration in progress!
+                        </b>
+                    </div>
+                    Logins and account creation have been disabled until the migration is complete. Please check back later.
+                </div>
+            </div>
+
+
             <div class="card mb-1 m-2" style="opacity:0.8;">
                 <h5 class="card-header" style="opacity: 1.0;">
                     Welcome to the National General Aviation Flight Information Database (NGAFID)
@@ -120,7 +135,15 @@
                     G1000 or data recorder).
                     </p>
 
-                    <span class="text-info"><b>To sign up for an NGAFID account <a class="text-warning" href='/create_account'>click here</a></b></span>
+                    <!-- <span class="text-info">
+                        <b>
+                            To sign up for an NGAFID account
+                            <a class="text-warning" href='/create_account' disabled>
+                                click here
+                            </a>
+                        </b>
+                    </span> -->
+
                 </div>
             </div>
         </div>

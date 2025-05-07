@@ -1,34 +1,126 @@
 package org.ngafid;
 
-import org.ngafid.common.ConvertToHTML;
-import org.ngafid.routes.*;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-import org.ngafid.routes.event_def_mgmt.*;
-import spark.Spark;
-import spark.Service;
-
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import java.io.IOException;
-
-import java.time.*;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import static org.ngafid.SendEmail.sendAdminEmails;
+import org.ngafid.accounts.EmailType;
+import org.ngafid.accounts.User;
+import org.ngafid.common.ConvertToHTML;
+import org.ngafid.routes.GetAggregate;
+import org.ngafid.routes.GetAggregateTrends;
+import org.ngafid.routes.GetAirSyncImports;
+import org.ngafid.routes.GetAirSyncUploads;
+import org.ngafid.routes.GetAllDoubleSeriesNames;
+import org.ngafid.routes.GetAllEventDescriptions;
+import org.ngafid.routes.GetCSV;
+import org.ngafid.routes.GetCreateAccount;
+import org.ngafid.routes.GetCreateEvent;
+import org.ngafid.routes.GetEmailUnsubscribe;
+import org.ngafid.routes.GetEventDefinitions;
+import org.ngafid.routes.GetEventDescription;
+import org.ngafid.routes.GetEventManager;
+import org.ngafid.routes.GetEventStatistics;
+import org.ngafid.routes.GetFlight;
+import org.ngafid.routes.GetFlightDisplay;
+import org.ngafid.routes.GetFlights;
+import org.ngafid.routes.GetForgotPassword;
+import org.ngafid.routes.GetHome;
+import org.ngafid.routes.GetImports;
+import org.ngafid.routes.GetKML;
+import org.ngafid.routes.GetManageFleet;
+import org.ngafid.routes.GetNgafidCesium;
+import org.ngafid.routes.GetResetPassword;
+import org.ngafid.routes.GetSandbox;
+import org.ngafid.routes.GetSeverities;
+import org.ngafid.routes.GetSimAircraft;
+import org.ngafid.routes.GetStoredFilters;
+import org.ngafid.routes.GetSystemIds;
+import org.ngafid.routes.GetTrends;
+import org.ngafid.routes.GetTurnToFinal;
+import org.ngafid.routes.GetUpdateEvent;
+import org.ngafid.routes.GetUpdatePassword;
+import org.ngafid.routes.GetUpdateProfile;
+import org.ngafid.routes.GetUpload;
+import org.ngafid.routes.GetUploads;
+import org.ngafid.routes.GetUserEmailPreferences;
+import org.ngafid.routes.GetUserPreferences;
+import org.ngafid.routes.GetUserPreferencesPage;
+import org.ngafid.routes.GetWaiting;
+import org.ngafid.routes.GetWelcome;
+import org.ngafid.routes.GetXPlane;
+import org.ngafid.routes.PostAirSyncImports;
+import org.ngafid.routes.PostAirSyncUploads;
+import org.ngafid.routes.PostAllSeverities;
+import org.ngafid.routes.PostAssociateTag;
+import org.ngafid.routes.PostCoordinates;
+import org.ngafid.routes.PostCreateAccount;
+import org.ngafid.routes.PostCreateEvent;
+import org.ngafid.routes.PostCreateTag;
+import org.ngafid.routes.PostDoubleSeries;
+import org.ngafid.routes.PostDoubleSeriesNames;
+import org.ngafid.routes.PostEditTag;
+import org.ngafid.routes.PostEventCounts;
+import org.ngafid.routes.PostEventMetaData;
+import org.ngafid.routes.PostEventStatistics;
+import org.ngafid.routes.PostEvents;
+import org.ngafid.routes.PostFlights;
+import org.ngafid.routes.PostForgotPassword;
+import org.ngafid.routes.PostImports;
+import org.ngafid.routes.PostLOCIMetrics;
+import org.ngafid.routes.PostLogin;
+import org.ngafid.routes.PostLogout;
+import org.ngafid.routes.PostManualAirSyncUpdate;
+import org.ngafid.routes.PostModifyFilter;
+import org.ngafid.routes.PostMonthlyEventCounts;
+import org.ngafid.routes.PostNewUpload;
+import org.ngafid.routes.PostRateOfClosure;
+import org.ngafid.routes.PostRemoveFilter;
+import org.ngafid.routes.PostRemoveTag;
+import org.ngafid.routes.PostRemoveUpload;
+import org.ngafid.routes.PostResetPassword;
+import org.ngafid.routes.PostSendUserInvite;
+import org.ngafid.routes.PostSeverities;
+import org.ngafid.routes.PostSimAircraft;
+import org.ngafid.routes.PostStatistic;
+import org.ngafid.routes.PostStoreFilter;
+import org.ngafid.routes.PostSummaryStatistics;
+import org.ngafid.routes.PostTags;
+import org.ngafid.routes.PostTurnToFinal;
+import org.ngafid.routes.PostUnassociatedTags;
+import org.ngafid.routes.PostUpdateAirSyncTimeout;
+import org.ngafid.routes.PostUpdateEvent;
+import org.ngafid.routes.PostUpdatePassword;
+import org.ngafid.routes.PostUpdateProfile;
+import org.ngafid.routes.PostUpdateTail;
+import org.ngafid.routes.PostUpdateUserAccess;
+import org.ngafid.routes.PostUpdateUserEmailPreferences;
+import org.ngafid.routes.PostUpload;
+import org.ngafid.routes.PostUploadDetails;
+import org.ngafid.routes.PostUploads;
+import org.ngafid.routes.PostUserPreferences;
+import org.ngafid.routes.PostUserPreferencesMetric;
+import org.ngafid.routes.UpdateMonthlyFlightsCache;
+import org.ngafid.routes.event_def_mgmt.DeleteEventDefinitions;
+import org.ngafid.routes.event_def_mgmt.GetAllEventDefinitions;
+import org.ngafid.routes.event_def_mgmt.PutEventDefinitions;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.stream.*;
 import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
 
-import static org.ngafid.SendEmail.sendAdminEmails;
+import spark.Service;
+import spark.Spark;
 
 
 /**
@@ -159,40 +251,50 @@ public final class WebServer {
             System.exit(1);
         }
         Spark.staticFiles.externalLocation(System.getenv("SPARK_STATIC_FILES"));
+        
 
         Spark.before("/protected/*", (request, response) -> {
-            LOG.info("protected URI: " + request.uri());
 
-            //if the user session variable has not been set, then don't allow
-            //access to the protected pages (the user is not logged in).
-            User user = (User)request.session().attribute("user");
+            LOG.info("redirecting to access_denied");
+            response.redirect("/access_denied");
+            Spark.halt(401, "Go Away!");
 
-            String previousURI = request.session().attribute("previous_uri");
-            if (user == null) {
-                //save the previous uri so we can redirect there after the user logs in
-                LOG.info("request uri: '" + request.uri());
-                LOG.info("request url: '" + request.url());
-                LOG.info("request queryString: '" + request.queryString() + "'");
+            //Disable all protected routes during migration
 
-                if (request.queryString() != null) {
-                    request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
-                } else {
-                    request.session().attribute("previous_uri", request.url());
+            /* 
+                LOG.info("protected URI: " + request.uri());
+
+                //if the user session variable has not been set, then don't allow
+                //access to the protected pages (the user is not logged in).
+                User user = (User)request.session().attribute("user");
+
+                String previousURI = request.session().attribute("previous_uri");
+                if (user == null) {
+                    //save the previous uri so we can redirect there after the user logs in
+                    LOG.info("request uri: '" + request.uri());
+                    LOG.info("request url: '" + request.url());
+                    LOG.info("request queryString: '" + request.queryString() + "'");
+
+                    if (request.queryString() != null) {
+                        request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
+                    } else {
+                        request.session().attribute("previous_uri", request.url());
+                    }
+
+                    LOG.info("redirecting to access_denied");
+                    response.redirect("/access_denied");
+                    Spark.halt(401, "Go Away!");
+
+                } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
+                    LOG.info("user waiting status, redirecting to waiting page!");
+                    response.redirect("/protected/waiting");
+                    Spark.halt(401, "Go Away!");
+
+                } else if (previousURI != null) {
+                    response.redirect(previousURI);
+                    request.session().attribute("previous_uri", null);
                 }
-
-                LOG.info("redirecting to access_denied");
-                response.redirect("/access_denied");
-                Spark.halt(401, "Go Away!");
-
-            } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
-                LOG.info("user waiting status, redirecting to waiting page!");
-                response.redirect("/protected/waiting");
-                Spark.halt(401, "Go Away!");
-
-            } else if (previousURI != null) {
-                response.redirect(previousURI);
-                request.session().attribute("previous_uri", null);
-            }
+            */
         });
 
         Spark.before("/", (request, response) -> {
