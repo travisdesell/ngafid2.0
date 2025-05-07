@@ -196,10 +196,6 @@ public class AirsyncJavalinRoutes {
                 return;
             }
 
-            LOG.info("Beginning AirSync update process!");
-            String status = fleet.update(connection);
-            LOG.info("AirSync update process complete! Status: " + status);
-
             fleet.setOverride(connection, true);
 
             ctx.json("OK");
