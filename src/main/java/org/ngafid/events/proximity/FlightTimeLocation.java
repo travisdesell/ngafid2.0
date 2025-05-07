@@ -1,5 +1,6 @@
 package org.ngafid.events.proximity;
 
+import org.jline.utils.Log;
 import org.ngafid.common.filters.Pair;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
@@ -63,22 +64,20 @@ public final class FlightTimeLocation {
         Pair<Double, Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
 
 
-        //Parquet files do not have rpm data, skip this check.
-        if (!flight.getFilename().endsWith(".parquet")) {
-            if ((minMaxRPM1 == null && minMaxRPM2 == null)
-                    || (minMaxRPM2 == null && minMaxRPM1.second() < 800)
-                    || (minMaxRPM1 == null && minMaxRPM2.second() < 800)
-                    || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800
-                    && minMaxRPM2.second() < 800))) {
-                valid = false;
-                return;
-            }
+        // Invalidate the flight if RPM is present and too low
+        if ((minMaxRPM1 != null && minMaxRPM1.second() < 800) &&
+                (minMaxRPM2 != null && minMaxRPM2.second() < 800)) {
+            Log.info("Flight is not valid, RPM error");
+            valid = false;
+            return;
         }
+
 
         Pair<Double, Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
         Pair<Double, Double> minMaxLongitude = DoubleTimeSeries.getMinMax(connection, flightId, "Longitude");
 
          if (minMaxLatitude == null || minMaxLongitude == null) {
+             Log.info("Flight is not valid, Longitude error");
             valid = false;
             return;
         }
@@ -91,6 +90,7 @@ public final class FlightTimeLocation {
         Pair<Double, Double> minMaxAltMSL = DoubleTimeSeries.getMinMax(connection, flightId, "AltMSL");
 
         if (minMaxAltMSL == null) {
+            Log.info("Flight is not valid, AltMSL error");
             valid = false;
             return;
         }

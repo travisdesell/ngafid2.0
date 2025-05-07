@@ -30,18 +30,11 @@ public class ProximityEventScanner extends AbstractEventScanner {
     public ProximityEventScanner(Flight flight, EventDefinition eventDefinition) {
         super(eventDefinition);
         this.flight = flight;
-        try (Connection connection = Database.getConnection()) {
-            this.gatherRequiredColumns(connection, flight);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to load required columns for proximity scanner");
-        }
 
     }
 
     @Override
     protected List<String> getRequiredDoubleColumns() {
-        LOG.info("Getting required double columns for ProximityEventScanner");
         return List.of(Parameters.ALT_AGL, Parameters.LATITUDE, Parameters.LONGITUDE);
     }
 
@@ -242,9 +235,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
         FlightTimeLocation flightInfo = new FlightTimeLocation(connection, flight);
         boolean hasSeriesData = flightInfo.getSeriesData(connection), gotSeriesData = flightInfo.hasSeriesData(), isValid = flightInfo.isValid();
 
-        if (flight.getFilename().contains("parquet")){
-            isValid = true;
-        }
 
         if (!hasSeriesData || !gotSeriesData || !isValid) {
             LOG.warning("Flight validation failed - hasSeriesData: " + hasSeriesData + ", gotSeriesData: " + gotSeriesData + ", isValid: " + isValid);
