@@ -16,3 +16,5 @@ ngafid-frontend/node_modules
 ngafid-static/js/*
 ngafid-chart-processor/charts/*
 ngafid-db/target/*
+ngafid-airsync/target
+ngafid-chart-processor/temp
