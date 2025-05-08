@@ -3,7 +3,16 @@
     # ------------------------------------------------------------------------------ #
     # NGAFID - Environment Variables Template                                        #
     #                                                                                #
-    # Last Updated: 5/5/25                                                           #
+    #                                                                                #
+    # Be sure to run  ' ~/ngafid2.0 $ source init_env.sh '  after making changes or  #
+    # running from a new shell.                                                      #
+    #                                                                                #
+    # Alternatively, you can add the following line to your ~/.bashrc                # 
+    # file to automatically source this file:                                        #
+    #                                                                                #
+    #   ' source ~/ngafid2.0/init_env.sh '                                           #
+    #                                                                                #
+    # Last Updated: 5/8/25                                                           #
     # ------------------------------------------------------------------------------ #
     # ✂ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
     #                                                                                #
@@ -34,12 +43,13 @@ export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv          # If
 export NGAFID_PORT=8181     #<-- You can use whatever port you need or want to use
 export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/ngafid-static/templates/
 export WEBSERVER_STATIC_FILES=ngafid-static/
+export DISABLE_PERSISTENT_SESSIONS=false   #<-- To require users to log in again after a restart, set this to true.
 
 
 #Emails
 export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
 export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
-export NGAFID_EMAIL_ENABLED=false               #<-- If you don't want the webserver to send emails (exceptions, shutdowns, etc.), set this to false.
+export NGAFID_EMAIL_ENABLED=false       #<-- If you don't want the webserver to send emails (exceptions, shutdowns, etc.), set this to false.
 
 
 #Backups
