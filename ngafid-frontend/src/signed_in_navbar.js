@@ -306,7 +306,7 @@ class SignedInNavbar extends React.Component {
 
                         {/* Status Button */}
                         {hasStatusView ?
-                            <NavLink icon={"fa-info-circle"} name={"Status"} href="/protected/status"/>
+                            <NavLink icon={"fa-info-circle"} name={"Status"} href="/status"/>
                             : ""
                         }
 
