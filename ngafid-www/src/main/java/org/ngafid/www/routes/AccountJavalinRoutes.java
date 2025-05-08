@@ -24,21 +24,21 @@ import java.util.logging.Logger;
 import static org.ngafid.www.WebServer.gson;
 
 public class AccountJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
+    public static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
-    private static class LoginResponse {
+    public static class LoginResponse {
         @JsonProperty
-        private final boolean loggedOut;
+        public final boolean loggedOut;
         @JsonProperty
-        private final boolean waiting;
+        public final boolean waiting;
         @JsonProperty
-        private final boolean denied;
+        public final boolean denied;
         @JsonProperty
-        private final boolean loggedIn;
+        public final boolean loggedIn;
         @JsonProperty
-        private final String message;
+        public final String message;
         @JsonProperty
-        private final User user;
+        public final User user;
 
         public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -50,17 +50,17 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static class LogoutResponse {
+    public static class LogoutResponse {
         @JsonProperty
-        private final boolean loggedOut;
+        public final boolean loggedOut;
         @JsonProperty
-        private final boolean waiting;
+        public final boolean waiting;
         @JsonProperty
-        private final boolean loggedIn;
+        public final boolean loggedIn;
         @JsonProperty
-        private final String message;
+        public final String message;
         @JsonProperty
-        private final User user;
+        public final User user;
 
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -71,7 +71,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static class ForgotPasswordResponse {
+    public static class ForgotPasswordResponse {
         @JsonProperty
         String message;
         @JsonProperty
@@ -84,11 +84,11 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static class CreatedAccount {
+    public static class CreatedAccount {
         @JsonProperty
-        private final String accountType;
+        public final String accountType;
         @JsonProperty
-        private final User user;
+        public final User user;
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
@@ -96,19 +96,19 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static class ResetSuccessResponse {
+    public static class ResetSuccessResponse {
         @JsonProperty
-        private final boolean loggedOut;
+        public final boolean loggedOut;
         @JsonProperty
-        private final boolean waiting;
+        public final boolean waiting;
         @JsonProperty
-        private final boolean denied;
+        public final boolean denied;
         @JsonProperty
-        private final boolean loggedIn;
+        public final boolean loggedIn;
         @JsonProperty
-        private final String message;
+        public final String message;
         @JsonProperty
-        private final User user;
+        public final User user;
 
         public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -120,16 +120,16 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static class Profile {
+    public static class Profile {
         @JsonProperty
-        private final User user;
+        public final User user;
 
         public Profile(User user) {
             this.user = user;
         }
     }
 
-    private static void postLogin(Context ctx) {
+    public static void postLogin(Context ctx) {
         final String email = ctx.formParam("email");
         final String password = ctx.formParam("password");
 
@@ -167,7 +167,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void postLogout(Context ctx) {
+    public static void postLogout(Context ctx) {
         User user = ctx.sessionAttribute("user");
 
         // Set the session attribute for this user so it will be considered logged in.
@@ -178,7 +178,7 @@ public class AccountJavalinRoutes {
         ctx.json(new LogoutResponse(true, false, false, "Successfully logged out.", null));
     }
 
-    private static void getCreateAccount(Context ctx) {
+    public static void getCreateAccount(Context ctx) {
         final String templateFile = "create_account.html";
         HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -219,7 +219,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void getForgotPassword(Context ctx) {
+    public static void getForgotPassword(Context ctx) {
         final String templateFile = "forgot_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
 
@@ -229,7 +229,7 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
-    private static void getResetPassword(Context ctx) {
+    public static void getResetPassword(Context ctx) {
         final String templateFile = "reset_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
 
@@ -239,7 +239,7 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
-    private static void getUpdatePassword(Context ctx) {
+    public static void getUpdatePassword(Context ctx) {
         final String templateFile = "update_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
         User user = ctx.sessionAttribute("user");
@@ -253,7 +253,7 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
-    private static void getUpdateProfile(Context ctx) {
+    public static void getUpdateProfile(Context ctx) {
         final String templateFile = "update_profile.html";
         Map<String, Object> scopes = new HashMap<>();
 
@@ -266,7 +266,7 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
-    private static void postForgotPassword(Context ctx) {
+    public static void postForgotPassword(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final String email = ctx.formParam("email");
             if (User.exists(connection, email)) {
@@ -284,7 +284,7 @@ public class AccountJavalinRoutes {
     }
 
 
-    private static void postCreateAccount(Context ctx) {
+    public static void postCreateAccount(Context ctx) {
         final String email = ctx.formParam("email");
         final String password = ctx.formParam("password");
         final String firstName = ctx.formParam("firstName");
@@ -327,7 +327,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void getUserEmailPreferences(Context ctx) {
+    public static void getUserEmailPreferences(Context ctx) {
         final String handleFetchType = Objects.requireNonNull(ctx.pathParam("handleFetchType"));
         final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int fleetUserID = -1;
@@ -355,7 +355,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void getUserPreferences(Context ctx) {
+    public static void getUserPreferences(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         try (Connection connection = Database.getConnection()) {
@@ -365,7 +365,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void getUserPreferencesPage(Context ctx) {
+    public static void getUserPreferencesPage(Context ctx) {
         final String templateFile = "preferences_page.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
@@ -393,7 +393,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void postUserPreferences(Context ctx) {
+    public static void postUserPreferences(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int decimalPrecision = Integer.parseInt(Objects.requireNonNull(ctx.formParam("decimal_precision")));
 
@@ -404,7 +404,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void postUserPreferencesMetric(Context ctx) {
+    public static void postUserPreferencesMetric(Context ctx) {
         LOG.info("handling post user prefs route!");
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -427,7 +427,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void postResetPassword(Context ctx) {
+    public static void postResetPassword(Context ctx) {
         final String emailAddress = Objects.requireNonNull(ctx.formParam("emailAddress"));
         final String passphrase = Objects.requireNonNull(ctx.formParam("passphrase"));
         final String newPassword = Objects.requireNonNull(ctx.formParam("newPassword"));
@@ -460,7 +460,7 @@ public class AccountJavalinRoutes {
 
     }
 
-    private static void postSendUserInvite(Context ctx) {
+    public static void postSendUserInvite(Context ctx) {
         class InvitationSent {
             final String message = "Invitation Sent.";
         }
@@ -495,7 +495,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void postUpdatePassword(Context ctx) {
+    public static void postUpdatePassword(Context ctx) {
         final String currentPassword = Objects.requireNonNull(ctx.formParam("currentPassword"));
         final String newPassword = Objects.requireNonNull(ctx.formParam("newPassword"));
         final String confirmPassword = Objects.requireNonNull(ctx.formParam("confirmPassword"));
@@ -527,7 +527,7 @@ public class AccountJavalinRoutes {
 
     }
 
-    private static void postUpdateProfile(Context ctx) {
+    public static void postUpdateProfile(Context ctx) {
         final String firstName = Objects.requireNonNull(ctx.formParam("firstName"));
         final String lastName = Objects.requireNonNull(ctx.formParam("lastName"));
         final String country = Objects.requireNonNull(ctx.formParam("country"));
@@ -547,7 +547,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    private static void postUpdateUserAccess(Context ctx) {
+    public static void postUpdateUserAccess(Context ctx) {
         class UpdateUserAccess {
             final String message = "Success.";
         }
@@ -574,7 +574,7 @@ public class AccountJavalinRoutes {
 
     }
 
-    private static void postUpdateUserEmailPreferences(Context ctx) {
+    public static void postUpdateUserEmailPreferences(Context ctx) {
         final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         // Log the raw handleUpdateType value
@@ -632,7 +632,7 @@ public class AccountJavalinRoutes {
         ctx.result("handleUpdateType not specified.");
     }
 
-    private static void getEmailUnsubscribe(Context ctx) {
+    public static void getEmailUnsubscribe(Context ctx) {
         final int id = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
         final String token = ctx.formParam("token");
 
