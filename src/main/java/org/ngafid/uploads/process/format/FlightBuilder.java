@@ -1,6 +1,4 @@
 package org.ngafid.uploads.process.format;
-
-import org.jline.utils.Log;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.calculations.TurnToFinal;
@@ -111,16 +109,6 @@ public class FlightBuilder {
         ArrayList<ComputeStep> steps =
                 Stream.concat(PROCESS_STEPS.stream()
                                 .map(factory -> factory.create(connection, this))
-                                .peek(step -> {
-                                    for (String output : step.getOutputColumns()) {
-                                        if (doubleTimeSeries.containsKey(output)) {
-                                            LOG.warning("Skipping step " + step.getClass().getSimpleName() + " because output " + output + " already exists in doubleTimeSeries.");
-                                        }
-                                        if (stringTimeSeries.containsKey(output)) {
-                                            LOG.warning("Skipping step " + step.getClass().getSimpleName() + " because output " + output + " already exists in stringTimeSeries.");
-                                        }
-                                    }
-                                })
                                 .filter(step ->
                                         step.getOutputColumns().stream()
                                                 .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))

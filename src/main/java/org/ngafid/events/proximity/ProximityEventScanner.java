@@ -66,7 +66,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
         final int stopBuffer = 30;
 
         if (!flightInfo.hasRegionOverlap(otherFlightInfo) || !otherFlightInfo.getSeriesData(connection)) {
-            LOG.info("No region overlap or missing series data - Flight IDs: " + flight.getId() + " and " + otherFlight.getId());
             return List.of();
         }
 

@@ -8,9 +8,7 @@ import org.ngafid.common.Database;
 import org.ngafid.common.MD5;
 import org.ngafid.common.SendEmail;
 import org.ngafid.flights.FlightError;
-import org.ngafid.uploads.process.MalformedFlightFileException;
-import org.ngafid.uploads.process.ParquetPipeline;
-import org.ngafid.uploads.process.Pipeline;
+import org.ngafid.uploads.process.*;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -101,6 +99,10 @@ public final class ProcessUpload {
         LOG.info("Done");
     }
 
+    // TODO: Refactor Pipeline and ParquetPipeline into a shared superclass (e.g., AbstractPipeline)
+    // to reduce code duplication and simplify support for future formats.
+
+
     private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
             try {
@@ -154,7 +156,7 @@ public final class ProcessUpload {
                 lockedUpload.updateStatus(status);
 
                 return status.isProcessed();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 lockedUpload.updateStatus(Upload.Status.FAILED_UNKNOWN);
                 e.printStackTrace();
                 return false;
@@ -222,33 +224,21 @@ public final class ProcessUpload {
         }
 
         else if (extension.equals("parquet")) {
-            try {
-                LOG.info("Processing Parquet file: " + filename);
-                System.out.println("Processing Parquet file: " + filename);
+
+            LOG.info("Processing Parquet file: " + filename);
+
+            Path parquetFilePath = Paths.get(filename);
+            ParquetPipeline parquetPipeline = new ParquetPipeline(connection, upload, parquetFilePath);
+            parquetPipeline.execute();
+            flightInfo = parquetPipeline.getFlightInfo();
+            flightErrors = parquetPipeline.getFlightErrors();
+            errorFlights = flightErrors.size();
+            warningFlights = parquetPipeline.getWarningFlightsCount();
+            validFlights = parquetPipeline.getValidFlightsCount();
+
+            LOG.info("Successfully processed Parquet file." + filename);
 
 
-                // Create ParquetPipeline instance and execute processing
-                Path parquetFilePath = Paths.get(filename);
-                ParquetPipeline parquetPipeline = new ParquetPipeline(connection, upload, parquetFilePath);
-                parquetPipeline.execute();
-                flightInfo = parquetPipeline.getFlightInfo();
-                flightErrors = parquetPipeline.getFlightErrors();
-                errorFlights = flightErrors.size();
-                warningFlights = parquetPipeline.getWarningFlightsCount();
-                validFlights = parquetPipeline.getValidFlightsCount();
-
-
-                System.out.println("Successfully processed file: " + filename);
-                LOG.info("Successfully processed Parquet file.");
-
-            } catch (Exception e) {
-                LOG.severe("Error processing Parquet file: " + e.getMessage());
-                e.printStackTrace();
-
-                UploadError.insertError(connection, uploadId, "Error processing Parquet file.");
-                status = Upload.Status.FAILED_ARCHIVE_TYPE;
-                uploadException = new Exception(e + ", error processing Parquet file.");
-            }
         } else {
             // insert an upload error for this upload
             status = Upload.Status.FAILED_ARCHIVE_TYPE;

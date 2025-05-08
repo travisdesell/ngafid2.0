@@ -1,12 +1,12 @@
 package org.ngafid.events.proximity;
-
-import org.jline.utils.Log;
 import org.ngafid.common.filters.Pair;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.uploads.process.format.CSVFileProcessor;
 
+import java.util.logging.Logger;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -46,6 +46,7 @@ public final class FlightTimeLocation {
     DoubleTimeSeries epochTime;
     //CHECKSTYLE:ON
 
+    private static final Logger LOG = Logger.getLogger(CSVFileProcessor.class.getName());
 
     public FlightTimeLocation(Connection connection, Flight flight) throws SQLException {
         this.fleetId = flight.getFleetId();
@@ -53,7 +54,6 @@ public final class FlightTimeLocation {
         this.airframeNameId = flight.getAirframeNameId();
         this.startDateTime = flight.getStartDateTime();
         this.endDateTime = flight.getEndDateTime();
-
 
         if (startDateTime == null || endDateTime == null) {
             valid = false;
@@ -63,21 +63,20 @@ public final class FlightTimeLocation {
         Pair<Double, Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
         Pair<Double, Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
 
-
-        // Invalidate the flight if RPM is present and too low
-        if ((minMaxRPM1 != null && minMaxRPM1.second() < 800) &&
-                (minMaxRPM2 != null && minMaxRPM2.second() < 800)) {
-            Log.info("Flight is not valid, RPM error");
+        // Invalidate flight if RPM1 is present and below threshold,
+        // and RPM2 is either missing or also below threshold.
+        if (minMaxRPM1 != null && minMaxRPM1.second() < 800 &&
+                (minMaxRPM2 == null || minMaxRPM2.second() < 800)) {
+            LOG.severe("Flight " + flight.getAirframe() + " is not valid, RPM error");
             valid = false;
             return;
         }
-
 
         Pair<Double, Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
         Pair<Double, Double> minMaxLongitude = DoubleTimeSeries.getMinMax(connection, flightId, "Longitude");
 
          if (minMaxLatitude == null || minMaxLongitude == null) {
-             Log.info("Flight is not valid, Longitude error");
+             LOG.severe("Flight" + flight.getAirframe() + "is not valid, Longitude error");
             valid = false;
             return;
         }
@@ -90,7 +89,7 @@ public final class FlightTimeLocation {
         Pair<Double, Double> minMaxAltMSL = DoubleTimeSeries.getMinMax(connection, flightId, "AltMSL");
 
         if (minMaxAltMSL == null) {
-            Log.info("Flight is not valid, AltMSL error");
+            LOG.severe("Flight" + flight.getAirframe() + "is not valid, AltMSL error");
             valid = false;
             return;
         }
@@ -134,13 +133,12 @@ public final class FlightTimeLocation {
         hasSeriesData = true;
         return true;
     }
-
     public boolean hasRegionOverlap(FlightTimeLocation other) {
 
         boolean overlap = other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude
                 && other.maxLongitude >= this.minLongitude && other.minLongitude <= this.maxLongitude;
-        //return overlap;
-        return true;
+        LOG.info("Has region overlap: " + overlap);
+        return overlap;
     }
 
     public boolean isValid() {

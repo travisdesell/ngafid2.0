@@ -1,5 +1,6 @@
 package org.ngafid.uploads.process.format;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -13,6 +14,7 @@ import org.ngafid.flights.Parameters;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.uploads.process.FatalFlightFileException;
 import org.ngafid.uploads.process.FlightMeta;
+import org.ngafid.uploads.process.FlightProcessingException;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -35,18 +37,18 @@ public class ParquetFileProcessor {
         this.filename = filename;
     }
 
-    public Stream<FlightBuilder> parse() {
+    public Stream<FlightBuilder> parse() throws FlightProcessingException {
         LOG.info("Parsing Parquet file: " + filename);
         List<FlightBuilder> flightBuilders = new ArrayList<>();
 
         try (ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
             GenericRecord record;
 
-           int counter = 0;
+           int flightCounter = 0;
             while ((record = reader.read()) != null) {
                 FlightMeta flightMeta = new FlightMeta();
 
-                Log.info("Processing metadata for flight " + counter);
+                Log.info("Processing metadata for flight " + flightCounter);
                 processMetaData(record, flightMeta);
 
                 Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
@@ -55,31 +57,21 @@ public class ParquetFileProcessor {
                 populateTimeSeries(record, doubleTimeSeries, stringTimeSeries);
 
                 int numberRows = doubleTimeSeries.get(Parameters.UNIX_TIME_SECONDS).size();
-                LOG.info("Number of rows for flight " + counter + ": " + numberRows);
+                LOG.info("Number of rows for flight " + flightCounter + ": " + numberRows);
 
 
                 flightBuilders.add(new ParquetFlightBuilder(flightMeta, doubleTimeSeries, stringTimeSeries));
-                counter++;
+                flightCounter++;
 
-                // How many flights we are processing (testing)
-                  if (counter > 10) break;
+                // How many flights we are processing (testing). Each record is a flight
+                //  if (flightCounter > 10) break;
 
             }
-        } catch (IOException e) {
+        } catch (IOException | FatalFlightFileException e) {
             LOG.severe("Error reading Parquet file: " + e.getMessage());
-            throw new RuntimeException("Failed to parse Parquet file", e);
-        } catch (FatalFlightFileException e) {
-            throw new RuntimeException(e);
+            throw new FlightProcessingException(e);
         }
         return flightBuilders.stream();
-    }
-
-    private double parseSafeDouble(String value) {
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            return Double.NaN;
-        }
     }
 
 
@@ -88,10 +80,13 @@ public class ParquetFileProcessor {
         DoubleTimeSeries latitudeValues = new DoubleTimeSeries(Parameters.LATITUDE, "degree");
         DoubleTimeSeries longitudeValues = new DoubleTimeSeries(Parameters.LONGITUDE, "degree");
         DoubleTimeSeries speedValues = new DoubleTimeSeries(Parameters.GND_SPD, "kt");
-        DoubleTimeSeries accelerationValues = new DoubleTimeSeries(Parameters.IAS, "kt"); // reused for LAT_AC
-        DoubleTimeSeries altitudeValues = new DoubleTimeSeries(Parameters.ALT_AGL, "m");  // reused for ALT_MSL
 
-        //String is always a reference type, no performance loss here
+        DoubleTimeSeries accelerationIAS = new DoubleTimeSeries(Parameters.IAS, "kt");
+        DoubleTimeSeries accelerationLat = new DoubleTimeSeries(Parameters.LAT_AC, "kt");
+
+        DoubleTimeSeries altitudeMSL = new DoubleTimeSeries(Parameters.ALT_MSL, "m");
+
+
         List<String> utcDateTimes = new ArrayList<>();
 
         List<?> pointsList = (List<?>) record.get("points");
@@ -112,42 +107,35 @@ public class ParquetFileProcessor {
                 continue;
             }
 
-            try {
-                double unixTime = parseSafeDouble(getStringOrNaN(element, "time"));
-                double timeInSeconds = (unixTime > 32503680000L) ? unixTime / 1000 : unixTime;
-                timeValues.add(timeInSeconds);
-                try {
-                    utcDateTimes.add(TimeUtils.convertUnixTimeToUTCDateTime(timeInSeconds));
-                } catch (NumberFormatException e) {
-                    utcDateTimes.add("Error");
-                }
-            } catch (NumberFormatException e) {
-                timeValues.add(Double.NaN);
-                utcDateTimes.add("Error");
-            }
+            double unixTime = JavaDoubleParser.parseDouble(getStringOrNaN(element, "time"));
+            double timeInSeconds = (unixTime > 32503680000L) ? unixTime / 1000 : unixTime;
+            timeValues.add(timeInSeconds);
+            utcDateTimes.add(TimeUtils.convertUnixTimeToUTCDateTime(timeInSeconds));
 
-            latitudeValues.add(parseSafeDouble(getStringOrNaN(element, "latitude")));
-            longitudeValues.add(parseSafeDouble(getStringOrNaN(element, "longitude")));
-            altitudeValues.add(parseSafeDouble(getStringOrNaN(element, "altitude")));
-            speedValues.add(parseSafeDouble(getStringOrNaN(element, "speed")));
-            accelerationValues.add(parseSafeDouble(getStringOrNaN(element, "acceleration")));
+            latitudeValues.add(JavaDoubleParser.parseDouble(getStringOrNaN(element, "latitude")));
+            longitudeValues.add(JavaDoubleParser.parseDouble(getStringOrNaN(element, "longitude")));
+
+            double altitude = JavaDoubleParser.parseDouble(getStringOrNaN(element, "altitude"));
+            altitudeMSL.add(altitude);
+
+            speedValues.add(JavaDoubleParser.parseDouble(getStringOrNaN(element, "speed")));
+
+            double acceleration = JavaDoubleParser.parseDouble(getStringOrNaN(element, "acceleration"));
+            accelerationIAS.add(acceleration);
+            accelerationLat.add(acceleration);
         }
 
-        // Now just add them directly — no need to convert to arrays
         doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, timeValues);
         doubleTimeSeries.put(Parameters.LATITUDE, latitudeValues);
         doubleTimeSeries.put(Parameters.LONGITUDE, longitudeValues);
         doubleTimeSeries.put(Parameters.GND_SPD, speedValues);
-        doubleTimeSeries.put(Parameters.IAS, accelerationValues);
-        doubleTimeSeries.put(Parameters.LAT_AC, accelerationValues); // reused
-        doubleTimeSeries.put(Parameters.ALT_AGL, altitudeValues);
-        doubleTimeSeries.put(Parameters.ALT_MSL, altitudeValues);    // reused
+        doubleTimeSeries.put(Parameters.IAS, accelerationIAS);
+        doubleTimeSeries.put(Parameters.LAT_AC, accelerationLat); // reused
+        doubleTimeSeries.put(Parameters.ALT_MSL, altitudeMSL);
+
 
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", (ArrayList<String>) utcDateTimes));
     }
-
-
-
 
     /**
      * Processes metadata from the first Parquet record.
@@ -169,7 +157,7 @@ public class ParquetFileProcessor {
                 new Airframes.Type("Fixed Wing")
         );
 
-        flightMeta.md5Hash = computeMD5Hash(flightMeta, primaryKey);
+        flightMeta.md5Hash = computeMD5Hash(primaryKey);
 
         LOG.info("Processed metadata: airframe=" + flightMeta.airframe.getName() +
                 ", system_id=" + flightMeta.systemId +
@@ -198,26 +186,10 @@ public class ParquetFileProcessor {
 
     /**
      * Computes an MD5 hash using systemId and Airframe name.
-     * @param meta FlightMeta object
+
      * @return MD5 hash string
      */
-    private String computeMD5Hash(FlightMeta meta, String primaryKey) {
-
-        if (primaryKey == null) primaryKey = "UNKNOWN_KEY";
-
-        String systemId = (meta.systemId != null) ? meta.systemId : "UNKNOWN_SYSTEM";
-        String airframeName = (meta.airframe.getName() != null) ? meta.airframe.getName() : "UNKNOWN_AIRFRAME";
-
+    private String computeMD5Hash( String primaryKey) {
         return MD5.computeHexHash(primaryKey);
-    }
-    /**
-    Converts list to primitive array
-     */
-    public static double[] toPrimitiveArray(List<Double> list) {
-        double[] array = new double[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            array[i] = list.get(i);
-        }
-        return array;
     }
 }

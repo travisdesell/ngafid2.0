@@ -1,7 +1,6 @@
 package org.ngafid.uploads.process;
 
 import org.apache.parquet.io.InputFile;
-import org.jline.utils.Log;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.Flight;
 import org.ngafid.uploads.Upload;
@@ -10,8 +9,10 @@ import org.ngafid.uploads.process.format.ParquetFileProcessor;
 import org.ngafid.uploads.process.format.FlightBuilder;
 import org.ngafid.uploads.ProcessUpload;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -51,7 +52,7 @@ public class ParquetPipeline {
 
         try {
             processParquetFile();
-        } catch (Exception e) {
+        } catch (UploadException e) {
             LOG.severe("Failed to process Parquet file: " + e.getMessage());
         }
 
@@ -81,7 +82,7 @@ public class ParquetPipeline {
                 Flight flight = buildFlight(connection, fb);
                 if (flight != null) {
                     flights.add(flight);
-                    finalizeFlight(fb);  // NEW: Track flight metadata and validity
+                    finalizeFlight(fb);
                 } else {
                     errorFlights++;
                 }
@@ -89,20 +90,27 @@ public class ParquetPipeline {
 
             if (!flights.isEmpty()) {
 
-                for (Flight flight : flights) {
-                    Log.info("Parquet pipeline");
-                    LOG.info("Preparing to insert flight: " + flight.getFilename());
-                    LOG.info("  Flight ID (pre-insert): " + flight.getId());
-                    LOG.info("  Number of rows: " + flight.getNumberRows());
-                    LOG.info("  DoubleTimeSeries keys: " + flight.getDoubleTimeSeriesMap().keySet());
-                    LOG.info("  StringTimeSeries keys: " + flight.getStringTimeSeriesMap().keySet());
-                }
-                Flight.batchUpdateDatabase(connection, flights);
-            }else{
-                LOG.severe("Flights are empty!!!");
-            }
+                //Insert flights into database in batches of 10
+                final int BATCH_SIZE = 10;
+                List<Flight> buffer = new ArrayList<>(BATCH_SIZE);
 
-        } catch (Exception e) {
+                for (Flight flight : flights) {
+                    buffer.add(flight);
+
+                    if (buffer.size() == BATCH_SIZE) {
+                        Flight.batchUpdateDatabase(connection, buffer);
+                        buffer.clear();
+                    }
+                }
+
+                // remaining flights
+                if (!buffer.isEmpty()) {
+                    Flight.batchUpdateDatabase(connection, buffer);
+                }
+            }else{
+                LOG.severe("Flights are empty!");
+            }
+        } catch (IOException | SQLException | FlightProcessingException e) {
             LOG.severe("Error processing Parquet file: " + e.getMessage());
             throw new UploadException("Failed to process Parquet file: " + e.getMessage(), e, parquetFilePath.toString());
         }
@@ -123,7 +131,7 @@ public class ParquetPipeline {
             fb.meta.airframe = new Airframes.Airframe(connection, fb.meta.airframe.getName(), fb.meta.airframe.getType());
 
             return fb.build(connection).getFlight();
-        } catch (Exception e) {
+        } catch (SQLException | FlightProcessingException e) {
             LOG.severe("Error building flight '" + fb.meta.filename + "': " + e.getMessage());
             flightErrors.put(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
             errorFlights++;
@@ -146,7 +154,6 @@ public class ParquetPipeline {
             validFlights++;
         }
 
-        // Store flight info
         flightInfo.put(flight.getFilename(), new ProcessUpload.FlightInfo(
                 flight.getId(),
                 flight.getNumberRows(),
