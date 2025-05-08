@@ -16,8 +16,8 @@ import './index.css'          //<-- include Tailwind
 enum StatusIcon {
     UNKNOWN = "fa-question",
     OK = "fa-check",
-    WARNING = "fa-exclamation",
-    ERROR = "fa-xmark"
+    WARNING = "fa-warning",
+    ERROR = "fa-exclamation-circle"
 }
 enum StatusName {
     UNKNOWN = "UNKNOWN",
@@ -246,7 +246,7 @@ export default class StatusPage extends React.Component {
                                             <td className="font-mono w-[10%] max-w-[10%] truncate whitespace-nowrap overflow-hidden">
 
                                                 {/* Status Icon */}
-                                                <i className={`mr-4 scale-150 fa ${entry.status.icon}`}/>
+                                                <i className={`mr-2 scale-100 fa ${entry.status.icon}`}/>
 
                                                 {/* Status Name */}
                                                 {entry.status.name}
