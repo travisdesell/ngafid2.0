@@ -4,7 +4,7 @@
 CREATE TABLE fleet_access (
     user_id INT,
     fleet_id INT,
-    type VARCHAR(32),
+    type ENUM('MANAGER', 'UPLOAD', 'VIEW', 'WAITING', 'DENIED'),
 
     PRIMARY KEY (user_id, fleet_id),
     FOREIGN KEY (user_id) REFERENCES user(id),
