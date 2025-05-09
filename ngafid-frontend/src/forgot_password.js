@@ -1,9 +1,9 @@
 import 'bootstrap';
-import React, { Component, useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import $ from "jquery";
-import { navbar } from "./home_navbar.js";
 import {errorModal} from "./error_modal";
+
 window.jQuery = $;
 window.$ = $;
 
@@ -11,9 +11,9 @@ class ForgotPassword extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            validEmail : false,
-            emailEmpty : true,
-            registeredEmail : false,
+            validEmail: false,
+            emailEmpty: true,
+            registeredEmail: false,
         };
         this.submit = this.submit.bind(this);
     }
@@ -32,16 +32,16 @@ class ForgotPassword extends React.Component {
 
         $("#loading").show();
         var submissionData = {
-            email : $("#email").val(),
+            email: $("#email").val(),
         };
         console.log(this.state);
         let forgotPasswordObj = this;
         $.ajax({
             type: 'POST',
-            url: './forgot_password',
-            data : submissionData,
-            dataType : 'json',
-            success : function (response) {
+            url: '/api/auth/forgot-password',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 $("#loading").hide();
                 if (response.registeredEmail) {
                     forgotPasswordObj.state.validEmail = true;
@@ -56,14 +56,15 @@ class ForgotPassword extends React.Component {
                     return false;
                 }
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
-            async : true
+            async: true
         });
         this.setState(forgotPasswordObj);
     }
+
     render() {
 
         let validationMessage = "";
@@ -79,15 +80,15 @@ class ForgotPassword extends React.Component {
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -115,7 +116,10 @@ class ForgotPassword extends React.Component {
                                 <label htmlFor="email" style={labelStyle}>Email Address</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <input type="email" className="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email (required)" required={true} onChange={() => {this.validateEmail();}}/>
+                                <input type="email" className="form-control" id="email" aria-describedby="emailHelp"
+                                       placeholder="Enter email (required)" required={true} onChange={() => {
+                                    this.validateEmail();
+                                }}/>
                             </div>
                         </div>
                     </div>
@@ -126,7 +130,10 @@ class ForgotPassword extends React.Component {
                         </div>
                     </div>
                     <div className='modal-footer'>
-                        <button id='forgotPasswordSubmitBtn' type='submit' className='btn btn-primary' onClick={() => {this.submit();}} disabled={submitDisabled}>Submit</button>
+                        <button id='forgotPasswordSubmitBtn' type='submit' className='btn btn-primary' onClick={() => {
+                            this.submit();
+                        }} disabled={submitDisabled}>Submit
+                        </button>
                     </div>
                 </div>
             </div>
@@ -136,7 +143,8 @@ class ForgotPassword extends React.Component {
                 <h5 className="card-header">Reset Password</h5>
                 <div className="card-body">
                     <p className="card-text">
-                        A password reset link has been sent to your registered email address. Please click on it to reset your password.
+                        A password reset link has been sent to your registered email address. Please click on it to
+                        reset your password.
                     </p>
                 </div>
             </div>

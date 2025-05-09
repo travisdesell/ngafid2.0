@@ -8,7 +8,7 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.util.FlightTag;
 import org.ngafid.core.util.filters.StoredFilter;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 
 import java.sql.Connection;
 import java.sql.SQLException;

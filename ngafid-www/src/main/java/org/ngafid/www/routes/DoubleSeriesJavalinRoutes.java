@@ -5,7 +5,7 @@ import io.javalin.http.Context;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 
 import java.io.IOException;
 import java.sql.Connection;

@@ -1,17 +1,5 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import Pagination from 'react-bootstrap/Pagination';
-import FormCheck from 'react-bootstrap/FormCheck';
-import Form from 'react-bootstrap/Form';
-import FormControl from 'react-bootstrap/FormControl';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Button from 'react-bootstrap/Button';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
+import React from "react";
 
 
 class MetricViewerSettings extends React.Component {
@@ -19,8 +7,8 @@ class MetricViewerSettings extends React.Component {
         super(props);
 
         this.state = {
-            selectedMetrics : props.selectedMetrics,
-            decimalPrecision : props.decimalPrecision
+            selectedMetrics: props.selectedMetrics,
+            decimalPrecision: props.decimalPrecision
         }
     }
 
@@ -28,30 +16,30 @@ class MetricViewerSettings extends React.Component {
         console.log("Updating Precision to " + this.state.decimalPrecision);
 
         var submissionData = {
-            decimal_precision : this.state.decimalPrecision
+            decimal_precision: this.state.decimalPrecision
         };
 
         let prefsPage = this;
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/preferences',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'PATCH',
+            url: '/api/user/me/metric-prefs',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
                 prefsPage.setState({
-                    selectedMetrics : response.flightMetrics,
-                    decimalPrecision : response.decimalPrecision
+                    selectedMetrics: response.flightMetrics,
+                    decimalPrecision: response.decimalPrecision
                 });
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating User Preferences", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     getAllDoubleSeriesNames() {
@@ -61,18 +49,18 @@ class MetricViewerSettings extends React.Component {
         $.ajax({
             type: 'GET',
             url: '/protected/all_double_series_names',
-            dataType : 'json',
-            success : function(response) {
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
                 metrics = response.names;
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Getting Column Names", errorThrown);
-            },   
-            async: false 
-        });  
+            },
+            async: false
+        });
 
         return metrics;
     }
@@ -98,30 +86,30 @@ class MetricViewerSettings extends React.Component {
         let prefsPage = this;
 
         let submissionData = {
-            metricName : name,
-            modificationType : type
+            metricName: name,
+            modificationType: type
         };
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/preferences_metric',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'PATCH',
+            url: '/api/user/me/metric-prefs',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
                 prefsPage.setState({
-                    selectedMetrics : response
+                    selectedMetrics: response
                 });
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating User Preferences", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
-    
+
     changePrecision(precision) {
         this.state.decimalPrecision = event.target.value;
 
@@ -136,13 +124,13 @@ class MetricViewerSettings extends React.Component {
         serverMetrics = serverMetrics.filter((e) => !exemptCols.includes(e));
 
         let styleButtonSq = {
-            flex : "right",
-            float : "auto"
+            flex: "right",
+            float: "auto"
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left'
         };
@@ -169,47 +157,53 @@ class MetricViewerSettings extends React.Component {
                 <div className="p-2">
                     {
                         selectedMetrics.map((columnName, index) => {
-                            return (<button type="button" key={columnName} className="btn btn-primary mr-1" onClick={() => this.removeMetric(index)}>{columnName} <i className="fa fa-times p-1"></i></button>)
+                            return (<button type="button" key={columnName} className="btn btn-primary mr-1"
+                                            onClick={() => this.removeMetric(index)}>{columnName} <i
+                                className="fa fa-times p-1"></i></button>)
                         })
                     }
                 </div>
                 <div className="p-2 flex" style={{flex: '0 0 280px'}}>
-                    <select id="columnNames" className="form-control" onChange={this.addMetric.bind(this)} value="Select a new metric to add...">
-                    <option key={0} value="Select a new metric to add..." disabled>Select a new metric to add...</option>
-                    {
-                        serverMetrics.map((seriesName, index) => {
-                            return (
-                                <option key={index} value={seriesName}>{seriesName}</option>
-                            )
-                        })
-                    }
-                    </select>               
+                    <select id="columnNames" className="form-control" onChange={this.addMetric.bind(this)}
+                            value="Select a new metric to add...">
+                        <option key={0} value="Select a new metric to add..." disabled>Select a new metric to add...
+                        </option>
+                        {
+                            serverMetrics.map((seriesName, index) => {
+                                return (
+                                    <option key={index} value={seriesName}>{seriesName}</option>
+                                )
+                            })
+                        }
+                    </select>
                 </div>
             </div>
         );
 
 
         //let listStyle = {
-            //maxHeight: "400px",
-            //overflowX: "scroll",
-            //flexDirection: "row"
+        //maxHeight: "400px",
+        //overflowX: "scroll",
+        //flexDirection: "row"
         //}
 
-              return (
-                <div className="card-body">
-                    <div className="col" style={{padding:"0 0 0 0"}}>
-                        <div className="card card-alt">
-                            <h6 className="card-header">
-                                Your Flight Metric Viewer Preferences:
-                            </h6>
-                            <div className="form-group" style={formGroupStyle}>
+        return (
+            <div className="card-body">
+                <div className="col" style={{padding: "0 0 0 0"}}>
+                    <div className="card card-alt">
+                        <h6 className="card-header">
+                            Your Flight Metric Viewer Preferences:
+                        </h6>
+                        <div className="form-group" style={formGroupStyle}>
                             {metricsRow}
                             <div className="d-flex">
                                 <div className="p-2 d-flex" style={formHeaderStyle}>
                                     <label htmlFor="selectedMetricsNames" style={labelStyle}>Decimal Precision:</label>
                                 </div>
                                 <div className="p-2 d-flex">
-                                    <select id="columnNames" className="form-control" onChange={this.changePrecision.bind(this)} value={this.state.decimalPrecision}>
+                                    <select id="columnNames" className="form-control"
+                                            onChange={this.changePrecision.bind(this)}
+                                            value={this.state.decimalPrecision}>
                                         <option key={0}>0</option>
                                         <option key={1}>1</option>
                                         <option key={2}>2</option>
@@ -217,9 +211,9 @@ class MetricViewerSettings extends React.Component {
                                         <option key={4}>4</option>
                                         <option key={5}>5</option>
                                         <option key={6}>6</option>
-                                    </select>               
+                                    </select>
                                 </div>
-                            <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
+                                <hr style={{padding: "0", margin: "0 0 0 0"}}></hr>
                             </div>
                         </div>
                     </div>
@@ -230,4 +224,4 @@ class MetricViewerSettings extends React.Component {
 }
 
 
-export { MetricViewerSettings };
+export {MetricViewerSettings};

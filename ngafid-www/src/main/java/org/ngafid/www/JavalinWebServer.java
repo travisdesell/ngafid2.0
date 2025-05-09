@@ -5,12 +5,15 @@ import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
+import io.javalin.security.RouteRole;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.routes.*;
+import org.ngafid.www.routes.api.Account;
+import org.ngafid.www.routes.api.Auth;
 
 import java.io.File;
 import java.sql.Connection;
@@ -18,6 +21,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
@@ -40,6 +44,9 @@ public class JavalinWebServer extends WebServer {
 
             Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
             config.jsonMapper(new JavalinGson(gson, false));
+
+            Account.INSTANCE.bind(config);
+            Auth.INSTANCE.bind(config);
         });
     }
 
@@ -49,16 +56,6 @@ public class JavalinWebServer extends WebServer {
 
         app.unsafeConfig().requestLogger.http((ctx, ms) -> {
             LOG.info(ctx.method() + " " + ctx.path() + " took " + ms + "ms");
-            String method = String.valueOf(ctx.method());
-            String path = ctx.path();
-            String status = String.valueOf(ctx.status());
-            int statusCode = Integer.parseInt(status.split(" ")[0]);
-            String ip = ctx.ip();
-            String parsedIp = ip.replace("[", "").replace("]", "");
-            String referer = ctx.header("Referer");
-            if (path.startsWith("/protected")) {
-                APILogger.logRequest(method, path, statusCode, parsedIp, referer);
-            }
         });
     }
 
@@ -101,6 +98,41 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureAuthChecks() {
+
+        // API Logging compatible with new-style access control as well as old style
+        app.before("/*", ctx -> {
+            final Set<RouteRole> roles = Objects.requireNonNull(ctx.sessionAttribute("roles"));
+            final String path = ctx.path();
+
+            if (path.startsWith("/protected") || roles.contains(Role.LOGGED_IN)) {
+                int statusCode = Integer.parseInt(ctx.status().toString().split(" ")[0]);
+                String parsedIp = ctx.ip().replace("[", "").replace("]", "");
+
+                APILogger.logRequest(ctx.method().toString(), ctx.path(), statusCode, parsedIp, ctx.header("Referer"));
+            }
+        });
+
+        // New style role-based access control
+        app.before("/api/*", ctx -> {
+            final Set<RouteRole> roles = Objects.requireNonNull(ctx.sessionAttribute("roles"));
+            final User user = ctx.sessionAttribute("user");
+
+            if (roles.contains(Role.LOGGED_IN)) {
+                if (user == null) {
+                    ctx.sessionAttribute("previous_uri", ctx.url() + (ctx.queryString() != null ? "?" + ctx.queryString() : ""));
+                    ctx.redirect("/access_denied");
+                } else {
+                    if (!ctx.path().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
+                        ctx.redirect("/protected/waiting");
+                    } else if (ctx.sessionAttribute("previous_uri") != null) {
+                        ctx.redirect(ctx.sessionAttribute("previous_uri"));
+                        ctx.sessionAttribute("previous_uri", null);
+                    }
+                }
+            }
+
+        });
+
         app.before("/protected/*", ctx -> {
             LOG.info("protected URI: " + ctx.path());
 
@@ -108,21 +140,15 @@ public class JavalinWebServer extends WebServer {
             String previousURI = ctx.sessionAttribute("previous_uri");
 
             if (user == null) {
-                LOG.info("request uri: '" + ctx.path() + "'");
-                LOG.info("request url: '" + ctx.url() + "'");
-                LOG.info("request queryString: '" + ctx.queryString() + "'");
-
                 if (ctx.queryString() != null) {
                     ctx.sessionAttribute("previous_uri", ctx.url() + "?" + ctx.queryString());
                 } else {
                     ctx.sessionAttribute("previous_uri", ctx.url());
                 }
 
-                LOG.info("redirecting to access_denied");
                 ctx.redirect("/access_denied");
                 // Note 401 status is not set since it is non-standard to redirect and Javalin won't render the page
             } else if (!ctx.path().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
-                LOG.info("user waiting status, redirecting to waiting page!");
                 ctx.redirect("/protected/waiting");
             } else if (previousURI != null) {
                 ctx.redirect(previousURI);
@@ -130,17 +156,15 @@ public class JavalinWebServer extends WebServer {
             }
         });
 
+        // To redirect users to the welcome page.
         app.before("/", ctx -> {
             User user = ctx.sessionAttribute("user");
             if (user != null) {
                 String previousURI = ctx.sessionAttribute("previous_uri");
                 if (previousURI != null) {
-                    LOG.info("user already logged in, redirecting to the " +
-                            "previous page because previous URI was not null");
                     ctx.redirect(previousURI);
                     ctx.sessionAttribute("previous_uri", null);
                 } else {
-                    LOG.info("user already logged in but accessing the '/' route, redirecting to welcome!");
                     ctx.redirect("/protected/welcome");
                 }
             }

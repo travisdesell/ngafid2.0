@@ -1,12 +1,12 @@
 import 'bootstrap';
-import React, { useState, useEffect } from 'react';
-import ReactDOM from "react-dom";
+import React from 'react';
 
 import $ from 'jquery';
+
 window.jQuery = $;
 window.$ = $;
 
-export { EmailSettingsTableUser, EmailSettingsTableManager }
+export {EmailSettingsTableUser, EmailSettingsTableManager}
 
 /*
 ------------------------------------
@@ -22,7 +22,7 @@ class EmailSettingsTableUser extends React.Component {
         this.state = {
             emailTypes: [],
             settings: {},
-            disableFetching : false
+            disableFetching: false
         };
     }
 
@@ -32,29 +32,23 @@ class EmailSettingsTableUser extends React.Component {
 
     //Update user email preferences
     updateUserEmailPreferences = (updatedSettings) => {
-
-        var submissionData = {
-            handleUpdateType : "HANDLE_UPDATE_USER",
-            ...updatedSettings
-        };
-
-        this.setState({ disableFetching: true });
+        this.setState({disableFetching: true});
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/update_email_preferences',
-            data: submissionData,
+            type: 'PUT',
+            url: `/api/user/me/email-prefs`,
+            data: updatedSettings,
             dataType: 'json',
             async: true,
 
             success: (response) => {
                 console.log('Email preferences updated successfully!');
-                this.setState({ disableFetching: false });
+                this.setState({disableFetching: false});
             },
 
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error updating email preferences:', errorThrown);
-                this.setState({ disableFetching: false });
+                this.setState({disableFetching: false});
             }
         });
     }
@@ -63,14 +57,12 @@ class EmailSettingsTableUser extends React.Component {
     getUserEmailPreferences = () => {
 
         let submissionData = {
-            handleFetchType : "HANDLE_FETCH_USER"
+            handleFetchType: "HANDLE_FETCH_USER"
         };
 
         $.ajax({
             type: 'GET',
-            url: '/protected/email_preferences',
-            data: submissionData,
-            dataType: 'json',
+            url: `/api/user/me/email-prefs`,
             async: true,
 
             success: (response) => {
@@ -123,7 +115,7 @@ class EmailSettingsTableUser extends React.Component {
                     ...prevStateSettings,
                     [type]: !prevStateSettings[type]
                 };
-                return { settings: updatedSettings };
+                return {settings: updatedSettings};
             },
             () => {
                 this.updateUserEmailPreferences(this.state.settings);
@@ -154,12 +146,12 @@ class EmailSettingsTableUser extends React.Component {
                 <tr>
                     {
                         this.state.emailTypes.map((type, typeIndex) => (
-                            <td key={typeIndex} style={{ textAlign: "center" }}>
+                            <td key={typeIndex} style={{textAlign: "center"}}>
                                 <input
                                     type="checkbox"
                                     checked={(this.state.settings && this.state.settings[type]) ? this.state.settings[type] : false}
                                     onChange={this.state.disableFetching ? () => undefined : () => this.handleCheckboxChange(type)}
-                                    style={{ scale: "2.00" }}
+                                    style={{scale: "2.00"}}
                                 />
                             </td>
                         ))
@@ -183,9 +175,9 @@ class EmailSettingsTableManager extends React.Component {
         super(props);
         console.log("Generating Manager Email Settings Table...");
         this.state = {
-            emailTypes : [],
-            fleetUsers : props.fleetUsers,
-            disableFetching : false
+            emailTypes: [],
+            fleetUsers: props.fleetUsers,
+            disableFetching: false
         };
     }
 
@@ -196,25 +188,18 @@ class EmailSettingsTableManager extends React.Component {
     updateUserEmailPreferences = (fleetUser, updatedSettings) => {
         let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.id === fleetUser.id).emailTypesUser;
 
-        var submissionData = {
-            handleUpdateType : "HANDLE_UPDATE_MANAGER",
-            fleetUserID : fleetUser.id,
-            fleetID : fleetUser.fleet.id,
-            ...updatedEmailTypeSettingsTarget
-        };
-
-        this.setState({ disableFetching: true });
+        this.setState({disableFetching: true});
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/update_email_preferences',
-            data: submissionData,
+            type: 'PUT',
+            url: `/api/user/${fleetUser.id}/email-prefs`,
+            data: updatedEmailTypeSettingsTarget,
             dataType: 'json',
             async: true,
-            success: () => this.setState({ disableFetching: false }),
+            success: () => this.setState({disableFetching: false}),
             error: (_, __, errorThrown) => {
                 console.log('Error updating preferences:', errorThrown);
-                this.setState({ disableFetching: false });
+                this.setState({disableFetching: false});
             }
         });
     }
@@ -223,19 +208,11 @@ class EmailSettingsTableManager extends React.Component {
         let fleetUsers = this.state.fleetUsers;
 
         fleetUsers.forEach(userTarget => {
-            let submissionData = {
-                handleFetchType : "HANDLE_FETCH_MANAGER",
-                fleetUserID : userTarget.id,
-                fleetID: userTarget.fleet.id
-            };
-
             $.ajax({
                 type: 'GET',
-                url: '/protected/email_preferences',
-                data: submissionData,
-                dataType : 'json',
+                url: `/api/user/${userTarget.id}/email-prefs`,
                 async: true,
-                success : (response) => {
+                success: (response) => {
                     let emailTypesUserIn = response.emailTypesUser;
                     let emailTypesKeysIn = response.emailTypesKeys.filter(type =>
                         !type.includes("HIDDEN") && !type.includes("FORCED") && !type.includes("ADMIN")
@@ -246,15 +223,15 @@ class EmailSettingsTableManager extends React.Component {
                             if (userCurrent.id === userTarget.id) {
                                 return {
                                     ...userCurrent,
-                                    emailTypesUser : emailTypesUserIn,
-                                    emailTypesKeys : emailTypesKeysIn
+                                    emailTypesUser: emailTypesUserIn,
+                                    emailTypesKeys: emailTypesKeysIn
                                 };
                             }
                             return userCurrent;
                         });
 
                         return {
-                            emailTypes : emailTypesKeysIn,
+                            emailTypes: emailTypesKeysIn,
                             fleetUsers
                         };
                     });
@@ -279,19 +256,19 @@ class EmailSettingsTableManager extends React.Component {
                     }
                     return user;
                 });
-                return { fleetUsers };
+                return {fleetUsers};
             },
             () => this.updateUserEmailPreferences(userTarget, this.state.fleetUsers)
         );
     };
 
     refreshFleetUsers = (updatedUsers) => {
-        this.setState({ fleetUsers: updatedUsers });
+        this.setState({fleetUsers: updatedUsers});
     };
 
     render() {
         return (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table style={{width: "100%", borderCollapse: "collapse"}}>
                 <thead>
                 <tr>
                     <th style={{padding: "0 12px"}}>Email</th>
@@ -332,7 +309,12 @@ class EmailSettingsTableManager extends React.Component {
                             };
 
                             return (
-                                <tr key={settingIndex} style={{...rowStyle, border: "solid", borderColor: "#00004411", borderWidth: "1px 0px"}}>
+                                <tr key={settingIndex} style={{
+                                    ...rowStyle,
+                                    border: "solid",
+                                    borderColor: "#00004411",
+                                    borderWidth: "1px 0px"
+                                }}>
                                     <td style={{padding: "16px 12px"}}>{userCurrent.email}</td>
                                     {
                                         this.state.emailTypes.map((type, typeIndex) => (

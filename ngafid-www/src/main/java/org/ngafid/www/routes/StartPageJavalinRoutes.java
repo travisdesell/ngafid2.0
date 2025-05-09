@@ -5,7 +5,7 @@ import io.javalin.http.Context;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Airframes;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
 import java.sql.Connection;

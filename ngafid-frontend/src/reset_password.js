@@ -1,10 +1,8 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import { errorModal } from "./error_modal.js";
-import { loginModal } from "./login.js";
-import { navbar } from "./home_navbar.js";
+import {errorModal} from "./error_modal.js";
 
 class ResetPasswordCard extends React.Component {
     constructor(props) {
@@ -12,18 +10,18 @@ class ResetPasswordCard extends React.Component {
         const urlParams = new URLSearchParams(window.location.search);
         let passPhrase = urlParams.get("resetPhrase");
         this.state = {
-            emailAddress : "",
-            passphrase : passPhrase,
-            newPassword : "",
-            confirmPassword : ""
+            emailAddress: "",
+            passphrase: passPhrase,
+            newPassword: "",
+            confirmPassword: ""
         };
     }
 
     clearPasswords() {
         this.state = {
-            emailAddress : "",
-            newPassword : "",
-            confirmPassword : ""
+            emailAddress: "",
+            newPassword: "",
+            confirmPassword: ""
         };
 
         this.setState(this.state);
@@ -33,10 +31,10 @@ class ResetPasswordCard extends React.Component {
         event.preventDefault();
 
         var submissionData = {
-            emailAddress : this.state.emailAddress,
-            passphrase : this.state.passphrase,
-            newPassword : this.state.newPassword,
-            confirmPassword : this.state.confirmPassword
+            emailAddress: this.state.emailAddress,
+            passphrase: this.state.passphrase,
+            newPassword: this.state.newPassword,
+            confirmPassword: this.state.confirmPassword
         };
 
 
@@ -44,10 +42,10 @@ class ResetPasswordCard extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/reset_password',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            url: '/api/auth/reset-password',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -69,7 +67,7 @@ class ResetPasswordCard extends React.Component {
                 }
 
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
             async: true
@@ -96,8 +94,8 @@ class ResetPasswordCard extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {background : "rgba(248,259,250,0.8)"};
-        const fgStyle = {opacity : 1.0};
+        const bgStyle = {background: "rgba(248,259,250,0.8)"};
+        const fgStyle = {opacity: 1.0};
 
         let formGroupStyle = {
             marginBottom: '8px'
@@ -109,15 +107,15 @@ class ResetPasswordCard extends React.Component {
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -181,7 +179,7 @@ class ResetPasswordCard extends React.Component {
 
                     <div className="card-body" style={fgStyle}>
 
-                        <form onSubmit={(event) => this.resetPassword(event)} >
+                        <form onSubmit={(event) => this.resetPassword(event)}>
 
                             <div className="form-group" style={formGroupStyle}>
                                 <div className="d-flex">
@@ -189,7 +187,9 @@ class ResetPasswordCard extends React.Component {
                                         <label htmlFor="resetEmailAddress" style={labelStyle}>Email Address</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="resetEmailAddress" aria-describedby="emailAddressHelp" placeholder="Enter Email Address" onChange={(event) => this.changeEmailAddress(event)}/>
+                                        <input type="text" className="form-control" id="resetEmailAddress"
+                                               aria-describedby="emailAddressHelp" placeholder="Enter Email Address"
+                                               onChange={(event) => this.changeEmailAddress(event)}/>
                                     </div>
                                 </div>
                             </div>
@@ -198,10 +198,17 @@ class ResetPasswordCard extends React.Component {
                                     <label htmlFor="createPassword" style={labelStyle}>New Password</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="newPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeNewPassword(event)}} value={this.state.newPassword}/>
+                                    <input type="password" className="form-control" id="newPassword"
+                                           placeholder="Password (required)" required={true} onChange={(event) => {
+                                        this.changeNewPassword(event)
+                                    }} value={this.state.newPassword}/>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={(event) => {this.changeConfirmPassword(event)}} value={this.state.confirmPassword}/>
+                                    <input type="password" className="form-control" id="confirmPassword"
+                                           placeholder="Confirm password (required)" required={true}
+                                           onChange={(event) => {
+                                               this.changeConfirmPassword(event)
+                                           }} value={this.state.confirmPassword}/>
                                 </div>
                             </div>
 
@@ -209,10 +216,13 @@ class ResetPasswordCard extends React.Component {
                                 <div className="p-2" style={formHeaderStyle}>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <span style={validationMessageStyle} hidden={passwordValidationHidden}>{passwordValidationMessage}</span>
+                                    <span style={validationMessageStyle}
+                                          hidden={passwordValidationHidden}>{passwordValidationMessage}</span>
                                 </div>
                                 <div className="p-2">
-                                    <button type="submit" className="btn btn-primary float-right" disabled={resetPasswordDisabled}>Reset Password</button>
+                                    <button type="submit" className="btn btn-primary float-right"
+                                            disabled={resetPasswordDisabled}>Reset Password
+                                    </button>
                                 </div>
                             </div>
 
@@ -226,6 +236,6 @@ class ResetPasswordCard extends React.Component {
 }
 
 var resetPasswordCard = ReactDOM.render(
-    <ResetPasswordCard />,
+    <ResetPasswordCard/>,
     document.querySelector('#reset-password-card')
 );

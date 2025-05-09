@@ -1,13 +1,12 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
-import Popover from 'react-bootstrap/Popover';
-import Modal from 'react-bootstrap/Modal'
 
 import {MetricViewerSettings} from "./metricviewer_preferences.js"
 
 import $ from 'jquery';
+
 window.jQuery = $;
 window.$ = $;
 
@@ -17,9 +16,9 @@ class MetricViewerSettingsModal extends React.Component {
         super(props);
 
         this.state = {
-            title : "",
-            message : "",
-            show : false
+            title: "",
+            message: "",
+            show: false
         };
     }
 
@@ -28,8 +27,8 @@ class MetricViewerSettingsModal extends React.Component {
         this.getUserPreferences();
 
         this.setState({
-            show : true,
-            parent : parent
+            show: true,
+            parent: parent
         });
     }
 
@@ -38,23 +37,23 @@ class MetricViewerSettingsModal extends React.Component {
 
         $.ajax({
             type: 'GET',
-            url: '/protected/user_preference',
-            dataType : 'json',
-            success : function(response) {
+            url: '/api/user/me/metric-prefs',
+            dataType: 'json',
+            success: function (response) {
                 console.log("got user pref response");
                 console.log(response);
 
                 thisFlight.setState({
-                    decimalPrecision : response.decimalPrecision,
-                    selectedMetrics : response.flightMetrics
+                    decimalPrecision: response.decimalPrecision,
+                    selectedMetrics: response.flightMetrics
                 });
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 console.log("Error getting upset data:");
                 console.log(errorThrown);
-            },   
-            async: false 
-        });  
+            },
+            async: false
+        });
     }
 
     modalClicked() {
@@ -82,15 +81,15 @@ class MetricViewerSettingsModal extends React.Component {
         }
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -103,7 +102,7 @@ class MetricViewerSettingsModal extends React.Component {
                 isVertical={false}
                 selectedMetrics={this.state.selectedMetrics}
                 decimalPrecision={this.state.decimalPrecision}
-                >
+            >
             </MetricViewerSettings>
         );
 
@@ -116,7 +115,8 @@ class MetricViewerSettingsModal extends React.Component {
 
                 <div className='modal-header'>
                     <h5 id='confirm-modal-title' className='modal-title'>Change Your Metric Viewer Settings:</h5>
-                    <button type='button' className='close' data-bs-dismiss='modal' onClick={() => this.state.parent.show()} aria-label='Close'>
+                    <button type='button' className='close' data-bs-dismiss='modal'
+                            onClick={() => this.state.parent.show()} aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
@@ -130,8 +130,8 @@ class MetricViewerSettingsModal extends React.Component {
 }
 
 var metricViewerSettingsModal = ReactDOM.render(
-    <MetricViewerSettingsModal />,
+    <MetricViewerSettingsModal/>,
     document.querySelector("#metric-settings-modal-content")
 );
 
-export { metricViewerSettingsModal };
+export {metricViewerSettingsModal};

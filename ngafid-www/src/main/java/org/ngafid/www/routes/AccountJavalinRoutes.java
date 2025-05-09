@@ -7,7 +7,7 @@ import org.ngafid.airsync.AirSyncFleet;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.*;
 import org.ngafid.core.util.SendEmail;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.MustacheHandler;
 import org.ngafid.www.Navbar;
 
@@ -684,37 +684,14 @@ public class AccountJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.post("/login", AccountJavalinRoutes::postLogin);
-        app.post("/logout", AccountJavalinRoutes::postLogout);
-
         app.get("/create_account", AccountJavalinRoutes::getCreateAccount);
-        app.post("/create_account", AccountJavalinRoutes::postCreateAccount);
-
         app.get("/forgot_password", AccountJavalinRoutes::getForgotPassword);
-        app.post("/forgot_password", AccountJavalinRoutes::postForgotPassword);
-
         app.get("/reset_password", AccountJavalinRoutes::getResetPassword);
-        app.post("/reset_password", AccountJavalinRoutes::postResetPassword);
-
         app.get("/protected/update_password", AccountJavalinRoutes::getUpdatePassword);
-        app.post("/protected/update_password", AccountJavalinRoutes::postUpdatePassword);
-
         app.get("/protected/update_profile", AccountJavalinRoutes::getUpdateProfile);
-        app.post("/protected/update_profile", AccountJavalinRoutes::postUpdateProfile);
-
-        app.post("/protected/send_user_invite", AccountJavalinRoutes::postSendUserInvite);
-        app.post("/protected/update_user_access", AccountJavalinRoutes::postUpdateUserAccess);
-        app.get("/protected/user_preference", AccountJavalinRoutes::getUserPreferences);
-
-        app.get("/protected/email_preferences/{handleFetchType}", AccountJavalinRoutes::getUserEmailPreferences);
-        app.get("/protected/email_preferences/{handleFetchType}/{fleetUserID}/{fleetID}",
-                AccountJavalinRoutes::getUserEmailPreferences);
+        app.get("/protected/preferences", AccountJavalinRoutes::getUserPreferencesPage);
         app.get("/email_unsubscribe", AccountJavalinRoutes::getEmailUnsubscribe);
         app.after("/email_unsubscribe", ctx -> ctx.redirect("/"));
 
-        app.get("/protected/preferences", AccountJavalinRoutes::getUserPreferencesPage);
-        app.post("/protected/preferences", AccountJavalinRoutes::postUserPreferences);
-        app.post("/protected/preferences_metric", AccountJavalinRoutes::postUserPreferencesMetric);
-        app.post("/protected/update_email_preferences", AccountJavalinRoutes::postUpdateUserEmailPreferences);
     }
 }

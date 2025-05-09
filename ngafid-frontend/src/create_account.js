@@ -9,28 +9,28 @@ class CreateAccountCard extends React.Component {
         super(props);
 
         this.state = {
-            valid : {
-                emailEmpty : true,
-                email : false,
-                confirmEmailEmpty : true,
-                confirmEmail : false,
-                emailMatch : true,
-                passwordEmpty : true,
-                password : false,
-                confirmPasswordEmpty : true,
-                confirmPassword : false,
-                passwordMatch : true,
-                firstName : true,
-                lastName : true,
-                country : true,
-                state : true,
-                city : true,
-                address : true,
-                phone : true,
-                zip : true,
+            valid: {
+                emailEmpty: true,
+                email: false,
+                confirmEmailEmpty: true,
+                confirmEmail: false,
+                emailMatch: true,
+                passwordEmpty: true,
+                password: false,
+                confirmPasswordEmpty: true,
+                confirmPassword: false,
+                passwordMatch: true,
+                firstName: true,
+                lastName: true,
+                country: true,
+                state: true,
+                city: true,
+                address: true,
+                phone: true,
+                zip: true,
                 fleetSelectName: ""
             },
-            checkedRadio : null,
+            checkedRadio: null,
         }
     }
 
@@ -40,7 +40,7 @@ class CreateAccountCard extends React.Component {
         const params = new URLSearchParams(queryString);
         const fleetName = params.get('fleet_name');
         const email = params.get('email');
-        if (fleetName){
+        if (fleetName) {
             let checkBox = $("input[name=accountTypeRadios]");
             let fleetSelect = $("#fleetSelect")
             let emailInput = $("#createEmail")
@@ -49,17 +49,17 @@ class CreateAccountCard extends React.Component {
             checkBox.val("existingFleet");
             this.setState({
                 checkedRadio: checkBox.val(),
-                valid : {
+                valid: {
                     fleetSelect: true,
-                    emailEmpty : false,
-                    email : true,
-                    confirmEmailEmpty : false,
-                    confirmEmail : true,
-                    emailMatch : true,
+                    emailEmpty: false,
+                    email: true,
+                    confirmEmailEmpty: false,
+                    confirmEmail: true,
+                    emailMatch: true,
                     passwordEmpty: true,
                     fleetSelectName: fleetName
                 }
-            }, () =>  {
+            }, () => {
                 fleetSelect.val(fleetName.trim());
                 emailInput.val(email.trim());
                 confirmEmailInput.val(email.trim());
@@ -91,18 +91,18 @@ class CreateAccountCard extends React.Component {
         if (!valid) return;
         if (this.state.checkedRadio == null) return;
 
-        var submissionData = { 
-            email : $("#createEmail").val(),
-            password : $("#createPassword").val(),
-            firstName : $("#createFirstName").val(),
-            lastName : $("#createLastName").val(),
-            country : $("#countrySelect").val(),
-            state : $("#stateSelect").val(),
-            city : $("#createCity").val(),
-            address : $("#createAddress").val(),
-            phoneNumber : $("#createPhoneNumber").val(),
-            zipCode : $("#createZipCode").val(),
-            accountType : this.state.checkedRadio
+        var submissionData = {
+            email: $("#createEmail").val(),
+            password: $("#createPassword").val(),
+            firstName: $("#createFirstName").val(),
+            lastName: $("#createLastName").val(),
+            country: $("#countrySelect").val(),
+            state: $("#stateSelect").val(),
+            city: $("#createCity").val(),
+            address: $("#createAddress").val(),
+            phoneNumber: $("#createPhoneNumber").val(),
+            zipCode: $("#createZipCode").val(),
+            accountType: this.state.checkedRadio
         };
 
 
@@ -120,10 +120,10 @@ class CreateAccountCard extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/create_account',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            url: '/api/auth/register',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -146,7 +146,7 @@ class CreateAccountCard extends React.Component {
                 }
 
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
             async: true
@@ -157,7 +157,7 @@ class CreateAccountCard extends React.Component {
 
     validateAccountType() {
         console.log("validating account type");
-        
+
         let checkedRadio = $("input[name=accountTypeRadios]:checked").val();
         this.state.checkedRadio = checkedRadio;
         this.setState(this.state);
@@ -288,8 +288,8 @@ class CreateAccountCard extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {opacity : 0.8};
-        const fgStyle = {opacity : 1.0};
+        const bgStyle = {opacity: 0.8};
+        const fgStyle = {opacity: 1.0};
 
         let formGroupStyle = {
             marginBottom: '8px'
@@ -301,15 +301,15 @@ class CreateAccountCard extends React.Component {
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -419,7 +419,7 @@ class CreateAccountCard extends React.Component {
 
         let submitDisabled = !validationHidden;
         let fleets = [];
-        
+
         if (typeof this.state.fleets != 'undefined') {
             fleets = this.state.fleets;
         }
@@ -427,15 +427,15 @@ class CreateAccountCard extends React.Component {
         console.log("rendering with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
 
         return (
-            
-            <div className="card mb-1" style={{...bgStyle, margin:"1em"}}>
+
+            <div className="card mb-1" style={{...bgStyle, margin: "1em"}}>
                 <h5 className="card-header" style={fgStyle}>
                     Create an NGAFID Account
                 </h5>
 
                 <div className="card-body" style={fgStyle}>
 
-                    <form onSubmit={(event) => this.submitAccount(event)} >
+                    <form onSubmit={(event) => this.submitAccount(event)}>
 
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
@@ -443,10 +443,14 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createEmail" style={labelStyle}>Email Address</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="email" className="form-control" id="createEmail" aria-describedby="emailHelp" placeholder="Enter email (required)" required={true} onChange={() => this.validateEmails()}/>
+                                    <input type="email" className="form-control" id="createEmail"
+                                           aria-describedby="emailHelp" placeholder="Enter email (required)"
+                                           required={true} onChange={() => this.validateEmails()}/>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="email" className="form-control" id="confirmEmail" aria-describedby="emailHelp" placeholder="Confirm email (required)" required={true} onChange={() => this.validateEmails()}/>
+                                    <input type="email" className="form-control" id="confirmEmail"
+                                           aria-describedby="emailHelp" placeholder="Confirm email (required)"
+                                           required={true} onChange={() => this.validateEmails()}/>
                                 </div>
                             </div>
                         </div>
@@ -457,10 +461,14 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createPassword" style={labelStyle}>Password</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="createPassword" placeholder="Enter password (required)" required={true} onChange={() => this.validatePasswords()}/>
+                                    <input type="password" className="form-control" id="createPassword"
+                                           placeholder="Enter password (required)" required={true}
+                                           onChange={() => this.validatePasswords()}/>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={() => this.validatePasswords()}/>
+                                    <input type="password" className="form-control" id="confirmPassword"
+                                           placeholder="Confirm password (required)" required={true}
+                                           onChange={() => this.validatePasswords()}/>
                                 </div>
                             </div>
                         </div>
@@ -471,7 +479,9 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createFirstName" style={labelStyle}>First Name</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="text" className="form-control" id="createFirstName" aria-describedby="firstNameHelp" placeholder="Enter first name" onChange={() => this.validateFirstName()}/>
+                                    <input type="text" className="form-control" id="createFirstName"
+                                           aria-describedby="firstNameHelp" placeholder="Enter first name"
+                                           onChange={() => this.validateFirstName()}/>
                                 </div>
                             </div>
                         </div>
@@ -482,7 +492,9 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createLastName" style={labelStyle}>Last Name</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="text" className="form-control" id="createLastName" aria-describedby="lastNameHelp" placeholder="Enter last name" onChange={() => this.validateLastName()}/>
+                                    <input type="text" className="form-control" id="createLastName"
+                                           aria-describedby="lastNameHelp" placeholder="Enter last name"
+                                           onChange={() => this.validateLastName()}/>
                                 </div>
                             </div>
                         </div>
@@ -494,7 +506,8 @@ class CreateAccountCard extends React.Component {
                                 </div>
                                 <div className="p-2 flex-fill">
 
-                                    <select id="countrySelect" className="form-control" onChange={() => this.validateCountry()}>
+                                    <select id="countrySelect" className="form-control"
+                                            onChange={() => this.validateCountry()}>
                                         <option value="NONE"></option>
 
                                         <option value="AFG">Afghanistan</option>
@@ -759,7 +772,8 @@ class CreateAccountCard extends React.Component {
                                 </div>
                                 <div className="p-2 flex-fill">
 
-                                    <select id="stateSelect" className="form-control" onChange={() => this.validateState()}>
+                                    <select id="stateSelect" className="form-control"
+                                            onChange={() => this.validateState()}>
                                         <option value="NONE"></option>
 
                                         <option value="AL">Alabama</option>
@@ -820,7 +834,7 @@ class CreateAccountCard extends React.Component {
                                         <option value="PR">Puerto Rico</option>
                                         <option value="UM">United States Minor Outlying Islands</option>
                                         <option value="VI">Virgin Islands</option>
-                                    </select>               
+                                    </select>
 
 
                                 </div>
@@ -833,7 +847,9 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createCity" style={labelStyle}>City</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="text" className="form-control" id="createCity" aria-describedby="cityHelp" placeholder="Enter city" onChange={() => this.validateCity()}/>
+                                    <input type="text" className="form-control" id="createCity"
+                                           aria-describedby="cityHelp" placeholder="Enter city"
+                                           onChange={() => this.validateCity()}/>
                                 </div>
                             </div>
                         </div>
@@ -845,7 +861,9 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createAddress" style={labelStyle}>Address</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="text" className="form-control" id="createAddress" aria-describedby="addressHelp" placeholder="Enter address" onChange={() => this.validateAddress()}/>
+                                    <input type="text" className="form-control" id="createAddress"
+                                           aria-describedby="addressHelp" placeholder="Enter address"
+                                           onChange={() => this.validateAddress()}/>
                                 </div>
                             </div>
                         </div>
@@ -856,7 +874,9 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createPhoneNumber" style={labelStyle}>Phone Number</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="text" className="form-control" id="createPhoneNumber" aria-describedby="phoneNumberHelp" placeholder="Enter phone number" onChange={() => this.validatePhone()}/>
+                                    <input type="text" className="form-control" id="createPhoneNumber"
+                                           aria-describedby="phoneNumberHelp" placeholder="Enter phone number"
+                                           onChange={() => this.validatePhone()}/>
                                 </div>
                             </div>
                         </div>
@@ -868,7 +888,9 @@ class CreateAccountCard extends React.Component {
                                     <label htmlFor="createZipCode" style={labelStyle}>Zip Code</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="text" className="form-control" id="createZipCode" aria-describedby="zipCodeHelp" placeholder="Enter zip code" onChange={() => this.validateZip()}/>
+                                    <input type="text" className="form-control" id="createZipCode"
+                                           aria-describedby="zipCodeHelp" placeholder="Enter zip code"
+                                           onChange={() => this.validateZip()}/>
                                 </div>
                             </div>
                         </div>
@@ -882,13 +904,17 @@ class CreateAccountCard extends React.Component {
                                 <div className="p-2 flex-fill">
 
                                     <div className="form-check">
-                                        <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()} />
+                                        <input className="form-check-input" type="radio" name="accountTypeRadios"
+                                               id="accountTypeNewFleet" value="newFleet"
+                                               onChange={() => this.validateAccountType()}/>
                                         <label className="form-check-label" htmlFor="exampleRadios2">
                                             I am operating my own fleet.
                                         </label>
                                     </div>
                                     <div className="form-check disabled">
-                                        <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeExistingFleet" value="existingFleet" onChange={() => this.validateAccountType()} />
+                                        <input className="form-check-input" type="radio" name="accountTypeRadios"
+                                               id="accountTypeExistingFleet" value="existingFleet"
+                                               onChange={() => this.validateAccountType()}/>
                                         <label className="form-check-label" htmlFor="exampleRadios3">
                                             I am requesting access to an existing fleet.
                                         </label>
@@ -897,8 +923,13 @@ class CreateAccountCard extends React.Component {
 
                                 <div className="p-2 flex-fill">
 
-                                    <input type="text" className="form-control" id="newFleetName" aria-describedby="newFleetNameHelp" placeholder="Enter the name of your fleet (required)" hidden={fleetNameHidden} onChange={() => this.validateFleetName()}/>
-                                    <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden} value={this.state.valid.fleetSelectName}  onChange={() => this.validateFleetSelect()}>
+                                    <input type="text" className="form-control" id="newFleetName"
+                                           aria-describedby="newFleetNameHelp"
+                                           placeholder="Enter the name of your fleet (required)"
+                                           hidden={fleetNameHidden} onChange={() => this.validateFleetName()}/>
+                                    <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden}
+                                            value={this.state.valid.fleetSelectName}
+                                            onChange={() => this.validateFleetSelect()}>
                                         {
                                             fleets.map((fleetInfo, index) => {
                                                 return (
@@ -917,10 +948,13 @@ class CreateAccountCard extends React.Component {
                             <div className="p-2" style={formHeaderStyle}>
                             </div>
                             <div className="p-2 flex-fill">
-                                <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
+                                <span style={validationMessageStyle}
+                                      hidden={validationHidden}>{validationMessage}</span>
                             </div>
                             <div className="p-2">
-                                <button type="submit" className="btn btn-primary float-right" disabled={submitDisabled}>Submit</button>
+                                <button type="submit" className="btn btn-primary float-right"
+                                        disabled={submitDisabled}>Submit
+                                </button>
                             </div>
                         </div>
 
@@ -928,15 +962,14 @@ class CreateAccountCard extends React.Component {
 
                 </div>
             </div>
-            
+
         );
     }
 }
 
 var createAccountCard = ReactDOM.render(
-    <CreateAccountCard />,
+    <CreateAccountCard/>,
     document.querySelector('#create-account-card')
-
 );
 
 createAccountCard.setFleets(fleetNames);

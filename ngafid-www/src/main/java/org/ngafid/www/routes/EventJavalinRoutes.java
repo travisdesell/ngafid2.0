@@ -12,7 +12,7 @@ import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.EventMetaData;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.EventStatistics;
 import org.ngafid.www.Navbar;
 
@@ -100,7 +100,7 @@ public class EventJavalinRoutes {
     private static void getAllEventDescriptions(Context ctx) {
 
         final int AIRFRAME_ID_GENERIC = 0;
-        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id OR event_definitions.airframe_id="+AIRFRAME_ID_GENERIC;
+        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id OR event_definitions.airframe_id=" + AIRFRAME_ID_GENERIC;
 
         try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             LOG.info("preparedStatement: " + preparedStatement);

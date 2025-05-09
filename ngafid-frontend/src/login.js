@@ -1,6 +1,6 @@
 import 'bootstrap';
 
-import React, {Component} from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import {errorModal} from "./error_modal.js";
 import $ from 'jquery';
@@ -61,7 +61,7 @@ class LoginModal extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: './login',
+            url: '/api/auth/login',
             data: submissionData,
             dataType: 'json',
             success: function (response) {

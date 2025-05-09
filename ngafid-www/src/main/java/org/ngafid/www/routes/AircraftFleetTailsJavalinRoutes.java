@@ -9,7 +9,7 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Tail;
 import org.ngafid.core.flights.Tails;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
 import java.sql.Connection;

@@ -1,10 +1,10 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import { errorModal } from "./error_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-import { EmailSettingsTableManager } from "./email_settings.js";
+import {EmailSettingsTableManager} from "./email_settings.js";
 
 class AccessCheck extends React.Component {
     constructor(props) {
@@ -25,7 +25,8 @@ class AccessCheck extends React.Component {
 
         return (
             <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name={"accessRadios" + userId} id={radioId} value={ucType} checked={ucType == userAccess} onChange={() => fleetUserRow.checkRadio(ucType)}/>
+                <input className="form-check-input" type="radio" name={"accessRadios" + userId} id={radioId}
+                       value={ucType} checked={ucType == userAccess} onChange={() => fleetUserRow.checkRadio(ucType)}/>
                 <label className="form-check-label" htmlFor={radioId}>
                     {slcType}
                 </label>
@@ -42,10 +43,10 @@ class FleetUserRow extends React.Component {
         fleetUser.fleetAccess.originalAccess = fleetUser.fleetAccess.accessType;
 
         this.state = {
-            fleetUser : fleetUser,
-            waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
-            settingIndex : props.settingIndex
+            fleetUser: fleetUser,
+            waitingUserCount: this.props.waitingUserCount,
+            unconfirmedTailsCount: this.props.unconfirmedTailsCount,
+            settingIndex: props.settingIndex
         };
     }
 
@@ -59,19 +60,19 @@ class FleetUserRow extends React.Component {
         $("#loading").show();
 
         var submissionData = {
-            fleetUserId : fleetUser.id,
-            fleetId : fleetUser.fleetAccess.fleetId,
-            accessType : fleetUser.fleetAccess.accessType
+            fleetUserId: fleetUser.id,
+            fleetId: fleetUser.fleetAccess.fleetId,
+            accessType: fleetUser.fleetAccess.accessType
         };
 
         var fleetUserRow = this;
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/update_user_access',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'PATCH',
+            url: `/api/user/${fleetUser.id}/fleet-access`,
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 $('#loading').hide();
 
                 if (response.errorTitle) {
@@ -94,7 +95,7 @@ class FleetUserRow extends React.Component {
 
                 fleetUserRow.props.onAccessChange();
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
                 errorModal.show("Error Loading Uploads", errorThrown);
             },
@@ -105,7 +106,7 @@ class FleetUserRow extends React.Component {
     render() {
         let fleetUser = this.state.fleetUser;
         let accessType = fleetUser.fleetAccess.accessType;
-        const { rowStyle } = this.props;
+        const {rowStyle} = this.props;
 
         let buttonClasses = "btn btn-outline-secondary";
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
@@ -122,7 +123,8 @@ class FleetUserRow extends React.Component {
                     <AccessCheck checkType="DENIED" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
                 </td>
                 <td>
-                    <button className={buttonClasses} style={{padding : "2 6 2 6"}} disabled={buttonDisabled} onClick={() => this.updateUserAccess(fleetUser)}>
+                    <button className={buttonClasses} style={{padding: "2 6 2 6"}} disabled={buttonDisabled}
+                            onClick={() => this.updateUserAccess(fleetUser)}>
                         Update
                     </button>
                 </td>
@@ -136,10 +138,10 @@ class ManageFleetPage extends React.Component {
         super(props);
 
         this.state = {
-            user : this.props.user,
+            user: this.props.user,
             fleetUsers: [],
-            waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            waitingUserCount: this.props.waitingUserCount,
+            unconfirmedTailsCount: this.props.unconfirmedTailsCount,
             showDeniedUsers: false
         };
     }
@@ -149,40 +151,40 @@ class ManageFleetPage extends React.Component {
     }
 
     sortAndSetUsers() {
-        const { user } = this.state;
+        const {user} = this.state;
         if (user && user.fleet && Array.isArray(user.fleet.users)) {
             const sortedUsers = [...user.fleet.users].sort((a, b) =>
                 a.fleetAccess.accessType === "DENIED" ? 1 : -1
             );
-            this.setState({ fleetUsers: sortedUsers });
+            this.setState({fleetUsers: sortedUsers});
         } else {
             console.warn("User data or fleet users array is missing.");
         }
     }
 
     setUser(user) {
-        this.setState({ user: user });
+        this.setState({user: user});
     }
 
     incrementWaiting() {
-        this.setState({ waitingUserCount : (this.state.waitingUserCount + 1) });
+        this.setState({waitingUserCount: (this.state.waitingUserCount + 1)});
     }
 
     decrementWaiting() {
-        this.setState({ waitingUserCount : (this.state.waitingUserCount - 1) });
+        this.setState({waitingUserCount: (this.state.waitingUserCount - 1)});
     }
 
     sendEmail = (email) => {
-        const { user } = this.state;
+        const {user} = this.state;
         var submissionData = {
-            email : email,
+            email: email,
             fleetName: user.fleet.name,
             fleetId: user.fleet.id
         };
 
         $.ajax({
             type: 'POST',
-            url: '/protected/send_user_invite',
+            url: '/api/user/invite',
             data: submissionData,
             dataType: 'json',
             success: (response) => {
@@ -213,9 +215,9 @@ class ManageFleetPage extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = { opacity: 0.8 };
-        const fgStyle = { opacity: 1.0 };
-        const grayoutStyle = { backgroundColor: '#d3d3d3' };
+        const bgStyle = {opacity: 0.8};
+        const fgStyle = {opacity: 1.0};
+        const grayoutStyle = {backgroundColor: '#d3d3d3'};
 
         let user = this.state.user;
         let fleetName = user?.fleet?.name || "";
