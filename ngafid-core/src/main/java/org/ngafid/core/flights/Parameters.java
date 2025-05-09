@@ -187,7 +187,6 @@ public interface Parameters {
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
-    String[] UI_METRICS = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
-    String[] DEFAULT_METRICS = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
+    String[] DEFAULT_METRICS = {};
 
 }

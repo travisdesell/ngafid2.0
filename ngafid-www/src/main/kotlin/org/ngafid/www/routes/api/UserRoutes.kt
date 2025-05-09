@@ -14,46 +14,50 @@ import org.ngafid.www.routes.RouteProvider
 import java.net.URLEncoder
 import java.util.*
 
-object Account : RouteProvider() {
+object UserRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/user") {
                 path("/me") {
                     // Get currently logged in account
-                    get(Account::getMe, Role.LOGGED_IN)
+                    get(UserRoutes::getMe, Role.LOGGED_IN)
 
                     // Update currently logged in account
-                    put(Account::putMe, Role.LOGGED_IN)
+                    put(UserRoutes::putMe, Role.LOGGED_IN)
 
                     // Soft delete currently logged in account
-                    delete(Account::softDelete, Role.LOGGED_IN)
+                    delete(UserRoutes::softDeleteMe, Role.LOGGED_IN)
 
                     // TODO: get all fleets user has access to.
                     // get("/fleet-access", ..., Role.LOGGED_IN)
 
-                    get("/metric-prefs", Account::getMetricPreferencesMe, Role.LOGGED_IN)
-                    patch("/metric-prefs", Account::patchMetricPreferencesMe, Role.LOGGED_IN)
-                    patch("/metric-prefs/precision", Account::patchMetricPrecisionMe, Role.LOGGED_IN)
+                    get("/metric-prefs", UserRoutes::getMetricPreferencesMe, Role.LOGGED_IN)
+                    patch("/metric-prefs", UserRoutes::patchMetricPreferencesMe, Role.LOGGED_IN)
+                    put("/metric-prefs/precision", UserRoutes::putMetricPrecisionMe, Role.LOGGED_IN)
 
-                    get("/email-prefs", Account::getEmailPreferencesMe, Role.LOGGED_IN)
-                    put("/email-prefs", Account::putEmailPreferences, Role.LOGGED_IN)
+                    get("/email-prefs", UserRoutes::getEmailPreferencesMe, Role.LOGGED_IN)
+                    put("/email-prefs", UserRoutes::putEmailPreferencesMe, Role.LOGGED_IN)
                 }
 
-                get(Account::getAll, Role.LOGGED_IN)
+                get(UserRoutes::getAll, Role.LOGGED_IN)
 
                 path("/{uid}") {
-                    get(Account::getOne, Role.LOGGED_IN)
-                    get("/email-prefs", Account::getUserEmailPreferences, Role.LOGGED_IN)
-                    put("/email-prefs", Account::putUserEmailPreferences, Role.LOGGED_IN)
+                    get(UserRoutes::getOne, Role.LOGGED_IN)
+                    get("/email-prefs", UserRoutes::getUserEmailPreferences, Role.LOGGED_IN)
+                    put("/email-prefs", UserRoutes::putUserEmailPreferences, Role.LOGGED_IN)
                     patch("/fleet-access", AccountJavalinRoutes::postUpdateUserAccess, Role.LOGGED_IN)
                 }
 
                 // Manager modifies user fleet access
 
                 // Send invitation
-                post("/invite", Account::postSendUserInvite, Role.LOGGED_IN)
+                post("/invite", UserRoutes::postSendUserInvite, Role.LOGGED_IN)
             }
         }
+    }
+
+    fun getAccess(ctx: Context) {
+
     }
 
     fun postSendUserInvite(ctx: Context) {
@@ -119,7 +123,7 @@ object Account : RouteProvider() {
         }
     }
 
-    fun putEmailPreferences(ctx: Context) {
+    fun putEmailPreferencesMe(ctx: Context) {
         val sessionUser = ctx.sessionAttribute<User>("user")!!
 
         val userID = sessionUser.id
@@ -169,7 +173,7 @@ object Account : RouteProvider() {
         ctx.result("handleUpdateType not specified.")
     }
 
-    fun patchMetricPrecisionMe(ctx: Context) {
+    fun putMetricPrecisionMe(ctx: Context) {
         val user = Objects.requireNonNull(ctx.sessionAttribute<User>("user"))!!
         val decimalPrecision = Objects.requireNonNull(ctx.formParam("decimal_precision"))!!.toInt()
 
@@ -207,7 +211,7 @@ object Account : RouteProvider() {
      * Performs a soft-delete for the currently logged-in user. Logging in will be disabled as will all email
      * communications.
      */
-    private fun softDelete(context: Context) {
+    private fun softDeleteMe(context: Context) {
         throw NotImplementedError()
     }
 

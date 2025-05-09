@@ -12,8 +12,9 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.routes.*;
-import org.ngafid.www.routes.api.Account;
-import org.ngafid.www.routes.api.Auth;
+import org.ngafid.www.routes.api.AircraftRoutes;
+import org.ngafid.www.routes.api.AuthRoutes;
+import org.ngafid.www.routes.api.UserRoutes;
 
 import java.io.File;
 import java.sql.Connection;
@@ -45,9 +46,11 @@ public class JavalinWebServer extends WebServer {
             Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
             config.jsonMapper(new JavalinGson(gson, false));
 
-            Account.INSTANCE.bind(config);
-            Auth.INSTANCE.bind(config);
+            UserRoutes.INSTANCE.bind(config);
+            AuthRoutes.INSTANCE.bind(config);
+            AircraftRoutes.INSTANCE.bind(config);
         });
+
     }
 
     @Override
@@ -101,7 +104,7 @@ public class JavalinWebServer extends WebServer {
 
         // API Logging compatible with new-style access control as well as old style
         app.before("/*", ctx -> {
-            final Set<RouteRole> roles = Objects.requireNonNull(ctx.sessionAttribute("roles"));
+            final Set<RouteRole> roles = ctx.routeRoles();
             final String path = ctx.path();
 
             if (path.startsWith("/protected") || roles.contains(Role.LOGGED_IN)) {
@@ -114,7 +117,7 @@ public class JavalinWebServer extends WebServer {
 
         // New style role-based access control
         app.before("/api/*", ctx -> {
-            final Set<RouteRole> roles = Objects.requireNonNull(ctx.sessionAttribute("roles"));
+            final Set<RouteRole> roles = ctx.routeRoles();
             final User user = ctx.sessionAttribute("user");
 
             if (roles.contains(Role.LOGGED_IN)) {

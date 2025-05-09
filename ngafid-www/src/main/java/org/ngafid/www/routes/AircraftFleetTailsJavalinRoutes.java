@@ -23,7 +23,7 @@ public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());
     public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
-    private static class UpdateTailResponse {
+    public static class UpdateTailResponse {
         private final int fleetId;
         private final String systemId;
         private final String tail;
@@ -165,10 +165,6 @@ public class AircraftFleetTailsJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/manage_fleet", AircraftFleetTailsJavalinRoutes::getManageFleet);
-//        app.post("/protected/fleet_names", AircraftFleetTailsJavalinRoutes::postFleetNames);
         app.get("/protected/system_ids", AircraftFleetTailsJavalinRoutes::getSystemIds);
-        app.get("/protected/sim_acft", AircraftFleetTailsJavalinRoutes::getSimAircraft);
-        app.post("/protected/sim_acft", AircraftFleetTailsJavalinRoutes::postSimAircraft);
-        app.post("/protected/update_tail", AircraftFleetTailsJavalinRoutes::postUpdateTail);
     }
 }

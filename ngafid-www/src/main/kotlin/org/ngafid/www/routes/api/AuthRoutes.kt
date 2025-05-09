@@ -15,26 +15,26 @@ import org.ngafid.www.routes.RouteProvider
 import java.util.*
 import java.util.logging.Logger
 
-object Auth : RouteProvider() {
-    val LOG: Logger = Logger.getLogger(Auth::class.java.name)
+object AuthRoutes : RouteProvider() {
+    val LOG: Logger = Logger.getLogger(AuthRoutes::class.java.name)
 
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/auth") {
-                post("/login", Auth::postLogin, Role.OPEN)
-                post("/logout", Auth::postLogout, Role.OPEN)
+                post("/login", AuthRoutes::postLogin, Role.OPEN)
+                post("/logout", AuthRoutes::postLogout, Role.OPEN)
 
                 // Create account
-                post("/register", Auth::postRegister, Role.OPEN)
+                post("/register", AuthRoutes::postRegister, Role.OPEN)
 
                 // Request password reset link
-                post("/forgot-password", Auth::postForgotPassword, Role.OPEN)
+                post("/forgot-password", AuthRoutes::postForgotPassword, Role.OPEN)
 
                 // Submit new password w/ token
-                post("/reset-password", Auth::postResetPassword, Role.OPEN)
+                post("/reset-password", AuthRoutes::postResetPassword, Role.OPEN)
 
                 // Logged in user changes password
-                patch("/change-password", Auth::patchUpdatePassword, Role.LOGGED_IN)
+                patch("/change-password", AuthRoutes::patchUpdatePassword, Role.LOGGED_IN)
             }
         }
     }

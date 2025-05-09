@@ -692,6 +692,5 @@ public class AccountJavalinRoutes {
         app.get("/protected/preferences", AccountJavalinRoutes::getUserPreferencesPage);
         app.get("/email_unsubscribe", AccountJavalinRoutes::getEmailUnsubscribe);
         app.after("/email_unsubscribe", ctx -> ctx.redirect("/"));
-
     }
 }

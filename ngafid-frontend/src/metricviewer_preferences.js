@@ -22,8 +22,8 @@ class MetricViewerSettings extends React.Component {
         let prefsPage = this;
 
         $.ajax({
-            type: 'PATCH',
-            url: '/api/user/me/metric-prefs',
+            type: 'PUT',
+            url: '/api/user/me/metric-prefs/precision',
             data: submissionData,
             dataType: 'json',
             success: function (response) {
