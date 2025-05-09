@@ -239,11 +239,11 @@ export default class StatusPage extends React.Component {
                                     return (
                                         <tr key={entry.name} className={`${index%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
 
-                                            <td className="w-[10%] max-w-[10%] truncate whitespace-nowrap overflow-hidden">
+                                            <td className="truncate whitespace-nowrap overflow-hidden">
                                                 {index+1} - {entry.nameDisplay}
                                             </td>
 
-                                            <td className="font-mono w-[10%] max-w-[10%] truncate whitespace-nowrap overflow-hidden">
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
 
                                                 {/* Status Icon */}
                                                 <i className={`mr-2 scale-100 fa ${entry.status.icon}`}/>
@@ -253,7 +253,7 @@ export default class StatusPage extends React.Component {
 
                                             </td>
 
-                                            <td className={`${entry.message == STATUS_DEFAULT_MESSAGE ? "italic opacity-50" : ""} w-[80%] max-w-[80%]`}>
+                                            <td className={`${entry.message == STATUS_DEFAULT_MESSAGE ? "italic opacity-50" : ""}`}>
                                                 {entry.message}
                                             </td>
 
