@@ -104,7 +104,7 @@ public class AirsyncJavalinRoutes {
         }
     }
 
-    private static void postAirsyncImports(Context ctx) {
+    public static void postAirsyncImports(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             LOG.severe("INVALID ACCESS: user was not logged in.");
@@ -137,7 +137,7 @@ public class AirsyncJavalinRoutes {
         }
     }
 
-    private static void postAirsyncUploads(Context ctx) {
+    public static void postAirsyncUploads(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             LOG.severe("INVALID ACCESS: user was not logged in.");
@@ -169,7 +169,7 @@ public class AirsyncJavalinRoutes {
         }
     }
 
-    private static void postAirsyncManualUpdate(Context ctx) {
+    public static void postAirsyncManualUpdate(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             LOG.severe("INVALID ACCESS: user was not logged in.");
@@ -204,7 +204,7 @@ public class AirsyncJavalinRoutes {
         }
     }
 
-    private static void postAirsyncTimeout(Context ctx) {
+    public static void postAirsyncTimeout(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             LOG.severe("INVALID ACCESS: user was not logged in.");
@@ -240,11 +240,11 @@ public class AirsyncJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/airsync_uploads", AirsyncJavalinRoutes::getAirsyncUploads);
-        app.post("/protected/airsync_uploads", AirsyncJavalinRoutes::postAirsyncUploads);
+        // app.post("/protected/airsync_uploads", AirsyncJavalinRoutes::postAirsyncUploads);
 
         app.get("/protected/airsync_imports", AirsyncJavalinRoutes::getAirsyncImports);
-        app.post("/protected/airsync_update", AirsyncJavalinRoutes::postAirsyncManualUpdate);
-        app.post("/protected/airsync_imports", AirsyncJavalinRoutes::postAirsyncImports);
-        app.post("/protected/airsync_settings", AirsyncJavalinRoutes::postAirsyncTimeout);
+        // app.post("/protected/airsync_update", AirsyncJavalinRoutes::postAirsyncManualUpdate);
+        // app.post("/protected/airsync_imports", AirsyncJavalinRoutes::postAirsyncImports);
+        // app.post("/protected/airsync_settings", AirsyncJavalinRoutes::postAirsyncTimeout);
     }
 }

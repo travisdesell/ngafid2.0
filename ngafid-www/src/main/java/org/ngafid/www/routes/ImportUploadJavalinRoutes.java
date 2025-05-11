@@ -33,9 +33,9 @@ import static org.ngafid.core.Config.NGAFID_UPLOAD_DIR;
 import static org.ngafid.www.WebServer.gson;
 
 public class ImportUploadJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
+    public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
 
-    private static class UploadsResponse {
+    public static class UploadsResponse {
         @JsonProperty
         public List<Upload> uploads;
         @JsonProperty
@@ -47,11 +47,13 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static class UploadDetails {
+    public static class UploadDetails {
         @JsonProperty
         List<UploadError> uploadErrors;
+
         @JsonProperty
         List<FlightError> flightErrors;
+
         @JsonProperty
         List<FlightWarning> flightWarnings;
 
@@ -65,7 +67,7 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static class ImportsResponse {
+    public static class ImportsResponse {
         @JsonProperty
         public List<Upload> imports;
         @JsonProperty
@@ -77,9 +79,8 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void getUpload(Context ctx) {
-
-        int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("uploadId")));
+    public static void getUpload(Context ctx) {
+        int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("uid")));
         LOG.log(Level.INFO, "Retrieving upload: {0} {1}", new Object[]{uploadId, ctx.formParams("md5Hash")});
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -116,7 +117,6 @@ public class ImportUploadJavalinRoutes {
 
         //File was found, attempt to send the file to the client
         if (file.exists()) {
-
             ctx.contentType("application/zip");
             ctx.header("Content-Disposition", "attachment; filename=" + upload.getFilename());
 
@@ -144,38 +144,26 @@ public class ImportUploadJavalinRoutes {
 
     }
 
-    private static void postUpload(Context ctx) {
+    public static void postUpload(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int uploaderId = user.getId();
 
         // Extract parameters from query string
-        String identifier = ctx.formParam("identifier");
-        if (identifier == null) {
-            LOG.severe("ERROR! Missing upload identifier");
-            ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing.")));
-            return;
-        }
-
-        String md5Hash = ctx.formParam("md5Hash");
-        if (md5Hash == null) {
-            LOG.severe("ERROR! Missing upload md5Hash");
-            ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing.")));
-            return;
-        }
+        int id = Integer.parseInt(ctx.pathParam("identifier"));
 
         String sChunkNumber = ctx.formParam("chunkNumber");
-        if (sChunkNumber == null) {
-            LOG.severe("ERROR! Missing upload chunk number");
-            ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing.")));
-            return;
-        }
         int chunkNumber = Integer.parseInt(sChunkNumber);
 
         try (Connection connection = Database.getConnection()) {
-            Upload upload = Upload.getUploadByUser(connection, uploaderId, md5Hash);
+            Upload upload = Upload.getUploadById(connection, id);
             if (upload == null) {
                 LOG.severe("ERROR! Upload was not in the database!");
                 ctx.result(gson.toJson(new ErrorResponse("File Upload Failure", "A system error occurred where this upload was not in the database. Please try again.")));
+                return;
+            }
+
+            if (upload.fleetId != user.getFleetId()) {
+                ctx.status(403);
                 return;
             }
 
@@ -190,7 +178,7 @@ public class ImportUploadJavalinRoutes {
             InputStream chunkInputStream = uploadPart.content();
             long chunkSize = chunkInputStream.available();
 
-            String chunkDirectory = NGAFID_UPLOAD_DIR + "/" + fleetId + "/" + uploaderId + "/" + identifier;
+            String chunkDirectory = NGAFID_UPLOAD_DIR + "/" + fleetId + "/" + uploaderId + "/" + upload.identifier;
             new File(chunkDirectory).mkdirs();  // Create directories if they don't exist
 
             String chunkFilename = chunkDirectory + "/" + chunkNumber + ".part";
@@ -215,7 +203,7 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void getUploads(Context ctx) {
+    public static void getUploads(Context ctx) {
         final String templateFile = "uploads.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -259,7 +247,7 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void postUploads(Context ctx) {
+    public static void postUploads(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -284,8 +272,8 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void postUploadDetails(Context ctx) {
-        final int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("uploadId")));
+    public static void postUploadDetails(Context ctx) {
+        final int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("uid")));
         try {
             ctx.json(new UploadDetails(uploadId));
         } catch (SQLException e) {
@@ -293,10 +281,10 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void postRemoveUpload(Context ctx) {
+    public static void postRemoveUpload(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final int uploadId = Integer.parseInt(ctx.formParam("uploadId"));
+            final int uploadId = Integer.parseInt(ctx.pathParam("uid"));
             String md5Hash = ctx.formParam("md5Hash");
             Upload upload = Objects.requireNonNull(Upload.getUploadById(connection, uploadId, md5Hash));
 
@@ -332,7 +320,7 @@ public class ImportUploadJavalinRoutes {
 
     }
 
-    private static void getImports(Context ctx) {
+    public static void getImports(Context ctx) {
         final String templateFile = "imports.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -367,7 +355,7 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void postImports(Context ctx) {
+    public static void postImports(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -394,7 +382,7 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
-    private static void postNewUpload(Context ctx) {
+    public static void postNewUpload(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int uploaderId = user.getId();
         final int fleetId = user.getFleetId();
@@ -453,18 +441,18 @@ public class ImportUploadJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.post("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
+        // app.post("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
         // app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
-        app.post("/protected/new_upload", ImportUploadJavalinRoutes::postNewUpload);
-        app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
-        app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
+        // app.post("/protected/new_upload", ImportUploadJavalinRoutes::postNewUpload);
+        // app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
+        // app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
 
         app.get("/protected/uploads", ImportUploadJavalinRoutes::getUploads);
-        app.post("/protected/uploads", ImportUploadJavalinRoutes::postUploads);
+        // app.post("/protected/uploads", ImportUploadJavalinRoutes::postUploads);
 
         app.get("/protected/imports", ImportUploadJavalinRoutes::getImports);
-        app.post("/protected/get_imports", ImportUploadJavalinRoutes::postImports);
+        // app.post("/protected/get_imports", ImportUploadJavalinRoutes::postImports);
 
-        app.post("/protected/upload_details", ImportUploadJavalinRoutes::postUploadDetails);
+        // app.post("/protected/upload_details", ImportUploadJavalinRoutes::postUploadDetails);
     }
 }

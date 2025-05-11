@@ -181,7 +181,7 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    private static void postFlights(Context ctx) {
+    public static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
         final Filter filter = gson.fromJson(filterJSON, Filter.class);
@@ -241,7 +241,7 @@ public class FlightsJavalinRoutes {
     public static void bindRoutes(Javalin app) {
         app.get("/protected/flight", FlightsJavalinRoutes::getFlight);
         app.get("/protected/flights", FlightsJavalinRoutes::getFlights);
-        app.post("/protected/get_flights", FlightsJavalinRoutes::postFlights);
+        // app.post("/protected/get_flights", FlightsJavalinRoutes::postFlights);
         app.get("/protected/flights/flight_display", FlightsJavalinRoutes::getFlightDisplay);
     }
 }

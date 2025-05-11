@@ -141,8 +141,7 @@ public class EventDefinition {
      * @param eventName  is the event name being retrieved
      * @return Event Definition matching the name passed in
      */
-    public static EventDefinition getEventDefinition(Connection connection, String eventName) throws IOException,
-            SQLException {
+    public static EventDefinition getEventDefinition(Connection connection, String eventName) throws SQLException {
         eventName = "name = '" + eventName + "'";
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
 

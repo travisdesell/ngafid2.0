@@ -4,12 +4,13 @@ import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import org.ngafid.core.Database
-import org.ngafid.core.accounts.User
 import org.ngafid.core.flights.Flight
 import org.ngafid.core.flights.Tails
 import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.UpdateTailResponse
 import org.ngafid.www.routes.Role
 import org.ngafid.www.routes.RouteProvider
+import org.ngafid.www.routes.RouteUtility
+import org.ngafid.www.routes.SessionUtility
 import java.util.*
 import java.util.logging.Logger
 
@@ -32,12 +33,14 @@ object AircraftRoutes : RouteProvider() {
                     post(AircraftRoutes::postSimAircraft, Role.LOGGED_IN)
                     delete(AircraftRoutes::deleteSimAircraft, Role.LOGGED_IN)
                 }
+
+                RouteUtility.getStat("/count", { ctx, stats -> ctx.json(stats.numberAircraft()) })
             }
         }
     }
 
     fun getAllSystemIds(ctx: Context) {
-        val user = ctx.sessionAttribute<User>("user")!!
+        val user = SessionUtility.getUser(ctx)
 
         if (user.hasViewAccess(user.fleetId)) {
             Database.getConnection().use { connection ->
@@ -47,7 +50,7 @@ object AircraftRoutes : RouteProvider() {
     }
 
     fun getAllSimAircraft(ctx: Context) {
-        val user = ctx.sessionAttribute<User>("user")!!
+        val user = SessionUtility.getUser(ctx)
         val fleetId = user.fleetId
 
         if (!user.hasViewAccess(fleetId)) {
@@ -64,7 +67,7 @@ object AircraftRoutes : RouteProvider() {
     }
 
     fun postSimAircraft(ctx: Context) {
-        val user = ctx.sessionAttribute<User>("user")!!
+        val user = SessionUtility.getUser(ctx)
         val path = ctx.formParam("path")!!
         val fleetId = user.fleetId
 
@@ -80,9 +83,9 @@ object AircraftRoutes : RouteProvider() {
     }
 
     fun deleteSimAircraft(ctx: Context) {
-        val user = Objects.requireNonNull(ctx.sessionAttribute<User>("user"))
+        val user = SessionUtility.getUser(ctx)
         val path = Objects.requireNonNull(ctx.formParam("path"))
-        val fleetId = user!!.fleetId
+        val fleetId = user.fleetId
 
         Database.getConnection().use { connection ->
             Flight.removeSimAircraft(connection, fleetId, path)
@@ -98,7 +101,7 @@ object AircraftRoutes : RouteProvider() {
         val tail = ctx.formParam("tail")
 
         Database.getConnection().use { connection ->
-            val user = ctx.sessionAttribute<User>("user")!!
+            val user = SessionUtility.getUser(ctx)
             val fleetId = user.fleetId
 
             // check to see if the user has upload access for this fleet.

@@ -12,6 +12,7 @@ import org.ngafid.www.routes.AccountJavalinRoutes
 import org.ngafid.www.routes.AccountJavalinRoutes.*
 import org.ngafid.www.routes.Role
 import org.ngafid.www.routes.RouteProvider
+import org.ngafid.www.routes.SessionUtility
 import java.util.*
 import java.util.logging.Logger
 
@@ -71,12 +72,12 @@ object AuthRoutes : RouteProvider() {
     }
 
     fun postLogout(ctx: Context) {
-        val user = ctx.sessionAttribute<User>("user")
+        val user = SessionUtility.getUser(ctx)
 
         // Set the session attribute for this user so it will be considered logged in.
         ctx.sessionAttribute("user", null)
         ctx.req().session.invalidate()
-        LOG.info("removed user '" + user!!.email + "' from the session.")
+        LOG.info("removed user '" + user.email + "' from the session.")
 
         ctx.json(LogoutResponse(true, false, false, "Successfully logged out.", null))
     }
@@ -223,7 +224,7 @@ object AuthRoutes : RouteProvider() {
         val newPassword = Objects.requireNonNull(ctx.formParam("newPassword"))
         val confirmPassword = Objects.requireNonNull(ctx.formParam("confirmPassword"))
 
-        val user = ctx.sessionAttribute<User>("user")!!
+        val user = SessionUtility.getUser(ctx)!!
         Database.getConnection().use { connection ->
             // 1. make sure currentPassword authenticates against what's in the database
             if (!user.validate(connection, currentPassword)) {

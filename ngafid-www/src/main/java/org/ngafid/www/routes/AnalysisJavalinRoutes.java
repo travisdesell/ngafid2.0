@@ -26,10 +26,10 @@ import java.util.logging.Logger;
 import static java.util.Map.of;
 
 public class AnalysisJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
+    public static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
     public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
-    private static class Coordinates {
+    public static class Coordinates {
         @JsonProperty
         int nanOffset = -1;
         @JsonProperty
@@ -51,7 +51,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class RateOfClosurePlotData {
+    public static class RateOfClosurePlotData {
         @JsonProperty
         int[] x;
         @JsonProperty
@@ -66,7 +66,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class FlightMetric {
+    public static class FlightMetric {
         @JsonProperty
         String value;
         @JsonProperty
@@ -88,7 +88,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class FlightMetricResponse {
+    public static class FlightMetricResponse {
         @JsonProperty
         List<FlightMetric> values;
         @JsonProperty
@@ -105,7 +105,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class CesiumResponse {
+    public static class CesiumResponse {
         @JsonProperty
         List<Double> flightGeoAglTaxiing;
         @JsonProperty
@@ -154,7 +154,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void getSeverities(Context ctx) {
+    public static void getSeverities(Context ctx) {
         final String templateFile = "severities.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -174,11 +174,13 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postSeverities(Context ctx) {
+    public static void postSeverities(Context ctx) {
         final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final String eventName = Objects.requireNonNull(ctx.formParam("eventNames"));
         final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
+
+        final String eventName = Objects.requireNonNull(ctx.pathParam("eventName"));
+
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -197,7 +199,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postAllSeverities(Context ctx) {
+    public static void postAllSeverities(Context ctx) {
         final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
         final String eventNames = Objects.requireNonNull(ctx.formParam("eventNames"));
@@ -241,7 +243,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void getTurnToFinal(Context ctx) {
+    public static void getTurnToFinal(Context ctx) {
         final String templateFile = "ttf.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -260,13 +262,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postTurnToFinal(Context ctx) {
+    public static void postTurnToFinal(Context ctx) {
         String startDate = ctx.formParam("startDate");
         String endDate = ctx.formParam("endDate");
         String airportIataCode = ctx.formParam("airport");
         System.out.println(startDate);
         System.out.println(endDate);
-
 
         List<TurnToFinal.TurnToFinalJSON> _ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
@@ -298,7 +299,7 @@ public class AnalysisJavalinRoutes {
         ctx.json(of("airports", airports, "ttfs", _ttfs));
     }
 
-    private static void getTrends(Context ctx) {
+    public static void getTrends(Context ctx) {
         final String templateFile = "trends.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -317,7 +318,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void getCesium(Context ctx) {
+    public static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final String otherFlightId = ctx.queryParam("other_flight_id"); // Can be null
@@ -492,8 +493,8 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postRateOfClosure(Context ctx) {
-        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
+    public static void postRateOfClosure(Context ctx) {
+        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("eid")));
         try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
             if (rateOfClosure != null) {
@@ -504,9 +505,9 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postLociMetrics(Context ctx) {
+    public static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
         final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.formParam("time_index")));
 
         try (Connection connection = Database.getConnection()) {
@@ -539,9 +540,9 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postCoordinates(Context ctx) {
+    public static void postCoordinates(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -562,18 +563,18 @@ public class AnalysisJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
-        app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
-        app.post("/protected/all_severities", AnalysisJavalinRoutes::postAllSeverities);
+        // app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
+        // app.post("/protected/all_severities", AnalysisJavalinRoutes::postAllSeverities);
 
         app.get("/protected/ttf", AnalysisJavalinRoutes::getTurnToFinal);
-        app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
+        // app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
 
         app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
 
-//        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
+        // app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 
-        app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
-        app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);
-        app.post("/protected/coordinates", AnalysisJavalinRoutes::postCoordinates);
+        // app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
+        // app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);
+        // app.post("/protected/coordinates", AnalysisJavalinRoutes::postCoordinates);
     }
 }

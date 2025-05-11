@@ -1,9 +1,9 @@
 import 'bootstrap';
-import { Paginator } from "./paginator_component.js";
-import { confirmModal } from "./confirm_modal.js";
-import { errorModal } from "./error_modal.js";
+import {Paginator} from "./paginator_component.js";
+import {confirmModal} from "./confirm_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
 class AirSyncUpload extends React.Component {
@@ -11,7 +11,7 @@ class AirSyncUpload extends React.Component {
         super(props);
 
         this.state = {
-            expanded : false,
+            expanded: false,
         }
     }
 
@@ -21,7 +21,7 @@ class AirSyncUpload extends React.Component {
 
     expandClicked() {
         this.setState({
-            expanded : !expanded,
+            expanded: !expanded,
         });
     }
 
@@ -38,24 +38,24 @@ class AirSyncUpload extends React.Component {
         const width = ((progressSize / totalSize) * 100).toFixed(2);
         const sizeText = (uploadInfo.sizeBytes / 1000) + " K";
         const progressSizeStyle = {
-            width : width + "%",
-            height : "24px",
-            textAlign : "left",
-            whiteSpace : "nowrap"
+            width: width + "%",
+            height: "24px",
+            textAlign: "left",
+            whiteSpace: "nowrap"
         };
 
         const fixedFlexStyle1 = {
-            flex : "0 0 15em"
+            flex: "0 0 15em"
         };
 
         const fixedFlexStyle2 = {
             //flex : "0 0 75em",
-            height : "34px",
-            padding : "4 0 4 0"
+            height: "34px",
+            padding: "4 0 4 0"
         };
 
         const fixedFlexStyle3 = {
-            flex : "0 0 18em"
+            flex: "0 0 18em"
         };
 
 
@@ -117,19 +117,28 @@ class AirSyncUpload extends React.Component {
             }
         }
 
-        let validClasses = 
+        let validClasses =
 
-        statusClasses += " mr-1 bg-light flex-fill";
+            statusClasses += " mr-1 bg-light flex-fill";
 
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle2}>{uploadInfo.identifier}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>Tail: {uploadInfo.tail}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.groupString}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.validFlights} valid flights.</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.warningFlights} warning flights.</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.errorFlights} error flights.</div>
+                    <div className="p-1 mr-1 card border-light bg-light"
+                         style={fixedFlexStyle2}>{uploadInfo.identifier}</div>
+                    <div className="p-1 mr-1 card border-light bg-light"
+                         style={fixedFlexStyle1}>Tail: {uploadInfo.tail}</div>
+                    <div className="p-1 mr-1 card border-light bg-light"
+                         style={fixedFlexStyle1}>{uploadInfo.groupString}</div>
+                    <div className="p-1 mr-1 card border-light bg-light"
+                         style={fixedFlexStyle1}>{uploadInfo.validFlights} valid flights.
+                    </div>
+                    <div className="p-1 mr-1 card border-light bg-light"
+                         style={fixedFlexStyle1}>{uploadInfo.warningFlights} warning flights.
+                    </div>
+                    <div className="p-1 mr-1 card border-light bg-light"
+                         style={fixedFlexStyle1}>{uploadInfo.errorFlights} error flights.
+                    </div>
                     <div className={statusClasses} style={fixedFlexStyle3}>{statusText}</div>
                 </div>
             </div>
@@ -149,11 +158,11 @@ class AirSyncUploadsCard extends React.Component {
         if (uploads == undefined) uploads = [];
 
         this.state = {
-            uploads : uploads,
-            numberPages : numberPages,
-            currentPage : currentPage,
-            pageSize : 10,
-            lastUpdateTime : props.lastUpdateTime,
+            uploads: uploads,
+            numberPages: numberPages,
+            currentPage: currentPage,
+            pageSize: 10,
+            lastUpdateTime: props.lastUpdateTime,
         };
     }
 
@@ -170,18 +179,18 @@ class AirSyncUploadsCard extends React.Component {
         var uploadsPage = this;
 
         var submissionData = {
-            currentPage : this.state.currentPage,
-            pageSize : this.state.pageSize,
+            currentPage: this.state.currentPage,
+            pageSize: this.state.pageSize,
         };
 
         console.log(submissionData);
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/airsync_uploads',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'GET',
+            url: '/api/airsync/uploads',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
 
                 console.log(response);
 
@@ -194,11 +203,11 @@ class AirSyncUploadsCard extends React.Component {
                 }
 
                 uploadsPage.setState({
-                    uploads : response.page,
-                    numberPages : response.numberPages
+                    uploads: response.page,
+                    numberPages: response.numberPages
                 });
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
             },
             async: true
@@ -207,22 +216,23 @@ class AirSyncUploadsCard extends React.Component {
 
     manualSync() {
         console.log("Manual AirSync update requested!");
-        confirmModal.show("Confirm Operation", "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.", () => {this.requestUpdate()});
+        confirmModal.show("Confirm Operation", "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.", () => {
+            this.requestUpdate()
+        });
     }
 
     requestUpdate() {
         let theseUploads = this;
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/airsync_update',
-            //data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'PATCH',
+            url: '/api/airsync/update',
+            dataType: 'json',
+            success: function (response) {
                 theseUploads.state.lastUpdateTime = "Pending";
                 theseUploads.setState(theseUploads.state);
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating:", errorThrown);
             },
             async: true
@@ -233,14 +243,16 @@ class AirSyncUploadsCard extends React.Component {
     render() {
         const hidden = this.props.hidden;
         const hiddenStyle = {
-            display : "none"
+            display: "none"
         };
 
         const updateTimeInfo = "Last Sync Time: " + this.state.lastUpdateTime;
 
         return (
             <div>
-                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
+                                unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
+                                plotMapHidden={plotMapHidden}/>
 
                 <div className="card-body" hidden={hidden}>
                     <div className="card mb-1 border-secondary">
@@ -248,14 +260,17 @@ class AirSyncUploadsCard extends React.Component {
                             <button id="upload-airsync-button" className="btn btn-info btn-sm float-left" disabled>
                                 <i className="fa fa-cloud-download"></i> {updateTimeInfo}
                             </button>
-                            <button id="upload-airsync-button" className="btn btn-primary btn-sm float-right" onClick={() => this.manualSync()}>
+                            <button id="upload-airsync-button" className="btn btn-primary btn-sm float-right"
+                                    onClick={() => this.manualSync()}>
                                 <i className="fa fa-refresh"></i> Sync with AirSync Server Now
                             </button>
                         </div>
                     </div>
 
                     <Paginator
-                        submitFilter={() => {this.submitFilter();}}
+                        submitFilter={() => {
+                            this.submitFilter();
+                        }}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
@@ -272,14 +287,16 @@ class AirSyncUploadsCard extends React.Component {
                     {
                         this.state.uploads.map((uploadInfo, index) => {
                             return (
-                                <AirSyncUpload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
+                                <AirSyncUpload uploadInfo={uploadInfo} key={uploadInfo.identifier}/>
                             );
                         })
                     }
 
 
                     <Paginator
-                        submitFilter={() => {this.submitFilter();}}
+                        submitFilter={() => {
+                            this.submitFilter();
+                        }}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
@@ -300,6 +317,7 @@ class AirSyncUploadsCard extends React.Component {
 }
 
 var preferencesPage = ReactDOM.render(
-    <AirSyncUploadsCard numberPages={numberPages} uploads={uploads} lastUpdateTime={lastUpdateTime} currentPage={currentPage}/>,
-   document.querySelector('#airsync-uploads-page')
+    <AirSyncUploadsCard numberPages={numberPages} uploads={uploads} lastUpdateTime={lastUpdateTime}
+                        currentPage={currentPage}/>,
+    document.querySelector('#airsync-uploads-page')
 )

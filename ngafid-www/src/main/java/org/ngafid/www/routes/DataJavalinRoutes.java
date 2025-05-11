@@ -22,9 +22,8 @@ import static org.ngafid.core.flights.export.XPlaneParameters.FDR_FILE_EXTENSION
 public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());
 
-    private static void getCSV(Context ctx) {
-        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
-        final boolean generated = Boolean.parseBoolean(ctx.queryParam("generated"));
+    public static void getCSV(Context ctx, boolean generated) {
+        final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final int flightId = Integer.parseInt(flightIdStr);
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -101,8 +100,8 @@ public class DataJavalinRoutes {
         }
     }
 
-    private static void getKML(Context ctx) {
-        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
+    public static void getKML(Context ctx) {
+        final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final int flightId = Integer.parseInt(flightIdStr);
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -149,8 +148,8 @@ public class DataJavalinRoutes {
         }
     }
 
-    private static void getXPlane(Context ctx) {
-        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
+    public static void getXPlane(Context ctx) {
+        final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final String aircraftPath = Objects.requireNonNull(ctx.queryParam("acft_path"));
         int version = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("version")));
         boolean useMSL = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("use_msl")));
@@ -179,8 +178,8 @@ public class DataJavalinRoutes {
     }
 
     public static void bindRoutes(io.javalin.Javalin app) {
-        app.get("/protected/get_csv", DataJavalinRoutes::getCSV);
-        app.get("/protected/get_kml", DataJavalinRoutes::getKML);
-        app.get("/protected/get_xplane", DataJavalinRoutes::getXPlane);
+        // app.get("/protected/get_csv", DataJavalinRoutes::getCSV);
+        // app.get("/protected/get_kml", DataJavalinRoutes::getKML);
+        // app.get("/protected/get_xplane", DataJavalinRoutes::getXPlane);
     }
 }

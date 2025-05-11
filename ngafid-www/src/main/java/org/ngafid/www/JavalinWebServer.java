@@ -3,8 +3,14 @@ package org.ngafid.www;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
+import io.javalin.openapi.JsonSchemaLoader;
+import io.javalin.openapi.JsonSchemaResource;
+import io.javalin.openapi.plugin.OpenApiPlugin;
+import io.javalin.openapi.plugin.redoc.ReDocPlugin;
+import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.security.RouteRole;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -12,9 +18,9 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.routes.*;
-import org.ngafid.www.routes.api.AircraftRoutes;
-import org.ngafid.www.routes.api.AuthRoutes;
-import org.ngafid.www.routes.api.UserRoutes;
+import org.ngafid.www.routes.api.*;
+import org.ngafid.www.routes.status.NotFoundException;
+import org.ngafid.www.routes.status.UnauthorizedException;
 
 import java.io.File;
 import java.sql.Connection;
@@ -45,12 +51,53 @@ public class JavalinWebServer extends WebServer {
 
             Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
             config.jsonMapper(new JavalinGson(gson, false));
+            config.bundledPlugins.enableRouteOverview("/api");
 
-            UserRoutes.INSTANCE.bind(config);
-            AuthRoutes.INSTANCE.bind(config);
             AircraftRoutes.INSTANCE.bind(config);
+            AirSyncRoutes.INSTANCE.bind(config);
+            AuthRoutes.INSTANCE.bind(config);
+            EventRoutes.INSTANCE.bind(config);
+            FilterRoutes.INSTANCE.bind(config);
+            FleetRoutes.INSTANCE.bind(config);
+            FlightRoutes.INSTANCE.bind(config);
+            TagRoutes.INSTANCE.bind(config);
+            UploadRoutes.INSTANCE.bind(config);
+            UserRoutes.INSTANCE.bind(config);
+
+            configureSwagger(config);
         });
 
+    }
+
+    private void configureSwagger(JavalinConfig config) {
+        final String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
+        config.registerPlugin(new OpenApiPlugin(openApiConfig -> {
+            openApiConfig
+                    .withDocumentationPath("/openapi.json")
+                    .withDefinitionConfiguration((version, openApiDefinition) ->
+                            openApiDefinition
+                                    .withServer(openApiServer ->
+                                            openApiServer
+                                                    .description("Server description goes here")
+                                                    .url("http://localhost:{port}/{basePath}")
+                                                    .variable("port", "Server's port", "8111", "8112", "7070")
+                                                    .variable("/swagger", "Base path of the server", "", "", "v1")
+                                    )
+                    );
+        }));
+
+        config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
+            swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
+        }));
+
+        config.registerPlugin(new ReDocPlugin(reDocConfiguration -> {
+            reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
+        }));
+
+        for (JsonSchemaResource generatedJsonSchema : new JsonSchemaLoader().loadGeneratedSchemes()) {
+            System.out.println(generatedJsonSchema.getName());
+            System.out.println(generatedJsonSchema.getContentAsString());
+        }
     }
 
     @Override
@@ -171,6 +218,18 @@ public class JavalinWebServer extends WebServer {
                     ctx.redirect("/protected/welcome");
                 }
             }
+        });
+
+        app.exception(UnauthorizedException.class, (e, ctx) -> {
+            LOG.info("Detected unauthorized access to route: " + ctx.path());
+            e.printStackTrace();
+            ctx.status(401);
+        });
+
+        app.exception(NotFoundException.class, (e, ctx) -> {
+            LOG.info("Attempted access to a resource that does not exist: " + ctx.path());
+            e.printStackTrace();
+            ctx.status(404);
         });
     }
 

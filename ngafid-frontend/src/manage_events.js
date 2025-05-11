@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
@@ -41,7 +41,7 @@ class EventManager extends React.Component {
     }
 
     loadEventDefs() {
-        fetch('/protected/manage_event_definitions')
+        fetch('/api/event/definition')
             .then(response => response.json())
             .then(data => {
                 this.setState({eventDefinitions: data});
@@ -62,18 +62,19 @@ class EventManager extends React.Component {
         }
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{flex:"0 0 auto"}}>
+                <div style={{flex: "0 0 auto"}}>
                     <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                     fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                     modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
                 </div>
 
-                <div style={{overflowY:"scroll", flex:"1 1 auto"}}>
+                <div style={{overflowY: "scroll", flex: "1 1 auto"}}>
                     <CreateEventCard/>
-                    <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} confirmDelete={this.confirmDelete}
-                                        confirmUpload={this.confirmUpload}/>
+                    <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions}
+                                           confirmDelete={this.confirmDelete}
+                                           confirmUpload={this.confirmUpload}/>
                 </div>
 
             </div>
@@ -86,19 +87,19 @@ class CreateEventCard extends React.Component {
         super(props);
 
         this.state = {
-            filterVisible : true,
-            eventName : "",
-            airframe : airframeMap[0],
-            airframeNameId : 0,
-            startBuffer : "",
-            stopBuffer : "",
-            severityType : "min",
-            severityColumnNames : [],
-            severityColumn : doubleTimeSeriesNames[0],
-            filters : {
-                type : "GROUP",
-                condition : "AND",
-                filters : []
+            filterVisible: true,
+            eventName: "",
+            airframe: airframeMap[0],
+            airframeNameId: 0,
+            startBuffer: "",
+            stopBuffer: "",
+            severityType: "min",
+            severityColumnNames: [],
+            severityColumn: doubleTimeSeriesNames[0],
+            filters: {
+                type: "GROUP",
+                condition: "AND",
+                filters: []
             }
         }
     }
@@ -107,7 +108,7 @@ class CreateEventCard extends React.Component {
         let eventName = event.target.value;
         console.log("new event name: " + eventName);
         this.setState({
-            eventName : eventName
+            eventName: eventName
         });
     }
 
@@ -115,7 +116,7 @@ class CreateEventCard extends React.Component {
         let airframe = event.target.value;
         console.log("new airframe: " + airframe);
         this.setState({
-            airframe : airframe
+            airframe: airframe
         });
     }
 
@@ -123,7 +124,7 @@ class CreateEventCard extends React.Component {
         let severityType = event.target.value;
         console.log("new severity type: " + severityType);
         this.setState({
-            severityType : severityType
+            severityType: severityType
         });
     }
 
@@ -131,7 +132,7 @@ class CreateEventCard extends React.Component {
         let severityColumn = event.target.value;
         console.log("new severity column: " + severityColumn);
         this.setState({
-            severityColumn : severityColumn
+            severityColumn: severityColumn
         });
     }
 
@@ -146,7 +147,7 @@ class CreateEventCard extends React.Component {
         console.log("new severity columns array:");
         console.log(newSeverityColumns);
         this.setState({
-            severityColumnNames : newSeverityColumns
+            severityColumnNames: newSeverityColumns
         });
     }
 
@@ -159,7 +160,7 @@ class CreateEventCard extends React.Component {
         console.log("new severity columns array:");
         console.log(newSeverityColumns);
         this.setState({
-            severityColumnNames : newSeverityColumns
+            severityColumnNames: newSeverityColumns
         });
     }
 
@@ -167,7 +168,7 @@ class CreateEventCard extends React.Component {
         let startBuffer = event.target.value;
         console.log("new startBuffer: " + startBuffer);
         this.setState({
-            startBuffer : startBuffer
+            startBuffer: startBuffer
         });
     }
 
@@ -175,19 +176,19 @@ class CreateEventCard extends React.Component {
         let stopBuffer = event.target.value;
         console.log("new stopBuffer: " + stopBuffer);
         this.setState({
-            stopBuffer : stopBuffer
+            stopBuffer: stopBuffer
         });
     }
 
     setFilter(filter) {
         this.setState({
-            filters : filter
+            filters: filter
         });
     }
 
     submitFilter() {
         console.log("Submitting filters:");
-        console.log( this.state.filters );
+        console.log(this.state.filters);
         console.log("airframe: " + this.state.airframe);
         console.log("airframeNameId: " + this.state.airframeNameId);
         console.log(airframeMap);
@@ -195,22 +196,22 @@ class CreateEventCard extends React.Component {
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(this.state.filters),
-            eventName : this.state.eventName,
-            startBuffer : this.state.startBuffer,
-            stopBuffer : this.state.stopBuffer,
-            severityColumnNames : JSON.stringify(this.state.severityColumnNames),
-            severityType : this.state.severityType,
-            airframe : this.state.airframe
+            filterQuery: JSON.stringify(this.state.filters),
+            eventName: this.state.eventName,
+            startBuffer: this.state.startBuffer,
+            stopBuffer: this.state.stopBuffer,
+            severityColumnNames: JSON.stringify(this.state.severityColumnNames),
+            severityType: this.state.severityType,
+            airframe: this.state.airframe
         };
         console.log(submissionData);
 
         $.ajax({
             type: 'POST',
             url: '/protected/create_event',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -225,7 +226,7 @@ class CreateEventCard extends React.Component {
                 // Passing loadEventDefs in as prop doesn't seem to work, so doing a hard reload instead
                 window.location.reload();
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
             },
             async: true
@@ -236,45 +237,47 @@ class CreateEventCard extends React.Component {
     render() {
 
         let bgStyle = {
-            margin:0
+            margin: 0
         };
 
         return (
-                <div className="card mb-1 m-2" style={bgStyle}>
-                    <h5 className="card-header">
-                        Create Event
-                    </h5>
+            <div className="card mb-1 m-2" style={bgStyle}>
+                <h5 className="card-header">
+                    Create Event
+                </h5>
 
-                    <EventDefinitionCard
-                        rules={rules}
-                        airframes={airframes}
-                        doubleTimeSeriesNames={doubleTimeSeriesNames}
+                <EventDefinitionCard
+                    rules={rules}
+                    airframes={airframes}
+                    doubleTimeSeriesNames={doubleTimeSeriesNames}
 
-                        eventID={0} // 0 is a placeholder for a new event. Can't be negative because that's used for custom events
+                    eventID={0} // 0 is a placeholder for a new event. Can't be negative because that's used for custom events
 
-                        submitName={"Create Event"}
-                        eventName={this.state.eventName}
-                        airframe={this.state.airframe}
-                        startBuffer={this.state.startBuffer}
-                        stopBuffer={this.state.stopBuffer}
-                        severityColumn={this.state.severityColumn}
-                        severityColumnNames={this.state.severityColumnNames}
-                        filters={this.state.filters}
+                    submitName={"Create Event"}
+                    eventName={this.state.eventName}
+                    airframe={this.state.airframe}
+                    startBuffer={this.state.startBuffer}
+                    stopBuffer={this.state.stopBuffer}
+                    severityColumn={this.state.severityColumn}
+                    severityColumnNames={this.state.severityColumnNames}
+                    filters={this.state.filters}
 
-                        getFilter={() => {return this.state.filters}}
-                        setFilter={(filter) => this.setFilter(filter)}
+                    getFilter={() => {
+                        return this.state.filters
+                    }}
+                    setFilter={(filter) => this.setFilter(filter)}
 
-                        submitFilter={() => this.submitFilter()}
-                        validateEventName={(event) => this.validateEventName(event)}
-                        validateAirframe={(event) => this.validateAirframe(event)}
-                        validateSeverityType={(event) => this.validateSeverityType(event)}
-                        changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
-                        addSeverityColumn={() => this.addSeverityColumn()}
-                        removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
-                        validateStartBuffer={(event) => this.validateStartBuffer(event)}
-                        validateStopBuffer={(event) => this.validateStopBuffer(event)}
-                    />
-                </div>
+                    submitFilter={() => this.submitFilter()}
+                    validateEventName={(event) => this.validateEventName(event)}
+                    validateAirframe={(event) => this.validateAirframe(event)}
+                    validateSeverityType={(event) => this.validateSeverityType(event)}
+                    changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
+                    addSeverityColumn={() => this.addSeverityColumn()}
+                    removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
+                    validateStartBuffer={(event) => this.validateStartBuffer(event)}
+                    validateStopBuffer={(event) => this.validateStopBuffer(event)}
+                />
+            </div>
         );
     }
 }
@@ -437,12 +440,12 @@ class UpdateEventDefinitionModal extends React.Component {
         console.log("event definition:");
         console.log(eventDefinition);
 
-        fetch('/protected/manage_event_definitions', {
-            method: 'PUT',
+        fetch(`/api/event/definition/${eventDefinition.id}`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(eventDefinition),
+            body: eventDefinition,
         })
             .then(response => {
                 if (response.ok) {
@@ -549,12 +552,7 @@ class EventDefinitionsTable extends React.Component {
             () => {
                 console.log(`Deleting event definition with ID ${eventDefinition.id}.`)
 
-                const params = {
-                    eventDefinitionID: eventDefinition.id,
-                };
-
-
-                fetch(`/protected/manage_event_definitions?${new URLSearchParams(params)}`, {
+                fetch(`/api/event/definitions/${eventDefinition.id}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -594,12 +592,12 @@ class EventDefinitionsTable extends React.Component {
 
 
         return (
-            <div className="card-body" style={{margin:10, padding:10, borderRadius:5}}>
+            <div className="card-body" style={{margin: 10, padding: 10, borderRadius: 5}}>
                 <div className="row">
                     <div className="col-md-12">
                         <Col>
                             <Table striped bordered hover size="sm">
-                                <thead style={{color:"var(--c_text)", backgroundColor:"var(--c_bg)"}}>
+                                <thead style={{color: "var(--c_text)", backgroundColor: "var(--c_bg)"}}>
                                 <tr>
                                     <th>id</th>
                                     <th>fleet_id</th>
@@ -614,9 +612,10 @@ class EventDefinitionsTable extends React.Component {
                                     <th>actions</th>
                                 </tr>
                                 </thead>
-                                <tbody style={{color:"var(--c_text_alt)"}}>
+                                <tbody style={{color: "var(--c_text_alt)"}}>
                                 {eventDefinitions.map((eventDefinition, index) => (
-                                    <tr key={index} style={{backgroundColor:(index%2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid")}}>
+                                    <tr key={index}
+                                        style={{backgroundColor: (index % 2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid")}}>
                                         <td>{eventDefinition.id}</td>
                                         <td>{eventDefinition.fleetId}</td>
                                         <td>{eventDefinition.airframeNameId}</td>
@@ -628,13 +627,15 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{arrayToString(eventDefinition.severityColumnNames)}</td>
                                         <td>{eventDefinition.severityType}</td>
                                         <td visibility="hidden">
-                                            <div style={{display:"flex", flexDirection:"row"}}>
-                                                <button className="btn btn-outline-primary" onClick={() => updateModal.show(eventDefinition)}>
+                                            <div style={{display: "flex", flexDirection: "row"}}>
+                                                <button className="btn btn-outline-primary"
+                                                        onClick={() => updateModal.show(eventDefinition)}>
                                                     <i className="fa fa-gear mr-1" aria-hidden="true"/>
                                                     Update
                                                 </button>
-                                                <div style={{margin:"0 5px"}}/>
-                                                <button className="btn btn-danger" onClick={() => this.confirmDelete(eventDefinition)}>
+                                                <div style={{margin: "0 5px"}}/>
+                                                <button className="btn btn-danger"
+                                                        onClick={() => this.confirmDelete(eventDefinition)}>
                                                     <i className="fa fa-times" aria-hidden="true"/>
                                                 </button>
                                             </div>

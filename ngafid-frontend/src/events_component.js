@@ -1,10 +1,9 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
 import Plotly from 'plotly.js';
-import { map } from "./map.js";
-import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
+import {map} from "./map.js";
+import {Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
 import {errorModal} from "./error_modal";
 // establish set of RGB values to combine //
@@ -52,13 +51,13 @@ class Events extends React.Component {
         }
 
         this.state = {
-            events : props.events,
-            definitions : definitionsPresent
+            events: props.events,
+            definitions: definitionsPresent
         };
     }
 
     updateEventDisplay(index, toggle) {
-    
+
         //Draw rectangles on plot
         let event = this.state.events[index];
         console.log("Updating event display for event: ", event);
@@ -66,7 +65,7 @@ class Events extends React.Component {
         //Cesium flight is enabled, add event to cesium
         if (this.props.parent.state.cesiumFlightEnabled)
             this.props.parent.addCesiumEventEntity(event);
-        
+
         console.log("Drawing plotly rectangle from ", event.startLine, " to ", event.endLine);
         const shapes = global.plotlyLayout.shapes;
         const update = {
@@ -96,7 +95,7 @@ class Events extends React.Component {
                     shapes.splice(i, 1);
                     found = true;
 
-                //...Otherwise, just update the shape
+                    //...Otherwise, just update the shape
                 } else {
 
                     shapes[i] = update;
@@ -135,11 +134,11 @@ class Events extends React.Component {
 
         const hiddenStyle = new Style({
             stroke: new Stroke({
-                color: [0,0,0,0],
+                color: [0, 0, 0, 0],
                 width: 3
             })
         });
-        
+
         //Get event info from flight
         const flight = this.props.parent;
         const eventMapped = flight.state.eventsMapped[index];
@@ -162,7 +161,7 @@ class Events extends React.Component {
             if (coords.length > 0 && pathVisible)
                 map.getView().setCenter(coords);
 
-        //Otherwise, hide it
+            //Otherwise, hide it
         } else {
 
             event.setStyle(hiddenStyle);
@@ -176,11 +175,11 @@ class Events extends React.Component {
     changeColor(e, index) {
         this.state.events[index].color = e.target.value;
         this.setState({
-            events : this.state.events
+            events: this.state.events
         });
         this.updateEventDisplay(index, false);
     }
-    
+
 
     eventClicked(index) {
         this.updateEventDisplay(index, true);
@@ -190,17 +189,17 @@ class Events extends React.Component {
 
         var eventMetaData = null;
         var submissionData = {
-            eventId : eventId
+            eventId: eventId
         };
         $.ajax({
-            type: 'POST',
-            url: '/protected/event_metadata',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                eventMetaData =  response;
+            type: 'GET',
+            url: `/api/events/${eventId}/meta`,
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
+                eventMetaData = response;
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Event Metadata ", errorThrown);
             },
             async: false
@@ -212,17 +211,17 @@ class Events extends React.Component {
 
     }
 
-   
+
     render() {
 
         let cellClasses = "d-flex flex-row p-1 mx-1";
-        let cellStyle = { "overflowX" : "auto" };
+        let cellStyle = {"overflowX": "auto"};
         let buttonClasses = "m-1 btn btn-outline-secondary";
 
         const cesiumZoomButtonClasses = "m-1 btn btn-primary";
 
         const styleButton = {
-            flex : "0 0 10em"
+            flex: "0 0 10em"
         };
 
         let eventType = "type";
@@ -236,7 +235,7 @@ class Events extends React.Component {
         this.state.events.map((event, index) => {
 
             if (!eventTypeSet.has(event.eventDefinitionId)) {
-                
+
                 //Add new eventDef to types set
                 eventTypeSet.add(event.eventDefinitionId);
 
@@ -245,36 +244,39 @@ class Events extends React.Component {
                     <button
                         id={`eventToggleButton-${thisFlight.props.flightInfo.id}-${event.eventDefinitionId}`}
                         className={buttonClasses}
-                        style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}}
+                        style={{
+                            flex: "0 0 10em",
+                            "backgroundColor": eventColorScheme[event.eventDefinitionId],
+                            "color": "#000000"
+                        }}
                         data-bs-toggle="button"
                         aria-pressed={thisFlight.state.eventsMapped[index] && thisFlight.state.pathVisible}
                         key={index}
                         title={GetDescription(event.eventDefinition.name)}
-                        onClick={() =>
-                            {
+                        onClick={() => {
 
-                                let flight = this.props.parent;
-                                let eventsMapped = flight.state.eventsMapped;
-                                let displayStatus = false;
-                                let displayStatusSet = false;
-                                
-                                // update eventDisplay for every event concerned
-                                for (let e = 0; e < this.state.events.length; e++) {
-                                    if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
-                                        // ensure unified display
-                                        if (!displayStatusSet) {
-                                            displayStatus = !eventsMapped[e];
-                                            displayStatusSet = true;
-                                        }
-                                        // eventsMapped[e] = displayStatus;
-                                        // this.updateEventDisplay(e);
+                            let flight = this.props.parent;
+                            let eventsMapped = flight.state.eventsMapped;
+                            let displayStatus = false;
+                            let displayStatusSet = false;
 
-                                        if (eventsMapped[e] != displayStatus) {
-                                            document.getElementById("_" + flight.props.flightInfo.id + e).click();
-                                        }
+                            // update eventDisplay for every event concerned
+                            for (let e = 0; e < this.state.events.length; e++) {
+                                if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
+                                    // ensure unified display
+                                    if (!displayStatusSet) {
+                                        displayStatus = !eventsMapped[e];
+                                        displayStatusSet = true;
+                                    }
+                                    // eventsMapped[e] = displayStatus;
+                                    // this.updateEventDisplay(e);
+
+                                    if (eventsMapped[e] != displayStatus) {
+                                        document.getElementById("_" + flight.props.flightInfo.id + e).click();
                                     }
                                 }
                             }
+                        }
                         }
                     >
                         <b>
@@ -291,9 +293,12 @@ class Events extends React.Component {
         return (
             <div className="w-100">
 
-                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"} style={{marginBottom:"0"}}>
-                    <div className="d-flex flex-column mr-3" style={{width: "16px", minWidth:"16px", maxWidth:"16px", height: "16px"}}>
-                        <i className='fa fa-exclamation ml-2' style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
+                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"}
+                   style={{marginBottom: "0"}}>
+                    <div className="d-flex flex-column mr-3"
+                         style={{width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px"}}>
+                        <i className='fa fa-exclamation ml-2'
+                           style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
                     </div>
                     <div style={{fontSize: "0.75em"}}>
                         Events
@@ -312,7 +317,7 @@ class Events extends React.Component {
 
                 <div className={"eventTypes"}>
                     {
-                        eventTypeButtons.map( (button) => {
+                        eventTypeButtons.map((button) => {
                             return (
                                 button
                             )
@@ -337,13 +342,15 @@ class Events extends React.Component {
                             const rocPlotData = this.getRateOfClosureData(event);
 
                             otherFlightText = ", other flight id: ";
-                            otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+                            otherFlightURL = (
+                                <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a>);
 
                             //Got rate of closure data, show button
                             if (rocPlotData != null) {
 
                                 rateOfClosureBtn = (
-                                    <button id="rocButton" data-bs-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
+                                    <button id="rocButton" data-bs-toggle="button" className={buttonClasses}
+                                            onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
                                         <i className="fa fa-area-chart p-1"/>
                                     </button>
                                 );
@@ -351,7 +358,7 @@ class Events extends React.Component {
                                 //Rate of closure plot is not visible, show it
                                 if (!event.rocPlotVisible)
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
-                                
+
                             }
 
                         }
@@ -380,7 +387,7 @@ class Events extends React.Component {
                         if (eventMetaData != null) {
                             eventMetaDataText = " , ";
                             eventMetaData.map((item) => {
-                                eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
+                                eventMetaDataText += item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
                             })
                             eventMetaDataText = eventMetaDataText.substring(0, eventMetaDataText.length - 2);
                         }
@@ -430,9 +437,9 @@ class Events extends React.Component {
         var id = event.id + "-rocPlot";
         if (!event.rocPlotVisible) {
             var trace = {
-                x : data.x,
-                y : data.y,
-                type : "scatter",
+                x: data.x,
+                y: data.y,
+                type: "scatter",
             }
             var layout = {
                 shapes: [
@@ -448,23 +455,23 @@ class Events extends React.Component {
                             width: 0
                         }
                     }],
-                yaxis : {
-                    title:{
+                yaxis: {
+                    title: {
                         text: "Rate of closure (distance in ft)"
                     }
                 },
-                xaxis : {
-                    title : {
-                        text : "Proximity Event (seconds)"
+                xaxis: {
+                    title: {
+                        text: "Proximity Event (seconds)"
                     }
                 }
             }
             Plotly.newPlot(id, [trace], layout)
             event.rocPlotVisible = true
-            $("#"+id).show();
+            $("#" + id).show();
         } else {
             event.rocPlotVisible = false;
-            $("#"+id).hide();
+            $("#" + id).hide();
         }
     };
 
@@ -473,18 +480,14 @@ class Events extends React.Component {
         var eventId = event.id;
         var rocPlotData = null;
         console.log("Calculating Rate of Closure")
-        var submissionData = {
-            eventId : eventId
-        };
         $.ajax({
-            type: 'POST',
-            url: '/protected/rate_of_closure',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                rocPlotData =  response;
+            type: 'GET',
+            url: `/api/event/${eventId}/rate-of-closure`,
+            dataType: 'json',
+            success: function (response) {
+                rocPlotData = response;
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Rate of closure ", errorThrown);
             },
             async: false
@@ -494,4 +497,4 @@ class Events extends React.Component {
 
 }
 
-export { Events, eventColorScheme };
+export {Events, eventColorScheme};

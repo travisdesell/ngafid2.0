@@ -6,7 +6,6 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
-import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Tail;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.www.ErrorResponse;
@@ -85,83 +84,6 @@ public class AircraftFleetTailsJavalinRoutes {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
-
-
-    private static void getSimAircraft(Context ctx) {
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = user.getFleetId();
-
-        if (!user.hasViewAccess(fleetId)) {
-            ctx.status(401);
-            ctx.result("User did not have access to view acces for this fleet.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            List<String> paths = Flight.getSimAircraft(connection, fleetId);
-            ctx.json(paths);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    private static void postSimAircraft(Context ctx) {
-        final String CACHE = "cache";
-        final String RMCACHE = "rmcache";
-
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String type = Objects.requireNonNull(ctx.formParam("type"));
-        final String path = Objects.requireNonNull(ctx.formParam("path"));
-        final int fleetId = user.getFleetId();
-
-        try (Connection connection = Database.getConnection()) {
-            switch (type) {
-                case CACHE:
-                    List<String> currPaths = Flight.getSimAircraft(connection, fleetId);
-                    if (!currPaths.contains(path)) {
-                        Flight.addSimAircraft(connection, fleetId, path);
-                        ctx.json("SUCCESS");
-                    } else {
-                        ctx.json("FAILURE");
-                    }
-                case RMCACHE:
-                    Flight.removeSimAircraft(connection, fleetId, path);
-                    ctx.json(Flight.getSimAircraft(connection, fleetId));
-
-                default:
-                    ctx.json("FAILURE");
-            }
-
-        } catch (Exception e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    private static void postUpdateTail(Context ctx) {
-        final String systemId = Objects.requireNonNull(ctx.formParam("systemId"));
-        final String tail = Objects.requireNonNull(ctx.formParam("tail"));
-
-        try (Connection connection = Database.getConnection()) {
-            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final int fleetId = user.getFleetId();
-
-            // check to see if the user has upload access for this fleet.
-            if (!user.hasUploadAccess(fleetId)) {
-                ctx.status(401);
-                ctx.result("User did not have access to view imports for this fleet.");
-                return;
-            }
-
-            Tails.updateTail(connection, fleetId, systemId, tail);
-
-            ctx.json(new UpdateTailResponse(fleetId, systemId, tail, 1));
-
-        } catch (SQLException e) {
-            LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/manage_fleet", AircraftFleetTailsJavalinRoutes::getManageFleet);

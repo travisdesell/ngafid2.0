@@ -18,13 +18,13 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 public class TagFilterJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());
+    public static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());
 
-    private static class RemoveTagResponse {
+    public static class RemoveTagResponse {
         @JsonProperty
-        private final boolean allTagsCleared;
+        public final boolean allTagsCleared;
         @JsonProperty
-        private final FlightTag tag;
+        public final FlightTag tag;
 
         public RemoveTagResponse() {
             this.tag = null;
@@ -37,7 +37,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postCreateTag(Context ctx) {
+    public static void postCreateTag(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String name = Objects.requireNonNull(ctx.formParam("name"));
         final String description = Objects.requireNonNull(ctx.formParam("description"));
@@ -57,11 +57,11 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postEditTag(Context ctx) {
+    public static void postEditTag(Context ctx) {
         final String name = Objects.requireNonNull(ctx.formParam("name"));
         final String description = Objects.requireNonNull(ctx.formParam("description"));
         final String color = Objects.requireNonNull(ctx.formParam("color"));
-        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
+        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("tid")));
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
 
@@ -84,7 +84,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postRemoveTag(Context ctx) {
+    public static void postRemoveTag(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
         final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
@@ -120,10 +120,9 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postTags(Context ctx) {
+    public static void postTags(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
-        System.out.println("TAGGED FLTID: " + flightId);
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -142,10 +141,10 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postUnassociatedTags(Context ctx) {
+    public static void postUnassociatedTags(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
 
         try (Connection connection = Database.getConnection()) {
 
@@ -165,10 +164,10 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postAssociateTag(Context ctx) {
+    public static void postAssociateTag(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
-        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
+        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("tid")));
 
         try (Connection connection = Database.getConnection()) {
             if (!user.hasFlightAccess(connection, flightId)) {
@@ -183,7 +182,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void getStoredFilters(Context ctx) {
+    public static void getStoredFilters(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, user.getFleetId());
@@ -194,7 +193,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postStoreFilter(Context ctx) {
+    public static void postStoreFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final String name = Objects.requireNonNull(ctx.formParam("name"));
@@ -213,8 +212,8 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    private static void postModifyFilter(Context ctx) {
-        final String currentName = Objects.requireNonNull(ctx.formParam("currentName"));
+    public static void postModifyFilter(Context ctx) {
+        final String currentName = Objects.requireNonNull(ctx.pathParam("fid"));
         final String newName = Objects.requireNonNull(ctx.formParam("newName"));
         final String filterJSON = Objects.requireNonNull(ctx.formParam("filterJSON"));
         final String color = Objects.requireNonNull(ctx.formParam("color"));
@@ -234,10 +233,10 @@ public class TagFilterJavalinRoutes {
     }
 
 
-    private static void postRemoveFilter(Context ctx) {
+    public static void postRemoveFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final String name = Objects.requireNonNull(ctx.formParam("name"));
+            final String name = Objects.requireNonNull(ctx.pathParam("fid"));
             final int fleetId = user.getFleetId();
 
             StoredFilter.removeFilter(connection, fleetId, name);
@@ -250,16 +249,17 @@ public class TagFilterJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.post("/protected/flight_tags", TagFilterJavalinRoutes::postTags);
-        app.post("/protected/create_tag", TagFilterJavalinRoutes::postCreateTag);
-        app.post("/protected/get_unassociated_tags", TagFilterJavalinRoutes::postUnassociatedTags);
-        app.post("/protected/associate_tag", TagFilterJavalinRoutes::postAssociateTag);
-        app.post("/protected/remove_tag", TagFilterJavalinRoutes::postRemoveTag);
-        app.post("/protected/edit_tag", TagFilterJavalinRoutes::postEditTag);
+        // app.post("/protected/flight_tags", TagFilterJavalinRoutes::postTags);
+        // app.post("/protected/get_unassociated_tags", TagFilterJavalinRoutes::postUnassociatedTags);
+        // app.post("/protected/associate_tag", TagFilterJavalinRoutes::postAssociateTag);
+        // app.post("/protected/remove_tag", TagFilterJavalinRoutes::postRemoveTag);
 
-        app.get("/protected/stored_filters", TagFilterJavalinRoutes::getStoredFilters);
-        app.post("/protected/store_filter", TagFilterJavalinRoutes::postStoreFilter);
-        app.post("/protected/remove_filter", TagFilterJavalinRoutes::postRemoveFilter);
-        app.post("/protected/modify_filter", TagFilterJavalinRoutes::postModifyFilter);
+        // app.post("/protected/create_tag", TagFilterJavalinRoutes::postCreateTag);
+        // app.post("/protected/edit_tag", TagFilterJavalinRoutes::postEditTag);
+
+        // app.get("/protected/stored_filters", TagFilterJavalinRoutes::getStoredFilters);
+        // app.post("/protected/store_filter", TagFilterJavalinRoutes::postStoreFilter);
+        // app.post("/protected/remove_filter", TagFilterJavalinRoutes::postRemoveFilter);
+        // app.post("/protected/modify_filter", TagFilterJavalinRoutes::postModifyFilter);
     }
 }

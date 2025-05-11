@@ -25,14 +25,14 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class EventJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
+    public static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
     public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     static class EventInfo {
         @JsonProperty
-        private final List<Event> events;
+        public final List<Event> events;
         @JsonProperty
-        private final List<EventDefinition> definitions;
+        public final List<EventDefinition> definitions;
 
         public EventInfo(List<Event> events, List<EventDefinition> definitions) {
             this.events = events;
@@ -41,7 +41,7 @@ public class EventJavalinRoutes {
     }
 
 
-    private static void getAllEventDefinitions(Context ctx) {
+    public static void getAllEventDefinitions(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             ctx.header("Content-Type", "application/json; charset=UTF-8");
 
@@ -53,7 +53,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void getEventDefinition(Context ctx) {
+    public static void getEventDefinition(Context ctx) {
         final String templateFile = "event_definitions_display.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -79,25 +79,20 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void getEventDescription(Context ctx) {
-        final String expectedName = Objects.requireNonNull(ctx.queryParam("eventName"));
-        final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = " + "\"" + expectedName + "\"";
+    public static void getEventDescription(Context ctx) {
+        final String expectedName = Objects.requireNonNull(ctx.pathParam("eventName"));
 
-        try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            resultSet.next();
-
+        try (Connection connection = Database.getConnection()) {
+            EventDefinition def = EventDefinition.getEventDefinition(connection, expectedName);
             ctx.contentType("application/json");
-            ctx.result(GSON.toJson(new EventDefinition(resultSet).toHumanReadable()));
-            LOG.info(new EventDefinition(resultSet).toHumanReadable());
+            ctx.json(def.toHumanReadable());
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
 
     }
 
-    private static void getAllEventDescriptions(Context ctx) {
+    public static void getAllEventDescriptions(Context ctx) {
 
         final int AIRFRAME_ID_GENERIC = 0;
         final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id OR event_definitions.airframe_id=" + AIRFRAME_ID_GENERIC;
@@ -135,10 +130,10 @@ public class EventJavalinRoutes {
     }
 
 
-    private static void putEventDefinitions(Context ctx) {
-        EventDefinition updatedEvent = GSON.fromJson(ctx.body(), EventDefinition.class);
-
+    public static void putEventDefinitions(Context ctx) {
         try (Connection connection = Database.getConnection()) {
+            // TODO: Validate that this def matches the route.
+            EventDefinition updatedEvent = GSON.fromJson(ctx.body(), EventDefinition.class);
             updatedEvent.updateSelf(connection);
         } catch (SQLException e) {
             ctx.status(500);
@@ -146,7 +141,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void deleteEventDefinitions(Context ctx) {
+    public static void deleteEventDefinitions(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             LOG.severe("INVALID ACCESS: user was not logged in.");
@@ -162,7 +157,7 @@ public class EventJavalinRoutes {
 
         String query = "DELETE FROM event_definitions WHERE id=?";
         try (Connection connection = Database.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventDefinitionID"))));
+            statement.setInt(1, Integer.parseInt(Objects.requireNonNull(ctx.pathParam("edid"))));
             statement.executeUpdate();
             ctx.json("Successfully deleted event definition.");
         } catch (SQLException e) {
@@ -171,11 +166,11 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void getEventCounts(Context ctx) {
+    public static void getEventCounts(Context ctx) {
         LOG.warning("getEventCounts not implemented!");
     }
 
-    private static void getEventCreator(Context ctx) {
+    public static void getEventCreator(Context ctx) {
         final String templateFile = "create_event.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -210,7 +205,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void getEventManager(Context ctx) {
+    public static void getEventManager(Context ctx) {
         final String templateFile = "manage_events.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -244,7 +239,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void postCreateEvent(Context ctx) {
+    public static void postCreateEvent(Context ctx) {
         final int fleetId = 0; // all events work on all fleets for now
         final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
         final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("startBuffer")));
@@ -264,7 +259,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void postAllEventCounts(Context ctx) {
+    public static void postAllEventCounts(Context ctx) {
         final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
 
@@ -286,7 +281,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void getUpdateEvent(Context ctx) {
+    public static void getUpdateEvent(Context ctx) {
         final String templateFile = "update_event.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -313,28 +308,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void postUpdateEvent(Context ctx) {
-        final int fleetId = 0; // all events work on all fleets for now
-        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
-        final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
-        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("startBuffer")));
-        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("stopBuffer")));
-        final String airframe = Objects.requireNonNull(ctx.formParam("airframe"));
-        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
-        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.formParam("severityColumnNames"));
-        final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
-
-        try (Connection connection = Database.getConnection()) {
-            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, EventDefinition.SeverityType.valueOf(severityType));
-
-            ctx.contentType("application/json");
-            ctx.result("{}");
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    private static void postEventMetaData(Context ctx) {
+    public static void postEventMetaData(Context ctx) {
         int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
         try (Connection connection = Database.getConnection()) {
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
@@ -349,9 +323,11 @@ public class EventJavalinRoutes {
         ctx.json(GSON.toJson(null));
     }
 
-    private static void postEvents(Context ctx) {
+    public static void postEvents(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
+
+        // TODO: Event definitions should just get loaded with a separate query... no need to complicate things
         final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("eventDefinitionsLoaded")));
 
         try (Connection connection = Database.getConnection()) {
@@ -382,7 +358,7 @@ public class EventJavalinRoutes {
         }
     }
 
-    private static void postEventStatistics(Context ctx) {
+    public static void postEventStatistics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
         final int airframeNameId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("airframeNameId")));
@@ -398,26 +374,26 @@ public class EventJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.get("/protected/manage_event_definitions", EventJavalinRoutes::getAllEventDefinitions);
+        // app.get("/protected/manage_event_definitions", EventJavalinRoutes::getAllEventDefinitions);
 
         app.get("/protected/event_definitions", EventJavalinRoutes::getEventDefinition);
-        app.put("/protected/event_definitions", EventJavalinRoutes::putEventDefinitions);
-        app.delete("/protected/event_definitions", EventJavalinRoutes::deleteEventDefinitions);
+        // app.put("/protected/event_definitions", EventJavalinRoutes::putEventDefinitions);
+        // app.delete("/protected/event_definitions", EventJavalinRoutes::deleteEventDefinitions);
 
-        app.get("/protected/get_event_description", EventJavalinRoutes::getEventDescription);
-        app.get("/protected/get_all_event_descriptions", EventJavalinRoutes::getAllEventDescriptions);
-        app.get("/protected/event_counts", EventJavalinRoutes::getEventCounts);
+        // app.get("/protected/get_event_description", EventJavalinRoutes::getEventDescription);
+        // app.get("/protected/get_all_event_descriptions", EventJavalinRoutes::getAllEventDescriptions);
+        // app.get("/protected/event_counts", EventJavalinRoutes::getEventCounts);
 
         app.get("/protected/create_event", EventJavalinRoutes::getEventCreator);
-        app.post("/protected/create_event", EventJavalinRoutes::postCreateEvent);
+        // app.post("/protected/create_event", EventJavalinRoutes::postCreateEvent);
 
         app.get("/protected/manage_events", EventJavalinRoutes::getEventManager);
 
-        app.post("/protected/events", EventJavalinRoutes::postEvents);
-        app.post("/protected/event_metadata", EventJavalinRoutes::postEventMetaData);
-        app.post("/protected/event_stat", EventJavalinRoutes::postEventStatistics);
+        // app.post("/protected/events", EventJavalinRoutes::postEvents);
+        // app.post("/protected/event_metadata", EventJavalinRoutes::postEventMetaData);
+        // app.post("/protected/event_stat", EventJavalinRoutes::postEventStatistics);
 
         app.get("/protected/update_event", EventJavalinRoutes::getUpdateEvent);
-        app.post("/protected/update_event", EventJavalinRoutes::postUpdateEvent);
+        // app.post("/protected/update_event", EventJavalinRoutes::postUpdateEvent);
     }
 }
