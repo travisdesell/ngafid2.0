@@ -123,7 +123,7 @@ Once you have done this, you can create the database tables by running the follo
 
 We need to set up some environmental variables that point to some important data / directories.
 
-Create a copy of the environment variables template, `init_env.template.sh` and call it `init_env.sh`. Ensure that you properly configure `init_env.sh` and address all lines marked with an exclamation point (❗).
+Create a **copy** of the environment variables template file, `init_env.template.sh`, and call it `init_env.sh`. Ensure that you properly configure `init_env.sh`. You **must** address all lines marked with an exclamation point (❗).
 
 Run the command below after making changes or running from a new shell:
 
