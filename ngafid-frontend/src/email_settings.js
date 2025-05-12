@@ -146,7 +146,7 @@ class EmailSettingsTableUser extends React.Component {
 
     render() {
         return (
-            <div className="flex flex-row w-full gap-2 items-center justify-center">
+            <div className="flex flex-row w-full gap-4 items-center justify-center">
             {
                 this.state.emailTypes.map((type, index) => (
 
@@ -167,6 +167,10 @@ class EmailSettingsTableUser extends React.Component {
                             //Non-Admin Type
                             :
                             <div className="mr-3 ml-2">
+                                <div className="flex flex-row gap-2 font-bold items-center">
+                                    <i className="fa fa-user"/>
+                                    User
+                                </div>
                                 {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </div>
                         }
