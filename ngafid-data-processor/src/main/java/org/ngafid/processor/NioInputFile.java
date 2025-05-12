@@ -11,7 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- *
+ * Java’s default file APIs don’t support random access in the way Parquet needs.
+ * Parquet needs to jump to specific byte positions which requires a seekable stream.
+ * NioInputFile enables seekable reads from local files without relying on Hadoop.
  */
 public class NioInputFile implements InputFile {
     private final Path path;
