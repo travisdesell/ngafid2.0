@@ -1,57 +1,28 @@
 package org.ngafid.www.routes;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.event.EventMetaData;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.EventStatistics;
 import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class EventJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
     public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
-    static class EventInfo {
-        @JsonProperty
-        public final List<Event> events;
-        @JsonProperty
-        public final List<EventDefinition> definitions;
-
-        public EventInfo(List<Event> events, List<EventDefinition> definitions) {
-            this.events = events;
-            this.definitions = definitions;
-        }
-    }
-
-
-    public static void getAllEventDefinitions(Context ctx) {
-        try (Connection connection = Database.getConnection()) {
-            ctx.header("Content-Type", "application/json; charset=UTF-8");
-
-            ctx.json(EventDefinition.getAll(connection));
-        } catch (SQLException e) {
-            LOG.severe(e.toString());
-            ctx.status(500);
-            ctx.result(e.toString());
-        }
-    }
 
     public static void getEventDefinition(Context ctx) {
         final String templateFile = "event_definitions_display.html";
@@ -77,97 +48,6 @@ public class EventJavalinRoutes {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }
-    }
-
-    public static void getEventDescription(Context ctx) {
-        final String expectedName = Objects.requireNonNull(ctx.pathParam("eventName"));
-
-        try (Connection connection = Database.getConnection()) {
-            EventDefinition def = EventDefinition.getEventDefinition(connection, expectedName);
-            ctx.contentType("application/json");
-            ctx.json(def.toHumanReadable());
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-
-    }
-
-    public static void getAllEventDescriptions(Context ctx) {
-
-        final int AIRFRAME_ID_GENERIC = 0;
-        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id OR event_definitions.airframe_id=" + AIRFRAME_ID_GENERIC;
-
-        try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            LOG.info("preparedStatement: " + preparedStatement);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            LOG.info("resultSet: " + resultSet);
-            Map<String, Map<String, String>> definitions = new TreeMap<>();
-            Map<Integer, String> airframeNames = new HashMap<>();
-
-            while (resultSet.next()) {
-                EventDefinition eventDefinition = new EventDefinition(resultSet);
-                LOG.info("eventDefinition: " + eventDefinition);
-
-                String text = eventDefinition.toHumanReadable();
-                LOG.info("text: " + text);
-
-                if (!definitions.containsKey(eventDefinition.getName())) {
-                    definitions.put(eventDefinition.getName(), new HashMap<>());
-                }
-
-                if (!airframeNames.containsKey(eventDefinition.getAirframeNameId())) {
-                    airframeNames.put(eventDefinition.getAirframeNameId(), resultSet.getString(11));
-                }
-
-                definitions.get(eventDefinition.getName()).put(airframeNames.get(eventDefinition.getAirframeNameId()), eventDefinition.toHumanReadable());
-            }
-
-            ctx.json(definitions);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    public static void putEventDefinitions(Context ctx) {
-        try (Connection connection = Database.getConnection()) {
-            // TODO: Validate that this def matches the route.
-            EventDefinition updatedEvent = GSON.fromJson(ctx.body(), EventDefinition.class);
-            updatedEvent.updateSelf(connection);
-        } catch (SQLException e) {
-            ctx.status(500);
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void deleteEventDefinitions(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            LOG.severe("INVALID ACCESS: user was not logged in.");
-            ctx.status(401);
-            ctx.json(new ErrorResponse("Not Logged In", "No user logged in."));
-            return;
-        }
-
-        if (!user.isAdmin()) {
-            LOG.severe("INVALID ACCESS: user did not have admin access.");
-            ctx.json(new ErrorResponse("Not Admin", "No permissions to delete event definitions."));
-        }
-
-        String query = "DELETE FROM event_definitions WHERE id=?";
-        try (Connection connection = Database.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, Integer.parseInt(Objects.requireNonNull(ctx.pathParam("edid"))));
-            statement.executeUpdate();
-            ctx.json("Successfully deleted event definition.");
-        } catch (SQLException e) {
-            ctx.status(500);
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void getEventCounts(Context ctx) {
-        LOG.warning("getEventCounts not implemented!");
     }
 
     public static void getEventCreator(Context ctx) {
@@ -239,48 +119,6 @@ public class EventJavalinRoutes {
         }
     }
 
-    public static void postCreateEvent(Context ctx) {
-        final int fleetId = 0; // all events work on all fleets for now
-        final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
-        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("startBuffer")));
-        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("stopBuffer")));
-        final String airframe = Objects.requireNonNull(ctx.formParam("airframe"));
-        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
-        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.formParam("severityColumnNames"));
-        final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
-
-        try (Connection connection = Database.getConnection()) {
-            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
-
-            ctx.contentType("application/json");
-            ctx.result("{}");
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postAllEventCounts(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-
-        // check to see if the user has access to view aggregate information
-        if (!user.hasAggregateView()) {
-            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
-            ctx.status(401);
-            ctx.result("User did not have aggregate access to view all event counts.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
-            ctx.json(eventCountsMap);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
     public static void getUpdateEvent(Context ctx) {
         final String templateFile = "update_event.html";
 
@@ -303,73 +141,6 @@ public class EventJavalinRoutes {
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
         } catch (SQLException e) {
-            LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postEventMetaData(Context ctx) {
-        int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
-        try (Connection connection = Database.getConnection()) {
-            List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
-            if (!metaDataList.isEmpty()) {
-                ctx.json(GSON.toJson(metaDataList));
-                return;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-        ctx.json(GSON.toJson(null));
-    }
-
-    public static void postEvents(Context ctx) {
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
-
-        // TODO: Event definitions should just get loaded with a separate query... no need to complicate things
-        final String eventDefinitionsLoadedStr = ctx.queryParam("eventDefinitionsLoaded");
-
-        // IDE says the following null check is not necessary, but it is.
-        final boolean eventDefinitionsLoaded = eventDefinitionsLoadedStr != null && Boolean.parseBoolean(eventDefinitionsLoadedStr);
-
-        try (Connection connection = Database.getConnection()) {
-            // check to see if the user has access to this data
-            if (!user.hasFlightAccess(connection, flightId)) {
-                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
-                ctx.status(401);
-                ctx.result("User did not have access to this flight.");
-                return;
-            }
-
-            List<Event> events = Event.getAll(connection, flightId);
-            List<EventDefinition> definitions = null;
-
-            if (!eventDefinitionsLoaded) {
-                definitions = EventDefinition.getAll(connection);
-            }
-
-            EventInfo eventInfo = new EventInfo(events, definitions);
-
-            String output = ctx.jsonMapper().toJsonString(eventInfo, EventInfo.class);
-            // need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN", "null");
-            ctx.result(output);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postEventStatistics(Context ctx) {
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = user.getFleetId();
-        final int airframeNameId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("airframeNameId")));
-        final String airframeName = Objects.requireNonNull(ctx.formParam("airframeName"));
-
-        try (Connection connection = Database.getConnection()) {
-            ctx.json(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
-        } catch (SQLException e) {
-            e.printStackTrace();
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }

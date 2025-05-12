@@ -8,7 +8,6 @@ import org.ngafid.airsync.AirSyncImportResponse;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.uploads.Upload;
-import org.ngafid.routes.PaginationResponse;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
@@ -18,7 +17,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 import static org.ngafid.airsync.AirSyncImport.getImports;
@@ -41,7 +39,6 @@ public class AirsyncJavalinRoutes {
                 ctx.status(401);
                 return;
             }
-
 
             int fleetId = user.getFleetId();
             // default page values
@@ -101,140 +98,6 @@ public class AirsyncJavalinRoutes {
             ctx.json(new ErrorResponse(e)).status(500);
         } catch (Exception e) {
             LOG.severe(e.toString());
-        }
-    }
-
-    public static void postAirsyncImports(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            LOG.severe("INVALID ACCESS: user was not logged in.");
-            ctx.status(401);
-            return;
-        }
-
-        int fleetId = user.getFleetId();
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasUploadAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to upload flights for this fleet.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
-            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
-            int totalImports = AirSyncImport.getNumImports(connection, fleetId, null);
-            int numberPages = totalImports / pageSize;
-
-            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId,
-                    " LIMIT " + (currentPage * pageSize) + "," + pageSize);
-
-            ctx.json(new PaginationResponse<>(imports, numberPages));
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postAirsyncUploads(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            LOG.severe("INVALID ACCESS: user was not logged in.");
-            ctx.status(401);
-            return;
-        }
-
-        int fleetId = user.getFleetId();
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasUploadAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to upload flights for this fleet.");
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
-            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
-            int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
-            int numberPages = totalUploads / pageSize;
-
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId,
-                    " LIMIT " + (currentPage * pageSize) + "," + pageSize);
-
-            ctx.json(new PaginationResponse<Upload>(uploads, numberPages));
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postAirsyncManualUpdate(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            LOG.severe("INVALID ACCESS: user was not logged in.");
-            ctx.status(401);
-            return;
-        }
-
-        int fleetId = user.getFleetId();
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasUploadAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to upload flights for this fleet.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId);
-            if (fleet == null) {
-                LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
-                ctx.status(401);
-                ctx.result("User did not have access to upload flights for this fleet.");
-                return;
-            }
-
-            fleet.setOverride(connection, true);
-
-            ctx.json("OK");
-        } catch (Exception e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postAirsyncTimeout(Context ctx) {
-        User user = ctx.sessionAttribute("user");
-        if (user == null) {
-            LOG.severe("INVALID ACCESS: user was not logged in.");
-            ctx.status(401);
-            return;
-        }
-
-        int fleetId = user.getFleetId();
-        String newTimeout = ctx.formParam("timeout");
-        if (newTimeout == null) {
-            LOG.severe("INVALID ACCESS: user did not provide a new timeout.");
-            ctx.status(401);
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            LOG.info("User set new timeout: " + newTimeout + ", requesting user: " + user.getFullName());
-
-            AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId);
-            if (fleet == null) {
-                LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
-                ctx.status(401);
-                return;
-            }
-
-            fleet.updateTimeout(connection, user, newTimeout);
-            ctx.json(newTimeout);
-        } catch (Exception e) {
-            e.printStackTrace();
-            ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 

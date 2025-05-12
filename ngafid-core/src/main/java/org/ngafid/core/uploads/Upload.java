@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Config;
 import org.ngafid.core.kafka.Configuration;
 import org.ngafid.core.kafka.Topic;
 import org.ngafid.core.util.MD5;
@@ -698,6 +699,10 @@ public final class Upload {
             default:
                 return ""; // unreachable
         }
+    }
+
+    public String getChunkDirectory() {
+        return String.format("%s/%d/%d/%s", Config.NGAFID_UPLOAD_DIR, fleetId, uploaderId, identifier);
     }
 
     public Path getArchivePath() {

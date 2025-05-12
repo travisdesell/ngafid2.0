@@ -133,7 +133,6 @@ public class JavalinWebServer extends WebServer {
         ImportUploadJavalinRoutes.bindRoutes(app);
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
-        TagFilterJavalinRoutes.bindRoutes(app);
         CesiumDataJavalinRoutes.bindRoutes(app);
         StatusJavalinRoutes.bindRoutes(app);
     }

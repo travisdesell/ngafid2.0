@@ -685,6 +685,17 @@ public class EventDefinition {
     }
 
     /**
+     * Deletes an event definition from database
+     */
+    public void delete(Connection connection) throws SQLException {
+        String query = "DELETE FROM event_definitions WHERE id=?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, id);
+            statement.executeUpdate();
+        }
+    }
+
+    /**
      * Presents a human-readable description of this event definition.
      *
      * @return a string of a human readable description of this event definition.

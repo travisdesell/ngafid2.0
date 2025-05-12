@@ -10,7 +10,6 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.accounts.UserPreferences;
 import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
-import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.RateOfClosure;
 import org.ngafid.core.flights.*;
@@ -19,7 +18,6 @@ import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -170,75 +168,6 @@ public class AnalysisJavalinRoutes {
 
         } catch (Exception e) {
             LOG.severe(e.toString());
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postSeverities(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
-        final String tagName = Objects.requireNonNull(ctx.queryParam("tagName"));
-
-        final String eventName = Objects.requireNonNull(ctx.pathParam("eventName"));
-
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = user.getFleetId();
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasViewAccess(fleetId)) {
-            ctx.status(401);
-            ctx.result("User did not have access to view imports for this fleet.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            Map<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
-            ctx.json(eventMap);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    public static void postAllSeverities(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final String eventNames = Objects.requireNonNull(ctx.formParam("eventNames"));
-        final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = user.getFleetId();
-
-        //check to see if the user has upload access for this fleet.
-        if (!user.hasViewAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to view imports for this fleet.");
-            return;
-        }
-
-        try {
-            Connection connection = Database.getConnection();
-            String[] eventNamesArray = eventNames.split(",");
-            Map<String, Map<String, ArrayList<Event>>> eventMap = new HashMap<>();
-
-            for (String eventName : eventNamesArray) {
-                //Remove leading and trailing quotes
-                eventName = eventName.replace("\"", "");
-
-                //Remove brackets
-                eventName = eventName.replace("[", "");
-                eventName = eventName.replace("]", "");
-
-                //Remove trailing spaces
-                eventName = eventName.trim();
-
-                if (eventName.equals("ANY Event")) continue;
-
-                Map<String, ArrayList<Event>> events = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
-                eventMap.put(eventName, events);
-            }
-
-            ctx.json(eventMap);
-        } catch (SQLException e) {
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }

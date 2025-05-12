@@ -76,11 +76,6 @@ class Upload extends React.Component {
 
         $("#loading").show();
 
-        var submissionData = {
-            uploadId: uploadInfo.id,
-            md5Hash: uploadInfo.md5Hash,
-        };
-
         let thisUpload = this;
 
         console.log("Removing Upload:", submissionData);
@@ -88,7 +83,6 @@ class Upload extends React.Component {
         $.ajax({
             type: 'DELETE',
             url: `/api/upload/${uploadInfo.id}`,
-            data: submissionData,
             dataType: 'json',
             async: true,
             success: function (response) {
@@ -698,7 +692,7 @@ class UploadsPage extends React.Component {
         var bytes = file[func](startByte, endByte, void 0);
 
         var xhr = new XMLHttpRequest();
-        xhr.open('PUT', `/api/upload/${uploadInfo.id}`);
+        xhr.open('PUT', `/api/upload/${uploadInfo.id}/chunk/${chunkNumber}`);
         xhr.onload = function () {
 
             console.log("Upload response: " + xhr.responseText);
@@ -744,10 +738,6 @@ class UploadsPage extends React.Component {
 
         console.log("appending identifier: " + file.identifier);
         var formData = new FormData();
-        formData.append("request", "UPLOAD");
-        formData.append("chunkNumber", chunkNumber);
-        formData.append("identifier", file.identifier);
-        formData.append("md5Hash", file.md5Hash);
         formData.append("chunk", bytes, file.fileName);
         xhr.send(formData);
     }
