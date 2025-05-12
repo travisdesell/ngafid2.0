@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.www.WebServer.gson;
-
 public class DoubleSeriesJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());
 
@@ -99,10 +97,12 @@ public class DoubleSeriesJavalinRoutes {
                 return;
             }
 
+            LOG.info("Fetching series with name: " + name);
             DoubleSeries doubleSeries = new DoubleSeries(connection, flightId, name);
+            LOG.info("Got: " + Objects.toString(doubleSeries, "oops null"));
 
             // System.out.println(gson.toJson(uploadDetails));
-            String output = gson.toJson(doubleSeries);
+            String output = ctx.jsonMapper().toJsonString(doubleSeries, DoubleSeries.class);
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replaceAll("NaN", "null");
 

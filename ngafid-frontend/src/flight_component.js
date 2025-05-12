@@ -78,7 +78,6 @@ class Flight extends React.Component {
         var thisFlight = this;
 
         var submissionData = {
-            flightId: this.props.flightInfo.id,
             eventDefinitionsLoaded: global.eventDefinitionsLoaded
         };
 
@@ -100,11 +99,8 @@ class Flight extends React.Component {
                 var events = response.events;
                 for (let i = 0; i < events.length; i++) {
                     for (let j = 0; j < global.eventDefinitions.length; j++) {
-
                         if (events[i].eventDefinitionId == global.eventDefinitions[j].id) {
                             events[i].eventDefinition = global.eventDefinitions[j];
-                            console.log("set events[" + i + "].eventDefinition to:");
-                            console.log(events[i].eventDefinition);
                         }
                     }
                 }
@@ -207,7 +203,7 @@ class Flight extends React.Component {
             };
 
             $.ajax({
-                type: 'POST',
+                type: 'GET',
                 url: `/api/flight/${this.props.flightInfo.id}/double-series`,
                 dataType: 'json',
                 success: function (response) {
@@ -639,7 +635,6 @@ class Flight extends React.Component {
                 type: 'GET',
                 url: `/api/flight/${this.props.flightInfo.id}/loci-metrics`,
                 data: submissionData,
-                dataType: 'json',
                 success: function (response) {
                     console.log("got loci_metrics response");
                     console.log(response);
@@ -753,8 +748,8 @@ class Flight extends React.Component {
                 console.log("Double series: ", name);
 
                 $.ajax({
-                    type: 'POST',
-                    url: `/api/flight/${this.props.flightInfo.id}/double-series/${name}`,
+                    type: 'GET',
+                    url: `/api/flight/${this.props.flightInfo.id}/double-series/${encodeURIComponent(name)}`,
                     dataType: 'json',
                     async: false,
                     success: function (response) {
@@ -767,20 +762,9 @@ class Flight extends React.Component {
                 });
             }
 
-            const submissionDataCoordinates = {
-                request: "GET_COORDINATES",
-                id_token: "TEST_ID_TOKEN",
-                //id_token : id_token,
-                //user_id : user_id,
-                user_id: 1,
-                flightId: this.props.flightInfo.id,
-            };
-
             $.ajax({
                 type: 'GET',
                 url: `/api/flight/${this.props.flightInfo.id}/coordinates`,
-                data: submissionDataCoordinates,
-                dataType: 'json',
                 success: function (response) {
 
                     var coordinates = response.coordinates;

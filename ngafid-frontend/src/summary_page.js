@@ -75,9 +75,8 @@ function fetchStatistic(stat, route, aggregate, successResponseHandler) {
     }
 
     $.ajax({
-        type: "GET",
+        type: 'GET',
         url: route,
-        dataType: "json",
         success: successResponseHandler,
         // success: function(response) {
 
@@ -419,10 +418,7 @@ export default class SummaryPage extends React.Component {
 
         const submissionData = {
             startDate: startDate + "-01",
-            endDate: endDate + "-28",
-            toString: function () {
-                return JSON.stringify(this);
-            }
+            endDate: endDate + "-28"
         };
 
         $("#loading").show();
@@ -436,22 +432,13 @@ export default class SummaryPage extends React.Component {
         console.log(`Got date change, fetching event counts from '${route}' with date data: '${submissionData}'`);
 
         $.ajax({
-            type: "GET",
+            type: 'GET',
             url: route,
             data: submissionData,
-            dataType: "text",
             async: true,
             success: function (response) {
 
                 $("#loading").hide();
-
-                //Response is not empty, parse it
-                if (response)
-                    response = JSON.parse(response);
-
-                //Response is empty, set it to an empty object
-                else
-                    response = {};
 
                 //Response has an error, exit
                 if (response.err_msg) {

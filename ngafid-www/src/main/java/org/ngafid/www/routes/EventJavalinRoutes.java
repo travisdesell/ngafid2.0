@@ -328,7 +328,10 @@ public class EventJavalinRoutes {
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
 
         // TODO: Event definitions should just get loaded with a separate query... no need to complicate things
-        final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("eventDefinitionsLoaded")));
+        final String eventDefinitionsLoadedStr = ctx.queryParam("eventDefinitionsLoaded");
+
+        // IDE says the following null check is not necessary, but it is.
+        final boolean eventDefinitionsLoaded = eventDefinitionsLoadedStr != null && Boolean.parseBoolean(eventDefinitionsLoadedStr);
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -348,12 +351,11 @@ public class EventJavalinRoutes {
 
             EventInfo eventInfo = new EventInfo(events, definitions);
 
-            String output = GSON.toJson(eventInfo);
+            String output = ctx.jsonMapper().toJsonString(eventInfo, EventInfo.class);
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replaceAll("NaN", "null");
-            ctx.json(output);
+            ctx.result(output);
         } catch (SQLException e) {
-            e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }

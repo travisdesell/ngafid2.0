@@ -49,7 +49,6 @@ class MetricViewerSettings extends React.Component {
         $.ajax({
             type: 'GET',
             url: '/api/flight/double-series',
-            dataType: 'json',
             success: function (response) {
                 console.log("received response: ");
                 console.log(response);

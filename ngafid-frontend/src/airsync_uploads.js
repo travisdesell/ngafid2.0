@@ -189,7 +189,6 @@ class AirSyncUploadsCard extends React.Component {
             type: 'GET',
             url: '/api/airsync/uploads',
             data: submissionData,
-            dataType: 'json',
             success: function (response) {
 
                 console.log(response);

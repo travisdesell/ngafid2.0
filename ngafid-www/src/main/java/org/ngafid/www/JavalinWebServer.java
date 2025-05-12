@@ -49,7 +49,9 @@ public class JavalinWebServer extends WebServer {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
 
-            Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter())
+                    .create();
             config.jsonMapper(new JavalinGson(gson, false));
             config.bundledPlugins.enableRouteOverview("/api");
 

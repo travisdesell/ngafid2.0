@@ -175,9 +175,9 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void postSeverities(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+        final String tagName = Objects.requireNonNull(ctx.queryParam("tagName"));
 
         final String eventName = Objects.requireNonNull(ctx.pathParam("eventName"));
 
@@ -263,9 +263,9 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void postTurnToFinal(Context ctx) {
-        String startDate = ctx.formParam("startDate");
-        String endDate = ctx.formParam("endDate");
-        String airportIataCode = ctx.formParam("airport");
+        String startDate = ctx.queryParam("startDate");
+        String endDate = ctx.queryParam("endDate");
+        String airportIataCode = ctx.queryParam("airport");
         System.out.println(startDate);
         System.out.println(endDate);
 
@@ -508,7 +508,7 @@ public class AnalysisJavalinRoutes {
     public static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
-        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.formParam("time_index")));
+        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("time_index")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -552,6 +552,8 @@ public class AnalysisJavalinRoutes {
             }
 
             final Coordinates coordinates = new Coordinates(connection, flightId);
+
+            // TODO: There is probably a better way to handle the serialization of NaN values than string replacement
             final String output = GSON.toJson(coordinates).replaceAll("NaN", "null");
 
             ctx.json(output);

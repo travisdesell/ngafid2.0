@@ -8,8 +8,6 @@ export default function GetAllDescriptions() {
     $.ajax({
         type: 'GET',
         url: '/api/event/definition/description',
-        data: {},
-        dataType: 'json',
         success: function (response) {
             console.log("received response: " + response);
 

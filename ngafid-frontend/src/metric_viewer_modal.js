@@ -38,7 +38,6 @@ class MetricViewerSettingsModal extends React.Component {
         $.ajax({
             type: 'GET',
             url: '/api/user/me/metric-prefs',
-            dataType: 'json',
             success: function (response) {
                 console.log("got user pref response");
                 console.log(response);

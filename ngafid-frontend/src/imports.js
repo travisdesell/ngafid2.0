@@ -176,10 +176,6 @@ class Import extends React.Component {
     expandClicked() {
         var thisImport = this;
 
-        var submissionData = {
-            uploadId: this.props.importInfo.id
-        };
-
         if (this.state.loaded) {
             console.log("not fetching import information from the server, already loaded.");
             thisImport.state.expanded = !thisImport.state.expanded;
@@ -190,8 +186,6 @@ class Import extends React.Component {
             $.ajax({
                 type: 'GET',
                 url: `/api/upload/${this.props.importInfo.id}/errors`,
-                data: submissionData,
-                dataType: 'json',
                 success: function (response) {
                     console.log("received response: ");
                     console.log(response);

@@ -188,13 +188,9 @@ class Events extends React.Component {
     getEventMetaData(eventId) {
 
         var eventMetaData = null;
-        var submissionData = {
-            eventId: eventId
-        };
         $.ajax({
             type: 'GET',
-            url: `/api/events/${eventId}/meta`,
-            data: submissionData,
+            url: `/api/event/${eventId}/meta`,
             dataType: 'json',
             success: function (response) {
                 eventMetaData = response;
@@ -483,7 +479,6 @@ class Events extends React.Component {
         $.ajax({
             type: 'GET',
             url: `/api/event/${eventId}/rate-of-closure`,
-            dataType: 'json',
             success: function (response) {
                 rocPlotData = response;
             },

@@ -767,7 +767,6 @@ class UploadsPage extends React.Component {
             type: 'GET',
             url: '/api/upload',
             data: submissionData,
-            dataType: 'json',
             success: function (response) {
 
                 console.log(response);

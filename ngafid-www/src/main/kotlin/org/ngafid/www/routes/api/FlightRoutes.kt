@@ -32,7 +32,7 @@ object FlightRoutes : RouteProvider() {
                     get("/xplane", DataJavalinRoutes::getXPlane, Role.LOGGED_IN)
 
                     get("/double-series", DoubleSeriesJavalinRoutes::postDoubleSeriesNames, Role.LOGGED_IN)
-                    get("/double-series/{series}", DoubleSeriesJavalinRoutes::postDoubleSeriesNames, Role.LOGGED_IN)
+                    get("/double-series/{series}", DoubleSeriesJavalinRoutes::postDoubleSeries, Role.LOGGED_IN)
 
                     get("/events", EventJavalinRoutes::postEvents, Role.LOGGED_IN)
 

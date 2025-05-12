@@ -32,7 +32,7 @@ object EventRoutes : RouteProvider() {
                     // TODO: We should not be querying by event name. Most of the javascript code that does this
                     // could easily be refactored to not require this, so this is a temporary hack.
                     path("/by-name/{eventName}") {
-                        get("/description", EventJavalinRoutes::getEventDefinition, Role.LOGGED_IN)
+                        get("/description", EventJavalinRoutes::getEventDescription, Role.LOGGED_IN)
                     }
                 }
 
@@ -44,12 +44,12 @@ object EventRoutes : RouteProvider() {
 
                 get(
                     "/count/by-airframe",
-                    { ctx -> StatisticsJavalinRoutes.postEventCounts(ctx, false) },
+                    { ctx -> StatisticsJavalinRoutes.getEventCountsByAirframe(ctx, false) },
                     Role.LOGGED_IN
                 )
                 get(
                     "/count/by-airframe/aggregate",
-                    { ctx -> StatisticsJavalinRoutes.postEventCounts(ctx, true) },
+                    { ctx -> StatisticsJavalinRoutes.getEventCountsByAirframe(ctx, true) },
                     Role.LOGGED_IN
                 )
                 get(

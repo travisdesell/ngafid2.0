@@ -251,9 +251,9 @@ public class StatisticsJavalinRoutes {
         }
     }
 
-    public static void postEventCounts(Context ctx, boolean aggregate) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
+    public static void getEventCountsByAirframe(Context ctx, boolean aggregate) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
 
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int fleetId = user.getFleetId();

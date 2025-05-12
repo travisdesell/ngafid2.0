@@ -81,7 +81,6 @@ class SelectAircraftModal extends React.Component {
         $.ajax({
             type: 'GET',
             url: '/api/aircraft/sim-aircraft',
-            dataType: 'json',
             success: function (response) {
                 console.log("received response: ");
                 console.log(response);

@@ -941,9 +941,8 @@ class FlightsPage extends React.Component {
         let storedFilters = [];
 
         $.ajax({
-            type: "GET",
+            type: 'GET',
             url: "/api/filter",
-            dataType: "json",
             async: false,
             success: function (response) {
                 console.log("received filters response: ");
@@ -997,10 +996,9 @@ class FlightsPage extends React.Component {
         let flightsPage = this;
 
         $.ajax({
-            type: "GET",
+            type: 'GET',
             url: "/api/flight",
             data: submissionData,
-            dataType: "json",
             timeout: 0, //set timeout to be unlimited for slow queries
             async: true,
             success: function (response) {
@@ -1208,9 +1206,8 @@ class FlightsPage extends React.Component {
         let tags = [];
 
         $.ajax({
-            type: "GET",
+            type: 'GET',
             url: `/api/flight/${flightId}/tag/unassociated`,
-            dataType: "json",
             async: false,
             success: function (response) {
                 console.log("received response: ");

@@ -20,6 +20,7 @@ object FleetRoutes : RouteProvider() {
                         ctx.json(Fleet.getNumberFleets(it))
                     }
                 }, Role.LOGGED_IN)
+                get("/count/aggregate", { ctx -> Database.getConnection().use { ctx.json(Fleet.getNumberFleets(it)) } })
             }
         }
     }

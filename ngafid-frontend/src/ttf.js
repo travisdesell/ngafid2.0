@@ -666,7 +666,6 @@ class TTFCard extends React.Component {
                 type: 'GET',
                 url: '/api/flight/turn-to-final',
                 data: submissionData,
-                dataType: 'json',
                 success: (response) => {
                     console.log("Fetched response: ", response);
 

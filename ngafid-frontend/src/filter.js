@@ -585,7 +585,7 @@ class Group extends React.Component {
             type: 'PUT',
             url: `/api/filter/${encodeURIComponent(filter.name)}`,
             data: submissionData,
-            dataType: 'json',
+            dataType: 'text',
             timeout: 0,
             async: true,
             success: function (response) {
@@ -639,7 +639,7 @@ class Group extends React.Component {
         $.ajax({
             type: 'DELETE',
             url: `/api/filter/${encodeURIComponent(name)}`,
-            dataType: 'json',
+            dataType: 'text',
             timeout: 0,
             async: true,
             success: function (response) {
@@ -678,7 +678,7 @@ class Group extends React.Component {
             type: 'POST',
             url: '/api/filter',
             data: submissionData,
-            dataType: 'json',
+            dataType: 'text',
             timeout: 0,
             async: true,
             success: function (response) {
@@ -716,7 +716,6 @@ class Group extends React.Component {
         $.ajax({
             type: 'GET',
             url: '/api/filter',
-            dataType: 'json',
             success: function (response) {
                 console.log("received filters response: ");
                 console.log(response);
@@ -931,6 +930,7 @@ class Group extends React.Component {
 
         var loadCard = "";
         if (this.state.showLoadPopover) {
+            // TODO: this sends a GET to the server every time the component is rendered...
             let filters = this.getStoredFilters();
             if (filters != null && filters.length > 0) {
                 loadCard = (

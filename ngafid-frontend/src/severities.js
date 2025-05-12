@@ -433,7 +433,6 @@ class SeveritiesPage extends React.Component {
             type: 'GET',
             url: '/api/event/severities',
             data: submissionData,
-            dataType: 'json',
             success: function (response) {
                 console.log("Received response <all_severities>: ", this.data, response);
 
@@ -519,15 +518,13 @@ class SeveritiesPage extends React.Component {
         var submissionData = {
             startDate: startDate + "-01",
             endDate: endDate + "-28",
-            eventName: eventName,
             tagName: this.state.tagName
         };
 
         $.ajax({
             type: 'GET',
-            url: `/api/event/severities/${eventName}`,
+            url: `/api/event/severities/${encodeURIComponent(eventName)}`,
             data: submissionData,
-            dataType: 'json',
             success: function (response) {
                 console.log("Received response <severities>: ", this.data, response);
 

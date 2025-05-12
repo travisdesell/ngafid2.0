@@ -155,8 +155,8 @@ public class AirsyncJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
-            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
+            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
+            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
             int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
 
