@@ -123,42 +123,13 @@ Once you have done this, you can create the database tables by running the follo
 
 We need to set up some environmental variables that point to some important data / directories.
 
-Create `init_env.sh`, and add the following:
+Create a copy of the environment variables template, `init_env.template.sh` and call it `init_env.sh`. Ensure that you properly configure `init_env.sh` and address all lines marked with an exclamation point (❗).
 
-```bash
-export NGAFID_REPO=<absolute path to ngafid2.0 repo>
-export NGAFID_DATA_FOLDER=<create a ngafid data folder and put the absolute path here>
-export NGAFID_PORT=8181 # You can use whatever port you need or want to use
-export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
-export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
-# If you don't have the data to add to the terrain directory, ask for it.
-export TERRAIN_DIRECTORY=$NGAFID_DATA_FOLDER/terrain/
-# If you don't have the data for the airports directory, ask for it.
-export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv
-# If you don't have the data for the runways directory, ask for it.
-export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv
-export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/src/main/resources/public/templates/
-export WEBSERVER_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
-export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
-export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
-# Set me to true if you dont want backups being made everytime you fire off the NGAFID
-# If you do set this to true the following 3 parameters do not need to be set
-export NGAFID_BACKUP_DIR=<path to where backups should be stored>
-export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads"
-# If you don't want the webserver to send emails (exceptions, shutdowns, etc.), set this to false.
-export NGAFID_EMAIL_ENABLED=false
-# (Optional) To require users to log in again after restart, set this to true
-#export DISABLE_PERSISTENT_SESSIONS=true
-```
-
-and run
+Run the command below after making changes or running from a new shell:
 
 ```
 ~/ngafid2.0 $ source init_env.sh
 ```
-
-every time you want to run the website from a new shell.
-
 If you want these variables to be initialized automatically when you launch a new shell,
 add the following line to your `~/.bashrc` file:
 

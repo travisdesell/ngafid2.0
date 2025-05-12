@@ -4,17 +4,17 @@
     # NGAFID - Environment Variables Template                                        #
     #                                                                                #
     #                                                                                #
-    # Be sure to run  ' ~/ngafid2.0 $ source init_env.sh '  after making changes or  #
+    # Be sure to run  ` ~/ngafid2.0 $ source init_env.sh `  after making changes or  #
     # running from a new shell.                                                      #
     #                                                                                #
     # Alternatively, you can add the following line to your ~/.bashrc                # 
     # file to automatically source this file:                                        #
     #                                                                                #
-    #   ' source ~/ngafid2.0/init_env.sh '                                           #
+    #   ` source ~/ngafid2.0/init_env.sh `                                           #
     #                                                                                #
     # Last Updated: 5/8/25                                                           #
     # ------------------------------------------------------------------------------ #
-    # ✂ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
+    # ✂ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ < ❗ Remove Here > ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
     #                                                                                #
     # This file is a template for setting up the environment variables for NGAFID.   #
     # Please make a copy called 'init_env.sh' and modify it according to your setup. #
@@ -23,7 +23,7 @@
 
 
 #Absolute path
-export NGAFID_REPO=<⚠ /Set/Path/Here ⚠>  #<-- ❗ Set this to the absolute path of your ngafid repo. This is the directory where you cloned the ngafid repo.
+export NGAFID_REPO=<⚠ /Set/Absolute/Path/Here ⚠>  #<-- ❗ Set this to the absolute path of your ngafid repo. This is the directory where you cloned the ngafid repo.
 
 
 #Database
