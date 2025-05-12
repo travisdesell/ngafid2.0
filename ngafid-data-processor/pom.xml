@@ -39,6 +39,35 @@
             <artifactId>opencsv</artifactId>
             <version>5.7.1</version>
         </dependency>
+
+        <!-- Parquet file processor  -->
+        <dependency>
+            <groupId>org.parquet</groupId>
+            <artifactId>parquet-reader</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-servlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-webapp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-util</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
+
+
     </dependencies>
 
     <build>
