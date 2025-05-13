@@ -7,7 +7,7 @@ import java.util.*
 import javax.net.ssl.HttpsURLConnection
 
 class AirSyncAuth(val key: String, val secret: String) {
-    class AccessToken(val accessToken: String)
+    data class AccessToken(val accessToken: String)
 
     val hash: ByteArray
     val accessToken: AccessToken
@@ -17,7 +17,7 @@ class AirSyncAuth(val key: String, val secret: String) {
         private var INSTANCE: AirSyncAuth? = null
 
         fun refreshInstance(): Unit {
-            val query = "SELECT sync.api_key, sync.api_secret FROM airsync_fleet_info LIMIT 1"
+            val query = "SELECT api_key, api_secret FROM airsync_fleet_info LIMIT 1"
 
             Database.getConnection().use { connection ->
                 connection.prepareStatement(query).use { statement ->
@@ -38,6 +38,9 @@ class AirSyncAuth(val key: String, val secret: String) {
                 refreshInstance();
             }
 
+            println("Bearer: ${INSTANCE?.getBearerString()}")
+            println("Access: $INSTANCE")
+
             return INSTANCE!!
         }
     }
@@ -49,7 +52,7 @@ class AirSyncAuth(val key: String, val secret: String) {
     }
 
     fun getBearerString(): String {
-        return "Bearer $accessToken"
+        return "Bearer ${accessToken.accessToken}"
     }
 
     fun isOutdated(): Boolean {
@@ -72,7 +75,7 @@ class AirSyncAuth(val key: String, val secret: String) {
 
             val resp = String(respRaw).replace("access_token".toRegex(), "accessToken")
 
-            return Utility.OBJECT_MAPPER.reader().readValue(
+            return Utility.OBJECT_MAPPER.readValue(
                 resp,
                 AccessToken::class.java
             )
