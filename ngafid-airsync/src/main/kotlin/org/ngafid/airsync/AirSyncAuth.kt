@@ -2,7 +2,6 @@ package org.ngafid.airsync
 
 import org.ngafid.core.Database
 import java.net.URL
-import java.sql.Connection
 import java.time.LocalDateTime
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
@@ -15,7 +14,7 @@ class AirSyncAuth(val key: String, val secret: String) {
     val timeObtained: LocalDateTime = LocalDateTime.now()
 
     companion object {
-        var INSTANCE: AirSyncAuth? = null
+        private var INSTANCE: AirSyncAuth? = null
 
         fun refreshInstance(): Unit {
             val query = "SELECT sync.api_key, sync.api_secret FROM airsync_fleet_info LIMIT 1"
@@ -34,7 +33,7 @@ class AirSyncAuth(val key: String, val secret: String) {
             }
         }
 
-        fun getInstance(connection: Connection): AirSyncAuth {
+        fun getInstance(): AirSyncAuth {
             if (INSTANCE == null) {
                 refreshInstance();
             }

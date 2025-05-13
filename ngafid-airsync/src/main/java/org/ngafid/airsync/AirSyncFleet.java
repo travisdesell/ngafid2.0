@@ -73,7 +73,7 @@ public class AirSyncFleet extends Fleet {
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         super(resultSet.getInt(1), resultSet.getString(2));
         this.airsyncFleetName = resultSet.getString(3);
-        this.authCreds = new AirSyncAuth(resultSet.getString(4), resultSet.getString(5));
+        this.authCreds = AirSyncAuth.Companion.getInstance();
 
         Timestamp timestamp = resultSet.getTimestamp(6);
         if (timestamp == null) {
@@ -349,7 +349,7 @@ public class AirSyncFleet extends Fleet {
         if (this.authCreds.isOutdated()) {
             LOG.info("Bearer token is out of date. Requesting a new one.");
             AirSyncAuth.Companion.refreshInstance();
-            this.authCreds = AirSyncAuth.Companion.getINSTANCE();
+            this.authCreds = AirSyncAuth.Companion.getInstance();
         }
 
         return this.authCreds;
