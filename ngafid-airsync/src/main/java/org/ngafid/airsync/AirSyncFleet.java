@@ -17,10 +17,7 @@ import java.net.URL;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
@@ -367,6 +364,10 @@ public class AirSyncFleet extends Fleet {
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
             connection.setRequestProperty("Authorization", this.authCreds.getBearerString());
+
+            for (Map.Entry<String, List<String>> e : connection.getRequestProperties().entrySet()) {
+                LOG.info(e.getKey() + ": " + e.getValue().stream().reduce((a, b) -> a + ", " + b).get());
+            }
 
             byte[] respRaw;
             try (InputStream is = connection.getInputStream()) {
