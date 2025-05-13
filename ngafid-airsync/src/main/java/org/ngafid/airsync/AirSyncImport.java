@@ -331,7 +331,7 @@ public final class AirSyncImport {
 
         connection.setRequestMethod("GET");
         connection.setDoOutput(true);
-        connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());
+        connection.setRequestProperty("Authorization", this.fleet.getAuth().getBearerString());
 
         try (InputStream is = connection.getInputStream()) {
             byte[] respRaw = is.readAllBytes();

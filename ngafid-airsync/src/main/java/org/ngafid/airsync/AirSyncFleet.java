@@ -33,7 +33,7 @@ public class AirSyncFleet extends Fleet {
     private static final int DEFAULT_TIMEOUT = 1440;
     private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
     private static AirSyncFleet[] fleets = null;
-    private final AirSyncAuth authCreds;
+    private AirSyncAuth authCreds;
     private final String airsyncFleetName;
     private List<AirSyncAircraft> aircraft;
     private transient LocalDateTime lastQueryTime;
@@ -348,7 +348,8 @@ public class AirSyncFleet extends Fleet {
     public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
             LOG.info("Bearer token is out of date. Requesting a new one.");
-            this.authCreds.requestAuthorization();
+            AirSyncAuth.Companion.refreshInstance();
+            this.authCreds = AirSyncAuth.Companion.getINSTANCE();
         }
 
         return this.authCreds;
@@ -365,7 +366,7 @@ public class AirSyncFleet extends Fleet {
 
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.authCreds.bearerString());
+            connection.setRequestProperty("Authorization", this.authCreds.getBearerString());
 
             byte[] respRaw;
             try (InputStream is = connection.getInputStream()) {

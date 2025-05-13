@@ -133,7 +133,7 @@ public final class AirSyncAircraft {
             throws IOException {
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
-        netConnection.setRequestProperty("Authorization", authentication.bearerString());
+        netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
         byte[] respRaw;
         try (InputStream is = netConnection.getInputStream()) {
@@ -200,15 +200,11 @@ public final class AirSyncAircraft {
         int nPage = 0;
 
         while (continueIteration) {
-            try {
-                HttpsURLConnection netConnection =
-                        (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
-                List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
-                continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
-                imports.addAll(page);
-            } catch (Exception e) {
-                ImportService.handleAirSyncAPIException(e, authentication);
-            }
+            HttpsURLConnection netConnection =
+                    (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
+            List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
+            continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
+            imports.addAll(page);
         }
 
         return imports;
