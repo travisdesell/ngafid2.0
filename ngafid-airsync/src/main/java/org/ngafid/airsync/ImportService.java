@@ -163,14 +163,16 @@ public final class ImportService {
                         LOG.info("Update status: " + status);
                     }
                 }
-
-                long waitTime = 30000;
-                LOG.info("Sleeping for " + waitTime / 1000 + "s.");
-                Thread.sleep(waitTime);
-            } catch (InterruptedException | SQLException | IOException e) {
+            } catch (SQLException | IOException e) {
                 LOG.severe("Encountered the following error: ");
                 e.printStackTrace();
-                continue;
+            }
+
+            long waitTime = 30000;
+            LOG.info("Sleeping for " + waitTime / 1000 + "s.");
+            try {
+                Thread.sleep(waitTime);
+            } catch (InterruptedException ignored) {
             }
         }
     }

@@ -131,12 +131,14 @@ public final class AirSyncImport {
 
     public static void batchCreateImport(Connection connection,
                                          List<AirSyncImport> imports, Flight flight) throws SQLException {
-        try (PreparedStatement query = createPreparedStatement(connection)) {
-            for (var imp : imports)
+        for (var imp : imports)
+            try (PreparedStatement query = createPreparedStatement(connection)) {
                 imp.addBatch(query, flight);
 
-            query.executeUpdate();
-        }
+                query.executeUpdate();
+            } catch (SQLIntegrityConstraintViolationException e) {
+                // Will only happen if there is a duplicate primary key. If this happens, we can just ignore it.
+            }
     }
 
     /**
