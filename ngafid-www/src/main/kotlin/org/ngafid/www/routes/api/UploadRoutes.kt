@@ -3,7 +3,10 @@ package org.ngafid.www.routes.api
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
+import io.javalin.http.BadRequestResponse
 import io.javalin.http.Context
+import io.javalin.http.NotFoundResponse
+import io.javalin.http.UnauthorizedResponse
 import jakarta.servlet.MultipartConfigElement
 import org.ngafid.core.Config
 import org.ngafid.core.Database
@@ -14,9 +17,6 @@ import org.ngafid.core.uploads.Upload
 import org.ngafid.core.uploads.UploadError
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
-import org.ngafid.www.routes.status.BadRequestException
-import org.ngafid.www.routes.status.NotFoundException
-import org.ngafid.www.routes.status.UnauthorizedException
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -31,13 +31,13 @@ object UploadRoutes : RouteProvider() {
             path("/api/upload") {
                 get(UploadRoutes::getUploads, Role.LOGGED_IN)
                 get("imported", UploadRoutes::getImported, Role.LOGGED_IN);
-                post(UploadRoutes::postNewUpload, Role.LOGGED_IN)
+                post(UploadRoutes::postNewUpload, Role.LOGGED_IN, Role.UPLOADER_ONLY)
 
                 path("{uid}") {
                     get("file", UploadRoutes::getUpload, Role.LOGGED_IN)
                     get("errors", UploadRoutes::getUploadErrors, Role.LOGGED_IN)
-                    put("chunk/{cid}", UploadRoutes::putUploadChunk, Role.LOGGED_IN)
-                    delete(UploadRoutes::deleteUpload, Role.LOGGED_IN)
+                    put("chunk/{cid}", UploadRoutes::putUploadChunk, Role.LOGGED_IN, Role.UPLOADER_ONLY)
+                    delete(UploadRoutes::deleteUpload, Role.LOGGED_IN, Role.UPLOADER_ONLY)
                 }
 
                 RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.uploads()) }
@@ -160,22 +160,19 @@ object UploadRoutes : RouteProvider() {
     fun getUpload(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
 
-        if (!user.hasUploadAccess(user.fleetId)) {
-            throw UnauthorizedException()
-        }
-
+        val uid = ctx.pathParam("uid").toInt()
         val upload: Upload? = Database.getConnection().use { connection ->
-            Upload.getUploadById(connection, ctx.pathParam("uid").toInt(), ctx.formParam("md5Hash"))
+            Upload.getUploadById(connection, uid, ctx.formParam("md5Hash"))
         }
 
         // Upload was not found, return 404
         if (upload == null) {
-            throw NotFoundException()
+            throw NotFoundResponse("Upload with id $uid not found.")
         }
 
         // User may have upload access but not for the fleet this upload belongs to.
         if (!user.hasUploadAccess(upload.getFleetId())) {
-            throw UnauthorizedException()
+            throw UnauthorizedResponse("User does not have upload access to fleet of upload.")
         }
 
         //Build the file path
@@ -202,7 +199,7 @@ object UploadRoutes : RouteProvider() {
                 }
             }
         } else {
-            throw NotFoundException()
+            throw NotFoundResponse("No such upload with id $uid")
         }
     }
 
@@ -236,17 +233,17 @@ object UploadRoutes : RouteProvider() {
         val chunkNumber = ctx.pathParam("cid").toInt()
 
         Database.getConnection().use { connection ->
-            val upload = Upload.getUploadById(connection, id) ?: throw NotFoundException()
+            val upload = Upload.getUploadById(connection, id) ?: throw NotFoundResponse("Upload with id $id not found.")
 
             if (upload.fleetId != user.fleetId)
-                throw UnauthorizedException()
+                throw UnauthorizedResponse("User ${user.id} does not belong to the same fleet as upload.")
 
             val chunkDirectory = upload.chunkDirectory
             File(chunkDirectory).mkdirs()
 
             val chunkFilename = "$chunkDirectory/$chunkNumber.part"
             Files.copy(
-                (ctx.uploadedFile("chunk") ?: throw BadRequestException()).content(),
+                (ctx.uploadedFile("chunk") ?: throw BadRequestResponse("Missing file attachment")).content(),
                 Paths.get(chunkFilename),
                 StandardCopyOption.REPLACE_EXISTING
             )
@@ -268,14 +265,11 @@ object UploadRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             val user = SessionUtility.getUser(ctx)
             val uploadId = ctx.pathParam("uid").toInt()
-            val upload = Upload.getUploadById(connection, uploadId) ?: throw NotFoundException()
-
-            // check to see if the user has upload access for this fleet.
-            if (!user.hasUploadAccess(upload.getFleetId()))
-                throw UnauthorizedException()
+            val upload = Upload.getUploadById(connection, uploadId)
+                ?: throw NotFoundResponse("Upload with id $uploadId not found.")
 
             if (upload.getFleetId() != user.fleetId)
-                throw UnauthorizedException()
+                throw UnauthorizedResponse("User or upload is not a part of the correct fleet.")
 
             upload.getLockedUpload(connection).use { locked -> locked.remove() }
             Tails.removeUnused(connection)

@@ -22,20 +22,20 @@ object AuthRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/auth") {
-                post("/login", AuthRoutes::postLogin, Role.OPEN)
-                post("/logout", AuthRoutes::postLogout, Role.OPEN)
+                post("login", AuthRoutes::postLogin, Role.OPEN)
+                post("logout", AuthRoutes::postLogout, Role.OPEN)
 
                 // Create account
-                post("/register", AuthRoutes::postRegister, Role.OPEN)
+                post("register", AuthRoutes::postRegister, Role.OPEN)
 
                 // Request password reset link
-                post("/forgot-password", AuthRoutes::postForgotPassword, Role.OPEN)
+                post("forgot-password", AuthRoutes::postForgotPassword, Role.OPEN)
 
                 // Submit new password w/ token
-                post("/reset-password", AuthRoutes::postResetPassword, Role.OPEN)
+                post("reset-password", AuthRoutes::postResetPassword, Role.OPEN)
 
                 // Logged in user changes password
-                patch("/change-password", AuthRoutes::patchUpdatePassword, Role.LOGGED_IN)
+                patch("change-password", AuthRoutes::patchUpdatePassword, Role.LOGGED_IN)
             }
         }
     }
@@ -114,72 +114,68 @@ object AuthRoutes : RouteProvider() {
         val zipCode = ctx.formParam("zipCode")
         val accountType = ctx.formParam("accountType")
 
-        try {
-            Database.getConnection().use { connection ->
-                if (accountType != null) {
-                    ctx.json(
-                        ErrorResponse(
-                            "Invalid Account Type",
-                            "A request was made to create an account with an unknown account type '$accountType'."
-                        )
+        Database.getConnection().use { connection ->
+            if (accountType != null) {
+                ctx.json(
+                    ErrorResponse(
+                        "Invalid Account Type",
+                        "A request was made to create an account with an unknown account type '$accountType'."
                     )
-                }
-                if (accountType != null && accountType == "gaard") {
-                    ctx.json(
-                        ErrorResponse(
-                            "Gaard Account Creation Disabled",
-                            "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."
-                        )
-                    )
-                } else if (accountType == "newFleet") {
-                    val fleetName = ctx.formParam("fleetName")
-                    val user = User.createNewFleetUser(
-                        connection,
-                        email,
-                        password,
-                        firstName,
-                        lastName,
-                        country,
-                        state,
-                        city,
-                        address,
-                        phoneNumber,
-                        zipCode,
-                        fleetName
-                    )
-                    ctx.sessionAttribute("user", user)
-
-                    ctx.json(CreatedAccount(accountType, user))
-                } else if (accountType == "existingFleet") {
-                    val fleetName = ctx.formParam("fleetName")
-                    val user = User.createExistingFleetUser(
-                        connection,
-                        email,
-                        password,
-                        firstName,
-                        lastName,
-                        country,
-                        state,
-                        city,
-                        address,
-                        phoneNumber,
-                        zipCode,
-                        fleetName
-                    )
-                    ctx.sessionAttribute("user", user)
-
-                    ctx.json(CreatedAccount(accountType, user))
-                } else {
-                    ctx.json(
-                        ErrorResponse(
-                            "Invalid Account Type",
-                            "A request was made to create an account with an unknown account type '$accountType'."
-                        )
-                    )
-                }
+                )
             }
-        } catch (e: AccountException) {
-            ctx.json(ErrorResponse(e)).status(500)
+            if (accountType != null && accountType == "gaard") {
+                ctx.json(
+                    ErrorResponse(
+                        "Gaard Account Creation Disabled",
+                        "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."
+                    )
+                )
+            } else if (accountType == "newFleet") {
+                val fleetName = ctx.formParam("fleetName")
+                val user = User.createNewFleetUser(
+                    connection,
+                    email,
+                    password,
+                    firstName,
+                    lastName,
+                    country,
+                    state,
+                    city,
+                    address,
+                    phoneNumber,
+                    zipCode,
+                    fleetName
+                )
+                ctx.sessionAttribute("user", user)
+
+                ctx.json(CreatedAccount(accountType, user))
+            } else if (accountType == "existingFleet") {
+                val fleetName = ctx.formParam("fleetName")
+                val user = User.createExistingFleetUser(
+                    connection,
+                    email,
+                    password,
+                    firstName,
+                    lastName,
+                    country,
+                    state,
+                    city,
+                    address,
+                    phoneNumber,
+                    zipCode,
+                    fleetName
+                )
+                ctx.sessionAttribute("user", user)
+
+                ctx.json(CreatedAccount(accountType, user))
+            } else {
+                ctx.json(
+                    ErrorResponse(
+                        "Invalid Account Type",
+                        "A request was made to create an account with an unknown account type '$accountType'."
+                    )
+                )
+            }
         }
     }
 
@@ -224,7 +220,7 @@ object AuthRoutes : RouteProvider() {
         val newPassword = Objects.requireNonNull(ctx.formParam("newPassword"))
         val confirmPassword = Objects.requireNonNull(ctx.formParam("confirmPassword"))
 
-        val user = SessionUtility.getUser(ctx)!!
+        val user = SessionUtility.getUser(ctx)
         Database.getConnection().use { connection ->
             // 1. make sure currentPassword authenticates against what's in the database
             if (!user.validate(connection, currentPassword)) {

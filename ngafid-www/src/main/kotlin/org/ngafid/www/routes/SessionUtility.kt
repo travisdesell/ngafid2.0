@@ -1,16 +1,16 @@
 package org.ngafid.www.routes
 
 import io.javalin.http.Context
+import io.javalin.http.UnauthorizedResponse
 import org.ngafid.core.Database
 import org.ngafid.core.accounts.User
 import org.ngafid.www.routes.StatisticsJavalinRoutes.StatFetcher
-import org.ngafid.www.routes.status.UnauthorizedException
 
 object SessionUtility {
     fun getUser(ctx: Context): User {
         val user = ctx.sessionAttribute<User>("user")
         if (user == null) {
-            throw UnauthorizedException()
+            throw UnauthorizedResponse("User is not logged in.")
         } else {
             return user
         }

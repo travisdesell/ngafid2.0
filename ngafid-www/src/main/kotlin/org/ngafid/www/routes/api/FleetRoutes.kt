@@ -15,12 +15,12 @@ object FleetRoutes : RouteProvider() {
         app.router.apiBuilder {
             path("/api/fleet") {
                 get(FleetRoutes::get, Role.LOGGED_IN)
-                get("/count", { ctx ->
+                get("count", { ctx ->
                     Database.getConnection().use {
                         ctx.json(Fleet.getNumberFleets(it))
                     }
                 }, Role.LOGGED_IN)
-                get("/count/aggregate", { ctx -> Database.getConnection().use { ctx.json(Fleet.getNumberFleets(it)) } })
+                get("count/aggregate", { ctx -> Database.getConnection().use { ctx.json(Fleet.getNumberFleets(it)) } })
             }
         }
     }

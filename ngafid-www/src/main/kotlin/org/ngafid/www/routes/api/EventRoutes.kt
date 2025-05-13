@@ -3,6 +3,7 @@ package org.ngafid.www.routes.api
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import io.javalin.http.UnauthorizedResponse
 import org.ngafid.core.Database
 import org.ngafid.core.event.Event
 import org.ngafid.core.event.EventDefinition
@@ -10,7 +11,6 @@ import org.ngafid.core.event.EventMetaData
 import org.ngafid.core.event.RateOfClosure
 import org.ngafid.core.flights.Airframes
 import org.ngafid.www.routes.*
-import org.ngafid.www.routes.status.UnauthorizedException
 import java.time.LocalDate
 import java.util.*
 
@@ -18,50 +18,50 @@ object EventRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/event/") {
-                path("/{eid}") {
-                    get("/rate-of-closure", EventRoutes::getEventRateOfClosure, Role.LOGGED_IN)
-                    get("/meta", EventRoutes::getEventMetaData, Role.LOGGED_IN)
+                path("{eid}") {
+                    get("rate-of-closure", EventRoutes::getEventRateOfClosure, Role.LOGGED_IN)
+                    get("meta", EventRoutes::getEventMetaData, Role.LOGGED_IN)
                 }
 
-                path("/severities") {
+                path("severities") {
                     get(EventRoutes::getAllSeverities, Role.LOGGED_IN)
-                    get("/{eventName}", EventRoutes::getEventSeverities, Role.LOGGED_IN)
+                    get("{eventName}", EventRoutes::getEventSeverities, Role.LOGGED_IN)
                 }
 
-                path("/definition") {
+                path("definition") {
                     get(EventRoutes::getAllEventDefinitions, Role.LOGGED_IN)
                     post(EventRoutes::postCreateEvent, Role.LOGGED_IN)
-                    get("/description", EventRoutes::getAllEventDescriptions, Role.LOGGED_IN)
+                    get("description", EventRoutes::getAllEventDescriptions, Role.LOGGED_IN)
 
-                    path("/{edid}") {
+                    path("{edid}") {
                         get(EventRoutes::getOneEventDefinition, Role.LOGGED_IN)
                         patch(EventRoutes::patchEventDefinition, Role.LOGGED_IN)
-                        delete(EventRoutes::deleteEventDefinition, Role.LOGGED_IN)
+                        delete(EventRoutes::deleteEventDefinition, Role.LOGGED_IN, Role.ADMIN_ONLY)
                     }
 
                     // TODO: We should not be querying by event name. Most of the javascript code that does this
                     // could easily be refactored to not require this, so this is a temporary hack.
-                    path("/by-name/{eventName}") {
-                        get("/description", EventRoutes::getEventDescription, Role.LOGGED_IN)
+                    path("by-name/{eventName}") {
+                        get("description", EventRoutes::getEventDescription, Role.LOGGED_IN)
                     }
                 }
 
-                RouteUtility.getStat("/count") { ctx, stats -> ctx.json(stats.totalEvents()) }
-                RouteUtility.getStat("/count/past-month") { ctx, stats -> ctx.json(stats.monthEvents()) }
-                RouteUtility.getStat("/count/past-year") { ctx, stats -> ctx.json(stats.yearEvents()) }
+                RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.totalEvents()) }
+                RouteUtility.getStat("count/past-month") { ctx, stats -> ctx.json(stats.monthEvents()) }
+                RouteUtility.getStat("count/past-year") { ctx, stats -> ctx.json(stats.yearEvents()) }
 
                 get(
-                    "/count/by-airframe",
+                    "count/by-airframe",
                     { ctx -> StatisticsJavalinRoutes.getEventCountsByAirframe(ctx, false) },
                     Role.LOGGED_IN
                 )
                 get(
-                    "/count/by-airframe/aggregate",
+                    "count/by-airframe/aggregate",
                     { ctx -> StatisticsJavalinRoutes.getEventCountsByAirframe(ctx, true) },
                     Role.LOGGED_IN
                 )
                 get(
-                    "/count/monthly/by-name",
+                    "count/monthly/by-name",
                     StatisticsJavalinRoutes::postMonthlyEventCounts,
                     Role.LOGGED_IN
                 )
@@ -220,7 +220,7 @@ object EventRoutes : RouteProvider() {
     fun deleteEventDefinition(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         if (!user.isAdmin) {
-            throw UnauthorizedException()
+            throw UnauthorizedResponse("User does not have admin privileges.")
         }
 
         Database.getConnection().use { connection ->

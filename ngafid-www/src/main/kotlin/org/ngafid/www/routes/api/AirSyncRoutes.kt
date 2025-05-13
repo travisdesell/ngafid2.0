@@ -10,23 +10,22 @@ import org.ngafid.www.PaginationResponse
 import org.ngafid.www.routes.Role
 import org.ngafid.www.routes.RouteProvider
 import org.ngafid.www.routes.SessionUtility
-import org.ngafid.www.routes.status.UnauthorizedException
 
 object AirSyncRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/airsync") {
                 // Fetch uploads
-                get("/uploads", AirSyncRoutes::getAirSyncUploads, Role.LOGGED_IN)
+                get("uploads", AirSyncRoutes::getAirSyncUploads, Role.LOGGED_IN)
 
                 // Fetch imports
-                get("/imports", AirSyncRoutes::getAirSyncImports, Role.LOGGED_IN)
+                get("imports", AirSyncRoutes::getAirSyncImports, Role.LOGGED_IN)
 
                 // Force-override to update, even if timeout has not elapsed.
-                patch("/update", AirSyncRoutes::patchAirSyncManualUpdate, Role.LOGGED_IN)
+                patch("update", AirSyncRoutes::patchAirSyncManualUpdate, Role.LOGGED_IN, Role.UPLOADER_ONLY)
 
                 // Update update window.
-                patch("/timeout", AirSyncRoutes::patchAirSyncTimeout, Role.LOGGED_IN)
+                patch("timeout", AirSyncRoutes::patchAirSyncTimeout, Role.LOGGED_IN)
             }
         }
     }
@@ -72,11 +71,6 @@ object AirSyncRoutes : RouteProvider() {
     fun patchAirSyncManualUpdate(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         val fleetId = user.fleetId
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasUploadAccess(fleetId)) {
-            throw UnauthorizedException()
-        }
 
         Database.getConnection().use { connection ->
             val fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId)

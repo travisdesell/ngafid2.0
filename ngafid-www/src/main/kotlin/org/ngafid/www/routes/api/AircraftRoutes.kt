@@ -23,18 +23,18 @@ object AircraftRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/aircraft") {
-                path("/system-id") {
+                path("system-id") {
                     get(AircraftRoutes::getAllSystemIds, Role.LOGGED_IN)
-                    patch("/{sid}", AircraftRoutes::patchSystemId, Role.LOGGED_IN)
+                    patch("{sid}", AircraftRoutes::patchSystemId, Role.LOGGED_IN, Role.UPLOADER_ONLY)
                 }
 
-                path("/sim-aircraft") {
+                path("sim-aircraft") {
                     get(AircraftRoutes::getAllSimAircraft, Role.LOGGED_IN)
                     post(AircraftRoutes::postSimAircraft, Role.LOGGED_IN)
                     delete(AircraftRoutes::deleteSimAircraft, Role.LOGGED_IN)
                 }
 
-                RouteUtility.getStat("/count", { ctx, stats -> ctx.json(stats.numberAircraft()) })
+                RouteUtility.getStat("count", { ctx, stats -> ctx.json(stats.numberAircraft()) })
             }
         }
     }
@@ -91,9 +91,6 @@ object AircraftRoutes : RouteProvider() {
             Flight.removeSimAircraft(connection, fleetId, path)
             ctx.json(Flight.getSimAircraft(connection, fleetId))
         }
-
-
-        ctx.json("FAILURE")
     }
 
     fun patchSystemId(ctx: Context) {
@@ -103,13 +100,6 @@ object AircraftRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             val user = SessionUtility.getUser(ctx)
             val fleetId = user.fleetId
-
-            // check to see if the user has upload access for this fleet.
-            if (!user.hasUploadAccess(fleetId)) {
-                ctx.status(401)
-                ctx.result("User did not have access to view imports for this fleet.")
-                return
-            }
 
             Tails.updateTail(connection, fleetId, systemId, tail)
             ctx.json(UpdateTailResponse(fleetId, systemId, tail, 1))

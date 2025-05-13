@@ -3,6 +3,7 @@ package org.ngafid.www.routes.api
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import io.javalin.http.NotFoundResponse
 import io.javalin.http.pathParamAsClass
 import io.javalin.openapi.*
 import org.ngafid.core.Database
@@ -13,8 +14,6 @@ import org.ngafid.core.accounts.User
 import org.ngafid.core.util.SendEmail
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
-import org.ngafid.www.routes.status.NotFoundException
-import org.ngafid.www.routes.status.UnauthorizedException
 import java.net.URLEncoder
 import java.util.*
 
@@ -23,10 +22,10 @@ object UserRoutes : RouteProvider() {
         app.router.apiBuilder {
             path("/api/user") {
                 get(UserRoutes::getAll, Role.LOGGED_IN)
-                post("/invite", UserRoutes::postSendUserInvite, Role.LOGGED_IN)
-                RouteUtility.getStat("/count") { ctx, stats -> ctx.json(stats.numberUsers()) }
+                post("invite", UserRoutes::postSendUserInvite, Role.LOGGED_IN)
+                RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.numberUsers()) }
 
-                path("/me") {
+                path("me") {
                     // Get currently logged in account
                     get(UserRoutes::getMe, Role.LOGGED_IN)
 
@@ -39,20 +38,20 @@ object UserRoutes : RouteProvider() {
                     // TODO: get all fleets user has access to.
                     // get("/fleet-access", ..., Role.LOGGED_IN)
 
-                    get("/metric-prefs", UserRoutes::getMetricPreferencesMe, Role.LOGGED_IN)
-                    patch("/metric-prefs", UserRoutes::patchMetricPreferencesMe, Role.LOGGED_IN)
-                    put("/metric-prefs/precision", UserRoutes::putMetricPrecisionMe, Role.LOGGED_IN)
+                    get("metric-prefs", UserRoutes::getMetricPreferencesMe, Role.LOGGED_IN)
+                    patch("metric-prefs", UserRoutes::patchMetricPreferencesMe, Role.LOGGED_IN)
+                    put("metric-prefs/precision", UserRoutes::putMetricPrecisionMe, Role.LOGGED_IN)
 
-                    get("/email-prefs", UserRoutes::getEmailPreferencesMe, Role.LOGGED_IN)
-                    put("/email-prefs", UserRoutes::putEmailPreferencesMe, Role.LOGGED_IN)
+                    get("email-prefs", UserRoutes::getEmailPreferencesMe, Role.LOGGED_IN)
+                    put("email-prefs", UserRoutes::putEmailPreferencesMe, Role.LOGGED_IN)
                 }
 
 
-                path("/{uid}") {
-                    get(UserRoutes::getOne, Role.LOGGED_IN)
-                    get("/email-prefs", UserRoutes::getUserEmailPreferences, Role.LOGGED_IN)
-                    put("/email-prefs", UserRoutes::putUserEmailPreferences, Role.LOGGED_IN)
-                    patch("/fleet-access", UserRoutes::patchUserFleetAccess, Role.LOGGED_IN)
+                path("{uid}") {
+                    get(UserRoutes::getOne, Role.LOGGED_IN, Role.MANAGER_ONLY)
+                    get("email-prefs", UserRoutes::getUserEmailPreferences, Role.LOGGED_IN)
+                    put("email-prefs", UserRoutes::putUserEmailPreferences, Role.LOGGED_IN)
+                    patch("fleet-access", UserRoutes::patchUserFleetAccess, Role.LOGGED_IN)
                 }
 
             }
@@ -300,18 +299,14 @@ object UserRoutes : RouteProvider() {
     )
     fun getOne(ctx: Context) {
         val currentUser = SessionUtility.getUser(ctx)
-        var targetUser = ctx.pathParam("uid").toInt()
-
-        if (!currentUser.fleetAccessType.equals(FleetAccess.MANAGER)) {
-            throw UnauthorizedException()
-        }
+        val targetUser = ctx.pathParam("uid").toInt()
 
         Database.getConnection().use { connection ->
             val fleetUsers = Fleet.get(connection, currentUser.fleetId).getUsers(connection)
             val user = fleetUsers.find { fleetUser -> fleetUser.id == targetUser }
 
             if (user == null) {
-                throw NotFoundException()
+                throw NotFoundResponse("No user with id $targetUser")
             } else {
                 ctx.json(user)
             }

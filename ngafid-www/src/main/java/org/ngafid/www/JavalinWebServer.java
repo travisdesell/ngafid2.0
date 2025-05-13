@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
+import io.javalin.http.UnauthorizedResponse;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinGson;
 import io.javalin.openapi.JsonSchemaLoader;
@@ -15,12 +16,11 @@ import io.javalin.security.RouteRole;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.core.Database;
+import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.routes.*;
 import org.ngafid.www.routes.api.*;
-import org.ngafid.www.routes.status.NotFoundException;
-import org.ngafid.www.routes.status.UnauthorizedException;
 
 import java.io.File;
 import java.sql.Connection;
@@ -170,18 +170,28 @@ public class JavalinWebServer extends WebServer {
 
             if (roles.contains(Role.LOGGED_IN)) {
                 if (user == null) {
-                    ctx.sessionAttribute("previous_uri", ctx.url() + (ctx.queryString() != null ? "?" + ctx.queryString() : ""));
-                    ctx.redirect("/access_denied");
-                } else {
-                    if (!ctx.path().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
-                        ctx.redirect("/protected/waiting");
-                    } else if (ctx.sessionAttribute("previous_uri") != null) {
-                        ctx.redirect(ctx.sessionAttribute("previous_uri"));
-                        ctx.sessionAttribute("previous_uri", null);
-                    }
+                    throw new UnauthorizedResponse("Not logged in.");
+                } else if (!user.hasViewAccess(user.getFleetId())) {
+                    throw new UnauthorizedResponse("User does not have view access.");
+                }
+
+                String accessType = user.getFleetAccessType();
+
+                if (roles.contains(Role.MANAGER_ONLY)) {
+                    if (!accessType.equals(FleetAccess.MANAGER))
+                        throw new UnauthorizedResponse("Manager access is required.");
+                }
+
+                if (roles.contains(Role.UPLOADER_ONLY)) {
+                    if (!accessType.equals(FleetAccess.UPLOAD) && !accessType.equals(FleetAccess.MANAGER))
+                        throw new UnauthorizedResponse("Uploader access is required.");
+                }
+
+                if (roles.contains(Role.ADMIN_ONLY)) {
+                    if (!user.isAdmin())
+                        throw new UnauthorizedResponse("Admin access is required.");
                 }
             }
-
         });
 
         app.before("/protected/*", ctx -> {
@@ -221,16 +231,11 @@ public class JavalinWebServer extends WebServer {
             }
         });
 
-        app.exception(UnauthorizedException.class, (e, ctx) -> {
-            LOG.info("Detected unauthorized access to route: " + ctx.path());
+        // will only execute of a more specific handler is not found
+        app.exception(Exception.class, (e, ctx) -> {
+            LOG.info("Encountered exception: " + e.getMessage());
             e.printStackTrace();
-            ctx.status(401);
-        });
-
-        app.exception(NotFoundException.class, (e, ctx) -> {
-            LOG.info("Attempted access to a resource that does not exist: " + ctx.path());
-            e.printStackTrace();
-            ctx.status(404);
+            ctx.json(new ErrorResponse(e));
         });
     }
 

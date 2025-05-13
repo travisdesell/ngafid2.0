@@ -18,7 +18,7 @@ object FilterRoutes : RouteProvider() {
                 post(FilterRoutes::postStoreFilter, Role.LOGGED_IN)
 
                 // fid is the filter name
-                path("/{fid}") {
+                path("{fid}") {
                     delete(FilterRoutes::deleteFilter, Role.LOGGED_IN)
                     put(FilterRoutes::putFilter, Role.LOGGED_IN)
                 }

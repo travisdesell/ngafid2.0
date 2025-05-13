@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import io.javalin.http.NotFoundResponse
 import org.ngafid.core.Database
 import org.ngafid.core.accounts.User
 import org.ngafid.core.flights.Flight
@@ -12,8 +13,6 @@ import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.Role
 import org.ngafid.www.routes.RouteProvider
 import org.ngafid.www.routes.SessionUtility
-import org.ngafid.www.routes.status.NotFoundException
-import org.ngafid.www.routes.status.UnauthorizedException
 import java.sql.SQLException
 import java.util.*
 
@@ -23,7 +22,7 @@ object TagRoutes : RouteProvider() {
             path("/api/tag") {
                 get(TagRoutes::getTags, Role.LOGGED_IN)
                 post(TagRoutes::postCreateTag, Role.LOGGED_IN)
-                path("/{tid}") {
+                path("{tid}") {
                     patch(TagRoutes::postEditTag, Role.LOGGED_IN)
                     delete(TagRoutes::deleteTag, Role.LOGGED_IN)
                 }
@@ -83,12 +82,8 @@ object TagRoutes : RouteProvider() {
         val tagId = ctx.pathParam("tid").toInt()
 
         Database.getConnection().use { connection ->
-            // check to see if the user has access to this data
-            if (!user.hasFlightAccess(connection, flightId))
-                throw UnauthorizedException()
-
             if (Flight.getFlight(connection, flightId) == null)
-                throw NotFoundException()
+                throw NotFoundResponse("Flight with id $flightId not found.")
 
             val tag = Flight.getTag(connection, tagId)
             Flight.deleteTag(tagId, connection)
