@@ -1,6 +1,6 @@
 import 'bootstrap';
 
-import React, {Component} from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import {errorModal} from "./error_modal.js";
 import $ from 'jquery';
