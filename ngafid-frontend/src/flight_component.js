@@ -1329,6 +1329,8 @@ class Flight extends React.Component {
             $('[data-bs-toggle="tooltip"]').tooltip()
         })
 
+        //  console.log("Rendering Airframe Component: ", flightInfo);
+
         return (
             <div className="card mb-1" style={{backgroundColor:"var(--c_entry_bg)"}}>
                 <div className="">
@@ -1375,8 +1377,8 @@ class Flight extends React.Component {
                                         <div>
                                             ◦&nbsp;
                                             {
-                                                (flightInfo.airframeName!=null && flightInfo.airframeName!="")
-                                                ? <a>{flightInfo.airframeName}</a>
+                                                (flightInfo.airframe.name!=null && flightInfo.airframe.name!="")
+                                                ? <a>{flightInfo.airframe.name}</a>
                                                 : <a style={styleEmptyCell}>No Airframe Name...</a>
                                             }
                                         </div>
