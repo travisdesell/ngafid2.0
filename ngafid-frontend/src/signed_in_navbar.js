@@ -129,8 +129,8 @@ class SignedInNavbar extends React.Component {
         let filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
         let cesiumButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.cesiumVisible && "active"}`;
-        let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
-        let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let plotButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.plotVisible && "active"}`;
+        let mapButtonClasses = `p-1 expand-import-button btn btn-outline-secondary ${this.props.mapVisible && "active"}`;
 
         const buttonStyle = {minWidth: "2.5em", minHeight: "2.5em"};
         const buttonStyleSmall = {width: "2.40em", height: "2.40em", fontSize: "0.8em"};
@@ -216,12 +216,10 @@ class SignedInNavbar extends React.Component {
                             {/* Flight Page Orientation Button */}
                             {
                                 (this.props.showFlightPageOrientationButton) &&
-                                <button
-                                    id="flight-page-orientation-button"
+                                <button id="flight-page-orientation-button"
                                     className="p-1 expand-import-button btn btn-outline-secondary text-center mr-1"
                                     data-bs-toggle="button"
                                     title="Toggle the Flight Page Orientation"
-                                    aria-pressed="false"
                                     style={buttonStyleSmall}
                                     onClick={() => this.props.toggleOrientation()}
                                 >
@@ -232,10 +230,13 @@ class SignedInNavbar extends React.Component {
                             {/* Filter Button */}
                             {
                                 (this.props.filterVisible) &&
-                                <button id="filter-toggle-button" className={filterButtonClasses}
-                                        data-bs-toggle="button" title="Toggle the Filter"
-                                        aria-pressed={this.props.filterSelected} style={buttonStyle}
-                                        onClick={() => this.props.toggleFilter()}>
+                                <button id="filter-toggle-button"
+                                    className={filterButtonClasses}
+                                    data-bs-toggle="button"
+                                    title="Toggle the Filter"
+                                    style={buttonStyle}
+                                    onClick={() => this.props.toggleFilter()}
+                                >
                                     <i className="fa fa-search p-1"/>
                                 </button>
                             }
@@ -243,9 +244,12 @@ class SignedInNavbar extends React.Component {
                             {/* Plot Button */}
                             {
                                 (this.props.showPlotButton) &&
-                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button"
-                                        title="Toggle the Plot" aria-pressed={this.props.plotVisible}
-                                        style={buttonStyle} onClick={() => this.props.togglePlot()}>
+                                <button id="plot-toggle-button"
+                                    className={plotButtonClasses}
+                                    data-bs-toggle="button"
+                                    title="Toggle the Plot"
+                                    style={buttonStyle} onClick={() => this.props.togglePlot()}
+                                >
                                     <i className="fa fa-area-chart p-1"/>
                                 </button>
                             }
@@ -253,9 +257,14 @@ class SignedInNavbar extends React.Component {
                             {/* Cesium Button */}
                             {
                                 (this.props.showCesiumButton) &&
-                                <button id="cesium-toggle-button" className={cesiumButtonClasses} data-toggle="button"
-                                        title="Toggle the Cesium Map" aria-pressed={this.props.cesiumVisible}
-                                        style={buttonStyle} onClick={() => this.props.toggleCesium()}>
+                                <button id="cesium-toggle-button"
+                                    className={cesiumButtonClasses}
+                                    data-toggle="button"
+                                    title="Toggle the Cesium Map"
+                                    aria-pressed={this.props.cesiumVisible}
+                                    style={buttonStyle}
+                                    onClick={() => this.props.toggleCesium()}
+                                >
                                     <i className="fa fa-globe p-1"/>
                                 </button>
                             }
@@ -265,11 +274,14 @@ class SignedInNavbar extends React.Component {
                                 (this.props.showMapButton) &&
                                 <div className="input-group m-0 h-100">
                                     <div className="input-group-prepend">
-                                        <button id="map-toggle-button" className={mapButtonClasses}
-                                                data-bs-toggle="button" title="Toggle the 2D Map"
-                                                aria-pressed={this.props.mapVisible} style={buttonStyle}
-                                                onClick={() => this.props.toggleMap()}
-                                                disabled={this.props.disableMapButton}>
+                                        <button id="map-toggle-button"
+                                            className={mapButtonClasses}
+                                            data-bs-toggle="button"
+                                            title="Toggle the 2D Map"
+                                            style={buttonStyle}
+                                            onClick={() => this.props.toggleMap()}
+                                            disabled={this.props.disableMapButton}
+                                        >
                                             <i className="fa fa-map-o p-1"/>
                                         </button>
                                     </div>
