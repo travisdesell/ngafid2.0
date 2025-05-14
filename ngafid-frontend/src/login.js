@@ -235,7 +235,7 @@ class LoginModal extends React.Component {
 
                     <div className="d-flex justify-content-end">
                         <div className="p-2">
-                            <a href="/ngafid-frontend/src/forgot_password">Forgot Password?</a>
+                            <a href="/forgot_password">Forgot Password?</a>
                         </div>
                     </div>
 

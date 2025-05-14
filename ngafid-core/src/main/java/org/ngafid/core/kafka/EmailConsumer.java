@@ -68,9 +68,11 @@ public class EmailConsumer {
 
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(10000));
+                LOG.info("Received " + records.count() + " emails to send from Kafka topic(s)");
                 for (String topic : topics) {
                     List<ConsumerRecord<String, String>> emails = IteratorUtils.<ConsumerRecord<String, String>>toList(records.records(topic).iterator());
                     List<SendEmail.Email> converted = emails.stream().map(ConsumerRecord::value).map(x -> {
+                        LOG.info("Email = " + x);
                         try {
                             return objectMapper.readValue(x, SendEmail.Email.class);
                         } catch (JsonProcessingException e) {
