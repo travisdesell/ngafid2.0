@@ -1436,15 +1436,15 @@ class Flight extends React.Component {
 
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
 
-                                            <button className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
+                                            <button className={buttonClasses} style={styleButton} id={`plotToggle-${this.props.flightInfo.id}`} data-bs-toggle="button" onClick={() => this.plotClicked()}>
                                                 <i className="fa fa-area-chart p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses + globeClasses} title={globeTooltip} id={"cesiumToggle-" + this.props.flightInfo.id} data-bs-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
+                                            <button className={buttonClasses + globeClasses} title={globeTooltip} id={`cesiumToggle-${this.props.flightInfo.id}`} aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
                                                 <i className="fa fa-globe p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} data-bs-toggle="button" aria-pressed="false" onClick={() => this.mapClicked()}>
+                                            <button className={buttonClasses} style={styleButton} id={`mapToggle-${this.props.flightInfo.id}`} data-bs-toggle="button" onClick={() => this.mapClicked()}>
                                                 <i className="fa fa-map-o p-1"/>
                                             </button>
                                         </div>
