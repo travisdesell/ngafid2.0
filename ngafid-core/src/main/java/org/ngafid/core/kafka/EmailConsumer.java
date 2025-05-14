@@ -68,7 +68,7 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
 
     @Override
     protected long getMaxPollIntervalMS() {
-        return 10 * 60 * 1000;
+        return 5 * 60 * 1000;
     }
 
     @Override
