@@ -7,7 +7,7 @@ import org.ngafid.airsync.AirSyncFleet;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.*;
 import org.ngafid.core.util.SendEmail;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.MustacheHandler;
 import org.ngafid.www.Navbar;
 

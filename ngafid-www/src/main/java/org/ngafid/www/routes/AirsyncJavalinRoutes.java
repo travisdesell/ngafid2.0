@@ -8,8 +8,8 @@ import org.ngafid.airsync.AirSyncImportResponse;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.uploads.Upload;
-import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.PaginationResponse;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.PaginationResponse;
 import org.ngafid.www.Navbar;
 
 import java.io.IOException;

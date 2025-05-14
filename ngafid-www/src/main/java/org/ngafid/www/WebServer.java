@@ -6,6 +6,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.util.ConvertToHTML;
 
@@ -23,6 +24,10 @@ import static org.ngafid.core.util.SendEmail.sendAdminEmails;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import io.javalin.Javalin;
+import io.javalin.json.JavalinGson; 
+
 
 
 /**
@@ -48,51 +53,114 @@ public abstract class WebServer {
     protected final Map<String, String> environment = System.getenv();
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
+
         @Override
         public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
+
             if (localDate == null) {
+
                 jsonWriter.nullValue();
                 return;
+
             }
+
             jsonWriter.value(localDate.toString());
+
         }
 
         @Override
         public LocalDateTime read(final JsonReader jsonReader) throws IOException {
+
             if (jsonReader.peek() == JsonToken.NULL) {
+
                 jsonReader.nextNull();
                 return null;
+                
             }
+
             return ZonedDateTime.parse(jsonReader.nextString()).toLocalDateTime();
+
         }
+
     }
 
     public static class OffsetDateTimeTypeAdapter extends TypeAdapter<OffsetDateTime> {
+
         private final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
         @Override
         public void write(final JsonWriter jsonWriter, final OffsetDateTime offsetDateTime) throws IOException {
+
             if (offsetDateTime == null) {
+
                 jsonWriter.nullValue();
                 return;
+
             }
+
             jsonWriter.value(formatter.format(offsetDateTime));
+
         }
 
         @Override
         public OffsetDateTime read(final JsonReader jsonReader) throws IOException {
+
             if (jsonReader.peek() == JsonToken.NULL) {
+
                 jsonReader.nextNull();
                 return null;
+
             }
+
             return OffsetDateTime.parse(jsonReader.nextString(), formatter);
+
         }
+
+    }
+
+    public static class NonFiniteDoubleAdapter extends TypeAdapter<Double> {
+
+        /*
+            Adapter to handle non-finite double values in JSON.
+
+            Covers NaN, +inf, and -inf.
+        */
+
+        @Override
+        public void write(JsonWriter jsonWriter, Double value) throws IOException {
+
+            //Got problematic value, write null
+            if (value == null || !Double.isFinite(value))
+                jsonWriter.nullValue();
+
+            //Otherwise, write the value
+            else
+                jsonWriter.value(value);
+
+        }
+
+        @Override
+        public Double read(JsonReader jsonReader) throws IOException {
+
+            if (jsonReader.peek() == JsonToken.NULL) {
+
+                jsonReader.nextNull();
+                return Double.NaN;   // or return null, or 0.0, or throw …
+
+            }
+
+            return jsonReader.nextDouble();
+
+        }
+        
     }
 
     public static final Gson gson = new GsonBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
             .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
+            .registerTypeAdapter(Double.class, new NonFiniteDoubleAdapter())
+            .registerTypeAdapter(double.class, new NonFiniteDoubleAdapter())
             .create();
 
     static {
