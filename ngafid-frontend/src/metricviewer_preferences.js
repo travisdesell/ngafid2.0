@@ -200,7 +200,7 @@ class MetricViewerSettings extends React.Component {
                     <div className="col" style={{padding:"0 0 0 0"}}>
                         <div className="card card-alt">
                             <h6 className="card-header">
-                                Your Flight Metric Viewer Preferences:
+                                Your Flight Metric Viewer Preferences
                             </h6>
                             <div className="form-group" style={formGroupStyle}>
                             {metricsRow}
