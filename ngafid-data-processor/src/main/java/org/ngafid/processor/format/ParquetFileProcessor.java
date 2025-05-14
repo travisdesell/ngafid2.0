@@ -6,6 +6,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.io.InputFile;
+import org.jline.utils.Log;
 import org.ngafid.core.flights.*;
 import org.ngafid.core.util.MD5;
 import org.ngafid.core.util.TimeUtils;
@@ -59,7 +60,8 @@ public class ParquetFileProcessor {
                 flightCounter++;
 
                 // How many flights we are processing (testing). Each record is a flight
-                //  if (flightCounter > 10) break;
+               // Log.info("Breaking statement set to 20");
+               // if (flightCounter > 1000) break;
 
             }
         } catch (IOException | FatalFlightFileException e) {

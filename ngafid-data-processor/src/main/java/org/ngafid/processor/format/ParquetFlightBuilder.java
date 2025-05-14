@@ -24,9 +24,8 @@ public class ParquetFlightBuilder extends FlightBuilder {
         List<ComputeStep.Factory> parquetSteps = List.of(
                 required(ComputeStartEndTime::new),
                 ComputeAltAGL::new,
-                ComputeAirportProximity::new,
-                ComputeLaggedAltMSL::new
-                //Skipping steps:  ComputeTurnToFinal::new, ComputeItinerary::new, ComputeLOCI::new, ComputeTotalFuel::new, ComputeDivergence::new,  ComputeStallIndex::new,
+                ComputeAirportProximity::new
+                //Skipping steps: ComputeLaggedAltMSL::new, ComputeTurnToFinal::new, ComputeItinerary::new, ComputeLOCI::new, ComputeTotalFuel::new, ComputeDivergence::new,  ComputeStallIndex::new,
         );
 
         ArrayList<ComputeStep> steps =

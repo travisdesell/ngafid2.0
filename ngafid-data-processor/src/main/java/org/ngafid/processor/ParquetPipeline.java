@@ -2,6 +2,8 @@ package org.ngafid.processor;
 
 
 import org.apache.parquet.io.InputFile;
+import org.jline.utils.Log;
+import org.ngafid.core.Database;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.FlightProcessingException;
@@ -17,7 +19,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -40,11 +44,18 @@ public class ParquetPipeline {
     // Maps filenames to the exception that caused processing to fail (like in original Pipeline)
     private final Map<String, UploadException> flightErrors = new ConcurrentHashMap<>();
 
+    private static ForkJoinPool pool = null;
+
+
+
+
     public ParquetPipeline(Connection connection, Upload upload, Path parquetFilePath) {
         this.connection = connection;
         this.upload = upload;
         this.parquetFilePath = parquetFilePath;
     }
+
+
 
     /**
      * Main execution method for processing the Parquet file.
@@ -53,17 +64,18 @@ public class ParquetPipeline {
         LOG.info("Starting processing for Parquet file: " + parquetFilePath.toString());
 
         try {
-            processParquetFile();
+            //processParquetFileSequential();
+            processParquetFileParallel();
         } catch (UploadException e) {
             LOG.severe("Failed to process Parquet file: " + e.getMessage());
         }
 
-        errorFlights = flightErrors.size();  // Track error flights
+        errorFlights = flightErrors.size();
 
         LOG.info("Processing completed. Flights processed: Valid=" + validFlights + ", Warnings=" + warningFlights + ", Errors=" + errorFlights);
     }
 
-    private void processParquetFile() throws UploadException {
+    private void processParquetFileParallel() throws UploadException {
         LOG.info("Reading Parquet file: " + parquetFilePath.toString());
 
         try {
@@ -72,6 +84,77 @@ public class ParquetPipeline {
 
             Stream<FlightBuilder> flightStream = processor.parse();
             List<FlightBuilder> flightBuilders = flightStream.toList();
+
+            LOG.info(flightBuilders.size() + " flights extracted from Parquet file.");
+
+            if (flightBuilders.isEmpty()) {
+                LOG.warning("No valid flights extracted from Parquet file.");
+                return;
+            }
+
+            // Build flights in parallel
+            List<FlightBuilder> successfulBuilders = flightBuilders.parallelStream()
+                    .map(fb -> {
+                        try (Connection threadConn = Database.getConnection()) {
+                            fb.meta.setFleetId(upload.fleetId);
+                            fb.meta.setUploaderId(upload.uploaderId);
+                            fb.meta.setUploadId(upload.id);
+                            fb.meta.airframe = new Airframes.Airframe(threadConn, fb.meta.airframe.getName(), fb.meta.airframe.getType());
+                            fb.build(threadConn);
+                            return fb;
+                        } catch (Exception e) {
+                            LOG.severe("Error building flight " + fb.meta.filename + ": " + e.getMessage());
+                            flightErrors.put(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
+                            errorFlights++;
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (successfulBuilders.isEmpty()) {
+                LOG.severe("All flight builds failed.");
+                return;
+            }
+
+            //  Insert flights into DB (main thread)
+            final int BATCH_SIZE = 10;
+            List<Flight> buffer = new ArrayList<>(BATCH_SIZE);
+
+            for (FlightBuilder fb : successfulBuilders) {
+                buffer.add(fb.getFlight());
+
+                if (buffer.size() == BATCH_SIZE) {
+                    Flight.batchUpdateDatabase(connection, buffer);
+                    buffer.clear();
+                }
+            }
+
+            if (!buffer.isEmpty()) {
+                Flight.batchUpdateDatabase(connection, buffer);
+            }
+
+            for (FlightBuilder fb : successfulBuilders) {
+                finalizeFlight(fb);
+            }
+
+        } catch (IOException | SQLException | FlightProcessingException e) {
+            LOG.severe("Error processing Parquet file: " + e.getMessage());
+            throw new UploadException("Failed to process Parquet file: " + e.getMessage(), e, parquetFilePath.toString());
+        }
+    }
+
+
+    private void processParquetFileSequential() throws UploadException {
+        LOG.info("Reading Parquet file: " + parquetFilePath.toString());
+
+        try {
+            InputFile inputFile = new NioInputFile(parquetFilePath);
+            ParquetFileProcessor processor = new ParquetFileProcessor(connection, inputFile, parquetFilePath.getFileName().toString());
+
+            Stream<FlightBuilder> flightStream = processor.parse();
+            List<FlightBuilder> flightBuilders = flightStream.toList();
+            LOG.info( flightBuilders.size() + " flights extracted from Parquet file.");
 
             if (flightBuilders.isEmpty()) {
                 LOG.warning("No valid flights extracted from Parquet file.");
