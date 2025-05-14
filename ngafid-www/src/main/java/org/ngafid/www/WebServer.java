@@ -123,7 +123,7 @@ public abstract class WebServer {
         /*
             Adapter to handle non-finite double values in JSON.
 
-            Covers NaN, +inf, and -inf.
+            Handles NaN, +inf, and -inf.
         */
 
         @Override
@@ -142,10 +142,11 @@ public abstract class WebServer {
         @Override
         public Double read(JsonReader jsonReader) throws IOException {
 
+            //Value is null, return null
             if (jsonReader.peek() == JsonToken.NULL) {
 
                 jsonReader.nextNull();
-                return Double.NaN;   // or return null, or 0.0, or throw …
+                return null;
 
             }
 
@@ -156,12 +157,12 @@ public abstract class WebServer {
     }
 
     public static final Gson gson = new GsonBuilder()
-            .serializeSpecialFloatingPointValues()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
-            .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
-            .registerTypeAdapter(Double.class, new NonFiniteDoubleAdapter())
-            .registerTypeAdapter(double.class, new NonFiniteDoubleAdapter())
-            .create();
+        .serializeSpecialFloatingPointValues()
+        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+        .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
+        .registerTypeAdapter(Double.class, new NonFiniteDoubleAdapter())
+        .registerTypeAdapter(double.class, new NonFiniteDoubleAdapter())
+        .create();
 
     static {
         NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
