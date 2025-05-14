@@ -79,16 +79,16 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
             email = objectMapper.readValue(record.value(), SendEmail.Email.class);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            return new Pair<>(record, false);
+            return new Pair<>(record, true);
         }
 
         try (Connection connection = Database.getConnection()) {
             SendEmail.sendBatchEmail(List.of(email), connection);
-            return new Pair<>(record, true);
+            return new Pair<>(record, false);
         } catch (SQLException e) {
             LOG.info("Encountered error in upload consumer: " + e.getMessage());
             e.printStackTrace();
-            return new Pair<>(record, false);
+            return new Pair<>(record, true);
         }
     }
 }
