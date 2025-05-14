@@ -11,7 +11,7 @@ class AirSyncAuth(val key: String, val secret: String) {
 
     val hash: ByteArray
     val accessToken: AccessToken
-    val timeObtained: LocalDateTime = LocalDateTime.now()
+    var timeObtained: LocalDateTime = LocalDateTime.now()
 
     companion object {
         private var INSTANCE: AirSyncAuth? = null
@@ -75,6 +75,7 @@ class AirSyncAuth(val key: String, val secret: String) {
 
             val resp = String(respRaw).replace("access_token".toRegex(), "accessToken")
 
+            timeObtained = LocalDateTime.now()
             return Utility.OBJECT_MAPPER.readValue(
                 resp,
                 AccessToken::class.java
