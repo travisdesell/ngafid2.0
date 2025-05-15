@@ -5,7 +5,7 @@ import io.javalin.http.Context;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -100,14 +100,8 @@ public class DoubleSeriesJavalinRoutes {
             }
 
             DoubleSeries doubleSeries = new DoubleSeries(connection, flightId, name);
+            ctx.json(doubleSeries);
 
-            // System.out.println(gson.toJson(uploadDetails));
-            String output = gson.toJson(doubleSeries);
-            // need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN", "null");
-
-            ctx.contentType("application/json");
-            ctx.result(output);
         } catch (SQLException | IOException e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);

@@ -1,4 +1,4 @@
-package org.ngafid.routes;
+package org.ngafid.www;
 
 import java.util.List;
 

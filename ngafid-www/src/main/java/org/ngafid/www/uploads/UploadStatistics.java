@@ -1,4 +1,4 @@
-package org.ngafid.uploads;
+package org.ngafid.www.uploads;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

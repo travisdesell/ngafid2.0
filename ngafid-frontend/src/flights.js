@@ -1637,7 +1637,7 @@ class FlightsPage extends React.Component {
     render() {
 
         let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
-        const CESIUM_RESOLUTION_SCALE_OPTIONS = [CESIUM_RESOLUTION_PASSTHROUGH, 0.50, 1.00, 2.00, 4.00];
+        const CESIUM_RESOLUTION_SCALE_OPTIONS = [CESIUM_RESOLUTION_PASSTHROUGH, 0.50, 1.00, 2.00, /*4.00*/];
 
 
         //Oritentation Resolution

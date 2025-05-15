@@ -7,7 +7,7 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.export.*;
 import org.ngafid.core.uploads.Upload;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 
 import java.sql.Connection;
 import java.util.HashMap;

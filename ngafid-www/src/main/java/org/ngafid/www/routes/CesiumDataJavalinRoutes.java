@@ -11,7 +11,7 @@ import org.ngafid.core.event.Event;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.WebServer;
 
 import java.io.PrintWriter;

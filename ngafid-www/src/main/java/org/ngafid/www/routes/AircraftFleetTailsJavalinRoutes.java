@@ -9,7 +9,7 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Tail;
 import org.ngafid.core.flights.Tails;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
@@ -19,9 +19,11 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
+import org.ngafid.www.WebServer;
+
 public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    public static final Gson GSON = WebServer.gson;
 
     private static class UpdateTailResponse {
         private final int fleetId;
