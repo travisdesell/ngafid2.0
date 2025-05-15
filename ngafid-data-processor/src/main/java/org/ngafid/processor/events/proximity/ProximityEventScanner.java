@@ -256,7 +256,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         List<Event> allEvents = new ArrayList<>();
         for (Flight otherFlight : potentialFlights) {
-            if (otherFlight.getId() == flight.getId()) continue;
+            if (otherFlight.getId() == flight.getId()) continue; // prevent self comparison
             LOG.info("Scanning flight pair");
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));

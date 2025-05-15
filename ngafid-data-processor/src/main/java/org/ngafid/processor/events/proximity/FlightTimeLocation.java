@@ -5,7 +5,6 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Pair;
-import org.ngafid.processor.format.CSVFileProcessor;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -173,9 +172,6 @@ public final class FlightTimeLocation {
         LOG.info("Buffered overlap check: " + overlap);
         return overlap;
     }
-
-
-
 
 
     public boolean isValid() {
