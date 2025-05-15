@@ -67,10 +67,21 @@ public class ProximityEventScanner extends AbstractEventScanner {
          */
         final int startBuffer = 1;
         final int stopBuffer = 30;
+        // Expands the bounding box to address edge cases.
+        final double DEGREE_BUFFER = 0.003; // 1000 ft
 
-        if (!flightInfo.hasRegionOverlap(otherFlightInfo) || !otherFlightInfo.getSeriesData(connection)) {
+        if (!flightInfo.hasBufferedRegionOverlap(otherFlightInfo, DEGREE_BUFFER) ||
+                !otherFlightInfo.getSeriesData(connection)) {
             return List.of();
         }
+
+        //prevent self-comparison
+        if (flight.getId() == otherFlight.getId()) {
+            LOG.warning("Skipping self-comparison for flight ID " + flight.getId());
+            return List.of();
+        }
+
+
 
         // Skip the first 30 seconds as it is usually the FDR being initialized
         final int SKIP_SECONDS = 30;
@@ -107,15 +118,12 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
             final double maxDistanceFt = 1000.0;
             final double minAltitudeAgl = 50.0;
-            final double minAirspeed = 20.0;
 
             boolean distanceCheck = (distanceFt < maxDistanceFt);
             boolean altitudeCheck =
                     (flightInfo.altitudeAGL[i] >= minAltitudeAgl) && (otherFlightInfo.altitudeAGL[j] >= minAltitudeAgl);
-            boolean airspeedCheck =
-                    (flightInfo.indicatedAirspeed[i] > minAirspeed) && (otherFlightInfo.indicatedAirspeed[j] > minAirspeed);
 
-            if (distanceCheck && altitudeCheck && airspeedCheck) {
+            if (distanceCheck && altitudeCheck) {
 
                 // If an exceedence is not being tracked, startTime is null
                 if (startTime == null) {
@@ -248,6 +256,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         List<Event> allEvents = new ArrayList<>();
         for (Flight otherFlight : potentialFlights) {
+            if (otherFlight.getId() == flight.getId()) continue;
             LOG.info("Scanning flight pair");
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));
