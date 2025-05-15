@@ -553,9 +553,8 @@ public class AnalysisJavalinRoutes {
             }
 
             final Coordinates coordinates = new Coordinates(connection, flightId);
-            final String output = GSON.toJson(coordinates).replaceAll("NaN", "null");
+            ctx.json(coordinates);
 
-            ctx.json(output);
         } catch (Exception e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);

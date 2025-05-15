@@ -100,14 +100,8 @@ public class DoubleSeriesJavalinRoutes {
             }
 
             DoubleSeries doubleSeries = new DoubleSeries(connection, flightId, name);
+            ctx.json(doubleSeries);
 
-            // System.out.println(gson.toJson(uploadDetails));
-            String output = gson.toJson(doubleSeries);
-            // need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN", "null");
-
-            ctx.contentType("application/json");
-            ctx.result(output);
         } catch (SQLException | IOException e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
