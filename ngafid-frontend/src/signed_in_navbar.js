@@ -10,6 +10,8 @@ import {DarkModeToggle} from "./dark_mode_toggle.js";
 var activePage = "";
 
 
+import './index.css';
+
 
 
 class NavLink extends React.Component {
@@ -18,13 +20,17 @@ class NavLink extends React.Component {
 
         console.log("Rendering navlink: '" + this.props.name + "'");
 
-        const name = this.props.name;
-        const hidden = this.props.hidden;
-        const icon = this.props.icon;
-        let active = this.props.active;
+        const {
+            active,
+            hidden,
+            icon,
+            name,
+        } = this.props;
 
-        let onClick = this.props.onClick;
-        let href = this.props.href;
+        let {
+            onClick,
+            href
+        } = this.props;
 
         //Handle undefined href
         if (typeof href == 'undefined')
@@ -49,22 +55,51 @@ class NavLink extends React.Component {
 }
 
 class DropdownLink extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
     render() {
-        const name = this.props.name;
-        const hidden = this.props.hidden;
 
-        let onClick = this.props.onClick;
-        let href = this.props.href;
+        const {
+            name,
+            hidden,
+            icon,
+        } = this.props;
 
-        if (typeof href == 'undefined') href = "#!";
-        //make unclick an empty function if its not defined
-        if (typeof onClick == 'undefined') onClick = function () {
-        };
+        let {
+            onClick,
+            href
+        } = this.props;
+
+        //Handle undefined href
+        if (typeof href == 'undefined')
+            href = "#!";
+        
+        //onClick is undefined, make it an empty function
+        if (typeof onClick == 'undefined')
+            onClick = () => { /*...*/ };
 
         return (
-            <a className="dropdown-item" href={href} hidden={hidden} onClick={() => onClick()}
-               style={{color: "var(--c_text)"}}>
-                {name}
+            <a
+                className="dropdown-item w-full! flex! flex-row! items-center"
+                href={href} hidden={hidden}
+                onClick={() => onClick()}
+                style={{color: "var(--c_text)"}}
+            >
+                {/* Item Icon */}
+                {
+                    (icon !== undefined) &&
+                    <div className="table-cell align-middle opacity-50">
+                        <i className={`fa fa-fw ${icon} text-center block`} aria-hidden="true"/>
+                    </div>
+                }
+
+                {/* Item Name */}
+                <div className="ml-auto table-cell align-top">
+                    {name}
+                </div>
             </a>
         );
     }
@@ -426,6 +461,8 @@ class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"/>
                                 <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>
+                                <div className="dropdown-divider"/>
+                                <DropdownLink name={"Report a Bug"} icon={"fa-bug"} hidden={false} href="/protected/bug_report"/>
                                 <div className="dropdown-divider"/>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>
