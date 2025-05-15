@@ -56,7 +56,7 @@ class AirSyncAuth(val key: String, val secret: String) {
     }
 
     fun isOutdated(): Boolean {
-        return LocalDateTime.now().isBefore(timeObtained.plusMinutes(60))
+        return !LocalDateTime.now().isBefore(timeObtained.plusMinutes(60))
     }
 
     /**

@@ -160,6 +160,8 @@ public class AirSyncFleet extends Fleet {
             }
         }
 
+        AirSyncAuth.Companion.refreshInstance();
+
         if (fleets == null || fleets.length != asFleetCount) {
             sql = "SELECT fl.id, fl.fleet_name, sync.airsync_fleet_name, sync.api_key, sync.api_secret, sync" +
                     ".last_upload_time, sync.timeout FROM fleet AS fl " +
@@ -255,11 +257,11 @@ public class AirSyncFleet extends Fleet {
      *
      * @param connection the DBMS connection
      * @return true if the fleet is out of date, false otherwise
-     * @throws SQLException if there is a DBMS issue
+     * @throws SQLException
      */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
         return (Duration.between(
-                getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection)
+                getLastQueryTime(connection), LocalDateTime.now()).toSeconds() >= getTimeout(connection)
         );
     }
 
@@ -385,10 +387,10 @@ public class AirSyncFleet extends Fleet {
 
             List<AirSyncAccount> accounts = AirSyncAccount.getAirSyncAccounts(this);
             AirSyncAccount account = accounts.stream().filter(ac -> ac.name.equals(airsyncFleetName)).findFirst().orElse(null);
+
             if (account == null) {
                 this.aircraft = List.of();
             } else {
-
                 this.aircraft = aircrafts.stream()
                         .filter(aircraft -> aircraft.accountToken.equals(account.accountToken))
                         .toList();
@@ -468,7 +470,7 @@ public class AirSyncFleet extends Fleet {
 
         AirSyncFleetUpdater() throws IOException {
             aircraft = getAircraft();
-
+            LOG.info("Updating " + aircraft.size() + " aircraft");
             for (AirSyncAircraft a : aircraft) {
                 LOG.info(OBJECT_MAPPER.writeValueAsString(a));
             }
