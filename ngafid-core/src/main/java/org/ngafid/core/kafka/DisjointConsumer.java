@@ -105,6 +105,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
 
                 var records = consumer.poll(Duration.ofMillis(consumerWaitTimeMS));
                 if (!records.isEmpty()) {
+                    LOG.info("Received " + records.count() + " from topic(s).");
                     taskQueue.put(records);
                 }
 
@@ -163,6 +164,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
 
                     preProcess(records);
                     for (var record : records) {
+                        LOG.info("Record: " + record.topic() + ": " + record.partition() + ": " + record.offset() + ": " + record.value());
                         var result = process(record);
                         recordList.add(result.first());
                         retry[i++] = result.second();

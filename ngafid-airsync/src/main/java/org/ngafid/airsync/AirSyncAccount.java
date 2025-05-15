@@ -35,7 +35,7 @@ public class AirSyncAccount {
                 "/accounts").openConnection();
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
-        netConnection.setRequestProperty("Authorization", authentication.bearerString());
+        netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
         byte[] respRaw;
         try (InputStream is = netConnection.getInputStream()) {

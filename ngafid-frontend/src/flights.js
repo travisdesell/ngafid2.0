@@ -426,10 +426,8 @@ class FlightsPage extends React.Component {
             filterVisible: true,
             filterSelected: true,
             plotVisible: false,
-            plotSelected: false,
             mapVisible: false,
             cesiumVisible: false,
-            mapSelected: false,
             mapStyle: "Road",
             flightsRef: React.createRef(),
             layers: [],
@@ -1639,7 +1637,7 @@ class FlightsPage extends React.Component {
     render() {
 
         let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
-        const CESIUM_RESOLUTION_SCALE_OPTIONS = [CESIUM_RESOLUTION_PASSTHROUGH, 0.50, 1.00, 2.00, 4.00];
+        const CESIUM_RESOLUTION_SCALE_OPTIONS = [CESIUM_RESOLUTION_PASSTHROUGH, 0.50, 1.00, 2.00, /*4.00*/];
 
 
         //Oritentation Resolution
@@ -1963,8 +1961,6 @@ class FlightsPage extends React.Component {
                         cesiumVisible={this.state.cesiumVisible}
                         mapVisible={this.state.mapVisible}
                         filterSelected={this.state.filterSelected}
-                        plotSelected={this.state.plotSelected}
-                        mapSelected={this.state.mapSelected}
                         mapStyle={this.state.mapStyle}
                         toggleOrientation={() => this.toggleOrientation()}
                         togglePlot={() => this.togglePlot()}

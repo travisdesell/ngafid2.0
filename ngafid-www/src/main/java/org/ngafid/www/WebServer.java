@@ -13,10 +13,12 @@ import org.ngafid.core.util.ConvertToHTML;
 import java.io.*;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -175,7 +177,6 @@ public abstract class WebServer {
         //     sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
         // }));
     }
-
 
 
     public WebServer(int port, String staticFilesLocation) {

@@ -42,7 +42,6 @@ public final class ImportService {
             LOG.severe(
                     "Bearer token is no longer valid (someone may have requested one elsewhere, " +
                             "or this daemon is running somewhere else!).");
-            authentication.requestAuthorization();
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);

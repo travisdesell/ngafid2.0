@@ -331,7 +331,7 @@ public final class AirSyncImport {
 
         connection.setRequestMethod("GET");
         connection.setDoOutput(true);
-        connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());
+        connection.setRequestProperty("Authorization", this.fleet.getAuth().getBearerString());
 
         try (InputStream is = connection.getInputStream()) {
             byte[] respRaw = is.readAllBytes();
@@ -374,9 +374,7 @@ public final class AirSyncImport {
         query.setInt(1, this.id);
         query.setString(2, this.aircraft.getTailNumber());
 
-        // NOTE: this is the time that we recieve the CSV, not the time
-        // that AirSync recieves it.
-        query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+        query.setTimestamp(3, Timestamp.valueOf(localDateTimeUpload));
         query.setInt(4, this.uploadId);
         query.setInt(5, this.fleet.getId());
 

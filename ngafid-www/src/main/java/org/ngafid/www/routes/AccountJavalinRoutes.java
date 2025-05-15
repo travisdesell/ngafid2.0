@@ -277,7 +277,7 @@ public class AccountJavalinRoutes {
                 LOG.info("User with email : " + email + " doesn't exist.");
                 ctx.json(new ForgotPasswordResponse("User doesn't exist in database", false));
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ForgotPasswordResponse(e.toString(), false));
         }
