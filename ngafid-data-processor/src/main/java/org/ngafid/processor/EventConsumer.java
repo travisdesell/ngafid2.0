@@ -107,7 +107,7 @@ public class EventConsumer extends DisjointConsumer<String, String> {
             Flight flight = Flight.getFlight(connection, etc.flightId());
             if (flight == null) {
                 LOG.info("Cannot compute event with definition id " + etc.eventId() + " for flight " + etc.flightId() + " because the flight does not exist in the database. Assuming this was a stale request");
-                return new Pair<>(null, false);
+                return new Pair<>(record, false);
             }
 
             EventDefinition def = eventDefinitionMap.get(etc.eventId());
