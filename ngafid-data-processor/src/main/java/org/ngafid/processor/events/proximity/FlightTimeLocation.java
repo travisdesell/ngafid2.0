@@ -9,6 +9,7 @@ import org.ngafid.core.util.filters.Pair;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 public final class FlightTimeLocation {
     //CHECKSTYLE:OFF
@@ -44,7 +45,7 @@ public final class FlightTimeLocation {
     StringTimeSeries utc;
     DoubleTimeSeries epochTime;
     //CHECKSTYLE:ON
-
+    private static final Logger LOG = Logger.getLogger(FlightTimeLocation.class.getName());
 
     public FlightTimeLocation(Connection connection, Flight flight) throws SQLException {
         this.fleetId = flight.getFleetId();
@@ -52,6 +53,8 @@ public final class FlightTimeLocation {
         this.airframeNameId = flight.getAirframeNameId();
         this.startDateTime = flight.getStartDateTime();
         this.endDateTime = flight.getEndDateTime();
+
+
 
         // first check and see if the flight had a start and end time, if not we cannot process it
         // System.out.println("Getting info for flight with start date time: " + startDateTime + " and end date time: "
@@ -63,33 +66,13 @@ public final class FlightTimeLocation {
             return;
         }
 
-        // then check and see if this was actually a flight (RPM > 800)
-        Pair<Double, Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
-        Pair<Double, Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
-
-        if ((minMaxRPM1 == null && minMaxRPM2 == null) // both RPM values are null, can't calculate exceedence
-                || (minMaxRPM2 == null && minMaxRPM1.second() < 800) // RPM2 is null, RPM1 is < 800 (RPM1 would not be
-                // null as well)
-                || (minMaxRPM1 == null && minMaxRPM2.second() < 800) // RPM1 is null, RPM2 is < 800 (RPM2 would not be
-                // null as well)
-                || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800
-                && minMaxRPM2.second() < 800))) { // RPM1 and RPM2 < 800
-            // couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
-            valid = false;
-            return;
-        }
 
         // then check and see if this flight had a latitude and longitude, if not we cannot calculate adjacency
         Pair<Double, Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
         Pair<Double, Double> minMaxLongitude = DoubleTimeSeries.getMinMax(connection, flightId, "Longitude");
 
-        // if (minMaxLatitude != null) System.out.println("min max latitude: " + minMaxLatitude.first() + ", " +
-        // minMaxLatitude.second());
-        // if (minMaxLongitude != null) System.out.println("min max longitude: " + minMaxLongitude.first() + ", " +
-        // minMaxLongitude.second());
-
         if (minMaxLatitude == null || minMaxLongitude == null) {
-            // flight didn't have latitude or longitude
+            LOG.severe("Flight" + flight.getAirframe() + "is not valid, Longitude error");
             valid = false;
             return;
         }
@@ -114,6 +97,16 @@ public final class FlightTimeLocation {
         // this flight had the necessary values and time series to calculate adjacency
         valid = true;
     }
+
+    // Constructor for testing only. Omits database connection
+    public FlightTimeLocation(double minLat, double maxLat, double minLon, double maxLon) {
+        this.minLatitude = minLat;
+        this.maxLatitude = maxLat;
+        this.minLongitude = minLon;
+        this.maxLongitude = maxLon;
+        this.valid = true;
+    }
+
 
     /**
      * Get the time series data for altitude, latitude, longitude, and indicated airspeed
@@ -152,10 +145,38 @@ public final class FlightTimeLocation {
         return true;
     }
 
-    public boolean hasRegionOverlap(FlightTimeLocation other) {
-        return other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude
-                && other.maxLongitude >= this.minLongitude && other.minLongitude <= this.maxLongitude;
+    /**
+     *  Checks whether the geographic bounding box of another flight overlaps
+     *  with this flight's bounding box after expanding this flight's box by a given buffer.
+     *  Used to identify candidate flights for proximity detection, even when
+     *  their original bounding boxes do not overlap but their flight paths may have come
+     *  close (e.g., within 1000 feet).
+     *  Checks both cases: this inside buffer of other | other inside buffer of this
+     *  Makes the method order-independent:
+     *  a.hasRegionOverlap(b, buffer) == b.hasRegionOverlap(a, buffer)
+     * @param other FlightTimeLocation
+     * @param degreeBuffer represent the desired proximity threshold (e.g. 0.003 degrees = 1000 feet)
+     * @return
+     */
+
+    public boolean hasRegionOverlap(FlightTimeLocation other, double degreeBuffer) {
+        boolean thisToOther = other.maxLatitude >= (this.minLatitude - degreeBuffer) &&
+                other.minLatitude <= (this.maxLatitude + degreeBuffer) &&
+                other.maxLongitude >= (this.minLongitude - degreeBuffer) &&
+                other.minLongitude <= (this.maxLongitude + degreeBuffer);
+
+        boolean otherToThis = this.maxLatitude >= (other.minLatitude - degreeBuffer) &&
+                this.minLatitude <= (other.maxLatitude + degreeBuffer) &&
+                this.maxLongitude >= (other.minLongitude - degreeBuffer) &&
+                this.minLongitude <= (other.maxLongitude + degreeBuffer);
+
+        boolean overlap = thisToOther || otherToThis;
+
+        LOG.info("Overlap check: " + overlap);
+        return overlap;
     }
+
+
 
     public boolean isValid() {
         return valid;
@@ -165,3 +186,4 @@ public final class FlightTimeLocation {
         return hasSeriesData;
     }
 }
+
