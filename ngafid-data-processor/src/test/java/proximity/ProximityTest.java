@@ -81,7 +81,7 @@ public class ProximityTest {
     }
 
     @Test
-    public void testNegativeCoordinatesOverlap() throws SQLException {
+    public void testNegativeCoordinatesOverlap() {
         FlightTimeLocation a = createFlight(-5, -3, -5, -3);
         FlightTimeLocation b = createFlight(-4, -2, -4, -2);
 
@@ -89,7 +89,7 @@ public class ProximityTest {
     }
 
     @Test
-    public void testNoOverlapEvenWithBuffer() throws SQLException {
+    public void testNoOverlapEvenWithBuffer() {
         FlightTimeLocation a = createFlight(0, 1, 0, 1);
         FlightTimeLocation b = createFlight(5, 6, 5, 6);
 
