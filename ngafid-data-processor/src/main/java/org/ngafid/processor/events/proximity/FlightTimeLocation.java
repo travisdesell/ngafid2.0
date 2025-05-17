@@ -172,7 +172,7 @@ public final class FlightTimeLocation {
 
         boolean overlap = thisToOther || otherToThis;
 
-        LOG.info("Buffered overlap check: " + overlap);
+        LOG.info("Overlap check: " + overlap);
         return overlap;
     }
 
