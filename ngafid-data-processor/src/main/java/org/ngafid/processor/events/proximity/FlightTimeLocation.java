@@ -98,6 +98,16 @@ public final class FlightTimeLocation {
         valid = true;
     }
 
+    // Constructor for testing only. Omits database connection
+    public FlightTimeLocation(double minLat, double maxLat, double minLon, double maxLon) {
+        this.minLatitude = minLat;
+        this.maxLatitude = maxLat;
+        this.minLongitude = minLon;
+        this.maxLongitude = maxLon;
+        this.valid = true;
+    }
+
+
     /**
      * Get the time series data for altitude, latitude, longitude, and indicated airspeed
      *
@@ -135,43 +145,37 @@ public final class FlightTimeLocation {
         return true;
     }
 
-    public boolean hasRegionOverlap(FlightTimeLocation other) {
-
-        boolean overlap = other.maxLatitude >= this.minLatitude &&
-                other.minLatitude <= this.maxLatitude &&
-                other.maxLongitude >= this.minLongitude &&
-                other.minLongitude <= this.maxLongitude;
-
-        LOG.info("Has region overlap: " + overlap);
-        return overlap;
-    }
-
     /**
      *  Checks whether the geographic bounding box of another flight overlaps
      *  with this flight's bounding box after expanding this flight's box by a given buffer.
      *  Used to identify candidate flights for proximity detection, even when
      *  their original bounding boxes do not overlap but their flight paths may have come
      *  close (e.g., within 1000 feet).
+     *  Checks both cases: this inside buffer of other | other inside buffer of this
+     *  Makes the method order-independent:
+     *  a.hasRegionOverlap(b, buffer) == b.hasRegionOverlap(a, buffer)
      * @param other FlightTimeLocation
      * @param degreeBuffer represent the desired proximity threshold (e.g. 0.003 degrees = 1000 feet)
      * @return
      */
 
-    public boolean hasBufferedRegionOverlap(FlightTimeLocation other, double degreeBuffer) {
-        double bufferedMinLat = this.minLatitude - degreeBuffer;
-        double bufferedMaxLat = this.maxLatitude + degreeBuffer;
-        double bufferedMinLon = this.minLongitude - degreeBuffer;
-        double bufferedMaxLon = this.maxLongitude + degreeBuffer;
+    public boolean hasRegionOverlap(FlightTimeLocation other, double degreeBuffer) {
+        boolean thisToOther = other.maxLatitude >= (this.minLatitude - degreeBuffer) &&
+                other.minLatitude <= (this.maxLatitude + degreeBuffer) &&
+                other.maxLongitude >= (this.minLongitude - degreeBuffer) &&
+                other.minLongitude <= (this.maxLongitude + degreeBuffer);
 
-        boolean overlap = other.maxLatitude >= bufferedMinLat &&
-                other.minLatitude <= bufferedMaxLat &&
-                other.maxLongitude >= bufferedMinLon &&
-                other.minLongitude <= bufferedMaxLon;
+        boolean otherToThis = this.maxLatitude >= (other.minLatitude - degreeBuffer) &&
+                this.minLatitude <= (other.maxLatitude + degreeBuffer) &&
+                this.maxLongitude >= (other.minLongitude - degreeBuffer) &&
+                this.minLongitude <= (other.maxLongitude + degreeBuffer);
 
+        boolean overlap = thisToOther || otherToThis;
 
         LOG.info("Buffered overlap check: " + overlap);
         return overlap;
     }
+
 
 
     public boolean isValid() {

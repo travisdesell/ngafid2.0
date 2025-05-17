@@ -70,7 +70,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
         // Expands the bounding box to address edge cases.
         final double DEGREE_BUFFER = 0.003; // 1000 ft
 
-        if (!flightInfo.hasBufferedRegionOverlap(otherFlightInfo, DEGREE_BUFFER) ||
+        if (!flightInfo.hasRegionOverlap(otherFlightInfo, DEGREE_BUFFER) ||
                 !otherFlightInfo.getSeriesData(connection)) {
             return List.of();
         }
@@ -256,12 +256,11 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         List<Event> allEvents = new ArrayList<>();
         for (Flight otherFlight : potentialFlights) {
-            if (otherFlight.getId() == flight.getId()) continue; // prevent self comparison
+            if (otherFlight.getId() <= flight.getId()) continue; // skip self or already-compared flight pairs
             LOG.info("Scanning flight pair");
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));
         }
-
         return allEvents;
     }
 
