@@ -104,7 +104,7 @@ class TrendsPage extends React.Component {
 
         return new Promise((resolve, reject) => {
             $.ajax({
-                type: 'POST',
+                type: 'GET',
                 url: '/api/event/count/monthly/by-name',
                 data: submissionData,
                 dataType: 'json',

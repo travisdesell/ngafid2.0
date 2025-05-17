@@ -14,6 +14,7 @@ export default function GetDescription(eventName) {
     $.ajax({
         type: 'GET',
         url: `/api/event/definition/by-name/${encodeURIComponent(eventName)}/description`,
+        dataType: 'text',
         success: function (response) {
             console.log("received response: " + response);
 

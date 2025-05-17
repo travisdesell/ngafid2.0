@@ -2,6 +2,7 @@ package org.ngafid.www.routes.api
 
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
+import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.UnauthorizedResponse
 import org.ngafid.core.Database
@@ -72,7 +73,8 @@ object EventRoutes : RouteProvider() {
 
     fun getEventDescription(ctx: Context): Unit =
         Database.getConnection().use { connection ->
-            ctx.json(EventDefinition.getEventDefinition(connection, ctx.pathParam("eventName")).toHumanReadable())
+            ctx.contentType(ContentType.PLAIN)
+            ctx.result(EventDefinition.getEventDefinition(connection, ctx.pathParam("eventName")).toHumanReadable())
         }
 
     fun getEventRateOfClosure(ctx: Context): Unit =

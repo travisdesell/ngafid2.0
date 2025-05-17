@@ -58,7 +58,7 @@ class SystemIdsPage extends React.Component {
 
         $.ajax({
             type: 'PATCH',
-            url: `/api/aircraft/system-id/${systemId.systemId}`,
+            url: `/api/aircraft/system-id/${encodeURIComponent(systemId.systemId)}`,
             data: {tail: systemId.tail},
             dataType: 'json',
             success: function (response) {
@@ -67,10 +67,12 @@ class SystemIdsPage extends React.Component {
 
                 systemId.confirmed = true;
                 systemId.modified = false;
+                systemId.tail = response.tail;
+                systemId.originalTail = response.tail;
 
-                systemIdsPage.setState({
-                    unconfirmedTailsCount: (systemIdsPage.state.unconfirmedTailsCount - 1)
-                });
+                systemIdsPage.state.unconfirmedTailsCount -= 1;
+                systemIdsPage.setState(systemIdsPage.state);
+                console.log(systemIdsPage.state);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating Tail Number", errorThrown);
