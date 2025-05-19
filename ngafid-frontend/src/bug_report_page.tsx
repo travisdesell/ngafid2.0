@@ -1,6 +1,7 @@
 import "bootstrap";
 
 import {errorModal} from "./error_modal.js";
+import {confirmModal} from "./confirm_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import React from 'react'
@@ -8,9 +9,15 @@ import ReactDOM from 'react-dom/client'
 
 
 import './index.css'          //<-- include Tailwind
+import { NGAFIDUser } from "./types.js";
 
 
-export default class BugReportPage extends React.Component {
+interface BugReportPageProps {
+    user: NGAFIDUser;
+}
+
+
+export default class BugReportPage extends React.Component<BugReportPageProps> {
 
     constructor(props: any) {
 
@@ -31,7 +38,9 @@ export default class BugReportPage extends React.Component {
 
         const submit = async () => {
         
-            console.log("Submitting bug report...");
+            //Get current time
+            const sendStart = new Date();
+            console.log("Submitting bug report... (" + sendStart.toLocaleString() + ")");
 
             //Fetch the bug report data
             const title = (document.getElementById("bug-title") as HTMLInputElement)
@@ -43,25 +52,25 @@ export default class BugReportPage extends React.Component {
             const includeEmail = (document.getElementById("bug-email") as HTMLInputElement)
                 .checked;
 
-            //TEST: Sleep for 2 seconds [EX]
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            //No title / description provided, exit
+            if (!title || !description) {
 
-            //No description provided, exit
-            if (!description) {
                 errorModal.show(
                     "Error Submitting Bug Report",
-                    "Please provide a description of the bug.",
+                    "Please ensure the title and description fields are filled out.",
                 );
+
                 return;
+
             }
 
-            //Append the email to the description
-            const EX_PLACEHOLDER_EMAIL = "placeholderemail@xyz.com";
+            //Append user's email to the description
+            const BUG_REPORT_EMAIL_UNKNOWN = "(Unknown Email!)";
             const body = includeEmail
-                ? `${description}\n\nEmail: ${EX_PLACEHOLDER_EMAIL ?? "Unknown"}`
+                ? `${description}\n\nSent By: ${user.email ?? BUG_REPORT_EMAIL_UNKNOWN}`
                 : description;
 
-            const SUBMIT_BUG_REPORT_URL = `/protected/submit_bug_report`;
+            const SUBMIT_BUG_REPORT_URL = `/protected/submit_bug_report_email`;
             const submissionData = {
                 title: title,
                 body: body
@@ -77,14 +86,19 @@ export default class BugReportPage extends React.Component {
                 async: true,
                 success: (response) => {
 
-                    //...
-    
-                    console.log("Bug report submitted successfully!");
-    
+                    const sendEnd = new Date();
+                    console.log("Bug report submitted successfully! (" + sendEnd.toLocaleString() + ")");
+
+                    confirmModal.show(
+                        "Bug Report Submitted",
+                        "Your bug report has been submitted successfully. Thank you for your feedback!",
+                    );
+
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
 
-                    console.warn("Error submitting bug report.");
+                    const sendEnd = new Date();
+                    console.warn("Error submitting bug report. (" + sendEnd.toLocaleString() + ")");
 
                     console.error(`jqXHR: ${jqXHR}`);
                     console.error(`textStatus: ${textStatus}`);
@@ -104,6 +118,10 @@ export default class BugReportPage extends React.Component {
 
         //Submit the bug report
         await submit();
+
+        //Sleep for X seconds
+        const BUG_REPORT_SUBMIT_DELAY_MS = 2_000;
+        await new Promise(resolve => setTimeout(resolve, BUG_REPORT_SUBMIT_DELAY_MS));
 
         //Hide the loading spinner
         $('#loading').hide();        
@@ -143,7 +161,7 @@ export default class BugReportPage extends React.Component {
                        
                         {/* Text Input Area -- Bug Title */}
                         <div className="form-group">
-                            <input type="text" className="form-control" id="bug-title" placeholder="Bug Title (Optional)"/>
+                            <input type="text" className="form-control" id="bug-title" placeholder="Bug Title (Required)"/>
                         </div>
 
                         {/* Text Input Area -- Bug Description */}
@@ -179,7 +197,8 @@ export default class BugReportPage extends React.Component {
                                 {/* Descriptive List */}
                                 <ul className="list-disc p-0 m-0 text-left italic my-auto">
                                     <li>Try to provide a brief title and detailed description</li>
-                                    <li>Use the checkbox to include your email in the report (will be publically visible)</li>
+                                    <li>Use the checkbox to include your email in the report</li>
+                                    <li>Wait up to 1 minute to confirm the report was submitted</li>
                                 </ul> 
 
                             </div>
@@ -215,7 +234,9 @@ export default class BugReportPage extends React.Component {
 }
 
 
+declare const user: NGAFIDUser; /* SERVER-INJECTED ⚠ */
+
 const root = ReactDOM.createRoot(
     document.getElementById("bug-report-page") as HTMLElement
 );
-root.render(<BugReportPage/>);
+root.render(<BugReportPage user={user}/>);  
