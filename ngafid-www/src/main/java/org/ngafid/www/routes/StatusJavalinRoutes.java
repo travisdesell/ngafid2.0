@@ -156,25 +156,9 @@ public class StatusJavalinRoutes {
 
     }
 
-    //[EX] Bug Report route, move this later
-    private static void getBugReport(Context ctx) {
-
-        final String templateFile = "bug_report_page.html";
-
-        Map<String, Object> scopes = Map.of("navbar_js", Navbar.getJavascript(ctx));
-
-        ctx.header("Content-Type", "text/html; charset=UTF-8");
-        ctx.render(templateFile, scopes);
-
-    }
-
     public static void bindRoutes(io.javalin.Javalin app) {
         // These are non-privileged routes.
         app.get("/status/{service-name}", StatusJavalinRoutes::getServiceStatus);
         app.get("/status", StatusJavalinRoutes::getStatus);
-
-        //[EX] Bug Report route, move this later
-        app.get("/protected/bug_report", StatusJavalinRoutes::getBugReport);
-
     }
 }
