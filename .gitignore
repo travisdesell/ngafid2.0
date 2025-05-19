@@ -19,3 +19,4 @@ ngafid-db/target/*
 ngafid-airsync/target
 ngafid-chart-processor/temp
 kafka_2.13-4.0.0/*
+ngafid-frontend/.webpack_cache/*
