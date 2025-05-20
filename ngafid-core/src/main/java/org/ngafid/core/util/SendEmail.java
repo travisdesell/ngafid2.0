@@ -1,11 +1,13 @@
 package org.ngafid.core.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.Database;
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.UserEmailPreferences;
 import org.ngafid.core.kafka.EmailConsumer;
+import org.ngafid.core.kafka.Topic;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -211,12 +213,8 @@ public enum SendEmail {
     public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
                                  String body, EmailType emailType) throws SQLException {
 
-        // Send the email with no existing connection
-        try (Connection connection = Database.getConnection()) {
-            LOG.info("Sending an email with a fresh SQL connection");
-            enqueueEmail(new Email(toRecipients, bccRecipients, subject, body, emailType));
-        }
-
+        LOG.info("Sending an email with a fresh SQL connection");
+        enqueueEmail(new Email(toRecipients, bccRecipients, subject, body, emailType));
     }
 
     public record Email(
@@ -228,14 +226,19 @@ public enum SendEmail {
     ) {
     }
 
-    private static KafkaProducer<String, Email> producer = null;
+    private static KafkaProducer<String, String> producer = null;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static void enqueueEmail(Email email) {
         if (producer == null) {
             producer = EmailConsumer.getProducer();
         }
 
-        producer.send(new ProducerRecord<>("email", email));
+        try {
+            producer.send(new ProducerRecord<>(Topic.EMAIL.toString(), objectMapper.writeValueAsString(email)));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void sendBatchEmail(List<Email> emails, Connection connection) throws SQLException {

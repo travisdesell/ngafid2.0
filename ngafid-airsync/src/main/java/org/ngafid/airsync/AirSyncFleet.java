@@ -1,30 +1,26 @@
-package org.ngafid.core.accounts;
+package org.ngafid.airsync;
 
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.ngafid.core.Database;
-import org.ngafid.core.airsync.AirSyncEndpoints;
-import org.ngafid.core.airsync.AirSyncImport;
+import org.ngafid.core.accounts.Fleet;
+import org.ngafid.core.accounts.User;
 import org.ngafid.core.uploads.Upload;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 
 /**
  * This is a representation of an AirSync enabled fleet in the NGAFID
@@ -33,9 +29,8 @@ public class AirSyncFleet extends Fleet {
     // 1 Day
     private static final int DEFAULT_TIMEOUT = 1440;
     private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
-    private static final Gson GSON = AirSyncImport.GSON;
     private static AirSyncFleet[] fleets = null;
-    private final AirSyncAuth authCreds;
+    private AirSyncAuth authCreds;
     private final String airsyncFleetName;
     private List<AirSyncAircraft> aircraft;
     private transient LocalDateTime lastQueryTime;
@@ -75,7 +70,7 @@ public class AirSyncFleet extends Fleet {
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         super(resultSet.getInt(1), resultSet.getString(2));
         this.airsyncFleetName = resultSet.getString(3);
-        this.authCreds = new AirSyncAuth(resultSet.getString(4), resultSet.getString(5));
+        this.authCreds = AirSyncAuth.Companion.getInstance();
 
         Timestamp timestamp = resultSet.getTimestamp(6);
         if (timestamp == null) {
@@ -164,6 +159,8 @@ public class AirSyncFleet extends Fleet {
                 return null;
             }
         }
+
+        AirSyncAuth.Companion.refreshInstance();
 
         if (fleets == null || fleets.length != asFleetCount) {
             sql = "SELECT fl.id, fl.fleet_name, sync.airsync_fleet_name, sync.api_key, sync.api_secret, sync" +
@@ -260,11 +257,11 @@ public class AirSyncFleet extends Fleet {
      *
      * @param connection the DBMS connection
      * @return true if the fleet is out of date, false otherwise
-     * @throws SQLException if there is a DBMS issue
+     * @throws SQLException
      */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
         return (Duration.between(
-                getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection)
+                getLastQueryTime(connection), LocalDateTime.now()).toSeconds() >= getTimeout(connection)
         );
     }
 
@@ -350,7 +347,8 @@ public class AirSyncFleet extends Fleet {
     public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
             LOG.info("Bearer token is out of date. Requesting a new one.");
-            this.authCreds.requestAuthorization();
+            AirSyncAuth.Companion.refreshInstance();
+            this.authCreds = AirSyncAuth.Companion.getInstance();
         }
 
         return this.authCreds;
@@ -367,7 +365,11 @@ public class AirSyncFleet extends Fleet {
 
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.authCreds.bearerString());
+            connection.setRequestProperty("Authorization", this.authCreds.getBearerString());
+
+            for (Map.Entry<String, List<String>> e : connection.getRequestProperties().entrySet()) {
+                LOG.info(e.getKey() + ": " + e.getValue().stream().reduce((a, b) -> a + ", " + b).get());
+            }
 
             byte[] respRaw;
             try (InputStream is = connection.getInputStream()) {
@@ -376,17 +378,23 @@ public class AirSyncFleet extends Fleet {
 
             String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
 
-            Type target = new TypeToken<List<AirSyncAircraft>>() {
-            }.getType();
-            System.out.println(resp);
-
-            List<AirSyncAircraft> aircrafts = GSON.fromJson(resp, target);
+            List<AirSyncAircraft> aircrafts = OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncAircraft>>() {
+            });
             for (AirSyncAircraft a : aircrafts)
                 a.initialize(this);
 
-            this.aircraft =
-                    aircrafts.stream().filter(a -> a.getAirSyncFleetName()
-                            .equals(airsyncFleetName)).collect(Collectors.toList());
+            LOG.info("airsync fleet name is uhhhh " + airsyncFleetName);
+
+            List<AirSyncAccount> accounts = AirSyncAccount.getAirSyncAccounts(this);
+            AirSyncAccount account = accounts.stream().filter(ac -> ac.name.equals(airsyncFleetName)).findFirst().orElse(null);
+
+            if (account == null) {
+                this.aircraft = List.of();
+            } else {
+                this.aircraft = aircrafts.stream()
+                        .filter(aircraft -> aircraft.accountToken.equals(account.accountToken))
+                        .toList();
+            }
         }
 
         return this.aircraft;
@@ -462,6 +470,10 @@ public class AirSyncFleet extends Fleet {
 
         AirSyncFleetUpdater() throws IOException {
             aircraft = getAircraft();
+            LOG.info("Updating " + aircraft.size() + " aircraft");
+            for (AirSyncAircraft a : aircraft) {
+                LOG.info(OBJECT_MAPPER.writeValueAsString(a));
+            }
         }
 
         Upload getUpload(Connection connection) throws SQLException {
@@ -483,25 +495,34 @@ public class AirSyncFleet extends Fleet {
         void addFileToUpload(Connection connection, AirSyncImport imp, byte[] data) throws IOException, SQLException {
             var uploadResult = getUpload(connection);
             imp.setUploadId(uploadResult.id);
+            getZipFile();
 
             try (InputStream bis = new ByteArrayInputStream(data)) {
                 var entry = new ZipArchiveEntry(imp.getFilename());
-                entry.setMethod(ZipArchiveOutputStream.DEFLATED);
-                zipFile.addRawArchiveEntry(entry, bis);
+                LOG.info("Filename: " + imp.getFilename());
+                entry.setSize(data.length);
+                zipFile.putArchiveEntry(entry);
+                zipFile.write(data);
+                zipFile.closeArchiveEntry();
             }
 
             filesAdded += 1;
 
-            if (filesAdded >= 128) {
+            if (filesAdded >= ARCHIVE_MAX_SIZE) {
                 try (Upload.LockedUpload locked = uploadResult.getLockedUpload(connection)) {
                     locked.complete();
                 }
 
                 // Create new upload + Zip file
-                uploadResult = Upload.createAirsyncUpload(connection, getId());
+                zipFile.finish();
                 zipFile.close();
+
+                upload = null;
+                getUpload(connection);
+
                 zipFile = null;
                 getZipFile();
+
                 filesAdded = 0;
             }
         }
@@ -526,10 +547,16 @@ public class AirSyncFleet extends Fleet {
                     }
                 });
 
+                LOG.info("All imports for aircraft " + OBJECT_MAPPER.writeValueAsString(ac));
+
+                for (AirSyncImport imp : allImports) {
+                    LOG.info(OBJECT_MAPPER.writeValueAsString(imp));
+                }
+
                 if (allImports.isEmpty()) return;
             }
 
-            for (var chunk : Lists.partition(allImports, 32)) {
+            for (var chunk : ListUtils.partition(allImports, 32)) {
                 var errors = new ArrayList<IOException>();
                 var downloads = chunk.parallelStream().map(imp -> {
                     try {
@@ -564,7 +591,10 @@ public class AirSyncFleet extends Fleet {
                     locked.complete();
                 }
             }
-            if (zipFile != null) zipFile.close();
+            if (zipFile != null) {
+                zipFile.finish();
+                zipFile.close();
+            }
         }
 
     }

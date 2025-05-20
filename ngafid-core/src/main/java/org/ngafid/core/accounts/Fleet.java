@@ -3,6 +3,7 @@ package org.ngafid.core.accounts;
 import java.io.Serializable;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -48,13 +49,13 @@ public class Fleet implements Serializable {
      * @return The fleet if it exists in the database, null otherwise
      * @throws SQLException If there was a query/database problem.
      */
-    public static Fleet get(Connection connection, int id) throws SQLException {
+    public static Fleet get(Connection connection, int id) throws SQLException, AccountException {
         try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet WHERE id = " + id);
              ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             if (!resultSet.next())
-                return null;
+                throw new AccountException("Fleet error", "No such fleet with id " + id);
 
             return new Fleet(id, resultSet.getString(1));
         }
@@ -68,7 +69,7 @@ public class Fleet implements Serializable {
      * @return The fleet if it exists in the database, null otherwise
      * @throws SQLException If there was a query/database problem.
      */
-    public static Fleet get(Connection connection, String name) throws SQLException {
+    public static Fleet get(Connection connection, String name) throws SQLException, AccountException {
         try (PreparedStatement query = connection.prepareStatement("SELECT id FROM fleet WHERE fleet_name = ?")) {
             query.setString(1, name);
 
@@ -76,7 +77,7 @@ public class Fleet implements Serializable {
             try (ResultSet resultSet = query.executeQuery()) {
 
                 if (!resultSet.next())
-                    return null;
+                    throw new AccountException("Fleet error", "No such fleet with name " + name);
 
                 return new Fleet(resultSet.getInt(1), name);
             }
@@ -96,7 +97,11 @@ public class Fleet implements Serializable {
             List<Fleet> fleets = new ArrayList<>();
 
             while (rs.next()) {
-                fleets.add(get(connection, rs.getInt(1)));
+                try {
+                    fleets.add(get(connection, rs.getInt(1)));
+                } catch (AccountException e) {
+                    // Shouldn't happen since we're pulling fleets with valid IDs. Safe to ignore.
+                }
             }
 
             return fleets;
@@ -157,8 +162,11 @@ public class Fleet implements Serializable {
                             "Could not get id of new fleet from database after insert.");
                 }
 
+                fleet.users = new ArrayList<>();
                 return fleet;
             }
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new AccountException("Cannot create name with duplicate name", e.getMessage());
         }
     }
 
@@ -181,9 +189,9 @@ public class Fleet implements Serializable {
     /**
      * @return the number of users waiting for access to this fleet.
      */
-    public int getWaitingUserCount() {
+    public int getWaitingUserCount(Connection connection) throws SQLException {
         int waitingUserCount = 0;
-        for (User user : users) {
+        for (User user : getUsers(connection)) {
             if (user.getFleetAccessType().equals(FleetAccess.WAITING)) {
                 waitingUserCount++;
             }
@@ -192,31 +200,30 @@ public class Fleet implements Serializable {
     }
 
     /**
-     * Populates the list of users with access to this fleet
+     * Populates the list of users with access to this fleet, except for user with id `populatorId`
      *
-     * @param connection  is a connection to the mysql database.
-     * @param populatorId is the id of the user whose populating the list of user
-     *                    for this fleet. we should not add this user to the list
-     *                    (or get them from the database) as it might end up in an
-     *                    infinite loop.
+     * @param connection is a connection to the mysql database.
      */
-
-    public void populateUsers(Connection connection, int populatorId) throws SQLException {
+    private void populateUsers(Connection connection) throws SQLException {
         LOG.info("populating users with access to fleet '" + name + "'");
         users = new ArrayList<User>();
 
         // get all the users waiting in this fleet's queue
         try (PreparedStatement query = connection
-                .prepareStatement("SELECT user_id FROM fleet_access WHERE fleet_id = ? AND user_id != ?")) {
+                .prepareStatement("SELECT user_id FROM fleet_access WHERE fleet_id = ?")) {
             query.setInt(1, this.id);
-            query.setInt(2, populatorId);
 
             try (ResultSet resultSet = query.executeQuery()) {
 
                 while (resultSet.next()) {
                     int userId = resultSet.getInt(1);
 
-                    users.add(User.get(connection, userId, this.id));
+                    try {
+                        users.add(User.get(connection, userId, this.id));
+                    } catch (AccountException e) {
+                        // These user IDs are known to be valid since they were pulled from DB.
+                        // Safe to ignore. Even if someone deletes a user while this is running, it will be a transient issue.
+                    }
                 }
             }
         }
@@ -244,5 +251,21 @@ public class Fleet implements Serializable {
 
     public String toString() {
         return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
+    }
+
+    public List<User> getUsers(Connection connection) throws SQLException {
+        if (users == null) {
+            populateUsers(connection);
+        }
+
+        return Collections.unmodifiableList(users);
+    }
+
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof Fleet otherFleet)) {
+            return false;
+        }
+
+        return id == otherFleet.getId() && name.equals(otherFleet.getName());
     }
 }

@@ -9,21 +9,36 @@ import {DarkModeToggle} from "./dark_mode_toggle.js";
 
 var activePage = "";
 
+
+import './index.css';
+
+
+
 class NavLink extends React.Component {
+
     render() {
-        const name = this.props.name;
-        const hidden = this.props.hidden;
-        const icon = this.props.icon;
-        let active = this.props.active;
 
-        let onClick = this.props.onClick;
-        let href = this.props.href;
+        console.log("Rendering navlink: '" + this.props.name + "'");
 
-        if (typeof href == 'undefined') href = "#!";
+        const {
+            active,
+            hidden,
+            icon,
+            name,
+        } = this.props;
 
-        //make onClick an empty function if its not defined
-        if (typeof onClick == 'undefined') onClick = function () {
-        };
+        let {
+            onClick,
+            href
+        } = this.props;
+
+        //Handle undefined href
+        if (typeof href == 'undefined')
+            href = "#!";
+
+        //onClick is undefined, make it an empty function
+        if (typeof onClick == 'undefined')
+            onClick = () => { /*...*/ };
 
         const classNames = (active ? "nav-item active" : "nav-item");
         const isCurrent = (active ? (<span className="sr-only">(current)</span>) : "");
@@ -40,22 +55,51 @@ class NavLink extends React.Component {
 }
 
 class DropdownLink extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
     render() {
-        const name = this.props.name;
-        const hidden = this.props.hidden;
 
-        let onClick = this.props.onClick;
-        let href = this.props.href;
+        const {
+            name,
+            hidden,
+            icon,
+        } = this.props;
 
-        if (typeof href == 'undefined') href = "#!";
-        //make unclick an empty function if its not defined
-        if (typeof onClick == 'undefined') onClick = function () {
-        };
+        let {
+            onClick,
+            href
+        } = this.props;
+
+        //Handle undefined href
+        if (typeof href == 'undefined')
+            href = "#!";
+        
+        //onClick is undefined, make it an empty function
+        if (typeof onClick == 'undefined')
+            onClick = () => { /*...*/ };
 
         return (
-            <a className="dropdown-item" href={href} hidden={hidden} onClick={() => onClick()}
-               style={{color: "var(--c_text)"}}>
-                {name}
+            <a
+                className="dropdown-item w-full! flex! flex-row! items-center"
+                href={href} hidden={hidden}
+                onClick={() => onClick()}
+                style={{color: "var(--c_text)"}}
+            >
+                {/* Item Icon */}
+                {
+                    (icon !== undefined) &&
+                    <div className="table-cell align-middle opacity-50">
+                        <i className={`fa fa-fw ${icon} text-center block`} aria-hidden="true"/>
+                    </div>
+                }
+
+                {/* Item Name */}
+                <div className="ml-auto table-cell align-top">
+                    {name}
+                </div>
             </a>
         );
     }
@@ -63,13 +107,15 @@ class DropdownLink extends React.Component {
 
 
 class SignedInNavbar extends React.Component {
+    
     constructor(props) {
+
         super(props);
 
-        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (() => {
-        });
+        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (() => {});
 
         this.infoTarget = React.createRef();
+
     }
 
     attemptLogIn() {
@@ -113,12 +159,13 @@ class SignedInNavbar extends React.Component {
             unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
 
         let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
+        console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
 
         let filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
         let cesiumButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.cesiumVisible && "active"}`;
-        let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
-        let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let plotButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.plotVisible && "active"}`;
+        let mapButtonClasses = `p-1 expand-import-button btn btn-outline-secondary ${this.props.mapVisible && "active"}`;
 
         const buttonStyle = {minWidth: "2.5em", minHeight: "2.5em"};
         const buttonStyleSmall = {width: "2.40em", height: "2.40em", fontSize: "0.8em"};
@@ -186,32 +233,28 @@ class SignedInNavbar extends React.Component {
         let analysisActive = (this.props.activePage === "ttf");
         let accountsActive = (this.props.activePage === "account");
 
-
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
-                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="../../src/main">NGAFID</a>
+                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
-                <div className="collapse navbar-collapse" id="navbarNavDropdown">
+                <div className="navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
 
-                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center"
-                            hidden={this.props.plotMapHidden}>
+                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center" hidden={this.props.plotMapHidden}>
 
                             {/* Flight Page Orientation Button */}
                             {
                                 (this.props.showFlightPageOrientationButton) &&
-                                <button
-                                    id="flight-page-orientation-button"
+                                <button id="flight-page-orientation-button"
                                     className="p-1 expand-import-button btn btn-outline-secondary text-center mr-1"
                                     data-bs-toggle="button"
                                     title="Toggle the Flight Page Orientation"
-                                    aria-pressed="false"
                                     style={buttonStyleSmall}
                                     onClick={() => this.props.toggleOrientation()}
                                 >
@@ -222,10 +265,13 @@ class SignedInNavbar extends React.Component {
                             {/* Filter Button */}
                             {
                                 (this.props.filterVisible) &&
-                                <button id="filter-toggle-button" className={filterButtonClasses}
-                                        data-bs-toggle="button" title="Toggle the Filter"
-                                        aria-pressed={this.props.filterSelected} style={buttonStyle}
-                                        onClick={() => this.props.toggleFilter()}>
+                                <button id="filter-toggle-button"
+                                    className={filterButtonClasses}
+                                    data-bs-toggle="button"
+                                    title="Toggle the Filter"
+                                    style={buttonStyle}
+                                    onClick={() => this.props.toggleFilter()}
+                                >
                                     <i className="fa fa-search p-1"/>
                                 </button>
                             }
@@ -233,9 +279,12 @@ class SignedInNavbar extends React.Component {
                             {/* Plot Button */}
                             {
                                 (this.props.showPlotButton) &&
-                                <button id="plot-toggle-button" className={plotButtonClasses} data-bs-toggle="button"
-                                        title="Toggle the Plot" aria-pressed={this.props.plotVisible}
-                                        style={buttonStyle} onClick={() => this.props.togglePlot()}>
+                                <button id="plot-toggle-button"
+                                    className={plotButtonClasses}
+                                    data-bs-toggle="button"
+                                    title="Toggle the Plot"
+                                    style={buttonStyle} onClick={() => this.props.togglePlot()}
+                                >
                                     <i className="fa fa-area-chart p-1"/>
                                 </button>
                             }
@@ -243,9 +292,14 @@ class SignedInNavbar extends React.Component {
                             {/* Cesium Button */}
                             {
                                 (this.props.showCesiumButton) &&
-                                <button id="cesium-toggle-button" className={cesiumButtonClasses} data-toggle="button"
-                                        title="Toggle the Cesium Map" aria-pressed={this.props.cesiumVisible}
-                                        style={buttonStyle} onClick={() => this.props.toggleCesium()}>
+                                <button id="cesium-toggle-button"
+                                    className={cesiumButtonClasses}
+                                    data-toggle="button"
+                                    title="Toggle the Cesium Map"
+                                    aria-pressed={this.props.cesiumVisible}
+                                    style={buttonStyle}
+                                    onClick={() => this.props.toggleCesium()}
+                                >
                                     <i className="fa fa-globe p-1"/>
                                 </button>
                             }
@@ -255,11 +309,14 @@ class SignedInNavbar extends React.Component {
                                 (this.props.showMapButton) &&
                                 <div className="input-group m-0 h-100">
                                     <div className="input-group-prepend">
-                                        <button id="map-toggle-button" className={mapButtonClasses}
-                                                data-bs-toggle="button" title="Toggle the 2D Map"
-                                                aria-pressed={this.props.mapVisible} style={buttonStyle}
-                                                onClick={() => this.props.toggleMap()}
-                                                disabled={this.props.disableMapButton}>
+                                        <button id="map-toggle-button"
+                                            className={mapButtonClasses}
+                                            data-bs-toggle="button"
+                                            title="Toggle the 2D Map"
+                                            style={buttonStyle}
+                                            onClick={() => this.props.toggleMap()}
+                                            disabled={this.props.disableMapButton}
+                                        >
                                             <i className="fa fa-map-o p-1"/>
                                         </button>
                                     </div>
@@ -289,9 +346,18 @@ class SignedInNavbar extends React.Component {
 
                     </ul>
 
-                    <ul className="navbar-nav">
+                    <ul className="navbar-nav" id="navbarPageButtons">
+
+                        {/* Home Button */}
                         <NavLink icon={"fa-home"} name={"Home"} active={homeActive} href="/protected/welcome"/>
 
+                        {/* Status Button */}
+                        {hasStatusView ?
+                            <NavLink icon={"fa-info-circle"} name={"Status"} href="/status"/>
+                            : ""
+                        }
+
+                        {/* Aggregate View Dropdown */}
                         {aggregateView ?
                             <li className="nav-item dropdown">
                                 <a className={"nav-link dropdown-toggle" + (aggregateActive ? " active" : "")}
@@ -311,6 +377,7 @@ class SignedInNavbar extends React.Component {
                             </li> : ""
                         }
 
+                        {/* Events Dropdown */}
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")}
                                style={eventsActive ? {color: "var(--c_text)"} : {}} href="#!"
@@ -337,7 +404,8 @@ class SignedInNavbar extends React.Component {
                                 }
                             </div>
                         </li>
-
+                        
+                        {/* Analysis Dropdown */}
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")}
                                style={analysisActive ? {color: "var(--c_text)"} : {}} href="#!"
@@ -353,34 +421,49 @@ class SignedInNavbar extends React.Component {
                             </div>
                         </li>
 
+                        {/* Flights Dropdown */}
                         <NavLink icon={"fa-plane"} name={"Flights"} active={this.props.activePage === "flights"}
                                  href="/protected/flights"/>
 
+                        {/* Imports Button */}
                         {importsButton}
+
+                        {/* Uploads Button */}
                         {uploadsButton}
 
+                        {/* Account Dropdown */}
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")}
-                               style={accountsActive ? {color: "var(--c_text)"} : {}} href="#!"
-                               id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
-                               aria-expanded="false">
+                            <a
+                                className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")}
+                                style={accountsActive ? {color: "var(--c_text)"} : {}} href="#!"
+                                id="navbarDropdownMenuLink"
+                                role="button"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
                                 <i className="fa fa-fw fa-user" aria-hidden="true"/>
-                                &nbsp;{"Account" + accountNotifications}{accountsActive ? (
-                                <span className="sr-only">(current)</span>) : ""}
+                                &nbsp;{"Account" + accountNotifications}
+                                {
+                                    accountsActive
+                                    ? (<span className="sr-only">(current)</span>)
+                                    : ""
+                                }
                             </a>
-                            <div className="dropdown-menu dropdown-menu-right text-right"
-                                 aria-labelledby="navbarDropdownMenuLink">
-                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden}
-                                              href="/protected/manage_fleet"/>
-                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden}
-                                              href="/protected/system_ids"/>
-                                <div className="dropdown-divider" hidden={manageHidden}></div>
-                                <DropdownLink name={"Update Password"} hidden={false}
-                                              href="/protected/update_password"/>
+                            <div
+                                className="dropdown-menu dropdown-menu-right text-right"
+                                aria-labelledby="navbarDropdownMenuLink"
+                            >
+                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
+                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden} href="/protected/system_ids"/>
+                                <div className="dropdown-divider" hidden={manageHidden}/>
+                                <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
-                                <div className="dropdown-divider"></div>
+                                <div className="dropdown-divider"/>
                                 <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>
-                                <div className="dropdown-divider"></div>
+                                <div className="dropdown-divider"/>
+                                <DropdownLink name={"Report a Bug"} icon={"fa-bug"} hidden={false} href="/protected/bug_report"/>
+                                <div className="dropdown-divider"/>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>
                         </li>

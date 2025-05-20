@@ -7,12 +7,51 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require('path');
 
 
+const isCI   = !!process.env.CI;
+const isProd = (process.env.NODE_ENV === 'production');
+const doWatch = (!isCI && !isProd);
+
+
+const { join } = require('path');
+
+
+
+class ShowChangedFilesPlugin {
+
+    apply(compiler) {
+
+        compiler.hooks.watchRun.tap('ShowChangedFiles', comp => {
+
+            //No files changed, do nothing
+            if (!comp.modifiedFiles || comp.modifiedFiles.length === 0)
+                return;
+
+            //Log the files that changed
+            console.log(
+                '\n\nChanged since last build:',
+                [...comp.modifiedFiles].join(', '),
+                "\n\n"
+            );
+
+        });
+    }
+    
+}
+
+
+
+const outputDir   = path.resolve(__dirname, '../ngafid-static/js');
+const cesiumCache = path.resolve(outputDir, 'cesium');
+const cacheDir    = path.resolve(__dirname, '.webpack_cache');
+
+
 module.exports = {
 
     mode: process.env.NODE_ENV || 'development',
-    watch: true,
+    watch: doWatch,
 
     resolve: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx'],
         fallback: {
             fs: false,
             path: false,
@@ -27,13 +66,15 @@ module.exports = {
     watchOptions: {
         ignored: [
             "/node_modules/",
-            path.resolve(__dirname, "src/main/resources/public/dist/"), //<-- Ignore built files so they aren't recompiled
+            `${outputDir}/**`,
+            `${cesiumCache}/**`,
+            "**/\.webpack_cache/**",
         ],
     },
 
     cache: {
         type: 'filesystem',
-        cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
+        cacheDirectory: cacheDir,
     },
 
     entry: {
@@ -69,9 +110,11 @@ module.exports = {
         uploads: "./src/uploads.js",
         welcome: "./src/welcome.js",
         theme_preload: "./src/theme_preload.js",
+        status: "./src/status_page.tsx",
+        bug_report: "./src/bug_report_page.tsx",
     },
 
-    devtool: "source-map",
+    devtool: (process.env.CI ? false : 'source-map'),
 
     output: {
         path: path.resolve(__dirname, "../ngafid-static/js/"),
@@ -82,12 +125,18 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/,
+                // test: /\.(js|jsx)$/,
+                test: /\.[jt]sx?$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
                         cacheDirectory: true,
+                        presets: [
+                            '@babel/preset-env',
+                            '@babel/preset-react',
+                            '@babel/preset-typescript'
+                        ]
                     }
                 },
                 include: path.resolve('src')
@@ -103,8 +152,12 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                use: ["style-loader", "css-loader"]
-            }
+                use: [
+                    'style-loader',      //<-- Injects styles into the DOM
+                    'css-loader',        //<-- Resolves @import/URL
+                    'postcss-loader',    //<-- Runs Tailwind & PostCSS
+                ],
+            },
         ]
     },
 
@@ -129,6 +182,7 @@ module.exports = {
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
-    ]
+        new ShowChangedFilesPlugin(),
+    ],
 
 };

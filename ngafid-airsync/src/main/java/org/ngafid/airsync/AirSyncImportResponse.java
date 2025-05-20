@@ -1,4 +1,4 @@
-package org.ngafid.core.airsync;
+package org.ngafid.airsync;
 
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.FlightWarning;

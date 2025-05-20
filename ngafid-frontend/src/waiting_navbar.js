@@ -92,7 +92,7 @@ class UserNavbar extends React.Component {
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
-                <div className="collapse navbar-collapse" id="navbarNavDropdown">
+                <div className="navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
                     </ul>
 

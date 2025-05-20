@@ -2,15 +2,15 @@ package org.ngafid.www.routes;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import org.ngafid.airsync.AirSyncFleet;
+import org.ngafid.airsync.AirSyncImport;
+import org.ngafid.airsync.AirSyncImportResponse;
 import org.ngafid.core.Database;
-import org.ngafid.core.accounts.AirSyncFleet;
 import org.ngafid.core.accounts.User;
-import org.ngafid.core.airsync.AirSyncImport;
-import org.ngafid.core.airsync.AirSyncImportResponse;
 import org.ngafid.core.uploads.Upload;
-import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
-import org.ngafid.routes.PaginationResponse;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.PaginationResponse;
+import org.ngafid.www.Navbar;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import static org.ngafid.airsync.AirSyncImport.getImports;
+import static org.ngafid.airsync.AirSyncImport.getNumImports;
 import static org.ngafid.core.Config.MUSTACHE_TEMPLATE_DIR;
-import static org.ngafid.core.airsync.AirSyncImport.getImports;
-import static org.ngafid.core.airsync.AirSyncImport.getNumImports;
 import static org.ngafid.www.WebServer.gson;
 import static org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.GSON;
 
@@ -195,10 +195,6 @@ public class AirsyncJavalinRoutes {
                 ctx.result("User did not have access to upload flights for this fleet.");
                 return;
             }
-
-            LOG.info("Beginning AirSync update process!");
-            String status = fleet.update(connection);
-            LOG.info("AirSync update process complete! Status: " + status);
 
             fleet.setOverride(connection, true);
 

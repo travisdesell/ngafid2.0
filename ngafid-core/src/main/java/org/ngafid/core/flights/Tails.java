@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -281,25 +280,12 @@ public final class Tails {
      * @return the number of unconfirmed tails for this fleet
      */
     public static int getUnconfirmedTailsCount(Connection connection, int fleetId) throws SQLException {
-        String queryString = "SELECT count(*) FROM tails WHERE fleet_id = " + fleetId + " AND confirmed = 0";
+        String queryString = "SELECT COALESCE(COUNT(*)) FROM tails WHERE fleet_id = " + fleetId + " AND confirmed = 0";
         try (PreparedStatement query = connection.prepareStatement(queryString);
              ResultSet resultSet = query.executeQuery()) {
-            if (resultSet.next()) {
-                return resultSet.getInt(1);
-            } else {
-                return 0;
-            }
+            resultSet.next();
+            return resultSet.getInt(1);
         }
-    }
-
-    /**
-     * Gets the total number of tails in the NGAFID.
-     *
-     * @param connection is the database connection
-     * @return the number of different tails in the fleet
-     */
-    public static int getNumberTails(Connection connection) throws SQLException {
-        return getNumberTails(connection, 0);
     }
 
     /**

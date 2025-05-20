@@ -9,10 +9,10 @@ import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Tails;
-import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
-import org.ngafid.uploads.UploadStatistics;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.uploads.UploadStatistics;
 import org.ngafid.www.EventStatistics;
+import org.ngafid.www.Navbar;
 import org.ngafid.www.flights.FlightStatistics;
 
 import java.sql.Connection;

@@ -1,0 +1,1 @@
+java -cp ngafid-www/target/ngafid-www-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.www.WebServer

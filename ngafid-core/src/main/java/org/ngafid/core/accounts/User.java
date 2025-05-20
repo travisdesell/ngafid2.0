@@ -1,8 +1,8 @@
 package org.ngafid.core.accounts;
 
-import org.apache.commons.lang.RandomStringUtils;
-import org.ngafid.core.util.SendEmail;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.ngafid.core.flights.Tails;
+import org.ngafid.core.util.SendEmail;
 
 import java.io.Serializable;
 import java.sql.*;
@@ -46,7 +46,25 @@ public final class User implements Serializable {
     private User() {
     }
 
-    private User(Connection connection, int fleetId, ResultSet resultSet) throws SQLException {
+    public User(Connection connection, int id, String email, String firstName, String lastName, String address, String city, String country, String state, String zipCode, String phoneNumber,
+                boolean admin, boolean aggregateView, int fleetId) throws SQLException, AccountException {
+        this.id = id;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.country = country;
+        this.state = state;
+        this.city = city;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.zipCode = zipCode;
+        this.admin = admin;
+        this.aggregateView = aggregateView;
+        this.fleet = Fleet.get(connection, fleetId);
+        this.fleetAccess = FleetAccess.get(connection, id, fleetId);
+    }
+
+    private User(Connection connection, int fleetId, ResultSet resultSet) throws SQLException, AccountException {
         this(resultSet);
 
         // get the access level of the user for this fleet
@@ -129,8 +147,8 @@ public final class User implements Serializable {
     /**
      * @return the number of users waiting for access to this user's fleet
      */
-    public int getWaitingUserCount() {
-        return fleet.getWaitingUserCount();
+    public int getWaitingUserCount(Connection connection) throws SQLException {
+        return fleet.getWaitingUserCount(connection);
     }
 
     /**
@@ -243,7 +261,7 @@ public final class User implements Serializable {
      * exist.
      * @throws SQLException if there was a problem with the SQL query.
      */
-    public static User get(Connection connection, int userId, int fleetId) throws SQLException {
+    public static User get(Connection connection, int userId, int fleetId) throws SQLException, AccountException {
         try (PreparedStatement query = connection.prepareStatement(USER_ROW_QUERY + " WHERE id = " + userId);
              ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
@@ -452,27 +470,37 @@ public final class User implements Serializable {
      * @param emailPreferences the {@link UserEmailPreferences} instance to store
      * @return an instance of {@link UserEmailPreferences} with all the user's email
      */
-    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId,
-                                                                  Map<String, Boolean> emailPreferences) throws SQLException {
-        String queryString = "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
-                + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)";
+    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
+
+        final String queryString =
+            "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
+            + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)"
+        ;
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
-            for (String emailType : emailPreferences.keySet()) {
+
+            for (Map.Entry<String, Boolean> entry : emailPreferences.entrySet()) {
+
                 query.setInt(1, userId);
-                query.setString(2, emailType);
-                query.setBoolean(3, emailPreferences.get(emailType));
+                query.setString(2, entry.getKey());
+                query.setBoolean(3, entry.getValue());
 
                 query.executeUpdate();
-            }
 
+            }
+                
             UserEmailPreferences updatedEmailPreferences = User.getUserEmailPreferences(connection, userId);
 
             User userTarget = UserEmailPreferences.getUser(userId);
-            userTarget.setEmailPreferences(updatedEmailPreferences);
+
+            //Found user in the map, update the email preferences
+            if (userTarget != null)
+                userTarget.setEmailPreferences(updatedEmailPreferences);
 
             return updatedEmailPreferences;
+
         }
+
     }
 
     public void setEmailPreferences(UserEmailPreferences updatedEmailPreferences) {
@@ -569,10 +597,6 @@ public final class User implements Serializable {
 
         user.fleet = Fleet.get(connection, user.fleetAccess.getFleetId());
 
-        if (user.fleetAccess.isManager()) {
-            user.fleet.populateUsers(connection, user.getId());
-        }
-
         // Get the email preferences for this user
         user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
         UserEmailPreferences.addUser(connection, user);
@@ -587,11 +611,8 @@ public final class User implements Serializable {
      *
      * @param connection is the connection to the database
      */
-    public void updateFleet(Connection connection) throws SQLException {
+    public void updateFleet(Connection connection) throws SQLException, AccountException {
         fleet = Fleet.get(connection, fleetAccess.getFleetId());
-        if (fleetAccess.isManager()) {
-            fleet.populateUsers(connection, getId());
-        }
     }
 
     /**
@@ -776,17 +797,9 @@ public final class User implements Serializable {
             query.executeUpdate();
 
             try (ResultSet resultSet = query.getGeneratedKeys()) {
-                if (resultSet.next()) {
-                    user.id = resultSet.getInt(1);
-                } else {
-                    LOG.severe("Database Error: Error happened getting id for new user on database insert.");
-                    throw new AccountException("Database Error",
-                            "Error happened getting id for new user on database insert.");
-                }
+                resultSet.next();
+                user.id = resultSet.getInt(1);
             }
-
-            // Record this user in the email preferences map and apply the default email
-            // preferences
         }
 
         UserEmailPreferences.addUser(connection, user);
@@ -851,10 +864,6 @@ public final class User implements Serializable {
 
         // give use manager access of this fleet
         user.fleetAccess = FleetAccess.create(connection, user.getId(), user.fleet.getId(), FleetAccess.MANAGER);
-
-        if (user.fleetAccess.isManager()) {
-            user.fleet.populateUsers(connection, user.getId());
-        }
 
         return user;
     }
@@ -922,7 +931,6 @@ public final class User implements Serializable {
     }
 
     public static void sendPasswordResetEmail(Connection connection, String email) throws SQLException {
-
         int resetPhraseLength = 10;
         boolean useLetters = true;
         boolean useDigits = true;
@@ -956,5 +964,16 @@ public final class User implements Serializable {
             LOG.info(query.toString());
             query.executeUpdate();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof User u)) {
+            return false;
+        }
+
+        return this.id == u.id && this.email.equals(u.email) && this.firstName.equals(u.firstName) && this.lastName.equals(u.lastName) && this.country.equals(u.country) && this.state.equals(u.state)
+                && this.city.equals(u.city) && this.address.equals(u.address) & this.phoneNumber.equals(u.phoneNumber) && this.zipCode.equals(u.zipCode) && this.admin == u.admin && this.aggregateView == u.aggregateView
+                && this.fleetAccess.equals(u.fleetAccess) && this.fleet.equals(u.fleet);
     }
 }

@@ -1,16 +1,13 @@
-package org.ngafid.core.accounts;
+package org.ngafid.airsync;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import org.ngafid.core.airsync.AirSync;
-import org.ngafid.core.airsync.AirSyncEndpoints;
-import org.ngafid.core.airsync.AirSyncImport;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
@@ -20,19 +17,28 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 /**
  * Represents an Aircraft that is AirSync compatibile
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class AirSyncAircraft {
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
-
     // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
     private static final LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
     private static final String TIMESTAMP_UPLOADED = "";
     private static final Logger LOG = Logger.getLogger(AirSyncAircraft.class.getName());
-    private final int id;
-    private final String tailNumber;
+
+    public final int id;
+    public final String tailNumber;
+    public final String accountToken;
+
     private AirSyncFleet fleet;
+
+    @JsonCreator
+    public static AirSyncAircraft create(@JsonProperty("id") int id, @JsonProperty("tailNumber") String tailNumber, @JsonProperty("account_token") String accountToken) {
+        return new AirSyncAircraft(id, tailNumber, accountToken);
+    }
 
     /**
      * Private constructor, for instantiation within this class.
@@ -40,9 +46,10 @@ public final class AirSyncAircraft {
      * @param id         the Aircraft's id
      * @param tailNumber the Aircraft's tail number
      */
-    private AirSyncAircraft(int id, String tailNumber) {
+    private AirSyncAircraft(int id, String tailNumber, String accountToken) {
         this.id = id;
         this.tailNumber = tailNumber;
+        this.accountToken = accountToken;
     }
 
     /**
@@ -94,12 +101,9 @@ public final class AirSyncAircraft {
      * import time
      */
     public Optional<LocalDateTime> getLastImportTime(Connection connection) throws SQLException {
-        String sql = "SELECT MAX(start_time) FROM uploads AS u " + "JOIN airsync_imports AS imp ON imp.fleet_id = u" +
-                ".fleet_id WHERE imp.tail = ? AND imp.fleet_id = ?";
+        String sql = "SELECT MAX(time_received) FROM airsync_imports WHERE tail = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
-
             query.setString(1, this.tailNumber);
-            query.setInt(2, this.fleet.getId());
 
             try (ResultSet resultSet = query.executeQuery()) {
                 if (resultSet.next()) {
@@ -126,7 +130,7 @@ public final class AirSyncAircraft {
             throws IOException {
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
-        netConnection.setRequestProperty("Authorization", authentication.bearerString());
+        netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
         byte[] respRaw;
         try (InputStream is = netConnection.getInputStream()) {
@@ -140,50 +144,14 @@ public final class AirSyncAircraft {
         resp = resp.replaceAll("file_url", "fileUrl");
         resp = resp.replaceAll("timestamp_uploaded", "timestampUploaded");
 
-        Type target = new TypeToken<List<AirSyncImport>>() {
-        }.getType();
-        List<AirSyncImport> page = GSON.fromJson(resp, target);
+        List<AirSyncImport> page = OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncImport>>() {
+        });
 
         // initialize the imports
         for (AirSyncImport i : page)
             i.init(fleet, this);
 
         return page;
-    }
-
-    public String getAirSyncFleetName() {
-        try {
-            byte[] respRaw = getBytes();
-
-            List<AirSyncAircraftAccountInfo> info = GSON.fromJson(new String(respRaw),
-                    new TypeToken<List<AirSyncAircraftAccountInfo>>() {
-                    }.getType());
-
-            if (info.size() != 1) {
-                LOG.severe("AirSync aircraft appears for multiple fleets. We do not support this functionality " +
-                        "currently...");
-                System.exit(1);
-            }
-
-            return info.get(0).name;
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    private byte[] getBytes() throws IOException {
-        AirSyncAuth authentication = fleet.getAuth();
-        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" +
-                "/accounts").openConnection();
-        netConnection.setRequestMethod("GET");
-        netConnection.setDoOutput(true);
-        netConnection.setRequestProperty("Authorization", authentication.bearerString());
-
-        byte[] respRaw;
-        try (InputStream is = netConnection.getInputStream()) {
-            respRaw = is.readAllBytes();
-        }
-        return respRaw;
     }
 
     /**
@@ -212,7 +180,7 @@ public final class AirSyncAircraft {
     }
 
     /**
-     * Gets a List of imports after a certian date
+     * Gets a List of imports after a certain date
      *
      * @param connection     the database connection
      * @param airSyncFleet   the AirSyncFleet that these imports belong to
@@ -229,15 +197,11 @@ public final class AirSyncAircraft {
         int nPage = 0;
 
         while (continueIteration) {
-            try {
-                HttpsURLConnection netConnection =
-                        (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
-                List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
-                continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
-                imports.addAll(page);
-            } catch (Exception e) {
-                AirSync.handleAirSyncAPIException(e, authentication);
-            }
+            HttpsURLConnection netConnection =
+                    (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
+            List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
+            continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
+            imports.addAll(page);
         }
 
         return imports;
@@ -247,18 +211,11 @@ public final class AirSyncAircraft {
             throws IOException, SQLException {
         var lastImportTime = getLastImportTime(connection);
         if (lastImportTime.isPresent()) {
-            // We must make the interval exclusive when asking the server for flights
             LocalDateTime importTime = lastImportTime.get().plusSeconds(1);
             return getImportsAfterDate(connection, airSyncFleet, importTime);
         } else {
             return getImports(connection, airSyncFleet);
         }
     }
-
-    //CHECKSTYLE:OFF
-    static class AirSyncAircraftAccountInfo {
-        public String accountToken;
-        public String name;
-    }
-    //CHECKSTYLE:ON
 }
+

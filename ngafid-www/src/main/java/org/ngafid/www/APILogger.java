@@ -26,6 +26,7 @@ public class APILogger {
             ps.executeUpdate();
         } catch (SQLException | UnknownHostException e) {
             System.err.println("Failed to log API request: " + e.getMessage());
+            // hello
         }
     }
 }

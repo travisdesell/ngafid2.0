@@ -8,95 +8,31 @@
     <name>ngafid</name>
     <url>http://maven.apache.org</url>
 
+    <modules>
+        <module>ngafid-core</module>
+        <module>ngafid-www</module>
+        <module>ngafid-data-processor</module>
+        <module>ngafid-db</module>
+        <module>ngafid-airsync</module>
+    </modules>
+
     <properties>
-        <!--
-        <maven.compiler.source>1.9</maven.compiler.source>
-        <maven.compiler.target>1.9</maven.compiler.target>
-        -->
-        <kotlin.version>1.9.10</kotlin.version>
+        <kotlin.version>2.1.20</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
-        <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
+        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <jvm.target>21</jvm.target>
         <spark.version>2.7.2</spark.version>
         <gson.version>2.11.0</gson.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <javalin.version>6.3.0</javalin.version>
         <jetty.version>11.0.22</jetty.version>
     </properties>
 
     <dependencies>
-
-        <!-- For Maven Embedder -->
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-embedder</artifactId>
-            <version>3.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-connector-wagon</artifactId>
-            <version>0.9.0.M2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-http-lightweight</artifactId>
-            <version>2.5</version>
-        </dependency>
-
-
-        <!-- Apache Command Line Interface (CLI) -->
-        <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.4</version>
-        </dependency>
-
-
-        <!-- Spark Java library -->
-        <!--        <dependency>-->
-        <!--            <groupId>com.sparkjava</groupId>-->
-        <!--            <artifactId>spark-core</artifactId>-->
-        <!--            <version>${spark.version}</version>-->
-        <!--        </dependency>-->
-
-
-        <!-- Javalin Webserver -->
-        <dependency>
-            <groupId>io.javalin</groupId>
-            <artifactId>javalin-bundle</artifactId>
-            <version>${javalin.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.javalin</groupId>
-            <artifactId>javalin-rendering</artifactId>
-            <version>6.4.0</version>
-        </dependency>
-
-        <!-- JSON utils -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
-        </dependency>
-
         <!-- Logging library -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
-        </dependency>
-
-        <!-- for sending email -->
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>1.5.0-b01</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.randelshofer</groupId>
-            <artifactId>fastdoubleparser</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
         <dependency>
@@ -106,60 +42,46 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.30</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.3.0</version>
         </dependency>
 
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.0</version>
+            <groupId>ch.randelshofer</groupId>
+            <artifactId>fastdoubleparser</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
-            <groupId>com.udojava</groupId>
-            <artifactId>EvalEx</artifactId>
-            <version>2.1</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.19.0</version>
         </dependency>
 
         <dependency>
-            <groupId>com.github.spullara.mustache.java</groupId>
-            <artifactId>compiler</artifactId>
-            <version>0.9.6</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>3.0-rc3</version>
         </dependency>
 
         <dependency>
-            <groupId>org.ngafid</groupId>
-            <artifactId>dat2csv</artifactId>
-            <version>1.0</version>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.19.0</version>
         </dependency>
 
         <dependency>
-            <groupId>com.opencsv</groupId>
-            <artifactId>opencsv</artifactId>
-            <version>5.7.1</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.13.1</version>
         </dependency>
 
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.11.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.11.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
-            <version>1.11.4</version>
-            <scope>test</scope>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.2</version>
         </dependency>
 
         <dependency>
@@ -175,19 +97,6 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.3.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>us.dustinj.timezonemap</groupId>
-            <artifactId>timezonemap</artifactId>
-            <version>4.5</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
             <version>1.27.1</version>
@@ -199,89 +108,98 @@
             <version>3.17.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.5.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-kotlin</artifactId>
+            <version>2.19.0</version>
+        </dependency>
+
+        <!-- Testing Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.11.4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.3.232</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
-    <modules>
-        <module>ngafid-core</module>
-        <module>ngafid-www</module>
-        <module>ngafid-data-processor</module>
-        <module>ngafid-db</module>
-    </modules>
-
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.liquibase</groupId>
-                    <artifactId>liquibase-maven-plugin</artifactId>
-                    <version>4.29.2</version>
-                    <configuration>
-                        <searchPath>ngafid-db/src</searchPath>
-                        <propertyFile>liquibase.properties</propertyFile>
-                        <changeLogFile>changelog-root.xml</changeLogFile>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-maven-plugin</artifactId>
-                    <version>${kotlin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>compile</id>
-                            <phase>compile</phase>
-                            <goals>
-                                <goal>compile</goal>
-                            </goals>
-                            <configuration>
-                                <sourceDirs>
-                                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                                    <sourceDir>${project.basedir}/src/main/java</sourceDir>
-                                </sourceDirs>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>test-compile</id>
-                            <phase>test-compile</phase>
-                            <goals>
-                                <goal>test-compile</goal>
-                            </goals>
-                            <configuration>
-                                <sourceDirs>
-                                    <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                                    <sourceDir>${project.basedir}/src/test/java</sourceDir>
-                                </sourceDirs>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>com.github.spotbugs</groupId>
-                    <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>4.8.6.0</version>
-                    <dependencies>
-                        <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
-                        <dependency>
-                            <groupId>com.github.spotbugs</groupId>
-                            <artifactId>spotbugs</artifactId>
-                            <version>4.8.6</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.1</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
+
+            <!-- Kotlin compiler should be listed first! -->
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <extensions>true</extensions>
+
+                <configuration>
+                    <jvmTarget>${jvm.target}</jvmTarget>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
                     <source>21</source>
-                    <target>21</target>
+                    <target>${jvm.target}</target>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
                         <arg>-Xmaxwarns</arg>
@@ -293,6 +211,32 @@
                         <exclude>org/ngafid/webserver</exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <!-- Replacing default-compile as it is treated specially by maven -->
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <!-- Replacing default-testCompile as it is treated specially by maven -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>java-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>java-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

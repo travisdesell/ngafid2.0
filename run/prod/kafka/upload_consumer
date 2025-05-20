@@ -1,0 +1,1 @@
+java -XX:MaxRAMPercentage=95 -cp ngafid-data-processor/target/ngafid-data-processor-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.processor.UploadConsumer

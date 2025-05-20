@@ -3,9 +3,6 @@ package org.ngafid.core.util;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.StringTimeSeries;
-import us.dustinj.timezonemap.TimeZoneMap;
 
 import java.io.IOException;
 import java.time.*;
@@ -21,17 +18,9 @@ import java.util.logging.Logger;
 public enum TimeUtils {
     ;
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
-    private static TimeZoneMap TIME_ZONE_MAP = null;
 
     public static DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     public static DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    private static TimeZoneMap getTimeZoneMap() {
-        if (TIME_ZONE_MAP == null)
-            TIME_ZONE_MAP = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
-
-        return TIME_ZONE_MAP;
-    }
 
     public static class OffsetDateTimeJSONAdapter extends TypeAdapter<OffsetDateTime> {
 
@@ -203,61 +192,6 @@ public enum TimeUtils {
         cal.setTime(date);
         cal.add(Calendar.MILLISECOND, milliseconds);
         return cal.getTime();
-    }
-
-    /**
-     * Calculates local date, local time, and UTC offset for each entry based on given UTC dates, times, latitudes, and longitudes.
-     *
-     * @param utcDates   time series of UTC dates as strings (e.g., "yyyy-MM-dd")
-     * @param utcTimes   time series of UTC times as strings (e.g., "HH:mm:ss")
-     * @param latitudes  time series of latitude strings
-     * @param longitudes time series of longitude strings
-     * @return a LocalDateTimeResult containing lists of local dates, times, and UTC offsets.
-     */
-    public static LocalDateTimeResult calculateLocalDateTimeFromTimeSeries(
-            StringTimeSeries utcDates,
-            StringTimeSeries utcTimes,
-            DoubleTimeSeries latitudes,
-            DoubleTimeSeries longitudes) throws UnrecognizedDateTimeFormatException {
-        TimeZoneMap map = getTimeZoneMap();
-
-        // Prepare lists for the results.
-        ArrayList<String> localDates = new ArrayList<>(utcDates.size());
-        ArrayList<String> localTimes = new ArrayList<>(utcDates.size());
-        ArrayList<String> utcOffsets = new ArrayList<>(utcDates.size());
-
-        String dateTimeString = utcDates.get(0) + " " + utcTimes.get(0);
-        DateTimeFormatter formatter = findCorrectFormatter(dateTimeString);
-
-        // Iterate over each index and calculate the corresponding local date, time, and offset.
-        for (int i = 0; i < utcDates.size(); i++) {
-            String dateTime = utcDates.get(i) + " " + utcTimes.get(i);
-            LocalDateTime utcDateTime = LocalDateTime.parse(dateTime, formatter);
-
-            double latitude = latitudes.get(i);
-            double longitude = longitudes.get(i);
-            String date = "", time = "", offset = "";
-
-            // If our latitude and / or longitude are NaN, we will get an illegal argument exception.
-            try {
-                String zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
-                ZoneId zoneId = ZoneId.of(zoneIdStr);
-                ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
-
-                date = localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-M-d"));
-                time = localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("H:m:s"));
-                offset = localZonedDateTime.getOffset().getId();
-            } catch (IllegalArgumentException e) {
-                // lat long values were invalid (nan or out of bounds).
-            }
-
-            // Add a default value.
-            localDates.add(date);
-            localTimes.add(time);
-            utcOffsets.add(offset);
-        }
-
-        return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
     }
 
     public static DateTimeFormatter findCorrectFormatter(String date, String time) throws UnrecognizedDateTimeFormatException {

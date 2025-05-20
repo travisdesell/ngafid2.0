@@ -1,1 +1,1 @@
-mvn exec:java -pl ngafid-data-processor -Dexec.mainClass="org.ngafid.processor.UploadConsumer" -Dexec.jvmArguments="-XX:MaxRAMPercentage=95.0" -Dexec.args="$*"
+mvn exec:java -pl ngafid-data-processor -Dexec.mainClass="org.ngafid.processor.UploadConsumer" -Dexec.jvmArguments="-XX:MaxRAMPercentage=95.0"

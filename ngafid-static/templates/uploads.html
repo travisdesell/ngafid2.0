@@ -16,41 +16,11 @@
 
     <script>
         var plotMapHidden = true;
-        {
-            {
-                {
-                    user_js
-                }
-            }
-        }
-        {
-            {
-                {
-                    numPages_js
-                }
-            }
-        }
-        {
-            {
-                {
-                    index_js
-                }
-            }
-        }
-        {
-            {
-                {
-                    navbar_js
-                }
-            }
-        }
-        {
-            {
-                {
-                    uploads_js
-                }
-            }
-        }
+            {{{user_js}}}
+            {{{numPages_js}}}
+            {{{index_js}}}
+            {{{navbar_js}}}
+            {{{uploads_js}}}
     </script>
 
 </head>
@@ -61,15 +31,17 @@
     <div id="loading-image" class="fa fa-spinner" alt="Loading..."></div>
 </div>
 
+<!-- Error Modal -->
 <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
-    <div class='modal-dialog modal-lg' role='document'>
+    <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
         <div id='error-modal-content'>
         </div>
     </div>
 </div>
 
+<!-- Confirm Modal -->
 <div id="confirm-modal" class='modal' tabIndex='-1' role='dialog'>
-    <div class='modal-dialog modal-lg' role='document'>
+    <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
         <div id='confirm-modal-content'>
         </div>
     </div>

@@ -1,12 +1,8 @@
-package org.ngafid.core.airsync;
+package org.ngafid.airsync;
 
-import org.codehaus.plexus.util.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ngafid.core.Database;
-import org.ngafid.core.accounts.AirSyncAuth;
-import org.ngafid.core.accounts.AirSyncFleet;
-import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.util.SendEmail;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -14,21 +10,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
  * This class contains code for controlling the AirSync daemon, as well
  * as many other methods may be used by the daemon
  */
-public final class AirSync {
+public final class ImportService {
     // How long the daemon will wait before making another request
     private static final long DEFAULT_WAIT_TIME = 10000;
 
-    private static final Logger LOG = Logger.getLogger(AirSync.class.getName());
+    private static final Logger LOG = Logger.getLogger(ImportService.class.getName());
 
-    private AirSync() {
+    private ImportService() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
@@ -48,28 +42,12 @@ public final class AirSync {
             LOG.severe(
                     "Bearer token is no longer valid (someone may have requested one elsewhere, " +
                             "or this daemon is running somewhere else!).");
-            authentication.requestAuthorization();
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
         } else {
             crashGracefully(e);
         }
-    }
-
-    /**
-     * Sends a notification to NGAFID admins that this daemon has crashed
-     * gracefully.
-     *
-     * @param message the message that needs to be sent
-     */
-    public static void sendAdminCrashNotification(String message) throws SQLException {
-        String ngafidAdminEmails = System.getenv("NGAFID_ADMIN_EMAILS");
-        ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(ngafidAdminEmails.split(";")));
-
-        ArrayList<String> bccRecipients = new ArrayList<String>();
-        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message,
-                EmailType.AIRSYNC_DAEMON_CRASH);
     }
 
     /**
@@ -184,14 +162,16 @@ public final class AirSync {
                         LOG.info("Update status: " + status);
                     }
                 }
-
-                long waitTime = 30000;
-                LOG.info("Sleeping for " + waitTime / 1000 + "s.");
-                Thread.sleep(waitTime);
-            } catch (InterruptedException | SQLException | IOException e) {
+            } catch (SQLException | IOException e) {
                 LOG.severe("Encountered the following error: ");
                 e.printStackTrace();
-                continue;
+            }
+
+            long waitTime = 30000;
+            LOG.info("Sleeping for " + waitTime / 1000 + "s.");
+            try {
+                Thread.sleep(waitTime);
+            } catch (InterruptedException ignored) {
             }
         }
     }

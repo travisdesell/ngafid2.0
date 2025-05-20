@@ -1,6 +1,7 @@
 package org.ngafid.core.util;
 
-import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.DigestInputStream;
@@ -34,7 +35,7 @@ public class MD5 {
             }
 
             byte[] hash = md.digest();
-            return DatatypeConverter.printHexBinary(hash).toLowerCase();
+            return String.valueOf(Hex.encodeHex(hash)).toLowerCase();
         } catch (NoSuchAlgorithmException e) {
             LOG.severe("Unable to find MD5 algorithm");
             e.printStackTrace();
@@ -55,7 +56,7 @@ public class MD5 {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(s.getBytes());
             byte[] hash = md.digest();
-            return DatatypeConverter.printHexBinary(hash).toLowerCase();
+            return String.valueOf(Hex.encodeHex(hash)).toLowerCase();
         } catch (NoSuchAlgorithmException e) {
             LOG.severe("Unable to find MD5 algorithm");
             e.printStackTrace();

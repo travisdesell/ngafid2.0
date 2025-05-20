@@ -3,8 +3,10 @@ package org.ngafid.www.routes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.Event;
@@ -12,9 +14,9 @@ import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.EventMetaData;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.EventStatistics;
+import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,9 +26,12 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
+import org.ngafid.www.WebServer;
+
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    public static final Gson GSON = WebServer.gson;
+
 
     static class EventInfo {
         @JsonProperty
@@ -98,7 +103,9 @@ public class EventJavalinRoutes {
     }
 
     private static void getAllEventDescriptions(Context ctx) {
-        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id";
+
+        final int AIRFRAME_ID_GENERIC = 0;
+        final String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " + "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id OR event_definitions.airframe_id=" + AIRFRAME_ID_GENERIC;
 
         try (Connection connection = Database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             LOG.info("preparedStatement: " + preparedStatement);
@@ -369,11 +376,8 @@ public class EventJavalinRoutes {
             }
 
             EventInfo eventInfo = new EventInfo(events, definitions);
+            ctx.json(eventInfo);
 
-            String output = GSON.toJson(eventInfo);
-            // need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN", "null");
-            ctx.json(output);
         } catch (SQLException e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);

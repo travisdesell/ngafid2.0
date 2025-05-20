@@ -1,14 +1,17 @@
 package org.ngafid.www.routes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+
+import org.ngafid.airsync.AirSyncFleet;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.*;
 import org.ngafid.core.util.SendEmail;
-import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.MustacheHandler;
+import org.ngafid.www.Navbar;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -19,6 +22,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
+
+import org.apache.kafka.streams.processor.ConnectedStoreProvider;
 
 import static org.ngafid.www.WebServer.gson;
 
@@ -276,7 +281,7 @@ public class AccountJavalinRoutes {
                 LOG.info("User with email : " + email + " doesn't exist.");
                 ctx.json(new ForgotPasswordResponse("User doesn't exist in database", false));
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ForgotPasswordResponse(e.toString(), false));
         }
@@ -566,69 +571,112 @@ public class AccountJavalinRoutes {
                 FleetAccess.update(connection, fleetUserId, fleetId, accessType);
                 user.updateFleet(connection);
                 ctx.json(new UpdateUserAccess());
-            } catch (SQLException e) {
+            } catch (SQLException | AccountException e) {
                 ctx.json(new ErrorResponse(e)).status(500);
             }
         }
 
     }
 
+    @SuppressWarnings("ConvertToStringSwitch")
     private static void postUpdateUserEmailPreferences(Context ctx) {
+
         final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
-        // Log the raw handleUpdateType value
+        //Add user to / update the UserEmailPreferences map
+        try (Connection connection = Database.getConnection()) {
+
+            UserEmailPreferences.addUser(connection, sessionUser);
+
+        } catch (SQLException e) {
+
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e)).status(500);
+
+        }
+
+        //Log the raw handleUpdateType value
         final String handleUpdateType = Objects.requireNonNull(ctx.formParam("handleUpdateType"));
 
-        if (handleUpdateType.equals("HANDLE_UPDATE_USER")) { // User Update...
+        //User Update...
+        if (handleUpdateType.equals("HANDLE_UPDATE_USER")) {
+
+            //Unpack Submission Data
             final int userID = sessionUser.getId();
 
-            Map<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-            for (String emailKey : ctx.formParamMap().keySet()) {
-                if (emailKey.equals("handleUpdateType")) {
-                    continue;
-                }
+            final HashSet<String> KEYS_EXCLUDE = new HashSet<>(Arrays.asList(
+                "handleUpdateType"
+            ));
 
-                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.formParam(emailKey)));
+            Map<String, Boolean> emailTypesUser = new HashMap<>();
+            for (String emailKey : ctx.formParamMap().keySet()) {
+
+                //Skip excluded keys
+                if (KEYS_EXCLUDE.contains(emailKey))
+                    continue;
+
+                emailTypesUser.put(emailKey, Boolean.valueOf(ctx.formParam(emailKey)));
+
             }
 
             try (Connection connection = Database.getConnection()) {
                 ctx.json(User.updateUserEmailPreferences(connection, userID, emailTypesUser));
             } catch (Exception e) {
+                LOG.severe("Error in postUpdateUserEmailPreferences.java (User): " + e.toString());
                 ctx.json(new ErrorResponse(e)).status(500);
             }
-        } else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) { // Manager Update...
-            // Unpack Submission Data
+
+        //Manager Update...
+        } else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) {
+
+            //Unpack Submission Data
             int fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetUserID")));
             int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetID")));
 
-            HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-            for (String emailKey : ctx.formParamMap().keySet()) {
-                if (emailKey.equals("fleetUserID") || emailKey.equals("fleetID") || emailKey.equals("handleUpdateType")) {
-                    continue;
-                }
+            final HashSet<String> KEYS_EXCLUDE = new HashSet<>(Arrays.asList(
+                "fleetUserID",
+                "fleetID",
+                "handleUpdateType"
+            ));
 
-                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.formParam(emailKey)));
+            HashMap<String, Boolean> emailTypesUser = new HashMap<>();
+            for (String emailKey : ctx.formParamMap().keySet()) {
+
+                //Skip excluded keys
+                if (KEYS_EXCLUDE.contains(emailKey))
+                    continue;
+
+                emailTypesUser.put(emailKey, Boolean.valueOf(ctx.formParam(emailKey)));
+                
             }
 
-            // Check to see if the logged-in user can update access to this fleet
+            //Check to see if the logged-in user can update access to this fleet
             if (!sessionUser.managesFleet(fleetID)) {
+
                 LOG.severe("INVALID ACCESS: user did not have access to modify user email preferences on this fleet.");
                 ctx.status(401);
                 ctx.result("User did not have access to modify user email preferences on this fleet.");
                 return;
+
             }
 
             try (Connection connection = Database.getConnection()) {
                 ctx.json(User.updateUserEmailPreferences(connection, fleetUserID, emailTypesUser));
             } catch (Exception e) {
+                LOG.severe("Error in postUpdateUserEmailPreferences.java (Manager): " + e.toString());
                 ctx.json(new ErrorResponse(e)).status(500);
             }
+
+        //Unknown Update...
+        } else {
+
+            //ERROR -- Unknown Update!
+            LOG.severe("INVALID ACCESS: handleUpdateType not specified.");
+            ctx.status(401);
+            ctx.result("handleUpdateType not specified.");
+
         }
 
-        // ERROR -- Unknown Update!
-        LOG.severe("INVALID ACCESS: handleUpdateType not specified.");
-        ctx.status(401);
-        ctx.result("handleUpdateType not specified.");
     }
 
     private static void getEmailUnsubscribe(Context ctx) {

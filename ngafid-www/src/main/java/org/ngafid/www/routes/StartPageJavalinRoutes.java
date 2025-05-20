@@ -1,18 +1,22 @@
 package org.ngafid.www.routes;
 
-import io.javalin.Javalin;
-import io.javalin.http.Context;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Logger;
+
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Airframes;
-import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.Navbar;
-
-import java.sql.Connection;
-import java.util.*;
-import java.util.logging.Logger;
-
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.Navbar;
 import static org.ngafid.www.WebServer.gson;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 
 public class StartPageJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StartPageJavalinRoutes.class.getName());

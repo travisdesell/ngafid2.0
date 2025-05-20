@@ -8,7 +8,7 @@ Type=simple
 User=www
 Group=www
 WorkingDirectory=/opt/ngafid/ngafid2.0
-ExecStart=/bin/bash -ac '. /etc/ngafid.conf; exec run/webserver'
+ExecStart=/bin/bash -ac 'source /etc/ngafid.conf; exec run/prod/webserver'
 
 [Install]
 WantedBy=ngafid.target

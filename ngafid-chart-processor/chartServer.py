@@ -31,7 +31,7 @@ import sys
 import platform
 
 """Configure logging. Log files will be rotating if the size will reach 10 MB"""""
-log_file = "ngafid-chart-processor/chart_server.log"
+log_file = "./chart_server.log"
 log_dir = os.path.dirname(log_file)
 
 os.makedirs(log_dir, exist_ok=True)
@@ -52,9 +52,6 @@ logging.basicConfig(
     ]
 )
 
-
-configuration_file = "ngafid-chart-processor/chart_service_config.json"
-
 stop_event = threading.Event()
 def parse_arguments():
     """Parse command-line arguments."""
@@ -64,6 +61,12 @@ def parse_arguments():
         type=str,
         help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
     )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Config file path",
+        default="ngafid-chart-processor/chart_service_config.default.json"
+    )
     return parser.parse_args()
 
 def handle_exit_signal(signum, frame):
@@ -72,7 +75,7 @@ def handle_exit_signal(signum, frame):
     sys.exit(0)
 
 # Load configuration
-def load_config(config_path=configuration_file):
+def load_config(config_path):
     """Load configuration values from the JSON file."""
     if not os.path.exists(config_path):
         logging.error(f"Configuration file {config_path} not found.")
@@ -87,7 +90,17 @@ def load_config(config_path=configuration_file):
             logging.error(f"Error parsing JSON in {config_path}: {e}")
             raise ValueError(f"Error parsing JSON in {config_path}: {e}")
 
-CONFIG = load_config()
+CONFIG = load_config(parse_arguments().config)
+PATHS = CONFIG.get("paths", {})
+
+# Extract paths from config
+try:
+    CHARTS_DIR = os.path.abspath(PATHS["charts"])
+except KeyError as e:
+    logging.error(f"Missing required path in configuration: {e}")
+    raise ValueError(f"Missing required path in configuration: {e}")
+
+
 
 def free_port(port):
     if platform.system() == "Windows":
@@ -222,8 +235,7 @@ class TileRequestHandler(SimpleHTTPRequestHandler):
     Custom handler to serve tiles from the charts directory.
     """
 
-    BASE_PATH = os.getenv("NGAFID_CHART_PROCESSOR_PATH", "ngafid-chart-processor")
-    BASE_DIR = os.path.abspath(f"{BASE_PATH}/charts")  # Static base directory
+    BASE_DIR = os.path.abspath(CHARTS_DIR)  # Static base directory
 
     def translate_path(self, path):
         """Translate the path to serve files from the BASE_DIR."""
@@ -284,6 +296,12 @@ def parse_arguments():
         type=str,
         help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
     )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Config file path",
+        default="ngafid-chart-processor/chart_service_config.default.json"
+    )
     return parser.parse_args()
 
 
@@ -292,8 +310,7 @@ def initial_download():
     Perform the initial download of charts if the charts directory is empty, missing specific subdirectories,
     or does not exist.
     """
-    base_path = os.getenv("NGAFID_CHART_PROCESSOR_PATH", "ngafid-chart-processor")
-    charts_dir = f"{base_path}/charts"
+    charts_dir = CHARTS_DIR
     required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high","helicopter"]
 
     # Check if the charts directory exists
@@ -337,7 +354,6 @@ def initial_download():
 
     logging.info(f"Determined date for initial download: {target_date}")
     run_chart_processor(target_date)
-
 
 
 if __name__ == "__main__":

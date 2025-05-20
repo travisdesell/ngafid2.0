@@ -26,3 +26,6 @@ CREATE TABLE airsync_imports (
     PRIMARY KEY (id),
     FOREIGN KEY (fleet_id)    REFERENCES fleet (id)
 );
+
+--changeset josh:airsync-imports-indexing labels:accounts,airsync
+CREATE INDEX idx_airsync_imports ON airsync_imports (fleet_id, tail, time_received);

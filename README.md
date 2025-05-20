@@ -1,3 +1,17 @@
+# About this Repository
+
+The NGAFID2.0 is an open source flight data management tool. The project is broken up into several modules:
+
+- `ngafid-chart-processor`: Python service which downloads and transforms charts from the FAA for use in maps on the
+  website.
+- `ngafid-core`: Core Java NGAFID code shared among other modules, mostly contains object relational mapping and
+  business logic.
+- `ngafid-data-processor`: Flight data processing code.
+- `ngafid-db`: Database schema, written in liquibase formatted SQL.
+- `ngafid-frontend`: React frontend.
+- `ngafid-static`: Directory from which static files are served.
+- `ngafid-www`: Java backend for the web application.
+
 # Steps for running the NGAFID2.0 website
 
 ## 0. Requirements
@@ -16,7 +30,7 @@ You will need the following software packages:
 ~/ $ git clone git@github.com:travisdesell/ngafid2.0
 ```
 
-Afterwards, we need to install a JAR file dependency to where Maven fetches your dependencies from.
+Afterward, we need to install a JAR file dependency to where Maven fetches your dependencies from.
 Running Maven will not be possible without running this script.
 
 ```
@@ -109,42 +123,13 @@ Once you have done this, you can create the database tables by running the follo
 
 We need to set up some environmental variables that point to some important data / directories.
 
-Create `init_env.sh`, and add the following:
+Create a **copy** of the environment variables template file, `init_env.template.sh`, and call it `init_env.sh`. Ensure that you properly configure `init_env.sh`. You **must** address all lines marked with an exclamation point (❗).
 
-```bash
-export NGAFID_REPO=<absolute path to ngafid2.0 repo>
-export NGAFID_DATA_FOLDER=<create a ngafid data folder and put the absolute path here>
-export NGAFID_PORT=8181 # You can use whatever port you need or want to use
-export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
-export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
-# If you don't have the data to add to the terrain directory, ask for it.
-export TERRAIN_DIRECTORY=$NGAFID_DATA_FOLDER/terrain/
-# If you don't have the data for the airports directory, ask for it.
-export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv
-# If you don't have the data for the runways directory, ask for it.
-export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv
-export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/src/main/resources/public/templates/
-export WEBSERVER_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
-export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
-export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
-# Set me to true if you dont want backups being made everytime you fire off the NGAFID
-# If you do set this to true the following 3 parameters do not need to be set
-export NGAFID_BACKUP_DIR=<path to where backups should be stored>
-export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads"
-# If you don't want the webserver to send emails (exceptions, shutdowns, etc.), set this to false.
-export NGAFID_EMAIL_ENABLED=false
-# (Optional) To require users to log in again after restart, set this to true
-#export DISABLE_PERSISTENT_SESSIONS=true
-```
-
-and run
+Run the command below after making changes or running from a new shell:
 
 ```
 ~/ngafid2.0 $ source init_env.sh
 ```
-
-every time you want to run the website from a new shell.
-
 If you want these variables to be initialized automatically when you launch a new shell,
 add the following line to your `~/.bashrc` file:
 
@@ -173,17 +158,16 @@ $NGAFID_DATA_FOLDER
 ```
 
 ## 5. Running the webserver
-
-First, we need maven to fetch all of the java dependencies:
-
-```
-~/ngafid2.0 $ mvn install
-```
-
-Next we need to initialize node. You'll need npm installed for this, then run:
+You need Maven installed to run the following script which will build the java modules:
 
 ```
-~/ngafid2.0 $ npm install
+~/ngafid2.0 $ run/build 
+```
+
+Next we need to initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
+
+```
+~/ngafid2.0/ngafid-frontend $ npm install
 ```
 
 This will download the javascript dependencies.
@@ -191,22 +175,15 @@ This will download the javascript dependencies.
 Then, in order to compile the javascript and automatically recompile whenever you change one of the files:
 
 ```
-~/ngafid2.0 $ npm run watch
+~/ngafid2.0/ngafid-frontend $ npm run watch
 ```
 
-Before we run the actual webserver, we need to launch Kafka so the webserver can produce messages. Change the properties
-file path you use here depending on what platform you're on. Note that these will need to be launched in separate
-terminals and be ran persistently while the data processing daemon or web server is up:
-
-Note that depending on your kafka installation, these programs may actually be shell scripts (e.g.
-`zookeeper-server-start.sh`) -- the following works for kafka installed via Brew on MacOS:
+Next, to launch the web server we must first initialize and start Kafka. Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart), using `ngafid2.0/resource/reconfig-server.properties`.
+Now, launch Kafka:
 
 ```
-# Launch Zookeeper -- required for Kafka server
-~/ngafid2.0 $ zookeeper-server-start src/main/resources/zookeeper-{mac,linux}.properties
-
-# Launch this in a separate terminal
-~/ngafid2.0 $ kafka-server-start src/main/resources/server-{mac,linux}.properties
+# Launch kafka kraft 
+~/ngafid2.0 $ kafka-server-start resources/reconfig-server.properties
 ```
 
 Next, run the following script to create the appropriate kafka topics:
@@ -218,7 +195,7 @@ Next, run the following script to create the appropriate kafka topics:
 You should then be able to compile and run the webserver by running `run/webserver.sh`
 
 ```
-~/ngafid2.0 $ run/webserver.sh
+~/ngafid2.0 $ run/webserver
 ```
 
 ## 6. Data Processing
@@ -351,6 +328,6 @@ to fix:
 
 sudo /usr/sbin/setsebool -P httpd_can_network_connect 1
 
-
 ## Chart Processing Service
-[Chart Processing Service Documentation](services/chart_processor/README.md)
+
+[Chart Processing Service Documentation](ngafid-chart-processor/README.md)
