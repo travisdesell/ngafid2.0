@@ -111,6 +111,7 @@ module.exports = {
         welcome: "./src/welcome.js",
         theme_preload: "./src/theme_preload.js",
         status: "./src/status_page.tsx",
+        bug_report: "./src/bug_report_page.tsx",
     },
 
     devtool: (process.env.CI ? false : 'source-map'),

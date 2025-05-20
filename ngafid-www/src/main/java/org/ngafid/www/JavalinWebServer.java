@@ -21,6 +21,7 @@ import org.ngafid.www.routes.AccountJavalinRoutes;
 import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes;
 import org.ngafid.www.routes.AirsyncJavalinRoutes;
 import org.ngafid.www.routes.AnalysisJavalinRoutes;
+import org.ngafid.www.routes.BugReportJavalinRoutes;
 import org.ngafid.www.routes.CesiumDataJavalinRoutes;
 import org.ngafid.www.routes.DataJavalinRoutes;
 import org.ngafid.www.routes.DoubleSeriesJavalinRoutes;
@@ -103,6 +104,7 @@ public class JavalinWebServer extends WebServer {
         TagFilterJavalinRoutes.bindRoutes(app);
         CesiumDataJavalinRoutes.bindRoutes(app);
         StatusJavalinRoutes.bindRoutes(app);
+        BugReportJavalinRoutes.bindRoutes(app);
     }
 
     @Override
