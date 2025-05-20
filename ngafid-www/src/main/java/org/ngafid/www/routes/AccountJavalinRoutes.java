@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import org.apache.kafka.streams.processor.ConnectedStoreProvider;
-import org.ngafid.routes.ErrorResponse;
+
 import static org.ngafid.www.WebServer.gson;
 
 public class AccountJavalinRoutes {
