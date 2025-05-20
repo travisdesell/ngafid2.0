@@ -133,6 +133,8 @@ public final class BugReportJavalinRoutes {
 
         String title = payload.title;
         String body = payload.body;
+        String senderEmail = payload.senderEmail;
+        boolean includeEmail = payload.includeEmail;
         String subject = "NGAFID Bug Report: " + title;
 
         //Use env variable 'NGAFID_ADMIN_EMAILS' as the recipient
@@ -147,10 +149,23 @@ public final class BugReportJavalinRoutes {
         //Use the email address as the recipient
         List<String> recipients = List.of(recipientEmail);
 
-        //Use no BCC recipients
-        List<String> bccRecipients = List.of();
+        
+        List<String> bccRecipients;
 
-        LOG.info("Attempting to send bug report email to '" + recipientEmail + "'...");
+        //Flagged to include the sender's email address, add it to the BCC list
+        if (includeEmail && senderEmail != null && !senderEmail.isBlank())
+            bccRecipients = List.of(senderEmail);
+
+        //Otherwise, no BCC recipients
+        else
+            bccRecipients = List.of();
+
+        LOG.info(
+            "Attempting to send bug report email to '" + recipientEmail
+            + "'" + " from  '" + senderEmail
+            + "'" + " (BCC Status: " + includeEmail + ")"
+            + "..."
+        );
 
         //Attempt to send the email
         try {
@@ -182,6 +197,8 @@ public final class BugReportJavalinRoutes {
 
         public String title;
         public String body;
+        public String senderEmail;
+        public boolean includeEmail;
 
     }
 

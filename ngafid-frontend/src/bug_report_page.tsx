@@ -64,16 +64,16 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
             }
 
-            //Append user's email to the description
             const BUG_REPORT_EMAIL_UNKNOWN = "(Unknown Email!)";
-            const body = includeEmail
-                ? `${description}\n\nSent By: ${user.email ?? BUG_REPORT_EMAIL_UNKNOWN}`
-                : description;
+            const body = description;
+            const senderEmail = user.email ?? BUG_REPORT_EMAIL_UNKNOWN;
 
             const SUBMIT_BUG_REPORT_URL = `/protected/submit_bug_report_email`;
             const submissionData = {
-                title: title,
-                body: body
+                title,
+                body,
+                senderEmail,
+                includeEmail,
             };
 
             $.ajax({
@@ -183,10 +183,11 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                                             <i className="fa fa-envelope"/>
                                             User
                                         </div>
-                                        Sign Report With Email
+                                        Send BCC With Report
                                     </div>
 
                                     <input
+                                        defaultChecked
                                         id="bug-email"
                                         type="checkbox"
                                         className="ml-2 !scale-200"
@@ -197,7 +198,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                                 {/* Descriptive List */}
                                 <ul className="list-disc p-0 m-0 text-left italic my-auto">
                                     <li>Try to provide a brief title and detailed description</li>
-                                    <li>Use the checkbox to include your email in the report</li>
+                                    <li>Use the checkbox to BCC your email in the report</li>
                                     <li>Wait up to 1 minute to confirm the report was submitted</li>
                                 </ul> 
 
