@@ -92,7 +92,7 @@ class PreferencesPage extends React.Component {
                                     <div className="col" style={{padding:"0 0 0 0"}}>
                                         <div className="card-alt card">
                                             <h6 className="card-header">
-                                                Your Email Preferences:
+                                                Your Email Preferences
                                             </h6>
                                             <div className="form-group my-4 px-4">
                                                 <div className="d-flex">

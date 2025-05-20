@@ -14,7 +14,7 @@ import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.RateOfClosure;
 import org.ngafid.core.flights.*;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
@@ -25,9 +25,11 @@ import java.util.logging.Logger;
 
 import static java.util.Map.of;
 
+import org.ngafid.www.WebServer;
+
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    public static final Gson GSON = WebServer.gson;
 
     private static class Coordinates {
         @JsonProperty
@@ -551,9 +553,8 @@ public class AnalysisJavalinRoutes {
             }
 
             final Coordinates coordinates = new Coordinates(connection, flightId);
-            final String output = GSON.toJson(coordinates).replaceAll("NaN", "null");
+            ctx.json(coordinates);
 
-            ctx.json(output);
         } catch (Exception e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);

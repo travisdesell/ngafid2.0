@@ -1126,22 +1126,8 @@ class Flight extends React.Component {
         let startTime = moment(flightInfo.startDateTime);
         let endTime = moment(flightInfo.endDateTime);
 
-        let globeClasses = "";
         let traceDisabled = false;
-        let globeTooltip = "";
-
         let tagTooltip = "Click to tag a flight for future queries and grouping";
-
-        /*
-            //console.log(flightInfo);
-            if (!flightInfo.hasCoords) {
-                //console.log("flight " + flightInfo.id + " doesn't have coords!");
-                globeTooltip = "Cannot display flight on the map because the flight data did not have latitude/longitude.";
-                traceDisabled = true;
-            } else {
-                globeTooltip = "Click the globe to display the flight on the map.";
-            }
-        */
 
         let visitedAirports = [];
         for (let i = 0; i < flightInfo.itinerary.length; i++) {
@@ -1329,6 +1315,8 @@ class Flight extends React.Component {
             $('[data-bs-toggle="tooltip"]').tooltip()
         })
 
+        //  console.log("Rendering Airframe Component: ", flightInfo);
+
         return (
             <div className="card mb-1" style={{backgroundColor:"var(--c_entry_bg)"}}>
                 <div className="">
@@ -1375,8 +1363,8 @@ class Flight extends React.Component {
                                         <div>
                                             ◦&nbsp;
                                             {
-                                                (flightInfo.airframeName!=null && flightInfo.airframeName!="")
-                                                ? <a>{flightInfo.airframeName}</a>
+                                                (flightInfo.airframe.name!=null && flightInfo.airframe.name!="")
+                                                ? <a>{flightInfo.airframe.name}</a>
                                                 : <a style={styleEmptyCell}>No Airframe Name...</a>
                                             }
                                         </div>
@@ -1434,32 +1422,78 @@ class Flight extends React.Component {
                                 <div className={"card mr-0"} style={{flexBasis:"100px", minHeight:"100%", backgroundColor:"transparent", borderColor:"transparent", margin:"0", padding:"0"}}>
                                     <div className={"d-flex flex-column"} style={{gap:"0.25em"}}>
 
+                                        {/* BUTTON ROW -- TOP */}
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
 
-                                            <button className={buttonClasses} style={styleButton} id={`plotToggle-${this.props.flightInfo.id}`} data-bs-toggle="button" onClick={() => this.plotClicked()}>
+                                            {/* Plot Toggle */}
+                                            <button
+                                                className={buttonClasses}
+                                                style={styleButton}
+                                                id={`plotToggle-${this.props.flightInfo.id}`}
+                                                data-bs-toggle="button"
+                                                onClick={() => this.plotClicked()}
+                                            >
                                                 <i className="fa fa-area-chart p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses + globeClasses} title={globeTooltip} id={`cesiumToggle-${this.props.flightInfo.id}`} aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
+                                            {/* Cesium Toggle */}
+                                            <button
+                                                className={buttonClasses}
+                                                style={styleButton}
+                                                id={`cesiumToggle-${this.props.flightInfo.id}`}
+                                                data-bs-toggle="button"
+                                                aria-pressed={this.state.replayToggled}
+                                                onClick={() => this.toggleCesiumFlight()}
+                                            >
                                                 <i className="fa fa-globe p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} id={`mapToggle-${this.props.flightInfo.id}`} data-bs-toggle="button" onClick={() => this.mapClicked()}>
+                                            {/* Map Toggle */}
+                                            <button
+                                                className={buttonClasses}
+                                                style={styleButton}
+                                                id={`mapToggle-${this.props.flightInfo.id}`}
+                                                data-bs-toggle="button"
+                                                onClick={() => this.mapClicked()}
+                                            >
                                                 <i className="fa fa-map-o p-1"/>
                                             </button>
                                         </div>
 
+                                        {/* BUTTON ROW -- BOTTOM */}
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
 
-                                            <button className={buttonClasses} data-bs-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
+                                            {/* Events Toggle */}
+                                            <button
+                                                className={buttonClasses}
+                                                data-bs-toggle="button"
+                                                aria-pressed="false"
+                                                style={styleButton}
+                                                onClick={() => this.exclamationClicked()}
+                                            >
                                                 <i className="fa fa-exclamation p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} disabled={true} title={"The external replay system is deprecated.\nCesium flight replays can now be viewed on this page with the globe buttons."}>
+                                            {/* (OUTDATED / DISABLED!) Replay Button */}
+                                            <button
+                                                className={buttonClasses}
+                                                style={styleButton}
+                                                disabled={true}
+                                                title={"The external replay system is deprecated.\nCesium flight replays can now be viewed on this page with the globe buttons."}
+                                            >
                                                 <i className="fa fa-video-camera p-1"/>
                                             </button>
 
-                                            <button className={buttonClasses} style={styleButton} type="button" id="dropdownMenu2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            {/* Download Button */}
+                                            <button
+                                                className={buttonClasses}
+                                                style={styleButton}
+                                                type="button"
+                                                id="dropdownMenu2"
+                                                data-bs-toggle="dropdown"
+                                                aria-haspopup="true"
+                                                aria-expanded="false"
+                                            >
                                                 <i className="fa fa-download p-1"/>
                                             </button>
 

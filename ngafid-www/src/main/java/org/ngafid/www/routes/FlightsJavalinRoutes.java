@@ -8,7 +8,7 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.*;
 import org.ngafid.core.util.filters.Filter;
-import org.ngafid.routes.ErrorResponse;
+import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
 import java.io.StringWriter;

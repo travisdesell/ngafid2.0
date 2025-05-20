@@ -101,12 +101,9 @@ public final class AirSyncAircraft {
      * import time
      */
     public Optional<LocalDateTime> getLastImportTime(Connection connection) throws SQLException {
-        String sql = "SELECT MAX(start_time) FROM uploads AS u " + "JOIN airsync_imports AS imp ON imp.fleet_id = u" +
-                ".fleet_id WHERE imp.tail = ? AND imp.fleet_id = ?";
+        String sql = "SELECT MAX(time_received) FROM airsync_imports WHERE tail = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
-
             query.setString(1, this.tailNumber);
-            query.setInt(2, this.fleet.getId());
 
             try (ResultSet resultSet = query.executeQuery()) {
                 if (resultSet.next()) {
@@ -183,7 +180,7 @@ public final class AirSyncAircraft {
     }
 
     /**
-     * Gets a List of imports after a certian date
+     * Gets a List of imports after a certain date
      *
      * @param connection     the database connection
      * @param airSyncFleet   the AirSyncFleet that these imports belong to
@@ -214,7 +211,6 @@ public final class AirSyncAircraft {
             throws IOException, SQLException {
         var lastImportTime = getLastImportTime(connection);
         if (lastImportTime.isPresent()) {
-            // We must make the interval exclusive when asking the server for flights
             LocalDateTime importTime = lastImportTime.get().plusSeconds(1);
             return getImportsAfterDate(connection, airSyncFleet, importTime);
         } else {

@@ -15,6 +15,36 @@ const doWatch = (!isCI && !isProd);
 const { join } = require('path');
 
 
+
+class ShowChangedFilesPlugin {
+
+    apply(compiler) {
+
+        compiler.hooks.watchRun.tap('ShowChangedFiles', comp => {
+
+            //No files changed, do nothing
+            if (!comp.modifiedFiles || comp.modifiedFiles.length === 0)
+                return;
+
+            //Log the files that changed
+            console.log(
+                '\n\nChanged since last build:',
+                [...comp.modifiedFiles].join(', '),
+                "\n\n"
+            );
+
+        });
+    }
+    
+}
+
+
+
+const outputDir   = path.resolve(__dirname, '../ngafid-static/js');
+const cesiumCache = path.resolve(outputDir, 'cesium');
+const cacheDir    = path.resolve(__dirname, '.webpack_cache');
+
+
 module.exports = {
 
     mode: process.env.NODE_ENV || 'development',
@@ -36,13 +66,15 @@ module.exports = {
     watchOptions: {
         ignored: [
             "/node_modules/",
-            path.resolve(__dirname, "src/main/resources/public/dist/"), //<-- Ignore built files so they aren't recompiled
+            `${outputDir}/**`,
+            `${cesiumCache}/**`,
+            "**/\.webpack_cache/**",
         ],
     },
 
     cache: {
         type: 'filesystem',
-        cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
+        cacheDirectory: cacheDir,
     },
 
     entry: {
@@ -150,6 +182,7 @@ module.exports = {
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
+        new ShowChangedFilesPlugin(),
     ],
 
 };

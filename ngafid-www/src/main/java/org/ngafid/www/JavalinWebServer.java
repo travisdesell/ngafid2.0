@@ -4,7 +4,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -18,7 +17,6 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
-import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.routes.AccountJavalinRoutes;
 import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes;
 import org.ngafid.www.routes.AirsyncJavalinRoutes;
@@ -34,9 +32,6 @@ import org.ngafid.www.routes.StartPageJavalinRoutes;
 import org.ngafid.www.routes.StatisticsJavalinRoutes;
 import org.ngafid.www.routes.StatusJavalinRoutes;
 import org.ngafid.www.routes.TagFilterJavalinRoutes;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -58,10 +53,10 @@ public class JavalinWebServer extends WebServer {
     @Override
     protected void preInitialize() {
         app = Javalin.create(config -> {
-            config.fileRenderer(new MustacheHandler());
 
-            Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter()).create();
-            config.jsonMapper(new JavalinGson(gson, false));
+            config.fileRenderer(new MustacheHandler());
+            config.jsonMapper(new JavalinGson(WebServer.gson, false));
+
         });
     }
 
