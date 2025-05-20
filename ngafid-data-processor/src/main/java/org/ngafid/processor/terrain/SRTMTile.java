@@ -1,5 +1,7 @@
 package org.ngafid.processor.terrain;
 
+import org.ngafid.core.Config;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -33,7 +35,7 @@ public class SRTMTile {
         // LOG.info("loading terrain from: '" + directory + "/" + filename + "'");
         // LOG.info("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
 
-        Path path = Paths.get(TerrainCache.TERRAIN_DIRECTORY + "/" + directory + "/" + filename);
+        Path path = Paths.get(Config.NGAFID_TERRAIN_DIR + "/" + directory + "/" + filename);
         //Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + filename);
 
         bytes = null;

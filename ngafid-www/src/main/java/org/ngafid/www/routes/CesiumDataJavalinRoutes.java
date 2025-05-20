@@ -12,7 +12,6 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.www.WebServer;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -234,7 +233,7 @@ public class CesiumDataJavalinRoutes {
 
             // This is for webpage section
             String resultString = "";
-            String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "ngafid_cesium.html";
+            String templateFile = "ngafid_cesium.html";
             LOG.severe("template file: '" + templateFile + "'");
 
             MustacheFactory mf = new DefaultMustacheFactory();

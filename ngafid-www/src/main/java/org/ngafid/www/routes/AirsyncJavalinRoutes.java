@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 
 import static org.ngafid.airsync.AirSyncImport.getImports;
 import static org.ngafid.airsync.AirSyncImport.getNumImports;
-import static org.ngafid.core.Config.MUSTACHE_TEMPLATE_DIR;
 import static org.ngafid.www.WebServer.gson;
 import static org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.GSON;
 
@@ -66,7 +65,7 @@ public class AirsyncJavalinRoutes {
     }
 
     private static void getAirsyncUploads(Context ctx) throws IOException {
-        String templateFile = MUSTACHE_TEMPLATE_DIR + "airsync_uploads.html";
+        String templateFile = "airsync_uploads.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try (Connection connection = Database.getConnection()) {

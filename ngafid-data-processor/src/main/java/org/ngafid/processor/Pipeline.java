@@ -3,6 +3,7 @@ package org.ngafid.processor;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.flights.Airframes;
@@ -60,13 +61,7 @@ public class Pipeline implements AutoCloseable {
      * equal to the number of hardware threads that are available. This can be overridden with an environment variable.
      */
     private static void initialize() {
-        int parallelism;
-
-        try {
-            parallelism = Integer.parseInt(System.getenv("PARALLELISM"));
-        } catch (NullPointerException | NumberFormatException e) {
-            parallelism = Runtime.getRuntime().availableProcessors();
-        }
+        int parallelism = Config.PARALLELISM;
 
         if (parallelism <= 0)
             pool = new ForkJoinPool();

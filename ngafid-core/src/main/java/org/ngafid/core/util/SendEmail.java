@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Config;
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.UserEmailPreferences;
 import org.ngafid.core.kafka.EmailConsumer;
@@ -33,52 +34,24 @@ public enum SendEmail {
     private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY); // Minimum number of milliseconds needed
     private static String password;
     private static String username;
-    private static boolean emailEnabled = true;
     // before trying to free old tokens
 
     static {
-
-        String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
-        LOG.info("Email base URL: " + BASE_URL);
-
-        if (enabled != null && enabled.equalsIgnoreCase("false")) {
-            LOG.info("Emailing has been disabled");
-            emailEnabled = false;
-        }
-
-        if (System.getenv("NGAFID_EMAIL_INFO") == null) {
-            System.err.println("ERROR: 'NGAFID_EMAIL_INFO' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_EMAIL_INFO=<path/to/email_info_file>");
-            System.exit(1);
-        }
-
-        String ngafidEmailInfo = System.getenv("NGAFID_EMAIL_INFO");
-
-        if (System.getenv("NGAFID_ADMIN_EMAILS") == null) {
-            System.err.println("ERROR: 'NGAFID_ADMIN_EMAILS' environment variable not specified at runtime.");
-            System.err.println("Please add a list of semicolon separated emails following to your ~/.bash_rc or ~/" +
-                    ".profile file:");
-            System.err.println("export NGAFID_ADMIN_EMAILS=\"person1@address.com;person2@address.net\"");
-            System.exit(1);
-        }
-
-        String ngafidAdminEmails = System.getenv("NGAFID_ADMIN_EMAILS");
-        ADMIN_EMAILS = new ArrayList<>(Arrays.asList(ngafidAdminEmails.split(";")));
+        ADMIN_EMAILS = new ArrayList<>(Arrays.asList(Config.NGAFID_ADMIN_EMAILS.split(";")));
         System.out.println("import emails will always also be sent to the following admin emails:");
         for (String adminEmail : ADMIN_EMAILS) {
             System.out.println("\t'" + adminEmail + "'");
         }
 
         try {
-            File file = new File(ngafidEmailInfo);
+            File file = new File(Config.EMAIL_INFO_FILE);
 
             // Email info file does not exit...
             if (!file.exists()) {
 
                 // ...Create a new file and will populate it
                 if (!file.createNewFile()) {
-                    throw new IllegalStateException("Could not create email file: " + ngafidEmailInfo);
+                    throw new IllegalStateException("Could not create email file: " + Config.EMAIL_INFO_FILE);
                 }
 
                 try {
@@ -89,23 +62,23 @@ public enum SendEmail {
 
                     pw.close();
                 } catch (IOException ie) {
-                    LOG.severe("ERROR: Could not write default information to email file: " + ngafidEmailInfo);
+                    LOG.severe("ERROR: Could not write default information to email file: " + Config.EMAIL_INFO_FILE);
                 }
 
-                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + ngafidEmailInfo +
+                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + Config.EMAIL_INFO_FILE +
                         ".");
 
             } else { // Email info file does exist...
 
                 // ...Read the file
-                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(ngafidEmailInfo))) {
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(Config.EMAIL_INFO_FILE))) {
 
                     username = bufferedReader.readLine();
                     // System.out.println("read username: '" + username + "'");
 
                     if (username != null && username.startsWith("#")) {
                         LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login" +
-                                " information to " + ngafidEmailInfo);
+                                " information to " + Config.EMAIL_INFO_FILE);
                     } else {
                         password = bufferedReader.readLine();
                         // System.out.println("read password: '" + password + "'");
@@ -118,7 +91,7 @@ public enum SendEmail {
             }
 
         } catch (IOException e) {
-            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + ngafidEmailInfo + "'");
+            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + Config.EMAIL_INFO_FILE + "'");
             e.printStackTrace();
             System.exit(1);
         }
@@ -244,7 +217,7 @@ public enum SendEmail {
     public static void sendBatchEmail(List<Email> emails, Connection connection) throws SQLException {
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
-        if (!emailEnabled) {
+        if (!Config.NGAFID_EMAIL_ENABLED) {
             LOG.info("Emailing has been disabled, not sending email");
             LOG.info("But we would have sent the following emails:");
 

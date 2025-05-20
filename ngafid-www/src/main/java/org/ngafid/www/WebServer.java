@@ -6,6 +6,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import org.ngafid.core.Config;
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.util.ConvertToHTML;
 
@@ -15,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
@@ -34,17 +34,12 @@ public abstract class WebServer {
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public static final String NGAFID_UPLOAD_DIR;
-    public static final String NGAFID_ARCHIVE_DIR;
-    public static final String MUSTACHE_TEMPLATE_DIR;
-
     protected final String staticFilesLocation;
     protected final int port;
 
     protected final int maxThreads = 32;
     protected final int minThreads = 2;
     protected final int timeOutMillis = 1000 * 60 * 5;
-    protected final Map<String, String> environment = System.getenv();
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -95,9 +90,7 @@ public abstract class WebServer {
             .create();
 
     static {
-        NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
-        NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR");
-        MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR");
+
 
         // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
         //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
@@ -129,7 +122,7 @@ public abstract class WebServer {
         configureExceptions();
 
 
-        if (environment.containsKey("DISABLE_PERSISTENT_SESSIONS") && environment.get("DISABLE_PERSISTENT_SESSIONS").equalsIgnoreCase("true")) {
+        if (Config.DISABLE_PERSISTENT_SESSIONS) {
             LOG.info("Persistent sessions are disabled.");
         } else {
             configurePersistentSessions();
@@ -174,24 +167,11 @@ public abstract class WebServer {
 
     protected void configureLogging() {
         try {
-            final InputStream logConfig = Files.newInputStream(new File("resources/log.properties").toPath());
+            final InputStream logConfig = Files.newInputStream(new File(Config.LOG_PROPERTIES_FILE).toPath());
             LogManager.getLogManager().readConfiguration(logConfig);
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Could not initialize log manager because: " + e.getMessage());
+            LOG.warning("Could not read log.properties file at " + Config.LOG_PROPERTIES_FILE);
         }
-    }
-
-    public static String getEnvironmentVariable(String key) {
-        String value = System.getenv(key);
-        if (value == null) {
-            System.err.println("ERROR: '" + key + "' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export " + key + "=<value>");
-            throw new RuntimeException("Environment variable '" + key + "' not set.");
-        }
-
-        return value;
     }
 
     /**
@@ -200,10 +180,7 @@ public abstract class WebServer {
      * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
-        String staticFiles = getEnvironmentVariable("WEBSERVER_STATIC_FILES");
-        int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
-
-        WebServer webserver = new JavalinWebServer(port, staticFiles);
+        WebServer webserver = new JavalinWebServer(Config.NGAFID_PORT, Config.NGAFID_STATIC_DIR);
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();
     }

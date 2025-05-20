@@ -41,7 +41,7 @@ public class Database {
     }
 
     public static String getDatabaseImplementation() {
-        if (System.getenv("NGAFID_USE_MARIA_DB") != null)
+        if (Config.NGAFID_USE_MARIA_DB)
             return "mariadb";
         else
             return "mysql";
@@ -59,14 +59,14 @@ public class Database {
     }
 
     private static void initializeConnectionPool() {
-        String dbInfoPath = "ngafid-db/src/liquibase.properties";
+        String dbInfoPath = Config.NGAFID_DB_INFO;
 
         if (!dbInfoExists()) {
+            LOG.info("db path = " + dbInfoPath);
             try {
                 readDatabaseCredentials(dbInfoPath);
             } catch (IOException e) {
                 System.err.println("Error reading from NGAFID_DB_INFO: '" + dbInfoPath + "'");
-                e.printStackTrace();
                 System.exit(1);
             }
         }
