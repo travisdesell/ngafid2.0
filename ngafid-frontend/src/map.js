@@ -1,6 +1,4 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
 
 import Overlay from 'ol/Overlay';
 import { Map, View } from 'ol';
@@ -9,10 +7,6 @@ import { fromLonLat, toLonLat } from 'ol/proj.js';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ.js';
 
-
-import OSM from 'ol/source/OSM';
-
-import { errorModal } from "./error_modal.js";
 
 console.log("doing first load after setting state!");
 
@@ -43,8 +37,7 @@ var tms_sec = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"}),
-    maxZoom: 10
+        url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"})
 });
 
 layers.push(tms_sec);
@@ -55,8 +48,7 @@ var tms_enrl = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : " http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"}),
-    maxZoom: 10
+        url : "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"})
 });
 
 layers.push(tms_enrl);
@@ -67,8 +59,7 @@ var tms_enrh = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"}),
-    maxZoom: 10
+        url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"})
 });
 
 layers.push(tms_enrh);
@@ -78,8 +69,7 @@ var tms_tac = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"}),
-    maxZoom: 10
+        url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"})
 });
 
 layers.push(tms_tac);
@@ -90,8 +80,7 @@ var heli = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
-        url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"}),
-    maxZoom: 10
+        url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"})
 });
 
 
@@ -113,8 +102,8 @@ function initializeMap() {
         loadTilesWhileInteracting: true,
         view: new View({
             center: center,
-            zoom: 3,       // Initial zoom level when the map loads
-            maxZoom: 10,   // Maximum zoom level the user can zoom to
+            zoom: 1,       // Initial zoom level when the map loads
+            maxZoom: 20,   // Maximum zoom level the user can zoom to
             minZoom: 0
         })
     });
