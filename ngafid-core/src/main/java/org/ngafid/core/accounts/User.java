@@ -470,27 +470,37 @@ public final class User implements Serializable {
      * @param emailPreferences the {@link UserEmailPreferences} instance to store
      * @return an instance of {@link UserEmailPreferences} with all the user's email
      */
-    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId,
-                                                                  Map<String, Boolean> emailPreferences) throws SQLException {
-        String queryString = "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
-                + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)";
+    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
+
+        final String queryString =
+            "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
+            + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)"
+        ;
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
-            for (String emailType : emailPreferences.keySet()) {
+
+            for (Map.Entry<String, Boolean> entry : emailPreferences.entrySet()) {
+
                 query.setInt(1, userId);
-                query.setString(2, emailType);
-                query.setBoolean(3, emailPreferences.get(emailType));
+                query.setString(2, entry.getKey());
+                query.setBoolean(3, entry.getValue());
 
                 query.executeUpdate();
-            }
 
+            }
+                
             UserEmailPreferences updatedEmailPreferences = User.getUserEmailPreferences(connection, userId);
 
             User userTarget = UserEmailPreferences.getUser(userId);
-            userTarget.setEmailPreferences(updatedEmailPreferences);
+
+            //Found user in the map, update the email preferences
+            if (userTarget != null)
+                userTarget.setEmailPreferences(updatedEmailPreferences);
 
             return updatedEmailPreferences;
+
         }
+
     }
 
     public void setEmailPreferences(UserEmailPreferences updatedEmailPreferences) {

@@ -131,16 +131,16 @@ public class EventConsumer extends DisjointConsumer<String, String> {
                 Event.batchInsertion(connection, flight, events);
 
                 // Computed okay.
-                return new Pair<>(record, true);
+                return new Pair<>(record, false);
             } catch (ColumnNotAvailableException e) {
                 // Some other exception happened...
                 e.printStackTrace();
                 LOG.info("A required column was not available so the event could not be computed: " + e.getMessage());
-                return new Pair<>(record, false);
+                return new Pair<>(record, true);
             } catch (Exception e) {
                 e.printStackTrace();
                 // Retry
-                return new Pair<>(record, false);
+                return new Pair<>(record, true);
             }
         } catch (SQLException e) {
             // If a sql exception happens, there is likely a bug that needs to addressed or the process should be rebooted. Crash process.

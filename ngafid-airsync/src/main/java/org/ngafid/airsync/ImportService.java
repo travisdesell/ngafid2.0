@@ -42,7 +42,6 @@ public final class ImportService {
             LOG.severe(
                     "Bearer token is no longer valid (someone may have requested one elsewhere, " +
                             "or this daemon is running somewhere else!).");
-            authentication.requestAuthorization();
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
@@ -163,14 +162,16 @@ public final class ImportService {
                         LOG.info("Update status: " + status);
                     }
                 }
-
-                long waitTime = 30000;
-                LOG.info("Sleeping for " + waitTime / 1000 + "s.");
-                Thread.sleep(waitTime);
-            } catch (InterruptedException | SQLException | IOException e) {
+            } catch (SQLException | IOException e) {
                 LOG.severe("Encountered the following error: ");
                 e.printStackTrace();
-                continue;
+            }
+
+            long waitTime = 30000;
+            LOG.info("Sleeping for " + waitTime / 1000 + "s.");
+            try {
+                Thread.sleep(waitTime);
+            } catch (InterruptedException ignored) {
             }
         }
     }

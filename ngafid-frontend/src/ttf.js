@@ -179,8 +179,6 @@ class TTFCard extends React.Component {
                 mapVisible={this.state.mapVisible}
                 activePage="ttf"
                 filterSelected={false}
-                plotSelected={false}
-                mapSelected={false}
                 mapStyle={this.state.mapStyle}
                 togglePlot={() => this.togglePlot()}
                 toggleFilter={() => this.toggleFilter()}

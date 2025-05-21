@@ -15,6 +15,9 @@ import Tooltip from "react-bootstrap/Tooltip";
 import { set } from 'ol/transform.js';
 
 
+import "./index.css";
+
+
 airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
 if (index !== -1) airframes.splice(index, 1);
@@ -60,7 +63,7 @@ class SeveritiesPage extends React.Component {
         let eventChecked = {};
         let eventsEmpty = {};
 
-        eventNames.unshift("ANY Event");
+        //  eventNames.unshift("ANY Event");    (⚠ ANY Event disabled on the severities page for now)
         for (let i = 0; i < eventNames.length; i++) {
 
             let eventNameCur = eventNames[i];
@@ -300,9 +303,9 @@ class SeveritiesPage extends React.Component {
         let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
         var severityLayout = {
-            title : 'Severity of Events',
+            title : {text: 'Severity of Events'},
             hovermode : "closest",
-            height: 700,
+            autosize: true,
             margin: {
                 l: 50,
                 r: 50,
@@ -723,7 +726,7 @@ class SeveritiesPage extends React.Component {
                                     </div>
 
                                     <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
-                                        <div id="severities-plot"></div>
+                                        <div id="severities-plot"/>
                                     </div>
                                 </div>
                             </div>

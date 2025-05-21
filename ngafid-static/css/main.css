@@ -753,3 +753,22 @@ html, body {
 }
 
 /* #endregion Map & Graph Containers */
+
+
+
+/* Plotly Graphs */
+
+.modebar {
+    display: flex;
+    flex-direction: row;
+    width: fit-content;
+    margin-left: auto;
+}
+
+.modebar-group {
+    display: flex !important;
+    flex-direction: row !important;
+    height: 28px !important;
+}
+
+/* #endregion Plotly Graphs */

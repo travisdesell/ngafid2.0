@@ -1,8 +1,9 @@
 import 'bootstrap';
 
-import { Modal } from 'bootstrap';          // ← programmatic API (no jQuery plug‑in)
 import React from 'react';
 import ReactDOM from 'react-dom';
+
+import { Modal } from 'bootstrap';
 
 
 
@@ -16,8 +17,6 @@ class ErrorModal extends React.Component {
             title : "",
             message : ""
         };
-
-        this.bootstrapModal = null;
 
     }
 
@@ -74,7 +73,7 @@ class ErrorModal extends React.Component {
                     </h4>
 
                     {/* Error Message */}
-                    {this.state.message}
+                    {message}
 
                 </div>
 

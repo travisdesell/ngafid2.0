@@ -10,6 +10,9 @@ import TimeHeader from "./time_header.js";
 import Plotly from "plotly.js";
 
 
+import "./index.css";
+
+
 airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
 if (index !== -1) airframes.splice(index, 1);
@@ -732,7 +735,7 @@ export default class SummaryPage extends React.Component {
         return (
             <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
                 <h4 className="card-header">Uploads</h4>
-                <div className="card-body">
+                <div className="card-body h-full">
                     <table className="row">
                         <tbody className="col-sm-6">
 

@@ -176,6 +176,8 @@ public final class FlightTimeLocation {
         return overlap;
     }
 
+
+
     public boolean isValid() {
         return valid;
     }
@@ -183,4 +185,3 @@ public final class FlightTimeLocation {
     public boolean hasSeriesData() {
         return hasSeriesData;
     }
-}

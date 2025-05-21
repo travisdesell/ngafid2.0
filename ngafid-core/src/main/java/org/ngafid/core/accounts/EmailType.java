@@ -1,7 +1,5 @@
 package org.ngafid.core.accounts;
 
-import org.ngafid.core.Database;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import org.ngafid.core.Database;
 
 public enum EmailType {
 
@@ -52,7 +52,12 @@ public enum EmailType {
      * purposes.
      */
     ACCOUNT_CREATION_INVITE("FORCED_account_creation_invite"),
-    PASSWORD_RESET("FORCED_password_reset");
+    PASSWORD_RESET("FORCED_password_reset"),
+    BUG_REPORT("FORCED_bug_report"),
+    
+    ;
+
+    // -------------------------------------------------------------------------------------------------------------
 
     /*
      * Default value of the removal flag for old email types.
