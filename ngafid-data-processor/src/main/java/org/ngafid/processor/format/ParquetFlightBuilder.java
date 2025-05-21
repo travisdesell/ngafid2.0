@@ -28,17 +28,9 @@ public class ParquetFlightBuilder extends FlightBuilder {
                 //Skipping steps: ComputeLaggedAltMSL::new, ComputeTurnToFinal::new, ComputeItinerary::new, ComputeLOCI::new, ComputeTotalFuel::new, ComputeDivergence::new,  ComputeStallIndex::new,
         );
 
-        ArrayList<ComputeStep> steps =
-                parquetSteps.stream()
-                        .map(factory -> factory.create(connection, this))
-                        .filter(step ->
-                                step.getOutputColumns().stream()
-                                        .noneMatch(x ->
-                                                getDoubleTimeSeriesMap().containsKey(x) ||
-                                                        getStringTimeSeriesMap().containsKey(x)
-                                        )
-                        )
-                        .collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<ComputeStep> steps = parquetSteps.stream()
+                .map(factory -> factory.create(connection, this))
+                .collect(Collectors.toCollection(ArrayList::new));
 
         if (!getDoubleTimeSeriesMap().containsKey(Parameters.UNIX_TIME_SECONDS) ||
                 !getStringTimeSeriesMap().containsKey(Parameters.UTC_DATE_TIME)) {

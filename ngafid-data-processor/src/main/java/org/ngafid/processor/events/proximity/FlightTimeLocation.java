@@ -5,7 +5,6 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Pair;
-import org.ngafid.processor.format.CSVFileProcessor;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -67,19 +66,6 @@ public final class FlightTimeLocation {
             return;
         }
 
-        // then check and see if this was actually a flight (RPM > 800)
-        Pair<Double, Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
-        Pair<Double, Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
-
-        // Invalidate flight if RPM1 is present and below threshold,
-
-
-        // and RPM2 is either missing or also below threshold.
-        if (minMaxRPM1 != null && minMaxRPM1.second() < 800 &&
-                (minMaxRPM2 == null || minMaxRPM2.second() < 800)) {
-            LOG.severe("Flight " + flight.getAirframe() + " is not valid, RPM error");   valid = false;
-            return;
-        }
 
         // then check and see if this flight had a latitude and longitude, if not we cannot calculate adjacency
         Pair<Double, Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
@@ -111,6 +97,16 @@ public final class FlightTimeLocation {
         // this flight had the necessary values and time series to calculate adjacency
         valid = true;
     }
+
+    // Constructor for testing only. Omits database connection
+    public FlightTimeLocation(double minLat, double maxLat, double minLon, double maxLon) {
+        this.minLatitude = minLat;
+        this.maxLatitude = maxLat;
+        this.minLongitude = minLon;
+        this.maxLongitude = maxLon;
+        this.valid = true;
+    }
+
 
     /**
      * Get the time series data for altitude, latitude, longitude, and indicated airspeed
@@ -149,14 +145,37 @@ public final class FlightTimeLocation {
         return true;
     }
 
-    public boolean hasRegionOverlap(FlightTimeLocation other) {
+    /**
+     *  Checks whether the geographic bounding box of another flight overlaps
+     *  with this flight's bounding box after expanding this flight's box by a given buffer.
+     *  Used to identify candidate flights for proximity detection, even when
+     *  their original bounding boxes do not overlap but their flight paths may have come
+     *  close (e.g., within 1000 feet).
+     *  Checks both cases: this inside buffer of other | other inside buffer of this
+     *  Makes the method order-independent:
+     *  a.hasRegionOverlap(b, buffer) == b.hasRegionOverlap(a, buffer)
+     * @param other FlightTimeLocation
+     * @param degreeBuffer represent the desired proximity threshold (e.g. 0.003 degrees = 1000 feet)
+     * @return
+     */
 
-        boolean overlap = other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude
-                && other.maxLongitude >= this.minLongitude && other.minLongitude <= this.maxLongitude;
+    public boolean hasRegionOverlap(FlightTimeLocation other, double degreeBuffer) {
+        boolean thisToOther = other.maxLatitude >= (this.minLatitude - degreeBuffer) &&
+                other.minLatitude <= (this.maxLatitude + degreeBuffer) &&
+                other.maxLongitude >= (this.minLongitude - degreeBuffer) &&
+                other.minLongitude <= (this.maxLongitude + degreeBuffer);
 
-        LOG.info("Has region overlap: " + overlap);
+        boolean otherToThis = this.maxLatitude >= (other.minLatitude - degreeBuffer) &&
+                this.minLatitude <= (other.maxLatitude + degreeBuffer) &&
+                this.maxLongitude >= (other.minLongitude - degreeBuffer) &&
+                this.minLongitude <= (other.maxLongitude + degreeBuffer);
+
+        boolean overlap = thisToOther || otherToThis;
+
+        LOG.info("Overlap check: " + overlap);
         return overlap;
     }
+
     public boolean isValid() {
         return valid;
     }
