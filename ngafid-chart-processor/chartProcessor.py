@@ -439,7 +439,7 @@ def create_virtual_raster(reprojected_tifs_path, virtual_raster_path):
 
 def generate_tiles(virtual_raster_path, tiles_output_path):
     """
-    Generates tiles that allow zoom capability. Zoom lever is defined as 0-10
+    Generates tiles that allow zoom capability. Zoom lever is defined as 0-13
     :param virtual_raster_path:
     :param tiles_output_path:
     :return: none
@@ -447,7 +447,7 @@ def generate_tiles(virtual_raster_path, tiles_output_path):
     os.makedirs(tiles_output_path, exist_ok=True)
     command = [
         "gdal2tiles.py",
-        "--zoom=0-10",
+        "--zoom=0-13",
         virtual_raster_path,
         tiles_output_path
     ]
