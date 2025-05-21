@@ -189,7 +189,7 @@ Now, launch Kafka:
 Next, run the following script to create the appropriate kafka topics:
 
 ```
-~/ngafid2.0 $ run/kafka/create_topics.sh
+~/ngafid2.0 $ run/kafka/create_topics
 ```
 
 You should then be able to compile and run the webserver by running `run/webserver.sh`
