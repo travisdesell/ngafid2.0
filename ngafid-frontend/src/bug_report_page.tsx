@@ -8,8 +8,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 
-import './index.css'          //<-- include Tailwind
-import { NGAFIDUser } from "./types.js";
+import './index.css' //<-- include Tailwind
+import {NGAFIDUser} from "./types.js";
 
 
 interface BugReportPageProps {
@@ -26,7 +26,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
     }
 
     async componentDidMount(): Promise<void> {
-        
+
         console.log("Bug Report Page mounted...");
 
     }
@@ -37,7 +37,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
         console.log("Showing loading spinner!");
 
         const submit = async () => {
-        
+
             //Get current time
             const sendStart = new Date();
             console.log("Submitting bug report... (" + sendStart.toLocaleString() + ")");
@@ -68,7 +68,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
             const body = description;
             const senderEmail = user.email ?? BUG_REPORT_EMAIL_UNKNOWN;
 
-            const SUBMIT_BUG_REPORT_URL = `/protected/submit_bug_report_email`;
+            const SUBMIT_BUG_REPORT_URL = `/api/bug`;
             const submissionData = {
                 title,
                 body,
@@ -95,7 +95,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                     );
 
                 },
-                error : function(jqXHR, textStatus, errorThrown) {
+                error: function (jqXHR, textStatus, errorThrown) {
 
                     const sendEnd = new Date();
                     console.warn("Error submitting bug report. (" + sendEnd.toLocaleString() + ")");
@@ -110,7 +110,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                     );
 
                 },
-                
+
             });
 
 
@@ -124,12 +124,12 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
         await new Promise(resolve => setTimeout(resolve, BUG_REPORT_SUBMIT_DELAY_MS));
 
         //Hide the loading spinner
-        $('#loading').hide();        
+        $('#loading').hide();
 
     }
 
     render() {
-        
+
         const jsxOut = <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
             {/* Navbar */}
@@ -137,7 +137,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
                 <SignedInNavbar
                     activePage="bug-report"
-                    waitingUserCount={waitingUserCount} 
+                    waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount}
                     modifyTailsAccess={modifyTailsAccess}
@@ -149,7 +149,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
             {/* Main Content */}
             <div style={{overflowY: "auto", flex: "1 1 auto"}}>
 
-                <div className="card flex flex-col m-16 my-4"> 
+                <div className="card flex flex-col m-16 my-4">
 
                     {/* Header */}
                     <div className="text-2xl card-header">
@@ -158,15 +158,17 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
                     {/* Display Status Entries */}
                     <div className="card-body text-center text-sm">
-                       
+
                         {/* Text Input Area -- Bug Title */}
                         <div className="form-group">
-                            <input type="text" className="form-control" id="bug-title" placeholder="Bug Title (Required)"/>
+                            <input type="text" className="form-control" id="bug-title"
+                                   placeholder="Bug Title (Required)"/>
                         </div>
 
                         {/* Text Input Area -- Bug Description */}
                         <div className="form-group">
-                            <textarea className="form-control" id="bug-description" rows={5} placeholder="Bug Description (Required)"/>
+                            <textarea className="form-control" id="bug-description" rows={5}
+                                      placeholder="Bug Description (Required)"/>
                         </div>
 
                         {/* Bottom Row */}
@@ -200,7 +202,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                                     <li>Try to provide a brief title and detailed description</li>
                                     <li>Use the checkbox to BCC your email in the report</li>
                                     <li>Wait up to 1 minute to confirm the report was submitted</li>
-                                </ul> 
+                                </ul>
 
                             </div>
 
@@ -219,7 +221,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                             </div>
 
                         </div>
-                                 
+
                     </div>
 
                 </div>

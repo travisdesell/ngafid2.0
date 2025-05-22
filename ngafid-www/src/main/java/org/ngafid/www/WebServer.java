@@ -23,13 +23,6 @@ import java.util.logging.Logger;
 
 import static org.ngafid.core.util.SendEmail.sendAdminEmails;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import io.javalin.Javalin;
-import io.javalin.json.JavalinGson;
-
-
 
 /**
  * The entry point for the NGAFID web server.
@@ -106,7 +99,7 @@ public abstract class WebServer {
             if (value == null || !Double.isFinite(value))
                 jsonWriter.nullValue();
 
-            //Otherwise, write the value
+                //Otherwise, write the value
             else
                 jsonWriter.value(value);
 
@@ -130,12 +123,12 @@ public abstract class WebServer {
     }
 
     public static final Gson gson = new GsonBuilder()
-        .serializeSpecialFloatingPointValues()
-        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
-        .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
-        .registerTypeAdapter(Double.class, new NonFiniteDoubleAdapter())
-        .registerTypeAdapter(double.class, new NonFiniteDoubleAdapter())
-        .create();
+            .serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+            .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
+            .registerTypeAdapter(Double.class, new NonFiniteDoubleAdapter())
+            .registerTypeAdapter(double.class, new NonFiniteDoubleAdapter())
+            .create();
 
     public WebServer(int port, String staticFilesLocation) {
         this.port = port;
