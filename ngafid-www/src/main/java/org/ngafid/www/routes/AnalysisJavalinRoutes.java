@@ -10,7 +10,6 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.accounts.UserPreferences;
 import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
-import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.RateOfClosure;
 import org.ngafid.core.flights.*;
@@ -19,7 +18,6 @@ import org.ngafid.www.Navbar;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -31,7 +29,7 @@ public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.gson;
 
-    private static class Coordinates {
+    public static class Coordinates {
         @JsonProperty
         int nanOffset = -1;
         @JsonProperty
@@ -53,7 +51,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class RateOfClosurePlotData {
+    public static class RateOfClosurePlotData {
         @JsonProperty
         int[] x;
         @JsonProperty
@@ -68,7 +66,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class FlightMetric {
+    public static class FlightMetric {
         @JsonProperty
         String value;
         @JsonProperty
@@ -90,7 +88,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class FlightMetricResponse {
+    public static class FlightMetricResponse {
         @JsonProperty
         List<FlightMetric> values;
         @JsonProperty
@@ -107,7 +105,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static class CesiumResponse {
+    public static class CesiumResponse {
         @JsonProperty
         List<Double> flightGeoAglTaxiing;
         @JsonProperty
@@ -156,7 +154,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void getSeverities(Context ctx) {
+    public static void getSeverities(Context ctx) {
         final String templateFile = "severities.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -176,74 +174,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postSeverities(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final String eventName = Objects.requireNonNull(ctx.formParam("eventNames"));
-        final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = user.getFleetId();
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasViewAccess(fleetId)) {
-            ctx.status(401);
-            ctx.result("User did not have access to view imports for this fleet.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            Map<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
-            ctx.json(eventMap);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    private static void postAllSeverities(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final String eventNames = Objects.requireNonNull(ctx.formParam("eventNames"));
-        final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = user.getFleetId();
-
-        //check to see if the user has upload access for this fleet.
-        if (!user.hasViewAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to view imports for this fleet.");
-            return;
-        }
-
-        try {
-            Connection connection = Database.getConnection();
-            String[] eventNamesArray = eventNames.split(",");
-            Map<String, Map<String, ArrayList<Event>>> eventMap = new HashMap<>();
-
-            for (String eventName : eventNamesArray) {
-                //Remove leading and trailing quotes
-                eventName = eventName.replace("\"", "");
-
-                //Remove brackets
-                eventName = eventName.replace("[", "");
-                eventName = eventName.replace("]", "");
-
-                //Remove trailing spaces
-                eventName = eventName.trim();
-
-                if (eventName.equals("ANY Event")) continue;
-
-                Map<String, ArrayList<Event>> events = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
-                eventMap.put(eventName, events);
-            }
-
-            ctx.json(eventMap);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e)).status(500);
-        }
-    }
-
-    private static void getTurnToFinal(Context ctx) {
+    public static void getTurnToFinal(Context ctx) {
         final String templateFile = "ttf.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -262,13 +193,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postTurnToFinal(Context ctx) {
-        String startDate = ctx.formParam("startDate");
-        String endDate = ctx.formParam("endDate");
-        String airportIataCode = ctx.formParam("airport");
+    public static void postTurnToFinal(Context ctx) {
+        String startDate = ctx.queryParam("startDate");
+        String endDate = ctx.queryParam("endDate");
+        String airportIataCode = ctx.queryParam("airport");
         System.out.println(startDate);
         System.out.println(endDate);
-
 
         List<TurnToFinal.TurnToFinalJSON> _ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
@@ -300,7 +230,7 @@ public class AnalysisJavalinRoutes {
         ctx.json(of("airports", airports, "ttfs", _ttfs));
     }
 
-    private static void getTrends(Context ctx) {
+    public static void getTrends(Context ctx) {
         final String templateFile = "trends.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -319,7 +249,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void getCesium(Context ctx) {
+    public static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final String otherFlightId = ctx.queryParam("other_flight_id"); // Can be null
@@ -494,8 +424,8 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postRateOfClosure(Context ctx) {
-        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
+    public static void postRateOfClosure(Context ctx) {
+        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("eid")));
         try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
             if (rateOfClosure != null) {
@@ -506,10 +436,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postLociMetrics(Context ctx) {
+    public static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
-        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.formParam("time_index")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
+        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("time_index")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -541,9 +471,9 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    private static void postCoordinates(Context ctx) {
+    public static void postCoordinates(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -554,7 +484,6 @@ public class AnalysisJavalinRoutes {
 
             final Coordinates coordinates = new Coordinates(connection, flightId);
             ctx.json(coordinates);
-
         } catch (Exception e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
@@ -563,18 +492,18 @@ public class AnalysisJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
-        app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
-        app.post("/protected/all_severities", AnalysisJavalinRoutes::postAllSeverities);
+        // app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
+        // app.post("/protected/all_severities", AnalysisJavalinRoutes::postAllSeverities);
 
         app.get("/protected/ttf", AnalysisJavalinRoutes::getTurnToFinal);
-        app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
+        // app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
 
         app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
 
-//        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
+        // app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 
-        app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
-        app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);
-        app.post("/protected/coordinates", AnalysisJavalinRoutes::postCoordinates);
+        // app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
+        // app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);
+        // app.post("/protected/coordinates", AnalysisJavalinRoutes::postCoordinates);
     }
 }

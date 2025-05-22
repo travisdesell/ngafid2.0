@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Config;
 import org.ngafid.core.kafka.Configuration;
 import org.ngafid.core.kafka.Topic;
 import org.ngafid.core.util.MD5;
@@ -17,8 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -511,13 +512,22 @@ public final class Upload {
         return getUploads(connection, fleetId, "");
     }
 
+    /**
+     * Fetches uploads for the frontend. Airsync uploads are consequentially filtered out as they have their own page.
+     *
+     * @param connection
+     * @param fleetId
+     * @param condition
+     * @return
+     * @throws SQLException
+     */
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
         // PreparedStatement uploadQuery = connection.prepareStatement("SELECT id,
         // fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus,
         // md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights,
         // warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
         String query = "SELECT " + DEFAULT_COLUMNS
-                + " FROM uploads WHERE fleet_id = ? AND uploader_id != ? ORDER BY start_time DESC ";
+                + " FROM uploads WHERE fleet_id = ? AND uploader_id != ? AND kind = 'FILE' ORDER BY start_time DESC ";
         if (condition != null) {
             query += " " + condition;
         }
@@ -541,7 +551,7 @@ public final class Upload {
     }
 
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String query = "SELECT count(id) FROM uploads WHERE uploader_id != ?";
+        String query = "SELECT count(id) FROM uploads WHERE kind = 'FILE'";
         if (fleetId > 0)
             query += " AND fleet_id = " + fleetId;
 
@@ -549,13 +559,9 @@ public final class Upload {
             query += " " + condition;
 
         try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
-            uploadQuery.setInt(1, -1);
-
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
                 resultSet.next();
-                int count = resultSet.getInt(1);
-
-                return count;
+                return resultSet.getInt(1);
             }
         }
     }
@@ -700,6 +706,10 @@ public final class Upload {
         }
     }
 
+    public String getChunkDirectory() {
+        return String.format("%s/%d/%d/%s", Config.NGAFID_UPLOAD_DIR, fleetId, uploaderId, identifier);
+    }
+
     public Path getArchivePath() {
         return Paths.get(getArchiveDirectory(), getArchiveFilename());
     }
@@ -747,10 +757,7 @@ public final class Upload {
     }
 
     public void getAirSyncInfo(Connection connection) throws SQLException {
-        String[] dateInfo = this.identifier.split("-");
-        int month = Integer.parseInt(dateInfo[3]);
-
-        this.groupString = Month.of(month) + " " + dateInfo[2];
+        this.groupString = startTime;
 
         String sql = "SELECT DISTINCT tail FROM airsync_imports WHERE upload_id = " + id;
         try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet = query.executeQuery()) {
@@ -765,7 +772,7 @@ public final class Upload {
                     // It indicates that more than one aircraft is grouped into an
                     // AirSync upload, which is not intended!
                     LOG.severe("This should not be happening! Multiple tails in one AirSync upload! "
-                            + Thread.currentThread().getStackTrace().toString());
+                            + Arrays.toString(Thread.currentThread().getStackTrace()));
                 }
             }
         }

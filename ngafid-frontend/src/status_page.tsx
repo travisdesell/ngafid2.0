@@ -7,7 +7,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 
-import './index.css'          //<-- include Tailwind
+import './index.css' //<-- include Tailwind
 
 
 /*
@@ -19,6 +19,7 @@ enum StatusIcon {
     WARNING = "fa-warning",
     ERROR = "fa-exclamation-circle"
 }
+
 enum StatusName {
     UNKNOWN = "UNKNOWN",
     OK = "OK",
@@ -75,45 +76,36 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
     return {
         name: name,
         nameDisplay: formatName(name),
-        status: { name: STATUS_DEFAULT, icon: StatusIcon.UNKNOWN },
+        status: {name: STATUS_DEFAULT, icon: StatusIcon.UNKNOWN},
         message: STATUS_DEFAULT_MESSAGE
     } as StatusEntry;
 
 });
 
 
-
-
 export default class StatusPage extends React.Component {
 
     constructor(props: any) {
-
         super(props);
-
     }
 
 
     //Fetch status entries from the server
     async componentDidMount(): Promise<void> {
-        
+
         console.log("Status Page mounted, fetching statuses...");
 
-        const submissionData = {
-            statusNames: STATUS_NAMES_LIST
-        };
-        
-        const STATUS_FAILURE_NAMES:string[] = [];
+        const STATUS_FAILURE_NAMES: string[] = [];
 
         const statusEntryRequests = STATUS_ENTRIES.map((entry) => {
 
-            const stautsURL = `/status/${entry.name}`;
+            const stautsURL = `/api/status/${encodeURIComponent(entry.name)}`;
 
             return new Promise<void>((resolve, reject) => {
 
                 $.ajax({
                     type: "GET",
                     url: stautsURL,
-                    data: submissionData,
                     dataType: "json",
                     contentType: "application/json",
                     async: true,
@@ -121,7 +113,7 @@ export default class StatusPage extends React.Component {
 
                         //Update Status Name
                         entry.status.name = (response.status ?? StatusName.UNKNOWN);
-                        
+
                         //Update Status Icon
                         const statusTuple = STATUS_TUPLES.find((tuple) => (tuple[STATUS_TUPLE_INDEX_NAME] === entry.status.name));
                         if (statusTuple) {
@@ -133,16 +125,16 @@ export default class StatusPage extends React.Component {
 
                         //Update Status Message
                         entry.message = (response.message ?? STATUS_DEFAULT_MESSAGE);
-        
+
                         console.log(`Status(${entry.name}) updated: ${entry.status.name} - ${entry.message}`);
 
                         resolve();
-        
+
                     },
-                    error : function(jqXHR, textStatus, errorThrown) {
+                    error: function (jqXHR, textStatus, errorThrown) {
 
                         STATUS_FAILURE_NAMES.push(entry.name);
-                        
+
                         console.error(`jqXHR: ${jqXHR}`);
                         console.error(`textStatus: ${textStatus}`);
                         console.error(`errorThrown: ${errorThrown}`);
@@ -152,7 +144,7 @@ export default class StatusPage extends React.Component {
                         reject(errorThrown);
 
                     },
-                    
+
                 });
 
             });
@@ -174,7 +166,7 @@ export default class StatusPage extends React.Component {
             const errorModalTitle = (STATUS_FAILURE_NAMES.length > 1) ? "Error Fetching Statuses" : "Error Fetching Status";
             errorModal.show(errorModalTitle, errorMessage);
         }
-        
+
         //Trigger a re-render
         this.forceUpdate();
 
@@ -182,7 +174,7 @@ export default class StatusPage extends React.Component {
 
 
     render() {
-        
+
         const jsxOut = <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
             {/* Navbar */}
@@ -190,7 +182,7 @@ export default class StatusPage extends React.Component {
 
                 <SignedInNavbar
                     activePage="status"
-                    waitingUserCount={waitingUserCount} 
+                    waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount}
                     modifyTailsAccess={modifyTailsAccess}
@@ -202,7 +194,7 @@ export default class StatusPage extends React.Component {
             {/* Main Content */}
             <div style={{overflowY: "auto", flex: "1 1 auto"}}>
 
-                <div className="card flex flex-col m-16 my-4"> 
+                <div className="card flex flex-col m-16 my-4">
 
                     {/* Header */}
                     <div className="text-2xl card-header">
@@ -214,30 +206,31 @@ export default class StatusPage extends React.Component {
                         <table className="table-hover table-fixed rounded-lg w-full">
 
                             <colgroup>
-                                <col style={{ width: "20%" }} />
-                                <col style={{ width: "20%" }} />
-                                <col style={{ width: "60%" }} />
+                                <col style={{width: "20%"}}/>
+                                <col style={{width: "20%"}}/>
+                                <col style={{width: "60%"}}/>
                             </colgroup>
 
                             <thead className="leading-16 text-[var(--c_text)] border-b-1">
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Status</th>
-                                    <th>Message</th>
-                                </tr>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Message</th>
+                            </tr>
                             </thead>
 
 
                             <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
 
-                                {/* Empty spacer row */}
-                                <tr className="pointer-none bg-transparent">
-                                    <td colSpan={3} className="h-6"/>
-                                </tr>
+                            {/* Empty spacer row */}
+                            <tr className="pointer-none bg-transparent">
+                                <td colSpan={3} className="h-6"/>
+                            </tr>
 
-                                {STATUS_ENTRIES.map((entry, index) => {
-                                    return (
-                                        <tr key={entry.name} className={`${index%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
+                            {STATUS_ENTRIES.map((entry, index) => {
+                                return (
+                                    <tr key={entry.name}
+                                        className={`${index % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
 
                                             <td className="truncate whitespace-nowrap overflow-hidden">
                                                 {index+1} - {entry.nameDisplay}
@@ -248,10 +241,10 @@ export default class StatusPage extends React.Component {
                                                 {/* Status Icon */}
                                                 <i className={`mr-2 scale-100 fa ${entry.status.icon}`}/>
 
-                                                {/* Status Name */}
-                                                {entry.status.name}
+                                            {/* Status Name */}
+                                            {entry.status.name}
 
-                                            </td>
+                                        </td>
 
                                             <td className={`${entry.message == STATUS_DEFAULT_MESSAGE ? "italic opacity-50" : ""}`}>
                                                 {entry.message}

@@ -1,4 +1,4 @@
-package org.ngafid.uploads.process;
+package org.ngafid.processor;
 
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.FlightProcessingException;
@@ -335,7 +335,7 @@ public class DependencyGraph {
                             "reason:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
                 } else {
-                    LOG.finer("Optional step " + step.getClass().getName() +
+                    LOG.info("Optional step " + step.getClass().getName() +
                             " has been disabled because:\n\t" + reason);
                     if (e != null)
                         exceptions.add(new MalformedFlightFileException(reason));

@@ -1,9 +1,8 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
-import { errorModal } from "./error_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import TimeHeader from "./time_header.js";
@@ -12,7 +11,6 @@ import GetDescription from "./get_description";
 import Plotly from 'plotly.js';
 import Tooltip from "react-bootstrap/Tooltip";
 import {OverlayTrigger} from "react-bootstrap";
-import { DarkModeToggle } from './dark_mode_toggle.js';
 
 airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
@@ -61,19 +59,20 @@ class TrendsPage extends React.Component {
 
         var date = new Date();
         this.state = {
-            airframe : "All Airframes",
-            startYear : 2020,
-            startMonth : 1,
-            endYear : date.getFullYear(),
-            endMonth : date.getMonth() + 1,
-            datesChanged : false,
-            aggregatePage : props.aggregate_page,
-            eventChecked : eventChecked,
-            eventsEmpty : eventsEmpty
+            airframe: "All Airframes",
+            startYear: 2020,
+            startMonth: 1,
+            endYear: date.getFullYear(),
+            endMonth: date.getMonth() + 1,
+            datesChanged: false,
+            aggregatePage: props.aggregate_page,
+            eventChecked: eventChecked,
+            eventsEmpty: eventsEmpty
         };
-        
+
         this.fetchMonthlyEventCounts();
     }
+
     startDate() {
         let startDate = this.state.startYear + "-";
 
@@ -94,9 +93,9 @@ class TrendsPage extends React.Component {
 
     fetchMonthlyEventCounts() {
         var submissionData = {
-            startDate : this.startDate() + "-01",
-            endDate : this.endDate() + "-28",
-            aggregatePage : this.props.aggregate_page
+            startDate: this.startDate() + "-01",
+            endDate: this.endDate() + "-28",
+            aggregatePage: this.props.aggregate_page
         };
 
         let trendsPage = this;
@@ -105,23 +104,23 @@ class TrendsPage extends React.Component {
 
         return new Promise((resolve, reject) => {
             $.ajax({
-                type: 'POST',
-                url: '/protected/monthly_event_counts',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
+                type: 'GET',
+                url: '/api/event/count/monthly/by-name',
+                data: submissionData,
+                dataType: 'json',
+                success: function (response) {
 
                     if (response.err_msg) {
                         errorModal.show(response.err_title, response.err_msg);
                         return;
-                    }   
+                    }
 
                     eventCounts = response;
-                    
-                    let countsMerged = {};
-                    for(let [eventName, countsObject] of Object.entries(eventCounts)) {
 
-                        for(let [airframeName] of Object.entries(countsObject)) {
+                    let countsMerged = {};
+                    for (let [eventName, countsObject] of Object.entries(eventCounts)) {
+
+                        for (let [airframeName] of Object.entries(countsObject)) {
 
                             if (airframeName === "Garmin Flight Display") {
                                 continue;
@@ -144,14 +143,14 @@ class TrendsPage extends React.Component {
                                     totalFlightsCounts: [...countsAirframe.totalFlightsCounts]
                                 };
 
-                            //Airframe name is already in the merged counts object, add the counts
+                                //Airframe name is already in the merged counts object, add the counts
                             } else {
 
-                                for (let i = 0 ; i < countsAirframe.dates.length ; i++) {
-                                    
+                                for (let i = 0; i < countsAirframe.dates.length; i++) {
+
                                     if (countsAirframe.totalEventsCounts[i] === 0)
                                         continue;
-    
+
                                     countsMerged[airframeName].aggregateFlightsWithEventCounts[i] += countsAirframe.aggregateFlightsWithEventCounts[i];
                                     countsMerged[airframeName].aggregateTotalEventsCounts[i] += countsAirframe.aggregateTotalEventsCounts[i];
                                     countsMerged[airframeName].aggregateTotalFlightsCounts[i] += countsAirframe.aggregateTotalFlightsCounts[i];
@@ -171,12 +170,12 @@ class TrendsPage extends React.Component {
                     trendsPage.displayPlots(trendsPage.state.airframe);
 
                     resolve(response);
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Loading Uploads", errorThrown);
                     reject(errorThrown);
-                },   
-                async: true 
+                },
+                async: true
             });
         });
 
@@ -378,7 +377,6 @@ class TrendsPage extends React.Component {
         percentData = [];
 
 
-
         let counts = eventCounts == null ? {} : eventCounts;
 
         let airframeNames = [];
@@ -410,14 +408,14 @@ class TrendsPage extends React.Component {
                 console.log('setting initial fleetPercents!');
 
                 fleetPercents = {
-                    name : eventName + ' - Your Fleet',
-                    type : 'scatter',
-                    hoverinfo : 'x+text',
-                    hovertext : [],
-                    y : [],
-                    x : [],
-                    flightsWithEventCounts : {},
-                    totalFlightsCounts : {},
+                    name: eventName + ' - Your Fleet',
+                    type: 'scatter',
+                    hoverinfo: 'x+text',
+                    hovertext: [],
+                    y: [],
+                    x: [],
+                    flightsWithEventCounts: {},
+                    totalFlightsCounts: {},
                 }
                 let ngafidPercentsName = eventName + " - ";
                 if (this.state.aggregatePage) {
@@ -426,14 +424,14 @@ class TrendsPage extends React.Component {
                     ngafidPercentsName += "All Other Fleets";
                 }
                 ngafidPercents = {
-                    name : ngafidPercentsName,
-                    type : 'scatter',
-                    hoverinfo : 'x+text',
-                    hovertext : [],
-                    y : [],
-                    x : [],
-                    flightsWithEventCounts : {},
-                    totalFlightsCounts :{},
+                    name: ngafidPercentsName,
+                    type: 'scatter',
+                    hoverinfo: 'x+text',
+                    hovertext: [],
+                    y: [],
+                    x: [],
+                    flightsWithEventCounts: {},
+                    totalFlightsCounts: {},
                 }
 
                 eventFleetPercents[eventName] = fleetPercents;
@@ -450,14 +448,14 @@ class TrendsPage extends React.Component {
                 //Current airframe name is neither the selected airframe name or 'All Airframes', skip
                 if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
                     continue;
-        
+
 
                 value.name = value.eventName + " - " + value.airframeName;
                 value.x = value.dates;
                 value.type = 'scatter';
                 value.hoverinfo = 'x+text';
 
-                    
+
                 let airframeIndex = airframes.indexOf(value.airframeName);
                 let eventNameIndex = eventNames.indexOf(eventName);
 
@@ -473,40 +471,40 @@ class TrendsPage extends React.Component {
                         legendgroup: value.name,
 
                         //Dashed lines for 'ANY Event'
-                        line : {
+                        line: {
                             dash: 'dot'
                         }
 
                     };
 
-                //Event is NOT 'ANY Event'
+                    //Event is NOT 'ANY Event'
                 } else {
 
                     value = {
                         ...value,
 
                         legendgroup: value.name,
-                        mode : 'lines',
+                        mode: 'lines',
 
                         //Standard lines for non-'ANY Event'
-                        line : {
-                            width : 2,
+                        line: {
+                            width: 2,
                         }
 
                     };
-                    
+
                 }
 
                 //don't add airframes to the count plot that the fleet doesn't have
                 if (airframes.indexOf(value.airframeName) >= 0) {
-                    
+
                     //Display the "ANY Event" lines under the other ones
                     if (eventName === "ANY Event") {
                         countData.push(value);
                     } else {
                         countData.unshift(value);
                     }
-                    
+
                 }
 
                 if (this.state.aggregatePage) {
@@ -560,7 +558,7 @@ class TrendsPage extends React.Component {
                     }
                     value.hovertext.push(value.y[i] + " events in " + flightsWithEventCount + " of " + totalFlightsCount + " flights : " + value.eventName + " - " + value.airframeName);
                 }
-                
+
             }
 
         }
@@ -569,19 +567,19 @@ class TrendsPage extends React.Component {
 
             let airframeIndex = airframeNames.indexOf(airframeName);
             let airframeLegendHighlight = {
-                
-                name : airframeName,
 
-                x : [0],
-                y : [0],
+                name: airframeName,
+
+                x: [0],
+                y: [0],
 
                 //visible: 'legendonly',
                 visible: false,
                 showlegend: true,
 
-                mode : 'markers',
-                marker : {
-                    width : 2.0,
+                mode: 'markers',
+                marker: {
+                    width: 2.0,
                     opacity: 1.0,
                     // color : 'hsl('
                     //     + parseInt(360.0 * airframeIndex / airframeNames.length) + ','
@@ -618,13 +616,13 @@ class TrendsPage extends React.Component {
                     legendgroup: fleetValue.name,
 
                     //Dashed lines for 'ANY Event'
-                    line : {
+                    line: {
                         dash: 'dot'
                     }
 
                 };
 
-            //FLEET VALUE -- Event is NOT 'ANY Event'
+                //FLEET VALUE -- Event is NOT 'ANY Event'
             } else {
 
                 //  console.log("[EX] NAME: ", fleetValue.name);
@@ -633,11 +631,11 @@ class TrendsPage extends React.Component {
                     ...fleetValue,
 
                     legendgroup: fleetValue.name,
-                    mode : 'lines',
+                    mode: 'lines',
 
                     //Standard lines for non-'ANY Event'
-                    line : {
-                        width : 2,
+                    line: {
+                        width: 2,
                     }
 
                 };
@@ -668,7 +666,7 @@ class TrendsPage extends React.Component {
                     } else {
                         fixedText = v.toFixed(2) + "%";
                     }
-                    fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
+                    fleetValue.hovertext.push(fixedText + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
                 }
             }
 
@@ -687,13 +685,13 @@ class TrendsPage extends React.Component {
                     legendgroup: ngafidValue.name,
 
                     //Dashed lines for 'ANY Event'
-                    line : {
+                    line: {
                         dash: 'dot'
                     }
 
                 };
 
-            //NGAFID VALUE -- Event is NOT 'ANY Event'
+                //NGAFID VALUE -- Event is NOT 'ANY Event'
             } else {
 
                 //  console.log("[EX] NAME: ", ngafidValue.name);
@@ -702,11 +700,11 @@ class TrendsPage extends React.Component {
                     ...ngafidValue,
 
                     legendgroup: ngafidValue.name,
-                    mode : 'lines',
+                    mode: 'lines',
 
                     //Standard lines for non-'ANY Event'
-                    line : {
-                        width : 2,
+                    line: {
+                        width: 2,
                     }
 
                 };
@@ -719,7 +717,6 @@ class TrendsPage extends React.Component {
 
             let indexCur = (airframeIndex + eventNameIndex);
             let indicesMax = (airframes.length + eventNames.length);
-
 
 
             percentData.push(ngafidValue);
@@ -760,8 +757,8 @@ class TrendsPage extends React.Component {
         let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
         var countLayout = {
-            title : {text: 'Event Counts Over Time'},
-            hovermode : "x unified",
+            title: {text: 'Event Counts Over Time'},
+            hovermode: "x unified",
             autosize: true,
             margin: {
                 l: 50,
@@ -770,25 +767,25 @@ class TrendsPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            legend: { 
+            legend: {
                 traceorder: "normal"
             },
-            plot_bgcolor : "transparent",
-            paper_bgcolor : plotBgColor,
-            font : {
-                color : plotTextColor
+            plot_bgcolor: "transparent",
+            paper_bgcolor: plotBgColor,
+            font: {
+                color: plotTextColor
             },
-            xaxis : {
-                gridcolor : plotGridColor
+            xaxis: {
+                gridcolor: plotGridColor
             },
-            yaxis : {
-                gridcolor : plotGridColor
+            yaxis: {
+                gridcolor: plotGridColor
             }
         };
 
         var percentLayout = {
-            title : {text: 'Percentage of Flights With Event Over Time'},
-            hovermode : "x unified",
+            title: {text: 'Percentage of Flights With Event Over Time'},
+            hovermode: "x unified",
             autosize: true,
             margin: {
                 l: 50,
@@ -797,19 +794,19 @@ class TrendsPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            legend: { 
+            legend: {
                 traceorder: "normal"
             },
-            plot_bgcolor : "transparent",
-            paper_bgcolor : plotBgColor,
-            font : {
-                color : plotTextColor
+            plot_bgcolor: "transparent",
+            paper_bgcolor: plotBgColor,
+            font: {
+                color: plotTextColor
             },
-            xaxis : {
-                gridcolor : plotGridColor
+            xaxis: {
+                gridcolor: plotGridColor
             },
-            yaxis : {
-                gridcolor : plotGridColor
+            yaxis: {
+                gridcolor: plotGridColor
             }
         };
 
@@ -842,30 +839,30 @@ class TrendsPage extends React.Component {
 
     updateStartYear(newStartYear) {
         console.log("setting new start year to: " + newStartYear);
-        this.setState({startYear : newStartYear, datesChanged : true});
+        this.setState({startYear: newStartYear, datesChanged: true});
         console.log(this.state);
     }
 
     updateStartMonth(newStartMonth) {
         console.log("setting new start month to: " + newStartMonth);
-        this.setState({startMonth : newStartMonth, datesChanged : true});
+        this.setState({startMonth: newStartMonth, datesChanged: true});
         console.log(this.state);
     }
 
     updateEndYear(newEndYear) {
         console.log("setting new end year to: " + newEndYear);
-        this.setState({endYear : newEndYear, datesChanged : true});
+        this.setState({endYear: newEndYear, datesChanged: true});
         console.log(this.state);
     }
 
     updateEndMonth(newEndMonth) {
         console.log("setting new end month to: " + newEndMonth);
-        this.setState({endMonth : newEndMonth, datesChanged : true});
+        this.setState({endMonth: newEndMonth, datesChanged: true});
         console.log(this.state);
     }
 
     dateChange() {
-        console.log("[trendscard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'"); 
+        console.log("[trendscard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'");
 
         for (let [eventName, value] of Object.entries(this.state.eventChecked)) {
             this.state.eventChecked[eventName] = false;
@@ -899,22 +896,26 @@ class TrendsPage extends React.Component {
 
     render() {
 
-        const numberOptions = { 
+        const numberOptions = {
             minimumFractionDigits: 2,
-            maximumFractionDigits: 2 
+            maximumFractionDigits: 2
         };
 
         const activePageName = (this.state.aggregatePage ? "aggregate_trends" : "trends");
         const timeHeaderTitle = (this.state.aggregatePage ? "Aggregate Event Trends" : "Event Trends");
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{flex:"0 0 auto"}}>
-                    <SignedInNavbar activePage={activePageName} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <div style={{flex: "0 0 auto"}}>
+                    <SignedInNavbar activePage={activePageName} darkModeOnClickAlt={() => {
+                        this.displayPlots(this.state.airframe);
+                    }} waitingUserCount={waitingUserCount} fleetManager={fleetManager}
+                                    unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
+                                    plotMapHidden={plotMapHidden}/>
                 </div>
 
-                <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
+                <div className="container-fluid" style={{overflowY: "auto", flex: "1 1 auto"}}>
 
                     <div className="row">
                         <div className="col-lg-12" style={{paddingBottom: "64"}}>
@@ -923,10 +924,10 @@ class TrendsPage extends React.Component {
                                     name={timeHeaderTitle}
                                     airframes={airframes}
                                     airframe={this.state.airframe}
-                                    startYear={this.state.startYear} 
-                                    startMonth={this.state.startMonth} 
-                                    endYear={this.state.endYear} 
-                                    endMonth={this.state.endMonth} 
+                                    startYear={this.state.startYear}
+                                    startMonth={this.state.startMonth}
+                                    endYear={this.state.endYear}
+                                    endMonth={this.state.endMonth}
                                     datesChanged={this.state.datesChanged}
                                     dateChange={() => this.dateChange()}
                                     airframeChange={(airframe) => this.airframeChange(airframe)}
@@ -936,52 +937,74 @@ class TrendsPage extends React.Component {
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
                                 />
-                            <div className="card-body" style={{padding:"0"}}>
-                                <div className="row" style={{margin:"0", display: "flex", height: "100%"}}>
-                                    <div className="col-lg-2" style={{padding:"8 8 8 8"}}>
+                                <div className="card-body" style={{padding: "0"}}>
+                                    <div className="row" style={{margin: "0", display: "flex", height: "100%"}}>
+                                        <div className="col-lg-2" style={{padding: "8 8 8 8"}}>
 
-                                        {
-                                            eventNames.map((eventName, index) => {
+                                            {
+                                                eventNames.map((eventName, index) => {
 
-                                                //Don't show a description for the "ANY Event" event
-                                                if (eventName === "ANY Event") return (
-                                                    <div key={index} className="form-check">
-                                                        <input className="form-check-input" disabled={this.state.eventsEmpty[eventName]} type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
-                                                        <label className="form-check-label">
-                                                            {eventName}
-                                                        </label>
-                                                    </div>
-                                                );
-
-                                                return (
-                                                    <div key={index} className="form-check">
-                                                        <input  className="form-check-input"
-                                                                disabled={this.state.eventsEmpty[eventName]} 
-                                                                type="checkbox" 
-                                                                value="" 
-                                                                id={"event-check-" + index}
-                                                                checked={this.state.eventChecked[eventName]} 
-                                                                onChange={() => this.checkEvent(eventName)}>
-                                                        </input>
-                                                        <OverlayTrigger overlay={(props) => (
-                                                            <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
-                                                                        placement="bottom">
+                                                    //Don't show a description for the "ANY Event" event
+                                                    if (eventName === "ANY Event") return (
+                                                        <div key={index} className="form-check">
+                                                            <input className="form-check-input"
+                                                                   disabled={this.state.eventsEmpty[eventName]}
+                                                                   type="checkbox" value="" id={"event-check-" + index}
+                                                                   checked={this.state.eventChecked[eventName]}
+                                                                   onChange={() => this.checkEvent(eventName)}></input>
                                                             <label className="form-check-label">
                                                                 {eventName}
                                                             </label>
-                                                        </OverlayTrigger>
+                                                        </div>
+                                                    );
 
-                                                    </div>
-                                                );
-                                            })
-                                        }
+                                                    return (
+                                                        <div key={index} className="form-check">
+                                                            <input className="form-check-input"
+                                                                   disabled={this.state.eventsEmpty[eventName]}
+                                                                   type="checkbox"
+                                                                   value=""
+                                                                   id={"event-check-" + index}
+                                                                   checked={this.state.eventChecked[eventName]}
+                                                                   onChange={() => this.checkEvent(eventName)}>
+                                                            </input>
+                                                            <OverlayTrigger overlay={(props) => (
+                                                                <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
+                                                                            placement="bottom">
+                                                                <label className="form-check-label">
+                                                                    {eventName}
+                                                                </label>
+                                                            </OverlayTrigger>
 
-                                    </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            }
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80", display:"flex", flexDirection: "column", minHeight: "85vh", flex:"1 1 auto"}}>
-                                        <div id="count-trends-plot" className="flex-fill" style={{flex: "1 1 auto", minHeight: "0", height: "100%", widhth: "100%"}}></div>
-                                        <hr style={{margin:"0", borderTop:"8px solid var(--c_card_bg)"}}></hr>
-                                        <div id="percent-trends-plot" className="flex-fill" style={{flex: "1 1 auto", minHeight: "0", height: "100%", widhth: "100%"}}></div>
+                                        </div>
+
+                                        <div className="col-lg-10" style={{
+                                            padding: "0 0 0 8",
+                                            opacity: "0.80",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            minHeight: "85vh",
+                                            flex: "1 1 auto"
+                                        }}>
+                                            <div id="count-trends-plot" className="flex-fill" style={{
+                                                flex: "1 1 auto",
+                                                minHeight: "0",
+                                                height: "100%",
+                                                widhth: "100%"
+                                            }}></div>
+                                            <hr style={{margin: "0", borderTop: "8px solid var(--c_card_bg)"}}></hr>
+                                            <div id="percent-trends-plot" className="flex-fill" style={{
+                                                flex: "1 1 auto",
+                                                minHeight: "0",
+                                                height: "100%",
+                                                widhth: "100%"
+                                            }}></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -989,12 +1012,9 @@ class TrendsPage extends React.Component {
                     </div>
                 </div>
             </div>
-        </div>
         );
     }
 }
-
-
 
 
 export default TrendsPage

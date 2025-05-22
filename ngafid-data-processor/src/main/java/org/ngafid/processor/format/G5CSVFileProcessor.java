@@ -161,6 +161,10 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             int fromIndex = (i == 0) ? 0 : splitIndices.get(i);
             int toIndex = (i == splitIndices.size() - 1) ? rows.size() : splitIndices.get(i + 1);
 
+            // Ignore anything < 5 minutes
+            if (toIndex - fromIndex < 60 * 5)
+                continue;
+
             Map<String, DoubleTimeSeries> segmentDoubleSeries = new HashMap<>();
             doubleTimeSeries.forEach((k, v) -> segmentDoubleSeries.put(k, v.subSeries(fromIndex, toIndex)));
 

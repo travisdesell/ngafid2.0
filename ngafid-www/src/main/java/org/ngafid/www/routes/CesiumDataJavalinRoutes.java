@@ -35,6 +35,7 @@ public class CesiumDataJavalinRoutes {
         app.post("/protected/cesium_data", CesiumDataJavalinRoutes::handlePostCesiumData);
     }
 
+    // TODO: This needs to be broken up into api routes to fetch the data
     private static void handleGetNgafidCesium(Context ctx) {
         LOG.info("Handling /protected/ngafid_cesium route");
 

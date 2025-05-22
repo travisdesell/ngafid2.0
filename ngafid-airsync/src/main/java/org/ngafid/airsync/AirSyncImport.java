@@ -58,15 +58,15 @@ public final class AirSyncImport {
      * instance's database! See db/update_tables.php for more info.
      */
     private static int AIRSYNC_UPLOADER_ID = -1;
+
+    // This ID is the ID airsync provides, NOT A FLIGHT ID
     private int id;
     private int uploadId;
     private int aircraftId;
-    private byte[] data;
     private String origin;
     private String destination;
     private String timeStart;
     private String timeEnd;
-    private String md5Hash;
     private String fileUrl;
     private String timestampUploaded;
     private LocalDateTime localDateTimeStart;
@@ -74,19 +74,6 @@ public final class AirSyncImport {
     private LocalDateTime localDateTimeUpload;
     private AirSyncAircraft aircraft;
     private AirSyncFleet fleet;
-
-    /**
-     * Private contructor for instaniation within this class
-     *
-     * @param id       the id of this import in the database
-     * @param uploadId the id of the upload this import belongs to in the database
-     * @param fleet    the fleet that this import belongs to
-     */
-    private AirSyncImport(int id, int uploadId, AirSyncFleet fleet) {
-        this.uploadId = uploadId;
-        this.id = id;
-        this.fleet = fleet;
-    }
 
     /**
      * Gets the uploader id of the AirSync user
@@ -108,19 +95,6 @@ public final class AirSyncImport {
         }
 
         return AIRSYNC_UPLOADER_ID;
-    }
-
-    /**
-     * Formats a string that will server as an identified for the uploads table
-     *
-     * @param fleetId    the id of the fleet that this import belongs to
-     * @param aircraftId the id of the aircraft this import is coming from
-     * @param time       the time of this import
-     * @return a formatted string that will serve as a unique indetifier in the
-     * database (uploads table)
-     */
-    public static String getUploadIdentifier(int fleetId, int aircraftId, LocalDateTime time) {
-        return "AS-" + fleetId + "." + aircraftId + "-" + time.getYear() + "-" + time.getMonthValue();
     }
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
@@ -163,13 +137,13 @@ public final class AirSyncImport {
      * @throws SQLException if there is an issue with the DBMS
      */
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String sql = String.format("SELECT %s FROM uploads WHERE fleet_id = ? AND uploader_id = ? " +
+        String sql = String.format("SELECT %s FROM uploads WHERE fleet_id = ? AND kind = ? " +
                 "ORDER BY start_time DESC", Upload.DEFAULT_COLUMNS);
         if (condition != null && !condition.isBlank()) sql += " " + condition;
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, fleetId);
-            query.setInt(2, -1);
+            query.setString(2, Upload.Kind.AIRSYNC.name());
 
             try (ResultSet resultSet = query.executeQuery()) {
                 List<Upload> uploads = new ArrayList<>();
@@ -227,13 +201,11 @@ public final class AirSyncImport {
      */
     public static List<AirSyncImportResponse> getImports(Connection connection,
                                                          int fleetId, String condition) throws SQLException {
-        String sql = "SELECT a.id, a.time_received, a.upload_id, f.status, a.flight_id, a.tail FROM airsync_imports " +
-                "AS a INNER JOIN flights AS f ON f.id = a.flight_id WHERE a.fleet_id = ? ORDER BY a.time_received";
+        String sql = "SELECT a.id, a.time_received, a.upload_id, u.status, a.flight_id, a.tail FROM airsync_imports " +
+                "AS a INNER JOIN uploads AS u ON u.id = a.upload_id WHERE u.status LIKE 'PROCESSED%' ORDER BY a.time_received";
         if (condition != null && !condition.isBlank()) sql += " " + condition;
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setInt(1, fleetId);
-
             try (ResultSet resultSet = query.executeQuery()) {
                 List<AirSyncImportResponse> imports = new ArrayList<>();
 
@@ -256,12 +228,11 @@ public final class AirSyncImport {
      * @throws SQLException if there is an issue with the DBMS
      */
     public static int getNumImports(Connection connection, int fleetId, String condition) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM airsync_imports WHERE fleet_id = ?";
+        String sql = "SELECT COUNT(*) FROM airsync_imports " +
+                "AS a INNER JOIN uploads AS u ON u.id = a.upload_id WHERE u.status LIKE 'PROCESSED%'";
         if (condition != null && !condition.isBlank()) sql += " " + condition;
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setInt(1, fleetId);
-
             try (ResultSet resultSet = query.executeQuery()) {
                 if (resultSet.next()) {
                     return resultSet.getInt(1);

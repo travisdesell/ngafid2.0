@@ -31,6 +31,7 @@ public final class User implements Serializable {
     private String zipCode;
     private boolean admin;
     private boolean aggregateView;
+    private String passwordToken;
 
     private UserEmailPreferences userEmailPreferences;
 
@@ -60,6 +61,8 @@ public final class User implements Serializable {
         this.zipCode = zipCode;
         this.admin = admin;
         this.aggregateView = aggregateView;
+        this.passwordToken = "";
+
         this.fleet = Fleet.get(connection, fleetId);
         this.fleetAccess = FleetAccess.get(connection, id, fleetId);
     }
@@ -85,6 +88,7 @@ public final class User implements Serializable {
         zipCode = resultSet.getString(10);
         admin = resultSet.getBoolean(11);
         aggregateView = resultSet.getBoolean(12);
+        passwordToken = resultSet.getString(13);
     }
 
     /**
@@ -269,12 +273,7 @@ public final class User implements Serializable {
             if (!resultSet.next())
                 return null;
 
-            User user = new User(connection, fleetId, resultSet);
-
-            // Record this user in the email preferences map
-            UserEmailPreferences.addUser(connection, user);
-
-            return user;
+            return new User(connection, fleetId, resultSet);
         }
     }
 
@@ -478,29 +477,18 @@ public final class User implements Serializable {
         ;
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
-
             for (Map.Entry<String, Boolean> entry : emailPreferences.entrySet()) {
-
                 query.setInt(1, userId);
                 query.setString(2, entry.getKey());
                 query.setBoolean(3, entry.getValue());
 
-                query.executeUpdate();
-
+                query.addBatch();
             }
-                
-            UserEmailPreferences updatedEmailPreferences = User.getUserEmailPreferences(connection, userId);
 
-            User userTarget = UserEmailPreferences.getUser(userId);
+            query.executeBatch();
 
-            //Found user in the map, update the email preferences
-            if (userTarget != null)
-                userTarget.setEmailPreferences(updatedEmailPreferences);
-
-            return updatedEmailPreferences;
-
+            return User.getUserEmailPreferences(connection, userId);
         }
-
     }
 
     public void setEmailPreferences(UserEmailPreferences updatedEmailPreferences) {
@@ -561,24 +549,15 @@ public final class User implements Serializable {
      * @throws AccountException if the password was incorrect.
      */
     public static User get(Connection connection, String email, String pass) throws SQLException, AccountException {
-        User user = null;
-        try (PreparedStatement query = connection.prepareStatement(
-                USER_ROW_QUERY + " WHERE email = ?")) {
-            query.setString(1, email);
+        User user = User.get(connection, email);
 
-            LOG.info(query.toString());
-            try (ResultSet resultSet = query.executeQuery()) {
-                if (!resultSet.next())
-                    return null;
-                user = new User(resultSet);
+        if (user == null) {
+            return null;
+        }
 
-                String passwordToken = resultSet.getString(13);
-                System.out.println("TOKEN = '" + passwordToken + "'");
-                if (!new PasswordAuthentication().authenticate(pass.toCharArray(), passwordToken)) {
-                    LOG.info("User password was incorrect.");
-                    throw new AccountException("Login Error", "Incorrect password.");
-                }
-            }
+        if (!new PasswordAuthentication().authenticate(pass.toCharArray(), user.passwordToken)) {
+            LOG.info("User password was incorrect.");
+            throw new AccountException("Login Error", "Incorrect password.");
         }
 
         // for now, it should be just one user per fleet
@@ -599,9 +578,23 @@ public final class User implements Serializable {
 
         // Get the email preferences for this user
         user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
-        UserEmailPreferences.addUser(connection, user);
 
         return user;
+    }
+
+
+    public static User get(Connection connection, String email) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement(
+                USER_ROW_QUERY + " WHERE email = ?")) {
+            query.setString(1, email);
+
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (!resultSet.next())
+                    return null;
+
+                return new User(resultSet);
+            }
+        }
     }
 
     /**
@@ -802,7 +795,6 @@ public final class User implements Serializable {
             }
         }
 
-        UserEmailPreferences.addUser(connection, user);
         return user;
     }
 

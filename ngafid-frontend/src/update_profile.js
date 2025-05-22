@@ -1,8 +1,8 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import { errorModal } from "./error_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 class ProfilePage extends React.Component {
@@ -10,16 +10,16 @@ class ProfilePage extends React.Component {
         super(props);
 
         this.state = {
-            user : { email : "" },
-            valid : {
-                firstName : true,
-                lastName : true,
-                country : true,
-                state : true,
-                city : true,
-                address : true,
-                phone : true,
-                zip : true
+            user: {email: ""},
+            valid: {
+                firstName: true,
+                lastName: true,
+                country: true,
+                state: true,
+                city: true,
+                address: true,
+                phone: true,
+                zip: true
             }
         }
 
@@ -28,7 +28,7 @@ class ProfilePage extends React.Component {
         this.lastNameInput = React.createRef();
         this.countrySelect = React.createRef();
         this.stateSelect = React.createRef();
-        this.cityInput= React.createRef();
+        this.cityInput = React.createRef();
         this.addressInput = React.createRef();
         this.phoneNumberInput = React.createRef();
         this.zipCodeInput = React.createRef();
@@ -67,27 +67,27 @@ class ProfilePage extends React.Component {
 
         if (!valid) return;
 
-        var submissionData = { 
-            email : this.emailInput.current.value,
-            firstName : this.firstNameInput.current.value,
-            lastName : this.lastNameInput.current.value,
-            country : this.countrySelect.current.value,
-            state : this.stateSelect.current.value,
-            city : this.cityInput.current.value,
-            address : this.addressInput.current.value,
-            phoneNumber : this.phoneNumberInput.current.value,
-            zipCode : this.zipCodeInput.current.value
+        var submissionData = {
+            email: this.emailInput.current.value,
+            firstName: this.firstNameInput.current.value,
+            lastName: this.lastNameInput.current.value,
+            country: this.countrySelect.current.value,
+            state: this.stateSelect.current.value,
+            city: this.cityInput.current.value,
+            address: this.addressInput.current.value,
+            phoneNumber: this.phoneNumberInput.current.value,
+            zipCode: this.zipCodeInput.current.value
         };
 
 
         $("#loading").show();
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/update_profile',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'PUT',
+            url: '/api/user/me',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -101,7 +101,7 @@ class ProfilePage extends React.Component {
 
                 profilePage.setUser(response.user);
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
             async: true
@@ -177,8 +177,8 @@ class ProfilePage extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        
-        const fgStyle = {opacity : 1.0};
+
+        const fgStyle = {opacity: 1.0};
 
         let formGroupStyle = {
             marginBottom: '8px'
@@ -190,15 +190,15 @@ class ProfilePage extends React.Component {
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -299,14 +299,16 @@ class ProfilePage extends React.Component {
         console.log("rendering with profile validation message: '" + profileValidationMessage + "' and profile validation visible: " + profileValidationHidden);
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{flex:"0 0 auto"}}>
-                    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <div style={{flex: "0 0 auto"}}>
+                    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
+                                    unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
+                                    plotMapHidden={plotMapHidden}/>
                 </div>
 
 
-                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                <div style={{overflowY: "auto", flex: "1 1 auto"}}>
                     <div className="card mb-1 m-2">
                         <h5 className="card-header" style={fgStyle}>
                             Update Profile
@@ -314,7 +316,7 @@ class ProfilePage extends React.Component {
 
                         <div className="card-body" style={fgStyle}>
 
-                            <form onSubmit={(event) => this.submitAccount(event)} >
+                            <form onSubmit={(event) => this.submitAccount(event)}>
 
                                 <div className="form-group" style={formGroupStyle}>
                                     <div className="d-flex">
@@ -322,7 +324,9 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createEmail" style={labelStyle}>Email Address</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="email" ref={this.emailInput} className="form-control" id="createEmail" aria-describedby="emailHelp" readOnly value={this.state.user.email} />
+                                            <input type="email" ref={this.emailInput} className="form-control"
+                                                   id="createEmail" aria-describedby="emailHelp" readOnly
+                                                   value={this.state.user.email}/>
                                         </div>
                                     </div>
                                 </div>
@@ -333,7 +337,10 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createFirstName" style={labelStyle}>First Name</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="text" ref={this.firstNameInput} className="form-control" id="createFirstName" aria-describedby="firstNameHelp" placeholder="Enter first name" onChange={() => this.validateFirstName()} />
+                                            <input type="text" ref={this.firstNameInput} className="form-control"
+                                                   id="createFirstName" aria-describedby="firstNameHelp"
+                                                   placeholder="Enter first name"
+                                                   onChange={() => this.validateFirstName()}/>
                                         </div>
                                     </div>
                                 </div>
@@ -344,7 +351,10 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createLastName" style={labelStyle}>Last Name</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="text" ref={this.lastNameInput} className="form-control" id="createLastName" aria-describedby="lastNameHelp" placeholder="Enter last name" onChange={() => this.validateLastName()} />
+                                            <input type="text" ref={this.lastNameInput} className="form-control"
+                                                   id="createLastName" aria-describedby="lastNameHelp"
+                                                   placeholder="Enter last name"
+                                                   onChange={() => this.validateLastName()}/>
                                         </div>
                                     </div>
                                 </div>
@@ -356,7 +366,8 @@ class ProfilePage extends React.Component {
                                         </div>
                                         <div className="p-2 flex-fill">
 
-                                            <select id="countrySelect" ref={this.countrySelect} className="form-control" onChange={() => this.validateCountry()}>
+                                            <select id="countrySelect" ref={this.countrySelect} className="form-control"
+                                                    onChange={() => this.validateCountry()}>
                                                 <option value="NONE"></option>
 
                                                 <option value="AFG">Afghanistan</option>
@@ -544,7 +555,8 @@ class ProfilePage extends React.Component {
                                                 <option value="RUS">Russian Federation</option>
                                                 <option value="RWA">Rwanda</option>
                                                 <option value="BLM">Saint Barthélemy</option>
-                                                <option value="SHN">Saint Helena, Ascension and Tristan da Cunha</option>
+                                                <option value="SHN">Saint Helena, Ascension and Tristan da Cunha
+                                                </option>
                                                 <option value="KNA">Saint Kitts and Nevis</option>
                                                 <option value="LCA">Saint Lucia</option>
                                                 <option value="MAF">Saint Martin (French part)</option>
@@ -565,7 +577,8 @@ class ProfilePage extends React.Component {
                                                 <option value="SLB">Solomon Islands</option>
                                                 <option value="SOM">Somalia</option>
                                                 <option value="ZAF">South Africa</option>
-                                                <option value="SGS">South Georgia and the South Sandwich Islands</option>
+                                                <option value="SGS">South Georgia and the South Sandwich Islands
+                                                </option>
                                                 <option value="SSD">South Sudan</option>
                                                 <option value="ESP">Spain</option>
                                                 <option value="LKA">Sri Lanka</option>
@@ -621,7 +634,8 @@ class ProfilePage extends React.Component {
                                         </div>
                                         <div className="p-2 flex-fill">
 
-                                            <select id="stateSelect" ref={this.stateSelect} className="form-control" onChange={() => this.validateState()}>
+                                            <select id="stateSelect" ref={this.stateSelect} className="form-control"
+                                                    onChange={() => this.validateState()}>
                                                 <option value="NONE"></option>
 
                                                 <option value="AL">Alabama</option>
@@ -682,7 +696,7 @@ class ProfilePage extends React.Component {
                                                 <option value="PR">Puerto Rico</option>
                                                 <option value="UM">United States Minor Outlying Islands</option>
                                                 <option value="VI">Virgin Islands</option>
-                                            </select>               
+                                            </select>
 
 
                                         </div>
@@ -695,7 +709,9 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createCity" style={labelStyle}>City</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="text" ref={this.cityInput} className="form-control" id="createCity" aria-describedby="cityHelp" placeholder="Enter city" onChange={() => this.validateCity()} />
+                                            <input type="text" ref={this.cityInput} className="form-control"
+                                                   id="createCity" aria-describedby="cityHelp" placeholder="Enter city"
+                                                   onChange={() => this.validateCity()}/>
                                         </div>
                                     </div>
                                 </div>
@@ -706,7 +722,9 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createAddress" style={labelStyle}>Address</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="text" ref={this.addressInput} className="form-control" id="createAddress" aria-describedby="addressHelp" placeholder="Enter address" onChange={() => this.validateAddress()} />
+                                            <input type="text" ref={this.addressInput} className="form-control"
+                                                   id="createAddress" aria-describedby="addressHelp"
+                                                   placeholder="Enter address" onChange={() => this.validateAddress()}/>
                                         </div>
                                     </div>
                                 </div>
@@ -717,7 +735,10 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createPhoneNumber" style={labelStyle}>Phone Number</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="text" ref={this.phoneNumberInput} className="form-control" id="createPhoneNumber" aria-describedby="phoneNumberHelp" placeholder="Enter phone number" onChange={() => this.validatePhone()} />
+                                            <input type="text" ref={this.phoneNumberInput} className="form-control"
+                                                   id="createPhoneNumber" aria-describedby="phoneNumberHelp"
+                                                   placeholder="Enter phone number"
+                                                   onChange={() => this.validatePhone()}/>
                                         </div>
                                     </div>
                                 </div>
@@ -729,7 +750,9 @@ class ProfilePage extends React.Component {
                                             <label htmlFor="createZipCode" style={labelStyle}>Zip Code</label>
                                         </div>
                                         <div className="p-2 flex-fill">
-                                            <input type="text" ref={this.zipCodeInput} className="form-control" id="createZipCode" aria-describedby="zipCodeHelp" placeholder="Enter zip code" onChange={() => this.validateZip()} />
+                                            <input type="text" ref={this.zipCodeInput} className="form-control"
+                                                   id="createZipCode" aria-describedby="zipCodeHelp"
+                                                   placeholder="Enter zip code" onChange={() => this.validateZip()}/>
                                         </div>
                                     </div>
                                 </div>
@@ -738,10 +761,13 @@ class ProfilePage extends React.Component {
                                     <div className="p-2" style={formHeaderStyle}>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <span style={validationMessageStyle} hidden={profileValidationHidden}>{profileValidationMessage}</span>
+                                        <span style={validationMessageStyle}
+                                              hidden={profileValidationHidden}>{profileValidationMessage}</span>
                                     </div>
                                     <div className="p-2">
-                                        <button type="submit" className="btn btn-primary float-right" disabled={updateProfileDisabled}>Update Profile</button>
+                                        <button type="submit" className="btn btn-primary float-right"
+                                                disabled={updateProfileDisabled}>Update Profile
+                                        </button>
                                     </div>
                                 </div>
 
@@ -751,13 +777,13 @@ class ProfilePage extends React.Component {
                     </div>
                 </div>
 
-                </div>
+            </div>
         );
     }
 }
 
 var profilePage = ReactDOM.render(
-    <ProfilePage />,
+    <ProfilePage/>,
     document.querySelector('#profile-page')
 );
 

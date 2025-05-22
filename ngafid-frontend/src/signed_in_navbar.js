@@ -1,8 +1,5 @@
 import 'bootstrap';
-import React, {Component} from "react";
-import ReactDOM from "react-dom";
-
-import Overlay from 'react-bootstrap/Overlay';
+import React from "react";
 import {errorModal} from "./error_modal.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
@@ -38,7 +35,8 @@ class NavLink extends React.Component {
 
         //onClick is undefined, make it an empty function
         if (typeof onClick == 'undefined')
-            onClick = () => { /*...*/ };
+            onClick = () => { /*...*/
+            };
 
         const classNames = (active ? "nav-item active" : "nav-item");
         const isCurrent = (active ? (<span className="sr-only">(current)</span>) : "");
@@ -76,7 +74,7 @@ class DropdownLink extends React.Component {
         //Handle undefined href
         if (typeof href == 'undefined')
             href = "#!";
-        
+
         //onClick is undefined, make it an empty function
         if (typeof onClick == 'undefined')
             onClick = () => { /*...*/ };
@@ -107,12 +105,13 @@ class DropdownLink extends React.Component {
 
 
 class SignedInNavbar extends React.Component {
-    
+
     constructor(props) {
 
         super(props);
 
-        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (() => {});
+        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (() => {
+        });
 
         this.infoTarget = React.createRef();
 
@@ -128,7 +127,7 @@ class SignedInNavbar extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '../logout',
+            url: '/api/auth/logout',
             data: submissionData,
             dataType: 'json',
             success: function (response) {
@@ -246,7 +245,8 @@ class SignedInNavbar extends React.Component {
                 <div className="navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
 
-                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center" hidden={this.props.plotMapHidden}>
+                        <ul className="navbar-nav mr-auto d-flex flex-row align-items-center justify-content-center"
+                            hidden={this.props.plotMapHidden}>
 
                             {/* Flight Page Orientation Button */}
                             {
@@ -404,7 +404,7 @@ class SignedInNavbar extends React.Component {
                                 }
                             </div>
                         </li>
-                        
+
                         {/* Analysis Dropdown */}
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")}
@@ -446,18 +446,21 @@ class SignedInNavbar extends React.Component {
                                 &nbsp;{"Account" + accountNotifications}
                                 {
                                     accountsActive
-                                    ? (<span className="sr-only">(current)</span>)
-                                    : ""
+                                        ? (<span className="sr-only">(current)</span>)
+                                        : ""
                                 }
                             </a>
                             <div
                                 className="dropdown-menu dropdown-menu-right text-right"
                                 aria-labelledby="navbarDropdownMenuLink"
                             >
-                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
-                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden} href="/protected/system_ids"/>
+                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden}
+                                              href="/protected/manage_fleet"/>
+                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden}
+                                              href="/protected/system_ids"/>
                                 <div className="dropdown-divider" hidden={manageHidden}/>
-                                <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
+                                <DropdownLink name={"Update Password"} hidden={false}
+                                              href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"/>
                                 <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>

@@ -1,16 +1,15 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
 import Plotly from 'plotly.js';
-import { errorModal } from "./error_modal.js";
+import {errorModal} from "./error_modal.js";
 
 class TraceButtons extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            parentFlight : this.props.parentFlight
+            parentFlight: this.props.parentFlight
         };
     }
 
@@ -26,26 +25,16 @@ class TraceButtons extends React.Component {
             console.log(seriesName);
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
 
-            var submissionData = {
-                flightId : this.props.flightId,
-                seriesName : seriesName
-            };   
-
             $.ajax({
-                type: 'POST',
-                url: '/protected/double_series',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-
+                type: 'GET',
+                url: `/api/flight/${this.props.flightId}/double-series/${seriesName}`,
+                success: function (response) {
                     var trace = {
-                        x : response.x,
-                        y : response.y,
-                        mode : "lines",
+                        x: response.x,
+                        y: response.y,
+                        mode: "lines",
                         //marker : { size: 1},
-                        name : thisTrace.props.flightId + " - " + seriesName
+                        name: thisTrace.props.flightId + " - " + seriesName
                     }
 
                     //set the trace number for this series
@@ -54,12 +43,12 @@ class TraceButtons extends React.Component {
                     parentFlight.setState(parentFlight.state);
 
                     Plotly.addTraces('plot', [trace]);
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Loading Flight Coordinates", errorThrown);
-                },   
-                async: true 
-            });  
+                },
+                async: true
+            });
         } else {
             //toggle visibility for this series
             let visibility = !parentFlight.state.traceVisibility[seriesName];
@@ -68,34 +57,37 @@ class TraceButtons extends React.Component {
 
             console.log("toggled visibility to: " + visibility);
 
-            Plotly.restyle('plot', { visible: visibility }, [ parentFlight.state.traceIndex[seriesName] ])
+            Plotly.restyle('plot', {visible: visibility}, [parentFlight.state.traceIndex[seriesName]])
         }
     }
 
     render() {
         let cellClasses = "d-flex flex-row pb-1";
-        let cellStyle = { "overflowX" : "auto" };
+        let cellStyle = {"overflowX": "auto"};
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
-            flex : "0 0 10em"
+            flex: "0 0 10em"
         };
 
         let parentFlight = this.state.parentFlight;
 
         return (
-            
+
             <div className="w-100">
 
-                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"} style={{marginBottom:"0"}}>
-                    <div className="d-flex flex-column mr-3" style={{width: "16px", minWidth:"16px", maxWidth:"16px", height: "16px"}}>
-                        <i className='fa fa-area-chart ml-2' style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
+                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"}
+                   style={{marginBottom: "0"}}>
+                    <div className="d-flex flex-column mr-3"
+                         style={{width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px"}}>
+                        <i className='fa fa-area-chart ml-2'
+                           style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
                     </div>
                     <div style={{fontSize: "0.75em"}}>
                         Parameters
                     </div>
                 </b>
 
-                <div className="p-1" style={{overflowX:"auto"}}>
+                <div className="p-1" style={{overflowX: "auto"}}>
 
                     <div className={cellClasses} style={cellStyle}>
                         {
@@ -105,7 +97,9 @@ class TraceButtons extends React.Component {
                                 if (ariaPressed) active = " active";
 
                                 return (
-                                    <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                    <button className={buttonClasses + active} key={traceName} style={styleButton}
+                                            data-bs-toggle="button" aria-pressed={ariaPressed}
+                                            onClick={() => this.traceClicked(traceName)}>
                                         {traceName}
                                     </button>
                                 );
@@ -120,7 +114,9 @@ class TraceButtons extends React.Component {
                                 if (ariaPressed) active = " active";
 
                                 return (
-                                    <button className={buttonClasses + active} key={traceName} style={styleButton} data-bs-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                    <button className={buttonClasses + active} key={traceName} style={styleButton}
+                                            data-bs-toggle="button" aria-pressed={ariaPressed}
+                                            onClick={() => this.traceClicked(traceName)}>
                                         {traceName}
                                     </button>
                                 );
@@ -134,4 +130,4 @@ class TraceButtons extends React.Component {
     }
 }
 
-export { TraceButtons };
+export {TraceButtons};

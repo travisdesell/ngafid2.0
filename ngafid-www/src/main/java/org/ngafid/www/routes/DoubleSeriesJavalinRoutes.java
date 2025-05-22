@@ -17,12 +17,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import static org.ngafid.www.WebServer.gson;
-
 public class DoubleSeriesJavalinRoutes {
-    private static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());
+    public static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());
 
-    private static class AllDoubleSeriesNames {
+    public static class AllDoubleSeriesNames {
         List<String> names = new ArrayList<String>();
 
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
@@ -36,7 +34,7 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
-    private static class DoubleSeries {
+    public static class DoubleSeries {
         String[] x;
         double[] y;
 
@@ -59,7 +57,7 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
-    private static class DoubleSeriesNames {
+    public static class DoubleSeriesNames {
         List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
@@ -76,7 +74,7 @@ public class DoubleSeriesJavalinRoutes {
     }
 
 
-    private static void getAllDoubleSeriesNames(Context ctx) throws IOException {
+    public static void getAllDoubleSeriesNames(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             ctx.json(new AllDoubleSeriesNames(connection));
         } catch (SQLException e) {
@@ -85,10 +83,10 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
-    private static void postDoubleSeries(Context ctx) {
+    public static void postDoubleSeries(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
-        final String name = Objects.requireNonNull(ctx.formParam("seriesName"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
+        final String name = Objects.requireNonNull(ctx.pathParam("series"));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -99,18 +97,18 @@ public class DoubleSeriesJavalinRoutes {
                 return;
             }
 
+            LOG.info("Fetching series with name: " + name);
             DoubleSeries doubleSeries = new DoubleSeries(connection, flightId, name);
             ctx.json(doubleSeries);
-
         } catch (SQLException | IOException e) {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
-    private static void postDoubleSeriesNames(Context ctx) {
+    public static void postDoubleSeriesNames(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -129,9 +127,9 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.get("/protected/all_double_series_names", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames);
-        app.post("/protected/double_series", DoubleSeriesJavalinRoutes::postDoubleSeries);
-        app.post("/protected/double_series_names", DoubleSeriesJavalinRoutes::postDoubleSeriesNames);
+        // app.get("/protected/all_double_series_names", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames);
+        // app.post("/protected/double_series", DoubleSeriesJavalinRoutes::postDoubleSeries);
+        // app.post("/protected/double_series_names", DoubleSeriesJavalinRoutes::postDoubleSeriesNames);
 
     }
 }

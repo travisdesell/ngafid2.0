@@ -141,8 +141,7 @@ public class EventDefinition {
      * @param eventName  is the event name being retrieved
      * @return Event Definition matching the name passed in
      */
-    public static EventDefinition getEventDefinition(Connection connection, String eventName) throws IOException,
-            SQLException {
+    public static EventDefinition getEventDefinition(Connection connection, String eventName) throws SQLException {
         eventName = "name = '" + eventName + "'";
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
 
@@ -683,6 +682,17 @@ public class EventDefinition {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
         update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, GSON.toJson(filter),
                 GSON.toJson(severityColumnNames), severityType.toString());
+    }
+
+    /**
+     * Deletes an event definition from database
+     */
+    public void delete(Connection connection) throws SQLException {
+        String query = "DELETE FROM event_definitions WHERE id=?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, id);
+            statement.executeUpdate();
+        }
     }
 
     /**

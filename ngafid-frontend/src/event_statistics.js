@@ -58,15 +58,9 @@ class AirframeCard extends React.Component {
     getStats(airframeCard) {
         console.log("Acquiring event stats");
 
-        var submissionData = {
-            airframeNameId: this.props.airframeId,
-            airframeName: this.props.airframeName
-        };
-
         $.ajax({
-            type: 'POST',
-            url: './event_stat',
-            data: submissionData,
+            type: 'GET',
+            url: `/api/event/count/by-airframe/${this.props.airframeId}`,
             dataType: 'json',
             success: function (response) {
                 if (response.events != null) {

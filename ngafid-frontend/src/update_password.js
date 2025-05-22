@@ -1,8 +1,8 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import { errorModal } from "./error_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 
@@ -11,17 +11,17 @@ class UpdatePasswordPage extends React.Component {
         super(props);
 
         this.state = {
-            currentPassword : "",
-            newPassword : "",
-            confirmPassword : ""
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: ""
         };
     }
 
     clearPasswords() {
         this.state = {
-            currentPassword : "",
-            newPassword : "",
-            confirmPassword : ""
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: ""
         };
 
         this.setState(this.state);
@@ -30,21 +30,21 @@ class UpdatePasswordPage extends React.Component {
     updatePassword(event) {
         event.preventDefault();
 
-        var submissionData = { 
-            currentPassword : this.state.currentPassword,
-            newPassword : this.state.newPassword,
-            confirmPassword : this.state.confirmPassword
+        var submissionData = {
+            currentPassword: this.state.currentPassword,
+            newPassword: this.state.newPassword,
+            confirmPassword: this.state.confirmPassword
         };
 
 
         $("#loading").show();
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/update_password',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'PATCH',
+            url: '/api/auth/change-password',
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -59,7 +59,7 @@ class UpdatePasswordPage extends React.Component {
                 profileCard.clearPasswords();
 
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
             async: true
@@ -85,8 +85,8 @@ class UpdatePasswordPage extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        
-        const fgStyle = {opacity : 1.0};
+
+        const fgStyle = {opacity: 1.0};
 
         let formGroupStyle = {
             marginBottom: '8px'
@@ -98,15 +98,15 @@ class UpdatePasswordPage extends React.Component {
         };
 
         let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
         let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
+            padding: '7 0 7 0',
+            margin: '0',
             display: 'block',
             textAlign: 'left',
             color: 'red'
@@ -163,61 +163,77 @@ class UpdatePasswordPage extends React.Component {
         console.log("rendering with password validation message: '" + passwordValidationMessage + "' and password validation visible: " + passwordValidationHidden);
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{flex:"0 0 auto"}}>
-                    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <div style={{flex: "0 0 auto"}}>
+                    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
+                                    unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
+                                    plotMapHidden={plotMapHidden}/>
                 </div>
 
-                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                <div style={{overflowY: "auto", flex: "1 1 auto"}}>
                     <div className="card mb-1 m-2">
-                    <h5 className="card-header" style={fgStyle}>
-                        Update Password
-                    </h5>
+                        <h5 className="card-header" style={fgStyle}>
+                            Update Password
+                        </h5>
 
-                    <div className="card-body" style={fgStyle}>
+                        <div className="card-body" style={fgStyle}>
 
-                        <form onSubmit={(event) => this.updatePassword(event)} >
+                            <form onSubmit={(event) => this.updatePassword(event)}>
 
-                            <div className="form-group" style={formGroupStyle}>
+                                <div className="form-group" style={formGroupStyle}>
+
+                                    <div className="d-flex">
+                                        <div className="p-2" style={formHeaderStyle}>
+                                            <label htmlFor="createPassword" style={labelStyle}>Current Password</label>
+                                        </div>
+                                        <div className="p-2 flex-fill">
+                                            <input type="password" className="form-control" id="currentPassword"
+                                                   placeholder="Password (required)" required={true}
+                                                   onChange={(event) => {
+                                                       this.changeCurrentPassword(event)
+                                                   }} value={this.state.currentPassword}/>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div className="d-flex">
                                     <div className="p-2" style={formHeaderStyle}>
-                                        <label htmlFor="createPassword" style={labelStyle}>Current Password</label>
+                                        <label htmlFor="createPassword" style={labelStyle}>New Password</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="password" className="form-control" id="currentPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeCurrentPassword(event)}} value={this.state.currentPassword}/>
+                                        <input type="password" className="form-control" id="newPassword"
+                                               placeholder="Password (required)" required={true} onChange={(event) => {
+                                            this.changeNewPassword(event)
+                                        }} value={this.state.newPassword}/>
+                                    </div>
+                                    <div className="p-2 flex-fill">
+                                        <input type="password" className="form-control" id="confirmPassword"
+                                               placeholder="Confirm password (required)" required={true}
+                                               onChange={(event) => {
+                                                   this.changeConfirmPassword(event)
+                                               }} value={this.state.confirmPassword}/>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="d-flex">
-                                <div className="p-2" style={formHeaderStyle}>
-                                    <label htmlFor="createPassword" style={labelStyle}>New Password</label>
+                                <div className="d-flex">
+                                    <div className="p-2" style={formHeaderStyle}>
+                                    </div>
+                                    <div className="p-2 flex-fill">
+                                        <span style={validationMessageStyle}
+                                              hidden={passwordValidationHidden}>{passwordValidationMessage}</span>
+                                    </div>
+                                    <div className="p-2">
+                                        <button type="submit" className="btn btn-primary float-right"
+                                                disabled={updatePasswordDisabled}>Update Password
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="newPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeNewPassword(event)}} value={this.state.newPassword}/>
-                                </div>
-                                <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={(event) => {this.changeConfirmPassword(event)}} value={this.state.confirmPassword}/>
-                                </div>
-                            </div>
-
-                            <div className="d-flex">
-                                <div className="p-2" style={formHeaderStyle}>
-                                </div>
-                                <div className="p-2 flex-fill">
-                                    <span style={validationMessageStyle} hidden={passwordValidationHidden}>{passwordValidationMessage}</span>
-                                </div>
-                                <div className="p-2">
-                                    <button type="submit" className="btn btn-primary float-right" disabled={updatePasswordDisabled}>Update Password</button>
-                                </div>
-                            </div>
 
 
-                        </form>
+                            </form>
 
-                    </div>
+                        </div>
                     </div>
                 </div>
 
@@ -227,6 +243,6 @@ class UpdatePasswordPage extends React.Component {
 }
 
 var passwordPage = ReactDOM.render(
-    <UpdatePasswordPage />,
+    <UpdatePasswordPage/>,
     document.querySelector('#password-page')
 );

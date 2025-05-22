@@ -1,28 +1,20 @@
 import "bootstrap";
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
 import SignedInNavbar from "./signed_in_navbar.js";
-import { map, styles, layers, Colors, initializeMap } from "./map.js";
+import {initializeMap, layers, map, styles} from "./map.js";
 
-import { Group, Vector as VectorLayer } from "ol/layer.js";
-import { Vector as VectorSource } from "ol/source.js";
-import { Circle, Fill, Icon, Stroke, Style } from "ol/style.js";
+import {errorModal} from "./error_modal.js";
+import {confirmModal} from "./confirm_modal.js";
 
-import { errorModal } from "./error_modal.js";
-import { confirmModal } from "./confirm_modal.js";
-
-import { Filter, isValidFilter } from './filter.js';
-import { Paginator } from './paginator_component.js';
-import { FlightsCard } from './flights_card_component.js';
+import {Filter, isValidFilter} from './filter.js';
+import {Paginator} from './paginator_component.js';
+import {FlightsCard} from './flights_card_component.js';
 import Plotly from 'plotly.js';
-import { timeZones } from "./time_zones.js";
+import {timeZones} from "./time_zones.js";
 import CesiumPage from "./ngafid_cesium.js";
-import { linearRingLength } from "ol/geom/flat/length.js";
-import { View } from "ol";
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import { cesiumFlightsSelected } from "./cesium_buttons.js";
+import {cesiumFlightsSelected} from "./cesium_buttons.js";
 
 function invalidString(str) {
     return str == null || str.length < 0 || /^\s*$/.test(str);
@@ -475,17 +467,17 @@ class FlightsPage extends React.Component {
         //Check for filter in URL and load if present
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam = urlParams.get('filter');
-        
+
         //Found a filter in the URL, try to load it
         if (filterParam) {
 
             try {
-                
+
                 //Double decode for URL components
                 let decodedFilter = decodeURIComponent(filterParam);
 
                 console.log("Decoded filter:", decodedFilter);
-                
+
                 // Strict validation with fallback
                 let parsedFilter;
                 try {
@@ -497,26 +489,26 @@ class FlightsPage extends React.Component {
                     throw new Error("Malformed filter structure");
 
                 }
-                
+
                 //Did not get 'filters' key in the parsed filter
                 if (!parsedFilter?.filters)
                     throw new Error("Missing 'filters' key in parsed filter");
-                    
+
                 //Did not interpret 'filters' as an array
                 if (!Array.isArray(parsedFilter.filters))
                     throw new Error("Loaded 'filters' value is not an array");
-    
+
                 //Validate filter
                 const autoSubmitFilter = isValidFilter(parsedFilter, rules);
 
-                this.setState({ filters: parsedFilter }, () => {
+                this.setState({filters: parsedFilter}, () => {
 
                     //Flagged as valid, automatically submit the filter
                     if (autoSubmitFilter)
                         this.submitFilter(true);
 
                 });
-    
+
             } catch (error) {
 
                 console.error("Filter load error:", error);
@@ -578,7 +570,7 @@ class FlightsPage extends React.Component {
             //Plot is visible, purge it
             if (this.plotContainerRef.current && this.state.plotInitialized) {
                 Plotly.purge(this.plotContainerRef.current);
-                this.setState({ plotInitialized: false });
+                this.setState({plotInitialized: false});
             }
 
         } catch (error) {
@@ -714,7 +706,7 @@ class FlightsPage extends React.Component {
         if (!this.state.cesiumVisible)
             return;
 
-        this.setState({ cesiumVisible: false });
+        this.setState({cesiumVisible: false});
 
     }
 
@@ -724,10 +716,9 @@ class FlightsPage extends React.Component {
         if (this.state.cesiumVisible)
             return;
 
-        this.setState({ cesiumVisible: true });
+        this.setState({cesiumVisible: true});
 
     }
-
 
 
     /*
@@ -739,7 +730,7 @@ class FlightsPage extends React.Component {
         if (this.state.mapVisible)
             return;
 
-        this.setState({ mapVisible: true });
+        this.setState({mapVisible: true});
 
     }
 
@@ -749,7 +740,7 @@ class FlightsPage extends React.Component {
         if (!this.state.mapVisible)
             return;
 
-        this.setState({ mapVisible: false });
+        this.setState({mapVisible: false});
 
     }
 
@@ -779,7 +770,7 @@ class FlightsPage extends React.Component {
         if (this.state.plotVisible)
             return;
 
-        this.setState({ plotVisible: true });
+        this.setState({plotVisible: true});
 
         //Resize the plot
         Plotly.Plots.resize("plot");
@@ -794,7 +785,7 @@ class FlightsPage extends React.Component {
         if (!this.state.plotVisible)
             return;
 
-        this.setState({ plotVisible: false });
+        this.setState({plotVisible: false});
 
     }
 
@@ -869,7 +860,7 @@ class FlightsPage extends React.Component {
 
     resolveDisplayExpanded() {
 
-        const { containerExpanded } = this.state;
+        const {containerExpanded} = this.state;
 
         console.log(`Resolving display for expanded container: ${containerExpanded}`);
 
@@ -884,31 +875,31 @@ class FlightsPage extends React.Component {
             switch (containerExpanded) {
 
                 case "plot-container":
-                    this.setState({ plotVisible: true }, () => {
+                    this.setState({plotVisible: true}, () => {
                         Plotly.Plots.resize("plot");
                     });
                     break;
 
                 case "cesium-container":
-                    this.setState({ cesiumVisible: true }, () => {
+                    this.setState({cesiumVisible: true}, () => {
                         /* ... */
                     });
                     break;
 
                 case "map-container":
-                    this.setState({ mapVisible: true }, () => {
+                    this.setState({mapVisible: true}, () => {
                         map.updateSize();
                     });
                     break;
             }
 
         });
-        
+
     }
 
     resolveDisplay() {
 
-        const { containerExpanded } = this.state;
+        const {containerExpanded} = this.state;
 
         //A container is expanded, perform expanded layout resolution instead
         if (containerExpanded) {
@@ -917,7 +908,7 @@ class FlightsPage extends React.Component {
         }
 
         //Normal layout calculations
-        const { plotVisible, cesiumVisible, mapVisible } = this.state;
+        const {plotVisible, cesiumVisible, mapVisible} = this.state;
 
         //Plot marked as visible, resize and show it
         if (plotVisible) {
@@ -948,9 +939,8 @@ class FlightsPage extends React.Component {
         let storedFilters = [];
 
         $.ajax({
-            type: "GET",
-            url: "/protected/stored_filters",
-            dataType: "json",
+            type: 'GET',
+            url: "/api/filter",
             async: false,
             success: function (response) {
                 console.log("received filters response: ");
@@ -958,13 +948,14 @@ class FlightsPage extends React.Component {
 
                 storedFilters = response;
             },
-            error: function (jqXHR, textStatus, errorThrown) { /* ... */ },
+            error: function (jqXHR, textStatus, errorThrown) { /* ... */
+            },
         });
 
         return storedFilters;
 
     }
-    
+
     submitFilter(resetCurrentPage = false) {
 
         console.log(
@@ -1003,10 +994,9 @@ class FlightsPage extends React.Component {
         let flightsPage = this;
 
         $.ajax({
-            type: "POST",
-            url: "/protected/get_flights",
+            type: 'GET',
+            url: "/api/flight",
             data: submissionData,
-            dataType: "json",
             timeout: 0, //set timeout to be unlimited for slow queries
             async: true,
             success: function (response) {
@@ -1030,7 +1020,7 @@ class FlightsPage extends React.Component {
                         "Please try a different query."
                     );
 
-                //Response is valid, update the flights
+                    //Response is valid, update the flights
                 } else {
 
                     flightsPage.setState({
@@ -1057,7 +1047,7 @@ class FlightsPage extends React.Component {
         console.log("changing selectable layers on navbar");
         console.log(plotLayers);
 
-        this.setState({ selectableLayers: plotLayers });
+        this.setState({selectableLayers: plotLayers});
 
     }
 
@@ -1088,14 +1078,14 @@ class FlightsPage extends React.Component {
 
         $.ajax({
             type: "POST",
-            url: "/protected/create_tag",
+            url: "/api/tag",
             data: submissionData,
             dataType: "json",
             async: true,
             success: function (response) {
-
                 console.log("received response: ");
                 console.log(response);
+
                 if (response != "ALREADY_EXISTS") {
 
                     for (var i = 0; i < thisFlight.state.flights.length; i++) {
@@ -1127,7 +1117,8 @@ class FlightsPage extends React.Component {
                 }
 
             },
-            error: function (jqXHR, textStatus, errorThrown) { /* ... */ }
+            error: function (jqXHR, textStatus, errorThrown) { /* ... */
+            }
         });
 
     }
@@ -1147,7 +1138,6 @@ class FlightsPage extends React.Component {
         console.log(newTag);
 
         var submissionData = {
-            tag_id: currentTag.hashId,
             name: newTag.name,
             description: newTag.description,
             color: newTag.color,
@@ -1156,8 +1146,8 @@ class FlightsPage extends React.Component {
         let thisFlight = this;
 
         $.ajax({
-            type: "POST",
-            url: "/protected/edit_tag",
+            type: "PATCH",
+            url: `/api/tag/${currentTag.hashId}`,
             data: submissionData,
             dataType: "json",
             async: true,
@@ -1201,7 +1191,8 @@ class FlightsPage extends React.Component {
                 thisFlight.setState(thisFlight.state);
 
             },
-            error: function (jqXHR, textStatus, errorThrown) { /* ... */ },
+            error: function (jqXHR, textStatus, errorThrown) { /* ... */
+            },
         });
 
     }
@@ -1212,15 +1203,9 @@ class FlightsPage extends React.Component {
 
         let tags = [];
 
-        var submissionData = {
-            id: flightId,
-        };
-
         $.ajax({
-            type: "POST",
-            url: "/protected/get_unassociated_tags",
-            data: submissionData,
-            dataType: "json",
+            type: 'GET',
+            url: `/api/flight/${flightId}/tag/unassociated`,
             async: false,
             success: function (response) {
                 console.log("received response: ");
@@ -1228,7 +1213,8 @@ class FlightsPage extends React.Component {
 
                 tags = response;
             },
-            error: function (jqXHR, textStatus, errorThrown) { /* ... */ }
+            error: function (jqXHR, textStatus, errorThrown) { /* ... */
+            }
         });
 
         return tags;
@@ -1239,7 +1225,6 @@ class FlightsPage extends React.Component {
      * Handles when the user presses the delete button, and prompts them with @module confirmModal
      */
     deleteTag(flightId, tagId) {
-
         return new Promise((resolve, reject) => {
 
             let tag = this.state.flights.find(
@@ -1301,13 +1286,22 @@ class FlightsPage extends React.Component {
         };
 
         let thisFlight = this;
-        console.log("calling deletion ajax");
+
+        // TODO: it is a little crazy that this is a single function. The routes have been broken up, the JS should mirror that.
+        var route;
+        if (isPermanent) {
+            route = `/api/tag/${tagId}`
+        } else if (all == -2) {
+            route = `/api/flight/${flightId}/tag`;
+        } else {
+            route = `/api/flight/${flightId}/tag/${tagId}`;
+        }
 
         return new Promise((resolve, reject) => {
 
             $.ajax({
-                type: "POST",
-                url: "/protected/remove_tag",
+                type: "DELETE",
+                url: route,
                 data: submissionData,
                 dataType: "json",
                 async: false,
@@ -1372,17 +1366,11 @@ class FlightsPage extends React.Component {
 
         console.log("associating tag #" + tagId + " with flight #" + flightId);
 
-        var submissionData = {
-            id: flightId,
-            tag_id: tagId,
-        };
-
         let thisFlight = this;
 
         $.ajax({
-            type: "POST",
-            url: "/protected/associate_tag",
-            data: submissionData,
+            type: "PUT",
+            url: `/api/flight/${flightId}/tag/${tagId}`,
             dataType: "json",
             async: true,
             success: function (response) {
@@ -1408,7 +1396,8 @@ class FlightsPage extends React.Component {
                 thisFlight.setState(thisFlight.state);
 
             },
-            error: function (jqXHR, textStatus, errorThrown) { /* ... */ }
+            error: function (jqXHR, textStatus, errorThrown) { /* ... */
+            }
         });
 
     }
@@ -1496,7 +1485,7 @@ class FlightsPage extends React.Component {
                 t: 40,
             }
         };
-        const plotlyConfig = { responsive: true };
+        const plotlyConfig = {responsive: true};
 
 
         //Get plot div element
@@ -1545,14 +1534,14 @@ class FlightsPage extends React.Component {
         };
 
         //Find or create the special OR group for Flight IDs
-        let filters = { ...this.state.filters };
+        let filters = {...this.state.filters};
         let flightIdGroup = filters.filters.find(
             f => f.type === "GROUP" && f.condition === "OR" && f.isFlightIdGroup
         );
 
         //No OR group exists, create new one
         if (!flightIdGroup) {
-            
+
             flightIdGroup = {
                 type: "GROUP",
                 condition: "OR",
@@ -1561,7 +1550,7 @@ class FlightsPage extends React.Component {
             };
             filters.filters.push(flightIdGroup);
 
-        //Otherwise, add to existing OR group
+            //Otherwise, add to existing OR group
         } else {
 
             //Check if a rule for this flight ID already exists
@@ -1598,7 +1587,7 @@ class FlightsPage extends React.Component {
 
                 //Filter is a group...
                 if (filter.type === "GROUP") {
-                    
+
                     //Recursively cull empty groups
                     filterCull(filter);
 
@@ -1619,14 +1608,14 @@ class FlightsPage extends React.Component {
         //Convert the filters to a JSON string
         let filterJsonString = JSON.stringify(filtersIn);
         console.log("Filter JSON String: ", filterJsonString);
-        
+
         //Encode the filter string
         let encodedFilter = encodeURIComponent(filterJsonString);
         console.log("Encoded Filter: ", encodedFilter);
-    
+
         //Construct the full URL
         const fullURL = `${window.location.origin}${window.location.pathname}?filter=${encodedFilter}`;
-        
+
         //Copy the URL to the clipboard
         navigator.clipboard.writeText(fullURL)
             .then(() => alert(`Copied current filter as a shareable URL!\n\n(URL Length: ${fullURL.length})`))
@@ -1658,14 +1647,18 @@ class FlightsPage extends React.Component {
         const searchFilters = (
             <div
                 id="search-filters"
-                style={{ flex: "0 0 auto" }}
+                style={{flex: "0 0 auto"}}
             >
                 <Filter
                     submitButtonName="Apply Current Filter"
-                    submitFilter={(resetCurrentPage = true) => { this.submitFilter(resetCurrentPage); }}
+                    submitFilter={(resetCurrentPage = true) => {
+                        this.submitFilter(resetCurrentPage);
+                    }}
                     rules={rules}
                     filters={this.state.filters}
-                    getFilter={() => { return this.state.filters; }}
+                    getFilter={() => {
+                        return this.state.filters;
+                    }}
                     setFilter={(filter) => this.setFilter(filter)}
                     setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
                     getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
@@ -1680,7 +1673,12 @@ class FlightsPage extends React.Component {
             <div
                 id="flights-card-container"
                 className="card d-flex"
-                style={{ overflowY: "scroll", flex: "1 1 auto", border: "1px solid var(--c_border_alt)", borderRadius: "0.25em" }}
+                style={{
+                    overflowY: "scroll",
+                    flex: "1 1 auto",
+                    border: "1px solid var(--c_border_alt)",
+                    borderRadius: "0.25em"
+                }}
             >
                 <FlightsCard
                     parent={this}
@@ -1688,12 +1686,22 @@ class FlightsPage extends React.Component {
                     flights={this.state.flights}
                     navBar={this.navRef}
                     ref={(elem) => (this.flightsRef = elem)}
-                    showMap={() => { this.showMap(); }}
+                    showMap={() => {
+                        this.showMap();
+                    }}
                     hideMap={() => this.hideMap()}
-                    showPlot={() => { this.showPlot(); }}
-                    setAvailableLayers={(plotLayers) => { this.setAvailableLayers(plotLayers); }}
-                    setFlights={(flights) => { this.setState({ flights: flights, }); }}
-                    updateNumberPages={(numberPages) => { this.setState({ numberPages: numberPages, }); }}
+                    showPlot={() => {
+                        this.showPlot();
+                    }}
+                    setAvailableLayers={(plotLayers) => {
+                        this.setAvailableLayers(plotLayers);
+                    }}
+                    setFlights={(flights) => {
+                        this.setState({flights: flights,});
+                    }}
+                    updateNumberPages={(numberPages) => {
+                        this.setState({numberPages: numberPages,});
+                    }}
                     addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
                     removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
                     deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
@@ -1701,13 +1709,27 @@ class FlightsPage extends React.Component {
                     associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
                     clearTags={(flightId) => this.clearTags(flightId)}
                     editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
-                    showCesium={(flightId, color) => { this.addCesiumFlight(flightId, color); }}
-                    addCesiumFlightPhase={(phase, flightId) => { this.addCesiumFlightPhase(phase, flightId); }}
-                    addCesiumEventEntity={(event, flightId) => { this.addCesiumEventEntity(event, flightId); }}
-                    removeCesiumFlight={(flightId) => { this.removeCesiumFlight(flightId); }}
-                    zoomToEventEntity={(eventId, flightId) => { this.zoomToEventEntity(eventId, flightId) }}
-                    cesiumFlightTrackedSet={(flightId) => { this.cesiumFlightTrackedSet(flightId) }}
-                    cesiumJumpToFlightStart={(flightId) => { this.cesiumRef.current.cesiumJumpToFlightStart(flightId) }}
+                    showCesium={(flightId, color) => {
+                        this.addCesiumFlight(flightId, color);
+                    }}
+                    addCesiumFlightPhase={(phase, flightId) => {
+                        this.addCesiumFlightPhase(phase, flightId);
+                    }}
+                    addCesiumEventEntity={(event, flightId) => {
+                        this.addCesiumEventEntity(event, flightId);
+                    }}
+                    removeCesiumFlight={(flightId) => {
+                        this.removeCesiumFlight(flightId);
+                    }}
+                    zoomToEventEntity={(eventId, flightId) => {
+                        this.zoomToEventEntity(eventId, flightId)
+                    }}
+                    cesiumFlightTrackedSet={(flightId) => {
+                        this.cesiumFlightTrackedSet(flightId)
+                    }}
+                    cesiumJumpToFlightStart={(flightId) => {
+                        this.cesiumRef.current.cesiumJumpToFlightStart(flightId)
+                    }}
                     onAddFilter={this.handleAddFilter}
                 />
             </div>
@@ -1717,10 +1739,12 @@ class FlightsPage extends React.Component {
         const searchPaginator = (
             <div
                 id="search-paginator"
-                style={{ flex: "0 0 auto" }}
+                style={{flex: "0 0 auto"}}
             >
                 <Paginator
-                    submitFilter={(resetCurrentPage) => { this.submitFilter(resetCurrentPage); }}
+                    submitFilter={(resetCurrentPage) => {
+                        this.submitFilter(resetCurrentPage);
+                    }}
                     items={this.state.flights}
                     itemName="flights"
                     rules={sortableColumns}
@@ -1732,8 +1756,12 @@ class FlightsPage extends React.Component {
                     setSortingOrder={(order) => this.setSortingOrder(order)}
                     getSortingOrder={() => this.getSortingOrder()}
                     sortOptions={sortableColumnsHumanReadable}
-                    updateCurrentPage={(currentPage) => { this.state.currentPage = currentPage; }}
-                    updateItemsPerPage={(pageSize) => { this.state.pageSize = pageSize; }}
+                    updateCurrentPage={(currentPage) => {
+                        this.state.currentPage = currentPage;
+                    }}
+                    updateItemsPerPage={(pageSize) => {
+                        this.state.pageSize = pageSize;
+                    }}
                     location="Bottom"
                 />
             </div>
@@ -1748,9 +1776,15 @@ class FlightsPage extends React.Component {
             <div
                 className={`${doSearchDisplay ? "d-flex" : "d-none"} flex-column`}
                 style={{
-                    padding: "0.5em", gap: "0.5em", flex: "1 0 0",
-                    minWidth: SEARCH_CONTAINER_WIDTH, maxWidth: SEARCH_CONTAINER_WIDTH, width: SEARCH_CONTAINER_WIDTH,
-                    minHeight: SEARCH_CONTAINER_HEIGHT, maxHeight: SEARCH_CONTAINER_HEIGHT, height: SEARCH_CONTAINER_HEIGHT,
+                    padding: "0.5em",
+                    gap: "0.5em",
+                    flex: "1 0 0",
+                    minWidth: SEARCH_CONTAINER_WIDTH,
+                    maxWidth: SEARCH_CONTAINER_WIDTH,
+                    width: SEARCH_CONTAINER_WIDTH,
+                    minHeight: SEARCH_CONTAINER_HEIGHT,
+                    maxHeight: SEARCH_CONTAINER_HEIGHT,
+                    height: SEARCH_CONTAINER_HEIGHT,
                     backgroundColor: `rgba(0, 0, 255, ${CONTAINER_BACKGROUND_COLOR_ALPHA})`
                 }}>
                 {this.state.filterVisible && searchFilters}
@@ -1758,7 +1792,6 @@ class FlightsPage extends React.Component {
                 {searchPaginator}
             </div>
         )
-
 
 
         let plotGraphicItem, cesiumGraphicItem, mapGraphicItem;
@@ -1781,10 +1814,10 @@ class FlightsPage extends React.Component {
                 {plotDiv}
                 <div
                     className="map-graph-expand-button btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                    style={{ position: "absolute", top: "0", left: "0" }}
+                    style={{position: "absolute", top: "0", left: "0"}}
                     onClick={() => this.expandContainer("plot-container")}
                 >
-                    <i className="fa fa-expand p-1" />
+                    <i className="fa fa-expand p-1"/>
                 </div>
             </div>
         );
@@ -1795,12 +1828,12 @@ class FlightsPage extends React.Component {
                 className="btn btn-outline-secondary"
                 id="flightTracerDisplay"
                 onClick={() => this.cesiumFlightTrackedClear()}
-                onMouseEnter={() => this.setState({ flightTrackerHovered: true })}
-                onMouseLeave={() => this.setState({ flightTrackerHovered: false })}
+                onMouseEnter={() => this.setState({flightTrackerHovered: true})}
+                onMouseLeave={() => this.setState({flightTrackerHovered: false})}
             >
                 <i
                     className={this.state.flightTrackerHovered ? "fa fa-close" : "fa fa-camera"}
-                    style={{ marginRight: "0.25em", minWidth: "1.25em", minHeight: "1.25em" }}
+                    style={{marginRight: "0.25em", minWidth: "1.25em", minHeight: "1.25em"}}
                 />
                 Tracked Flight: {this.state.cesiumFlightsSelected ?? "(None)"}
             </div>
@@ -1833,14 +1866,15 @@ class FlightsPage extends React.Component {
                 />
 
                 {/* Additional Cesium Controls */}
-                <div style={{ position: "absolute", top: "0", left: "0" }} className="d-flex align-items-center justify-content-center gap-1">
+                <div style={{position: "absolute", top: "0", left: "0"}}
+                     className="d-flex align-items-center justify-content-center gap-1">
 
                     {/* Expand Cesium Button */}
                     <div
                         className="map-graph-expand-button btn btn-outline-secondary"
                         onClick={() => this.expandContainer("cesium-container")}
                     >
-                        <i className="fa fa-expand p-1" />
+                        <i className="fa fa-expand p-1"/>
                     </div>
 
                     {/* Dropdown Menu to Change Resolution Scale */}
@@ -1895,15 +1929,16 @@ class FlightsPage extends React.Component {
             >
                 {mapDiv}
                 <div className="map-graph-expand-button btn btn-outline-secondary"
-                    style={{ position: "absolute", top: "0", left: "0" }}
-                    onClick={() => this.expandContainer("map-container")}>
-                    <i className="fa fa-expand p-1" />
+                     style={{position: "absolute", top: "0", left: "0"}}
+                     onClick={() => this.expandContainer("map-container")}>
+                    <i className="fa fa-expand p-1"/>
                 </div>
             </div>
         );
 
         //Fake "constants" for the graphics container expanded condition
-        let GRAPHICS_CONTAINER_WIDTH, GRAPHICS_CONTAINER_HEIGHT, GRAPHICS_CONTAINER_FLEX_TYPE, GRAPHICS_CONTAINER_PADDING;
+        let GRAPHICS_CONTAINER_WIDTH, GRAPHICS_CONTAINER_HEIGHT, GRAPHICS_CONTAINER_FLEX_TYPE,
+            GRAPHICS_CONTAINER_PADDING;
 
         //Graphics Container [Expanded]
         if (this.state.containerExpanded) {
@@ -1920,8 +1955,8 @@ class FlightsPage extends React.Component {
             GRAPHICS_CONTAINER_HEIGHT = (isColumnMode ? "100%" : `${GRAPHICS_CONTAINER_SIZE_PERCENTAGE}%`);
             GRAPHICS_CONTAINER_FLEX_TYPE = (isColumnMode ? "column" : "row");
             GRAPHICS_CONTAINER_PADDING = (isColumnMode
-                ? "0.5em 0.0em 0.5em 0.5em"     //Column View -> No padding on the right
-                : "0.5em 0.5em 0.0em 0.5em"     //Row View -> No padding on the bottom
+                    ? "0.5em 0.0em 0.5em 0.5em"     //Column View -> No padding on the right
+                    : "0.5em 0.5em 0.0em 0.5em"     //Row View -> No padding on the bottom
             );
 
         }
@@ -1931,9 +1966,15 @@ class FlightsPage extends React.Component {
             <div
                 className={`${doGraphicsDisplay ? "d-flex" : "d-none"} flex-${GRAPHICS_CONTAINER_FLEX_TYPE} flex-fill`}
                 style={{
-                    flex: "1 0 0", gap: "0.5em", padding: GRAPHICS_CONTAINER_PADDING,
-                    minWidth: GRAPHICS_CONTAINER_WIDTH, maxWidth: GRAPHICS_CONTAINER_WIDTH, width: GRAPHICS_CONTAINER_WIDTH,
-                    minHeight: GRAPHICS_CONTAINER_HEIGHT, maxHeight: GRAPHICS_CONTAINER_HEIGHT, height: GRAPHICS_CONTAINER_HEIGHT,
+                    flex: "1 0 0",
+                    gap: "0.5em",
+                    padding: GRAPHICS_CONTAINER_PADDING,
+                    minWidth: GRAPHICS_CONTAINER_WIDTH,
+                    maxWidth: GRAPHICS_CONTAINER_WIDTH,
+                    width: GRAPHICS_CONTAINER_WIDTH,
+                    minHeight: GRAPHICS_CONTAINER_HEIGHT,
+                    maxHeight: GRAPHICS_CONTAINER_HEIGHT,
+                    height: GRAPHICS_CONTAINER_HEIGHT,
                     backgroundColor: `rgba(0, 255, 0, ${CONTAINER_BACKGROUND_COLOR_ALPHA})`
                 }}
             >
@@ -1945,7 +1986,16 @@ class FlightsPage extends React.Component {
 
 
         return (
-            <div style={{ overflowY: "hidden", overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh", maxHeight: "100vh", maxWidth: "100vw", width: "100vw" }}>
+            <div style={{
+                overflowY: "hidden",
+                overflowX: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                height: "100vh",
+                maxHeight: "100vh",
+                maxWidth: "100vw",
+                width: "100vw"
+            }}>
 
                 {/* Navbar */}
                 <div className="d-flex flex-shrink-1">
@@ -1974,12 +2024,15 @@ class FlightsPage extends React.Component {
                         ref={this.navRef}
                         unconfirmedTailsCount={unconfirmedTailsCount}
                         modifyTailsAccess={modifyTailsAccess}
-                        darkModeOnClickAlt={() => { this.displayPlot(); }}
+                        darkModeOnClickAlt={() => {
+                            this.displayPlot();
+                        }}
                     />
                 </div>
 
                 {/* Main Content Subcontainer */}
-                <div className={`d-flex flex-${MAIN_CONTENT_CONTAINER_FLEX_TYPE}`} style={{ overflowY: "auto", overflowX: "hidden", flex: "1 1 auto", }}>
+                <div className={`d-flex flex-${MAIN_CONTENT_CONTAINER_FLEX_TYPE}`}
+                     style={{overflowY: "auto", overflowX: "hidden", flex: "1 1 auto",}}>
 
                     {graphicsContainer}
                     {searchContainer}
@@ -1993,9 +2046,8 @@ class FlightsPage extends React.Component {
 }
 
 
-
 const flightsPage = ReactDOM.render(
-    <FlightsPage />,
+    <FlightsPage/>,
     document.querySelector("#flights-page")
 );
 

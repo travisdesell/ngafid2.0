@@ -158,7 +158,7 @@ public class StatusJavalinRoutes {
 
     public static void bindRoutes(io.javalin.Javalin app) {
         // These are non-privileged routes.
-        app.get("/status/{service-name}", StatusJavalinRoutes::getServiceStatus);
+        app.get("/api/status/{service-name}", StatusJavalinRoutes::getServiceStatus);
         app.get("/status", StatusJavalinRoutes::getStatus);
     }
 }

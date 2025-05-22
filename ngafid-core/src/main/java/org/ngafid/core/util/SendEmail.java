@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.accounts.UserEmailPreferences;
+import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
 
@@ -307,15 +307,18 @@ public enum SendEmail {
                         if (EmailType.isForced(email.emailType)) {
                             LOG.info("Delivering FORCED email type: " + email.emailType);
                             embedUnsubscribeURL = false;
-                        } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, email.emailType)) {
-                            // Check if this email type is enabled for this user.
-                            continue;
+                        } else {
+                            User user = User.get(connection, toRecipient);
+                            if (user != null && !user.getUserEmailPreferences(connection).getPreference(email.emailType)) {
+                                // Check if this email type is enabled for this user.
+                                continue;
+                            }
                         }
 
                         String bodyPersonalized = email.body;
                         if (embedUnsubscribeURL) {
                             try {
-                                int userID = UserEmailPreferences.getUserIDFromEmail(toRecipient);
+                                int userID = User.get(connection, toRecipient).getId();
 
                                 // Generate a token for the user to unsubscribe
                                 String token = generateUnsubscribeToken(toRecipient, userID, connection);

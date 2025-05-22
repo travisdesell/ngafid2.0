@@ -181,9 +181,9 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    private static void postFlights(Context ctx) {
+    public static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
+        final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
         final Filter filter = gson.fromJson(filterJSON, Filter.class);
         final int fleetId = user.getFleetId();
 
@@ -196,11 +196,11 @@ public class FlightsJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
-            final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
-            final String orderingColumnn = Objects.requireNonNull(ctx.formParam("sortingColumn"));
+            final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
+            final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
+            final String orderingColumnn = Objects.requireNonNull(ctx.queryParam("sortingColumn"));
 
-            final boolean isAscending = Objects.equals(ctx.formParam("sortingOrder"), "Ascending");
+            final boolean isAscending = Objects.equals(ctx.queryParam("sortingOrder"), "Ascending");
 
             final int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             final int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
@@ -241,7 +241,7 @@ public class FlightsJavalinRoutes {
     public static void bindRoutes(Javalin app) {
         app.get("/protected/flight", FlightsJavalinRoutes::getFlight);
         app.get("/protected/flights", FlightsJavalinRoutes::getFlights);
-        app.post("/protected/get_flights", FlightsJavalinRoutes::postFlights);
+        // app.post("/protected/get_flights", FlightsJavalinRoutes::postFlights);
         app.get("/protected/flights/flight_display", FlightsJavalinRoutes::getFlightDisplay);
     }
 }

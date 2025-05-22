@@ -61,7 +61,7 @@ class UserNavbar extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '../logout',
+            url: '/api/auth/logout',
             data: submissionData,
             dataType: 'json',
             success: function (response) {

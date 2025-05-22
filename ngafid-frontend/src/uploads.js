@@ -1,14 +1,10 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-import { createRoot } from "react-dom/client";
-
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import { confirmModal } from "./confirm_modal.js";
-import { errorModal } from "./error_modal.js";
+import React from "react";
+import {createRoot} from "react-dom/client";
+import {confirmModal} from "./confirm_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-import { Paginator } from "./paginator_component.js";
+import {Paginator} from "./paginator_component.js";
 
 import SparkMD5 from "spark-md5";
 import Button from "react-bootstrap/Button";
@@ -23,28 +19,23 @@ class Upload extends React.Component {
     constructor(props) {
         super(props);
     }
-    
+
     downloadUpload() {
 
         $("#loading").show();
-        
+
         let uploadInfo = this.props.uploadInfo;
-        var submissionData = {
-            uploadId : uploadInfo.id,
-            md5Hash : uploadInfo.md5Hash,
-        };
 
         console.log("Downloading Upload: ", this.props.uploadInfo);
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/download_upload',
-            data : submissionData,
-            xhrFields : {
-                responseType : 'blob'
+            type: 'GET',
+            url: `/api/upload/${uploadInfo.id}/file`,
+            xhrFields: {
+                responseType: 'blob'
             },
             async: true,
-            success : function(response) {
+            success: function (response) {
 
                 console.log("Download Upload -- Received Response: ", response);
 
@@ -59,7 +50,7 @@ class Upload extends React.Component {
 
                 //Build the download link for the received ZIP file
                 const FILE_DOWNLOAD_NAME_DEFAULT = "UnknownFlightData.zip";
-                let blob = new Blob([response], { type: "application/zip" });
+                let blob = new Blob([response], {type: "application/zip"});
                 let link = document.createElement("a");
                 link.href = window.URL.createObjectURL(blob);
                 link.download = (uploadInfo.filename || FILE_DOWNLOAD_NAME_DEFAULT);
@@ -68,7 +59,7 @@ class Upload extends React.Component {
                 document.body.removeChild(link);
 
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
 
                 let errorMessage = `${errorThrown}\n\n${textStatus}`;
@@ -76,7 +67,7 @@ class Upload extends React.Component {
                 errorModal.show("Error Downloading Upload", errorMessage);
             }
         });
-       
+
         $("#loading").hide();
     }
 
@@ -85,22 +76,14 @@ class Upload extends React.Component {
 
         $("#loading").show();
 
-        var submissionData = {
-            uploadId : uploadInfo.id,
-            md5Hash : uploadInfo.md5Hash,
-        };
-
         let thisUpload = this;
 
-        console.log("Removing Upload:", submissionData);
-
         $.ajax({
-            type: 'POST',
-            url: '/protected/remove_upload',
-            data : submissionData,
-            dataType : 'json',
+            type: 'DELETE',
+            url: `/api/upload/${uploadInfo.id}`,
+            dataType: 'json',
             async: true,
-            success : function(response) {
+            success: function (response) {
 
                 console.log("Remove Upload -- Received Response: ", response);
 
@@ -119,7 +102,7 @@ class Upload extends React.Component {
                 thisUpload.props.removeUpload(uploadInfo);
 
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
 
                 let errorMessage = `${errorThrown}\n\n${textStatus}`;
@@ -137,7 +120,9 @@ class Upload extends React.Component {
 
         confirmModal.show("Confirm Delete: '" + uploadInfo.filename + "'",
             "Are you sure you wish to delete this upload?\n\nThis operation will remove it from the server along with all flights and other information from the database. A backup of this upload is not stored on the server and if you wish to retrieve it you will have to re-upload it.",
-            () => {this.removeUpload(uploadInfo)}
+            () => {
+                this.removeUpload(uploadInfo)
+            }
         );
 
     }
@@ -153,9 +138,9 @@ class Upload extends React.Component {
         if (totalSize == undefined) totalSize = uploadInfo.sizeBytes;
 
         const width = ((progressSize / totalSize) * 100).toFixed(2);
-        const sizeText = (progressSize/1000).toFixed(2).toLocaleString() + "/" + (totalSize/1000).toFixed(2).toLocaleString()  + " kB (" + width + "%)";
+        const sizeText = (progressSize / 1000).toFixed(2).toLocaleString() + "/" + (totalSize / 1000).toFixed(2).toLocaleString() + " kB (" + width + "%)";
 
-        
+
         let status = uploadInfo.status;
 
         console.log("[EX] Upload Status: ", status);
@@ -179,75 +164,75 @@ class Upload extends React.Component {
 
             (Note: If the status is not listed, apply the unknown defaults)
 
-        */  
+        */
 
         let statusText, progressBarClasses, statusClasses;
         const statusStates = {
-            "UPLOADING" : {
-                "statusText" : "Uploading",
-                "progressBarClasses" : "progress-bar bg-info",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-info text-info"
+            "UPLOADING": {
+                "statusText": "Uploading",
+                "progressBarClasses": "progress-bar bg-info",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-info text-info"
             },
-            "UPLOADING_FAILED" : {
-                "statusText" : "Upload Failed",
-                "progressBarClasses" : "progress-bar bg-danger",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            "UPLOADING_FAILED": {
+                "statusText": "Upload Failed",
+                "progressBarClasses": "progress-bar bg-danger",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
             },
-            "UPLOADED" : {
-                "statusText" : "Uploaded",
-                "progressBarClasses" : "progress-bar bg-primary",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-primary text-primary"
+            "UPLOADED": {
+                "statusText": "Uploaded",
+                "progressBarClasses": "progress-bar bg-primary",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-primary text-primary"
             },
-            "ENQUEUED" : {
-                "statusText" : "Enqueued",
-                "progressBarClasses" : "progress-bar bg-secondary",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
+            "ENQUEUED": {
+                "statusText": "Enqueued",
+                "progressBarClasses": "progress-bar bg-secondary",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
             },
-            "PROCESSING" : {
-                "statusText" : "Processing",
-                "progressBarClasses" : "progress-bar bg-warning",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-warning text-warning"
+            "PROCESSING": {
+                "statusText": "Processing",
+                "progressBarClasses": "progress-bar bg-warning",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-warning text-warning"
             },
-            "PROCESSED_OK" : {
-                "statusText" : "Processed OK",
-                "progressBarClasses" : "progress-bar bg-success",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-success text-success"
+            "PROCESSED_OK": {
+                "statusText": "Processed OK",
+                "progressBarClasses": "progress-bar bg-success",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-success text-success"
             },
-            "PROCESSED_WARNING" : {
-                "statusText" : "Processed With Warnings",
-                "progressBarClasses" : "progress-bar bg-warning",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-warning text-warning"
+            "PROCESSED_WARNING": {
+                "statusText": "Processed With Warnings",
+                "progressBarClasses": "progress-bar bg-warning",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-warning text-warning"
             },
-            "FAILED_FILE_TYPE" : {
-                "statusText" : "Failed: File Type",
-                "progressBarClasses" : "progress-bar bg-danger",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            "FAILED_FILE_TYPE": {
+                "statusText": "Failed: File Type",
+                "progressBarClasses": "progress-bar bg-danger",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
             },
-            "FAILED_AIRCRAFT_TYPE" : {
-                "statusText" : "Failed: Aircraft Type",
-                "progressBarClasses" : "progress-bar bg-danger",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            "FAILED_AIRCRAFT_TYPE": {
+                "statusText": "Failed: Aircraft Type",
+                "progressBarClasses": "progress-bar bg-danger",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
             },
-            "FAILED_ARCHIVE_TYPE" : {
-                "statusText" : "Failed: Archive Type",
-                "progressBarClasses" : "progress-bar bg-danger",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            "FAILED_ARCHIVE_TYPE": {
+                "statusText": "Failed: Archive Type",
+                "progressBarClasses": "progress-bar bg-danger",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
             },
-            "FAILED_UNKNOWN" : {
-                "statusText" : "Failed: Unknown",
-                "progressBarClasses" : "progress-bar bg-danger",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
+            "FAILED_UNKNOWN": {
+                "statusText": "Failed: Unknown",
+                "progressBarClasses": "progress-bar bg-danger",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-danger text-danger"
             },
-            "DERIVED" : {
-                "statusText" : "Derived",
-                "progressBarClasses" : "progress-bar bg-info",
-                "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-info text-info"
+            "DERIVED": {
+                "statusText": "Derived",
+                "progressBarClasses": "progress-bar bg-info",
+                "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-info text-info"
             },
         };
         const statusStateUnknownDefaults = {
-            "statusText" : "...",
-            "progressBarClasses" : "progress-bar bg-secondary",
-            "statusClasses" : "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
+            "statusText": "...",
+            "progressBarClasses": "progress-bar bg-secondary",
+            "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
         }
 
         //Status is listed, apply the status text and classes
@@ -256,7 +241,7 @@ class Upload extends React.Component {
             progressBarClasses = statusStates[status].progressBarClasses;
             statusClasses = statusStates[status].statusClasses;
 
-        //Status is not listed, apply the unknown defaults
+            //Status is not listed, apply the unknown defaults
         } else {
             statusText = statusStateUnknownDefaults.statusText;
             progressBarClasses = statusStateUnknownDefaults.progressBarClasses;
@@ -265,10 +250,10 @@ class Upload extends React.Component {
 
 
         const progressSizeStyle = {
-            width : width + "%",
-            height : "34px",
-            textAlign : "left",
-            whiteSpace : "nowrap"
+            width: width + "%",
+            height: "34px",
+            textAlign: "left",
+            whiteSpace: "nowrap"
         };
 
         console.log("uploadInfo:");
@@ -290,31 +275,51 @@ class Upload extends React.Component {
 
         return (
             <div className="m-2">
-                <div className="d-flex align-items-start" style={{backgroundColor: "var(--c_entry_bg)", padding: '10px', borderRadius: "10px", position:"relative", border:"1px solid var(--c_border_alt)" }}>
-        
+                <div className="d-flex align-items-start" style={{
+                    backgroundColor: "var(--c_entry_bg)",
+                    padding: '10px',
+                    borderRadius: "10px",
+                    position: "relative",
+                    border: "1px solid var(--c_border_alt)"
+                }}>
+
                     {/* LEFT ELEMENTS */}
-                    <div className="d-flex flex-row" style={{ flex: '0 0 15em', minWidth:"35%", maxWidth:"35%", position:"relative" }}>
-                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch' }}>{uploadInfo.filename}</div>
-                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch', minWidth:"35%", maxWidth:"35%" }}>{uploadInfo.startTime}</div>
+                    <div className="d-flex flex-row"
+                         style={{flex: '0 0 15em', minWidth: "35%", maxWidth: "35%", position: "relative"}}>
+                        <div className="p-1 mr-1 card"
+                             style={{flex: '1 1 0', alignSelf: 'stretch'}}>{uploadInfo.filename}</div>
+                        <div className="p-1 mr-1 card" style={{
+                            flex: '1 1 0',
+                            alignSelf: 'stretch',
+                            minWidth: "35%",
+                            maxWidth: "35%"
+                        }}>{uploadInfo.startTime}</div>
                     </div>
 
                     {/* CENTER ELEMENTS */}
-                    <div className="flex-fill card progress" style={{height:"34px"}}>
-                        <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
+                    <div className="flex-fill card progress" style={{height: "34px"}}>
+                        <div className={progressBarClasses} role="progressbar" style={progressSizeStyle}
+                             aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
                     </div>
-        
+
                     {/* RIGHT ELEMENTS */}
-                    <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
+                    <div className={statusClasses} style={{flex: "0 0 18em"}}>{statusText}</div>
 
                     {/* VERTICALLY CENTERED DELETE & DOWNLOAD BUTTONS */}
-                    <div style={{ marginTop:"auto", marginBottom:"auto" }}>
+                    <div style={{marginTop: "auto", marginBottom: "auto"}}>
                         {
                             (!doDeleteButtonHide) &&
                             <Button
                                 type="button"
                                 className={"btn btn-danger btn-sm"}
-                                style={{backgroundColor:(doDeleteButtonDisable ? '#444444' : '#DC3545'), width:"30px", height:"30px", marginLeft:"4px", padding:"2 4 4 4"}}
-                                >
+                                style={{
+                                    backgroundColor: (doDeleteButtonDisable ? '#444444' : '#DC3545'),
+                                    width: "30px",
+                                    height: "30px",
+                                    marginLeft: "4px",
+                                    padding: "2 4 4 4"
+                                }}
+                            >
                                 <i
                                     className="fa fa-times"
                                     aria-hidden="true"
@@ -325,8 +330,8 @@ class Upload extends React.Component {
                                         justifyContent: "center",
                                         marginTop: "1px"
                                     }}
-                                    onClick={ () => (doDeleteButtonDisable ? undefined : this.confirmRemoveUpload(uploadInfo)) }
-                                    >
+                                    onClick={() => (doDeleteButtonDisable ? undefined : this.confirmRemoveUpload(uploadInfo))}
+                                >
                                 </i>
                             </Button>
                         }
@@ -336,8 +341,14 @@ class Upload extends React.Component {
                             <Button
                                 type="button"
                                 className={"btn btn btn-sm"}
-                                style={{backgroundColor:(doDownloadButtonDisable ? '#444444' : '#007BFF'), width:"30px", height:"30px", marginLeft:"4px", padding:"2 4 4 4"}}
-                                >
+                                style={{
+                                    backgroundColor: (doDownloadButtonDisable ? '#444444' : '#007BFF'),
+                                    width: "30px",
+                                    height: "30px",
+                                    marginLeft: "4px",
+                                    padding: "2 4 4 4"
+                                }}
+                            >
                                 <i
                                     className="fa fa-download"
                                     aria-hidden="true"
@@ -348,8 +359,8 @@ class Upload extends React.Component {
                                         justifyContent: "center",
                                         marginTop: "4px"
                                     }}
-                                    onClick={ () => (doDownloadButtonDisable ? undefined : this.downloadUpload()) }
-                                    >
+                                    onClick={() => (doDownloadButtonDisable ? undefined : this.downloadUpload())}
+                                >
                                 </i>
                             </Button>
                         }
@@ -363,7 +374,7 @@ class Upload extends React.Component {
 }
 
 function getUploadeIdentifier(filename, size) {
-    return(size + '-' + filename.replace(/[^0-9a-zA-Z_-]/img, ''));
+    return (size + '-' + filename.replace(/[^0-9a-zA-Z_-]/img, ''));
 }
 
 
@@ -373,13 +384,13 @@ class UploadsPage extends React.Component {
         super(props);
 
         this.state = {
-            uploads : this.props.uploads,
-            pending_uploads : this.props.pending_uploads,
+            uploads: this.props.uploads,
+            pending_uploads: this.props.pending_uploads,
 
             //needed for paginator
-            currentPage : this.props.currentPage,
-            numberPages : this.props.numberPages, //this will be set globally in the javascript
-            pageSize : 10
+            currentPage: this.props.currentPage,
+            numberPages: this.props.numberPages, //this will be set globally in the javascript
+            pageSize: 10
         };
     }
 
@@ -395,7 +406,7 @@ class UploadsPage extends React.Component {
             fileReader = new FileReader();
 
         fileReader.onload = function (e) {
-            
+
             console.log('read chunk nr', currentChunk + 1, 'of', chunks);
             spark.append(e.target.result);                   // Append array buffer
             currentChunk++;
@@ -414,7 +425,7 @@ class UploadsPage extends React.Component {
             }
 
             if (currentChunk < chunks) {
-                loadNext();        
+                loadNext();
             } else {    //Reset progress bar for uploading...
 
                 let state = uploadsPage.state;
@@ -478,10 +489,10 @@ class UploadsPage extends React.Component {
             console.log("got md5Hash: '" + md5Hash + "'");
             var xhr = new XMLHttpRequest();
 
-            xhr.open('POST', '/protected/new_upload');
-            xhr.onload = function() {
-                
-                 console.log("New upload response: " + xhr.responseText);
+            xhr.open('POST', '/api/upload');
+            xhr.onload = function () {
+
+                console.log("New upload response: " + xhr.responseText);
                 var response = JSON.parse(xhr.responseText);
 
                 var filename = (file.webkitRelativePath || file.fileName || file.name);
@@ -515,7 +526,7 @@ class UploadsPage extends React.Component {
 
 
     addUpload(file) {
-        
+
         const filename = (file.webkitRelativePath || file.fileName || file.name);
         const progressSize = 0;
         const status = "HASHING";
@@ -539,7 +550,7 @@ class UploadsPage extends React.Component {
 
                 //Upload already exists in the list but is incomplete, so we need to restart it
                 if (pendingUploads[i].status == "UPLOAD INCOMPLETE") {
-                    
+
                     alreadyExists = true;
                     file.position = i;
 
@@ -554,7 +565,7 @@ class UploadsPage extends React.Component {
                 }
 
             }
-            
+
             //Testing non-matching identifiers
             else {
                 file.position++;
@@ -567,12 +578,12 @@ class UploadsPage extends React.Component {
 
             //pendingUploads.unshift({
             pendingUploads.push({
-                position : file.position,
-                identifier : identifier,
-                filename : filename,
-                status : status,
-                totalSize : totalSize,
-                progressSize : progressSize
+                position: file.position,
+                identifier: identifier,
+                filename: filename,
+                status: status,
+                totalSize: totalSize,
+                progressSize: progressSize
             });
 
         }
@@ -589,7 +600,7 @@ class UploadsPage extends React.Component {
 
         this.setState(this.state);
         this.startUpload(file);
-    
+
     }
 
     removePendingUpload(file) {
@@ -604,14 +615,14 @@ class UploadsPage extends React.Component {
             pending_uploads.splice(file.position, 1);
             for (var i = 0; i < pending_uploads.length; i++) {
                 pending_uploads[i].position = i;
-                }
+            }
 
             this.state.pending_uploads = pending_uploads;
 
             // uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier; });
             // console.log(`Removing a *pending* file upload! New State: [${uploadStringMap}]`);
 
-            this.setState( this.state );
+            this.setState(this.state);
         }
     }
 
@@ -638,11 +649,11 @@ class UploadsPage extends React.Component {
                 //Trigger state update
                 this.setState(this.state);
 
-            //Upload position is out of bounds, throw an error
+                //Upload position is out of bounds, throw an error
             } else {
                 throw new Error("Upload position is out of bounds!");
             }
-            
+
         } catch (error) {
 
             //Display Error Modal
@@ -669,7 +680,7 @@ class UploadsPage extends React.Component {
 
         this.state.pending_uploads[uploadInfo.position] = uploadInfo;
 
-        this.setState( this.state );
+        this.setState(this.state);
 
         var uploadsPage = this;
 
@@ -679,8 +690,8 @@ class UploadsPage extends React.Component {
         var bytes = file[func](startByte, endByte, void 0);
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/protected/upload');
-        xhr.onload = function() {
+        xhr.open('PUT', `/api/upload/${uploadInfo.id}/chunk/${chunkNumber}`);
+        xhr.onload = function () {
 
             console.log("Upload response: " + xhr.responseText);
             var response = JSON.parse(xhr.responseText);
@@ -689,7 +700,7 @@ class UploadsPage extends React.Component {
             if (response.errorTitle !== undefined) {
                 errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
 
-            //No error encountered, continue with upload
+                //No error encountered, continue with upload
             } else {
 
                 var uploadInfo = response;
@@ -713,22 +724,18 @@ class UploadsPage extends React.Component {
 
                     uploadsPage.updateUpload(uploadInfo);
 
-                //All chunks have been uploaded, finish the upload
+                    //All chunks have been uploaded, finish the upload
                 } else {
                     console.log("Should be finished upload!");
 
                     uploadsPage.state.pending_uploads[uploadInfo.position] = uploadInfo;
-                    uploadsPage.setState( uploadsPage.state );
+                    uploadsPage.setState(uploadsPage.state);
                 }
             }
         };
 
         console.log("appending identifier: " + file.identifier);
         var formData = new FormData();
-        formData.append("request", "UPLOAD");
-        formData.append("chunkNumber", chunkNumber);
-        formData.append("identifier", file.identifier);
-        formData.append("md5Hash", file.md5Hash);
         formData.append("chunk", bytes, file.fileName);
         xhr.send(formData);
     }
@@ -738,18 +745,17 @@ class UploadsPage extends React.Component {
         var uploadsPage = this;
 
         var submissionData = {
-            currentPage : this.state.currentPage,
-            pageSize : this.state.pageSize
+            currentPage: this.state.currentPage,
+            pageSize: this.state.pageSize
         };
 
         console.log(submissionData);
 
         $.ajax({
-            type: 'POST',
-            url: '/protected/uploads',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            type: 'GET',
+            url: '/api/upload',
+            data: submissionData,
+            success: function (response) {
 
                 console.log(response);
 
@@ -761,25 +767,25 @@ class UploadsPage extends React.Component {
                     return false;
                 }
 
-                console.log("got response: "+response+" "+response.sizeAll);
+                console.log("got response: " + response + " " + response.sizeAll);
 
                 uploadsPage.setState({
-                    uploads : response.uploads,
-                    numberPages : response.numberPages
+                    uploads: response.uploads,
+                    numberPages: response.numberPages
                 });
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
             },
             async: true
         });
     }
-    
+
     render() {
         console.log("rendering uploads!");
 
         const hiddenStyle = {
-            display : "none"
+            display: "none"
         };
 
         //Disable Upload buttons with no Upload Access
@@ -787,20 +793,22 @@ class UploadsPage extends React.Component {
 
         return (
 
-            <div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                <div style={{display: "flex", flexDirection: "column", minHeight: "100vh"}}>
 
-                    <div style={{flex:"0 0 auto"}}>
-                        <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                    <div style={{flex: "0 0 auto"}}>
+                        <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount}
+                                        fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
+                                        modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
                     </div>
 
-                    <div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
+                    <div style={{overflowY: "scroll", flex: "1 1 auto", paddingBottom: "70px"}}>
 
                         <div className="m-1">
 
-                            <input id ="upload-file-input" type="file" style={hiddenStyle}/>
-                            
+                            <input id="upload-file-input" type="file" style={hiddenStyle}/>
+
                             {/* Render Pending Uploads */}
                             {
                                 this.state.pending_uploads.map((uploadInfo, index) => {
@@ -814,7 +822,9 @@ class UploadsPage extends React.Component {
                                         <Upload
                                             uploadInfo={uploadInfo}
                                             key={uploadInfo.identifier}
-                                            removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}}
+                                            removeUpload={(uploadInfo) => {
+                                                this.removePendingUpload(uploadInfo);
+                                            }}
                                         />
                                     );
                                 })
@@ -833,24 +843,41 @@ class UploadsPage extends React.Component {
                                         <Upload
                                             uploadInfo={uploadInfo}
                                             key={uploadInfo.identifier}
-                                            removeUpload={(uploadInfo) => {this.removeUploadProp(uploadInfo);}}
+                                            removeUpload={(uploadInfo) => {
+                                                this.removeUploadProp(uploadInfo);
+                                            }}
                                         />
                                     );
                                 })
                             }
 
-                            <input id ="upload-file-input" type="file" style={hiddenStyle}/>   {/* <-- Keep this here so the Upload Flights button in the Paginator works */}
-                            <div style={{ bottom:"0", width:"99%", paddingLeft: "0.5em", paddingBottom: "1.0em", paddingRight: "1.00em", position:"fixed", alignSelf:"center" }}>
+                            <input id="upload-file-input" type="file"
+                                   style={hiddenStyle}/> {/* <-- Keep this here so the Upload Flights button in the Paginator works */}
+                            <div style={{
+                                bottom: "0",
+                                width: "99%",
+                                paddingLeft: "0.5em",
+                                paddingBottom: "1.0em",
+                                paddingRight: "1.00em",
+                                position: "fixed",
+                                alignSelf: "center"
+                            }}>
                                 <Paginator
-                                    submitFilter={() => {this.submitFilter();}}
+                                    submitFilter={() => {
+                                        this.submitFilter();
+                                    }}
                                     items={this.state.uploads}
                                     itemName="uploads"
                                     uploadsPage={this}
                                     currentPage={this.state.currentPage}
                                     numberPages={this.state.numberPages}
                                     pageSize={this.state.pageSize}
-                                    updateCurrentPage={(currentPage) => {   this.state.currentPage = currentPage;   }}
-                                    updateItemsPerPage={(pageSize) => {     this.state.pageSize = pageSize;     }}
+                                    updateCurrentPage={(currentPage) => {
+                                        this.state.currentPage = currentPage;
+                                    }}
+                                    updateItemsPerPage={(pageSize) => {
+                                        this.state.pageSize = pageSize;
+                                    }}
                                     doUploadButtonHide={doUploadButtonHide}
                                 />
                             </div>
@@ -865,4 +892,5 @@ class UploadsPage extends React.Component {
 }
 
 const root = createRoot(document.querySelector('#uploads-page'));
-root.render(<UploadsPage uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages} currentPage={currentPage}/>);
+root.render(<UploadsPage uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages}
+                         currentPage={currentPage}/>);
