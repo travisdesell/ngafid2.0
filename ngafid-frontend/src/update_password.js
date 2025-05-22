@@ -40,7 +40,7 @@ class UpdatePasswordPage extends React.Component {
         $("#loading").show();
 
         $.ajax({
-            type: 'POST',
+            type: 'PATCH',
             url: '/api/auth/change-password',
             data: submissionData,
             dataType: 'json',

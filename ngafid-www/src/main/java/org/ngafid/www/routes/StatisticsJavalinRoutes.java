@@ -251,7 +251,7 @@ public class StatisticsJavalinRoutes {
         }
     }
 
-    public static void getEventCountsByAirframe(Context ctx, boolean aggregate) {
+    public static void getAllEventCountsByAirframe(Context ctx, boolean aggregate) {
         final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
 
@@ -287,12 +287,31 @@ public class StatisticsJavalinRoutes {
         }
     }
 
-    public static void postMonthlyEventCounts(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
-        final boolean aggregateTrendsPage = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("aggregatePage")));
+    public static void getOneEventCountsByAirframe(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String eventName = ctx.formParam("eventName"); // Might be null intentionally
+        final int fleetId = user.getFleetId();
+        final int airframeNameId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("aid")));
+
+        try (Connection connection = Database.getConnection()) {
+            if (airframeNameId == 0) {
+                ctx.json(new EventStatistics(connection, 0, "Generic", fleetId));
+            } else {
+                final Airframes.Airframe af = new Airframes.Airframe(connection, airframeNameId);
+                ctx.json(new EventStatistics(connection, af.getId(), af.getName(), fleetId));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e)).status(500);
+        }
+    }
+
+    public static void getMonthlyEventCounts(Context ctx) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+        final boolean aggregateTrendsPage = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("aggregatePage")));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final String eventName = ctx.queryParam("eventName"); // Might be null intentionally
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Map<String, EventStatistics.MonthlyEventCounts>> map;
@@ -321,12 +340,12 @@ public class StatisticsJavalinRoutes {
             }
 
             if (eventName == null) {
+                LOG.info("");
                 ctx.json(map);
             } else {
                 ctx.json(map.get(eventName));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
         }

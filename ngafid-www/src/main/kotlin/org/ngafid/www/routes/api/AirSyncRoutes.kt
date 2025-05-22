@@ -35,8 +35,8 @@ object AirSyncRoutes : RouteProvider() {
         val fleetId = user.fleetId
 
         Database.getConnection().use { connection ->
-            val currentPage = ctx.formParam("currentPage")!!.toInt()
-            val pageSize = ctx.formParam("pageSize")!!.toInt()
+            val currentPage = ctx.queryParam("currentPage")!!.toInt()
+            val pageSize = ctx.queryParam("pageSize")!!.toInt()
             val totalImports = AirSyncImport.getNumImports(connection, fleetId, null)
             val numberPages = totalImports / pageSize
 

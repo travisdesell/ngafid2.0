@@ -78,8 +78,6 @@ class Upload extends React.Component {
 
         let thisUpload = this;
 
-        console.log("Removing Upload:", submissionData);
-
         $.ajax({
             type: 'DELETE',
             url: `/api/upload/${uploadInfo.id}`,

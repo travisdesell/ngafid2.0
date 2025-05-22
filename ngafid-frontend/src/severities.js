@@ -154,13 +154,9 @@ class SeveritiesPage extends React.Component {
 
     getEventMetaData(eventId) {
         var eventMetaData = null;
-        var submissionData = {
-            eventId: eventId
-        };
         $.ajax({
-            type: 'POST',
-            url: '/protected/event_metadata',
-            data: submissionData,
+            type: 'GET',
+            url: `/api/event/${eventId}/meta`,
             dataType: 'json',
             success: function (response) {
                 eventMetaData = response;

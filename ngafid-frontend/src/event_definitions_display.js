@@ -18,8 +18,6 @@ class EventDefinitionsDisplayPage extends React.Component {
 
     render() {
 
-        const GENERIC_AIRFRAME_TYPE_INDICATOR = "Unknown";
-
         const ROW_INDEX_EVENT_NAME = 0;
         const ROW_INDEX_AIRFRAME = 1;
         const ROW_INDEX_EVENT_DEFINITION = 2;
@@ -27,17 +25,20 @@ class EventDefinitionsDisplayPage extends React.Component {
         const rowsGeneric = [];
         const rowsSpecific = [];
 
-        //Add all events to the rows array
+        console.log(this.events);
+
+        // Add all events to the rows array
         for (let eventName of this.events.keys()) {
 
             for (let airframe of Object.keys(this.events.get(eventName))) {
-
+                console.log(airframe);
+                console.log(typeof airframe);
+                console.log(airframe == null);
                 //Got a generic event, add it to the generic rows
-                if (airframe === GENERIC_AIRFRAME_TYPE_INDICATOR)
+                if (airframe == "Any")
                     rowsGeneric.push([eventName, airframe, this.events.get(eventName)[airframe]]);
-
                 //Otherwise, add it to the specific rows
-                else 
+                else
                     rowsSpecific.push([eventName, airframe, this.events.get(eventName)[airframe]]);
 
             }
@@ -64,10 +65,10 @@ class EventDefinitionsDisplayPage extends React.Component {
         }
 
         return (
-            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+            <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
                 {/* Navbar */}
-                <div style={{flex:"0 0 auto"}}>
+                <div style={{flex: "0 0 auto"}}>
                     <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                     fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                     modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}
@@ -75,8 +76,8 @@ class EventDefinitionsDisplayPage extends React.Component {
                 </div>
 
                 {/* Main Content */}
-                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
-                    <div className="card-body" style={{margin:24, padding:12, borderRadius:5}}>
+                <div style={{overflowY: "auto", flex: "1 1 auto"}}>
+                    <div className="card-body" style={{margin: 24, padding: 12, borderRadius: 5}}>
                         <div className="row">
                             <div className="col-md-12">
                                 <Col>
@@ -87,28 +88,28 @@ class EventDefinitionsDisplayPage extends React.Component {
                                     </h1>
                                     <Table striped bordered hover size="sm" className="rounded-0">
                                         <thead style={{color: "var(--c_text)", backgroundColor: "var(--c_bg)"}}>
-                                            <tr>
-                                                <th>Event Name</th>
-                                                {/* <th style={{minWidth: "10%"}}>Aircraft Type</th> */}
-                                                <th>Event Definition</th>
-                                            </tr>
+                                        <tr>
+                                            <th>Event Name</th>
+                                            {/* <th style={{minWidth: "10%"}}>Aircraft Type</th> */}
+                                            <th>Event Definition</th>
+                                        </tr>
                                         </thead>
                                         <tbody style={{color: "var(--c_text_alt)"}}>
-                                            {rowsGeneric.map((row, index) => (
-                                                <tr
-                                                    key={index}
-                                                    style={{
-                                                        backgroundColor:
-                                                            index % 2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid)",
-                                                    }}
-                                                >
+                                        {rowsGeneric.map((row, index) => (
+                                            <tr
+                                                key={index}
+                                                style={{
+                                                    backgroundColor:
+                                                        index % 2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid)",
+                                                }}
+                                            >
 
-                                                    {/* Event Definition Name */}
-                                                    <th>
-                                                        {row[ROW_INDEX_EVENT_NAME]}
-                                                    </th>
+                                                {/* Event Definition Name */}
+                                                <th>
+                                                    {row[ROW_INDEX_EVENT_NAME]}
+                                                </th>
 
-                                                    {/*
+                                                {/*
                                                     Event Definition Aircraft Type
                                                     (Not displayed for generic events)
 
@@ -117,18 +118,18 @@ class EventDefinitionsDisplayPage extends React.Component {
                                                     </th>
                                                     */}
 
-                                                    {/* Event Definition Text */}
-                                                    <th
-                                                        style={{
-                                                            fontStyle: "normal",
-                                                            fontWeight: "normal",
-                                                            color: "var(--c_text_alt)",
-                                                        }}
-                                                    >
-                                                        {row[ROW_INDEX_EVENT_DEFINITION]}
-                                                    </th>
-                                                </tr>
-                                            ))}
+                                                {/* Event Definition Text */}
+                                                <th
+                                                    style={{
+                                                        fontStyle: "normal",
+                                                        fontWeight: "normal",
+                                                        color: "var(--c_text_alt)",
+                                                    }}
+                                                >
+                                                    {row[ROW_INDEX_EVENT_DEFINITION]}
+                                                </th>
+                                            </tr>
+                                        ))}
                                         </tbody>
                                     </Table>
 
@@ -138,54 +139,54 @@ class EventDefinitionsDisplayPage extends React.Component {
 
                                     {/* Specific Entries */}
                                     <h1 className="ml-1 mb-3 mt-1">
-                                        Specific Event Definitions
+                                        Per-Airframe Event Definitions
                                     </h1>
                                     <Table striped bordered hover size="sm">
                                         <thead style={{color: "var(--c_text)", backgroundColor: "var(--c_bg)"}}>
-                                            <tr>
-                                                <th>Event Name</th>
-                                                <th style={{minWidth: "10%"}}>Aircraft Type</th>
-                                                <th>Event Definition</th>
-                                            </tr>
+                                        <tr>
+                                            <th>Event Name</th>
+                                            <th style={{minWidth: "10%"}}>Aircraft Type</th>
+                                            <th>Event Definition</th>
+                                        </tr>
                                         </thead>
                                         <tbody style={{color: "var(--c_text_alt)"}}>
-                                            {rowsSpecific.map((row, index) => (
-                                                <tr
-                                                    key={index}
+                                        {rowsSpecific.map((row, index) => (
+                                            <tr
+                                                key={index}
+                                                style={{
+                                                    backgroundColor: index % 2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid)",
+
+                                                }}
+                                            >
+                                                {eventNameUpdated(row[ROW_INDEX_EVENT_NAME])}
+
+                                                {/* Event Definition Name */}
+                                                <th style={{
+                                                    paddingTop: eventPadding,
+                                                }}>
+                                                    {row[ROW_INDEX_EVENT_NAME]}
+                                                </th>
+
+                                                {/* Event Definition Aircraft Type */}
+                                                <th style={{
+                                                    paddingTop: eventPadding,
+                                                }}>
+                                                    {row[ROW_INDEX_AIRFRAME]}
+                                                </th>
+
+                                                {/* Event Definition Text */}
+                                                <th
                                                     style={{
-                                                        backgroundColor: index % 2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid)",
-                                                        
+                                                        fontStyle: "normal",
+                                                        fontWeight: "normal",
+                                                        color: "var(--c_text_alt)",
+                                                        paddingTop: eventPadding,
                                                     }}
                                                 >
-                                                    {eventNameUpdated(row[ROW_INDEX_EVENT_NAME])}
-
-                                                    {/* Event Definition Name */}
-                                                    <th style={{
-                                                        paddingTop: eventPadding,
-                                                    }}>
-                                                        {row[ROW_INDEX_EVENT_NAME]}
-                                                    </th>
-
-                                                    {/* Event Definition Aircraft Type */}
-                                                    <th style={{
-                                                        paddingTop: eventPadding,
-                                                    }}>
-                                                        {row[ROW_INDEX_AIRFRAME]}
-                                                    </th>
-
-                                                    {/* Event Definition Text */}
-                                                    <th
-                                                        style={{
-                                                            fontStyle: "normal",
-                                                            fontWeight: "normal",
-                                                            color: "var(--c_text_alt)",
-                                                            paddingTop: eventPadding,
-                                                        }}
-                                                    >
-                                                        {row[ROW_INDEX_EVENT_DEFINITION]}
-                                                    </th>
-                                                </tr>
-                                            ))}
+                                                    {row[ROW_INDEX_EVENT_DEFINITION]}
+                                                </th>
+                                            </tr>
+                                        ))}
                                         </tbody>
                                     </Table>
                                 </Col>

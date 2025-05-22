@@ -53,17 +53,21 @@ object EventRoutes : RouteProvider() {
 
                 get(
                     "count/by-airframe",
-                    { ctx -> StatisticsJavalinRoutes.getEventCountsByAirframe(ctx, false) },
+                    { ctx -> StatisticsJavalinRoutes.getAllEventCountsByAirframe(ctx, false) },
                     Role.LOGGED_IN
                 )
                 get(
+                    "count/by-airframe/{aid}",
+                    { ctx -> StatisticsJavalinRoutes.getOneEventCountsByAirframe(ctx) },
+                )
+                get(
                     "count/by-airframe/aggregate",
-                    { ctx -> StatisticsJavalinRoutes.getEventCountsByAirframe(ctx, true) },
+                    { ctx -> StatisticsJavalinRoutes.getAllEventCountsByAirframe(ctx, true) },
                     Role.LOGGED_IN
                 )
                 get(
                     "count/monthly/by-name",
-                    StatisticsJavalinRoutes::postMonthlyEventCounts,
+                    StatisticsJavalinRoutes::getMonthlyEventCounts,
                     Role.LOGGED_IN
                 )
 
@@ -89,10 +93,10 @@ object EventRoutes : RouteProvider() {
 
     fun getAllSeverities(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
-        val startDate = ctx.formParam("startDate")!!
-        val endDate = ctx.formParam("endDate")!!
-        val eventNames = ctx.formParam("eventNames")!!
-        val tagName = ctx.formParam("tagName")!!
+        val startDate = ctx.queryParam("startDate")!!
+        val endDate = ctx.queryParam("endDate")!!
+        val eventNames = ctx.queryParam("eventNames")!!
+        val tagName = ctx.queryParam("tagName")!!
         val fleetId = user.fleetId
 
         Database.getConnection().use { connection ->
@@ -190,9 +194,9 @@ object EventRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             val definitions: MutableMap<String, MutableMap<String?, String>> = TreeMap()
             val airframeNames: MutableMap<Int, String> = HashMap()
+            airframeNames[0] = "Any"
 
             for (eventDefinition in EventDefinition.getAll(connection)) {
-
                 if (!definitions.containsKey(eventDefinition.name)) {
                     definitions[eventDefinition.name] = HashMap()
                 }
@@ -202,6 +206,7 @@ object EventRoutes : RouteProvider() {
                         Airframes.Airframe(connection, eventDefinition.airframeNameId).name
                 }
 
+                println("${airframeNames[eventDefinition.airframeNameId]} -> ${eventDefinition.toHumanReadable()}")
                 definitions[eventDefinition.name]!![airframeNames[eventDefinition.airframeNameId]] =
                     eventDefinition.toHumanReadable()
             }

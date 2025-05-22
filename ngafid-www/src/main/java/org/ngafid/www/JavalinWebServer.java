@@ -231,18 +231,17 @@ public class JavalinWebServer extends WebServer {
             }
         });
 
+
+    }
+
+    @Override
+    protected void configureExceptions() {
         // will only execute of a more specific handler is not found
         app.exception(Exception.class, (e, ctx) -> {
             LOG.info("Encountered exception: " + e.getMessage());
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
-        });
-    }
-
-    @Override
-    protected void configureExceptions() {
-        app.exception(Exception.class, (exception, ctx) -> {
-            exceptionHandler(exception);
+            ctx.status(500);
         });
     }
 

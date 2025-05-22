@@ -271,7 +271,7 @@ class ImportsPage extends React.Component {
         var importsPage = this;
 
         $.ajax({
-            type: 'POST',
+            type: 'GET',
             url: '/api/airsync/imports',
             data: submissionData,
             dataType: 'json',
