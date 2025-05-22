@@ -182,6 +182,8 @@ public final class FlightTimeLocation {
         return valid;
     }
 
-    public boolean hasSeriesData() {return hasSeriesData;}
-
+    public boolean hasSeriesData() {
+        return hasSeriesData;
+    }
 }
+

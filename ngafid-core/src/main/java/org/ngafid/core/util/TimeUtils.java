@@ -194,18 +194,6 @@ public enum TimeUtils {
         return cal.getTime();
     }
 
-    /**
-     Calculated UTC Date Time from unit time seconds
-     */
-
-    public static String convertUnixTimeToUTCDateTime(double unixTimeSeconds) {
-
-
-        Instant instant = Instant.ofEpochSecond((long) unixTimeSeconds);
-        OffsetDateTime utcDateTime = instant.atOffset(ZoneOffset.UTC);
-        return utcDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    }
-
     public static DateTimeFormatter findCorrectFormatter(String date, String time) throws UnrecognizedDateTimeFormatException {
         return findCorrectFormatter(date + " " + time);
     }

@@ -93,10 +93,6 @@ public class Flight {
         this.stringTimeSeries = new HashMap<>(stringTimeSeries);
         this.doubleTimeSeries = new HashMap<>(doubleTimeSeries);
 
-        if (!doubleTimeSeries.isEmpty()) {
-            numberRows = doubleTimeSeries.values().iterator().next().size();
-        }
-
         for (var series : doubleTimeSeries.values())
             assert series.size() == numberRows;
         for (var series : stringTimeSeries.values())

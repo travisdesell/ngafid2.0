@@ -100,12 +100,6 @@ public final class ProcessUpload {
         LOG.info("Done");
     }
 
-
-
-    // TODO: Refactor Pipeline and ParquetPipeline into a shared superclass (e.g., AbstractPipeline)
-    // to reduce code duplication and simplify support for future formats.
-
-
     private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
             try {
@@ -176,7 +170,7 @@ public final class ProcessUpload {
         String filename = upload.getArchivePath().toString();
         LOG.info("processing: '" + filename + "'");
 
-        String extension = filename.substring(filename.lastIndexOf('.') + 1);
+        String extension = filename.substring(filename.length() - 4);
         LOG.info("extension: '" + extension + "'");
 
         Upload.Status status = Upload.Status.PROCESSED_OK;
@@ -191,10 +185,9 @@ public final class ProcessUpload {
         int warningFlights = 0;
         int errorFlights = 0;
 
-        if (extension.equals("zip")) {
+        if (extension.equals(".zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
-            try (ZipFile zipFile = ZipFile.builder().setFile(filename).get();
-                 Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
+            try (ZipFile zipFile = ZipFile.builder().setFile(filename).get(); Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
 
                 flightInfo = pipeline.getFlightInfo();
@@ -223,31 +216,12 @@ public final class ProcessUpload {
                 uploadException = new Exception(e + ", could not read from zip file: please delete this " +
                         "upload and re-upload.");
             }
-
-        }else if (extension.equals("parquet")) {
-
-                LOG.info("Processing Parquet file: " + filename);
-
-                Path parquetFilePath = Paths.get(filename);
-                ParquetPipeline parquetPipeline = new ParquetPipeline(connection, upload, parquetFilePath);
-                parquetPipeline.execute();
-                flightInfo = parquetPipeline.getFlightInfo();
-                flightErrors = parquetPipeline.getFlightErrors();
-                errorFlights = flightErrors.size();
-                warningFlights = parquetPipeline.getWarningFlightsCount();
-                validFlights = parquetPipeline.getValidFlightsCount();
-
-
-
-                LOG.info("Successfully processed Parquet file." + filename);
-
-
         } else {
             // insert an upload error for this upload
             status = Upload.Status.FAILED_ARCHIVE_TYPE;
-            UploadError.insertError(connection, uploadId, "Uploaded file was not a zip or parquet file.");
+            UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
 
-            uploadException = new Exception("Uploaded file was not a zip or parquet file.");
+            uploadException = new Exception("Uploaded file was not a zip file.");
         }
 
         // update upload in database, add upload exceptions if there are any
