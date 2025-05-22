@@ -18,3 +18,5 @@ ngafid-chart-processor/charts/*
 ngafid-db/target/*
 ngafid-airsync/target
 ngafid-chart-processor/temp
+.env
+ngafid-db/src/liquibase.docker.properties
