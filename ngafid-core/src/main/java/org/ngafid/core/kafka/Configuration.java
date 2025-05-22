@@ -1,5 +1,7 @@
 package org.ngafid.core.kafka;
 
+import org.ngafid.core.Config;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
@@ -13,7 +15,7 @@ public enum Configuration {
     public static Properties getProperties() {
         Properties props = new Properties();
         try {
-            props.load(new FileReader("resources/connect-standalone.properties"));
+            props.load(new FileReader(Config.KAFKA_CONFIG_FILE));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

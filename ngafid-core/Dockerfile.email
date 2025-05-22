@@ -1,0 +1,5 @@
+FROM ngafid-base
+COPY resources/ngafid-email.conf /etc/ngafid-email.conf
+RUN mkdir /opt/ngafid-core
+COPY ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/ngafid-core/ngafid-core.jar
+CMD ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar", "org.ngafid.core.kafka.EmailConsumer"]

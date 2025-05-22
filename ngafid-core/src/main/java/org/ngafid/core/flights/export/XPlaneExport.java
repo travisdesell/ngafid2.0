@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ngafid.core.Config.MUSTACHE_TEMPLATE_DIR;
 import static org.ngafid.core.flights.export.XPlaneParameters.*;
 
 /**
@@ -191,7 +190,7 @@ public abstract class XPlaneExport {
         StringBuffer sb = new StringBuffer();
         this.writeFlightData(sb, scopes);
 
-        String templateFile = MUSTACHE_TEMPLATE_DIR + "template.fdr";
+        String templateFile = "template.fdr";
 
         MustacheFactory mf = new DefaultMustacheFactory();
         Mustache mustache = mf.compile(templateFile);

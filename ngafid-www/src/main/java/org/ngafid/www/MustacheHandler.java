@@ -18,7 +18,7 @@ import static org.ngafid.core.Config.MUSTACHE_TEMPLATE_DIR;
 public class MustacheHandler implements FileRenderer {
     public static String handle(String templateFilename, Map<String, ?> scopes) throws IOException {
         MustacheFactory mf = new DefaultMustacheFactory();
-        String templateFile = MUSTACHE_TEMPLATE_DIR + templateFilename;
+        String templateFile = MUSTACHE_TEMPLATE_DIR + "/" + templateFilename;
         JavalinLogger.info("handling mustache template: " + templateFile);
         Mustache mustache = mf.compile(templateFile);
         StringWriter stringOut = new StringWriter();

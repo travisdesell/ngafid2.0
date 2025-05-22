@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
+import org.ngafid.core.Config;
 
 import java.nio.file.NoSuchFileException;
 import java.util.concurrent.ExecutionException;
@@ -11,34 +12,13 @@ import java.util.logging.Logger;
 
 public enum TerrainCache {
     ;
-    public static final String TERRAIN_DIRECTORY;
-    private static int MAX_CACHE_SIZE;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
 
     private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
 
     static {
-        // TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
-        if (System.getenv("TERRAIN_DIRECTORY") == null) {
-            LOG.severe("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
-            LOG.severe("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            LOG.severe("export TERRAIN_DIRECTORY=<path_to_terrain_data>");
-            System.exit(1);
-        }
-
-        TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
-        //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
-
-        if (System.getenv("MAX_CACHE_SIZE") == null) {
-            LOG.warning("ERROR: 'MAX_CACHE_SIZE' environment variable not specified at runtime. Setting default to 357 (1GB).");
-
-            // Each tile is 2.8 MB, so 1000 tiles is 2.8 GB. Make the default 1GB
-            // 1 GB / 2.8 MB = 357 tiles
-            MAX_CACHE_SIZE = 357;
-        }
-
         TILE_CACHE = CacheBuilder.newBuilder()
-                .maximumSize(MAX_CACHE_SIZE)
+                .maximumSize(Config.MAX_TERRAIN_CACHE_SIZE)
                 .build(
                         new CacheLoader<>() {
                             @NotNull

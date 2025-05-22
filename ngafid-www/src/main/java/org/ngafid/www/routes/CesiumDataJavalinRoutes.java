@@ -235,7 +235,7 @@ public class CesiumDataJavalinRoutes {
 
             // This is for webpage section
             String resultString = "";
-            String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "ngafid_cesium.html";
+            String templateFile = "ngafid_cesium.html";
             LOG.severe("template file: '" + templateFile + "'");
 
             MustacheFactory mf = new DefaultMustacheFactory();

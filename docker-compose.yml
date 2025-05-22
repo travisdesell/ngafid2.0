@@ -1,0 +1,94 @@
+version: "1.0"
+
+# Split this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
+# itself.
+x-ngafid-service-common-base: &ngafid-service-common-base
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  env_file:
+    - .env
+
+x-ngafid-service-common: &ngafid-service-common
+  <<: *ngafid-service-common-base
+  depends_on:
+    ngafid-kafka-topics:
+      condition: service_completed_successfully
+  volumes:
+    - $HOST_UPLOAD_DIR:$CONTAINER_UPLOAD_DIR
+    - $HOST_ARCHIVE_DIR:$CONTAINER_ARCHIVE_DIR
+    - $HOST_STATIC_DIR:$CONTAINER_STATIC_DIR
+    - $HOST_TERRAIN_DIR:$CONTAINER_TERRAIN_DIR
+
+services:
+  base:
+    env_file:
+      - .env
+    build:
+      context: .
+      args:
+        HOST_DB_INFO: ${HOST_DB_INFO}
+        CONTAINER_DB_INFO: ${CONTAINER_DB_INFO}
+        HOST_KAFKA_CONFIG: ${HOST_KAFKA_CONFIG}
+        CONTAINER_KAFKA_CONFIG: ${CONTAINER_KAFKA_CONFIG}
+        HOST_EMAIL_INFO: ${HOST_EMAIL_INFO}
+        CONTAINER_EMAIL_INFO: ${CONTAINER_EMAIL_INFO}
+    image: ngafid-base
+
+  # This must run and complete before everything else to create the Kafka topics
+  ngafid-kafka-topics:
+    build:
+      context: .
+      dockerfile: ngafid-core/Dockerfile.topics
+    <<: *ngafid-service-common-base
+    depends_on:
+      kafka:
+        condition: service_started
+
+  # # Reads emails from email kafka topic and sends them using the supplied credentials
+  ngafid-email-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-core/Dockerfile.email
+    <<: *ngafid-service-common
+
+  # ngafid-airsync-importer:
+  #   build:
+  #     context: .
+  #     dockerfile: ngafid-airsync/Dockerfile
+  #   <<: *ngafid-service-common
+
+  ngafid-upload-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile
+    <<: *ngafid-service-common
+
+  ngafid-www:
+    build:
+      context: .
+      dockerfile: ngafid-www/Dockerfile
+    ports:
+      - "8181:8181"
+    <<: *ngafid-service-common
+
+  kafka:
+    image: apache/kafka-native
+    ports:
+      - "9092:9092"
+    environment:
+      # Configure listeners for both docker and host communication
+      KAFKA_LISTENERS: CONTROLLER://localhost:9091,HOST://0.0.0.0:9092,DOCKER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: HOST://localhost:9092,DOCKER://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT
+
+      # Settings required for KRaft mode
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9091
+
+      # Listener to use for broker-to-broker communication
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+
+      # Required for a single node cluster
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1

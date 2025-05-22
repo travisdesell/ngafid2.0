@@ -2,6 +2,7 @@ package org.ngafid.core.airports;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import org.apache.commons.lang3.mutable.MutableDouble;
+import org.ngafid.core.Config;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -15,8 +16,6 @@ import java.util.stream.Collectors;
 
 public final class Airports {
     private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
-    private static final String AIRPORTS_FILE;
-    private static final String RUNWAYS_FILE;
     private static final double FT_PER_KM = 3280.84;
     private static final Logger LOG = Logger.getLogger(Airports.class.getName());
     private static final HashMap<String, ArrayList<Airport>> GEO_HASH_TO_AIRPORT;
@@ -28,30 +27,6 @@ public final class Airports {
     }
 
     static {
-        // AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
-        if (System.getenv("AIRPORTS_FILE") == null) {
-            System.err.println("ERROR: 'AIRPORTS_FILE' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export AIRPORTS_FILE=<path_to_airports_file>");
-            System.exit(1);
-        }
-        LOG.info("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
-
-        AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
-
-        // AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
-
-        // RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
-        if (System.getenv("RUNWAYS_FILE") == null) {
-            System.err.println("ERROR: 'RUNWAYS_FILE' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export RUNWAYS_FILE=<path_to_runways_file>");
-            System.exit(1);
-        }
-
-        RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
-        // RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
-
         GEO_HASH_TO_AIRPORT = new HashMap<String, ArrayList<Airport>>();
         SITE_NUMBER_TO_AIRPORT = new HashMap<String, Airport>();
         IATA_TO_AIRPORT = new HashMap<String, Airport>();
@@ -59,8 +34,8 @@ public final class Airports {
         int maxHashSize = 0;
         int numberAirports = 0;
 
-        try (BufferedReader airportsReader = new BufferedReader(new FileReader(AIRPORTS_FILE));
-             BufferedReader runwaysReader = new BufferedReader(new FileReader(RUNWAYS_FILE))) {
+        try (BufferedReader airportsReader = new BufferedReader(new FileReader(Config.AIRPORTS_FILE));
+             BufferedReader runwaysReader = new BufferedReader(new FileReader(Config.RUNWAYS_FILE))) {
 
             String line;
             while ((line = airportsReader.readLine()) != null) {
