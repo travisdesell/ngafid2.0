@@ -130,6 +130,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
                     // Start tracking a new exceedence
                     startTime = flightInfo.utc.get(i);
+
                     otherStartTime = otherFlightInfo.utc.get(j);
 
                     startLine = i;

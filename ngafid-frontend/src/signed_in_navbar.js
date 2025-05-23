@@ -224,7 +224,7 @@ class SignedInNavbar extends React.Component {
 
         let homeActive = (this.props.activePage === "welcome");
 
-        const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
+        const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics","proximity_map"];
         let eventsActive = (eventPageNames.includes(this.props.activePage));
 
         const aggregatePageNames = ["aggregate", "aggregate_trends"];
@@ -392,6 +392,7 @@ class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
                                 <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
+                                <DropdownLink name={"Proximity map"} hidden={false} href="/protected/proximity_map"/>
 
                                 {admin
                                     ? <div className="dropdown-divider"></div>

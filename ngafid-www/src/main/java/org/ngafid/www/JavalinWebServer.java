@@ -28,6 +28,7 @@ import org.ngafid.www.routes.DoubleSeriesJavalinRoutes;
 import org.ngafid.www.routes.EventJavalinRoutes;
 import org.ngafid.www.routes.FlightsJavalinRoutes;
 import org.ngafid.www.routes.ImportUploadJavalinRoutes;
+import org.ngafid.www.routes.ProximityMapJavalinRoutes;
 import org.ngafid.www.routes.StartPageJavalinRoutes;
 import org.ngafid.www.routes.StatisticsJavalinRoutes;
 import org.ngafid.www.routes.StatusJavalinRoutes;
@@ -99,6 +100,7 @@ public class JavalinWebServer extends WebServer {
         EventJavalinRoutes.bindRoutes(app);
         FlightsJavalinRoutes.bindRoutes(app);
         ImportUploadJavalinRoutes.bindRoutes(app);
+        ProximityMapJavalinRoutes.bindRoutes(app);
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         TagFilterJavalinRoutes.bindRoutes(app);
