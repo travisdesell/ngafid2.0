@@ -57,7 +57,8 @@ public class EventDefinition {
             severityTypeId = MAX_ABS_SEVERITY;
         } else {
             LOG.severe("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
-            System.exit(1);
+            //  System.exit(1);
+            throw new RuntimeException("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
         }
 
         severityColumnIds = new int[severityColumnNames.size()];

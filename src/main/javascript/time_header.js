@@ -34,7 +34,7 @@ export default class TimeHeader extends React.Component {
         if ('exportCSV' in this.props) {
             exportButton = (
                 <div className="col-auto">
-                    <button className="btn btn-outline-primary" onClick={() => this.props.exportCSV()}>Export</button>
+                    <button className="btn btn-primary" onClick={() => this.props.exportCSV()}>Export</button>
                 </div>
             );
         }
@@ -163,7 +163,7 @@ export default class TimeHeader extends React.Component {
                 { additionalHeaderContents }
 
                 <div className="col-auto mr-5">
-                    <button className="btn btn-primary btn-outline-primary" onClick={() => this.props.dateChange()} disabled={!this.props.datesChanged}>{this.state.buttonContent}</button>
+                    <button className="btn btn-primary" onClick={() => this.props.dateChange()} disabled={!this.props.datesChanged}>{this.state.buttonContent}</button>
                 </div>
 
                 { additionalRowContents }
@@ -172,13 +172,32 @@ export default class TimeHeader extends React.Component {
     }
 
     render() {
+
+        let descriptiveList = null;
+
+        if (this.props.name === "Event Trends") {
+
+            descriptiveList = (
+                <ul style={{fontSize: "16px", alignContent: "center", alignItems: "center", justifyContent: "start", marginBottom: "0", fontStyle: "italic"}}>
+                    <li>Select a date range, then use the Update button to scan for events</li>
+                    <li>Events for the current calendar year will be loaded automatically</li>
+                </ul>
+            );
+        }
+
         return (
             <div className="row card-header d-flex" style={{padding:"7 20 7 20", margin:"0"}}>
-                <h4 className="mr-auto" style={{margin:"4 0 4 0", alignContent:"center"}}>{this.props.name}</h4>
+                <h4 className="mr-auto d-flex flex-row" style={{margin:"4 0 4 0", alignContent:"center", alignItems:"center", justifyContent:"start"}}>
+                    {this.props.name}
+                    {descriptiveList}
+                </h4>
+
                 { this.makeHeaderContents(this.props.extraHeaderComponents, this.props.extraRowComponents) }
             </div>
         );
+
     }
+
 };
 
 class TurnToFinalHeaderComponents extends React.Component {

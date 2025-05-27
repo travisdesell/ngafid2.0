@@ -12,40 +12,27 @@ import GetDescription from "./get_description";
 import Plotly from 'plotly.js';
 import Tooltip from "react-bootstrap/Tooltip";
 import {OverlayTrigger} from "react-bootstrap";
-import { DarkModeToggle } from './dark_mode_toggle.js';
 
 airframes.unshift("All Airframes");
-var index = airframes.indexOf("Garmin Flight Display");
-if (index !== -1) airframes.splice(index, 1);
+const index = airframes.indexOf("Garmin Flight Display");
+if (index !== -1)
+    airframes.splice(index, 1);
 
 eventNames.sort();
 
-/*
-var trace1 = {
-    name: 'test1',
-    x: [1, 2, 3, 4],
-    y: [10, 15, 13, 17],
-    type: 'scatter'
-};
 
-var trace2 = {
-    name: 'test2',
-    x: [1, 2, 3, 4],
-    y: [16, 5, 11, 9],
-    type: 'scatter'
-};
-*/
-
-var countData = [];
-var percentData = [];
+const countData = [];
+const percentData = [];
 
 var eventCounts = null;
 
-var eventFleetPercents = {};
-var eventNGAFIDPercents = {};
+let eventFleetPercents = {};
+let eventNGAFIDPercents = {};
 
 class TrendsPage extends React.Component {
+
     constructor(props) {
+
         super(props);
         let eventChecked = {};
         let eventsEmpty = {};
@@ -56,59 +43,104 @@ class TrendsPage extends React.Component {
             let eventNameCur = eventNames[i];
             eventChecked[eventNameCur] = false;
             eventsEmpty[eventNameCur] = true;
-        }
-        eventsEmpty["ANY Event"] = false;
 
-        var date = new Date();
+        }
+
+        const dateCurrent = new Date();
         this.state = {
+
             airframe : "All Airframes",
-            startYear : 2025,
-            startMonth : 1,
-            endYear : date.getFullYear(),
-            endMonth : date.getMonth() + 1,
+
+            //Start at start of calendar year
+            startYear : dateCurrent.getFullYear(),
+            startMonth : 1, //<-- January
+
+            //End at current month of current year
+            endYear : dateCurrent.getFullYear(),
+            endMonth : dateCurrent.getMonth() + 1,
+
             datesChanged : false,
             aggregatePage : props.aggregate_page,
             eventChecked : eventChecked,
-            eventsEmpty : eventsEmpty
+            eventsEmpty : eventsEmpty,
+
+            performedSuccessfulFetch : false,
+
         };
         
         this.fetchMonthlyEventCounts();
     }
-    startDate() {
-        let startDate = this.state.startYear + "-";
-
-        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
-        else startDate += this.state.startMonth;
-
-        return startDate;
-    }
-
-    endDate() {
-        let endDate = this.state.endYear + "-";
-
-        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
-        else endDate += this.state.endMonth;
-
-        return endDate;
-    }
 
     fetchMonthlyEventCounts() {
-        var submission_data = {
-            startDate : this.startDate() + "-01",
-            endDate : this.endDate() + "-28",
+
+        /*
+            IMPORTANT:
+
+            Dates require leading zeroes for the
+            months and days, so ternary operators
+            are used to append a leading zero
+            if the month or day is less than 10.
+        */
+
+        const startDate = `${this.state.startYear}-${this.state.startMonth<10?'0':''}${this.state.startMonth}-01`;
+
+        const endDate = (() => {
+
+            //Append final day of the month to the end date
+            let endDateOut = `${this.state.endYear}-${this.state.endMonth<10?'0':''}${this.state.endMonth}-`;
+
+            let endDayOut = 0;
+            switch (parseInt(this.state.endMonth)) {
+
+                case 1: //January
+                case 3: //March
+                case 5: //May
+                case 7: //July
+                case 8: //August
+                case 10: //October
+                case 12: //December
+                    endDayOut = 31;
+                    break;
+
+                case 4: //April
+                case 6: //June
+                case 9: //September
+                case 11: //November
+                    endDayOut = 30
+                    break;
+
+                case 2: //February
+                    if ((this.state.endYear % 4 === 0 && this.state.endYear % 100 !== 0) || (this.state.endYear % 400 === 0))
+                        endDayOut = 29 //<-- Leap year, February has 29 days
+                    else
+                        endDayOut = 28 //<-- Non-leap year, February has 28 days
+                    break;
+
+            }
+
+            endDateOut += `${endDayOut<10?'0':''}${endDayOut}`;
+
+            return endDateOut;
+
+        })();
+
+        const submission_data = {
+            startDate : startDate,
+            endDate : endDate,
             aggregatePage : this.props.aggregate_page
         };
 
-        let trendsPage = this;
+        console.log("Fetching monthly event counts with data: ", submission_data);
 
-        $('#loading').hide();
-
+        const trendsPage = this;
+        
         return new Promise((resolve, reject) => {
             $.ajax({
                 type: 'POST',
                 url: '/protected/monthly_event_counts',
                 data : submission_data,
                 dataType : 'json',
+                async: true,
                 success : function(response) {
 
                     if (response.err_msg) {
@@ -118,7 +150,7 @@ class TrendsPage extends React.Component {
 
                     eventCounts = response;
                     
-                    let countsMerged = {};
+                    const countsMerged = {};
                     for(let [eventName, countsObject] of Object.entries(eventCounts)) {
 
                         for(let [airframeName] of Object.entries(countsObject)) {
@@ -175,8 +207,7 @@ class TrendsPage extends React.Component {
                 error : function(jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Loading Uploads", errorThrown);
                     reject(errorThrown);
-                },   
-                async: true 
+                },
             });
         });
 
@@ -192,31 +223,34 @@ class TrendsPage extends React.Component {
 
 
         for (let [eventName, countsObject] of Object.entries(eventCounts)) {
-            //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
-            if (!this.state.eventChecked[eventName]) continue;
+            
+            if (!this.state.eventChecked[eventName])
+                continue;
 
-            //make sure the eventNames array is unique names only
-            if (!eventNames.includes(eventName)) {
+            //Ensure the eventNames array is unique names only
+            if (!eventNames.includes(eventName))
                 eventNames.push(eventName);
-            }
 
             for (let [airframe, value] of Object.entries(countsObject)) {
-                if (value.airframeName === "Garmin Flight Display") continue;
-                if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
+
+                if (value.airframeName === "Garmin Flight Display")
+                    continue;
+
+                if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes")
+                    continue;
 
                 let airframeName = value.airframeName;
                 let valueDates = value.dates;
 
 
-                //make sure the airframeNames array is unique names only
-                if (!airframeNames.includes(airframeName)) {
+                //Ensure the airframeNames array is unique names only
+                if (!airframeNames.includes(airframeName))
                     airframeNames.push(airframeName);
-                }
 
-
-                console.log(value.dates);
+                console.log("Dates: ", value.dates);
 
                 for (let i = 0; i < value.dates.length; i++) {
+
                     let date = value.dates[i];
                     let eventCount = value.y[i];
                     let flightsWithEventCount;
@@ -229,106 +263,132 @@ class TrendsPage extends React.Component {
                         totalFlights = value.totalFlightsCounts[i];
                     }
 
-                    //make sure the dates array is unique dates only
-                    if (!dates.includes(date)) {
+                    //Ensure the dates array is unique dates only
+                    if (!dates.includes(date))
                         dates.push(date);
-                    }
 
-                    if (!(eventName in csvValues)) {
+                    if (!(eventName in csvValues))
                         csvValues[eventName] = {};
-                    }
-
-                    if (!(airframeName in csvValues[eventName])) {
+                
+                    if (!(airframeName in csvValues[eventName]))
                         csvValues[eventName][airframeName] = {};
-                    }
 
                     csvValues[eventName][airframeName][date] = {};
                     csvValues[eventName][airframeName][date].eventCount = eventCount;
                     csvValues[eventName][airframeName][date].flightsWithEventCount = flightsWithEventCount;
                     csvValues[eventName][airframeName][date].totalFlights = totalFlights;
+
                 }
+
             }
+
         }
+
         eventNames.sort();
         airframeNames.sort();
         dates.sort();
 
         for (let eventName of eventNames) {
+
             console.log(csvValues[eventName]);
 
             for (let airframeName of airframeNames) {
-                if (airframeName in csvValues[eventName]) {
+
+                if (airframeName in csvValues[eventName])
                     console.log("\t" + eventName + " - " + airframeName + " has " + Object.keys(csvValues[eventName][airframeName]).length + " entries!");
-                }
+                
             }
+
         }
 
         let filetext = "";
 
         let needsComma = false;
         for (let eventName of eventNames) {
+
             for (let airframeName of airframeNames) {
+
                 if (airframeName in csvValues[eventName]) {
-                    if (needsComma) {
+
+                    if (needsComma)
                         filetext += ",";
-                    } else {
+                    else
                         needsComma = true;
-                    }
 
                     filetext += eventName;
                     filetext += "," + eventName;
                     filetext += "," + eventName;
                 }
+
             }
+
         }
+
         filetext += "\n";
 
         needsComma = false;
         for (let eventName of eventNames) {
+
             for (let airframeName of airframeNames) {
+
                 if (airframeName in csvValues[eventName]) {
-                    if (needsComma) {
+
+                    if (needsComma)
                         filetext += ",";
-                    } else {
+                    else
                         needsComma = true;
-                    }
+                    
                     filetext += airframeName;
                     filetext += "," + airframeName;
                     filetext += "," + airframeName;
+
                 }
+
             }
+
         }
+
         filetext += "\n";
 
         needsComma = false;
         for (let eventName of eventNames) {
+
             for (let airframeName of airframeNames) {
+
                 if (airframeName in csvValues[eventName]) {
-                    if (needsComma) {
+
+                    if (needsComma)
                         filetext += ",";
-                    } else {
+                    else
                         needsComma = true;
-                    }
+                    
                     filetext += "Events";
                     filetext += ",Flights With Event";
                     filetext += ",Total Flights";
+
                 }
+
             }
+
         }
+
         filetext += "\n";
 
         for (let i = 0; i < dates.length; i++) {
+
             let date = dates[i];
 
             needsComma = false;
             for (let eventName of eventNames) {
+                
                 for (let airframeName of airframeNames) {
+
                     if (airframeName in csvValues[eventName]) {
-                        if (needsComma) {
+
+                        if (needsComma)
                             filetext += ",";
-                        } else {
+                        else
                             needsComma = true;
-                        }
 
                         if (date in csvValues[eventName][airframeName]) {
                             filetext += csvValues[eventName][airframeName][date].eventCount;
@@ -338,22 +398,21 @@ class TrendsPage extends React.Component {
                             filetext += ",,";
                         }
                     }
+
                 }
+
             }
+
             filetext += "\n";
+
         }
 
-        console.log("eventNames:");
-        console.log(eventNames);
-        console.log("airframeNames:");
-        console.log(airframeNames);
-        console.log("dates:");
-        console.log(dates);
+        console.log("eventNames:", eventNames);
+        console.log("airframeNames:", airframeNames);
+        console.log("dates:", dates);
 
-
-        let filename = "trends.csv";
-
-        console.log("exporting csv!");
+        const filename = "trends.csv";
+        console.log("Exporting .csv: ", filename);
 
         var element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(filetext));
@@ -368,46 +427,60 @@ class TrendsPage extends React.Component {
 
     }
 
-    displayPlots(selectedAirframe) {
-        console.log("displaying plots with airframe: '" + selectedAirframe + "'");
+    async displayPlots(selectedAirframe) {
+
+        //Show Loading Spinner
+        $('#loading').show();
+
+
+        console.log("Displaying plots with airframe: '", selectedAirframe, "'");
 
         eventFleetPercents = {};
         eventNGAFIDPercents = {};
 
-        countData = [];
-        percentData = [];
+        countData.length = 0;
+        percentData.length = 0;
 
 
 
-        let counts = eventCounts == null ? {} : eventCounts;
+        let counts = (eventCounts == null ? {} : eventCounts);
 
         let airframeNames = [];
         for (let [eventName, countsObject] of Object.entries(counts)) {
+
             for (let [airframe, value] of Object.entries(countsObject)) {
-                if (value.airframeName === "Garmin Flight Display") continue;
-                if (!airframeNames.includes(value.airframeName)) {
+
+                if (value.airframeName === "Garmin Flight Display")
+                    continue;
+
+                if (!airframeNames.includes(value.airframeName))
                     airframeNames.push(value.airframeName);
-                }
+
             }
+
         }
 
         for (let [eventName, countsObject] of Object.entries(counts)) {
+
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
-            if (!this.state.eventChecked[eventName]) continue;
+
+            if (!this.state.eventChecked[eventName])
+                continue;
 
 
             let fleetPercents = null;
             let ngafidPercents = null;
 
-
             if (eventName in eventFleetPercents) {
-                console.log('getting existing fleetPercents!');
+
+                console.log('Getting existing fleetPercents...');
 
                 fleetPercents = eventFleetPercents[eventName];
                 ngafidPercents = eventNGAFIDPercents[eventName];
 
             } else {
-                console.log('setting initial fleetPercents!');
+
+                console.log('Setting initial fleetPercents...');
 
                 fleetPercents = {
                     name : eventName + ' - Your Fleet',
@@ -419,12 +492,17 @@ class TrendsPage extends React.Component {
                     flightsWithEventCounts : {},
                     totalFlightsCounts : {},
                 }
+
                 let ngafidPercentsName = eventName + " - ";
-                if (this.state.aggregatePage) {
+
+                //Aggregate Page, show "All Fleets"
+                if (this.state.aggregatePage)
                     ngafidPercentsName += "All Fleets";
-                } else {
+
+                //Non-Aggregate Page, show "All Other Fleets"
+                else
                     ngafidPercentsName += "All Other Fleets";
-                }
+                
                 ngafidPercents = {
                     name : ngafidPercentsName,
                     type : 'scatter',
@@ -438,6 +516,7 @@ class TrendsPage extends React.Component {
 
                 eventFleetPercents[eventName] = fleetPercents;
                 eventNGAFIDPercents[eventName] = ngafidPercents;
+
             }
 
 
@@ -456,13 +535,6 @@ class TrendsPage extends React.Component {
                 value.x = value.dates;
                 value.type = 'scatter';
                 value.hoverinfo = 'x+text';
-
-                    
-                let airframeIndex = airframes.indexOf(value.airframeName);
-                let eventNameIndex = eventNames.indexOf(eventName);
-
-                let indexCur = (airframeIndex + eventNameIndex);
-                let indicesMax = (airframes.length + eventNames.length);
 
                 //Event name is 'ANY Event'
                 if (eventName === "ANY Event") {
@@ -521,44 +593,52 @@ class TrendsPage extends React.Component {
 
                     //don't add airframes to the fleet percentage plot that the fleet doesn't have
                     if (airframes.indexOf(value.airframeName) >= 0 && !this.state.aggregatePage) {
+
                         if (date in fleetPercents.flightsWithEventCounts) {
-                            //console.log("incremented fleetPercents.flightsWithEventCounts for date: " + date + " and airframe: " + value.airframeName + " initially " + fleetPercents.flightsWithEventCounts[date] + " by " + value.flightsWithEventCounts[i]);
-                            //console.log("incremented fleetPercents.totalFlightsCounts for date: " + date + " and airframe: " + value.airframeName + " initially " + fleetPercents.totalFlightsCounts[date] + " by " + value.totalFlightsCounts[i]);
 
                             fleetPercents.flightsWithEventCounts[date] += value.flightsWithEventCounts[i];
                             fleetPercents.totalFlightsCounts[date] += value.totalFlightsCounts[i];
 
-                            //console.log("incremented fleetPercents.flightsWithEventCounts for date: " + date + " and airframe: " + value.airframeName + " to " + fleetPercents.flightsWithEventCounts[date] + " was incremented by " + value.flightsWithEventCounts[i]);
-                            //console.log("incremented fleetPercents.totalFlightsCounts for date: " + date + " and airframe: " + value.airframeName + " to " + fleetPercents.totalFlightsCounts[date] + " was incremented by " + value.totalFlightsCounts[i]);
                         } else {
+
                             fleetPercents.flightsWithEventCounts[date] = value.flightsWithEventCounts[i];
                             fleetPercents.totalFlightsCounts[date] = value.totalFlightsCounts[i];
 
-                            //console.log("resetting fleetPercents for date: " + date + " and airframe: " + value.airframeName + " to " + fleetPercents.flightsWithEventCounts[date]);
                         }
                     }
 
                     if (date in ngafidPercents.flightsWithEventCounts) {
+
                         ngafidPercents.flightsWithEventCounts[date] += value.aggregateFlightsWithEventCounts[i];
                         ngafidPercents.totalFlightsCounts[date] += value.aggregateTotalFlightsCounts[i];
+
                     } else {
+
                         ngafidPercents.flightsWithEventCounts[date] = value.aggregateFlightsWithEventCounts[i];
                         ngafidPercents.totalFlightsCounts[date] = value.aggregateTotalFlightsCounts[i];
+
                     }
+
                 }
 
                 for (let i = 0; i < value.dates.length; i++) {
-                    let date = value.dates[i];
+
                     let flightsWithEventCount;
                     let totalFlightsCount;
+
+                    //Aggregate page, add to aggregate counts
                     if (this.state.aggregatePage) {
                         flightsWithEventCount = value.aggregateFlightsWithEventCounts[i];
                         totalFlightsCount = value.aggregateTotalFlightsCounts[i];
+
+                    //Non-aggregate page, add to non-aggregate counts
                     } else {
                         flightsWithEventCount = value.flightsWithEventCounts[i];
                         totalFlightsCount = value.totalFlightsCounts[i];
                     }
+
                     value.hovertext.push(value.y[i] + " events in " + flightsWithEventCount + " of " + totalFlightsCount + " flights : " + value.eventName + " - " + value.airframeName);
+
                 }
                 
             }
@@ -567,7 +647,6 @@ class TrendsPage extends React.Component {
 
         for (const airframeName of airframeNames) {
 
-            let airframeIndex = airframeNames.indexOf(airframeName);
             let airframeLegendHighlight = {
                 
                 name : airframeName,
@@ -583,10 +662,6 @@ class TrendsPage extends React.Component {
                 marker : {
                     width : 2.0,
                     opacity: 1.0,
-                    // color : 'hsl('
-                    //     + parseInt(360.0 * airframeIndex / airframeNames.length) + ','
-                    //     + parseInt(50.0) + '%,'
-                    //     + parseInt(50.0) + '%)'
                 }
 
             };
@@ -595,31 +670,16 @@ class TrendsPage extends React.Component {
 
         }
 
-        /*
-        console.log("eventFleetPercents:");
-        console.log(eventFleetPercents);
-        console.log("eventNGAFIDPercents:");
-        console.log(eventNGAFIDPercents);
-        */
-
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
-
-            console.log("[EX] EVENT NAME: ", eventName)
-
 
             //FLEET VALUE -- Event name is 'ANY Event'
             if (eventName === "ANY Event") {
 
-                //  console.log("[EX] NAME (AE): ", fleetValue.name);
-
                 fleetValue = {
                     ...fleetValue,
-
                     legendgroup: fleetValue.name,
-
-                    //Dashed lines for 'ANY Event'
                     line : {
-                        dash: 'dot'
+                        dash: 'dot' //<-- Dashed lines for 'ANY Event'
                     }
 
                 };
@@ -627,68 +687,59 @@ class TrendsPage extends React.Component {
             //FLEET VALUE -- Event is NOT 'ANY Event'
             } else {
 
-                //  console.log("[EX] NAME: ", fleetValue.name);
-
                 fleetValue = {
                     ...fleetValue,
-
                     legendgroup: fleetValue.name,
                     mode : 'lines',
-
-                    //Standard lines for non-'ANY Event'
                     line : {
-                        width : 2,
+                        width : 2,  //<-- Standard lines for non-'ANY Event'
                     }
 
                 };
 
             }
 
-
             //Push fleet values...
             if (!this.state.aggregatePage) {
+
                 percentData.push(fleetValue);
+
                 fleetValue.x = [];
                 fleetValue.y = [];
 
                 for (let date of Object.keys(fleetValue.flightsWithEventCounts).sort()) {
+
                     fleetValue.x.push(date);
 
                     let v = 100.0 * (parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]));
-                    if (isNaN(v)) v = 0.0;
+                    if (isNaN(v))
+                        v = 0.0;
+
                     fleetValue.y.push(v);
 
-                    // console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
-
-                    //this will give 2 significant figures (and leading 0s if it is quite small)
+                    //Gives 2 significant figures (and leading 0s if it is quite small)
                     var fixedText = "";
-                    if (v > 0 && v < 1) {
-                        //console.log("Log10 of y is " + Math.log10(v);
+                    if (v > 0.00 && v < 1.00)
                         fixedText = v.toFixed(-Math.ceil(Math.log10(v)) + 2) + "%";
-                    } else {
+                    else
                         fixedText = v.toFixed(2) + "%";
-                    }
+                    
                     fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
+                    
                 }
             }
 
             //Push NGAFID data...
             let ngafidValue = eventNGAFIDPercents[eventName];
 
-
             //NGAFID VALUE -- Event name is 'ANY Event'
             if (eventName === "ANY Event") {
 
-                //  console.log("[EX] NAME (AE): ", ngafidValue.name);
-
                 ngafidValue = {
                     ...ngafidValue,
-
                     legendgroup: ngafidValue.name,
-
-                    //Dashed lines for 'ANY Event'
                     line : {
-                        dash: 'dot'
+                        dash: 'dot' //<-- Dashed lines for 'ANY Event'
                     }
 
                 };
@@ -696,31 +747,17 @@ class TrendsPage extends React.Component {
             //NGAFID VALUE -- Event is NOT 'ANY Event'
             } else {
 
-                //  console.log("[EX] NAME: ", ngafidValue.name);
-
                 ngafidValue = {
                     ...ngafidValue,
-
                     legendgroup: ngafidValue.name,
                     mode : 'lines',
-
-                    //Standard lines for non-'ANY Event'
                     line : {
-                        width : 2,
+                        width : 2,  //<-- Standard lines for non-'ANY Event'
                     }
 
                 };
 
             }
-
-
-            let airframeIndex = airframes.indexOf(ngafidValue.airframeName);
-            let eventNameIndex = eventNames.indexOf(eventName);
-
-            let indexCur = (airframeIndex + eventNameIndex);
-            let indicesMax = (airframes.length + eventNames.length);
-
-
 
             percentData.push(ngafidValue);
             ngafidValue.x = [];
@@ -729,42 +766,34 @@ class TrendsPage extends React.Component {
                 ngafidValue.x.push(date);
 
                 let v = 100.0 * parseFloat(ngafidValue.flightsWithEventCounts[date]) / parseFloat(ngafidValue.totalFlightsCounts[date]);
-                if (isNaN(v)) v = 0.0;
+                if (isNaN(v))
+                    v = 0.0;
 
                 ngafidValue.y.push(v);
 
-
-                //console.log(date + " :: " + ngafidValue.flightsWithEventCounts[date]  + " / " + ngafidValue.totalFlightsCounts[date] + " : " + v);
-
-                //this will give 2 significant figures (and leading 0s if it is quite small)
+                //Gives 2 significant figures (and leading 0s if it is quite small)
                 var fixedText = "";
-                if (v > 0 && v < 1) {
-                    //console.log("Log10 of y is " + Math.log10(v);
+                if (v > 0.00 && v < 1.00) 
                     fixedText = v.toFixed(-Math.ceil(Math.log10(v)) + 2) + "%";
-                } else {
+                else 
                     fixedText = v.toFixed(2) + "%";
-                }
+                
                 ngafidValue.hovertext.push(fixedText + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name);
+
             }
 
         }
 
-        /*
-        console.log("percentData:");
-        console.log(percentData);
-        */
 
-        let styles = getComputedStyle(document.documentElement);
-        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
-        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
-        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+        const styles = getComputedStyle(document.documentElement);
+        const plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        const plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        const plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
-        var countLayout = {
-            title : 'Event Counts Over Time',
-            hovermode : "x unified",
-            //autosize: false,
-            //width: 500,
-            //height: 500,
+        const countLayout = {
+            title: {text: 'Event Counts Over Time'},
+            hovermode: "x unified",
+            autosize: true,
             margin: {
                 l: 50,
                 r: 50,
@@ -772,28 +801,26 @@ class TrendsPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            legend: { 
+            legend: {
                 traceorder: "normal"
             },
-            plot_bgcolor : "transparent",
-            paper_bgcolor : plotBgColor,
-            font : {
-                color : plotTextColor
+            plot_bgcolor: "transparent",
+            paper_bgcolor: plotBgColor,
+            font: {
+                color: plotTextColor
             },
-            xaxis : {
-                gridcolor : plotGridColor
+            xaxis: {
+                gridcolor: plotGridColor
             },
-            yaxis : {
-                gridcolor : plotGridColor
+            yaxis: {
+                gridcolor: plotGridColor
             }
         };
 
-        var percentLayout = {
-            title : 'Percentage of Flights With Event Over Time',
-            hovermode : "x unified",
-            //autosize: false,
-            //width: 500,
-            //height: 500,
+        const percentLayout = {
+            title: {text: 'Percentage of Flights With Event Over Time'},
+            hovermode: "x unified",
+            autosize: true,
             margin: {
                 l: 50,
                 r: 50,
@@ -801,34 +828,29 @@ class TrendsPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            legend: { 
+            legend: {
                 traceorder: "normal"
             },
-            plot_bgcolor : "transparent",
-            paper_bgcolor : plotBgColor,
-            font : {
-                color : plotTextColor
+            plot_bgcolor: "transparent",
+            paper_bgcolor: plotBgColor,
+            font: {
+                color: plotTextColor
             },
-            xaxis : {
-                gridcolor : plotGridColor
+            xaxis: {
+                gridcolor: plotGridColor
             },
-            yaxis : {
-                gridcolor : plotGridColor
+            yaxis: {
+                gridcolor: plotGridColor
             }
         };
 
-        var config = {responsive: true};
 
-        /*
-        console.log("countData, percentData:");
-        console.log(countData);
-        console.log(percentData);
-        */
+        const config = {responsive: true};
 
         Plotly.newPlot('count-trends-plot', countData, countLayout, config);
         Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
 
-        console.log("Hiding loading spinner");
+        //Hide loading spinner
         $('#loading').hide();
 
     }
@@ -845,37 +867,62 @@ class TrendsPage extends React.Component {
     }
 
     updateStartYear(newStartYear) {
-        console.log("setting new start year to: " + newStartYear);
+
+        console.log("Setting new start year to: ", newStartYear);
         this.setState({startYear : newStartYear, datesChanged : true});
         console.log(this.state);
+
     }
 
     updateStartMonth(newStartMonth) {
-        console.log("setting new start month to: " + newStartMonth);
+
+        console.log("Setting new start month to: ", newStartMonth);
         this.setState({startMonth : newStartMonth, datesChanged : true});
         console.log(this.state);
+
     }
 
     updateEndYear(newEndYear) {
-        console.log("setting new end year to: " + newEndYear);
+
+        console.log("Setting new end year to: ", newEndYear);
         this.setState({endYear : newEndYear, datesChanged : true});
         console.log(this.state);
+
     }
 
     updateEndMonth(newEndMonth) {
-        console.log("setting new end month to: " + newEndMonth);
+
+        console.log("Setting new end month to: ", newEndMonth);
         this.setState({endMonth : newEndMonth, datesChanged : true});
         console.log(this.state);
+
     }
 
-    dateChange() {
-        console.log("[trendscard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'"); 
+    async delay() {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    async dateChange() {
+
+        //Show Loading Spinner
+        $('#loading').show();
+
+        //[EX] For Testing -- Wait 1 second
+        //  await this.delay();
+
+        console.log(
+            "[trendscard] notifying date change 2, startYear: '", this.state.startYear,
+            "', startMonth: '", this.state.startMonth,
+            ", endYear: '", this.state.endYear,
+            "', endMonth: '" + this.state.endMonth + "'"
+        ); 
 
         for (let [eventName, value] of Object.entries(this.state.eventChecked)) {
             this.state.eventChecked[eventName] = false;
         }
+
         this.state.datesChanged = false;
-        $('#loading').hide();
+        
 
         this.fetchMonthlyEventCounts().then((data) => {
 
@@ -885,28 +932,32 @@ class TrendsPage extends React.Component {
                 this.state.eventsEmpty[eventNameCur] = true;
             }
 
-            for (let [eventName, countsObject] of Object.entries(data)) {
+            const dataEntries = Object.entries(data);
+            for (let [eventName, countsObject] of dataEntries) {
                 this.state.eventsEmpty[eventName] = false;
             }
+
+            console.log("Data Entries: ", dataEntries);
+            this.state.eventsEmpty["ANY Event"] = (dataEntries.length <= 1); //<-- Data is empty/only has "ANY Event"
 
             this.setState(this.state);
             this.displayPlots(this.state.airframe);
 
         });
 
+        //Hide loading spinner
+        $('#loading').hide();        
+
     }
 
     airframeChange(airframe) {
+
         this.setState({airframe});
         this.displayPlots(airframe);
+
     }
 
     render() {
-
-        const numberOptions = { 
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2 
-        };
 
         return (
             <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
