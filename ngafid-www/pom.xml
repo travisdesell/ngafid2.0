@@ -59,6 +59,13 @@
             <version>6.4.0</version>
         </dependency>
 
+        <!-- Thymeleaf -->
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf</artifactId>
+            <version>3.1.2.RELEASE</version>
+        </dependency>
+
         <!-- OpenApi plugin -->
         <dependency>
             <groupId>io.javalin.community.openapi</groupId>

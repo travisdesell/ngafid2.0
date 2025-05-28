@@ -13,10 +13,16 @@ import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.security.RouteRole;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
+import org.ngafid.core.Database;
 import org.ngafid.www.routes.*;
+import org.ngafid.www.routes.api.AuthRoutes;
+import org.ngafid.www.routes.Role;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import java.io.File;
 import java.sql.Connection;
@@ -113,6 +119,9 @@ public class JavalinWebServer extends WebServer {
         CesiumDataJavalinRoutes.bindRoutes(app);
         StatusJavalinRoutes.bindRoutes(app);
         BugReportJavalinRoutes.bindRoutes(app);
+        
+        // Register API routes
+        AuthRoutes.INSTANCE.bind(app.unsafeConfig());
     }
 
     @Override
