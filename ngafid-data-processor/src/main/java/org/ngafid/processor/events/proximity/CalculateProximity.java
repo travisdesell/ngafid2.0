@@ -115,20 +115,31 @@ public class CalculateProximity {
     }
 
     public static void addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
+        // Validate input
+        if (testEvent == null) {
+            LOG.warning("Attempted to add null event to list");
+            return;
+        }
 
+        // Check for duplicate events
         for (Event event : eventList) {
+            boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId() && 
+                                      event.getOtherFlightId() == testEvent.getOtherFlightId());
+            boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime()) && 
+                                       event.getEndTime().equals(testEvent.getEndTime()));
 
-            boolean hasSameFlightIDs =
-                    (event.getFlightId() == testEvent.getFlightId() && event.getOtherFlightId() == testEvent.getOtherFlightId());
-            boolean hasSameTimestamps =
-                    (event.getStartTime().equals(testEvent.getStartTime()) && event.getEndTime().equals(testEvent.getEndTime()));
-
-            // Event already in the list, don't add it again
-            if (hasSameFlightIDs && hasSameTimestamps) return;
-
+            if (hasSameFlightIDs && hasSameTimestamps) {
+                LOG.info(String.format("Skipping duplicate event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
+                    testEvent.getFlightId(), testEvent.getOtherFlightId(), 
+                    testEvent.getStartTime(), testEvent.getEndTime()));
+                return;
+            }
         }
 
         // Event not in the list, add it
+        LOG.info(String.format("Adding new event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
+            testEvent.getFlightId(), testEvent.getOtherFlightId(), 
+            testEvent.getStartTime(), testEvent.getEndTime()));
         eventList.add(testEvent);
     }
 }

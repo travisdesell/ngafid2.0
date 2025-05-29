@@ -408,6 +408,10 @@ public class Event {
     public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Event event : events) {
+                if (event.getFlightId() == event.getOtherFlightId()) {
+                    LOG.warning("Self-proximity event detected before DB insert: flight ID = " + event.getFlightId() +
+                            ", otherFlightId = " + event.getOtherFlightId());
+                }
                 event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
             }
 
@@ -427,6 +431,12 @@ public class Event {
         this.eventDefinitionId = eventDefinitionId;
         this.flightId = flightId;
         this.fleetId = fleetId;
+
+        if (otherFlightId != null && this.flightId == otherFlightId) {
+            LOG.severe("Aborting insertion: flightId == otherFlightId (" + this.flightId + "). This should never happen.");
+            return; // or throw new IllegalStateException(...) if you want to fail loudly
+        }
+
 
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, flightId);
@@ -482,4 +492,6 @@ public class Event {
     public void setRateOfClosure(RateOfClosure rateOfClosure) {
         this.rateOfClosure = rateOfClosure;
     }
+
+
 }

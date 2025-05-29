@@ -54,13 +54,6 @@ public class ProximityMapJavalinRoutes {
                 return;
             }
 
-            // Only allow admin users to get all events
-            /*if (!user.isAdmin()) {
-                ctx.status(403);
-                ctx.result("Only administrators can access all proximity events");
-                return;
-            }*/
-
             ctx.json(ProximityEventService.getAllProximityEvents());
         } catch (SQLException e) {
             LOG.severe(e.toString());

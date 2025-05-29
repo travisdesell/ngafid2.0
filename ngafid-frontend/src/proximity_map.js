@@ -62,23 +62,27 @@ class ProximityMapPage extends React.Component {
                             <th>Start Time</th>
                             <th>End Time</th>
                             <th>Severity</th>
+                            <th>Lateral Distance (ft)</th>
+                            <th>Vertical Distance (ft)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {events.map(event => (
                             <tr key={event.id}>
-                                <td>{event.flight_id}</td>
-                                <td>{event.other_flight_id}</td>
-                                <td>{event.start_line}</td>
-                                <td>{event.end_line}</td>
-                                <td>{this.formatDateTime(event.start_time)}</td>
-                                <td>{this.formatDateTime(event.end_time)}</td>
+                                <td>{event.flightId}</td>
+                                <td>{event.otherFlightId}</td>
+                                <td>{event.startLine}</td>
+                                <td>{event.endLine}</td>
+                                <td>{this.formatDateTime(event.startTime)}</td>
+                                <td>{this.formatDateTime(event.endTime)}</td>
                                 <td>
                                     <span className={`badge badge-${event.severity > 0.7 ? 'danger' : event.severity > 0.3 ? 'warning' : 'info'}`}>
                                         {event.severity.toFixed(2)}
                                     </span>
                                 </td>
+                                <td>{event.lateralDistance ? event.lateralDistance.toFixed(2) : 'N/A'}</td>
+                                <td>{event.verticalDistance ? event.verticalDistance.toFixed(2) : 'N/A'}</td>
                                 <td>
                                     <button 
                                         className="btn btn-sm btn-primary"
