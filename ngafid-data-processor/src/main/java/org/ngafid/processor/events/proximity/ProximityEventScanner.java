@@ -82,7 +82,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
         }
 
 
-
         // Skip the first 30 seconds as it is usually the FDR being initialized
         final int SKIP_SECONDS = 30;
         int i = SKIP_SECONDS, j = SKIP_SECONDS;
@@ -256,7 +255,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         List<Event> allEvents = new ArrayList<>();
         for (Flight otherFlight : potentialFlights) {
-            if (otherFlight.getId() <= flight.getId()) continue; // skip self or already-compared flight pairs
+            if (otherFlight.getId() == flight.getId()) continue; // skip self or already-compared flight pairs
             LOG.info("Scanning flight pair");
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));

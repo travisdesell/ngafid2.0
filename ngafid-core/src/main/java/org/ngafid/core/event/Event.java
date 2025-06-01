@@ -408,7 +408,12 @@ public class Event {
     public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Event event : events) {
-                event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+                if (event.getFlightId() == event.getOtherFlightId()) {
+                    LOG.warning("Insertion skipped. Self-proximity event detected before DB insert: flight ID = " + event.getFlightId() +
+                            ", otherFlightId = " + event.getOtherFlightId());
+                }else{
+                    event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+                }
             }
 
             preparedStatement.executeBatch();
