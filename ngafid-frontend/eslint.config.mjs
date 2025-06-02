@@ -4,9 +4,14 @@ import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import globals from "globals";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
+import compat from "eslint-plugin-compat";
+
 
 export default defineConfig([
-    
+
+    //eslint-plgin-compat
+    compat.configs["flat/recommended"],
+
     reactRecommended,
 
     {
