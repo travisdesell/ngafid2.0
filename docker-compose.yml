@@ -32,6 +32,10 @@ services:
         CONTAINER_KAFKA_CONFIG: ${CONTAINER_KAFKA_CONFIG}
         HOST_EMAIL_INFO: ${HOST_EMAIL_INFO}
         CONTAINER_EMAIL_INFO: ${CONTAINER_EMAIL_INFO}
+        HOST_RUNWAYS: ${HOST_RUNWAYS}
+        CONTAINER_RUNWAYS: ${CONTAINER_RUNWAYS}
+        HOST_AIRPORTS: ${HOST_AIRPORTS}
+        CONTAINER_AIRPORTS: ${CONTAINER_AIRPORTS}
     image: ngafid-base
 
   # This must run and complete before everything else to create the Kafka topics
@@ -44,25 +48,31 @@ services:
       kafka:
         condition: service_started
 
-  # # Reads emails from email kafka topic and sends them using the supplied credentials
+  # Reads emails from email kafka topic and sends them using the supplied credentials
   ngafid-email-consumer:
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.email
     <<: *ngafid-service-common
 
+  # AirSync sync daemon
   # ngafid-airsync-importer:
   #   build:
   #     context: .
   #     dockerfile: ngafid-airsync/Dockerfile
   #   <<: *ngafid-service-common
 
+  # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
   ngafid-upload-consumer:
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 2
     <<: *ngafid-service-common
 
+  # Webserver
   ngafid-www:
     build:
       context: .
@@ -70,6 +80,22 @@ services:
     ports:
       - "8181:8181"
     <<: *ngafid-service-common
+
+  # Event Consumer: reads from event topic and computes the events
+  ngafid-event-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile.event-consumer
+    <<: *ngafid-service-common
+
+  # Event Observer: scans database for events that have not been computed, and computes them.
+  # This can also be used to re-compute events as potential duplicates are deleted.
+  ngafid-event-observer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile.event-observer
+    <<: *ngafid-service-common
+
 
   kafka:
     image: apache/kafka-native
