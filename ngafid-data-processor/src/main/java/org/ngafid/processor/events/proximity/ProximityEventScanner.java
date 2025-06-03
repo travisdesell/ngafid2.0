@@ -1,6 +1,5 @@
 package org.ngafid.processor.events.proximity;
 
-import org.jline.utils.Log;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
@@ -24,7 +23,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import static org.ngafid.processor.events.proximity.CalculateProximity.*;
-
 
 /**
  * Refactored proximity event scanner. Still could use an overhaul, this is directly derived from the original code.
@@ -84,7 +82,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
         }
 
 
-
         // Skip the first 30 seconds as it is usually the FDR being initialized
         final int SKIP_SECONDS = 30;
         int i = SKIP_SECONDS, j = SKIP_SECONDS;
@@ -132,7 +129,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
                     // Start tracking a new exceedence
                     startTime = flightInfo.utc.get(i);
-
                     otherStartTime = otherFlightInfo.utc.get(j);
 
                     startLine = i;
@@ -149,13 +145,17 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
                 // New closest proximity this time, update the severity
                 if (distanceFt < severity) {
-                  //  LOG.info(String.format("New smallest distance: %.14f < %.14f at time %s and other time %s with lateral distance: %.14f and vertical distance: %.1f",
-                  //      distanceFt, severity, flightInfo.utc.get(i), otherFlightInfo.utc.get(j), lateralDistanceFt, verticalDistanceFt));
+
+                    LOG.info("CalculateProximity.java -- New smallest distance: " + distanceFt + " < "
+                            + severity + " at time " + endTime + " and other time " + otherEndTime
+                            + " with lateral distance: " + lateralDistanceFt + " and vertical distance: "
+                            + verticalDistanceFt);
                     severity = distanceFt;
 
                     // Record Lateral & Vertical Distances when the new smallest Euclidean distance is found
                     lateralDistance = lateralDistanceFt;
                     verticalDistance = verticalDistanceFt;
+
                 }
 
                 // Increment the startCount, reset the stopCount
@@ -204,25 +204,11 @@ public class ProximityEventScanner extends AbstractEventScanner {
     }
 
     private void emitProximityEventPair(Flight flight, FlightTimeLocation flightInfo, Flight otherFlight, FlightTimeLocation otherFlightInfo, ArrayList<Event> eventList, OffsetDateTime startTime, OffsetDateTime endTime, OffsetDateTime otherStartTime, OffsetDateTime otherEndTime, int startLine, int endLine, int otherStartLine, int otherEndLine, double severity, double lateralDistance, double verticalDistance) {
-        // Add validation to prevent self-comparison
-        if (flight.getId() == otherFlight.getId()) {
-            LOG.warning("Attempted to create proximity event with same flight ID: " + flight.getId() + ". Skipping event creation.");
-            return;
-        }
-
-
-        LOG.info("Emiting proximity event pair");
-        LOG.info(String.format("Creating proximity event between flights: %d and %d", flight.getId(), otherFlight.getId()));
-
-        // Create event from flight's perspective
         Event event = new Event(startTime, endTime, startLine, endLine, super.definition.getId(), severity,
                 flight.getId(), otherFlight.getId());
-
-        // Create event from other flight's perspective
         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine,
                 otherEndLine, super.definition.getId(), severity, otherFlight.getId(), flight.getId());
 
-        // Add metadata for both events
         EventMetaData lateralDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE,
                 lateralDistance);
         EventMetaData verticalDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE,
@@ -241,27 +227,12 @@ public class ProximityEventScanner extends AbstractEventScanner {
             otherEvent.setRateOfClosure(rateOfClosure);
         }
 
-        LOG.info("=== Emitted Events ===");
-        for (Event e : List.of(event, otherEvent)) {
-            LOG.info(String.format("Event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s, severity=%.2f",
-                    e.getFlightId(),
-                    e.getOtherFlightId(),
-                    e.getStartTime(),
-                    e.getEndTime(),
-                    e.getSeverity()));
-
-            if (e.getFlightId() == e.getOtherFlightId()) {
-                LOG.warning(" Self-proximity detected in emit method: flight_id == other_flight_id == " + e.getFlightId());
-            }
-        }
-        LOG.info("=== End Emitted Events ===");
-
-        // Add both events to the list
         addProximityIfNotInList(eventList, event);
         addProximityIfNotInList(eventList, otherEvent);
     }
 
     public List<Event> processFlight(Connection connection, Flight flight) throws SQLException {
+
         LOG.info("Processing flight: " + flight.getId() + ", " + flight.getFilename());
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
@@ -276,7 +247,6 @@ public class ProximityEventScanner extends AbstractEventScanner {
             return List.of();
         }
 
-        // Get flights that overlap in time with this flight
         ArrayList<Flight> potentialFlights = Flight.getFlights(connection, "(id != " + flightId + " AND " +
                 "start_time <= '" + flightInfo.endDateTime + "' AND end_time >= " +
                 "'" + flightInfo.startDateTime + "')");
@@ -285,48 +255,11 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         List<Event> allEvents = new ArrayList<>();
         for (Flight otherFlight : potentialFlights) {
-            // Skip self-comparison
-            if (otherFlight.getId() == flight.getId()) {
-                LOG.info("Skipping self-comparison for flight pair " + flight.getId() + " and " + otherFlight.getId());
-                continue;
-            }
-
-            LOG.info("Scanning flight pair new " + flight.getId() + " and " + otherFlight.getId());
+            if (otherFlight.getId() == flight.getId()) continue; // skip self or already-compared flight pairs
+            LOG.info("Scanning flight pair");
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
-            List<Event> events = scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo);
-            
-            // Print detailed information about collected events
-            if (!events.isEmpty()) {
-                LOG.info("=== Collected Events for Flight Pair " + flight.getId() + " and " + otherFlight.getId() + " ===");
-                for (Event event : events) {
-                    LOG.info(String.format("Event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s, severity=%.2f",
-                        event.getFlightId(),
-                        event.getOtherFlightId(),
-                        event.getStartTime(),
-                        event.getEndTime(),
-                        event.getSeverity()));
-                }
-                LOG.info("=== End of Events ===");
-            }
-            
-            allEvents.addAll(events);
+            allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));
         }
-        
-        // Print summary of all collected events
-        if (!allEvents.isEmpty()) {
-            LOG.info("=== Summary of All Collected Events ===");
-            LOG.info("Total events collected: " + allEvents.size());
-            for (Event event : allEvents) {
-                LOG.info(String.format("Event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s, severity=%.2f",
-                    event.getFlightId(),
-                    event.getOtherFlightId(),
-                    event.getStartTime(),
-                    event.getEndTime(),
-                    event.getSeverity()));
-            }
-            LOG.info("=== End of Summary ===");
-        }
-        
         return allEvents;
     }
 
