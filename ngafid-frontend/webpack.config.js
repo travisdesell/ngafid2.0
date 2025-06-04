@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const DeadCodePlugin = require('webpack-deadcode-plugin');
 
 
 const path = require('path');
@@ -49,6 +50,10 @@ module.exports = {
 
     mode: process.env.NODE_ENV || 'development',
     watch: doWatch,
+
+    optimization: {
+        usedExports: true,
+    },
 
     resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -183,6 +188,18 @@ module.exports = {
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
         new ShowChangedFilesPlugin(),
+        new DeadCodePlugin({
+            patterns: [
+                'src/**/*.(js|jsx|css|ts|tsx)',
+            ],
+            exclude: [
+                'node_modules/**',
+                'src/cesium/**',
+                'src/ngafid_cesium.js',
+                'src/plotly.js',
+                'src/plotly.min.js',
+            ],
+        }),
     ],
 
 };
