@@ -1,21 +1,11 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
 import { Colors } from "./map.js";
 
 import { errorModal } from "./error_modal.js";
-import { confirmModal } from "./confirm_modal.js";
 
-const cloneDeep = require('clone-deep');
-
-//This will be helpful for text inputs
-function invalidString(str){
-    return (str == null || str.length < 0 || /^\s*$/.test(str));
-}
-
+import cloneDeep from 'clone-deep';
 
 
 /**
@@ -98,27 +88,34 @@ class Tags extends React.Component {
         tag.index = index;
         this.setToggle(index);
 
-        console.log("Editing tag: " + tag.hashId);
+        console.log("Editing tag: ", tag.hashId);
         if (this.state.activeTag == null || this.state.activeTag != tag) {
-            this.state.activeTag = tag;
-            this.state.editing = true;
-            this.state.addFormActive = true;
+
+            this.setState({
+                activeTag: tag,
+                editing: true,
+                addFormActive: true,
+                adding: false,
+                editedTag: cloneDeep(tag)
+            });
+
         } else {
+
             this.clearActiveTag();
-            this.state.editing = false;
-            this.state.addFormActive = false;
+            this.setState({
+                editing: false,
+                addFormActive: false,
+                adding: false,
+                editedTag: cloneDeep(tag)
+            });
+
         }
-        this.state.adding = false;
 
-        this.state.editedTag = cloneDeep(tag);
-
-        this.setState(this.state);
     }
 
     clearActiveTag() {
         this.clearSelected();
-        this.state.activeTag = null;
-        this.setState(this.state);
+        this.setState({ activeTag: null });
     }
 
     clearSelected() {
@@ -126,16 +123,22 @@ class Tags extends React.Component {
     }
     
     setToggle(index) {
-        if (this.props.flight.tags != null && this.props.flight.tags.length > 0) {
-            let len = this.props.flight.tags.length;
 
-            for (var i = 0; i < len; i++) {
+        if (this.props.flight.tags != null && this.props.flight.tags.length > 0) {
+
+            const len = this.props.flight.tags.length;
+
+            for (let i = 0; i < len; i++) {
+
                 if (i != index) {
-                    let id = '#tag_button_' + i;
+                    const id = `#tag_button_${  i}`;
                     $(id).removeClass('active');
                 }
+
             }
+
         }
+
     }
 
 
@@ -172,7 +175,7 @@ class Tags extends React.Component {
         });
 
         this.props.deleteTag(this.props.flight.id, this.state.activeTag.hashId)
-        .then((data) => {
+        .then(() => {
             this.clearSelected();
         });
 
@@ -188,13 +191,13 @@ class Tags extends React.Component {
             addFormActive: false
         });
 
-        let id = "#tag_img_" + this.state.activeTag.index;
+        const id = `#tag_img_${  this.state.activeTag.index}`;
         $(id).attr('data-title', 'Changes Saved!').tooltip('show');
-        $("#tag_button_" + this.state.activeTag.index).removeClass('active');
+        $(`#tag_button_${  this.state.activeTag.index}`).removeClass('active');
 
         setTimeout(function() {
             $(id).tooltip('hide');
-         }.bind(this), 5000)
+         }.bind(this), 5000);
     }
 
     createTag() {
@@ -209,22 +212,22 @@ class Tags extends React.Component {
             addFormActive: false
         });
 
-        let id = "#tag_img_" + this.props.flight.tags.length - 1;
+        const id = `#tag_img_${  this.props.flight.tags.length}` - 1;
         console.log(id);
 
         setTimeout(function() {
             $(id).tooltip('hide');
-         }.bind(this), 5000)
+         }.bind(this), 5000);
     }
 
     /**
      * Handles state changes for when the 'Create a new tag' option is selected
      */
     createClicked() {
-        this.state = {
+        this.setState({
             adding : true,
             editing : false,
-        };
+        });
         this.showAddForm();
     }
 
@@ -232,13 +235,14 @@ class Tags extends React.Component {
      * Shows the form for adding and/or editing a tag
      */
     showAddForm() {
-        this.state.addFormActive = !this.state.addFormActive;
-        this.state.editedTag = {
-            name : "",
-            description : "",
-            color : Colors.randomValue()
-        };
-        this.setState(this.state);
+        this.setState((prevState) => ({
+            addFormActive: !prevState.addFormActive,
+            editedTag: {
+                name: "",
+                description: "",
+                color: Colors.randomValue()
+            }
+        }));
     }
 
     /**
@@ -247,14 +251,15 @@ class Tags extends React.Component {
      * @param e the onChange() event
      */
     handleFormChange(e) {
+        const editedTag = { ...this.state.editedTag };
         if (e.target.id == 'comName') {
-            this.state.editedTag.name = e.target.value;
+            editedTag.name = e.target.value;
         } else if (e.target.id == 'description') {
-            this.state.editedTag.description = e.target.value;
+            editedTag.description = e.target.value;
         } else if (e.target.id == 'color-picker-tag') {
-            this.state.editedTag.color = e.target.value;
+            editedTag.color = e.target.value;
         }
-        this.setState(this.state);
+        this.setState({ editedTag });
     }
 
     /**
@@ -262,14 +267,13 @@ class Tags extends React.Component {
      */
     render() {
 
-        let cellClasses = "d-flex flex-row p-1";
-        let cellStyle = { "overflowX" : "auto" };
-        let vcellStyle = { "overflowY" : "visible"};
+        const cellClasses = "d-flex flex-row p-1";
+        const cellStyle = { "overflowX" : "auto" };
         let addForm = "";
         let addDrop = "";
-        let activeTag = this.state.activeTag;
-        let editedTag = this.state.editedTag;
-        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const activeTag = this.state.activeTag;
+        const editedTag = this.state.editedTag;
+        const buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em",
         };
@@ -279,12 +283,8 @@ class Tags extends React.Component {
             minHeight:"2.50em"
         };
 
-        const styleColorInput = {
-            height : "38",
-        };
-
-        let tags = this.props.flight.tags;
-        let unassociatedTags = this.props.getUnassociatedTags(this.props.flight.id);
+        const tags = this.props.flight.tags;
+        const unassociatedTags = this.props.getUnassociatedTags(this.props.flight.id);
 
         let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = {}, tagStat = "";
         if (tags == null || tags.length == 0) {
@@ -303,8 +303,8 @@ class Tags extends React.Component {
                     {
                         tags.map((tag, index) => {
                             return (
-                                <button id={"tag_button_" + index} key={index} className={buttonClasses} data-bs-toggle="button" onClick={() => this.selectTag(index, tag)}>
-                                    <i id={"tag_img_" + index} className="fa fa-tag m-1" data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="right" style={{color : tag.color, marginRight : '10px'}}></i>
+                                <button id={`tag_button_${  index}`} key={index} className={buttonClasses} data-bs-toggle="button" onClick={() => this.selectTag(index, tag)}>
+                                    <i id={`tag_img_${  index}`} className="fa fa-tag m-1" data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="right" style={{color : tag.color, marginRight : '10px'}}></i>
                                     {tag.name}
                                 </button>
                             );
@@ -341,7 +341,6 @@ class Tags extends React.Component {
             );
         }
 
-        let tagInfo = "";
         if (this.state.editing) {
             defName = this.state.editedTag.name;
             defDescript = this.state.editedTag.description;
@@ -385,10 +384,10 @@ class Tags extends React.Component {
                 }
                 {unassociatedTags != null && unassociatedTags.length > 0 &&
                     unassociatedTags.map((tag, index) => {
-                        let style = {
+                        const style = {
                             backgroundColor : tag.color,
                             fontSize : "110%"
-                        }
+                        };
                         return (
                             <button key={index} className="btn dropdown-item" onClick={() => this.props.associateTag(tag.hashId, this.props.flight.id)}>
                                 <div className="row">
@@ -415,7 +414,7 @@ class Tags extends React.Component {
                     <div className="col-">
                         <div className="input-group">
                             <div className="input-group-prepend">
-                                 <button type="button" className="btn input-group-text" title="Assign a color to this tag" onClick={(e) => $("#color-picker-tag").click()}>
+                                 <button type="button" className="btn input-group-text" title="Assign a color to this tag" onClick={() => $("#color-picker-tag").click()}>
                                      <i className="fa fa-tag" aria-hidden="true" style={{color: defColor}}></i>
                                  </button>
                                  <input key="cc-0" className="hidden" style={{display: "none"}} type="color" name="eventColor" value={defColor} onChange={(e) => this.handleFormChange(e)} id="color-picker-tag"/>

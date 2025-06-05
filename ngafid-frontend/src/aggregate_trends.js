@@ -2,11 +2,8 @@ import TrendsPage from "./trends";
 import ReactDOM from "react-dom";
 import React from "react";
 
-var aggregateTrendsPage = ReactDOM.render(
-    <TrendsPage
-        aggregate_page ={true}
-    />,
-    document.querySelector('#trends-page')
-);
+const container = document.querySelector("#trends-page");
+const root = ReactDOM.createRoot(container);
+const aggregateTrendsPage = root.render(<TrendsPage aggregate_page={true}/>);
 
 aggregateTrendsPage.displayPlots("All Airframes");

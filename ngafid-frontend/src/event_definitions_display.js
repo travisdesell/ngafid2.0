@@ -28,9 +28,9 @@ class EventDefinitionsDisplayPage extends React.Component {
         console.log(this.events);
 
         // Add all events to the rows array
-        for (let eventName of this.events.keys()) {
+        for (const eventName of this.events.keys()) {
 
-            for (let airframe of Object.keys(this.events.get(eventName))) {
+            for (const airframe of Object.keys(this.events.get(eventName))) {
                 console.log(airframe);
                 console.log(typeof airframe);
                 console.log(airframe == null);
@@ -62,7 +62,7 @@ class EventDefinitionsDisplayPage extends React.Component {
             //Otherwise, clear padding
             eventPadding = PADDING_AMT_NONE;
 
-        }
+        };
 
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -196,11 +196,11 @@ class EventDefinitionsDisplayPage extends React.Component {
                 </div>
 
             </div>
-        )
+        );
     }
 }
 
 
-const eventDefinitionsDisplayPage = ReactDOM.render(
-    <EventDefinitionsDisplayPage/>, document.querySelector('#event-definitions-display-page')
-)
+const container = document.querySelector("#event-definitions-display-page");
+const root = ReactDOM.createRoot(container);
+root.render(<EventDefinitionsDisplayPage />);

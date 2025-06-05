@@ -1,12 +1,7 @@
 import ReactDOM from "react-dom";
 import React from "react";
-import TrendsPage from "./trends"
+import TrendsPage from "./trends";
 
-var trendsPage = ReactDOM.render(
-    <TrendsPage
-        aggregate_page ={false}
-    />,
-    document.querySelector('#trends-page')
-);
-
-trendsPage.displayPlots("All Airframes");
+const container = document.querySelector("#trends-page");
+const root = ReactDOM.createRoot(container);
+root.render(<TrendsPage aggregate_page={false}/>);

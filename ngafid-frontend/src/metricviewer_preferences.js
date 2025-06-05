@@ -1,6 +1,8 @@
 import 'bootstrap';
 import React from "react";
 
+import { errorModal } from './error_modal';
+
 
 class MetricViewerSettings extends React.Component {
     constructor(props) {
@@ -9,56 +11,58 @@ class MetricViewerSettings extends React.Component {
         this.state = {
             selectedMetrics: props.selectedMetrics,
             decimalPrecision: props.decimalPrecision
-        }
+        };
     }
 
     updatePrecision() {
-        console.log("Updating Precision to " + this.state.decimalPrecision);
 
-        var submissionData = {
+        console.log(`Updating Precision to ${  this.state.decimalPrecision}`);
+
+        const submissionData = {
             decimal_precision: this.state.decimalPrecision
         };
-
-        let prefsPage = this;
 
         $.ajax({
             type: 'PUT',
             url: '/api/user/me/metric-prefs/precision',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
 
-                prefsPage.setState({
+                console.log("Received response: ", response);
+
+                this.setState({
                     selectedMetrics: response.flightMetrics,
                     decimalPrecision: response.decimalPrecision
                 });
+
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
+
                 errorModal.show("Error Updating User Preferences", errorThrown);
+
             },
-            async: true
         });
+
     }
 
     getAllDoubleSeriesNames() {
-        let prefsPage = this;
+
         let metrics = [];
 
         $.ajax({
             type: 'GET',
             url: '/api/flight/double-series',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: false,
+            success: (response) => {
+                console.log("Received response: ", response);
 
                 metrics = response.names;
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Getting Column Names", errorThrown);
             },
-            async: false
         });
 
         return metrics;
@@ -67,24 +71,23 @@ class MetricViewerSettings extends React.Component {
     addMetric(event) {
         console.log(event);
 
-        let name = event.target.value;
-        console.log("adding " + name + " to metric list.");
+        const name = event.target.value;
+        console.log(`adding ${  name  } to metric list.`);
 
         this.modifyMetric(name, "addition");
     }
 
     removeMetric(index) {
-        let name = this.state.selectedMetrics[index];
+        const name = this.state.selectedMetrics[index];
 
-        console.log("removing " + name + " from metric list.");
+        console.log(`removing ${  name  } from metric list.`);
 
         this.modifyMetric(name, "deletion");
     }
 
     modifyMetric(name, type) {
-        let prefsPage = this;
 
-        let submissionData = {
+        const submissionData = {
             metricName: name,
             modificationType: type
         };
@@ -94,61 +97,51 @@ class MetricViewerSettings extends React.Component {
             url: '/api/user/me/metric-prefs',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
 
-                prefsPage.setState({
+                console.log("Received response: ", response);
+
+                this.setState({
                     selectedMetrics: response
                 });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Updating User Preferences", errorThrown);
             },
-            async: true
         });
     }
 
-    changePrecision(precision) {
-        this.state.decimalPrecision = event.target.value;
-
-        this.updatePrecision();
+    changePrecision() {
+        this.setState({ decimalPrecision: event.target.value }, () => {
+            this.updatePrecision();
+        });
     }
 
     render() {
-        let exemptCols = ["LOC-I Index", "Stall Index"]; //put columns here that we dont want to show in the popup
-        let selectedMetrics = this.state.selectedMetrics;
-        let defSeriesNames = this.getAllDoubleSeriesNames();
+        const exemptCols = ["LOC-I Index", "Stall Index"]; //put columns here that we dont want to show in the popup
+        const selectedMetrics = this.state.selectedMetrics;
+        const defSeriesNames = this.getAllDoubleSeriesNames();
         let serverMetrics = defSeriesNames.filter((e) => !selectedMetrics.includes(e));
         serverMetrics = serverMetrics.filter((e) => !exemptCols.includes(e));
 
-        let styleButtonSq = {
-            flex: "right",
-            float: "auto"
-        };
-
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'left'
         };
-
-        let listStyle = {
-            maxHeight: "400px",
-            overflowY: "scroll"
-        };
-
-        let formGroupStyle = {
+        
+        const formGroupStyle = {
             marginBottom: '0px',
             padding: '0 4 0 4'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             flex: '0 0 180px'
         };
 
-        let metricsRow = (
+        const metricsRow = (
             <div className="d-flex">
                 <div className="p-2" style={formHeaderStyle}>
                     <label htmlFor="selectedMetricsNames" style={labelStyle}>Selected Metrics:</label>
@@ -158,7 +151,7 @@ class MetricViewerSettings extends React.Component {
                         selectedMetrics.map((columnName, index) => {
                             return (<button type="button" key={columnName} className="btn btn-primary mr-1"
                                             onClick={() => this.removeMetric(index)}>{columnName} <i
-                                className="fa fa-times p-1"></i></button>)
+                                className="fa fa-times p-1"></i></button>);
                         })
                     }
                 </div>
@@ -171,7 +164,7 @@ class MetricViewerSettings extends React.Component {
                             serverMetrics.map((seriesName, index) => {
                                 return (
                                     <option key={index} value={seriesName}>{seriesName}</option>
-                                )
+                                );
                             })
                         }
                     </select>

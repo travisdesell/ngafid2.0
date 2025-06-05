@@ -1,4 +1,4 @@
-var timeZones = [
+const timeZones = [
                     "(GMT-12:00) International Date Line West",
                     "(GMT-11:00) Midway Island, Samoa",
                     "(GMT-10:00) Hawaii",

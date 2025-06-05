@@ -1,9 +1,8 @@
-import 'bootstrap';
+import { Modal } from 'bootstrap';
 
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import { Modal } from 'bootstrap';
 
 
 class ConfirmModal extends React.Component {
@@ -111,9 +110,8 @@ class ConfirmModal extends React.Component {
     }
 }
 
-const confirmModal = ReactDOM.render(
-    <ConfirmModal/>,
-    document.querySelector("#confirm-modal-content")
-);
+const container = document.querySelector("#confirm-modal-content");
+const confirmModal = ReactDOM.createRoot(container);
+confirmModal.render(<ConfirmModal/>);
 
 export { confirmModal };

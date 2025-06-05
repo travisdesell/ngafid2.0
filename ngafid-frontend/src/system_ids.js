@@ -28,9 +28,9 @@ class SystemIdsPage extends React.Component {
     }
 
     validateTail(systemId) {
-        console.log("original tail: '" + systemId.originalTail + "', current value: '" + systemId.tail + "'");
+        console.log(`original tail: '${  systemId.originalTail  }', current value: '${  systemId.tail  }'`);
 
-        let newTail = $("#" + systemId.systemId + "-tail-number-form").val();
+        const newTail = $(`#${  systemId.systemId  }-tail-number-form`).val();
 
         if (systemId.confirmed === 1) {
             if (newTail === "") {
@@ -50,34 +50,39 @@ class SystemIdsPage extends React.Component {
     }
 
     updateSystemId(systemId) {
-        let newTail = $("#" + systemId.systemId + "-tail-number-form").val();
-        console.log("updating system id on server -- original tail: '" + systemId.originalTail + "', current value: '" + systemId.tail + "', newTail: '" + newTail + "'");
-        if (systemId.tail === "") systemId.tail = systemId.originalTail;
 
-        let systemIdsPage = this;
+        const newTail = $(`#${  systemId.systemId  }-tail-number-form`).val();
+        console.log(
+            "Updating system id on server -- original tail: '", systemId.originalTail,
+            "', current value: '", systemId.tail,
+            "', newTail: '", newTail, "'"
+        );
+
+        if (systemId.tail === "")
+            systemId.tail = systemId.originalTail;
 
         $.ajax({
             type: 'PATCH',
             url: `/api/aircraft/system-id/${encodeURIComponent(systemId.systemId)}`,
             data: {tail: systemId.tail},
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+                console.log("Received response: ", response);
 
                 systemId.confirmed = true;
                 systemId.modified = false;
                 systemId.tail = response.tail;
                 systemId.originalTail = response.tail;
 
-                systemIdsPage.state.unconfirmedTailsCount -= 1;
-                systemIdsPage.setState(systemIdsPage.state);
-                console.log(systemIdsPage.state);
+                this.setState((prevState) => ({
+                    unconfirmedTailsCount: (prevState.unconfirmedTailsCount - 1)
+                }));
+                console.log(this.state);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Updating Tail Number", errorThrown);
             },
-            async: true
         });
     }
 
@@ -117,17 +122,17 @@ class SystemIdsPage extends React.Component {
                                                 <div className="form-row align-items-center justify-content-center">
                                                     <div className="col-sm-5 my-1">
                                                         <label className="sr-only"
-                                                               htmlFor={systemId.systemId + "-system-id-form"}>Name</label>
+                                                               htmlFor={`${systemId.systemId  }-system-id-form`}>Name</label>
                                                         <input type="text" className="form-control"
-                                                               id={systemId.systemId + "-system-id-form"}
+                                                               id={`${systemId.systemId  }-system-id-form`}
                                                                placeholder={systemId.systemId} readOnly></input>
                                                     </div>
                                                     <div className="col-sm-6 my-1">
                                                         <label className="sr-only"
-                                                               htmlFor={systemId.systemId + "-tail-number-form"}>Tail
+                                                               htmlFor={`${systemId.systemId  }-tail-number-form`}>Tail
                                                             Number</label>
                                                         <input type="text" className="form-control"
-                                                               id={systemId.systemId + "-tail-number-form"}
+                                                               id={`${systemId.systemId  }-tail-number-form`}
                                                                placeholder={systemId.originalTail}
                                                                onChange={() => this.validateTail(systemId)}></input>
                                                     </div>
@@ -137,14 +142,14 @@ class SystemIdsPage extends React.Component {
                                                         &&
                                                         <div className="col-sm-1 my-1">
                                                             <button type="button"
-                                                                    className={"btn btn-primary" + (systemId.modified ? "btn-outline-primary" : "btn-outline-secondary")}
+                                                                    className={`btn btn-primary${  systemId.modified ? "btn-outline-primary" : "btn-outline-secondary"}`}
                                                                     style={{
                                                                         width: "36",
                                                                         height: "36",
                                                                         backgroundColor: "var(--c_confirm)",
                                                                         color: "white"
                                                                     }} onClick={() => {
-                                                                this.updateSystemId(systemId)
+                                                                this.updateSystemId(systemId);
                                                             }}>
                                                                 <div className="d-flex justify-content-center">
                                                                     <i className='fa fa-check'
@@ -172,8 +177,8 @@ class SystemIdsPage extends React.Component {
     render() {
         //console.log(systemIds);
 
-        let unconfirmedHtml = this.getSystemIdsPage("Unconfirmed System IDs", false);
-        let confirmedHtml = this.getSystemIdsPage("Confirmed System IDs", true);
+        const unconfirmedHtml = this.getSystemIdsPage("Unconfirmed System IDs", false);
+        const confirmedHtml = this.getSystemIdsPage("Confirmed System IDs", true);
 
         return (
             <div style={{display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -202,9 +207,10 @@ class SystemIdsPage extends React.Component {
     }
 }
 
-console.log("setting system ids page with react!");
+console.log("Setting system IDs page with react!");
 
-var systemIdsPage = ReactDOM.render(
-    <SystemIdsPage waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
-    document.querySelector('#system-ids-page')
+const container = document.querySelector("#system-ids-page");
+const root = ReactDOM.createRoot(container);
+root.render(
+    <SystemIdsPage waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>
 );

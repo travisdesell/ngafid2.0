@@ -1,9 +1,8 @@
-import 'bootstrap';
+import { Modal } from 'bootstrap';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { Modal } from 'bootstrap';
 
 
 
@@ -92,9 +91,9 @@ class ErrorModal extends React.Component {
     }
 }
 
-const errorModal = ReactDOM.render(
-    <ErrorModal/>,
-    document.querySelector("#error-modal-content")
-);
+
+const container = document.querySelector("#error-modal-content");
+const errorModal = ReactDOM.createRoot(container);
+errorModal.render(<ErrorModal/>);
 
 export { errorModal };

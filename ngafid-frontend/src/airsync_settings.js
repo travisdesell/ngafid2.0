@@ -10,70 +10,69 @@ class AirSyncSettings extends React.Component {
             selectedMetrics: props.selectedMetrics,
             decimalPrecision: props.decimalPrecision,
             timeout: props.timeout
-        }
+        };
 
         console.log(this.state);
     }
 
     updateTimeout(timeout) {
-        var submissionData = {
+
+        const submissionData = {
             timeout: timeout
-        }
+        };
 
         console.log(submissionData);
-
-        var theseSettings = this;
 
         $.ajax({
             type: 'PATCH',
             url: '/api/airsync/timeout',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("got airsync_settings response:");
-                console.log(response);
+            async: false,
+            success: (response) => {
 
-                theseSettings.state = {
+                console.log("Got airsync_settings response:", response);
+
+                this.setState({
                     timeout: response.timeout
-                };
-
-                theseSettings.setState(theseSettings.state);
+                });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.log("error updating the timeout");
-            },
+            error: (jqXHR, textStatus, errorThrown) => {
 
-            async: false
+                console.error("Error updating timeout:", textStatus, errorThrown);
+                console.log("Error updating the timeout");
+                
+            },
         });
     }
 
     timeoutChanged() {
-        let timeout = event.target.value;
-        console.log("New timeout is: " + timeout);
+        const timeout = event.target.value;
+        console.log(`New timeout is: ${  timeout}`);
 
         this.updateTimeout(timeout);
     }
 
     render() {
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'left'
         };
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '0px',
             padding: '0 4 0 4'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             flex: '0 0 180px'
         };
 
         $(function () {
-            $('[data-bs-toggle="tooltip"]').tooltip()
-        })
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
 
         return (
             <div className="card-body">

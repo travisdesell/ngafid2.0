@@ -1,7 +1,7 @@
 
 import 'bootstrap';
 
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
 import $ from 'jquery';
@@ -20,40 +20,21 @@ class HelpModal extends React.Component {
     }
 
     show(title, message, closeMethod) {
-        this.state.title = title;
-        this.state.message = message;
-        this.state.closeMethod = closeMethod;
-        this.setState(this.state);
-
-        $("#help-modal").modal('show');
+        this.setState({
+            title: title,
+            message: message,
+            closeMethod: closeMethod
+        }, () => {
+            $("#help-modal").modal('show');
+        });
     }
 
     render() {
-        let formGroupStyle = {
-            marginBottom: '8px'
-        };
 
-        let formHeaderStyle = {
-            width: '150px',
-            flex: '0 0 150px'
-        };
-
-        let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'right'
-        };
-
-        let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        console.log("rendering help modal with title: '" + this.state.title + "' and message: " + this.state.message);
+        console.log(
+            "Rendering help modal with title: '", this.state.title,
+            "' and message: ", this.state.message
+        );
 
         return (
             <div className='modal-content'>
@@ -78,9 +59,8 @@ class HelpModal extends React.Component {
     }
 }
 
-var helpModal = ReactDOM.render(
-    <HelpModal />,
-    document.querySelector("#help-modal-content")
-);
+const container = document.querySelector("#help-modal-content");
+const root = ReactDOM.createRoot(container);
+const helpModal = root.render(<HelpModal/>);
 
 export { helpModal };

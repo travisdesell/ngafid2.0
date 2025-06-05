@@ -3,11 +3,11 @@ import "bootstrap";
 import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
 
-import './index.css' //<-- include Tailwind
+import './index.css'; //<-- include Tailwind
 
 
 /*
@@ -71,7 +71,7 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
 
         return formattedName;
 
-    }
+    };
 
     return {
         name: name,
@@ -85,7 +85,7 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
 
 export default class StatusPage extends React.Component {
 
-    constructor(props: any) {
+    constructor(props: object) {
         super(props);
     }
 
@@ -261,7 +261,7 @@ export default class StatusPage extends React.Component {
 
             </div>
 
-        </div>
+        </div>;
 
         return jsxOut;
 

@@ -8,12 +8,18 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import {EventDefinitionCard} from './event_definition.js';
 
 
-var navbar = ReactDOM.render(
+const navbarContainer = document.querySelector('#navbar');
+const waitingUserCount = navbarContainer.getAttribute("data-waiting-user-count");
+const fleetManager = navbarContainer.getAttribute("data-fleet-manager") === "true";
+const unconfirmedTailsCount = navbarContainer.getAttribute("data-unconfirmed-tails-count");
+const modifyTailsAccess = navbarContainer.getAttribute("data-modify-tails-access") === "true";
+const plotMapHidden = navbarContainer.getAttribute("data-plot-map-hidden") === "true";
+ReactDOM.createRoot(navbarContainer).render(
     <SignedInNavbar activePage="update event" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
-                    plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
+                    plotMapHidden={plotMapHidden}/>
 );
+
 
 airframes.unshift("All Airframes");
 
@@ -22,7 +28,7 @@ airframeMap[0] = "All Airframes";
 //remove the 'proximity' event because this can't be modified by this interface
 eventDefinitions.splice(0, 1);
 
-var rules = [];
+const rules = [];
 
 for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
@@ -45,7 +51,7 @@ class UpdateEventCard extends React.Component {
     constructor(props) {
         super(props);
 
-        let eventDefinition = eventDefinitions[0];
+        const eventDefinition = eventDefinitions[0];
 
         this.state = {
             filterVisible: true,
@@ -59,44 +65,44 @@ class UpdateEventCard extends React.Component {
             severityColumnNames: eventDefinition.severityColumnNames,
             severityType: eventDefinition.severityType,
             filters: eventDefinition.filter
-        }
+        };
     }
 
     validateEventName(event) {
-        let eventName = event.target.value;
-        console.log("new event name: " + eventName);
+        const eventName = event.target.value;
+        console.log(`new event name: ${  eventName}`);
         this.setState({
             eventName: eventName
         });
     }
 
     validateAirframe(event) {
-        let airframe = event.target.value;
-        console.log("new airframe: " + airframe);
+        const airframe = event.target.value;
+        console.log(`new airframe: ${  airframe}`);
         this.setState({
             airframe: airframe
         });
     }
 
     validateSeverityType(event) {
-        let severityType = event.target.value;
-        console.log("new severity type: " + severityType);
+        const severityType = event.target.value;
+        console.log(`new severity type: ${  severityType}`);
         this.setState({
             severityType: severityType
         });
     }
 
     changeSeverityColumn(event) {
-        let severityColumn = event.target.value;
-        console.log("new severity column: " + severityColumn);
+        const severityColumn = event.target.value;
+        console.log(`new severity column: ${  severityColumn}`);
         this.setState({
             severityColumn: severityColumn
         });
     }
 
     addSeverityColumn() {
-        console.log("adding severity column: " + this.state.severityColumn);
-        let newSeverityColumns = this.state.severityColumnNames;
+        console.log(`adding severity column: ${  this.state.severityColumn}`);
+        const newSeverityColumns = this.state.severityColumnNames;
 
         if (newSeverityColumns.indexOf(this.state.severityColumn) === -1) {
             newSeverityColumns.push(this.state.severityColumn);
@@ -110,9 +116,9 @@ class UpdateEventCard extends React.Component {
     }
 
     removeSeverityColumn(columnName) {
-        let newSeverityColumns = this.state.severityColumnNames;
+        const newSeverityColumns = this.state.severityColumnNames;
 
-        let columnIndex = newSeverityColumns.indexOf(columnName);
+        const columnIndex = newSeverityColumns.indexOf(columnName);
         newSeverityColumns.splice(columnIndex, 1);
 
         console.log("new severity columns array:");
@@ -123,16 +129,16 @@ class UpdateEventCard extends React.Component {
     }
 
     validateStartBuffer(event) {
-        let startBuffer = event.target.value;
-        console.log("new startBuffer: " + startBuffer);
+        const startBuffer = event.target.value;
+        console.log(`new startBuffer: ${  startBuffer}`);
         this.setState({
             startBuffer: startBuffer
         });
     }
 
     validateStopBuffer(event) {
-        let stopBuffer = event.target.value;
-        console.log("new stopBuffer: " + stopBuffer);
+        const stopBuffer = event.target.value;
+        console.log(`new stopBuffer: ${  stopBuffer}`);
         this.setState({
             stopBuffer: stopBuffer
         });
@@ -140,7 +146,7 @@ class UpdateEventCard extends React.Component {
 
     changeSelectedEvent(event) {
         //the key will be the index of the event definition
-        let eventDefinition = eventDefinitions[event.target.value];
+        const eventDefinition = eventDefinitions[event.target.value];
         console.log(eventDefinition);
 
         this.setState({
@@ -169,7 +175,7 @@ class UpdateEventCard extends React.Component {
 
         $("#loading").show();
 
-        var submissionData = {
+        const submissionData = {
             filterQuery: JSON.stringify(this.state.filters),
             eventId: this.state.eventId,
             eventName: this.state.eventName,
@@ -186,9 +192,9 @@ class UpdateEventCard extends React.Component {
             url: `/api/event/definition/${submissionData.eventId}`,
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+                console.log("Received response: ", response);
 
                 $("#loading").hide();
 
@@ -200,43 +206,42 @@ class UpdateEventCard extends React.Component {
 
                 //createEventCard.setEvents(response);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Loading Flights", errorThrown);
             },
-            async: true
         });
 
     }
 
     render() {
-        let style = {
+        const style = {
             padding: 5
         };
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '0px',
             padding: '0 4 0 4'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '200px',
             flex: '0 0 200px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let bgStyle = {
+        const bgStyle = {
             background: "rgba(248,259,250,0.8)",
             margin: 0
         };
 
-        let initialSelect = this.state.eventName + " - " + airframeMap[this.state.airframeNameId];
-        console.log("initial select: " + initialSelect);
+        const initialSelect = `${this.state.eventName  } - ${  airframeMap[this.state.airframeNameId]}`;
+        console.log(`initial select: ${  initialSelect}`);
 
         return (
             <div className="card-body" style={style}>
@@ -258,10 +263,10 @@ class UpdateEventCard extends React.Component {
                                         value={this.state.eventIndex}>
                                     {
                                         eventDefinitions.map((eventDefinition, index) => {
-                                            let fullName = eventDefinition.name + " - " + airframeMap[eventDefinition.airframeNameId];
+                                            const fullName = `${eventDefinition.name  } - ${  airframeMap[eventDefinition.airframeNameId]}`;
                                             return (
                                                 <option key={index} value={index}>{fullName}</option>
-                                            )
+                                            );
                                         })
                                     }
                                 </select>
@@ -286,7 +291,7 @@ class UpdateEventCard extends React.Component {
                         filters={this.state.filters}
 
                         getFilter={() => {
-                            return this.state.filters
+                            return this.state.filters;
                         }}
                         setFilter={(filter) => this.setFilter(filter)}
 
@@ -307,7 +312,6 @@ class UpdateEventCard extends React.Component {
     }
 }
 
-let createEventCard = ReactDOM.render(
-    <UpdateEventCard/>,
-    document.querySelector('#update-event-card')
-);
+const container = document.querySelector("#update-event-card");
+const root = ReactDOM.createRoot(container);
+root.render(<UpdateEventCard/>);

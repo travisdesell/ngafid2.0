@@ -25,8 +25,8 @@ class Paginator extends React.Component {
     }
 
     updateGoto(event) {
-        let value = event.target.value;
-        console.log("goto updated to: '" + value + "'");
+        const value = event.target.value;
+        console.log(`goto updated to: '${  value  }'`);
         if (/^\d+$/.test(value) && value > 0 && value <= this.props.numberPages) {
             console.log("setting goto active to true!");
             this.setState({
@@ -98,20 +98,20 @@ class Paginator extends React.Component {
     triggerInput() {
         console.log("input triggered!");
 
-        let uploadsPageRef = this.props.uploadsPage;
+        const uploadsPageRef = this.props.uploadsPage;
 
         $('#upload-file-input').trigger('click');
 
         $('#upload-file-input:not(.bound)').addClass('bound').change(function () {
-            console.log("number files selected: " + this.files.length);
+            console.log(`number files selected: ${  this.files.length}`);
             console.log(this.files);
 
             if (this.files.length > 0) {
-                var file = this.files[0];
-                var filename = file.webkitRelativePath || file.fileName || file.name;
+                const file = this.files[0];
+                const filename = file.webkitRelativePath || file.fileName || file.name;
 
                 const isZip = file['type'].includes("zip");
-                console.log("isZip: " + isZip);
+                console.log(`isZip: ${  isZip}`);
 
                 if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
                     errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
@@ -125,10 +125,10 @@ class Paginator extends React.Component {
     }
 
     render() {
-        let pages = [];
+        const pages = [];
 
-        let totalVisiblePages = 9;
-        let pagesAround = 4;
+        const totalVisiblePages = 9;
+        const pagesAround = 4;
 
         let firstVisiblePage = this.props.currentPage - pagesAround;
         let lastVisiblePage = this.props.currentPage + pagesAround + 1;
@@ -169,7 +169,7 @@ class Paginator extends React.Component {
         }
         */
 
-        var sorter = "";
+        let sorter = "";
         if (this.props.sortOptions != null) {
             sorter = (
                 <PaginationSorter
@@ -187,7 +187,7 @@ class Paginator extends React.Component {
             numTotalPages = 1;
         }
 
-        let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
+        const PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
 
         return (
             <div className="card border-secondary"
@@ -244,7 +244,7 @@ class Paginator extends React.Component {
                         </div>
 
                         {/* RIGHT ELEMENTS */}
-                        <div className={"d-flex flex-row " + (PAGE_FLIGHTS ? "" : "ml-auto")}
+                        <div className={`d-flex flex-row ${  PAGE_FLIGHTS ? "" : "ml-auto"}`}
                              style={{justifyContent: "space-between", flexDirection: "row", alignContent: "end"}}>
 
                             {
@@ -270,7 +270,7 @@ class Paginator extends React.Component {
                                         display: "inline-block",
                                         verticalAlign: "-25%"
                                     }}>
-                                    	{this.props.pageSize + " " + this.props.itemName + " per page"}
+                                    	{`${this.props.pageSize  } ${  this.props.itemName  } per page`}
                                 	</span>
                                 } size="sm">
                                     <Dropdown.Item as="button"

@@ -6,7 +6,7 @@ import ReactDOM from "react-dom";
 import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import TimeHeader from "./time_header.js";
+import {TimeHeader} from "./time_header.js";
 import GetDescription from "./get_description.js";
 
 import Plotly from 'plotly.js';
@@ -18,40 +18,36 @@ import "./index.css";
 
 
 airframes.unshift("All Airframes");
-var index = airframes.indexOf("Garmin Flight Display");
-if (index !== -1) airframes.splice(index, 1);
+const index = airframes.indexOf("Garmin Flight Display");
+if (index !== -1)
+    airframes.splice(index, 1);
 
 tagNames.unshift("All Tags");
-var tagIndex = tagNames.indexOf("Garmin Flight Display");
-if (tagIndex !== -1) tagNames.splice(tagIndex, 1);
+const tagIndex = tagNames.indexOf("Garmin Flight Display");
+if (tagIndex !== -1)
+    tagNames.splice(tagIndex, 1);
 
 eventNames.sort();
 
 console.log(eventNames);
 
 /*
-var trace1 = {
-    name: 'test1',
-    x: [1, 2, 3, 4],
-    y: [10, 15, 13, 17],
-    type: 'scatter'
-};
+    var trace1 = {
+        name: 'test1',
+        x: [1, 2, 3, 4],
+        y: [10, 15, 13, 17],
+        type: 'scatter'
+    };
 
-var trace2 = {
-    name: 'test2',
-    x: [1, 2, 3, 4],
-    y: [16, 5, 11, 9],
-    type: 'scatter'
-};
+    var trace2 = {
+        name: 'test2',
+        x: [1, 2, 3, 4],
+        y: [16, 5, 11, 9],
+        type: 'scatter'
+    };
 */
 
-var countData = [];
-var percentData = [];
-
-var eventSeverities = {};
-
-var eventFleetPercents = {};
-var eventNGAFIDPercents = {};
+let eventSeverities = {};
 
 class SeveritiesPage extends React.Component {
 
@@ -59,18 +55,18 @@ class SeveritiesPage extends React.Component {
 
         super(props);
 
-        let eventChecked = {};
-        let eventsEmpty = {};
+        const eventChecked = {};
+        const eventsEmpty = {};
 
         //  eventNames.unshift("ANY Event");    (⚠ ANY Event disabled on the severities page for now)
         for (let i = 0; i < eventNames.length; i++) {
 
-            let eventNameCur = eventNames[i];
+            const eventNameCur = eventNames[i];
             eventChecked[eventNameCur] = false;
             eventsEmpty[eventNameCur] = false;
         }
 
-        var date = new Date();
+        const date = new Date();
         this.state = {
             airframe: "All Airframes",
             tagName: "All Tags",
@@ -92,24 +88,27 @@ class SeveritiesPage extends React.Component {
     }
 
     componentDidMount() {
+
         this.displayPlot(this.state.airframe);
+        this.displayPlot("All Airframes");
+
     }
 
     exportCSV() {
-        let selectedAirframe = this.state.airframe;
+        const selectedAirframe = this.state.airframe;
 
-        console.log("selected airframe: '" + selectedAirframe + "'");
+        console.log(`selected airframe: '${  selectedAirframe  }'`);
         console.log(eventSeverities);
-        let fileHeaders = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
+        const fileHeaders = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
 
-        let fileContent = [fileHeaders];
-        let uniqueMetaDataNames = [];
+        const fileContent = [fileHeaders];
+        const uniqueMetaDataNames = [];
 
-        for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
+        for (const [eventName, countsMap] of Object.entries(eventSeverities)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
             if (!this.state.eventChecked[eventName]) continue;
 
-            for (let [airframe, counts] of Object.entries(countsMap)) {
+            for (const [airframe, counts] of Object.entries(countsMap)) {
                 if (airframe === "Garmin Flight Display") continue;
                 if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes") continue;
                 console.log("Counts severities");
@@ -117,33 +116,33 @@ class SeveritiesPage extends React.Component {
 
                 for (let i = 0; i < counts.length; i++) {
                     let line = "";
-                    var eventMetaData = this.state.eventMetaData[counts[i].id];
+                    const eventMetaData = this.state.eventMetaData[counts[i].id];
                     console.log(eventMetaData);
-                    var eventMetaDataText = [];
+                    const eventMetaDataText = [];
                     if (eventMetaData != null) {
                         eventMetaData.map((item) => {
                             if (!uniqueMetaDataNames.includes(item.name)) {
                                 uniqueMetaDataNames.push(item.name);
                             }
                             eventMetaDataText.push(item.value);
-                        })
+                        });
                     }
-                    let count = counts[i];
-                    line = eventName + "," + airframe + "," + count.flightId + "," + count.startTime + "," + count.endTime + "," + count.startLine + "," + count.endLine + "," + count.severity;
+                    const count = counts[i];
+                    line = `${eventName  },${  airframe  },${  count.flightId  },${  count.startTime  },${  count.endTime  },${  count.startLine  },${  count.endLine  },${  count.severity}`;
                     if (eventMetaDataText != "")
-                        line += "," + eventMetaDataText.join(",");
+                        line += `,${  eventMetaDataText.join(",")}`;
                     fileContent.push(line);
                 }
             }
         }
 
         if (uniqueMetaDataNames.length != 0)
-            fileContent[0] = fileHeaders + "," + uniqueMetaDataNames.join(",");
-        let filename = "event_severities.csv";
+            fileContent[0] = `${fileHeaders  },${  uniqueMetaDataNames.join(",")}`;
+        const filename = "event_severities.csv";
         console.log("exporting csv!");
 
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fileContent.join("\n")));
+        const element = document.createElement('a');
+        element.setAttribute('href', `data:text/plain;charset=utf-8,${  encodeURIComponent(fileContent.join("\n"))}`);
         element.setAttribute('download', filename);
 
         element.style.display = 'none';
@@ -156,21 +155,20 @@ class SeveritiesPage extends React.Component {
     }
 
     getEventMetaData(eventId) {
-        var eventMetaData = null;
+        let eventMetaData = null;
         $.ajax({
             type: 'GET',
             url: `/api/event/${eventId}/meta`,
             dataType: 'json',
-            success: function (response) {
+            async: false,
+            success: (response) => {
                 eventMetaData = response;
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Loading Event Metadata ", errorThrown);
             },
-            async: false
-        })
-        //console.log("Event MetaData : ");
-        //console.log(eventMetaData);
+        });
+        
 
         return eventMetaData;
 
@@ -178,19 +176,19 @@ class SeveritiesPage extends React.Component {
 
     displayPlot(selectedAirframe) {
 
-        console.log("Displaying plots with airframe: '" + selectedAirframe + "'");
+        console.log(`Displaying plots with airframe: '${  selectedAirframe  }'`);
         // console.log("Event Severities: ", eventSeverities);
 
-        let severityTraces = [];
-        var airframeNames = {};
+        const severityTraces = [];
+        const airframeNames = {};
 
 
-        for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
+        for (const [eventName, countsMap] of Object.entries(eventSeverities)) {
 
             if (!this.state.eventChecked[eventName])
                 continue;
 
-            for (let [airframe, counts] of Object.entries(countsMap)) {
+            for (const [airframe, counts] of Object.entries(countsMap)) {
 
                 if (airframe === "Garmin Flight Display")
                     continue;
@@ -202,12 +200,12 @@ class SeveritiesPage extends React.Component {
                 const markerSymbolList = ["circle", "diamond", "square", "x", "pentagon", "hexagon", "octagon"];
 
                 airframeNames[airframe] ??= Object.keys(airframeNames).length;
-                let markerSymbol = markerSymbolList[airframeNames[airframe] % markerSymbolList.length];
+                const markerSymbol = markerSymbolList[airframeNames[airframe] % markerSymbolList.length];
                 // console.log("Marker Symbol: ", markerSymbol);
-                let markerSymbolAny = (markerSymbol + "-open-dot");
+                const markerSymbolAny = (`${markerSymbol  }-open-dot`);
 
-                let severityTrace = {
-                    name: eventName + ' - ' + airframe,
+                const severityTrace = {
+                    name: `${eventName  } - ${  airframe}`,
                     type: 'scatter',
                     mode: 'markers',
                     hoverinfo: 'x+text',
@@ -235,15 +233,15 @@ class SeveritiesPage extends React.Component {
 
                 } else {
 
-                    let eventNameIndex = eventNames.indexOf(eventName);
+                    const eventNameIndex = eventNames.indexOf(eventName);
                     severityTrace.marker = {
 
                         //Consistent rainbow colors for each event
                         color:
-                            'hsl('
-                            + parseInt(360.0 * eventNameIndex / eventNames.length)
-                            + ',100%'
-                            + ',75%)',
+                            `hsl(${
+                             parseInt(360.0 * eventNameIndex / eventNames.length)
+                             },100%`
+                            + `,75%)`,
                         symbol: markerSymbol,
                         size: 8,
                         line: {
@@ -264,17 +262,17 @@ class SeveritiesPage extends React.Component {
                     severityTrace.tagName.push(counts[i].tagName);
 
                     if (counts[i].eventDefinitionId === -1) {
-                        severityTrace.flightIds.push(counts[i].flightId + " " + counts[i].otherFlightId);
+                        severityTrace.flightIds.push(`${counts[i].flightId  } ${  counts[i].otherFlightId}`);
                     } else {
                         severityTrace.flightIds.push(counts[i].flightId);
                     }
 
-                    let hovertext = "Flight #" + counts[i].flightId + ", System ID: " + counts[i].systemId + ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event name: " + eventName + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                    let hovertext = `Flight #${  counts[i].flightId  }, System ID: ${  counts[i].systemId  }, Tail: ${  counts[i].tail  }, severity: ${  (Math.round(counts[i].severity * 100) / 100).toFixed(2)  }, event name: ${  eventName  }, event start time: ${  counts[i].startTime  }, event end time: ${  counts[i].endTime}`;
                     if (counts[i].tagName !== "") {
-                        hovertext += ", Tag: " + counts[i].tagName;
+                        hovertext += `, Tag: ${  counts[i].tagName}`;
                     }
 
-                    if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
+                    if (counts[i].eventDefinitionId == -1) hovertext += `, Proximity Flight #${  counts[i].otherFlightId}`;
 
                     //if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
 
@@ -292,12 +290,12 @@ class SeveritiesPage extends React.Component {
             }
         }
 
-        let styles = getComputedStyle(document.documentElement);
-        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
-        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
-        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+        const styles = getComputedStyle(document.documentElement);
+        const plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        const plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        const plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
-        var severityLayout = {
+        const severityLayout = {
             title : {text: 'Severity of Events'},
             hovermode : "closest",
             autosize: true,
@@ -321,30 +319,30 @@ class SeveritiesPage extends React.Component {
             }
         };
 
-        var config = {responsive: true};
+        const config = {responsive: true};
 
         Plotly.newPlot('severities-plot', severityTraces, severityLayout, config);
 
-        let severitiesPlot = document.getElementById('severities-plot');
+        const severitiesPlot = document.getElementById('severities-plot');
         severitiesPlot.on('plotly_click', function (data) {
             console.log("clicked on plot near point!");
             console.log(data);
 
-            for (var i = 0; i < data.points.length; i++) {
-                let index = data.points[i].pointIndex;
+            for (let i = 0; i < data.points.length; i++) {
+                const index = data.points[i].pointIndex;
                 let flightId = data.points[i].data.flightIds[index];
                 let otherFlightId = null;
                 if (typeof flightId === 'string' && flightId.indexOf(' ') >= 0) {
-                    let parts = flightId.split(' ');
+                    const parts = flightId.split(' ');
                     flightId = parts[0];
                     otherFlightId = parts[1];
                 }
 
-                console.log("point index of clicked point is: " + index + " with a flight id of: " + flightId);
+                console.log(`point index of clicked point is: ${  index  } with a flight id of: ${  flightId}`);
                 if (otherFlightId == null) {
-                    window.open("/protected/flight?flight_id=" + flightId);
+                    window.open(`/protected/flight?flight_id=${  flightId}`);
                 } else {
-                    window.open("/protected/flight?flight_id=" + otherFlightId + "&flight_id=" + flightId);
+                    window.open(`/protected/flight?flight_id=${  otherFlightId  }&flight_id=${  flightId}`);
                 }
 
                 //might want to only open one tab if for some reason multiple points overlap (which shouldn't but might happen)
@@ -353,53 +351,56 @@ class SeveritiesPage extends React.Component {
         });
 
         severitiesPlot.on('plotly_hover', (data) => {
-            var point = data.points[0];
-            var idIndex = point.pointIndex;
-            var severityData = point.data;
-            var id = severityData.id[idIndex];
-            var severity = severityData.y[idIndex];
-            var startTime = severityData.x[idIndex];
-            var tail = severityData.tail[idIndex];
-            var eventDefinitionId = severityData.eventDefinitionId[idIndex];
-            var endTime = severityData.z[idIndex];
-            var systemId = severityData.systemId[idIndex];
-            var tagName = severityData.tagName[idIndex];
+            const point = data.points[0];
+            const idIndex = point.pointIndex;
+            const severityData = point.data;
+            const id = severityData.id[idIndex];
+            const severity = severityData.y[idIndex];
+            const startTime = severityData.x[idIndex];
+            const tail = severityData.tail[idIndex];
+            const eventDefinitionId = severityData.eventDefinitionId[idIndex];
+            const endTime = severityData.z[idIndex];
+            const systemId = severityData.systemId[idIndex];
+            const tagName = severityData.tagName[idIndex];
 
             let flightId = severityData.flightIds[idIndex];
             let otherFlightId = null;
             if (typeof flightId === 'string' && flightId.indexOf(' ') >= 0) {
-                let parts = flightId.split(' ');
+                const parts = flightId.split(' ');
                 flightId = parts[0];
                 otherFlightId = parts[1];
             }
-            var eventMetaDataText = [];
+            const eventMetaDataText = [];
             if (!this.state.eventMetaData[id]) {
-                var eventMetaData = this.getEventMetaData(id);
+                const eventMetaData = this.getEventMetaData(id);
                 if (eventMetaData != null) {
                     eventMetaData.map((item) => {
-                        eventMetaDataText.push(item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2));
+                        eventMetaDataText.push(`${item.name  }: ${  (Math.round(item.value * 100) / 100).toFixed(2)}`);
                     });
-                    this.state.eventMetaData[id] = eventMetaData;
+                    this.setState(prevState => {
+                        const updatedEventMetaData = { ...prevState.eventMetaData, [id]: eventMetaData };
+                        return { eventMetaData: updatedEventMetaData };
+                    });
 
                     eventMetaData.forEach((item) => {
-                        eventMetaDataText.push(item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2));
+                        eventMetaDataText.push(`${item.name  }: ${  (Math.round(item.value * 100) / 100).toFixed(2)}`);
                     });
                 }
             }
 
-            let hovertext = "Flight #" + flightId + ", System ID: " + systemId + ", Tail: " + tail + ", severity: " + (Math.round(severity * 100) / 100).toFixed(2) + ", event start time: " + startTime + ", event end time: " + endTime;
+            let hovertext = `Flight #${  flightId  }, System ID: ${  systemId  }, Tail: ${  tail  }, severity: ${  (Math.round(severity * 100) / 100).toFixed(2)  }, event start time: ${  startTime  }, event end time: ${  endTime}`;
 
             if (tagName !== "") {
-                hovertext += ", Tag: " + tagName;
+                hovertext += `, Tag: ${  tagName}`;
             }
 
-            if (eventDefinitionId === -1) hovertext += ", Proximity Flight #" + otherFlightId;
+            if (eventDefinitionId === -1) hovertext += `, Proximity Flight #${  otherFlightId}`;
 
-            if (eventMetaDataText.length !== 0) hovertext += ", " + eventMetaDataText.join(", ");
+            if (eventMetaDataText.length !== 0) hovertext += `, ${  eventMetaDataText.join(", ")}`;
             severityData.hovertext = hovertext;
             this.setState(this.state);
-            let index = severityTraces.findIndex(hash => hash.name === severityData.name);
-            Plotly.restyle(severitiesPlot, {"hovertext": hovertext}, [index])
+            const index = severityTraces.findIndex(hash => hash.name === severityData.name);
+            Plotly.restyle(severitiesPlot, {"hovertext": hovertext}, [index]);
         });
 
     }
@@ -410,20 +411,18 @@ class SeveritiesPage extends React.Component {
         console.log("showing loading spinner!");
 
 
-        let startDate = this.state.startYear + "-";
-        let endDate = this.state.endYear + "-";
+        let startDate = `${this.state.startYear  }-`;
+        let endDate = `${this.state.endYear  }-`;
 
         //0 pad the months on the front
-        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        if (parseInt(this.state.startMonth) < 10) startDate += `0${  parseInt(this.state.startMonth)}`;
         else startDate += this.state.startMonth;
-        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        if (parseInt(this.state.endMonth) < 10) endDate += `0${  parseInt(this.state.endMonth)}`;
         else endDate += this.state.endMonth;
 
-        let severitiesPage = this;
-
-        var submissionData = {
-            startDate: startDate + "-01",
-            endDate: endDate + "-28",
+        const submissionData = {
+            startDate: `${startDate  }-01`,
+            endDate: `${endDate  }-28`,
             eventNames: JSON.stringify(eventNames),
             tagName: this.state.tagName
         };
@@ -432,7 +431,8 @@ class SeveritiesPage extends React.Component {
             type: 'GET',
             url: '/api/event/severities',
             data: submissionData,
-            success: function (response) {
+            success: (response) => {
+
                 console.log("Received response <all_severities>: ", this.data, response);
 
                 $('#loading').hide();
@@ -443,47 +443,62 @@ class SeveritiesPage extends React.Component {
                 }
 
                 //Check if the response is empty for each event
-                for (let [eventName, countsMap] of Object.entries(response)) {
+                for (const [eventName] of Object.entries(response)) {
 
-                    let eventSeverityCounts = response[eventName];
+                    const eventSeverityCounts = response[eventName];
 
                     let isEmpty = true;
-                    for (let [airframe, counts] of Object.entries(eventSeverityCounts)) {
+                    for (const [counts] of Object.entries(eventSeverityCounts)) {
 
                         if (counts.length > 0) {
                             isEmpty = false;
                             break;
                         }
+
                     }
+
                     if (isEmpty) {
-                        severitiesPage.state.eventsEmpty[eventName] = true;
+
+                        this.setState(prevState => ({
+                            eventsEmpty: { ...prevState.eventsEmpty, [eventName]: true }
+                        }));
+
                         eventSeverities[eventName] = {};
+
                     } else {
+
                         //Mark severities for event
-                        severitiesPage.state.eventsEmpty[eventName] = false;
+                        this.setState(prevState => ({
+                            eventsEmpty: { ...prevState.eventsEmpty, [eventName]: false }
+                        }));
+
                         eventSeverities[eventName] = eventSeverityCounts;
 
                         //Concatenate the counts for the "ANY Event" event
                         if (eventSeverities["ANY Event"] == null)
                             eventSeverities["ANY Event"] = {};
-                        console.log("Merging counts for event: '" + eventName + "'");
-                        for (let [airframe, counts] of Object.entries(eventSeverityCounts)) {
+
+                        console.log(`Merging counts for event: '${  eventName  }'`);
+                        for (const [airframe] of Object.entries(eventSeverityCounts)) {
 
                             if (eventSeverities["ANY Event"][airframe] == null)
                                 eventSeverities["ANY Event"][airframe] = eventSeverityCounts[airframe];
                             else
                                 eventSeverities["ANY Event"][airframe] = eventSeverities["ANY Event"][airframe].concat(eventSeverityCounts[airframe]);
+
                         }
+
                     }
+
                 }
 
                 // severitiesPage.displayPlot(severitiesPage.state.airframe);
-                severitiesPage.setState(severitiesPage.state);
-                severitiesPage.displayPlot(severitiesPage.state.airframe);
+                this.setState(this.state);
+                this.displayPlot(this.state.airframe);
 
             },
 
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Loading Uploads", errorThrown);
             }
 
@@ -497,20 +512,18 @@ class SeveritiesPage extends React.Component {
         console.log("showing loading spinner!");
 
 
-        let startDate = this.state.startYear + "-";
-        let endDate = this.state.endYear + "-";
+        let startDate = `${this.state.startYear  }-`;
+        let endDate = `${this.state.endYear  }-`;
 
         //0 pad the months on the front
-        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        if (parseInt(this.state.startMonth) < 10) startDate += `0${  parseInt(this.state.startMonth)}`;
         else startDate += this.state.startMonth;
-        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        if (parseInt(this.state.endMonth) < 10) endDate += `0${  parseInt(this.state.endMonth)}`;
         else endDate += this.state.endMonth;
 
-        let severitiesPage = this;
-
-        var submissionData = {
-            startDate: startDate + "-01",
-            endDate: endDate + "-28",
+        const submissionData = {
+            startDate: `${startDate  }-01`,
+            endDate: `${endDate  }-28`,
             tagName: this.state.tagName
         };
 
@@ -518,7 +531,8 @@ class SeveritiesPage extends React.Component {
             type: 'GET',
             url: `/api/event/severities/${encodeURIComponent(eventName)}`,
             data: submissionData,
-            success: function (response) {
+            async: true,
+            success: (response) => {
                 console.log("Received response <severities>: ", this.data, response);
 
                 $('#loading').hide();
@@ -529,77 +543,85 @@ class SeveritiesPage extends React.Component {
                 }
 
                 //Check if the response is empty
-                for (let [airframe, counts] of Object.entries(response)) {
+                for (const [airframe, counts] of Object.entries(response)) {
 
                     if (counts.length != 0)
                         continue;
 
-                    console.log("No counts for event: '" + eventName + "' and airframe: '" + airframe + "'");
+                    console.log(`No counts for event: '${  eventName  }' and airframe: '${  airframe  }'`);
 
-                    severitiesPage.state.eventsEmpty[eventName] = true;
+                    this.setState(prevState => ({
+                        eventsEmpty: { ...prevState.eventsEmpty, [eventName]: true }
+                    }));
                     eventSeverities[eventName] = {};
-                    severitiesPage.setState(severitiesPage.state);
                     return;
                 }
 
                 eventSeverities[eventName] = response;
-                severitiesPage.setState(severitiesPage.state);
-                severitiesPage.displayPlot(severitiesPage.state.airframe);
+                this.setState(this.state);
+                this.displayPlot(this.state.airframe);
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Loading Uploads", errorThrown);
             },
-            async: true
         });
 
     }
 
     checkEvent(eventName) {
-        console.log("Checking event: '" + eventName + "'");
-        this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
-        this.setState(this.state);
-
-        if (eventName in eventSeverities) {
-            console.log("already loaded counts for event: '" + eventName + "'");
-            severitiesPage.displayPlot(severitiesPage.state.airframe);
-        } else {
-            this.fetchEventSeverities(eventName);
-        }
+        
+        console.log("Checking event: '", eventName, "'");
+        this.setState(prevState => {
+            const updatedEventChecked = { ...prevState.eventChecked };
+            updatedEventChecked[eventName] = !updatedEventChecked[eventName];
+            return { eventChecked: updatedEventChecked };
+        }, () => {
+            if (eventName in eventSeverities) {
+                
+                console.log("Already loaded counts for event: '", eventName, "'");
+                this.displayPlot(this.state.airframe);
+            } else {
+                this.fetchEventSeverities(eventName);
+            }
+        });
     }
 
     updateStartYear(newStartYear) {
-        console.log("setting new start year to: " + newStartYear);
+        console.log(`setting new start year to: ${  newStartYear}`);
         this.setState({startYear: newStartYear, datesChanged: true});
         console.log(this.state);
     }
 
     updateStartMonth(newStartMonth) {
-        console.log("setting new start month to: " + newStartMonth);
+        console.log(`setting new start month to: ${  newStartMonth}`);
         this.setState({startMonth: newStartMonth, datesChanged: true});
         console.log(this.state);
     }
 
     updateEndYear(newEndYear) {
-        console.log("setting new end year to: " + newEndYear);
+        console.log(`setting new end year to: ${  newEndYear}`);
         this.setState({endYear: newEndYear, datesChanged: true});
         console.log(this.state);
     }
 
     updateEndMonth(newEndMonth) {
-        console.log("setting new end month to: " + newEndMonth);
+        console.log(`setting new end month to: ${  newEndMonth}`);
         this.setState({endMonth: newEndMonth, datesChanged: true});
         console.log(this.state);
     }
 
     dateChange() {
-        console.log("[severitiescard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'");
+        console.log(`[severitiescard] notifying date change 2, startYear: '${  this.state.startYear  }', startMonth: '${  this.state.startMonth  }, endYear: '${  this.state.endYear  }', endMonth: '${  this.state.endMonth  }'`);
 
-        for (let [eventName, value] of Object.entries(this.state.eventChecked)) {
-            this.state.eventChecked[eventName] = false;
+        const updatedEventChecked = { ...this.state.eventChecked };
+        for (const [eventName] of Object.entries(updatedEventChecked)) {
+            updatedEventChecked[eventName] = false;
         }
-        this.state.datesChanged = false;
-        this.setState(this.state);
+        this.setState({
+            eventChecked: updatedEventChecked,
+            datesChanged: false
+        });
 
         eventSeverities = {};
         this.displayPlot(this.state.airframe);
@@ -621,23 +643,7 @@ class SeveritiesPage extends React.Component {
 
     }
 
-    updateTags(tagName) {
-        this.setState({tagName, datesChanged: true});
-
-    }
-
-    tagNameChange(tagName) {
-        this.setState({tagName}, () => this.displayPlot(this.state.airframe));
-
-    }
-
     render() {
-        //console.log(systemIds);
-
-        const numberOptions = {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        };
 
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -687,7 +693,7 @@ class SeveritiesPage extends React.Component {
                                                     if (eventName === "ANY Event") return (
                                                         <div key={index} className="form-check">
                                                             <input className="form-check-input" type="checkbox" value=""
-                                                                   id={"event-check-" + index}
+                                                                   id={`event-check-${  index}`}
                                                                    checked={this.state.eventChecked[eventName]}
                                                                    onChange={() => this.checkEvent(eventName)}
                                                                    style={{border: "1px solid red"}}/>
@@ -701,7 +707,7 @@ class SeveritiesPage extends React.Component {
                                                         <div key={index} className="form-check">
                                                             <input disabled={this.state.eventsEmpty[eventName]}
                                                                    className="form-check-input" type="checkbox" value=""
-                                                                   id={"event-check-" + index}
+                                                                   id={`event-check-${  index}`}
                                                                    checked={this.state.eventChecked[eventName]}
                                                                    onChange={() => this.checkEvent(eventName)}></input>
 
@@ -739,9 +745,6 @@ class SeveritiesPage extends React.Component {
 }
 
 
-var severitiesPage = ReactDOM.render(
-    <SeveritiesPage/>,
-    document.querySelector('#severities-page')
-);
-
-severitiesPage.displayPlot("All Airframes");
+const container = document.getElementById('severities-page');
+const root = ReactDOM.createRoot(container);
+root.render(<SeveritiesPage/>);

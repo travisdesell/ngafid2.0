@@ -31,7 +31,7 @@ class CreateAccountCard extends React.Component {
                 fleetSelectName: ""
             },
             checkedRadio: null,
-        }
+        };
     }
 
 
@@ -41,10 +41,10 @@ class CreateAccountCard extends React.Component {
         const fleetName = params.get('fleet_name');
         const email = params.get('email');
         if (fleetName) {
-            let checkBox = $("input[name=accountTypeRadios]");
-            let fleetSelect = $("#fleetSelect")
-            let emailInput = $("#createEmail")
-            let confirmEmailInput = $("#confirmEmail")
+            const checkBox = $("input[name=accountTypeRadios]");
+            const fleetSelect = $("#fleetSelect");
+            const emailInput = $("#createEmail");
+            const confirmEmailInput = $("#confirmEmail");
             checkBox.prop('checked', true);
             checkBox.val("existingFleet");
             this.setState({
@@ -68,18 +68,20 @@ class CreateAccountCard extends React.Component {
             });
 
         }
+
+        this.setFleets(fleetNames);
+
     }
 
     setFleets(fleets) {
-        this.state.fleets = fleets;
-        this.setState(this.state);
+        this.setState({ fleets: fleets });
     }
 
     submitAccount(event) {
         event.preventDefault();
 
         let valid = true;
-        for (let property in this.state.valid) {
+        for (const property in this.state.valid) {
             console.log(property);
 
             if (property == false) {
@@ -91,7 +93,7 @@ class CreateAccountCard extends React.Component {
         if (!valid) return;
         if (this.state.checkedRadio == null) return;
 
-        var submissionData = {
+        const submissionData = {
             email: $("#createEmail").val(),
             password: $("#createPassword").val(),
             firstName: $("#createFirstName").val(),
@@ -115,7 +117,7 @@ class CreateAccountCard extends React.Component {
             return;
         }
 
-        let checkedRadio = this.state.checkedRadio;
+        const checkedRadio = this.state.checkedRadio;
         $("#loading").show();
 
         $.ajax({
@@ -123,14 +125,15 @@ class CreateAccountCard extends React.Component {
             url: '/api/auth/register',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+
+                console.log("Received response: ", response);
 
                 $("#loading").hide();
 
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
+                    console.log("Displaying error modal!");
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
@@ -146,168 +149,247 @@ class CreateAccountCard extends React.Component {
                 }
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
-            async: true
         });
 
         console.log("submitting account!");
     }
 
     validateAccountType() {
-        console.log("validating account type");
+        console.log("Validating account type...");
 
-        let checkedRadio = $("input[name=accountTypeRadios]:checked").val();
-        this.state.checkedRadio = checkedRadio;
-        this.setState(this.state);
-        console.log("checked: " + this.state.checkedRadio);
+        const checkedRadio = $("input[name=accountTypeRadios]:checked").val();
+        this.setState({ checkedRadio: checkedRadio }, () => {
+            console.log("Checked: ", this.state.checkedRadio);
+        });
 
         if (checkedRadio == "existingFleet") {
             this.validateFleetSelect();
         } else if (checkedRadio == "newFleet") {
             this.validateFleetName();
         }
+
     }
 
     validateFleetName() {
-        console.log("validating fleet name");
-        let re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.\,a-zA-Z0-9 ]*/;
-        let fleetName = $("#newFleetName").val().trim();
-        console.log("re.test(fleetName): '" + re.test(fleetName)) + "'";
-        console.log("fleeName.length: " + fleetName.length);
 
-        this.state.valid.fleetName = re.test(fleetName) && fleetName.length < 128 && fleetName.length > 0;
-        this.setState(this.state);
+        console.log("Validating fleet name");
+        const re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.\,a-zA-Z0-9 ]*/; //eslint-disable-line no-useless-escape
+        const fleetName = $("#newFleetName").val().trim();
+        console.log(`re.test(fleetName): '${  re.test(fleetName)  }'`);
+        console.log("fleeName.length: ", fleetName.length);
+
+        this.setState(prevState => ({
+            valid: {
+                ...prevState.valid,
+                fleetName: re.test(fleetName) && fleetName.length < 128 && fleetName.length > 0
+            }
+        }));
     }
 
     validateFleetSelect() {
-        console.log("validating fleet select");
-        let fleetSelect = $("#fleetSelect").val();
-        console.log("selected: " + fleetSelect);
 
-        this.state.valid.fleetSelect = fleetSelect != "NONE";
-        this.state.valid.fleetSelectName = fleetSelect;
-        this.setState(this.state);
+        console.log("Validating fleet select");
+        const fleetSelect = $("#fleetSelect").val();
+        console.log("Selected: ", fleetSelect);
+
+        this.setState(prevState => ({
+            valid: {
+                ...prevState.valid,
+                fleetSelect: fleetSelect != "NONE",
+                fleetSelectName: fleetSelect
+            }
+        }));
+
     }
 
     validateEmails() {
-        let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-        let email = $("#createEmail").val();
-        this.state.valid.email = re.test(String(email).toLowerCase());
+        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
-        let confirmEmail = $("#confirmEmail").val();
-        this.state.valid.confirmEmail = re.test(String(confirmEmail).toLowerCase());
+        const email = $("#createEmail").val();
+        const confirmEmail = $("#confirmEmail").val();
 
-        this.state.valid.emailMatch = email == confirmEmail;
-        this.state.valid.emailEmpty = email.length == 0;
-        this.state.valid.confirmEmailEmpty = confirmEmail.length == 0;
+        this.setState(prevState => ({
+            valid: {
+                ...prevState.valid,
+                email: re.test(String(email).toLowerCase()),
+                confirmEmail: re.test(String(confirmEmail).toLowerCase()),
+                emailMatch: email == confirmEmail,
+                emailEmpty: email.length == 0,
+                confirmEmailEmpty: confirmEmail.length == 0
+            }
+        }));
 
-        this.setState(this.state);
     }
 
     validatePasswords() {
-        let re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.,a-zA-Z0-9 ]*/;
-        let password = $("#createPassword").val();
-        this.state.valid.password = re.test(password) && password.length > 10;
 
-        let confirmPassword = $("#confirmPassword").val();
-        this.state.valid.confirmPassword = re.test(confirmPassword) && confirmPassword.length > 10;
+        const re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.,a-zA-Z0-9 ]*/; //eslint-disable-line no-useless-escape
+        const password = $("#createPassword").val();
+        const confirmPassword = $("#confirmPassword").val();
 
-        this.state.valid.passwordMatch = password == confirmPassword;
-        this.state.valid.passwordEmpty = password.length == 0;
-        this.state.valid.confirmPasswordEmpty = confirmPassword.length == 0;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                password: re.test(password) && (password.length > 10),
+                confirmPassword: re.test(confirmPassword) && (confirmPassword.length > 10),
+                passwordMatch: password == confirmPassword,
+                passwordEmpty: password.length == 0,
+                confirmPasswordEmpty: confirmPassword.length == 0
+            }
+        });
 
-        this.setState(this.state);
     }
 
     validateFirstName() {
-        let firstName = $("#createFirstName").val();
-        this.state.valid.firstName = firstName.length < 64;
-        this.setState(this.state);
+
+        const firstName = this.firstNameInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                firstName: (firstName.length < 64)
+            }
+        });
+
     }
 
     validateLastName() {
-        let lastName = $("#createFirstName").val();
-        this.state.valid.lastName = lastName.length < 64;
-        this.setState(this.state);
+
+        const lastName = this.lastNameInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                lastName: (lastName.length < 64)
+            }
+        });
+
     }
 
     validateCountry() {
-        let country = $("#countrySelect").val();
-        this.state.valid.country = country.length < 128;
-        this.setState(this.state);
+
+        const country = this.countrySelect.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                country: (country.length < 128)
+            }
+        });
+
     }
 
     validateState() {
-        let state = $("#stateSelect").val();
-        this.state.valid.state = state.length < 64;
-        this.setState(this.state);
+
+        const state = this.stateSelect.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                state: (state.length < 64)
+            }
+        });
+
     }
 
     validateCity() {
-        let city = $("#createCity").val();
-        this.state.valid.city = city.length < 64;
-        this.setState(this.state);
+
+        const city = this.cityInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                city: (city.length < 64)
+            }
+        });
+
     }
 
     validateAddress() {
-        let address = $("#createAddress").val();
-        this.state.valid.address = address.length < 256;
-        this.setState(this.state);
+
+        const address = this.addressInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                address: (address.length < 256)
+            }
+        });
+
     }
 
     validatePhone() {
-        let phone = $("#createPhoneNumber").val();
-        console.log("phone: '" + phone + "'");
 
+        const phone = this.phoneNumberInput.current.value;
+        console.log("Phone: '", phone, "'");
+
+        let phoneValid;
+        
+        //Empty string --> Valid
         if (phone == "") {
-            this.state.valid.phone = true;
+            phoneValid = true;
+
+        //Otherwise, check the regex
         } else {
-            let re = /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
-            this.state.valid.phone = re.test(phone) && phone.length < 24;
+            const re = /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+            phoneValid = re.test(phone) && (phone.length < 24);
         }
 
-        this.setState(this.state);
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                phone: phoneValid
+            }
+        });
+
     }
 
     validateZip() {
-        let zip = $("#createZipCode").val();
-        console.log("zip: '" + zip + "'");
 
+        const zip = this.zipCodeInput.current.value;
+        console.log("Zip Code: '", zip, "'");
+
+        let zipValid;
+
+        //Empty string --> Valid
         if (zip == "") {
-            this.state.valid.zip = true;
+            zipValid = true;
+        
+        //Otherwise, check the regex
         } else {
-            let re = /^\d{5}(?:[-\s]\d{4})?$/;
-            this.state.valid.zip = re.test(zip) && zip.length < 16;
+            const re = /^\d{5}(?:[-\s]\d{4})?$/;
+            zipValid = re.test(zip) && (zip.length < 16);
         }
 
-        this.setState(this.state);
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                zip: zipValid
+            }
+        });
+
     }
 
     render() {
-        const hidden = this.props.hidden;
+        
         const bgStyle = {opacity: 0.8};
         const fgStyle = {opacity: 1.0};
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '8px'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '150px',
             flex: '0 0 150px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let validationMessageStyle = {
+        const validationMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -417,14 +499,14 @@ class CreateAccountCard extends React.Component {
             }
         }
 
-        let submitDisabled = !validationHidden;
+        const submitDisabled = !validationHidden;
         let fleets = [];
 
         if (typeof this.state.fleets != 'undefined') {
             fleets = this.state.fleets;
         }
 
-        console.log("rendering with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
+        console.log(`rendering with validation message: '${  validationMessage  }' and validation visible: ${  validationHidden}`);
 
         return (
 
@@ -564,7 +646,7 @@ class CreateAccountCard extends React.Component {
                                         <option value="COD">Congo, the Democratic Republic of the</option>
                                         <option value="COK">Cook Islands</option>
                                         <option value="CRI">Costa Rica</option>
-                                        <option value="CIV">Côte d'Ivoire</option>
+                                        <option value="CIV">Côte d&#39;Ivoire</option>
                                         <option value="HRV">Croatia</option>
                                         <option value="CUB">Cuba</option>
                                         <option value="CUW">Curaçao</option>
@@ -627,11 +709,11 @@ class CreateAccountCard extends React.Component {
                                         <option value="KAZ">Kazakhstan</option>
                                         <option value="KEN">Kenya</option>
                                         <option value="KIR">Kiribati</option>
-                                        <option value="PRK">Korea, Democratic People's Republic of</option>
+                                        <option value="PRK">Korea, Democratic People&#39;s Republic of</option>
                                         <option value="KOR">Korea, Republic of</option>
                                         <option value="KWT">Kuwait</option>
                                         <option value="KGZ">Kyrgyzstan</option>
-                                        <option value="LAO">Lao People's Democratic Republic</option>
+                                        <option value="LAO">Lao People&#39;s Democratic Republic</option>
                                         <option value="LVA">Latvia</option>
                                         <option value="LBN">Lebanon</option>
                                         <option value="LSO">Lesotho</option>
@@ -967,10 +1049,6 @@ class CreateAccountCard extends React.Component {
     }
 }
 
-var createAccountCard = ReactDOM.render(
-    <CreateAccountCard/>,
-    document.querySelector('#create-account-card')
-);
-
-createAccountCard.setFleets(fleetNames);
-
+const container = document.querySelector("#create-account-card");
+const root = ReactDOM.createRoot(container);
+root.render(<CreateAccountCard/>);

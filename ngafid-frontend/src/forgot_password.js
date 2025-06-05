@@ -19,50 +19,62 @@ class ForgotPassword extends React.Component {
     }
 
     validateEmail() {
-        let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-        let email = $("#email").val();
+
+        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
+        const email = $("#email").val();
         console.log(email);
-        this.state.validEmail = re.test(String(email).toLowerCase());
-        this.state.emailEmpty = email.length == 0;
-        this.state.error = false;
-        this.setState(this.state);
+
+        this.setState({
+            validEmail: re.test(String(email).toLowerCase()),
+            emailEmpty: email.length === 0,
+            error: false
+        });
     }
 
     submit() {
 
         $("#loading").show();
-        var submissionData = {
+        const submissionData = {
             email: $("#email").val(),
         };
         console.log(this.state);
-        let forgotPasswordObj = this;
+
         $.ajax({
             type: 'POST',
             url: '/api/auth/forgot-password',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
+            async: true,
+            success: (response) => {
+
                 $("#loading").hide();
                 if (response.registeredEmail) {
-                    forgotPasswordObj.state.validEmail = true;
-                    forgotPasswordObj.state.registeredEmail = true;
-                    forgotPasswordObj.setState(forgotPasswordObj.state);
+
+                    this.setState({
+                        validEmail: true,
+                        registeredEmail: true,
+                        error: false
+                    });
                     return true;
+
                 } else {
-                    forgotPasswordObj.state.registeredEmail = false;
-                    forgotPasswordObj.state.validEmail = false;
-                    forgotPasswordObj.state.error = true;
-                    forgotPasswordObj.setState(forgotPasswordObj.state);
+
+                    this.setState({
+                        registeredEmail: false,
+                        validEmail: false,
+                        error: true
+                    });
                     return false;
+
                 }
+
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
-            async: true
         });
-        this.setState(forgotPasswordObj);
+        this.setState(this);
     }
 
     render() {
@@ -70,23 +82,23 @@ class ForgotPassword extends React.Component {
         let validationMessage = "";
         let validationHidden = true;
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '8px'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '150px',
             flex: '0 0 150px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let validationMessageStyle = {
+        const validationMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -104,9 +116,9 @@ class ForgotPassword extends React.Component {
             validationHidden = false;
         }
 
-        let submitDisabled = !validationHidden;
+        const submitDisabled = !validationHidden;
 
-        let forgotPasswordCard = (
+        const forgotPasswordCard = (
             <div className="card mt-4">
                 <h5 className="card-header">Forgot Password</h5>
                 <div className="card-body">
@@ -138,7 +150,8 @@ class ForgotPassword extends React.Component {
                 </div>
             </div>
         );
-        let resetPaaswordCard = (
+
+        const resetPaaswordCard = (
             <div className="card mt-4">
                 <h5 className="card-header">Reset Password</h5>
                 <div className="card-body">
@@ -148,7 +161,8 @@ class ForgotPassword extends React.Component {
                     </p>
                 </div>
             </div>
-        )
+        );
+
         return (
             <div className="container">
                 <div className="row justify-content-center">
@@ -164,7 +178,6 @@ class ForgotPassword extends React.Component {
     }
 }
 
-var forgotPassword = ReactDOM.render(
-    <ForgotPassword/>,
-    document.querySelector('#forgot_password-card')
-)
+const container = document.querySelector("#forgot_password-page");
+const root = ReactDOM.createRoot(container);
+root.render(<ForgotPassword />);
