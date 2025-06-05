@@ -1,8 +1,7 @@
 import 'bootstrap';
-import React, {Component} from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
 import {loginModal} from "./login.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
@@ -74,9 +73,8 @@ class HomeNavbar extends React.Component {
     }
 }
 
-var navbar = ReactDOM.render(
-    <HomeNavbar/>,
-    document.querySelector('#navbar')
-);
+const container = document.querySelector("#navbar");
+const root = ReactDOM.createRoot(container);
+const navbar = root.render(<HomeNavbar/>);
 
 export {navbar};

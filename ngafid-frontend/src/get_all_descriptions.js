@@ -8,8 +8,9 @@ export default function GetAllDescriptions() {
     $.ajax({
         type: 'GET',
         url: '/api/event/definition/description',
-        success: function (response) {
-            console.log("received response: " + response);
+        async: false,
+        success: (response) => {
+            console.log(`Received response: ${  response}`);
 
             $('#loading').hide();
 
@@ -19,12 +20,11 @@ export default function GetAllDescriptions() {
 
             descriptions = response;
         },
-        error: function (jqXHR, textStatus, errorThrown) {
+        error: (jqXHR, textStatus, errorThrown) => {
             errorModal.show("Error Getting Event Description", errorThrown);
         },
-        async: false
     });
 
-    console.log("Returning descriptions: " + descriptions);
+    console.log(`Returning descriptions: ${  descriptions}`);
     return descriptions;
 }

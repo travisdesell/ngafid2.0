@@ -1,9 +1,8 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
-import {fromLonLat, toLonLat} from 'ol/proj.js';
-import { map, styles, layers, Colors } from "./map.js";
+import {fromLonLat} from 'ol/proj.js';
+import { map } from "./map.js";
 
 class Itinerary extends React.Component {
 
@@ -50,7 +49,7 @@ class Itinerary extends React.Component {
         console.log("Setting selected layer: ", selectedLayer);
         for (let i = 0; i < this.props.layers.length; i++) {
 
-            let layer = this.props.layers[i];
+            const layer = this.props.layers[i];
             layer.setVisible(layer.get('name').includes(selectedLayer));
             console.log("Setting layer: ", layer);
 
@@ -112,7 +111,7 @@ class Itinerary extends React.Component {
 
                 <div className={cellClasses} style={cellStyle}>
                     <div style={{flex: "0 0"}}>
-                        <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+                        <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event);}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                     </div>
 
                     <button className="m-1 btn btn-outline-dark dropdown-toggle" style={styleButton} type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -138,7 +137,7 @@ class Itinerary extends React.Component {
 
                             //Got runway, add it to the identifier
                             if (stop.runway != null)
-                                identifier += " (" + stop.runway + ")";
+                                identifier += ` (${  stop.runway  })`;
 
                             return (
                                 <button className={buttonClasses} key={index} style={styleButton} onClick={() => this.itineraryClicked(index)}>

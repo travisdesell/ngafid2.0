@@ -16,26 +16,26 @@ class TraceButtons extends React.Component {
     traceClicked(seriesName) {
         this.props.showPlot();
 
-        let parentFlight = this.state.parentFlight;
+        const parentFlight = this.state.parentFlight;
 
         //check to see if we've already loaded this time series
         if (!(seriesName in parentFlight.state.traceIndex)) {
-            var thisTrace = this;
 
             console.log(seriesName);
-            console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
+            console.log(`seriesName: ${  seriesName  }, flightId: ${  this.props.flightId}`);
 
             $.ajax({
                 type: 'GET',
                 url: `/api/flight/${this.props.flightId}/double-series/${seriesName}`,
-                success: function (response) {
-                    var trace = {
+                async: true,
+                success: (response) => {
+
+                    const trace = {
                         x: response.x,
                         y: response.y,
                         mode: "lines",
-                        //marker : { size: 1},
-                        name: thisTrace.props.flightId + " - " + seriesName
-                    }
+                        name: `${this.props.flightId  } - ${  seriesName}`
+                    };
 
                     //set the trace number for this series
                     parentFlight.state.traceIndex[seriesName] = $("#plot")[0].data.length;
@@ -44,32 +44,35 @@ class TraceButtons extends React.Component {
 
                     Plotly.addTraces('plot', [trace]);
                 },
-                error: function (jqXHR, textStatus, errorThrown) {
+                error: (jqXHR, textStatus, errorThrown) => {
                     errorModal.show("Error Loading Flight Coordinates", errorThrown);
                 },
-                async: true
             });
+
         } else {
+
             //toggle visibility for this series
-            let visibility = !parentFlight.state.traceVisibility[seriesName];
+            const visibility = !parentFlight.state.traceVisibility[seriesName];
             parentFlight.state.traceVisibility[seriesName] = visibility;
             parentFlight.setState(parentFlight.state);
 
-            console.log("toggled visibility to: " + visibility);
+            console.log("Toggled Visibility to: ", visibility);
 
-            Plotly.restyle('plot', {visible: visibility}, [parentFlight.state.traceIndex[seriesName]])
+            Plotly.restyle('plot', {visible: visibility}, [parentFlight.state.traceIndex[seriesName]]);
+
         }
+
     }
 
     render() {
-        let cellClasses = "d-flex flex-row pb-1";
-        let cellStyle = {"overflowX": "auto"};
-        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const cellClasses = "d-flex flex-row pb-1";
+        const cellStyle = {"overflowX": "auto"};
+        const buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex: "0 0 10em"
         };
 
-        let parentFlight = this.state.parentFlight;
+        const parentFlight = this.state.parentFlight;
 
         return (
 
@@ -91,8 +94,8 @@ class TraceButtons extends React.Component {
 
                     <div className={cellClasses} style={cellStyle}>
                         {
-                            parentFlight.state.commonTraceNames.map((traceName, index) => {
-                                let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                            parentFlight.state.commonTraceNames.map((traceName) => {
+                                const ariaPressed = parentFlight.state.traceVisibility[traceName];
                                 let active = "";
                                 if (ariaPressed) active = " active";
 
@@ -108,8 +111,8 @@ class TraceButtons extends React.Component {
                     </div>
                     <div className={cellClasses} style={cellStyle}>
                         {
-                            parentFlight.state.uncommonTraceNames.map((traceName, index) => {
-                                let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                            parentFlight.state.uncommonTraceNames.map((traceName) => {
+                                const ariaPressed = parentFlight.state.traceVisibility[traceName];
                                 let active = "";
                                 if (ariaPressed) active = " active";
 

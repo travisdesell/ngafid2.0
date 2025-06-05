@@ -7,8 +7,7 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import {EmailSettingsTableManager} from "./email_settings.js";
 
 
-import './index.css'          //<-- include Tailwind
-import { setSourceMapsEnabled } from 'process';
+import './index.css';          //<-- include Tailwind
 
 
 
@@ -29,11 +28,11 @@ class AccessCheck extends React.Component {
         const fleetUserRow = this.props.fleetUserRow;
         const userId = this.props.userId;
 
-        const radioId = (lcType + "AccessRadio" + userId);
+        const radioId = (`${lcType  }AccessRadio${  userId}`);
 
         return (
             <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name={"accessRadios" + userId} id={radioId}
+                <input className="form-check-input" type="radio" name={`accessRadios${  userId}`} id={radioId}
                        value={ucType} checked={ucType == userAccess} onChange={() => fleetUserRow.checkRadio(ucType)}/>
                 <label className="form-check-label" htmlFor={radioId}>
                     {slcType}
@@ -85,25 +84,20 @@ class FleetUserRow extends React.Component {
             accessType : fleetUser.fleetAccess.accessType
         };
 
-        const thisFleetRow = this;
-
         $.ajax({
             type: 'PATCH',
             url: `/api/user/${fleetUser.id}/fleet-access`,
             data: submissionData,
             dataType: 'json',
             async: true,
-            success: function (response) {
+            success: (response) => {
+                
                 $('#loading').hide();
 
                 if (response && response.errorTitle) {
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
-
-                let previousAccess = fleetUser.fleetAccess.originalAccess;
-                let newAccess = fleetUser.fleetAccess.accessType;
-
 
                 const updatedFleetUser = {
                     ...fleetUser,
@@ -113,17 +107,16 @@ class FleetUserRow extends React.Component {
                     }
                 };
 
-                thisFleetRow.props.onFleetUserUpdated(updatedFleetUser);
-
-                thisFleetRow.setState({ fleetUser: updatedFleetUser });
+                this.props.onFleetUserUpdated(updatedFleetUser);
+                this.setState({ fleetUser: updatedFleetUser });
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
                 errorModal.show("Error Loading Uploads", errorThrown);
             },
         });
-    }
+    };
 
     render() {
 
@@ -134,14 +127,14 @@ class FleetUserRow extends React.Component {
         const buttonVisible = (fleetUser.fleetAccess.originalAccess != accessType);
 
         const rowIndex = this.props.index;
-        const rowClassName = (this.props.isDenied ? `italic opacity-50` : `opacity-100 ${rowIndex%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`)
+        const rowClassName = (this.props.isDenied ? `italic opacity-50` : `opacity-100 ${rowIndex%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`);
 
         const nameExists = (fleetUser.firstName || fleetUser.lastName);
         const userNameDisplay = nameExists ? `${fleetUser.firstName} ${fleetUser.lastName}` : "Unknown Name...";
         const userNameClassName = nameExists ? `truncate whitespace-nowrap overflow-hidden` : `truncate whitespace-nowrap overflow-hidden italic`;
 
         return (
-            <tr userid={fleetUser.id} className={rowClassName}>
+            <tr className={rowClassName}>
 
                 {/* User Email */}
                 <td className="whitespace-wrap pl-4">
@@ -196,7 +189,7 @@ class ManageFleetPage extends React.Component {
     sortAndSetUsers() {
         const {user} = this.state;
         if (user && user.fleet && Array.isArray(user.fleet.users)) {
-            const sortedUsers = [...user.fleet.users].sort((a, b) =>
+            const sortedUsers = [...user.fleet.users].sort((a) =>
                 (a.fleetAccess.accessType === "DENIED") ? 1 : -1
             );
 
@@ -235,17 +228,25 @@ class ManageFleetPage extends React.Component {
             dataType: 'json',
             async: true,
             success: (response) => {
+
                 if (response.errorTitle) {
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
-                alert('Email invite sent to ' + email + '.');
+
+                alert(`Email invite sent to ${  email  }.`);
                 $('#inviteEmail').val('');
+
             },
             error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
                 errorModal.show("Error Sending Invite");
             }
+
         });
+
     };
 
     handleSubmit = (event) => {
@@ -445,7 +446,13 @@ class ManageFleetPage extends React.Component {
     }
 }
 
-var manageFleetPage = ReactDOM.render(
-    <ManageFleetPage user={user} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
-    document.querySelector('#manage-fleet-page')
+
+const container = document.querySelector("#manage-fleet-page");
+const root = ReactDOM.createRoot(container);
+root.render(
+    <ManageFleetPage
+        user={window.user}
+        waitingUserCount={window.waitingUserCount}
+        unconfirmedTailsCount={window.unconfirmedTailsCount}
+    />
 );

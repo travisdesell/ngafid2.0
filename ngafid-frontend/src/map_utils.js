@@ -1,7 +1,7 @@
 //Static class to assist with generation of LOC-I Index and Stall Index 'heatmaps'
 import {Vector as VectorSource} from 'ol/source.js';
-import {Group, Vector as VectorLayer} from 'ol/layer.js';
-import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
+import { Vector as VectorLayer} from 'ol/layer.js';
+import { Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
 
@@ -10,9 +10,9 @@ import LineString from 'ol/geom/LineString.js';
 // They should add to 1.0 so if one of them is 0, the resulting color
 // will just be the other color (e.g. w0 is 0 then the resulting color will be the same as c1)
 function interpolateColors(c0, w0, c1, w1) {
-    var new_color = [0.0, 0.0, 0.0];
+    const new_color = [0.0, 0.0, 0.0];
     // red = 0, green = 1, blue = 2
-    for (var i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++) {
         new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
     }
     return new_color;
@@ -22,50 +22,58 @@ function interpolateColors(c0, w0, c1, w1) {
 // This will get the color for a given p(LOC)
 // This can probably be made cleaner / not use if statements and just use lists but im lazy
 function paletteAt(loc_probability) {
+
+    let c0, c1, weight, w0, w1;
+
     if (loc_probability < 0.8) {
-        var c0 = [0, 255, 0]; // green
-        var c1 = [255, 255, 0]; // yellow
+        c0 = [0, 255, 0];   // green
+        c1 = [255, 255, 0]; // yellow
 
         // This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
-        var weight = loc_probability / 0.8;
-        var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
-        var w1 = weight;
+        weight = loc_probability / 0.8;
+        w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
+        w1 = weight;
 
         return interpolateColors(c0, w0, c1, w1);
+
     } else if (loc_probability >= 0.8 && loc_probability < 1.0) {
+
         // Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
-        var c0 = [255, 255, 0];//yellow
-        var c1 = [255, 0, 0];//red
+        c0 = [255, 255, 0]; //yellow
+        c1 = [255, 0, 0];   //red
 
         // The minimum value of this will be 0.0 and max is 0.2
-        var numerator = loc_probability - 0.8;
+        const numerator = loc_probability - 0.8;
 
         // value range is 0.0 to 1.0
-        var weight = numerator / 0.2;
-        var w0 = 1.0 - weight;
-        var w1 = weight;
+        weight = numerator / 0.2;
+        w0 = 1.0 - weight;
+        w1 = weight;
 
         return interpolateColors(c0, w0, c1, w1);
+
     } else {
-        // red
-        return [255, 0, 0];
+
+        return [255, 0, 0]; // red
+
     }
+    
 }
 
 
 function paletteGenerator(colors, pos) {
     return function (p) {
-        let length = colors.length;
-        for (var i = 0; i < length - 1; i++) {
+        const length = colors.length;
+        for (let i = 0; i < length - 1; i++) {
             if (p <= pos[i + 1]) {
-                let diff = pos[i + 1] - pos[i];
-                let w0 = 1 - (p - pos[i]) / diff;
-                let w1 = 1 - (pos[i + 1] - p) / diff;
+                const diff = pos[i + 1] - pos[i];
+                const w0 = 1 - (p - pos[i]) / diff;
+                const w1 = 1 - (pos[i + 1] - p) / diff;
                 return interpolateColors(colors[i], w0, colors[i + 1], w1);
             }
         }
         return colors[length - 1];
-    }
+    };
 }
 
 /**
@@ -76,11 +84,11 @@ function paletteGenerator(colors, pos) {
  * @param flight the flight object that has data pertaining to the flight
  */
 function generateStallLayer(spData, layers, flight) {
-    var spPhases = [], spOutlinePhases = [];
+    const spPhases = [], spOutlinePhases = [];
     if (spData != null) {
         for(let i = 0; i < spData.length; i++){
-            let val = spData[i];
-            var feat = new Feature({
+            const val = spData[i];
+            const feat = new Feature({
                 geometry : new LineString(flight.state.points.slice(i, i+2)),
                 name : "SP"
             });
@@ -95,7 +103,7 @@ function generateStallLayer(spData, layers, flight) {
               })
             ]);
 
-            let outFeat = new Feature({
+            const outFeat = new Feature({
                 geometry : new LineString(flight.state.points.slice(i, i+2)),
                 name : "Stall Index Outline"
             });
@@ -110,7 +118,7 @@ function generateStallLayer(spData, layers, flight) {
 
     spPhases.push(flight.state.trackingPoint);
 
-    let spLayer = new VectorLayer({
+    const spLayer = new VectorLayer({
         name : 'Stall Index' ,
         description : 'Stall Index',
         nMap : false,
@@ -120,7 +128,7 @@ function generateStallLayer(spData, layers, flight) {
         })
     });
 
-    let spLayerOutline = new VectorLayer({
+    const spLayerOutline = new VectorLayer({
         name : 'Stall Index' ,
         description : 'Stall Index Outline',
         nMap : true,
@@ -149,11 +157,11 @@ function generateStallLayer(spData, layers, flight) {
  * @param flight the flight object that has data pertaining to the flight
  */
 function generateLOCILayer(lociData, layers, flight) {
-    var lociPhases = [], lociOutlinePhases = [];
+    const lociPhases = [], lociOutlinePhases = [];
     if (lociData != null) {
         for(let i = 0; i < lociData.length; i++){
-            let val = lociData[i];
-            var feat = new Feature({
+            const val = lociData[i];
+            const feat = new Feature({
                 geometry : new LineString(flight.state.points.slice(i, i+2)),
                 name : "LOC-I Index"
             });
@@ -168,7 +176,7 @@ function generateLOCILayer(lociData, layers, flight) {
               })
             ]);
 
-            let outFeat = new Feature({
+            const outFeat = new Feature({
                 geometry : new LineString(flight.state.points.slice(i, i+2)),
                 name : "LOC-I Index Outline"
             });
@@ -184,7 +192,7 @@ function generateLOCILayer(lociData, layers, flight) {
 
     lociPhases.push(flight.state.trackingPoint);
 
-    let lociLayer = new VectorLayer({
+    const lociLayer = new VectorLayer({
         name : 'LOC-I Index' ,
         description : 'LOC-I Index' ,
         nMap : false,
@@ -195,7 +203,7 @@ function generateLOCILayer(lociData, layers, flight) {
         })
     });
 
-    let lociLayerOutline = new VectorLayer({
+    const lociLayerOutline = new VectorLayer({
         name : 'LOC-I Index Outline' ,
         description : 'LOC-I Index' ,
         nMap : true,

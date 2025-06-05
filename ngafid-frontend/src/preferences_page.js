@@ -1,17 +1,8 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import Form from 'react-bootstrap/Form';
-import FormControl from 'react-bootstrap/FormControl';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Button from 'react-bootstrap/Button';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
-
-import { errorModal } from "./error_modal.js";
 import { MetricViewerSettings } from "./metricviewer_preferences.js";
 import { AirSyncSettings } from "./airsync_settings.js";
 
@@ -44,16 +35,16 @@ class PreferencesPage extends React.Component {
 
     render() {
         let adminContent = "";
-        let userNameDisplay = (
+        const userNameDisplay = (
             this.state.fullName.replace(/\s/g, '').length > 0
             ? `${this.state.fullName}'s Preferences`
             : "Your Preferences"
         );
-        console.log("FULL NAME: " + `'${this.state.fullName}'`);
+        console.log(`FULL NAME: '${this.state.fullName}'`);
 
         if (this.props.isAdmin) {
             if (this.state.airsyncEnabled) {
-                console.log("timeout is: " + this.props.airsyncTimeout);
+                console.log(`timeout is: ${  this.props.airsyncTimeout}`);
                 adminContent = (
                     <AirSyncSettings
                         isVertical={false}
@@ -115,7 +106,14 @@ class PreferencesPage extends React.Component {
 
 console.log("setting preferences page with react!");
 
-var preferencesPage = ReactDOM.render(
-    <PreferencesPage userPreferences={userPreferences} isAdmin={isAdmin} airsyncTimeout={airsync_timeout} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
-   document.querySelector('#preferences-page')
+const container = document.querySelector("#preferences-page");
+const root = ReactDOM.createRoot(container);
+root.render(
+    <PreferencesPage
+        userPreferences={userPreferences}
+        isAdmin={isAdmin}
+        airsyncTimeout={airsyncTimeout}
+        waitingUserCount={waitingUserCount}
+        unconfirmedTailsCount={unconfirmedTailsCount}
+    />
 );

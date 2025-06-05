@@ -13,7 +13,7 @@ class FlightWarning extends React.Component {
     }
 
     render() {
-        let warning = this.props.warning;
+        const warning = this.props.warning;
 
         const styleName = {flex: "0 0 25em"};
         let filenameClasses = "p-1 mr-1 card border-warning text-warning";
@@ -42,12 +42,12 @@ class FlightWarnings extends React.Component {
     }
 
     render() {
-        let flightWarnings = this.props.flightWarnings;
+        const flightWarnings = this.props.flightWarnings;
 
         return (
             <div className="m-0">
                 {
-                    flightWarnings.map((warning, index) => {
+                    flightWarnings.map((warning) => {
                         return (
                             <FlightWarning warning={warning} key={warning.id}/>
                         );
@@ -78,7 +78,7 @@ class AirSyncImport extends React.Component {
     expandClicked() {
         this.setState({
             expanded: !this.state.expanded,
-        })
+        });
         //var thisImport = this;
 
         //var submissionData = {
@@ -125,12 +125,12 @@ class AirSyncImport extends React.Component {
     }
 
     render() {
-        let expanded = this.state.expanded;
+        const expanded = this.state.expanded;
         //let uploadErrors = this.state.uploadErrors;
-        let flightWarnings = this.state.flightWarnings;
+        const flightWarnings = this.state.flightWarnings;
         //let flightErrors = this.state.flightErrors;
 
-        for (var i = 1; i < flightWarnings.length; i++) {
+        for (let i = 1; i < flightWarnings.length; i++) {
             if (flightWarnings[i - 1].filename == flightWarnings[i].filename) {
                 flightWarnings[i].sameFilename = true;
             } else {
@@ -146,7 +146,7 @@ class AirSyncImport extends React.Component {
         //}
         //}
 
-        let importInfo = this.props.importInfo;
+        const importInfo = this.props.importInfo;
         console.log(importInfo);
 
         /*
@@ -158,26 +158,18 @@ class AirSyncImport extends React.Component {
         let progressSize = importInfo.progressSize;
         let totalSize = importInfo.totalSize;
 
-        if (progressSize == undefined) progressSize = importInfo.bytesUploaded;
-        if (totalSize == undefined) totalSize = importInfo.sizeBytes;
+        if (progressSize == undefined)
+            progressSize = importInfo.bytesUploaded;
 
-        const width = ((progressSize / totalSize) * 100).toFixed(2);
-        const sizeText = (progressSize / 1000).toFixed(2).toLocaleString() + "/" + (totalSize / 1000).toFixed(2).toLocaleString() + " kB (" + width + "%)";
-        const progressSizeStyle = {
-            width: width + "%",
-            height: "24px",
-            textAlign: "left",
-            whiteSpace: "nowrap"
-        };
+        if (totalSize == undefined)
+            totalSize = importInfo.sizeBytes;
 
-        const styleName = {};
-        const styleTime = {flex: "0 0 11em"};
         const styleCount = {flex: "0 0 8em"};
         const styleStatus = {flex: "0 0 20em"};
         const styleButton = {};
 
         let statusText = "";
-        let expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        const expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
         let expandIconClasses = "fa ";
 
         let expandDivClasses = "";
@@ -189,37 +181,33 @@ class AirSyncImport extends React.Component {
             expandDivClasses = "m-0";
         }
 
-        let progressBarClasses = "progress-bar";
-        let status = importInfo.status;
-        console.log("status: " + status);
+        const status = importInfo.status;
+        console.log(`status: ${  status}`);
         let colorClasses = "";
 
         if (status == "SUCCESS") {
             statusText = "Imported";
-            progressBarClasses += " bg-success";
             colorClasses += " border-success text-success";
         } else if (status == "WARNING") {
             statusText = "Imported With Warning(s)";
-            progressBarClasses += " bg-warning";
             colorClasses += " border-warning text-warning ";
         } else if (status == "ERROR") {
             statusText = "Import Failed";
-            progressBarClasses += " bg-danger";
             colorClasses += " border-danger text-danger";
         }
 
-        let textClasses = "p-1 mr-1 card bg-light";
-        let cardClasses = textClasses + colorClasses;
+        const textClasses = "p-1 mr-1 card bg-light";
+        const cardClasses = textClasses + colorClasses;
 
-        let fillClasses = textClasses + " flex-fill";
+        const fillClasses = `${textClasses  } flex-fill`;
 
-        let inlineClasses = textClasses + " flex-row justify-content-between";
+        const inlineClasses = `${textClasses  } flex-row justify-content-between`;
 
         //<h6 className="p-1"><span className="badge badge-success">New!</span> </h6>
-        let flightNumInfo = (
+        const flightNumInfo = (
             <div className={inlineClasses} style={styleCount}>
                 <i className="fa fa-plane p-1"> <a
-                    href={'/protected/flight?flight_id=' + importInfo.flightId}>{importInfo.flightId}</a></i>
+                    href={`/protected/flight?flight_id=${  importInfo.flightId}`}>{importInfo.flightId}</a></i>
             </div>
         );
 
@@ -249,8 +237,7 @@ class ImportsPage extends React.Component {
     constructor(props) {
         super(props);
 
-        console.log("imports: ");
-        console.log(imports);
+        console.log("imports: ", this.props.imports);
 
         this.state = {
             imports: this.props.imports,
@@ -263,19 +250,18 @@ class ImportsPage extends React.Component {
     }
 
     submitFilter() {
-        var submissionData = {
+
+        const submissionData = {
             currentPage: this.state.currentPage,
             pageSize: this.state.pageSize
-        }
-
-        var importsPage = this;
+        };
 
         $.ajax({
             type: 'GET',
             url: '/api/airsync/imports',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
+            success: (response) => {
 
                 console.log(response);
 
@@ -287,12 +273,12 @@ class ImportsPage extends React.Component {
                     return false;
                 }
 
-                importsPage.setState({
+                this.setState({
                     imports: response.page,
                     numberPages: response.numberPages
                 });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Loading Flights", errorThrown);
             },
             async: true
@@ -317,15 +303,15 @@ class ImportsPage extends React.Component {
                     numberPages={this.state.numberPages}
                     pageSize={this.state.pageSize}
                     updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
+                        this.setState({ currentPage });
                     }}
                     updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
+                        this.setState({ pageSize });
                     }}
                 />
 
                 {
-                    this.state.imports.map((importInfo, index) => {
+                    this.state.imports.map((importInfo) => {
                         return (
                             <AirSyncImport importInfo={importInfo} key={importInfo.id}/>
                         );
@@ -343,10 +329,10 @@ class ImportsPage extends React.Component {
                     numberPages={this.state.numberPages}
                     pageSize={this.state.pageSize}
                     updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
+                        this.setState({ currentPage });
                     }}
                     updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
+                        this.setState({ pageSize });
                     }}
                 />
             </div>
@@ -354,8 +340,8 @@ class ImportsPage extends React.Component {
     }
 }
 
-
-var importsPage = ReactDOM.render(
-    <ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage}/>,
-    document.querySelector('#airsync-imports-page')
+const container = document.querySelector("#airsync-imports-page");
+const root = ReactDOM.createRoot(container);
+root.render(
+    <ImportsPage imports={this.state.imports} numberPages={this.state.numberPages} currentPage={this.state.currentPage}/>
 );

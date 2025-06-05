@@ -5,7 +5,7 @@ import React from "react";
 import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import TimeHeader from "./time_header.js";
+import {TimeHeader} from "./time_header.js";
 
 import Plotly from "plotly.js";
 
@@ -14,11 +14,11 @@ import "./index.css";
 
 
 airframes.unshift("All Airframes");
-var index = airframes.indexOf("Garmin Flight Display");
+const index = airframes.indexOf("Garmin Flight Display");
 if (index !== -1) airframes.splice(index, 1);
 
 
-let targetValues = {
+const targetValues = {
     flightTime: "/api/flight/time",
     yearFlightTime: "/api/flight/time/past-year",
     monthFlightTime: "/api/flight/time/past-month",
@@ -75,7 +75,7 @@ function fetchStatistic(stat, route, aggregate, successResponseHandler) {
         console.log(textStatus);
         console.log(errorThrown);
         errorModal.show("Error Loading Statistic", errorThrown);
-    }
+    };
 
     $.ajax({
         type: 'GET',
@@ -115,8 +115,7 @@ class Notifications extends React.Component {
 
     fetchStatistics() {
 
-        const notifications = this;
-        const successResponseHandler = function (response) {
+        const successResponseHandler = (response) => {
 
             console.log(`Got successful response for fetched stat: ${response}`);
 
@@ -127,14 +126,18 @@ class Notifications extends React.Component {
             }
 
             //Update the notification count
-            notifications.state.notifications[i].count = response;
-            notifications.setState(notifications.state);
+            this.setState(prevState => {
+                const notifications = prevState.notifications.map((notif, idx) =>
+                    idx === idx ? {...notif, count: response} : notif
+                );
+                return { notifications };
+            });
 
-        }
+        };
 
         console.log("Notifications -- Fetching Statistics...");
 
-        for (let [i, notif] of this.state.notifications.entries()) {
+        for (const [notif] of this.state.notifications.entries()) {
 
             //Notification has a 'name' property, fetch the statistic
             if (Object.hasOwn(notif, "name"))
@@ -159,7 +162,7 @@ class Notifications extends React.Component {
                             return (
                                 <tr key={index}>
                                     <td style={{textAlign: "right", paddingBottom: "6"}}>
-                                                <span className={'badge ' + info.badgeType}>
+                                                <span className={`badge ${  info.badgeType}`}>
                                                     <i className="fa fa-fw fa-bell" aria-hidden="true"/>
                                                     &nbsp;{Number(info.count).toLocaleString('en')}
                                                 </span>
@@ -180,7 +183,7 @@ export default class SummaryPage extends React.Component {
     constructor(props) {
         super(props);
 
-        var date = new Date();
+        const date = new Date();
         this.state = {
             airframe: "All Airframes",
             startYear: date.getFullYear(),
@@ -204,10 +207,10 @@ export default class SummaryPage extends React.Component {
 
     displayPlots(selectedAirframe) {
 
-        var countData = [];
-        var percentData = [];
+        const countData = [];
+        const percentData = [];
 
-        var fleetPercents = {
+        const fleetPercents = {
             name: this.props.aggregate ? "All Fleets" : "Your Fleet",
             type: "bar",
             orientation: "h",
@@ -219,7 +222,7 @@ export default class SummaryPage extends React.Component {
             totalFlightsCounts: []
         };
 
-        var ngafidPercents = {
+        const ngafidPercents = {
             name: this.props.aggregate ? "All Fleets" : 'All Other Fleets',
             type: 'bar',
             orientation: 'h',
@@ -231,7 +234,7 @@ export default class SummaryPage extends React.Component {
             totalFlightsCounts: []
         };
 
-        for (let [key, value] of Object.entries(this.state.eventCounts)) {
+        for (const [value] of Object.entries(this.state.eventCounts)) {
 
             //Airframe name is 'Garmin Flight Display', skip
             if (value.airframeName === "Garmin Flight Display")
@@ -261,24 +264,25 @@ export default class SummaryPage extends React.Component {
                     plot that the fleet doesn't have.
                 */
 
-                var index = ngafidPercents.y.indexOf(value.names[i]);
+                const index = ngafidPercents.y.indexOf(value.names[i]);
                 if (index !== -1) {
                     ngafidPercents.flightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
                     ngafidPercents.totalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
                 } else {
-                    let pos = ngafidPercents.y.length;
+                    const pos = ngafidPercents.y.length;
                     ngafidPercents.y.push(value.names[i]);
                     ngafidPercents.flightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
                     ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
                 }
 
                 if (airframes.indexOf(value.airframeName) >= 0) {
-                    var index = fleetPercents.y.indexOf(value.names[i]);
+                    
+                    const index = fleetPercents.y.indexOf(value.names[i]);
                     if (index !== -1) {
                         fleetPercents.flightsWithEventCounts[index] += value.flightsWithEventCounts[i];
                         fleetPercents.totalFlightsCounts[index] += value.totalFlightsCounts[i];
                     } else {
-                        let pos = fleetPercents.y.length;
+                        const pos = fleetPercents.y.length;
                         fleetPercents.y.push(value.names[i]);
                         fleetPercents.flightsWithEventCounts[pos] = value.flightsWithEventCounts[i];
                         fleetPercents.totalFlightsCounts[pos] = value.totalFlightsCounts[i];
@@ -302,7 +306,7 @@ export default class SummaryPage extends React.Component {
         //for (let j = 0; j < percentData.length; j++) {
         for (let j = percentData.length - 1; j >= 0; j--) {
 
-            let value = percentData[j];
+            const value = percentData[j];
             value.x = [];
 
             for (let i = 0; i < value.flightsWithEventCounts.length; i++) {
@@ -310,23 +314,23 @@ export default class SummaryPage extends React.Component {
                 value.x.push(100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]));
 
 
-                var fixedText = "";
+                let fixedText = "";
                 if (value.x[i] > 0 && value.x[i] < 1) {
-                    fixedText = value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2) + "%"
+                    fixedText = `${value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2)  }%`;
                 } else {
-                    fixedText = value.x[i].toFixed(2) + "%";
+                    fixedText = `${value.x[i].toFixed(2)  }%`;
                 }
                 value.hovertext.push(fixedText);
 
             }
         }
 
-        let styles = getComputedStyle(document.documentElement);
-        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
-        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
-        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+        const styles = getComputedStyle(document.documentElement);
+        const plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        const plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        const plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
-        var countLayout = {
+        const countLayout = {
             title: "Event Counts",
             barmode: "stack",
             //autosize: false,
@@ -355,7 +359,7 @@ export default class SummaryPage extends React.Component {
             }
         };
 
-        var percentLayout = {
+        const percentLayout = {
             title: "Percentage of Flights With Event",
             //autosize: false,
             //width: 500,
@@ -387,7 +391,7 @@ export default class SummaryPage extends React.Component {
         console.log("Plot bg color: ", plotBgColor);
         console.log("Plot text color: ", plotTextColor);
 
-        var config = {responsive: true}
+        const config = {responsive: true};
 
         Plotly.newPlot("event-counts-plot", countData, countLayout, config);
         Plotly.newPlot("event-percents-plot", percentData, percentLayout, config);
@@ -410,23 +414,21 @@ export default class SummaryPage extends React.Component {
     }
 
     dateChange() {
-        let startDate = this.state.startYear + "-";
-        let endDate = this.state.endYear + "-";
+        let startDate = `${this.state.startYear  }-`;
+        let endDate = `${this.state.endYear  }-`;
 
         //0 pad the months on the front
-        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        if (parseInt(this.state.startMonth) < 10) startDate += `0${  parseInt(this.state.startMonth)}`;
         else startDate += this.state.startMonth;
-        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        if (parseInt(this.state.endMonth) < 10) endDate += `0${  parseInt(this.state.endMonth)}`;
         else endDate += this.state.endMonth;
 
         const submissionData = {
-            startDate: startDate + "-01",
-            endDate: endDate + "-28"
+            startDate: `${startDate  }-01`,
+            endDate: `${endDate  }-28`
         };
 
         $("#loading").show();
-
-        let page = this;
 
         let route = "/api/event/count/by-airframe";
         if (this.props.aggregate)
@@ -439,7 +441,7 @@ export default class SummaryPage extends React.Component {
             url: route,
             data: submissionData,
             async: true,
-            success: function (response) {
+            success: (response) => {
 
                 $("#loading").hide();
 
@@ -449,12 +451,12 @@ export default class SummaryPage extends React.Component {
                     return;
                 }
 
-                page.state.eventCounts = response;
-                page.displayPlots(page.state.airframe);
-                page.setState({datesChanged: false});
+                this.setState({ eventCounts: response, datesChanged: false }, () => {
+                    this.displayPlots(this.state.airframe);
+                });
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
@@ -464,23 +466,26 @@ export default class SummaryPage extends React.Component {
     }
 
     fetchStatistics() {
-        const page = this;
 
         console.log("SummaryPage -- Fetching Statistics...");
 
         for (const [stat, route] of Object.entries(targetValues)) {
-            const successResponseHandler = function (response) {
+
+            const successResponseHandler = (response) => {
+
                 if (response.err_msg) {
                     errorModal.show(response.err_title, response.err_msg);
                     return;
                 }
 
-                var result = {};
+                const result = {};
                 result[stat] = response;
-                page.setState({statistics: {...page.state.statistics, ...result}});
-            }
+                this.setState({statistics: {...this.state.statistics, ...result}});
+
+            };
 
             fetchStatistic(stat, route, this.props.aggregate, successResponseHandler);
+
         }
 
     }
@@ -491,6 +496,7 @@ export default class SummaryPage extends React.Component {
     }
 
     FlightSummary() {
+
         let title;
         if (this.props.aggregate)
             title = "All Fleets";
@@ -599,8 +605,8 @@ export default class SummaryPage extends React.Component {
 
         //Modifes a string to be plural if the supplied is not 1
         const pluralize = (count, stringIn) => {
-            return (count === 1 ? stringIn : stringIn + "s");
-        }
+            return (count === 1 ? stringIn : `${stringIn  }s`);
+        };
 
         return (
             <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
@@ -700,13 +706,13 @@ export default class SummaryPage extends React.Component {
 
     UploadsSummary() {
 
-        let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithError);
-        let hasWarnings = (this.state.statistics.flightsWithWarning > 0);
+        const totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithError);
+        const hasWarnings = (this.state.statistics.flightsWithWarning > 0);
 
         //Modifes a string to be plural if the supplied is not 1
         const pluralize = (count, stringIn) => {
-            return (count === 1 ? stringIn : stringIn + "s");
-        }
+            return (count === 1 ? stringIn : `${stringIn  }s`);
+        };
 
         return (
             <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
@@ -916,4 +922,4 @@ export default class SummaryPage extends React.Component {
     }
 }
 
-export {SummaryPage}
+export {SummaryPage};

@@ -18,19 +18,18 @@ class UpdatePasswordPage extends React.Component {
     }
 
     clearPasswords() {
-        this.state = {
+        this.setState({
             currentPassword: "",
             newPassword: "",
             confirmPassword: ""
-        };
-
-        this.setState(this.state);
+        });
     }
 
     updatePassword(event) {
+        
         event.preventDefault();
 
-        var submissionData = {
+        const submissionData = {
             currentPassword: this.state.currentPassword,
             newPassword: this.state.newPassword,
             confirmPassword: this.state.confirmPassword
@@ -44,9 +43,10 @@ class UpdatePasswordPage extends React.Component {
             url: '/api/auth/change-password',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+
+                console.log("Received response: ", response);
 
                 $("#loading").hide();
 
@@ -56,55 +56,48 @@ class UpdatePasswordPage extends React.Component {
                     return false;
                 }
 
-                profileCard.clearPasswords();
-
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 errorModal.show("Error Submitting Account Information", errorThrown);
             },
-            async: true
         });
 
-        console.log("submitting account!");
+        console.log("Submitting account!");
     }
 
     changeCurrentPassword(event) {
-        this.state.currentPassword = event.target.value;
-        this.setState(this.state);
+        this.setState({ currentPassword: event.target.value });
     }
 
     changeNewPassword(event) {
-        this.state.newPassword = event.target.value;
-        this.setState(this.state);
+        this.setState({ newPassword: event.target.value });
     }
 
     changeConfirmPassword(event) {
-        this.state.confirmPassword = event.target.value;
-        this.setState(this.state);
+        this.setState({ confirmPassword: event.target.value });
     }
 
     render() {
-        const hidden = this.props.hidden;
 
         const fgStyle = {opacity: 1.0};
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '8px'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '150px',
             flex: '0 0 150px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let validationMessageStyle = {
+        const validationMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -112,15 +105,15 @@ class UpdatePasswordPage extends React.Component {
             color: 'red'
         };
 
-        let currentPassword = this.state.currentPassword;
-        let newPassword = this.state.newPassword;
-        let confirmPassword = this.state.confirmPassword;
+        const currentPassword = this.state.currentPassword;
+        const newPassword = this.state.newPassword;
+        const confirmPassword = this.state.confirmPassword;
 
         //passwords must have valid text
         //new must equal validate
         //current must not equal new/validate
 
-        let re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.,a-zA-Z0-9 ]*/;
+        const re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.,a-zA-Z0-9 ]*/; //eslint-disable-line no-useless-escape
 
         let passwordValidationMessage = "";
         let passwordValidationHidden = true;
@@ -158,9 +151,9 @@ class UpdatePasswordPage extends React.Component {
             passwordValidationHidden = false;
         }
 
-        let updatePasswordDisabled = !passwordValidationHidden;
+        const updatePasswordDisabled = !passwordValidationHidden;
 
-        console.log("rendering with password validation message: '" + passwordValidationMessage + "' and password validation visible: " + passwordValidationHidden);
+        console.log(`rendering with password validation message: '${  passwordValidationMessage  }' and password validation visible: ${  passwordValidationHidden}`);
 
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -191,7 +184,7 @@ class UpdatePasswordPage extends React.Component {
                                             <input type="password" className="form-control" id="currentPassword"
                                                    placeholder="Password (required)" required={true}
                                                    onChange={(event) => {
-                                                       this.changeCurrentPassword(event)
+                                                       this.changeCurrentPassword(event);
                                                    }} value={this.state.currentPassword}/>
                                         </div>
                                     </div>
@@ -204,14 +197,14 @@ class UpdatePasswordPage extends React.Component {
                                     <div className="p-2 flex-fill">
                                         <input type="password" className="form-control" id="newPassword"
                                                placeholder="Password (required)" required={true} onChange={(event) => {
-                                            this.changeNewPassword(event)
+                                            this.changeNewPassword(event);
                                         }} value={this.state.newPassword}/>
                                     </div>
                                     <div className="p-2 flex-fill">
                                         <input type="password" className="form-control" id="confirmPassword"
                                                placeholder="Confirm password (required)" required={true}
                                                onChange={(event) => {
-                                                   this.changeConfirmPassword(event)
+                                                   this.changeConfirmPassword(event);
                                                }} value={this.state.confirmPassword}/>
                                     </div>
                                 </div>
@@ -242,7 +235,11 @@ class UpdatePasswordPage extends React.Component {
     }
 }
 
-var passwordPage = ReactDOM.render(
-    <UpdatePasswordPage/>,
-    document.querySelector('#password-page')
-);
+// var passwordPage = ReactDOM.render(
+//     <UpdatePasswordPage/>,
+//     document.querySelector('#password-page')
+// );
+
+const container = document.querySelector("#password-page");
+const root = ReactDOM.createRoot(container);
+root.render(<UpdatePasswordPage/>);

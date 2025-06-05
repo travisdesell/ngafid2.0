@@ -45,14 +45,14 @@ function filterValid(filter, rules) {
         //Filter is a rule...
     } else if (filter.type == "RULE") {
 
-        let inputs = filter.inputs;
+        const inputs = filter.inputs;
 
         if (inputs[0] == 0) {
             return "Please select a rule.";
         } else {
             //console.log("checking rule valid, inputs then rule:");
             //console.log(inputs);
-            let rule = getRuleFromInput(inputs[0], rules);
+            const rule = getRuleFromInput(inputs[0], rules);
             //console.log(rule);
 
             if (rule == null) {
@@ -88,7 +88,7 @@ function filterValid(filter, rules) {
             return "";
         }
     } else {
-        return "Unknown filter type: '" + filter.type + "'";
+        return `Unknown filter type: '${  filter.type  }'`;
     }
 }
 
@@ -98,13 +98,13 @@ function recursiveValid(filters, rules) {
     if (filterValid(filters, rules) != FILTER_VALIDATE_SUCCESS)
         return false;
 
-    let subFilters = filters.filters;
+    const subFilters = filters.filters;
     for (let i = 0; i < subFilters.length; i++) {
 
         if (subFilters[i].type == "GROUP") {
 
             //Check if subgroup is valid
-            let subValid = recursiveValid(subFilters[i], rules);
+            const subValid = recursiveValid(subFilters[i], rules);
 
             //Subgroup was invalid, return false
             if (!subValid)
@@ -113,7 +113,7 @@ function recursiveValid(filters, rules) {
         } else if (subFilters[i].type == "RULE") {
 
             //Check if rule is valid
-            let subValid = (filterValid(subFilters[i], rules) == FILTER_VALIDATE_SUCCESS);
+            const subValid = (filterValid(subFilters[i], rules) == FILTER_VALIDATE_SUCCESS);
 
             //Subgroup was invalid, return false
             if (!subValid)
@@ -135,14 +135,14 @@ function recursiveValid(filters, rules) {
 export function isValidFilter(filters, rules) {
 
     //Recursively validate filter
-    let valid = recursiveValid(filters, rules);
+    const valid = recursiveValid(filters, rules);
     return valid;
 
 }
 
 function getFilterAtTreeIndexHelper(filter, treeIndex) {
 
-    console.log("Current treeIndex: " + treeIndex);
+    console.log(`Current treeIndex: ${  treeIndex}`);
     console.log("Filter: ", filter);
 
     const commaIndex = treeIndex.indexOf(",");
@@ -159,7 +159,7 @@ function getFilterAtTreeIndexHelper(filter, treeIndex) {
 
         const filterIndex = treeIndex.substr(0, commaIndex);
         const nextIndex = treeIndex.substr(commaIndex + 1);
-        console.log("nextIndex: " + nextIndex);
+        console.log(`nextIndex: ${  nextIndex}`);
 
         return getFilterAtTreeIndexHelper(filter.filters[filterIndex], nextIndex);
 
@@ -265,7 +265,7 @@ function removeFilter(filter, treeIndex) {
 
         const parentIndex = treeIndex.substr(0, treeIndex.lastIndexOf(","));
         const childIndex = treeIndex.substr(treeIndex.lastIndexOf(",") + 1);
-        console.log("parentIndex: " + parentIndex + ", childIndex: " + childIndex);
+        console.log(`parentIndex: ${  parentIndex  }, childIndex: ${  childIndex}`);
 
         const parentFilter = getFilterAtTreeIndex(filter, parentIndex);
         parentFilter.filters.splice(childIndex, 1);
@@ -327,7 +327,7 @@ class Rule extends React.Component {
                         <option value="Select Rule">Select Rule</option>
                         {
                             this.props.rules.map((ruleInfo, index) => {
-                                return (<option value={ruleInfo.name} key={"rule-" + index}>{ruleInfo.name}</option>);
+                                return (<option value={ruleInfo.name} key={`rule-${  index}`}>{ruleInfo.name}</option>);
                             })
                         }
                     </select>
@@ -366,11 +366,11 @@ class Rule extends React.Component {
 
             if (TIME_ZONE_INPUTS.includes(inputs[0])) {
 
-                var split = new Date().toString().split(" ");
+                const split = new Date().toString().split(" ");
                 console.log(split);
 
-                var timeZoneFormatted = split[split.length - 2];
-                timeZoneFormatted = timeZoneFormatted.slice(0, 6) + ":" + timeZoneFormatted.slice(6);
+                let timeZoneFormatted = split[split.length - 2];
+                timeZoneFormatted = `${timeZoneFormatted.slice(0, 6)  }:${  timeZoneFormatted.slice(6)}`;
 
                 console.log("Current time zone is: ", timeZoneFormatted);
 
@@ -405,7 +405,7 @@ class Rule extends React.Component {
                         <option value="Select Rule">Select Rule</option>
                         {
                             this.props.rules.map((ruleInfo, index) => {
-                                return (<option value={ruleInfo.name} key={"rule-" + index}>{ruleInfo.name}</option>);
+                                return (<option value={ruleInfo.name} key={`rule-${  index}`}>{ruleInfo.name}</option>);
                             })
                         }
                     </select>
@@ -419,7 +419,7 @@ class Rule extends React.Component {
                                 "date",
                                 "number",
                                 "datetime-local",
-                            ]
+                            ];
 
                             //Condition is a select...
                             if (conditionInfo.type == "select") {
@@ -427,27 +427,27 @@ class Rule extends React.Component {
                                 const flexBasis = (conditionInfo.name == "timezone") ? "375px" : "150px";
 
                                 return (
-                                    <div>
+                                    <div key={`condition-div-${  index}`}>
                                         {
                                             //No options for the given condition
                                             (conditionInfo.options.length == 0)
                                                 ?
-                                                <select disabled={true} className="form-control" key={"select-" + index}
+                                                <select disabled={true} className="form-control" key={`select-${  index}`}
                                                         value={null}>
-                                                    <option value={null} key={conditionInfo.name + "-" + index}>N/A
+                                                    <option value={null} key={`${conditionInfo.name  }-${  index}`}>N/A
                                                     </option>
-                                                    "
+                                                    &quot;
                                                 </select>
                                                 :
                                                 <select id="stateSelect" type={conditionInfo.type}
-                                                        key={"select-" + index} className="form-control"
+                                                        key={`select-${  index}`} className="form-control"
                                                         onChange={(event) => this.props.setFilter(ruleValueChange(this.props.getFilter(), this.props.treeIndex, inputs, index, event))}
                                                         style={{flexBasis: flexBasis, flexShrink: 0, marginRight: 5}}
                                                         value={inputs[index + 1]}>
                                                     {
                                                         conditionInfo.options.map((optionInfo, index) => {
                                                             return (<option value={optionInfo}
-                                                                            key={conditionInfo.name + "-" + index}>{optionInfo}</option>);
+                                                                            key={`${conditionInfo.name  }-${  index}`}>{optionInfo}</option>);
                                                         })
                                                     }
                                                 </select>
@@ -459,9 +459,9 @@ class Rule extends React.Component {
                             } else if (CONDITION_TYPES_OTHER.includes(conditionInfo.type)) {
 
                                 return (
-                                    <input type={conditionInfo.type} step="any" key={"input-" + index}
+                                    <input type={conditionInfo.type} step="any" key={`input-${  index}`}
                                            className={"form-control"} aria-describedby="valueHelp"
-                                           placeholder={"Enter " + conditionInfo.name}
+                                           placeholder={`Enter ${  conditionInfo.name}`}
                                            onChange={(event) => this.props.setFilter(ruleValueChange(this.props.getFilter(), this.props.treeIndex, inputs, index, event))}
                                            style={{flexBasis: "150px", flexShrink: 0, marginRight: 5}}
                                            value={inputs[index + 1]}/>
@@ -501,30 +501,30 @@ class Group extends React.Component {
             filterSaved: false,
             filterName: "",
             filterColor: colorRand
-        }
+        };
 
         this.handleColorChange = this.handleColorChange.bind(this);
     }
 
     toggleLoadPopover() {
-        this.state.showLoadPopover = !this.state.showLoadPopover;
-        this.setState(this.state);
+        this.setState((prevState) => ({
+            showLoadPopover: !prevState.showLoadPopover
+        }));
     }
 
     setLoadPopoverTarget(event) {
-        this.state.loadPopoverTarget = event.target;
         console.log("Setting load popover target");
-        this.setState(this.state);
+        this.setState({ loadPopoverTarget: event.target });
     }
 
     toggleSavePopover() {
-        this.state.showSavePopover = !this.state.showSavePopover;
-        this.setState(this.state);
+        this.setState((prevState) => ({
+            showSavePopover: !prevState.showSavePopover
+        }));
     }
 
     setSavePopoverTarget(event) {
-        this.state.savePopoverTarget = event.target;
-        this.setState(this.state);
+        this.setState({ savePopoverTarget: event.target });
     }
 
     setFilter(filter) {
@@ -536,7 +536,7 @@ class Group extends React.Component {
         //show resolution tooltip for a max 10s
         setTimeout(function () {
             this.props.submitFilter();
-        }.bind(this), 50)
+        }.bind(this), 50);
     }
 
     saveFilter() {
@@ -547,8 +547,6 @@ class Group extends React.Component {
     }
 
     submitChanges(filter) {
-
-        const thisFilter = this;
 
         const submissionData = {
             currentName: filter.name,
@@ -563,7 +561,7 @@ class Group extends React.Component {
             $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
             setTimeout(function () {
                 $('#modify-filter-submit-button').tooltip('hide');
-            }.bind(this), MESSAGE_BIND_PERIOD_MS)
+            }.bind(this), MESSAGE_BIND_PERIOD_MS);
 
             return;
 
@@ -573,7 +571,7 @@ class Group extends React.Component {
             $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is different from its original name, the filter color is different, or that the filter rules are different.').tooltip('show');
             setTimeout(function () {
                 $('#modify-filter-submit-button').tooltip('hide');
-            }.bind(this), MESSAGE_BIND_PERIOD_MS)
+            }.bind(this), MESSAGE_BIND_PERIOD_MS);
 
             return;
 
@@ -588,7 +586,7 @@ class Group extends React.Component {
             dataType: 'text',
             timeout: 0,
             async: true,
-            success: function (response) {
+            success: (response) => {
 
                 if (response === "DUPLICATE_PK") {
 
@@ -599,8 +597,10 @@ class Group extends React.Component {
 
                 } else {
 
-                    thisFilter.state.editingFilter = {};
-                    thisFilter.state.showLoadPopover = false;
+                    this.setState({
+                        editingFilter: {},
+                        showLoadPopover: false
+                    });
 
                     $('#modify-filter-submit-button').tooltip('hide');
                     $('#load-filter-button').tooltip('show');
@@ -610,28 +610,26 @@ class Group extends React.Component {
 
                 }
 
-                thisFilter.setState(thisFilter.state);
+                this.setState(this.state);
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.log("TF: ", thisFilter);
-                console.log("TFP: ", thisFilter.props);
-                thisFilter.props.errorModal.show("Error Loading Flights", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log("TF: ", this);
+                console.log("TFP: ", this.props);
+                this.props.errorModal.show("Error Loading Flights", errorThrown);
             }
         });
     }
 
     deleteFilterClicked(name) {
-        confirmModal.show("Confirm Delete Filter: '" + name + "'",
-            "Are you sure you wish to delete filter '" + name + "'?\n\nThis operation will remove it from your fleet, meaning it will be deleted for other users as well. This operation cannot be undone!",
+        confirmModal.show(`Confirm Delete Filter: '${  name  }'`,
+            `Are you sure you wish to delete filter '${  name  }'?\n\nThis operation will remove it from your fleet, meaning it will be deleted for other users as well. This operation cannot be undone!`,
             () => {
-                this.deleteFilter(name)
+                this.deleteFilter(name);
             });
     }
 
     deleteFilter(name) {
-
-        const thisFilter = this;
 
         console.log("Removing filter ", name);
         console.log(this.filterRef);
@@ -642,18 +640,16 @@ class Group extends React.Component {
             dataType: 'text',
             timeout: 0,
             async: true,
-            success: function (response) {
-                thisFilter.setState(thisFilter.state);
+            success: () => {
+                this.setState(this.state);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                thisFilter.props.errorModal.show("Error Loading Flights", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                this.props.errorModal.show("Error Loading Flights", errorThrown);
             }
         });
     }
 
     storeFilter(name, color) {
-
-        const thisFilter = this;
 
         const submissionData = {
             name: name,
@@ -667,12 +663,12 @@ class Group extends React.Component {
             $('#save-filter-button-card').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
             setTimeout(function () {
                 $('#save-filter-button-card').tooltip('hide');
-            }.bind(this), MESSAGE_BIND_PERIOD_MS)
+            }.bind(this), MESSAGE_BIND_PERIOD_MS);
 
             return;
         }
 
-        console.log("Storing filter " + name);
+        console.log("Storing filter ", name);
 
         $.ajax({
             type: 'POST',
@@ -681,67 +677,68 @@ class Group extends React.Component {
             dataType: 'text',
             timeout: 0,
             async: true,
-            success: function (response) {
+            success: (response) => {
                 if (response === "DUPLICATE_PK") {
                     console.log("duplicate pk detected");
                     $('#save-filter-button-card').tooltip('show');
                     setTimeout(function () {
                         $('#save-filter-button-card').tooltip('hide');
-                    }.bind(this), MESSAGE_BIND_PERIOD_MS)
+                    }.bind(this), MESSAGE_BIND_PERIOD_MS);
                 } else {
                     $('#save-filter-button-card').tooltip('hide');
                     $('#save-filter-button').tooltip('show');
 
-                    thisFilter.state.saveButtonDisabled = true;
-                    thisFilter.state.showSavePopover = false;
-                    thisFilter.state.filterSaved = true;
+                    this.setState({
+                        saveButtonDisabled: true,
+                        showSavePopover: false,
+                        filterSaved: true
+                    });
 
                     setTimeout(function () { //show success tooltip for a max 5s
                         $('#save-filter-button').tooltip('hide');
-                    }.bind(this), 5000)
+                    }.bind(this), 5000);
                 }
 
-                thisFilter.setState(thisFilter.state);
+                this.setState(this.state);
             },
 
-            error: function (jqXHR, textStatus, errorThrown) {
-                thisFilter.props.errorModal.show("Error Loading Flights", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                this.props.errorModal.show("Error Loading Flights", errorThrown);
             }
         });
     }
 
     getStoredFilters() {
+
         let storedFilters = [];
 
         $.ajax({
             type: 'GET',
             url: '/api/filter',
-            success: function (response) {
-                console.log("received filters response: ");
-                console.log(response);
+            async: false,
+            success: (response) => {
+                console.log("Received filters response: ", response);
 
                 storedFilters = response;
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log("Error getting stored filters: ", errorThrown);
+                this.props.errorModal.show("Error Getting Stored Filters", errorThrown);
             },
-            async: false
         });
 
         return storedFilters;
     }
 
     editFilter(filter) {
+
         this.props.setFilter(JSON.parse(filter.filter));
-        this.state.editingFilter = filter;
-        this.state.filterName = filter.name;
-        this.state.filterColor = filter.color;
-        this.setState(this.state);
+        this.setState({
+            editingFilter: filter,
+            filterName: filter.name,
+            filterColor: filter.color
+        });
 
-        //let target = $("load-filter-button").click(function(event){
-        //return event.target;
-        //});
-
-        //this.state.loadPopoverTarget = target;
     }
 
     setStoredFilters(filters) {
@@ -759,14 +756,8 @@ class Group extends React.Component {
         this.props.setFilter(JSON.parse(filter));
     }
 
-    renderFilterSelector(getFiltersMethod, submitMethod) {
-        let filters = getFiltersMethod();
-
-        loadFilterModal.show(filters, submitMethod);
-    }
-
     handleColorChange(event) {
-        let color = event.target.value;
+        const color = event.target.value;
         console.log(color);
 
         this.setState({
@@ -775,9 +766,10 @@ class Group extends React.Component {
     };
 
     render() {
-        var validated = false, loadFilterButtonId = "load-filter-button";
+        
+        const loadFilterButtonId = "load-filter-button";
 
-        let errorMessageStyle = {
+        const errorMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -785,35 +777,17 @@ class Group extends React.Component {
             color: 'red'
         };
 
-        let tooltipStyle = {
-            backgroundColor: 'green'
-        }
-
-        let styleButtonSq = {
+        const styleButtonSq = {
             flex: "right",
             float: "auto"
         };
 
-        let listStyle = {
-            maxHeight: "400px",
-            overflowY: "scroll"
-        }
-
-        let popoverStyle = {
-            maxHeight: "400px",
-            minWidth: "800px"
-        }
-
-        let listGrpStyle = {
-            maxHeight: "400px"
-        }
-
-        let filterPillStyle = {
+        const filterPillStyle = {
             marginRight: '4px',
             lineHeight: '4',
             opacity: '75%',
             fontSize: '100%',
-        }
+        };
 
         let errorHidden = true;
         let errorMessage = "";
@@ -826,7 +800,7 @@ class Group extends React.Component {
         //console.log("GROUP: index: " + this.props.treeIndex);
         //console.log(this.props.filters);
 
-        let andChecked = this.props.filters.condition === "AND";
+        const andChecked = (this.props.filters.condition === "AND");
         let andActive = "";
         let orActive = "";
         if (andChecked) {
@@ -838,42 +812,25 @@ class Group extends React.Component {
 
         const handleSaveClick = (event) => {
             this.toggleSavePopover();
-            validated = true;
             this.setSavePopoverTarget(event);
         };
 
-        //if (this.state.filterSaved) {
-        //$('#save-filter-button').tooltip('show');
-        //this.state.filterSaved = false;
-        //} else {
-        //// wait 15s to hide success msg
-        //setTimeout(function() { //start the timer
-        //$('#save-filter-button').tooltip('hide');
-        //}.bind(this), 15000)
-        //}
-
-        let filters = this.state.storedFilters;
+        const filters = this.state.storedFilters;
 
         console.log(filters);
-
-        let loadFilterPopoverContent = "";
-
-        let loadFilterFunction = this.handleLoadClick;
-        if (this.state.editingFilter == null) {
-            loadFilterFunction = this.handleLoadClickPersist;
-        }
-
 
         let submitHidden = true;
         let submitDisabled = true;
         if (typeof this.props.submitButtonName !== 'undefined') {
             submitHidden = false;
             submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
-            this.state.saveButtonDisabled = !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved;
-            this.state.filterSaved = false;
+            this.setState({
+                saveButtonDisabled: !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved,
+                filterSaved: false
+            });
         }
 
-        var saveCard = "";
+        let saveCard = "";
         if (this.state.showSavePopover) {
             saveCard = (
                 <div className="card m-1 float-right" style={{minWidth: "500px"}}>
@@ -888,7 +845,7 @@ class Group extends React.Component {
                             <div className="input-group-prepend">
                                 <button type="button" className="btn btn-outline-secondary"
                                         title="Assign a color to this filter"
-                                        onClick={(e) => $("#color-picker-filter").click()}>
+                                        onClick={() => $("#color-picker-filter").click()}>
                                     <span className="badge badge-pill badge-primary" style={{
                                         ...filterPillStyle,
                                         backgroundColor: this.state.filterColor,
@@ -911,7 +868,7 @@ class Group extends React.Component {
                                     id='save-filter-button-card'
                                     className="btn btn-outline-secondary"
                                     onClick={() => {
-                                        this.saveFilter()
+                                        this.saveFilter();
                                     }}
                                     data-bs-toggle="tooltip"
                                     data-bs-trigger='manual'
@@ -928,10 +885,10 @@ class Group extends React.Component {
             );
         }
 
-        var loadCard = "";
+        let loadCard = "";
         if (this.state.showLoadPopover) {
             // TODO: this sends a GET to the server every time the component is rendered...
-            let filters = this.getStoredFilters();
+            const filters = this.getStoredFilters();
             if (filters != null && filters.length > 0) {
                 loadCard = (
                     <div className="card m-1 float-right" style={{minWidth: "800px"}}>
@@ -944,8 +901,6 @@ class Group extends React.Component {
                         <div className="card-body" style={{maxHeight: "200px", overflowY: "auto"}}>
                             {
                                 filters.map((filter, index) => {
-                                    let initColor = filter.color;
-                                    let newColor = JSON.parse(JSON.stringify(this.state.filterColor)); //make copy for each index
 
                                     //Normal
                                     let editButton = (
@@ -954,13 +909,13 @@ class Group extends React.Component {
                                             <i className="fa fa-pencil" aria-hidden="true"></i>
                                         </button>
                                     );
-                                    let deleteButton = (
+                                    const deleteButton = (
                                         <button className="m-1 btn btn-danger align-right" style={styleButtonSq}
                                                 onClick={() => this.deleteFilterClicked(filter.name)}
                                                 title="Delete this filter">
                                             <i className="fa fa-trash" aria-hidden="true"></i>
                                         </button>
-                                    )
+                                    );
 
                                     let nameField = (
                                         <div style={{width: "100%"}} className="d-flex flex-row">
@@ -1024,7 +979,7 @@ class Group extends React.Component {
                                                         <div className="input-group-prepend">
                                                             <button type="button" className="btn btn-outline-secondary"
                                                                     title="Assign a different color to this filter"
-                                                                    onClick={(e) => $("#color-picker-filter-mod").click()}>
+                                                                    onClick={() => $("#color-picker-filter-mod").click()}>
                                                                 <span className="badge badge-pill badge-primary"
                                                                       style={{
                                                                           ...filterPillStyle,
@@ -1097,12 +1052,12 @@ class Group extends React.Component {
 
                     <div className="p-2 d-flex flex-row justify-content-center align-items-center">
                         <div className="btn-group btn-group-toggle" data-bs-toggle="buttons">
-                            <label className={"btn btn-outline-primary btn-sm " + andActive}
+                            <label className={`btn btn-outline-primary btn-sm ${  andActive}`}
                                    onClick={() => this.props.setFilter(andClicked(this.props.getFilter(), this.props.treeIndex))}>
                                 <input type="radio" name="options" id="option1" autoComplete="off"
                                        defaultChecked={andChecked}/>AND
                             </label>
-                            <label className={"btn btn-outline-primary btn-sm " + orActive}
+                            <label className={`btn btn-outline-primary btn-sm ${  orActive}`}
                                    onClick={() => this.props.setFilter(orClicked(this.props.getFilter(), this.props.treeIndex))}>
                                 <input type="radio" name="options" id="option2" autoComplete="off"
                                        defaultChecked={!andChecked}/>OR
@@ -1112,7 +1067,7 @@ class Group extends React.Component {
                         {/* Indicate Flight ID Filter Group */}
                         {
                             this.props.isFlightIdGroup &&
-                            <div className="ml-4 d-flex flex-row align-items-center ml-2 p-2 rounded"
+                            <div className="ml-4 d-flex flex-row align-items-center p-2 rounded"
                                  style={{backgroundColor: "#FFFFFF22"}}>
                                 <i className="fa fa-search"
                                    style={{fontSize: "1.25em", userSelect: "none", opacity: "0.75"}}/>
@@ -1148,20 +1103,20 @@ class Group extends React.Component {
                         if (filterInfo.type === "GROUP") {
 
                             return (
-                                <div className="p-2" key={this.props.treeIndex + "," + index}>
+                                <div className="p-2" key={`${this.props.treeIndex  },${  index}`}>
                                     <Group
-                                        key={this.props.treeIndex + "," + index}
-                                        treeIndex={this.props.treeIndex + "," + index}
+                                        key={`${this.props.treeIndex  },${  index}`}
+                                        treeIndex={`${this.props.treeIndex  },${  index}`}
                                         rules={this.props.rules}
                                         filters={filterInfo}
                                         getStoredFilters={() => this.props.getStoredFilters()}
                                         getFilter={() => {
-                                            return this.props.getFilter()
+                                            return this.props.getFilter();
                                         }}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                         setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
                                         getSortByColumn={() => {
-                                            return this.props.getSortByColumn
+                                            return this.props.getSortByColumn;
                                         }}
                                         isFlightIdGroup={filterInfo.isFlightIdGroup}
                                         copyFilterURL={() => this.props.copyFilterURL()}
@@ -1172,15 +1127,15 @@ class Group extends React.Component {
                         } else if (filterInfo.type === "RULE") {
 
                             return (
-                                <div className="p-2" key={this.props.treeIndex + "," + index}>
+                                <div className="p-2" key={`${this.props.treeIndex  },${  index}`}>
                                     <Rule
-                                        key={this.props.treeIndex + "," + index}
-                                        treeIndex={this.props.treeIndex + "," + index}
+                                        key={`${this.props.treeIndex  },${  index}`}
+                                        treeIndex={`${this.props.treeIndex  },${  index}`}
                                         rules={this.props.rules}
                                         filter={filterInfo}
                                         getStoredFilters={() => this.props.getStoredFilters()}
                                         getFilter={() => {
-                                            return this.props.getFilter()
+                                            return this.props.getFilter();
                                         }}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                     />
@@ -1258,13 +1213,13 @@ class Filter extends React.Component {
                     rules={this.props.rules}
                     filters={this.props.filters}
                     getFilter={() => {
-                        return this.props.getFilter()
+                        return this.props.getFilter();
                     }}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}
                     setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
                     getSortByColumn={() => {
-                        return this.props.getSortByColumn
+                        return this.props.getSortByColumn;
                     }}
                     errorModal={this.props.errorModal}
                     copyFilterURL={() => this.props.copyFilterURL()}

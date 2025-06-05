@@ -3,7 +3,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {MetricViewerSettings} from "./metricviewer_preferences.js"
+import {MetricViewerSettings} from "./metricviewer_preferences.js";
 
 import $ from 'jquery';
 
@@ -33,25 +33,22 @@ class MetricViewerSettingsModal extends React.Component {
     }
 
     getUserPreferences() {
-        let thisFlight = this;
 
         $.ajax({
             type: 'GET',
             url: '/api/user/me/metric-prefs',
-            success: function (response) {
-                console.log("got user pref response");
-                console.log(response);
+            async: false,
+            success: (response) => {
+                console.log("Got user pref response", response);
 
-                thisFlight.setState({
+                this.setState({
                     decimalPrecision: response.decimalPrecision,
                     selectedMetrics: response.flightMetrics
                 });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.log("Error getting upset data:");
-                console.log(errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log("Error getting upset data:", errorThrown);
             },
-            async: false
         });
     }
 
@@ -61,40 +58,11 @@ class MetricViewerSettingsModal extends React.Component {
     }
 
     render() {
-        let showThis = this.state.show;
 
-        let formGroupStyle = {
-            marginBottom: '8px'
-        };
-
-        let formHeaderStyle = {
-            width: '150px',
-            flex: '0 0 150px'
-        };
-
-        var style = {
-            //top : this.props.placement[1] + this.state.navbarWidth,
-            //left : this.props.placement[0],
-            //display : this.props.on,
-            minWidth: 320
-        }
-
-        let labelStyle = {
-            padding: '7 0 7 0',
-            margin: '0',
-            display: 'block',
-            textAlign: 'right'
-        };
-
-        let validationMessageStyle = {
-            padding: '7 0 7 0',
-            margin: '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        console.log("rendering metric settings modal with confirm title: '" + this.state.title + "' and message: " + this.state.message);
+        console.log(
+            "Rendering metric settings modal with confirm title: '", this.state.title,
+            "' and message: ", this.state.message
+        );
 
         let settingsDialog = (
             <MetricViewerSettings
@@ -105,9 +73,8 @@ class MetricViewerSettingsModal extends React.Component {
             </MetricViewerSettings>
         );
 
-        if (this.state.selectedMetrics == null || this.state.decimalPrecision == null) {
+        if (this.state.selectedMetrics == null || this.state.decimalPrecision == null)
             settingsDialog = "";
-        }
 
         return (
             <div className='modal-content'>
@@ -128,9 +95,8 @@ class MetricViewerSettingsModal extends React.Component {
     }
 }
 
-var metricViewerSettingsModal = ReactDOM.render(
-    <MetricViewerSettingsModal/>,
-    document.querySelector("#metric-settings-modal-content")
-);
+const container = document.querySelector("#metric-settings-modal-content");
+const root = ReactDOM.createRoot(container);
+const metricViewerSettingsModal = root.render(<MetricViewerSettingsModal/>);
 
 export {metricViewerSettingsModal};
