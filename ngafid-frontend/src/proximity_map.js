@@ -10,17 +10,13 @@ import { fromLonLat } from 'ol/proj';
 import TileLayer from 'ol/layer/Tile';
 import Heatmap from 'ol/layer/Heatmap';
 import VectorLayer from 'ol/layer/Vector';
-
 import OSM from 'ol/source/OSM';
 import VectorSource from 'ol/source/Vector';
-
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
-
 import Style from 'ol/style/Style';
-import Fill from 'ol/style/Fill';
-import Stroke from 'ol/style/Stroke';
-import RegularShape from 'ol/style/RegularShape';
+import Icon from 'ol/style/Icon';
+import Overlay from 'ol/Overlay';
 
 class ProximityMapPage extends React.Component {
     constructor(props) {
@@ -46,17 +42,29 @@ class ProximityMapPage extends React.Component {
             const heatmapLayer1 = new Heatmap({
                 source: heatmapSource1,
                 blur: 3,
-                radius: 2.9,
+                radius: 2,
                 opacity: 0.5,
-                gradient: ['#00f', '#0ff', '#0f0', '#ff0', '#f00']
+                gradient: [
+                    'rgba(0,255,0,0)',
+                    'rgba(0,255,0,1)',
+                    'rgba(255,255,0,1)',
+                    'rgba(255,165,0,1)',
+                    'rgba(255,0,0,1)'
+                ]
             });
 
             const heatmapLayer2 = new Heatmap({
                 source: heatmapSource2,
                 blur: 3,
-                radius: 2.9,
+                radius: 2,
                 opacity: 0.5,
-                gradient: ['#00f', '#0ff', '#0f0', '#ff0', '#f00']
+                gradient: [
+                    'rgba(0,255,0,0)',
+                    'rgba(0,255,0,1)',
+                    'rgba(255,255,0,1)',
+                    'rgba(255,165,0,1)',
+                    'rgba(255,0,0,1)'
+                ]
             });
 
             const markerLayer = new VectorLayer({
@@ -78,9 +86,50 @@ class ProximityMapPage extends React.Component {
                 })
             });
 
+            const container = document.getElementById('popup');
+            const content = document.getElementById('popup-content');
+            const closer = document.getElementById('popup-closer');
+
+            const overlay = new Overlay({
+                element: container,
+                autoPan: true,
+                autoPanAnimation: { duration: 250 }
+            });
+            map.addOverlay(overlay);
+
+            closer.onclick = () => {
+                overlay.setPosition(undefined);
+                container.style.display = 'none';
+                closer.blur();
+                return false;
+            };
+
+            map.on('singleclick', function (event) {
+                map.forEachFeatureAtPixel(event.pixel, function (feature) {
+                    const geometry = feature.getGeometry();
+                    const coord = geometry.getCoordinates();
+                    const props = feature.getProperties();
+                    if (!props.isMarker) return;
+
+                    content.innerHTML = `
+                        <div class="popup-content">
+                            <h3>Proximity Event Details</h3>
+                            <p><strong>Time:</strong> ${new Date(props.time).toLocaleString()}</p>
+                            <p><strong>Coordinates:</strong> ${coord.map(n => n.toFixed(5)).join(', ')}</p>
+                            <p><strong>Flight ID:</strong> ${props.flightId}</p>
+                            <p><strong>Airframe:</strong> ${props.flightAirframe || 'N/A'}</p>
+                            <p><strong>Other Flight ID:</strong> ${props.otherFlightId}</p>
+                            <p><strong>Other Airframe:</strong> ${props.otherFlightAirframe || 'N/A'}</p>
+                            <p><strong>Severity:</strong> ${props.severity}</p>
+                        </div>
+                    `;
+                    container.style.display = 'block';
+                    overlay.setPosition(coord);
+                });
+            });
+
             map.on('moveend', () => {
-                const zoom = map.getView().getZoom();
-                markerLayer.setVisible(zoom >= 12);
+                markerLayer.setVisible(map.getView().getZoom() >= 12);
             });
 
             this.setState({ map, heatmapLayer1, heatmapLayer2, markerSource }, async () => {
@@ -121,24 +170,19 @@ class ProximityMapPage extends React.Component {
         heatmapSource2.clear();
         markerSource.clear();
 
-        const squareStyle = new Style({
-            image: new RegularShape({
-                points: 4,
-                radius: 8,
-                angle: Math.PI / 4,
-                fill: new Fill({ color: 'blue' }),
-                stroke: new Stroke({ color: 'white', width: 1 })
+        const blackPointStyle = new Style({
+            image: new Icon({
+                src: '/images/black-point.png',
+                scale: 0.05,
+                anchor: [0.5, 0.5],
             })
         });
 
-        const starStyle = new Style({
-            image: new RegularShape({
-                points: 5,
-                radius: 10,
-                radius2: 4,
-                angle: 0,
-                fill: new Fill({ color: 'gold' }),
-                stroke: new Stroke({ color: 'black', width: 1 })
+        const redPointStyle = new Style({
+            image: new Icon({
+                src: '/images/red-point.png',
+                scale: 0.05,
+                anchor: [0.5, 0.5],
             })
         });
 
@@ -149,11 +193,22 @@ class ProximityMapPage extends React.Component {
             if (coordinates1) {
                 coordinates1.forEach(coord => {
                     const olCoord = fromLonLat(coord);
-                    heatmapSource1.addFeature(new Feature({
-                        geometry: new Point(olCoord),
-                    }));
+
+                    const feature = new Feature({ geometry: new Point(olCoord) });
+                    feature.set('weight', 0.8);
+                    heatmapSource1.addFeature(feature);
+
                     const marker = new Feature({ geometry: new Point(olCoord) });
-                    marker.setStyle(squareStyle);
+                    marker.setStyle(redPointStyle);
+                    marker.setProperties({
+                        isMarker: true,
+                        flightId: event.flightId,
+                        otherFlightId: event.otherFlightId,
+                        time: event.startTime,
+                        flightAirframe: event.flightAirframe,
+                        otherFlightAirframe: event.otherFlightAirframe,
+                        severity: event.severity
+                    });
                     markerSource.addFeature(marker);
                 });
             }
@@ -161,11 +216,22 @@ class ProximityMapPage extends React.Component {
             if (coordinates2) {
                 coordinates2.forEach(coord => {
                     const olCoord = fromLonLat(coord);
-                    heatmapSource2.addFeature(new Feature({
-                        geometry: new Point(olCoord),
-                    }));
+
+                    const feature = new Feature({ geometry: new Point(olCoord) });
+                    feature.set('weight', 0.8);
+                    heatmapSource2.addFeature(feature);
+
                     const marker = new Feature({ geometry: new Point(olCoord) });
-                    marker.setStyle(starStyle);
+                    marker.setStyle(blackPointStyle);
+                    marker.setProperties({
+                        isMarker: true,
+                        flightId: event.otherFlightId,
+                        otherFlightId: event.flightId,
+                        time: event.endTime,
+                        flightAirframe: event.otherFlightAirframe,
+                        otherFlightAirframe: event.flightAirframe,
+                        severity: event.severity
+                    });
                     markerSource.addFeature(marker);
                 });
             }
@@ -207,53 +273,8 @@ class ProximityMapPage extends React.Component {
         this.setState(prevState => ({ showEventList: !prevState.showEventList }));
     };
 
-    renderEventList = () => {
-        const { events } = this.state;
-        if (events.length === 0) return <div className="alert alert-info">No proximity events found.</div>;
-        return (
-            <div className="table-responsive">
-                <table className="table table-striped table-hover">
-                    <thead>
-                    <tr>
-                        <th>Flight ID</th>
-                        <th>Other Flight ID</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Severity</th>
-                        <th>Lateral Distance (ft)</th>
-                        <th>Vertical Distance (ft)</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {events.map(event => (
-                        <tr key={event.id}>
-                            <td>{event.flightId}</td>
-                            <td>{event.otherFlightId}</td>
-                            <td>{new Date(event.startTime).toLocaleString()}</td>
-                            <td>{new Date(event.endTime).toLocaleString()}</td>
-                            <td>
-                                    <span className={`badge badge-${event.severity > 0.7 ? 'danger' : event.severity > 0.3 ? 'warning' : 'info'}`}>
-                                        {event.severity.toFixed(2)}
-                                    </span>
-                            </td>
-                            <td>{event.lateralDistance?.toFixed(2) || 'N/A'}</td>
-                            <td>{event.verticalDistance?.toFixed(2) || 'N/A'}</td>
-                            <td>
-                                <button className="btn btn-sm btn-primary" onClick={() => this.showEventDetails?.(event.id)}>
-                                    Details
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-        );
-    };
-
     render() {
-        const { loading, error, showEventList } = this.state;
+        const { loading, error, showEventList, events } = this.state;
         return (
             <div className="container-fluid mt-4">
                 <div className="row">
@@ -274,7 +295,51 @@ class ProximityMapPage extends React.Component {
                                     </button>
                                 </div>
                                 <div id="map" style={{ height: '100vh', width: '100%', position: 'relative' }}></div>
-                                {showEventList && this.renderEventList()}
+                                <div id="popup" className="ol-popup" style={{
+                                    position: 'absolute',
+                                    backgroundColor: 'white',
+                                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                                    padding: '15px',
+                                    borderRadius: '10px',
+                                    border: '1px solid #cccccc',
+                                    bottom: '12px',
+                                    left: '-50px',
+                                    minWidth: '200px',
+                                    zIndex: 100,
+                                    display: 'none'
+                                }}>
+                                    <a href="#" id="popup-closer" className="ol-popup-closer"
+                                       style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}>
+                                        ✖
+                                    </a>
+                                    <div id="popup-content"></div>
+                                </div>
+                                {showEventList && events.length > 0 && (
+                                    <div className="table-responsive mt-3">
+                                        <table className="table table-striped table-hover">
+                                            <thead>
+                                            <tr>
+                                                <th>Flight ID</th>
+                                                <th>Other Flight ID</th>
+                                                <th>Start Time</th>
+                                                <th>End Time</th>
+                                                <th>Severity</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {events.map(event => (
+                                                <tr key={event.id}>
+                                                    <td>{event.flightId}</td>
+                                                    <td>{event.otherFlightId}</td>
+                                                    <td>{new Date(event.startTime).toLocaleString()}</td>
+                                                    <td>{new Date(event.endTime).toLocaleString()}</td>
+                                                    <td>{event.severity.toFixed(2)}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
@@ -295,7 +360,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pageContainer) {
         const pageRoot = createRoot(pageContainer);
         pageRoot.render(<ProximityMapPage />);
-    } else {
-        console.error("Could not find #proximity-map-page element!");
     }
 });
