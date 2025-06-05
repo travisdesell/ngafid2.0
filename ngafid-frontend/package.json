@@ -35,6 +35,8 @@
         "copy-webpack-plugin": "^11.0.0",
         "css-loader": "^7.1.2",
         "eslint": "^9.25.1",
+        "eslint-import-resolver-webpack": "^0.13.10",
+        "eslint-plugin-import": "^2.31.0",
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-hooks": "^5.2.0",
         "html-loader": "^5.1.0",
@@ -76,7 +78,8 @@
         "react-router-dom": "^6.30.0",
         "resium": "1.14.3",
         "spark-md5": "^3.0.1",
-        "stream-browserify": "^3.0.0"
+        "stream-browserify": "^3.0.0",
+        "ts-unused-exports": "^11.0.1"
     },
     "browserslist": [
         "defaults"
