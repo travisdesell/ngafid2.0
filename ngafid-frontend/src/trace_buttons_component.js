@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 
 import Plotly from 'plotly.js';
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 
 class TraceButtons extends React.Component {
     constructor(props) {
@@ -45,7 +45,7 @@ class TraceButtons extends React.Component {
                     Plotly.addTraces('plot', [trace]);
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                    showErrorModal("Error Loading Flight Coordinates", errorThrown);
                 },
             });
 

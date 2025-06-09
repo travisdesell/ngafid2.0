@@ -9,7 +9,7 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
 import {helpModal} from './help_modal.js';
-import {errorModal} from './error_modal.js';
+import {showErrorModal} from './error_modal.js';
 
 import $ from 'jquery';
 
@@ -94,7 +94,7 @@ class SelectAircraftModal extends React.Component {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                errorModal.show("Error Loading Aircraft", errorThrown);
+                showErrorModal("Error Loading Aircraft", errorThrown);
             },
         });
     }
@@ -118,7 +118,7 @@ class SelectAircraftModal extends React.Component {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                errorModal.show("Error Adding Aircraft", errorThrown);
+                showErrorModal("Error Adding Aircraft", errorThrown);
             },
         });
     }
@@ -145,7 +145,7 @@ class SelectAircraftModal extends React.Component {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                errorModal.show("Error Removing Aircraft", errorThrown);
+                showErrorModal("Error Removing Aircraft", errorThrown);
             },
         });
     }

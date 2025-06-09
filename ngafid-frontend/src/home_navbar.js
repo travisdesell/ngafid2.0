@@ -1,8 +1,9 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
-import {loginModal} from "./login.js";
+// import {loginModal} from "./login.js";
+import { showLoginModal } from "./login.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
 
@@ -36,9 +37,11 @@ class NavLink extends React.Component {
 
 
 class HomeNavbar extends React.Component {
+
     attemptLogIn() {
-        console.log("showing login modal!");
-        loginModal.show();
+        console.log("Showing login modal: ...");
+        showLoginModal();
+        // loginModal.show();
     }
 
     render() {
@@ -74,7 +77,7 @@ class HomeNavbar extends React.Component {
 }
 
 const container = document.querySelector("#navbar");
-const root = ReactDOM.createRoot(container);
-const navbar = root.render(<HomeNavbar/>);
+const navbar = createRoot(container);
+navbar.render(<HomeNavbar/>);
 
 export {navbar};

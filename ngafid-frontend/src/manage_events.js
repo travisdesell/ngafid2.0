@@ -6,7 +6,7 @@ import SignedInNavbar from "./signed_in_navbar";
 import {confirmModal} from "./confirm_modal";
 import $ from "jquery";
 import {EventDefinitionCard} from "./event_definition";
-import {errorModal} from "./error_modal";
+import {showErrorModal} from "./error_modal";
 
 
 airframes.unshift("All Airframes");
@@ -219,7 +219,7 @@ class CreateEventCard extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -227,7 +227,7 @@ class CreateEventCard extends React.Component {
                 window.location.reload();
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
             },
         });
 

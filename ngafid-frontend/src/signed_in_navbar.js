@@ -1,12 +1,12 @@
 import 'bootstrap';
 import React from "react";
-import {errorModal} from "./error_modal.js";
-import { loginModal } from './login.js';
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
+import { showLoginModal, hideLoginModal } from './login.js';
 
 
 import './index.css';
+import { showErrorModal } from './error_modal.js';
 
 
 
@@ -117,7 +117,7 @@ class SignedInNavbar extends React.Component {
     }
 
     attemptLogIn() {
-        loginModal.show();
+        showLoginModal();
     }
 
     attemptLogOut() {
@@ -142,7 +142,8 @@ class SignedInNavbar extends React.Component {
                 window.location.replace("/logout_success");
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Logging Out", errorThrown);
+                hideLoginModal();
+                showErrorModal("Error Logging Out", errorThrown);
             },
         });
 

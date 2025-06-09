@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 
 class ResetPasswordCard extends React.Component {
     
@@ -54,7 +54,7 @@ class ResetPasswordCard extends React.Component {
                 if (response.errorTitle) {
                     this.clearPasswords();
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -68,7 +68,7 @@ class ResetPasswordCard extends React.Component {
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Submitting Account Information", errorThrown);
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
         });
 

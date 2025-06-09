@@ -5,7 +5,7 @@ import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {initializeMap, layers, map, styles} from "./map.js";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import {confirmModal} from "./confirm_modal.js";
 
 import {Filter, isValidFilter} from './filter.js';
@@ -952,7 +952,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
 
                 console.log("Error loading stored filters: ", jqXHR, textStatus, errorThrown);
-                errorModal.show("Error Loading Filters", errorThrown);
+                showErrorModal("Error Loading Filters", errorThrown);
                 
             },
         });
@@ -1015,7 +1015,7 @@ class FlightsPage extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("Error in 'Get Flights', displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -1023,7 +1023,7 @@ class FlightsPage extends React.Component {
                 if (response == "NO_RESULTS") {
 
                     console.log("'Get Flights' -- No flights found with the given parameters!");
-                    errorModal.show(
+                    showErrorModal(
                         "No flights found with the given parameters!",
                         "Please try a different query."
                     );
@@ -1043,7 +1043,7 @@ class FlightsPage extends React.Component {
 
                 console.log("Error loading flights: ", jqXHR, textStatus, errorThrown);
 
-                errorModal.show("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
                 $("#loading").hide();
             }
         });
@@ -1064,7 +1064,7 @@ class FlightsPage extends React.Component {
 
         if (invalidString(name) || invalidString(description)) {
 
-            errorModal.show(
+            showErrorModal(
                 "Error creating tag!",
                 "Please ensure the name and description fields are correctly filled out!"
             );
@@ -1115,7 +1115,7 @@ class FlightsPage extends React.Component {
 
                 } else {
 
-                    errorModal.show(
+                    showErrorModal(
                         "Error creating tag",
                         "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name"
                     );
@@ -1126,7 +1126,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => { 
 
                 console.log("Error creating tag: ", jqXHR, textStatus, errorThrown);
-                errorModal.show("Error Creating Tag", errorThrown);
+                showErrorModal("Error Creating Tag", errorThrown);
 
             }
         });
@@ -1198,7 +1198,7 @@ class FlightsPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error editing tag: ", jqXHR, textStatus, errorThrown);
-                errorModal.show("Error Editing Tag", errorThrown);
+                showErrorModal("Error Editing Tag", errorThrown);
             },
         });
 
@@ -1222,7 +1222,7 @@ class FlightsPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error loading unassociated tags: ", jqXHR, textStatus, errorThrown);
-                errorModal.show("Error Loading Unassociated Tags", errorThrown);
+                showErrorModal("Error Loading Unassociated Tags", errorThrown);
             }
         });
 
@@ -1250,7 +1250,7 @@ class FlightsPage extends React.Component {
 
             if (tagId == null) {
 
-                errorModal.show(
+                showErrorModal(
                     "Please select a tag to delete first!",
                     "You did not select a tag to delete"
                 );
@@ -1284,7 +1284,7 @@ class FlightsPage extends React.Component {
         console.log(`un-associating tag #${  tagId  } with flight #${  flightId}`);
 
         if (tagId == null || tagId == -1) {
-            errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
+            showErrorModal("Please select a flight to remove first!", "Cannot remove any flights!");
             return;
         }
 
@@ -1404,7 +1404,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
 
                 console.log("Error associating tag: ", jqXHR, textStatus, errorThrown);
-                errorModal.show("Error Associating Tag", errorThrown);
+                showErrorModal("Error Associating Tag", errorThrown);
 
             }
         });
@@ -1670,7 +1670,6 @@ class FlightsPage extends React.Component {
                     setFilter={(filter) => this.setFilter(filter)}
                     setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
                     getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
-                    errorModal={errorModal}
                     copyFilterURL={() => this.copyFilterURL()}
                 />
             </div>
@@ -1865,7 +1864,6 @@ class FlightsPage extends React.Component {
                     parent={this}
                     setRef={this.cesiumRef}
                     flights={this.state.flights}
-                    errorModal={errorModal}
                     cesiumResolutionScale={this.state.cesiumResolutionScale}
                     cesiumResolutionUseDefault={this.state.cesiumResolutionUseDefault}
                 />

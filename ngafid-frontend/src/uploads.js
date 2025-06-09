@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import {createRoot} from "react-dom/client";
 import {confirmModal} from "./confirm_modal.js";
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {Paginator} from "./paginator_component.js";
 
@@ -45,7 +45,7 @@ class Upload extends React.Component {
                 //Encountered an error, display error modal
                 if (response.errorTitle) {
                     console.log("Displaying Error Modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -60,7 +60,7 @@ class Upload extends React.Component {
                     link.click();
                     document.body.removeChild(link);
                 } else {
-                    errorModal.show(
+                    showErrorModal(
                         "Download Not Supported",
                         "Your browser does not support downloading files using this method. Please use a different browser."
                     );
@@ -72,7 +72,7 @@ class Upload extends React.Component {
 
                 const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Downloading Upload: ", errorMessage);
-                errorModal.show("Error Downloading Upload", errorMessage);
+                showErrorModal("Error Downloading Upload", errorMessage);
             }
         });
 
@@ -98,7 +98,7 @@ class Upload extends React.Component {
                 //Encountered an error, display error modal
                 if (response.errorTitle) {
                     console.log("Displaying Error Modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -114,7 +114,7 @@ class Upload extends React.Component {
 
                 const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Removing Upload: ", errorMessage);
-                errorModal.show("Error Removing Upload", errorMessage);
+                showErrorModal("Error Removing Upload", errorMessage);
 
             }
 
@@ -456,7 +456,7 @@ class UploadsPage extends React.Component {
         };
 
         fileReader.onerror = function () {
-            errorModal.show("File Upload Error", "Could not upload file because of an error generating it's MD5 hash. Please reload the page and try again.");
+            showErrorModal("File Upload Error", "Could not upload file because of an error generating it's MD5 hash. Please reload the page and try again.");
         };
 
         function loadNext() {
@@ -507,7 +507,7 @@ class UploadsPage extends React.Component {
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
-                    errorModal.show(response.errorTitle, `${response.errorMessage  }\n\nOn file: '${  filename  }'`);
+                    showErrorModal(response.errorTitle, `${response.errorMessage  }\n\nOn file: '${  filename  }'`);
                     this.removePendingUpload(file);
 
                 } else {
@@ -664,7 +664,7 @@ class UploadsPage extends React.Component {
         } catch (error) {
 
             //Display Error Modal
-            errorModal.show("Error Removing Upload Prop", error.message);
+            showErrorModal("Error Removing Upload Prop", error.message);
 
         }
 
@@ -704,7 +704,7 @@ class UploadsPage extends React.Component {
 
             //Error in response, show error modal
             if (response.errorTitle !== undefined) {
-                errorModal.show(response.errorTitle, `${response.errorMessage  }\n\nOn file: '${  filename  }'`);
+                showErrorModal(response.errorTitle, `${response.errorMessage  }\n\nOn file: '${  filename  }'`);
 
             //No error encountered, continue with upload
             } else {
@@ -772,7 +772,7 @@ class UploadsPage extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -784,7 +784,7 @@ class UploadsPage extends React.Component {
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
             },
         });
     }

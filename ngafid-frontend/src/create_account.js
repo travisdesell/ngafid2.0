@@ -1,8 +1,8 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
-import {errorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
 
 class CreateAccountCard extends React.Component {
     constructor(props) {
@@ -134,7 +134,7 @@ class CreateAccountCard extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("Displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -150,7 +150,7 @@ class CreateAccountCard extends React.Component {
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Submitting Account Information", errorThrown);
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
         });
 
@@ -369,9 +369,6 @@ class CreateAccountCard extends React.Component {
     }
 
     render() {
-        
-        const bgStyle = {opacity: 0.8};
-        const fgStyle = {opacity: 1.0};
 
         const formGroupStyle = {
             marginBottom: '8px'
@@ -510,12 +507,12 @@ class CreateAccountCard extends React.Component {
 
         return (
 
-            <div className="card mb-1" style={{...bgStyle, margin: "1em"}}>
-                <h5 className="card-header" style={fgStyle}>
+            <div className="card mb-1" style={{margin: "1em"}}>
+                <h5 className="card-header">
                     Create an NGAFID Account
                 </h5>
 
-                <div className="card-body" style={fgStyle}>
+                <div className="card-body">
 
                     <form onSubmit={(event) => this.submitAccount(event)}>
 
@@ -1050,5 +1047,5 @@ class CreateAccountCard extends React.Component {
 }
 
 const container = document.querySelector("#create-account-card");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(<CreateAccountCard/>);

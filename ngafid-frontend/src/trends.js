@@ -2,7 +2,7 @@ import 'bootstrap';
 
 import React from "react";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import { TimeHeader } from "./time_header.js";
@@ -117,7 +117,7 @@ class TrendsPage extends React.Component {
                 success: (response) => {
 
                     if (response.err_msg) {
-                        errorModal.show(response.err_title, response.err_msg);
+                        showErrorModal(response.err_title, response.err_msg);
                         return;
                     }
 
@@ -177,7 +177,7 @@ class TrendsPage extends React.Component {
                     resolve(response);
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    errorModal.show("Error Loading Uploads", errorThrown);
+                    showErrorModal("Error Loading Uploads", errorThrown);
                     reject(errorThrown);
                 },
             });

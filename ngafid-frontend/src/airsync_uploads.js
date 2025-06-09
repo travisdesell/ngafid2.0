@@ -1,7 +1,7 @@
 import 'bootstrap';
 import {Paginator} from "./paginator_component.js";
 import {confirmModal} from "./confirm_modal.js";
-import {errorModal} from "./error_modal.js";
+import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";
 import React from "react";
 import ReactDOM from "react-dom";
@@ -148,7 +148,7 @@ class AirSyncUploadsCard extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("Displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -158,7 +158,7 @@ class AirSyncUploadsCard extends React.Component {
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
             },
         });
     }
@@ -181,7 +181,7 @@ class AirSyncUploadsCard extends React.Component {
                 this.setState({ lastUpdateTime: "Pending" });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Updating:", errorThrown);
+                showErrorModal("Error Updating:", errorThrown);
             },
         });
     }

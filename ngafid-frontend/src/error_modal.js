@@ -1,9 +1,10 @@
 import { Modal } from 'bootstrap';
 
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, {createRef} from 'react';
+import { createRoot } from 'react-dom/client';
 
 
+const errorModalRef = createRef();
 
 
 class ErrorModal extends React.Component {
@@ -93,7 +94,18 @@ class ErrorModal extends React.Component {
 
 
 const container = document.querySelector("#error-modal-content");
-const errorModal = ReactDOM.createRoot(container);
-errorModal.render(<ErrorModal/>);
+const root = createRoot(container);
+root.render(<ErrorModal ref={errorModalRef}/>);
 
-export { errorModal };
+
+export function showErrorModal(title, message) {
+
+    //Got the error modal reference, show it
+    if (errorModalRef.current)
+        errorModalRef.current.show(title, message);
+
+    //Otherwise, log an error
+    else
+        console.error("Error Modal reference is not set. Cannot show error modal.");
+
+}

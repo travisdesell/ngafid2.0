@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import {createRoot} from "react-dom/client";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import {Paginator} from "./paginator_component.js";
@@ -195,7 +195,7 @@ class Import extends React.Component {
                     console.log("Received response: ", response);
 
                     if (response.errorTitle !== undefined) {
-                        errorModal.show(response.errorTitle, response.errorMessage);
+                        showErrorModal(response.errorTitle, response.errorMessage);
                     } else {
 
                         this.setState((prevState) => ({
@@ -210,7 +210,7 @@ class Import extends React.Component {
 
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    errorModal.show("Error Loading Uploads", errorThrown);
+                    showErrorModal("Error Loading Uploads", errorThrown);
                 },
             });
         }
@@ -598,7 +598,7 @@ class ImportsPage extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("Displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -610,7 +610,7 @@ class ImportsPage extends React.Component {
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
             },
         });
     }

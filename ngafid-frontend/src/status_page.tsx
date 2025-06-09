@@ -1,6 +1,6 @@
 import "bootstrap";
 
-import {errorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import React from 'react';
@@ -164,7 +164,7 @@ export default class StatusPage extends React.Component {
             const errorMessage = `Failed to fetch ${(STATUS_FAILURE_NAMES.length > 1) ? "statuses" : "status"} for: ${STATUS_FAILURE_NAMES.join(", ")}`;
 
             const errorModalTitle = (STATUS_FAILURE_NAMES.length > 1) ? "Error Fetching Statuses" : "Error Fetching Status";
-            errorModal.show(errorModalTitle, errorMessage);
+            showErrorModal(errorModalTitle, errorMessage);
         }
 
         //Trigger a re-render

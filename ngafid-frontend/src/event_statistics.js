@@ -3,7 +3,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import $ from "jquery";
 
@@ -76,7 +76,7 @@ class AirframeCard extends React.Component {
                 }
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Getting Event Statistics", errorThrown);
+                showErrorModal("Error Getting Event Statistics", errorThrown);
             },
         });
         

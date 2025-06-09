@@ -3,7 +3,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 
@@ -81,7 +81,7 @@ class SystemIdsPage extends React.Component {
                 console.log(this.state);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Updating Tail Number", errorThrown);
+                showErrorModal("Error Updating Tail Number", errorThrown);
             },
         });
     }

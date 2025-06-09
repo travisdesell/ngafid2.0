@@ -1,4 +1,4 @@
-import {errorModal} from "./error_modal";
+import {showErrorModal} from "./error_modal";
 
 const descriptions = {};
 
@@ -20,13 +20,13 @@ export default function GetDescription(eventName) {
             $('#loading').hide();
 
             if (response.err_msg) {
-                errorModal.show(response.err_title, response.err_msg);
+                showErrorModal(response.err_title, response.err_msg);
             }
 
             descriptions[eventName] = response;
         },
         error: (jqXHR, textStatus, errorThrown) => {
-            errorModal.show("Error Getting Event Description", errorThrown);
+            showErrorModal("Error Getting Event Description", errorThrown);
         },
     });
 

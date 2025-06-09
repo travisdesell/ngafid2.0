@@ -1,6 +1,6 @@
 import "bootstrap";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import {confirmModal} from "./confirm_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
@@ -55,7 +55,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
             //No title / description provided, exit
             if (!title || !description) {
 
-                errorModal.show(
+                showErrorModal(
                     "Error Submitting Bug Report",
                     "Please ensure the title and description fields are filled out.",
                 );
@@ -104,7 +104,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                     console.error(`textStatus: ${textStatus}`);
                     console.error(`errorThrown: ${errorThrown}`);
 
-                    errorModal.show(
+                    showErrorModal(
                         "Error Submitting Bug Report",
                         errorThrown,
                     );

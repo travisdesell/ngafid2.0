@@ -5,7 +5,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
 import {PaginationSorter} from './sorter_component.js';
 import {CesiumButtons} from "./cesium_buttons";
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 
 class Paginator extends React.Component {
     constructor(props) {
@@ -114,9 +114,9 @@ class Paginator extends React.Component {
                 console.log(`isZip: ${  isZip}`);
 
                 if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                    errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+                    showErrorModal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
                 } else if (!isZip) {
-                    errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
+                    showErrorModal("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
                     uploadsPageRef.addUpload(file);
                 }

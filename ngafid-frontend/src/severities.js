@@ -3,7 +3,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import {TimeHeader} from "./time_header.js";
@@ -165,7 +165,7 @@ class SeveritiesPage extends React.Component {
                 eventMetaData = response;
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Event Metadata ", errorThrown);
+                showErrorModal("Error Loading Event Metadata ", errorThrown);
             },
         });
         
@@ -438,7 +438,7 @@ class SeveritiesPage extends React.Component {
                 $('#loading').hide();
 
                 if (response.err_msg) {
-                    errorModal.show(response.err_title, response.err_msg);
+                    showErrorModal(response.err_title, response.err_msg);
                     return;
                 }
 
@@ -499,7 +499,7 @@ class SeveritiesPage extends React.Component {
             },
 
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
             }
 
         });
@@ -538,7 +538,7 @@ class SeveritiesPage extends React.Component {
                 $('#loading').hide();
 
                 if (response.err_msg) {
-                    errorModal.show(response.err_title, response.err_msg);
+                    showErrorModal(response.err_title, response.err_msg);
                     return;
                 }
 
@@ -563,7 +563,7 @@ class SeveritiesPage extends React.Component {
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
             },
         });
 

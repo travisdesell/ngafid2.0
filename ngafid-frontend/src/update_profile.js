@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 class ProfilePage extends React.Component {
@@ -103,14 +103,14 @@ class ProfilePage extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
                 this.setUser(response.user);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Submitting Account Information", errorThrown);
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
         });
 

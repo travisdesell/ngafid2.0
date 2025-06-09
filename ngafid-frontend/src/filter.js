@@ -616,7 +616,7 @@ class Group extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("TF: ", this);
                 console.log("TFP: ", this.props);
-                this.props.errorModal.show("Error Loading Flights", errorThrown);
+                this.props.showErrorModal("Error Loading Flights", errorThrown);
             }
         });
     }
@@ -644,7 +644,7 @@ class Group extends React.Component {
                 this.setState(this.state);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                this.props.errorModal.show("Error Loading Flights", errorThrown);
+                this.props.showErrorModal("Error Loading Flights", errorThrown);
             }
         });
     }
@@ -703,7 +703,7 @@ class Group extends React.Component {
             },
 
             error: (jqXHR, textStatus, errorThrown) => {
-                this.props.errorModal.show("Error Loading Flights", errorThrown);
+                this.props.showErrorModal("Error Loading Flights", errorThrown);
             }
         });
     }
@@ -723,7 +723,7 @@ class Group extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error getting stored filters: ", errorThrown);
-                this.props.errorModal.show("Error Getting Stored Filters", errorThrown);
+                this.props.showErrorModal("Error Getting Stored Filters", errorThrown);
             },
         });
 

@@ -3,7 +3,7 @@ import React from "react";
 
 import { Colors } from "./map.js";
 
-import { errorModal } from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
 
 import cloneDeep from 'clone-deep';
 
@@ -146,7 +146,7 @@ class Tags extends React.Component {
      * shows @module errorModal when a tag has not been edited properly
      */
     showNoEditError() {
-        errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
+        showErrorModal("Error editing tag", "Please make a change to the tag first before pressing submit!");
     }
 
     removeTag() {

@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import {EventDefinitionCard} from './event_definition.js';
@@ -200,14 +200,14 @@ class UpdateEventCard extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
                 //createEventCard.setEvents(response);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
             },
         });
 

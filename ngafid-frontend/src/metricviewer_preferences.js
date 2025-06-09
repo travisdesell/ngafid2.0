@@ -1,7 +1,7 @@
 import 'bootstrap';
 import React from "react";
 
-import { errorModal } from './error_modal';
+import { showErrorModal } from './error_modal';
 
 
 class MetricViewerSettings extends React.Component {
@@ -40,7 +40,7 @@ class MetricViewerSettings extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
 
-                errorModal.show("Error Updating User Preferences", errorThrown);
+                showErrorModal("Error Updating User Preferences", errorThrown);
 
             },
         });
@@ -61,7 +61,7 @@ class MetricViewerSettings extends React.Component {
                 metrics = response.names;
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Getting Column Names", errorThrown);
+                showErrorModal("Error Getting Column Names", errorThrown);
             },
         });
 
@@ -107,7 +107,7 @@ class MetricViewerSettings extends React.Component {
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Updating User Preferences", errorThrown);
+                showErrorModal("Error Updating User Preferences", errorThrown);
             },
         });
     }

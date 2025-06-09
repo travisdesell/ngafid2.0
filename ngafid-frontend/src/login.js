@@ -1,14 +1,17 @@
 import 'bootstrap';
 
-import React from "react";
-import ReactDOM from "react-dom";
-import {errorModal} from "./error_modal.js";
+import React, {createRef} from "react";
+import { createRoot } from 'react-dom/client';
+import { showErrorModal } from './error_modal.js';
 import $ from 'jquery';
 
 import { navbar } from './home_navbar.js';
 
 window.jQuery = $;
 window.$ = $;
+
+
+const loginModalRef = createRef();
 
 
 class LoginModal extends React.Component {
@@ -68,14 +71,19 @@ class LoginModal extends React.Component {
             dataType: 'json',
             async: true,
             success: (response) => {
+
                 $("#loginPassword").val("");
                 $("#loading").hide();
 
                 if (response.loggedOut) {
-                    console.log("user was logged out");
-                    loginModal.state.valid.errorMessage = true;
-                    loginModal.state.errorMessage = response.message;
-                    loginModal.setState(loginModal.state);
+                    console.log("User was logged out...");
+                    this.setState(prevState => ({
+                        valid: {
+                            ...prevState.valid,
+                            errorMessage: true
+                        },
+                        errorMessage: response.message
+                    }));
                     navbar.logOut();
                     return false;
                 }
@@ -84,8 +92,9 @@ class LoginModal extends React.Component {
                 $("#login-modal").modal('hide');
 
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    console.log("Displaying error modal!");
+                    hideLoginModal();
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -100,7 +109,8 @@ class LoginModal extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
-                errorModal.show("Error Submitting Account Information", errorThrown);
+                hideLoginModal();
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
         });
 
@@ -265,7 +275,19 @@ class LoginModal extends React.Component {
 }
 
 const container = document.querySelector("#login-modal-content");
-const root = ReactDOM.createRoot(container);
-const loginModal = root.render(<LoginModal/>);
+const root = createRoot(container);
+root.render(<LoginModal ref={loginModalRef}/>);
 
-export {loginModal};
+export function showLoginModal() {
+
+    if (loginModalRef.current)
+        loginModalRef.current.show();
+
+}
+
+export function hideLoginModal() {
+
+    if (loginModalRef.current)
+        $("#login-modal").modal('hide');
+
+}

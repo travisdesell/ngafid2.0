@@ -1,7 +1,7 @@
 import 'bootstrap';
 import React from "react";
 import { createRoot } from "react-dom/client";
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import {MapPopup} from "./map_popup.js";
 
 import {Colors, map} from "./map.js";
@@ -112,7 +112,7 @@ class Flight extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
                 this.setState({ mapLoaded: false });
 
-                errorModal.show("Error Loading Flight Events", errorThrown);
+                showErrorModal("Error Loading Flight Events", errorThrown);
             },
         });
     }
@@ -265,7 +265,7 @@ class Flight extends React.Component {
                         commonTraceNames: null,
                         uncommonTraceNames: null
                     });
-                    errorModal.show("Error Getting Potential Plot Parameters", errorThrown);
+                    showErrorModal("Error Getting Potential Plot Parameters", errorThrown);
                 },
             });
         } else {
@@ -945,7 +945,7 @@ class Flight extends React.Component {
                     this.setState({ mapLoaded: false });
                     this.setState(this.state);
 
-                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                    showErrorModal("Error Loading Flight Coordinates", errorThrown);
                 },
             });
 

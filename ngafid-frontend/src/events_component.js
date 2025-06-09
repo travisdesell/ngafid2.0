@@ -5,7 +5,7 @@ import Plotly from 'plotly.js';
 import {map} from "./map.js";
 import {Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
-import {errorModal} from "./error_modal";
+import {showErrorModal} from "./error_modal";
 import { plotlyLayoutGlobal } from "./flights";
 
 // establish set of RGB values to combine //
@@ -205,7 +205,7 @@ class Events extends React.Component {
                 eventMetaData = response;
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Event Metadata ", errorThrown);
+                showErrorModal("Error Loading Event Metadata ", errorThrown);
             },
         });
         console.log("Event MetaData: ", eventMetaData);
@@ -489,7 +489,7 @@ class Events extends React.Component {
                 rocPlotData = response;
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                errorModal.show("Error Loading Rate of closure ", errorThrown);
+                showErrorModal("Error Loading Rate of closure ", errorThrown);
             },
         });
         return rocPlotData;

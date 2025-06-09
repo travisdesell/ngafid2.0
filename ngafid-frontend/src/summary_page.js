@@ -2,7 +2,7 @@ import "bootstrap";
 
 import React from "react";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import {TimeHeader} from "./time_header.js";
@@ -74,7 +74,7 @@ function fetchStatistic(stat, route, aggregate, successResponseHandler) {
         console.log(jqXHR);
         console.log(textStatus);
         console.log(errorThrown);
-        errorModal.show("Error Loading Statistic", errorThrown);
+        showErrorModal("Error Loading Statistic", errorThrown);
     };
 
     $.ajax({
@@ -121,7 +121,7 @@ class Notifications extends React.Component {
 
             //Response has an error, exit
             if (response.err_msg) {
-                errorModal.show(response.err_title, response.err_msg);
+                showErrorModal(response.err_title, response.err_msg);
                 return;
             }
 
@@ -447,7 +447,7 @@ export default class SummaryPage extends React.Component {
 
                 //Response has an error, exit
                 if (response.err_msg) {
-                    errorModal.show(response.err_title, response.err_msg);
+                    showErrorModal(response.err_title, response.err_msg);
                     return;
                 }
 
@@ -460,7 +460,7 @@ export default class SummaryPage extends React.Component {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                errorModal.show("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
             }
         });
     }
@@ -474,7 +474,7 @@ export default class SummaryPage extends React.Component {
             const successResponseHandler = (response) => {
 
                 if (response.err_msg) {
-                    errorModal.show(response.err_title, response.err_msg);
+                    showErrorModal(response.err_title, response.err_msg);
                     return;
                 }
 

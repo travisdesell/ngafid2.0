@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {EmailSettingsTableManager} from "./email_settings.js";
 
@@ -95,7 +95,7 @@ class FleetUserRow extends React.Component {
                 $('#loading').hide();
 
                 if (response && response.errorTitle) {
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -113,7 +113,7 @@ class FleetUserRow extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
-                errorModal.show("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
             },
         });
     };
@@ -230,7 +230,7 @@ class ManageFleetPage extends React.Component {
             success: (response) => {
 
                 if (response.errorTitle) {
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -242,7 +242,7 @@ class ManageFleetPage extends React.Component {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                errorModal.show("Error Sending Invite");
+                showErrorModal("Error Sending Invite");
             }
 
         });

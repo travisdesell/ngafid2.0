@@ -1,11 +1,15 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import $ from "jquery";
-import {errorModal} from "./error_modal";
+import { showErrorModal } from "./error_modal";
 
 window.jQuery = $;
 window.$ = $;
+
+
+import './index.css';
+
 
 class ForgotPassword extends React.Component {
     constructor(props) {
@@ -71,7 +75,7 @@ class ForgotPassword extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
-                errorModal.show("Error Submitting Account Information", errorThrown);
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
         });
         this.setState(this);
@@ -119,7 +123,7 @@ class ForgotPassword extends React.Component {
         const submitDisabled = !validationHidden;
 
         const forgotPasswordCard = (
-            <div className="card mt-4">
+            <div className="card">
                 <h5 className="card-header">Forgot Password</h5>
                 <div className="card-body">
                     <div className="form-group" style={formGroupStyle}>
@@ -164,7 +168,7 @@ class ForgotPassword extends React.Component {
         );
 
         return (
-            <div className="container">
+            <div className="container my-auto pb-24">
                 <div className="row justify-content-center">
                     <div className="col-md-6">
                         {
@@ -178,6 +182,6 @@ class ForgotPassword extends React.Component {
     }
 }
 
-const container = document.querySelector("#forgot_password-page");
-const root = ReactDOM.createRoot(container);
+const container = document.querySelector("#forgot_password-card");
+const root = createRoot(container);
 root.render(<ForgotPassword />);
