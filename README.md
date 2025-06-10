@@ -99,7 +99,7 @@ mysql> exit
 Bye
 ```
 
-We need to store these credentials in a file called `src/main/resources/liquibase.properties`, along with some other
+We need to store these credentials in a file called `ngafid-db/src/liquibase.properties`, along with some other
 information:
 
 ```
