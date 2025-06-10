@@ -158,66 +158,78 @@ $NGAFID_DATA_FOLDER
 ```
 
 ## 5. Running the webserver
-You need Maven installed to run the following script which will build the java modules:
 
+### Initialize Dependencies
+
+You need Maven installed to run the following script which will build the java modules:
+From the project root (`~/ngafid2.0`), run:
 ```
-~/ngafid2.0 $ run/build 
+run/build 
 ```
 
 Next we need to initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
-
+From ~/ngafid2.0/ngafid-frontend, run:
 ```
-~/ngafid2.0/ngafid-frontend $ npm install
+npm install
 ```
 
 This will download the javascript dependencies.
 
 Then, in order to compile the javascript and automatically recompile whenever you change one of the files:
-
+From ~/ngafid2.0/ngafid-frontend, run:
 ```
-~/ngafid2.0/ngafid-frontend $ npm run watch
+npm run watch
 ```
 
+ ### Launch Kafka
 Next, to launch the web server we must first initialize and start Kafka. Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart), using `ngafid2.0/resource/reconfig-server.properties`.
-If you are using a mac you can install Kafka using command:
-
+On macOS, you can install Kafka with:
 ```
  brew install kafka
 ```
-These are the steps to setup kafka from the Kafka quickstart (above)
+
+
+These are the steps to setup kafka from the Kafka quickstart (above).
 Before starting the Kafka server, you must format the storage directory using a cluster ID. This step is required only once per cluster.
 
 1. Generate random claster-id:
-
+From the project root (`~/ngafid2.0`), run:
 ```
 kafka-storage random-uuid
 ```
 
 2. Run the following command to format Kafka’s log directory and generate the required meta.properties file:
-
-
+From the project root (`~/ngafid2.0`), run:
 ```
 kafka-storage format -t <your-cluster-id> -c resources/reconfig-server.properties
-
 ```
 
-Now, launch Kafka:
 
+3. Add this line to the resources/reconfig-server.properties – required for Kafka in KRaft mode (i.e., no Zookeeper).
+It tells Kafka how to form the internal metadata quorum used for coordination.
+The 1@localhost:9093 part maps the node.id to the address where the controller listens
 ```
-# Launch kafka kraft 
-~/ngafid2.0 $ kafka-server-start resources/reconfig-server.properties
-```
-
-Next, run the following script to create the appropriate kafka topics:
-
-```
-~/ngafid2.0 $ run/kafka/create_topics.sh
+controller.quorum.voters=1@localhost:9093
 ```
 
-You should then be able to compile and run the webserver by running `run/webserver.sh`
-
+4. Now, launch Kafka:
+From the project root (`~/ngafid2.0`), run:
 ```
-~/ngafid2.0 $ run/webserver
+kafka-server-start resources/reconfig-server.properties
+```
+
+5. Run the following script to create the appropriate kafka topics:
+From the project root (`~/ngafid2.0`), run:
+```
+$ run/kafka/create_topics
+```
+
+### Launch webserver
+
+You should then be able to compile and run the webserver. 
+From the project root (`~/ngafid2.0`), run:
+```
+run/webserver
 ```
 
 ## 6. Data Processing
