@@ -179,6 +179,28 @@ Then, in order to compile the javascript and automatically recompile whenever yo
 ```
 
 Next, to launch the web server we must first initialize and start Kafka. Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart), using `ngafid2.0/resource/reconfig-server.properties`.
+If you are using a mac you can install Kafka using command:
+
+```
+ brew install kafka
+```
+These are the steps to setup kafka from the Kafka quickstart (above)
+Before starting the Kafka server, you must format the storage directory using a cluster ID. This step is required only once per cluster.
+
+1. Generate random claster-id:
+
+```
+kafka-storage random-uuid
+```
+
+2. Run the following command to format Kafka’s log directory and generate the required meta.properties file:
+
+
+```
+kafka-storage format -t <your-cluster-id> -c resources/reconfig-server.properties
+
+```
+
 Now, launch Kafka:
 
 ```
