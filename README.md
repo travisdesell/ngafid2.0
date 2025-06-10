@@ -221,7 +221,7 @@ kafka-server-start resources/reconfig-server.properties
 5. Run the following script to create the appropriate kafka topics:
 From the project root (`~/ngafid2.0`), run:
 ```
-$ run/kafka/create_topics
+run/kafka/create_topics
 ```
 
 ### Launch webserver
