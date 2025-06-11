@@ -109,7 +109,7 @@ url=jdbc:mysql://localhost/ngafid
 username=ngafid_user
 password=password
 ```
-### NOTE: this file is in gitignore (to keep credentials private), create your own version ngafid-db/src/liquibase.properties
+### NOTE: liquibase.properties is in gitignore (to keep credentials private), create your own version.
 
 
 
