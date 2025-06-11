@@ -2,11 +2,14 @@
 import 'bootstrap';
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
+
+
+const helpModalRef = React.createRef();
 
 
 class HelpModal extends React.Component {
@@ -60,7 +63,14 @@ class HelpModal extends React.Component {
 }
 
 const container = document.querySelector("#help-modal-content");
-const root = ReactDOM.createRoot(container);
-const helpModal = root.render(<HelpModal/>);
+const root = createRoot(container);
+root.render(<HelpModal ref={helpModalRef}/>);
 
-export { helpModal };
+
+export function showHelpModal(title, message, closeMethod) {
+
+    console.log("Showing help modal with title: '", title, "' and message: ", message);
+
+    helpModalRef.current.show(title, message, closeMethod);
+    
+}

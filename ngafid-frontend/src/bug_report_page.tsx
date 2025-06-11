@@ -1,7 +1,7 @@
 import "bootstrap";
 
 import {showErrorModal} from "./error_modal.js";
-import {confirmModal} from "./confirm_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import React from 'react';
@@ -89,7 +89,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                     const sendEnd = new Date();
                     console.log(`Bug report submitted successfully! (${  sendEnd.toLocaleString()  })`);
 
-                    confirmModal.show(
+                    showConfirmModal(
                         "Bug Report Submitted",
                         "Your bug report has been submitted successfully. Thank you for your feedback!",
                     );

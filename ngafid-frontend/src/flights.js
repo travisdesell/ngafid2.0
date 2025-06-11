@@ -1,12 +1,12 @@
 import "bootstrap";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import SignedInNavbar from "./signed_in_navbar.js";
 import {initializeMap, layers, map, styles} from "./map.js";
 
 import {showErrorModal} from "./error_modal.js";
-import {confirmModal} from "./confirm_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
 
 import {Filter, isValidFilter} from './filter.js';
 import {Paginator} from './paginator_component.js';
@@ -1259,8 +1259,8 @@ class FlightsPage extends React.Component {
 
             }
 
-            console.log("delete tag invoked!");
-            confirmModal.show(
+            console.log("Delete tag invoked!");
+            showConfirmModal(
                 `Confirm Delete Tag: '${  tag.name  }'`,
                 "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
                 () => {
@@ -1416,14 +1416,10 @@ class FlightsPage extends React.Component {
      */
     clearTags(flightId) {
 
-        confirmModal.show(
+        showConfirmModal(
             "Confirm action",
-            `Are you sure you would like to remove all the tags from flight #${ 
-            flightId 
-            }?`,
-            () => {
-                this.removeTag(flightId, -2, false);
-            }
+            `Are you sure you would like to remove all the tags from flight #${ flightId  }?`,
+            () => { this.removeTag(flightId, -2, false); }
         );
 
     }
@@ -2050,10 +2046,8 @@ class FlightsPage extends React.Component {
 
 
 const container = document.querySelector("#flights-page");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(<FlightsPage />);
-
-console.log("rendered flightsCard!");
 
 
 export {plotlyLayoutGlobal};

@@ -47,7 +47,7 @@ class HomeNavbar extends React.Component {
     render() {
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
+            <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
 
                 <a className="navbar-brand" href="../../src/main/javascript">NGAFID</a>
@@ -80,4 +80,4 @@ const container = document.querySelector("#navbar");
 const navbar = createRoot(container);
 navbar.render(<HomeNavbar/>);
 
-export {navbar};
+export {navbar as homeNavbar};

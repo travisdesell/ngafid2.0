@@ -1,6 +1,6 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
@@ -448,7 +448,7 @@ class ManageFleetPage extends React.Component {
 
 
 const container = document.querySelector("#manage-fleet-page");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(
     <ManageFleetPage
         user={window.user}

@@ -1,9 +1,9 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import {createRoot} from 'react-dom/client';
 import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
 import SignedInNavbar from "./signed_in_navbar";
-import {confirmModal} from "./confirm_modal";
+import {showConfirmModal} from "./confirm_modal";
 import $ from "jquery";
 import {EventDefinitionCard} from "./event_definition";
 import {showErrorModal} from "./error_modal";
@@ -539,39 +539,51 @@ class EventDefinitionsTable extends React.Component {
 
 
     confirmDelete(eventDefinition) {
-        confirmModal.show(`Confirm Delete: ${  eventDefinition.name  } (${  eventDefinition.id  })`,
-            "Are you sure you wish to delete this event definition?\n\n" +
-            "This will not delete if there are any events associated with it.\n",
-            () => {
-                console.log(`Deleting event definition with ID ${eventDefinition.id}.`);
 
-                fetch(`/api/event/definitions/${eventDefinition.id}`, {
+        const onConfirmDelete = () => {
+        
+            console.log(`Deleting event definition with ID ${eventDefinition.id}.`);
+
+            fetch(
+                `/api/event/definitions/${eventDefinition.id}`,
+                {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                }
+            ).then(response => {
 
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            console.log(`Event definition with ID ${eventDefinition.id} deleted successfully.`);
-                            for (let i = 0; i < this.props.eventDefinitions.length; i++) {
-                                if (this.props.eventDefinitions[i].id === eventDefinition.id) {
-                                    this.props.eventDefinitions.splice(i, 1);
-                                    this.forceUpdate();
-                                    break;
-                                }
-                            }
-                        } else {
-                            console.error(`Error deleting event definition with ID ${eventDefinition.id}.`);
-                            console.error(response);
+                if (response.ok) {
+
+                    console.log(`Event definition with ID ${eventDefinition.id} deleted successfully.`);
+                    for (let i = 0; i < this.props.eventDefinitions.length; i++) {
+
+                        if (this.props.eventDefinitions[i].id === eventDefinition.id) {
+                            this.props.eventDefinitions.splice(i, 1);
+                            this.forceUpdate();
+                            break;
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error during deletion:', error);
-                    });
-            }
+
+                    }
+                } else {
+                    console.error(`Error deleting event definition with ID ${eventDefinition.id}.`);
+                    console.error(response);
+                }
+
+            }).catch(error => {
+                console.error('Error during deletion:', error);
+            });
+
+        };
+
+        showConfirmModal(
+            `Confirm Delete: ${  eventDefinition.name  } (${  eventDefinition.id  })`,
+            "Are you sure you wish to delete this event definition?\n\n" +
+            "This will not delete if there are any events associated with it.\n",
+            onConfirmDelete
         );
+
     }
 
     render() {
@@ -646,9 +658,9 @@ class EventDefinitionsTable extends React.Component {
 }
 
 const updateModalContainer = document.querySelector("#update-event-definition-modal-content");
-const updateModalRoot = ReactDOM.createRoot(updateModalContainer);
+const updateModalRoot = createRoot(updateModalContainer);
 const updateModal = updateModalRoot.render(<UpdateEventDefinitionModal/>);
 
 const eventManagerContainer = document.querySelector('#manage-events-page');
-const eventManagerRoot = ReactDOM.createRoot(eventManagerContainer);
+const eventManagerRoot = createRoot(eventManagerContainer);
 eventManagerRoot.render(<EventManager/>);

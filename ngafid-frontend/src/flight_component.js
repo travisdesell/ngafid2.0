@@ -18,7 +18,7 @@ import {Itinerary} from './itinerary_component.js';
 import {TraceButtons} from './trace_buttons_component.js';
 import {Tags} from './tags_component.js';
 import {Events, eventDefinitions} from './events_component.js';
-import {selectAircraftModal} from './select_acft_modal.js';
+import {showSelectAircraftModal} from './select_acft_modal.js';
 import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
@@ -474,9 +474,9 @@ class Flight extends React.Component {
         if (type === 'KML') {
             window.open(`/api/flight/${this.props.flightInfo.id}/kml`);
         } else if (type === 'XPL10') {
-            selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);
+            showSelectAircraftModal('10', this.submitXPlanePath, this.props.flightInfo.id);
         } else if (type === 'XPL11') {
-            selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);
+            showSelectAircraftModal('11', this.submitXPlanePath, this.props.flightInfo.id);
         } else if (type === 'CSV-IMP') {
             window.open(`/api/flight/${this.props.flightInfo.id}/csv`);
         } else if (type === 'CSV-GEN') {

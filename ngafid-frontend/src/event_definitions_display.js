@@ -10,7 +10,13 @@ class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
 
         super(props);
-        this.events = new Map(Object.entries(GetAllDescriptions()));
+
+        this.events = null;
+
+        const allDescriptions = GetAllDescriptions();
+        console.log("All Descriptions: ", allDescriptions);
+        if (allDescriptions)
+            this.events = new Map(Object.entries(allDescriptions));
 
         console.log("Event Definitions: ", this.events);
 
@@ -28,7 +34,7 @@ class EventDefinitionsDisplayPage extends React.Component {
         console.log(this.events);
 
         // Add all events to the rows array
-        for (const eventName of this.events.keys()) {
+        for (const eventName of this.events?.keys()??[]) {
 
             for (const airframe of Object.keys(this.events.get(eventName))) {
                 console.log(airframe);

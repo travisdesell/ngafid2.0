@@ -1,7 +1,7 @@
 import 'bootstrap';
 import React from "react";
 import {createRoot} from "react-dom/client";
-import {confirmModal} from "./confirm_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {Paginator} from "./paginator_component.js";
@@ -124,14 +124,12 @@ class Upload extends React.Component {
 
     confirmRemoveUpload(uploadInfo) {
 
-        console.log("attempting to remove upload!");
-        console.log(this.props);
+        console.log("Attempting to remove upload: ", this.props);
 
-        confirmModal.show(`Confirm Delete: '${  uploadInfo.filename  }'`,
+        showConfirmModal(
+            `Confirm Delete: '${  uploadInfo.filename  }'`,
             "Are you sure you wish to delete this upload?\n\nThis operation will remove it from the server along with all flights and other information from the database. A backup of this upload is not stored on the server and if you wish to retrieve it you will have to re-upload it.",
-            () => {
-                this.removeUpload(uploadInfo);
-            }
+            () => { this.removeUpload(uploadInfo); }
         );
 
     }
@@ -900,6 +898,14 @@ class UploadsPage extends React.Component {
     }
 }
 
-const root = createRoot(document.querySelector('#uploads-page'));
-root.render(<UploadsPage uploads={uploads} pendingUploads={pendingUploads} numberPages={numberPages}
-                         currentPage={currentPage}/>);
+console.log("Uploads: ", uploads);
+console.log("Pending Uploads: ", pendingUploads);
+
+const container = document.querySelector('#uploads-page');
+const root = createRoot(container);
+root.render(<UploadsPage
+    uploads={uploads}
+    pendingUploads={pendingUploads ?? []}
+    numberPages={numberPages}
+    currentPage={currentPage}
+/>);

@@ -1,20 +1,23 @@
 import 'bootstrap';
 
-import React from "react";
-import ReactDOM from "react-dom";
+import React, {createRef} from "react";
+import { createRoot } from 'react-dom/client';
 
 import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
-import {helpModal} from './help_modal.js';
+import {showHelpModal} from './help_modal.js';
 import {showErrorModal} from './error_modal.js';
 
 import $ from 'jquery';
 
 window.jQuery = $;
 window.$ = $;
+
+
+const selectAircraftModalRef = createRef();
 
 
 class SelectAircraftModal extends React.Component {
@@ -51,11 +54,13 @@ class SelectAircraftModal extends React.Component {
         if (this.state.activeId == 0) {
             selectedPath = $('#cust_path').val();
             if (selectedPath == null || selectedPath.match(/^ *$/) !== null) {
-                console.log("selected path is not formatted correctly!");
+
+                console.log("Selected path is not formatted correctly!");
                 const title = "Format Error";
                 const message = "Please make sure there is a path selected or there is a correctly formatted path in the custom path box. Press help for more information";
-                helpModal.show(title, message, this.reOpen);
+                showHelpModal(title, message, this.reOpen);
                 return;
+
             }
             this.addFile(selectedPath); //cache the filepath in the server
         }
@@ -73,7 +78,7 @@ class SelectAircraftModal extends React.Component {
         const message = "The paths in the list are filepaths to aircraft from previous exports. To add a new aircraft, use the text " +
             "field at the top of the list. The path should follow the format (no quotes): \"Aircraft/Laminar Research/Cessna 172SP/Cessna172SP.acf\"." +
             " It is very important to exclude the leading '/' from the filepath right before the 'Aircraft' directory.";
-        helpModal.show(title, message, this.reOpen);
+        showHelpModal(title, message, this.reOpen);
     }
 
     getSimAircraft() {
@@ -86,9 +91,9 @@ class SelectAircraftModal extends React.Component {
                 console.log("Received Response: ", response);
 
                 this.setState({ paths: response });
-                if (response != null && response.length > 0) {
+                if (response != null && response.length > 0)
                     this.setState({ selectedPath: response[0] });
-                }
+
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log(jqXHR);
@@ -251,7 +256,18 @@ class SelectAircraftModal extends React.Component {
 }
 
 const container = document.querySelector("#select_aircraft-modal-content");
-const root = ReactDOM.createRoot(container);
-const selectAircraftModal = root.render(<SelectAircraftModal backdrop="static"/>);
+const root = createRoot(container);
+root.render(<SelectAircraftModal backdrop="static" ref={selectAircraftModalRef}/>);
 
-export {selectAircraftModal};
+
+export function showSelectAircraftModal(type, submitMethod) {
+
+    console.log("Showing select aircraft modal with type: '", type, "' and submitMethod: ", submitMethod);
+    const selectAircraftModal = container.querySelector('select-aircraft-modal');
+
+    if (selectAircraftModal)
+        selectAircraftModal.show(type, submitMethod);
+    else
+        console.error("SelectAircraftModal component not found in the DOM.");
+
+}

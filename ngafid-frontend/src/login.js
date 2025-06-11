@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { showErrorModal } from './error_modal.js';
 import $ from 'jquery';
 
-import { navbar } from './home_navbar.js';
+import { homeNavbar } from './home_navbar.js';
 
 window.jQuery = $;
 window.$ = $;
@@ -66,7 +66,8 @@ class LoginModal extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/api/auth/login',
+            // url: '/api/auth/login',
+            url: '/login',  /* [EX] */
             data: submissionData,
             dataType: 'json',
             async: true,
@@ -84,7 +85,7 @@ class LoginModal extends React.Component {
                         },
                         errorMessage: response.message
                     }));
-                    navbar.logOut();
+                    homeNavbar.logOut();
                     return false;
                 }
 

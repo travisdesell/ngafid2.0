@@ -44,7 +44,9 @@ let eventFleetPercents = {};
 let eventNGAFIDPercents = {};
 
 class TrendsPage extends React.Component {
+
     constructor(props) {
+        
         super(props);
         const eventChecked = {};
         const eventsEmpty = {};

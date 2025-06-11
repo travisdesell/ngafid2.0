@@ -1,7 +1,7 @@
 import 'bootstrap';
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import {MetricViewerSettings} from "./metricviewer_preferences.js";
 
@@ -53,7 +53,7 @@ class MetricViewerSettingsModal extends React.Component {
     }
 
     modalClicked() {
-        console.log("modal submit clicked!");
+        console.log("Modal submit clicked!");
         this.state.submitMethod();
     }
 
@@ -96,7 +96,7 @@ class MetricViewerSettingsModal extends React.Component {
 }
 
 const container = document.querySelector("#metric-settings-modal-content");
-const root = ReactDOM.createRoot(container);
-const metricViewerSettingsModal = root.render(<MetricViewerSettingsModal/>);
+const metricViewerSettingsModal = createRoot(container);
+metricViewerSettingsModal.render(<MetricViewerSettingsModal/>);
 
 export {metricViewerSettingsModal};

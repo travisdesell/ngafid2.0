@@ -1,6 +1,6 @@
 import 'bootstrap';
 import {Paginator} from "./paginator_component.js";
-import {confirmModal} from "./confirm_modal.js";
+import { showConfirmModal } from "./confirm_modal.js";
 import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";
 import React from "react";
@@ -165,9 +165,11 @@ class AirSyncUploadsCard extends React.Component {
 
     manualSync() {
         console.log("Manual AirSync update requested!");
-        confirmModal.show("Confirm Operation", "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.", () => {
-            this.requestUpdate();
-        });
+        showConfirmModal(
+            "Confirm Operation",
+            "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.",
+            () => { this.requestUpdate(); }
+        );
     }
 
     requestUpdate() {

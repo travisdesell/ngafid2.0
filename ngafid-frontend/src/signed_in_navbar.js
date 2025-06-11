@@ -1,8 +1,8 @@
 import 'bootstrap';
 import React from "react";
+// import { createRoot } from 'react-dom/client';
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
-import { showLoginModal, hideLoginModal } from './login.js';
 
 
 import './index.css';
@@ -103,7 +103,7 @@ class DropdownLink extends React.Component {
 }
 
 
-class SignedInNavbar extends React.Component {
+export default class SignedInNavbar extends React.Component {
 
     constructor(props) {
 
@@ -114,10 +114,6 @@ class SignedInNavbar extends React.Component {
 
         this.infoTarget = React.createRef();
 
-    }
-
-    attemptLogIn() {
-        showLoginModal();
     }
 
     attemptLogOut() {
@@ -142,7 +138,6 @@ class SignedInNavbar extends React.Component {
                 window.location.replace("/logout_success");
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                hideLoginModal();
                 showErrorModal("Error Logging Out", errorThrown);
             },
         });
@@ -237,7 +232,7 @@ class SignedInNavbar extends React.Component {
         const accountsActive = (this.props.activePage === "account");
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
+            <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
                 <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -486,15 +481,3 @@ class SignedInNavbar extends React.Component {
         );
     }
 }
-
-SignedInNavbar.defaultProps = {
-    showFlightPageOrientationButton: false,
-    filterVisible: false,
-    showPlotButton: false,
-    showCesiumButton: false,
-    showMapButton: false,
-    disableMapButton: false,
-    plotMapHidden: true,
-};
-
-export default SignedInNavbar;

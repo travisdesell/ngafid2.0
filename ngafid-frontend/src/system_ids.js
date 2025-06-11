@@ -1,7 +1,7 @@
 import 'bootstrap';
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
@@ -210,7 +210,7 @@ class SystemIdsPage extends React.Component {
 console.log("Setting system IDs page with react!");
 
 const container = document.querySelector("#system-ids-page");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(
     <SystemIdsPage waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>
 );

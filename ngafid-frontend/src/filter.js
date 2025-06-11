@@ -1,11 +1,11 @@
 import 'bootstrap';
 import React from "react";
 import {Colors} from "./map.js";
-
+import { showErrorModal } from './error_modal.js';
 import {timeZones} from "./time_zones.js";
-import {confirmModal} from "./confirm_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
 
-const MESSAGE_BIND_PERIOD_MS = 3000;
+const MESSAGE_BIND_PERIOD_MS = 3_000;
 
 const FILTER_VALIDATE_SUCCESS = "";
 
@@ -616,17 +616,19 @@ class Group extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("TF: ", this);
                 console.log("TFP: ", this.props);
-                this.props.showErrorModal("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
             }
         });
     }
 
     deleteFilterClicked(name) {
-        confirmModal.show(`Confirm Delete Filter: '${  name  }'`,
+
+        showConfirmModal(
+            `Confirm Delete Filter: '${  name  }'`,
             `Are you sure you wish to delete filter '${  name  }'?\n\nThis operation will remove it from your fleet, meaning it will be deleted for other users as well. This operation cannot be undone!`,
-            () => {
-                this.deleteFilter(name);
-            });
+            () => { this.deleteFilter(name); }
+        );
+
     }
 
     deleteFilter(name) {
@@ -644,7 +646,7 @@ class Group extends React.Component {
                 this.setState(this.state);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                this.props.showErrorModal("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
             }
         });
     }
@@ -703,7 +705,7 @@ class Group extends React.Component {
             },
 
             error: (jqXHR, textStatus, errorThrown) => {
-                this.props.showErrorModal("Error Loading Flights", errorThrown);
+                showErrorModal("Error Loading Flights", errorThrown);
             }
         });
     }
@@ -723,7 +725,7 @@ class Group extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error getting stored filters: ", errorThrown);
-                this.props.showErrorModal("Error Getting Stored Filters", errorThrown);
+                showErrorModal("Error Getting Stored Filters", errorThrown);
             },
         });
 
@@ -816,19 +818,24 @@ class Group extends React.Component {
         };
 
         const filters = this.state.storedFilters;
+        console.log(`Rendering Filters: ${  filters  }`);
 
-        console.log(filters);
+        /*
+            [EX]
+            TODO: Figure out what to do with this,
+            updating state in render is illegal
+        */  
 
-        let submitHidden = true;
-        let submitDisabled = true;
-        if (typeof this.props.submitButtonName !== 'undefined') {
-            submitHidden = false;
-            submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
-            this.setState({
-                saveButtonDisabled: !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved,
-                filterSaved: false
-            });
-        }
+        const submitHidden = true;
+        const submitDisabled = true;
+        // if (typeof this.props.submitButtonName !== 'undefined') {
+        //     submitHidden = false;
+        //     submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
+        //     this.setState({
+        //         saveButtonDisabled: !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved,
+        //         filterSaved: false
+        //     });
+        // }
 
         let saveCard = "";
         if (this.state.showSavePopover) {
