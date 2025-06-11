@@ -109,6 +109,12 @@ url=jdbc:mysql://localhost/ngafid
 username=ngafid_user
 password=password
 ```
+### NOTE: this file is in gitignore (to keep credentials private), create your own version ngafid-db/src/liquibase.properties
+
+
+
+
+
 
 You should not modify the first two lines, but lines 3-5 may need to be tweaked depending on your database setup. In
 particular, if you are using a database other than mysql you will have to tweak the URL.
@@ -238,38 +244,38 @@ The data processing pipeline consists of two Kafka consumers and one database ob
 uploaded to the website, and the other two handle event processing. They should all run persistently in separate
 terminals:
 
-The upload consumer simply processes uploaded files from the `upload` topic:
-
-```shell
-~/ngafid2.0 $ run/kafka/upload_consumer
+The upload consumer simply processes uploaded files from the `upload` topic,
+ from the project root (`~/ngafid2.0`), run:
+```
+run/kafka/upload_consumer
 ```
 
 The event consumer and event observer work in concert: the event observer looks for uncomputed events in fully imported
-flights and places them into the `event` topic. Then, the event consumer computes those events.
-
-```shell
-~/ngafid2.0 $ run/kafka/event_consumer
+flights and places them into the `event` topic. Then, the event consumer computes those events.  From the project root (`~/ngafid2.0`), run:
+```
+run/kafka/event_consumer
 ```
 
-```shell
-~/ngafid2.0 $ run/kafka/event_observer
+```
+run/kafka/event_observer
 ```
 
 ## 7. Workflow
 
 If you modify the upload processing code in some way and want to re-add an upload to the processing queue, you may use
-the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue:
+the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue. From the project root (`~/ngafid2.0`), run:
+
+
 
 ```
-~/ngafid2.0 $ run/kafka/upload_helper --help
+run/kafka/upload_helper --help
 ```
 
 Similarly, if you modify a custom-event computation you can use the `EventHelper` to remove events from the database.
 The event observer will pick up on this and enqueue them for re-computation. You may also delete events and opt for them
-not to be recomputed.
-
+not to be recomputed. From the project root (`~/ngafid2.0`), run:
 ```
-~/ngafid2.0 $ run/kafka/event_helper --help
+run/kafka/event_helper --help
 ```
 
 ## 8. Event Statistics
@@ -279,8 +285,13 @@ website, you must update these cached tables:
 
 ```
 $ run/liquibase/daily-materialized-views
+```
+
+```
 $ run/liquibase/hourly-materialized-views
 ```
+
+
 
 You can set up a timer with `cron` or `systemd` to automatically do this on a schedule. Website features that work on
 event statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
@@ -292,7 +303,7 @@ to backup, etc).
 First, change the first line of the file in `db/backup_database.sh` so that the argument after `source` is the path to
 the aformentioned `init_env.sh` file.
 
-Then, you will need to copy the systemd files to your systemd directory and reload the os daemons.
+Then, you will need to copy the systemd files to your systemd directory and reload the os daemons.From the project root (`~/ngafid2.0`), run:
 
 ```
 ~/ngafid2.0 # cp services/backup/ngafid-backup* /usr/lib/systemd/system
