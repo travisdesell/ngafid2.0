@@ -40,13 +40,13 @@ public class ImportUploadJavalinRoutes {
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalUploads / pageSize;
 
-            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new Upload.Status[]{Upload.Status.UPLOADING});
+            List<Upload> pendingUploads = Upload.getUploads(connection, fleetId, new Upload.Status[]{Upload.Status.UPLOADING});
 
             // update the status of all the uploads currently uploading to incomplete so the
             // webpage knows they
             // need to be restarted and aren't currently being uploaded.
             // TODO: This will cause a problem if a user is uploading something while another user views the uploads page.
-            for (Upload upload : pending_uploads) {
+            for (Upload upload : pendingUploads) {
                 upload.setStatus(Upload.Status.UPLOADING_FAILED);
             }
 
@@ -55,7 +55,7 @@ public class ImportUploadJavalinRoutes {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pending_uploads = JSON.parse('" + gson.toJson(pending_uploads) + "');");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pendingUploads = JSON.parse('" + gson.toJson(pendingUploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

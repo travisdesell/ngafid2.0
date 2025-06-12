@@ -1,18 +1,18 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import {createRoot} from 'react-dom/client';
 import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
 import SignedInNavbar from "./signed_in_navbar";
-import {confirmModal} from "./confirm_modal";
+import {showConfirmModal} from "./confirm_modal";
 import $ from "jquery";
 import {EventDefinitionCard} from "./event_definition";
-import {errorModal} from "./error_modal";
+import {showErrorModal} from "./error_modal";
 
 
 airframes.unshift("All Airframes");
 airframeMap[0] = "All Airframes";
 
-let rules = [];
+const rules = [];
 
 for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
@@ -57,7 +57,7 @@ class EventManager extends React.Component {
     }
 
     render() {
-        for (let eventDefinition of this.state.eventDefinitions) {
+        for (const eventDefinition of this.state.eventDefinitions) {
             console.log(eventDefinition);
         }
 
@@ -101,44 +101,44 @@ class CreateEventCard extends React.Component {
                 condition: "AND",
                 filters: []
             }
-        }
+        };
     }
 
     validateEventName(event) {
-        let eventName = event.target.value;
-        console.log("new event name: " + eventName);
+        const eventName = event.target.value;
+        console.log(`new event name: ${  eventName}`);
         this.setState({
             eventName: eventName
         });
     }
 
     validateAirframe(event) {
-        let airframe = event.target.value;
-        console.log("new airframe: " + airframe);
+        const airframe = event.target.value;
+        console.log(`new airframe: ${  airframe}`);
         this.setState({
             airframe: airframe
         });
     }
 
     validateSeverityType(event) {
-        let severityType = event.target.value;
-        console.log("new severity type: " + severityType);
+        const severityType = event.target.value;
+        console.log(`new severity type: ${  severityType}`);
         this.setState({
             severityType: severityType
         });
     }
 
     changeSeverityColumn(event) {
-        let severityColumn = event.target.value;
-        console.log("new severity column: " + severityColumn);
+        const severityColumn = event.target.value;
+        console.log(`new severity column: ${  severityColumn}`);
         this.setState({
             severityColumn: severityColumn
         });
     }
 
     addSeverityColumn() {
-        console.log("adding severity column: " + this.state.severityColumn);
-        let newSeverityColumns = this.state.severityColumnNames;
+        console.log(`adding severity column: ${  this.state.severityColumn}`);
+        const newSeverityColumns = this.state.severityColumnNames;
 
         if (newSeverityColumns.indexOf(this.state.severityColumn) === -1) {
             newSeverityColumns.push(this.state.severityColumn);
@@ -152,9 +152,9 @@ class CreateEventCard extends React.Component {
     }
 
     removeSeverityColumn(columnName) {
-        let newSeverityColumns = this.state.severityColumnNames;
+        const newSeverityColumns = this.state.severityColumnNames;
 
-        let columnIndex = newSeverityColumns.indexOf(columnName);
+        const columnIndex = newSeverityColumns.indexOf(columnName);
         newSeverityColumns.splice(columnIndex, 1);
 
         console.log("new severity columns array:");
@@ -165,16 +165,16 @@ class CreateEventCard extends React.Component {
     }
 
     validateStartBuffer(event) {
-        let startBuffer = event.target.value;
-        console.log("new startBuffer: " + startBuffer);
+        const startBuffer = event.target.value;
+        console.log(`new startBuffer: ${  startBuffer}`);
         this.setState({
             startBuffer: startBuffer
         });
     }
 
     validateStopBuffer(event) {
-        let stopBuffer = event.target.value;
-        console.log("new stopBuffer: " + stopBuffer);
+        const stopBuffer = event.target.value;
+        console.log(`new stopBuffer: ${  stopBuffer}`);
         this.setState({
             stopBuffer: stopBuffer
         });
@@ -189,13 +189,13 @@ class CreateEventCard extends React.Component {
     submitFilter() {
         console.log("Submitting filters:");
         console.log(this.state.filters);
-        console.log("airframe: " + this.state.airframe);
-        console.log("airframeNameId: " + this.state.airframeNameId);
+        console.log(`airframe: ${  this.state.airframe}`);
+        console.log(`airframeNameId: ${  this.state.airframeNameId}`);
         console.log(airframeMap);
 
         $("#loading").show();
 
-        var submissionData = {
+        const submissionData = {
             filterQuery: JSON.stringify(this.state.filters),
             eventName: this.state.eventName,
             startBuffer: this.state.startBuffer,
@@ -211,32 +211,31 @@ class CreateEventCard extends React.Component {
             url: '/protected/create_event',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+                console.log("Received response: ", response);
 
                 $("#loading").hide();
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
                 // Passing loadEventDefs in as prop doesn't seem to work, so doing a hard reload instead
                 window.location.reload();
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Loading Flights", errorThrown);
             },
-            async: true
         });
 
     }
 
     render() {
 
-        let bgStyle = {
+        const bgStyle = {
             margin: 0
         };
 
@@ -263,7 +262,7 @@ class CreateEventCard extends React.Component {
                     filters={this.state.filters}
 
                     getFilter={() => {
-                        return this.state.filters
+                        return this.state.filters;
                     }}
                     setFilter={(filter) => this.setFilter(filter)}
 
@@ -301,13 +300,13 @@ class UpdateEventDefinitionModal extends React.Component {
                 condition: "AND",
                 filters: []
             }
-        }
+        };
     }
 
     show(eventDefinition) {
         console.log(eventDefinition);
         this.setState({
-            title: "Update Event Definition: " + eventDefinition.name + " (" + eventDefinition.id + ")",
+            title: `Update Event Definition: ${  eventDefinition.name  } (${  eventDefinition.id  })`,
             eventDefinitionID: eventDefinition.id,
             eventName: eventDefinition.name,
             airframe: airframeMap[eventDefinition.airframeNameId],
@@ -334,44 +333,44 @@ class UpdateEventDefinitionModal extends React.Component {
     };
 
     modalClicked = () => {
-        console.log("Update Submitted: " + this.state.eventData.id);
+        console.log(`Update Submitted: ${  this.state.eventData.id}`);
     };
 
     validateEventName(event) {
-        let eventName = event.target.value;
-        console.log("new event name: " + eventName);
+        const eventName = event.target.value;
+        console.log(`new event name: ${  eventName}`);
         this.setState({
             eventName: eventName
         });
     }
 
     validateAirframe(event) {
-        let airframe = event.target.value;
-        console.log("new airframe: " + airframe);
+        const airframe = event.target.value;
+        console.log(`new airframe: ${  airframe}`);
         this.setState({
             airframe: airframe
         });
     }
 
     validateSeverityType(event) {
-        let severityType = event.target.value;
-        console.log("new severity type: " + severityType);
+        const severityType = event.target.value;
+        console.log(`new severity type: ${  severityType}`);
         this.setState({
             severityType: severityType
         });
     }
 
     changeSeverityColumn(event) {
-        let severityColumn = event.target.value;
-        console.log("new severity column: " + severityColumn);
+        const severityColumn = event.target.value;
+        console.log(`new severity column: ${  severityColumn}`);
         this.setState({
             severityColumn: severityColumn
         });
     }
 
     addSeverityColumn() {
-        console.log("adding severity column: " + this.state.severityColumn);
-        let newSeverityColumns = this.state.severityColumnNames;
+        console.log(`adding severity column: ${  this.state.severityColumn}`);
+        const newSeverityColumns = this.state.severityColumnNames;
 
         if (newSeverityColumns.indexOf(this.state.severityColumn) === -1) {
             newSeverityColumns.push(this.state.severityColumn);
@@ -385,9 +384,9 @@ class UpdateEventDefinitionModal extends React.Component {
     }
 
     removeSeverityColumn(columnName) {
-        let newSeverityColumns = this.state.severityColumnNames;
+        const newSeverityColumns = this.state.severityColumnNames;
 
-        let columnIndex = newSeverityColumns.indexOf(columnName);
+        const columnIndex = newSeverityColumns.indexOf(columnName);
         newSeverityColumns.splice(columnIndex, 1);
 
         console.log("new severity columns array:");
@@ -398,16 +397,16 @@ class UpdateEventDefinitionModal extends React.Component {
     }
 
     validateStartBuffer(event) {
-        let startBuffer = event.target.value;
-        console.log("new startBuffer: " + startBuffer);
+        const startBuffer = event.target.value;
+        console.log(`new startBuffer: ${  startBuffer}`);
         this.setState({
             startBuffer: startBuffer
         });
     }
 
     validateStopBuffer(event) {
-        let stopBuffer = event.target.value;
-        console.log("new stopBuffer: " + stopBuffer);
+        const stopBuffer = event.target.value;
+        console.log(`new stopBuffer: ${  stopBuffer}`);
         this.setState({
             stopBuffer: stopBuffer
         });
@@ -421,9 +420,9 @@ class UpdateEventDefinitionModal extends React.Component {
 
     submit() {
         console.log("submitting event definition update");
-        console.log("Result: " + this.state.eventData);
+        console.log(`Result: ${  this.state.eventData}`);
 
-        let eventDefinition = this.state.eventData;
+        const eventDefinition = this.state.eventData;
         eventDefinition.name = this.state.eventName;
         for (let i = 0; i < airframeMap.length; i++) {
             if (airframeMap[i] === this.state.airframe) {
@@ -461,18 +460,12 @@ class UpdateEventDefinitionModal extends React.Component {
     }
 
     render() {
-        const {eventData} = this.state;
-
-        let style = {
+        
+        const style = {
             padding: 5
         };
 
-        let bgStyle = {
-            margin: 0
-        };
-
-        console.log("Filter: " + JSON.stringify(this.state.filters));
-
+        console.log("Filter: ", JSON.stringify(this.state.filters));
 
         return (
             <div className="modal-content">
@@ -504,7 +497,7 @@ class UpdateEventDefinitionModal extends React.Component {
                             filters={this.state.filters}
 
                             getFilter={() => {
-                                return this.state.filters
+                                return this.state.filters;
                             }}
 
                             setFilter={(filter) => this.setFilter(filter)}
@@ -546,48 +539,60 @@ class EventDefinitionsTable extends React.Component {
 
 
     confirmDelete(eventDefinition) {
-        confirmModal.show("Confirm Delete: " + eventDefinition.name + " (" + eventDefinition.id + ")",
-            "Are you sure you wish to delete this event definition?\n\n" +
-            "This will not delete if there are any events associated with it.\n",
-            () => {
-                console.log(`Deleting event definition with ID ${eventDefinition.id}.`)
 
-                fetch(`/api/event/definitions/${eventDefinition.id}`, {
+        const onConfirmDelete = () => {
+        
+            console.log(`Deleting event definition with ID ${eventDefinition.id}.`);
+
+            fetch(
+                `/api/event/definitions/${eventDefinition.id}`,
+                {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                }
+            ).then(response => {
 
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            console.log(`Event definition with ID ${eventDefinition.id} deleted successfully.`);
-                            for (let i = 0; i < this.props.eventDefinitions.length; i++) {
-                                if (this.props.eventDefinitions[i].id === eventDefinition.id) {
-                                    this.props.eventDefinitions.splice(i, 1);
-                                    this.forceUpdate();
-                                    break;
-                                }
-                            }
-                        } else {
-                            console.error(`Error deleting event definition with ID ${eventDefinition.id}.`);
-                            console.error(response);
+                if (response.ok) {
+
+                    console.log(`Event definition with ID ${eventDefinition.id} deleted successfully.`);
+                    for (let i = 0; i < this.props.eventDefinitions.length; i++) {
+
+                        if (this.props.eventDefinitions[i].id === eventDefinition.id) {
+                            this.props.eventDefinitions.splice(i, 1);
+                            this.forceUpdate();
+                            break;
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error during deletion:', error);
-                    });
-            }
+
+                    }
+                } else {
+                    console.error(`Error deleting event definition with ID ${eventDefinition.id}.`);
+                    console.error(response);
+                }
+
+            }).catch(error => {
+                console.error('Error during deletion:', error);
+            });
+
+        };
+
+        showConfirmModal(
+            `Confirm Delete: ${  eventDefinition.name  } (${  eventDefinition.id  })`,
+            "Are you sure you wish to delete this event definition?\n\n" +
+            "This will not delete if there are any events associated with it.\n",
+            onConfirmDelete
         );
+
     }
 
     render() {
+
         const {eventDefinitions} = this.props;
-        const {showModal: showDeleteModal, deleteItemId} = this.state;
 
         function arrayToString(arr) {
 
-            return "[" + arr.join(', ') + "]";
+            return `[${  arr.join(', ')  }]`;
         }
 
 
@@ -652,12 +657,10 @@ class EventDefinitionsTable extends React.Component {
     }
 }
 
-let updateModal = ReactDOM.render(
-    <UpdateEventDefinitionModal/>,
-    document.querySelector("#update-event-definition-modal-content")
-);
+const updateModalContainer = document.querySelector("#update-event-definition-modal-content");
+const updateModalRoot = createRoot(updateModalContainer);
+const updateModal = updateModalRoot.render(<UpdateEventDefinitionModal/>);
 
-let event_manager = ReactDOM.render(
-    <EventManager/>,
-    document.querySelector('#manage-events-page')
-);
+const eventManagerContainer = document.querySelector('#manage-events-page');
+const eventManagerRoot = createRoot(eventManagerContainer);
+eventManagerRoot.render(<EventManager/>);

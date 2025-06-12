@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 import {createRoot} from "react-dom/client";
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import {Paginator} from "./paginator_component.js";
@@ -13,7 +13,7 @@ class FlightWarning extends React.Component {
     }
 
     render() {
-        let warning = this.props.warning;
+        const warning = this.props.warning;
 
         const styleName = {flex: "0 0 25em", textShadow: "1px 1px 1px rgba(0,0,0,0.10)"};
         let filenameClasses = "p-1 mr-1 card border-warning";
@@ -42,12 +42,12 @@ class FlightWarnings extends React.Component {
     }
 
     render() {
-        let flightWarnings = this.props.flightWarnings;
+        const flightWarnings = this.props.flightWarnings;
 
         return (
             <div className="m-0">
                 {
-                    flightWarnings.map((warning, index) => {
+                    flightWarnings.map((warning) => {
                         return (
                             <FlightWarning warning={warning} key={warning.id}/>
                         );
@@ -65,7 +65,7 @@ class FlightError extends React.Component {
 
 
     render() {
-        let error = this.props.error;
+        const error = this.props.error;
 
         const styleName = {flex: "0 0 25em", textShadow: "1px 1px 1px rgba(0,0,0,0.10)"};
         let filenameClasses = "p-1 mr-1 card border-danger text-danger";
@@ -94,12 +94,12 @@ class FlightErrors extends React.Component {
     }
 
     render() {
-        let flightErrors = this.props.flightErrors;
+        const flightErrors = this.props.flightErrors;
 
         return (
             <div className="m-0">
                 {
-                    flightErrors.map((error, index) => {
+                    flightErrors.map((error) => {
                         return (
                             <FlightError error={error} key={error.id}/>
                         );
@@ -130,12 +130,12 @@ class UploadErrors extends React.Component {
     }
 
     render() {
-        let uploadErrors = this.props.uploadErrors;
+        const uploadErrors = this.props.uploadErrors;
 
         return (
             <div className="m-0 mt-1">
                 {
-                    uploadErrors.map((error, index) => {
+                    uploadErrors.map((error) => {
                         return (
                             <UploadError error={error} key={error.id}/>
                         );
@@ -174,68 +174,74 @@ class Import extends React.Component {
     }
 
     expandClicked() {
-        var thisImport = this;
 
         if (this.state.loaded) {
-            console.log("not fetching import information from the server, already loaded.");
-            thisImport.state.expanded = !thisImport.state.expanded;
-            thisImport.setState(thisImport.state);
+
+            console.log("Not fetching import information from the server, already loaded.");
+            this.setState((prevState) => ({
+                expanded: !prevState.expanded
+            }));
+
         } else {
-            console.log("fetching import information from the server.");
+
+            console.log("Fetching import information from the server.");
 
             $.ajax({
                 type: 'GET',
                 url: `/api/upload/${this.props.importInfo.id}/errors`,
-                success: function (response) {
-                    console.log("received response: ");
-                    console.log(response);
+                async: true,
+                success: (response) => {
+
+                    console.log("Received response: ", response);
 
                     if (response.errorTitle !== undefined) {
-                        errorModal.show(response.errorTitle, response.errorMessage);
+                        showErrorModal(response.errorTitle, response.errorMessage);
                     } else {
-                        thisImport.state.loaded = true;
-                        thisImport.state.expanded = !thisImport.state.expanded;
-                        console.log("expand clicked, now:" + thisImport.state.expanded);
-                        thisImport.state.uploadErrors = response.uploadErrors;
-                        thisImport.state.flightWarnings = response.flightWarnings;
-                        thisImport.state.flightErrors = response.flightErrors;
 
-                        thisImport.setState(thisImport.state);
+                        this.setState((prevState) => ({
+                            loaded: true,
+                            expanded: !prevState.expanded,
+                            uploadErrors: response.uploadErrors,
+                            flightWarnings: response.flightWarnings,
+                            flightErrors: response.flightErrors
+                        }));
+                        console.log(`Expand clicked, now:${  !this.state.expanded}`);
                     }
 
                 },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Loading Uploads", errorThrown);
+                error: (jqXHR, textStatus, errorThrown) => {
+                    showErrorModal("Error Loading Uploads", errorThrown);
                 },
-                async: true
             });
         }
 
     }
 
     render() {
-        let expanded = this.state.expanded;
-        let uploadErrors = this.state.uploadErrors;
-        let flightWarnings = this.state.flightWarnings;
-        let flightErrors = this.state.flightErrors;
+        const expanded = this.state.expanded;
+        const uploadErrors = this.state.uploadErrors;
+        const flightWarnings = this.state.flightWarnings;
+        const flightErrors = this.state.flightErrors;
 
-        for (var i = 1; i < flightWarnings.length; i++) {
-            if (flightWarnings[i - 1].filename == flightWarnings[i].filename) {
+        for (let i = 1; i < flightWarnings.length; i++) {
+
+            if (flightWarnings[i - 1].filename == flightWarnings[i].filename)
                 flightWarnings[i].sameFilename = true;
-            } else {
+            else
                 flightWarnings[i].sameFilename = false;
-            }
+            
         }
 
-        for (var i = 1; i < flightErrors.length; i++) {
-            if (flightErrors[i - 1].filename == flightErrors[i].filename) {
+        for (let i = 1; i < flightErrors.length; i++) {
+
+            if (flightErrors[i - 1].filename == flightErrors[i].filename)
                 flightErrors[i].sameFilename = true;
-            } else {
+            else
                 flightErrors[i].sameFilename = false;
-            }
+            
         }
 
-        let importInfo = this.props.importInfo;
+        const importInfo = this.props.importInfo;
 
         /*
         console.log("rendering import for filename: '" + importInfo.filename + "'");
@@ -246,17 +252,11 @@ class Import extends React.Component {
         let progressSize = importInfo.progressSize;
         let totalSize = importInfo.totalSize;
 
-        if (progressSize == undefined) progressSize = importInfo.bytesUploaded;
-        if (totalSize == undefined) totalSize = importInfo.sizeBytes;
+        if (progressSize == undefined)
+            progressSize = importInfo.bytesUploaded;
 
-        const width = ((progressSize / totalSize) * 100).toFixed(2);
-        const sizeText = (progressSize / 1000).toFixed(2).toLocaleString() + "/" + (totalSize / 1000).toFixed(2).toLocaleString() + " kB (" + width + "%)";
-        const progressSizeStyle = {
-            width: width + "%",
-            height: "24px",
-            textAlign: "left",
-            whiteSpace: "nowrap"
-        };
+        if (totalSize == undefined)
+            totalSize = importInfo.sizeBytes;
 
         const styleName = {};
         const styleTime = {flex: "0 0 11em"};
@@ -270,9 +270,9 @@ class Import extends React.Component {
         const styleStatus = {flex: "0 0 10em"};
         const styleButton = {};
 
-        let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
+        const expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
+        
         let expandIconClasses = "fa ";
-
         let expandDivClasses = "";
         if (expanded) {
             expandIconClasses += "fa-angle-double-up";
@@ -282,7 +282,7 @@ class Import extends React.Component {
             expandDivClasses = "m-0";
         }
 
-        let status = importInfo.status;
+        const status = importInfo.status;
 
         /*
 
@@ -388,13 +388,13 @@ class Import extends React.Component {
         }
 
 
-        let textClasses = "p-1 mr-1 card";
-        let cardClasses = (textClasses + colorClasses);
+        const textClasses = "p-1 mr-1 card";
+        const cardClasses = (textClasses + colorClasses);
 
         console.log("Import Info: ", importInfo);
-        let totalFlights = (importInfo.validFlights + importInfo.errorFlights);
+        const totalFlights = (importInfo.validFlights + importInfo.errorFlights);
 
-        let hasWarnings = (importInfo.warningFlights > 0);
+        const hasWarnings = (importInfo.warningFlights > 0);
 
         return (
             <div className="m-2">
@@ -499,7 +499,7 @@ class Import extends React.Component {
                         >
                             {statusText}
                         </div>
-                        <button className={expandButtonClasses + "d-flex justify-content-end flex-wrap"}
+                        <button className={`${expandButtonClasses  }d-flex justify-content-end flex-wrap`}
                                 style={{...styleButton, marginLeft: "10px"}} onClick={() => this.expandClicked()}>
                             <i className={expandIconClasses}/>
                         </button>
@@ -578,41 +578,40 @@ class ImportsPage extends React.Component {
     }
 
     submitFilter() {
-        var submissionData = {
+
+        const submissionData = {
             currentPage: this.state.currentPage,
             pageSize: this.state.pageSize
-        }
-
-        var importsPage = this;
+        };
 
         $.ajax({
             type: 'POST',
             url: '/api/upload/imported',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
+            async: true,
+            success: (response) => {
 
                 console.log(response);
 
                 $("#loading").hide();
 
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    console.log("Displaying error modal!");
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
-                console.log("got response: " + response + " " + response.size);
+                console.log(`got response: ${  response  } ${  response.size}`);
 
-                importsPage.setState({
+                this.setState({
                     imports: response.imports,
                     numberPages: response.numberPages
                 });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Loading Flights", errorThrown);
             },
-            async: true
         });
     }
 
@@ -628,7 +627,7 @@ class ImportsPage extends React.Component {
 
                 <div style={{overflowY: "scroll", flex: "1 1 auto", paddingBottom: "70px"}}>
                     <div className="m-1">
-                        {this.state.imports.map((importInfo, index) => {
+                        {this.state.imports.map((importInfo) => {
                             return (
                                 <Import importInfo={importInfo} key={importInfo.identifier}/>
                             );
@@ -671,5 +670,12 @@ class ImportsPage extends React.Component {
     }
 }
 
-const root = createRoot(document.querySelector('#imports-page'));
-root.render(<ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage}/>);
+const container = document.querySelector("#imports-page");
+const root = createRoot(container);
+root.render(
+    <ImportsPage
+        imports={imports}
+        numberPages={numberPages}
+        currentPage={currentPage}
+    />
+);

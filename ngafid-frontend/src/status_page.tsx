@@ -1,13 +1,13 @@
 import "bootstrap";
 
-import {errorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 
 
-import './index.css' //<-- include Tailwind
+import './index.css'; //<-- include Tailwind
 
 
 /*
@@ -71,7 +71,7 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
 
         return formattedName;
 
-    }
+    };
 
     return {
         name: name,
@@ -85,7 +85,7 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
 
 export default class StatusPage extends React.Component {
 
-    constructor(props: any) {
+    constructor(props: object) {
         super(props);
     }
 
@@ -164,7 +164,7 @@ export default class StatusPage extends React.Component {
             const errorMessage = `Failed to fetch ${(STATUS_FAILURE_NAMES.length > 1) ? "statuses" : "status"} for: ${STATUS_FAILURE_NAMES.join(", ")}`;
 
             const errorModalTitle = (STATUS_FAILURE_NAMES.length > 1) ? "Error Fetching Statuses" : "Error Fetching Status";
-            errorModal.show(errorModalTitle, errorMessage);
+            showErrorModal(errorModalTitle, errorMessage);
         }
 
         //Trigger a re-render
@@ -261,7 +261,7 @@ export default class StatusPage extends React.Component {
 
             </div>
 
-        </div>
+        </div>;
 
         return jsxOut;
 
@@ -270,7 +270,7 @@ export default class StatusPage extends React.Component {
 }
 
 
-const root = ReactDOM.createRoot(
+const root = createRoot(
     document.getElementById("status-page") as HTMLElement
 );
 root.render(<StatusPage/>);

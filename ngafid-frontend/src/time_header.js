@@ -1,9 +1,6 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-
-import { errorModal } from "./error_modal.js";
+import React from "react";
 
 export default class TimeHeader extends React.Component {
     constructor(props) {
@@ -14,7 +11,7 @@ export default class TimeHeader extends React.Component {
             buttonContent = "Update";
         }
 
-        let years = [];
+        const years = [];
         for (let year = 2000; year <= props.endYear; year++) {
             years.push(year);
         }
@@ -48,13 +45,19 @@ export default class TimeHeader extends React.Component {
                            {this.props.airframe}
                        </button>
                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                           {
-                               this.props.airframes.map((airframeName, index) => {
-                                   return (
-                                       <a key={index} className="dropdown-item" onClick={event => this.props.airframeChange(airframeName)}>{airframeName}</a>
-                                   );
-                               })
-                           }
+                            {
+                                this.props.airframes.map((airframeName, index) => {
+                                    return (
+                                        <a
+                                            key={index} 
+                                            className="dropdown-item"
+                                            onClick={() => this.props.airframeChange(airframeName)}
+                                        >
+                                            {airframeName}
+                                        </a>
+                                    );
+                                })
+                            }
                        </div>
                    </div>
                </div>
@@ -72,7 +75,7 @@ export default class TimeHeader extends React.Component {
                             {
                                 this.props.tagNames.map((tagName, index) => {
                                     return (
-                                        <a key={index} className="dropdown-item" onClick={event => this.props.tagNameChange(tagName)} onChange={event => this.props.updateTags(event.target.value)}>{tagName}</a>
+                                        <a key={index} className="dropdown-item" onClick={() => this.props.tagNameChange(tagName)} onChange={event => this.props.updateTags(event.target.value)}>{tagName}</a>
                                     );
                                 })
                             }
@@ -187,7 +190,7 @@ class TurnToFinalHeaderComponents extends React.Component {
     }
 
     makeDropdown(currentItem, items, onChange) {
-        let dropdownStyle = {
+        const dropdownStyle = {
           maxHeight: "200px",
           overflowY: "auto"
         };
@@ -201,19 +204,19 @@ class TurnToFinalHeaderComponents extends React.Component {
                         {
                             items.map((itemName, index) => {
                                 return (
-                                    <a key={index} className="dropdown-item" onClick={event => onChange(itemName)}>{itemName}</a>
+                                    <a key={index} className="dropdown-item" onClick={() => onChange(itemName)}>{itemName}</a>
                                 );
                             })
                         }
                     </div>
                 </div>
             </div>
-        )
+        );
     }
 
     render() {
-        var airportsHTML = this.makeDropdown(this.props.airport, this.props.airports, this.props.airportChange);
-        var runwaysHTML = this.makeDropdown(this.props.runway, this.props.runways, this.props.runwayChange);
+        const airportsHTML = this.makeDropdown(this.props.airport, this.props.airports, this.props.airportChange);
+        const runwaysHTML = this.makeDropdown(this.props.runway, this.props.runways, this.props.runwayChange);
         // var airframesHTML = this.makeDropdown(this.props.airframe, this.props.airframes, this.props.airframeChange);
         return (
             <div className='form-row'>

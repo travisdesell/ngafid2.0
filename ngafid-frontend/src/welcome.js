@@ -1,9 +1,9 @@
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import React from "react";
 
-import SummaryPage from "./summary_page.js"
+import {SummaryPage} from "./summary_page.js";
 
-var welcomePage= ReactDOM.render(
-    <SummaryPage aggregate={false}/>,
-    document.querySelector('#welcome-page')
-);
+
+const container = document.querySelector("#welcome-page");
+const root = createRoot(container);
+root.render(<SummaryPage aggregate={false}/>);

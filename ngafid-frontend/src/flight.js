@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from 'react-dom/client';
 
 
 class FlightPage extends React.Component {
@@ -26,10 +26,9 @@ if (doRedirectDelay === "true") {
 
     console.log("FlightPage component loaded...");
 
-    const flightPage = ReactDOM.render(
-        <FlightPage />,
-        document.querySelector('#flight-page')
-    );
+    const container = document.querySelector("#flight-page");
+    const root = createRoot(container);
+    root.render(<FlightPage/>);
 
     console.log("Rendered FlightPage...");
 
@@ -94,7 +93,7 @@ if (doRedirectDelay === "true") {
     //Short delay before redirecting
     setTimeout(() => {
 
-        console.log("Redirecting to: " + redirectURL);
+        console.log(`Redirecting to: ${  redirectURL}`);
 
         //Disable the redirect delay
         localStorage.setItem("doRedirectDelay", "false");

@@ -1,18 +1,19 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import {EventDefinitionCard} from './event_definition.js';
 
 
-var navbar = ReactDOM.render(
+const navbarContainer = document.querySelector('#navbar');
+const navbarRoot = createRoot(navbarContainer);
+navbarRoot.render(
     <SignedInNavbar activePage="create event" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
-                    plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
+                    plotMapHidden={plotMapHidden}/>
 );
 
 airframes.unshift("All Airframes");
@@ -20,7 +21,7 @@ airframes.unshift("All Airframes");
 airframeMap[0] = "All Airframes";
 
 
-var rules = [];
+const rules = [];
 
 for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
@@ -59,45 +60,45 @@ class CreateEventCard extends React.Component {
                 filters: []
             },
 
-        }
+        };
 
     }
 
     validateEventName(event) {
-        let eventName = event.target.value;
-        console.log("new event name: " + eventName);
+        const eventName = event.target.value;
+        console.log(`new event name: ${  eventName}`);
         this.setState({
             eventName: eventName
         });
     }
 
     validateAirframe(event) {
-        let airframe = event.target.value;
-        console.log("new airframe: " + airframe);
+        const airframe = event.target.value;
+        console.log(`new airframe: ${  airframe}`);
         this.setState({
             airframe: airframe
         });
     }
 
     validateSeverityType(event) {
-        let severityType = event.target.value;
-        console.log("new severity type: " + severityType);
+        const severityType = event.target.value;
+        console.log(`new severity type: ${  severityType}`);
         this.setState({
             severityType: severityType
         });
     }
 
     changeSeverityColumn(event) {
-        let severityColumn = event.target.value;
-        console.log("new severity column: " + severityColumn);
+        const severityColumn = event.target.value;
+        console.log(`new severity column: ${  severityColumn}`);
         this.setState({
             severityColumn: severityColumn
         });
     }
 
     addSeverityColumn() {
-        console.log("adding severity column: " + this.state.severityColumn);
-        let newSeverityColumns = this.state.severityColumnNames;
+        console.log(`adding severity column: ${  this.state.severityColumn}`);
+        const newSeverityColumns = this.state.severityColumnNames;
 
         if (newSeverityColumns.indexOf(this.state.severityColumn) === -1) {
             newSeverityColumns.push(this.state.severityColumn);
@@ -111,9 +112,9 @@ class CreateEventCard extends React.Component {
     }
 
     removeSeverityColumn(columnName) {
-        let newSeverityColumns = this.state.severityColumnNames;
+        const newSeverityColumns = this.state.severityColumnNames;
 
-        let columnIndex = newSeverityColumns.indexOf(columnName);
+        const columnIndex = newSeverityColumns.indexOf(columnName);
         newSeverityColumns.splice(columnIndex, 1);
 
         console.log("new severity columns array:");
@@ -124,16 +125,16 @@ class CreateEventCard extends React.Component {
     }
 
     validateStartBuffer(event) {
-        let startBuffer = event.target.value;
-        console.log("new startBuffer: " + startBuffer);
+        const startBuffer = event.target.value;
+        console.log(`new startBuffer: ${  startBuffer}`);
         this.setState({
             startBuffer: startBuffer
         });
     }
 
     validateStopBuffer(event) {
-        let stopBuffer = event.target.value;
-        console.log("new stopBuffer: " + stopBuffer);
+        const stopBuffer = event.target.value;
+        console.log(`new stopBuffer: ${  stopBuffer}`);
         this.setState({
             stopBuffer: stopBuffer
         });
@@ -148,13 +149,13 @@ class CreateEventCard extends React.Component {
     submitFilter() {
         console.log("Submitting filters:");
         console.log(this.state.filters);
-        console.log("airframe: " + this.state.airframe);
-        console.log("airframeNameId: " + this.state.airframeNameId);
+        console.log(`airframe: ${  this.state.airframe}`);
+        console.log(`airframeNameId: ${  this.state.airframeNameId}`);
         console.log(airframeMap);
 
         $("#loading").show();
 
-        var submissionData = {
+        const submissionData = {
             filterQuery: JSON.stringify(this.state.filters),
             eventName: this.state.eventName,
             startBuffer: this.state.startBuffer,
@@ -170,34 +171,34 @@ class CreateEventCard extends React.Component {
             url: '/api/event/definition',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+
+                console.log("Received response: ", response);
 
                 $("#loading").hide();
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
                 //createEventCard.setEvents(response);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Loading Flights", errorThrown);
             },
-            async: true
         });
 
     }
 
     render() {
-        let style = {
+        const style = {
             padding: 5
         };
 
-        let bgStyle = {
+        const bgStyle = {
             background: "rgba(248,259,250,0.8)",
             margin: 0
         };
@@ -225,7 +226,7 @@ class CreateEventCard extends React.Component {
                         filters={this.state.filters}
 
                         getFilter={() => {
-                            return this.state.filters
+                            return this.state.filters;
                         }}
                         setFilter={(filter) => this.setFilter(filter)}
 
@@ -246,7 +247,6 @@ class CreateEventCard extends React.Component {
     }
 }
 
-let createEventCard = ReactDOM.render(
-    <CreateEventCard/>,
-    document.querySelector('#create-event-card')
-);
+const container = document.querySelector("#create-event-card");
+const createEventCard = createRoot(container);
+createEventCard.render(<CreateEventCard/>);

@@ -1,9 +1,9 @@
 import 'bootstrap';
-import React, {Component} from "react";
-import ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from 'react-dom/client';
 
-import {errorModal} from "./error_modal.js";
-import {loginModal} from "./login.js";
+// import {loginModal} from "./login.js";
+import { showLoginModal } from "./login.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
 
@@ -37,15 +37,17 @@ class NavLink extends React.Component {
 
 
 class HomeNavbar extends React.Component {
+
     attemptLogIn() {
-        console.log("showing login modal!");
-        loginModal.show();
+        console.log("Showing login modal: ...");
+        showLoginModal();
+        // loginModal.show();
     }
 
     render() {
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
+            <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
 
                 <a className="navbar-brand" href="../../src/main/javascript">NGAFID</a>
@@ -74,9 +76,8 @@ class HomeNavbar extends React.Component {
     }
 }
 
-var navbar = ReactDOM.render(
-    <HomeNavbar/>,
-    document.querySelector('#navbar')
-);
+const container = document.querySelector("#navbar");
+const navbar = createRoot(container);
+navbar.render(<HomeNavbar/>);
 
-export {navbar};
+export {navbar as homeNavbar};

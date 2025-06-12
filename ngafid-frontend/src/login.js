@@ -1,12 +1,17 @@
 import 'bootstrap';
 
-import React from "react";
-import ReactDOM from "react-dom";
-import {errorModal} from "./error_modal.js";
+import React, {createRef} from "react";
+import { createRoot } from 'react-dom/client';
+import { showErrorModal } from './error_modal.js';
 import $ from 'jquery';
+
+import { homeNavbar } from './home_navbar.js';
 
 window.jQuery = $;
 window.$ = $;
+
+
+const loginModalRef = createRef();
 
 
 class LoginModal extends React.Component {
@@ -39,7 +44,7 @@ class LoginModal extends React.Component {
 
     submitLogin() {
         let valid = true;
-        for (let property in this.state.valid) {
+        for (const property in this.state.valid) {
             console.log(property);
 
             if (property == false) {
@@ -54,26 +59,33 @@ class LoginModal extends React.Component {
         $("#login-modal").modal('show');
         $("#loading").show();
 
-        var submissionData = {
+        const submissionData = {
             email: $("#loginEmail").val(),
             password: $("#loginPassword").val()
         };
 
         $.ajax({
             type: 'POST',
-            url: '/api/auth/login',
+            // url: '/api/auth/login',
+            url: '/login',  /* [EX] */
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
+            async: true,
+            success: (response) => {
+
                 $("#loginPassword").val("");
                 $("#loading").hide();
 
                 if (response.loggedOut) {
-                    console.log("user was logged out");
-                    loginModal.state.valid.errorMessage = true;
-                    loginModal.state.errorMessage = response.message;
-                    loginModal.setState(loginModal.state);
-                    navbar.logOut();
+                    console.log("User was logged out...");
+                    this.setState(prevState => ({
+                        valid: {
+                            ...prevState.valid,
+                            errorMessage: true
+                        },
+                        errorMessage: response.message
+                    }));
+                    homeNavbar.logOut();
                     return false;
                 }
 
@@ -81,8 +93,9 @@ class LoginModal extends React.Component {
                 $("#login-modal").modal('hide');
 
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    console.log("Displaying error modal!");
+                    hideLoginModal();
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
@@ -95,60 +108,68 @@ class LoginModal extends React.Component {
                 }
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
-                errorModal.show("Error Submitting Account Information", errorThrown);
+                hideLoginModal();
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
-            async: true
         });
 
     }
 
     validateEmail() {
-        let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
-        let email = $("#loginEmail").val();
-        this.state.valid.email = re.test(String(email).toLowerCase());
-        this.state.valid.emailEmpty = email.length == 0;
+        const email = $("#loginEmail").val();
+        const newValid = {
+            ...this.state.valid,
+            email: re.test(String(email).toLowerCase()),
+            emailEmpty: email.length == 0,
+            errorMessage: false
+        };
 
-        //reset the error message from the server as the user has modified the email/password
-        this.state.valid.errorMessage = false;
-        this.state.errorMessage = "";
-
-        this.setState(this.state);
+        this.setState({
+            valid: newValid,
+            errorMessage: ""
+        });
     }
 
     validatePassword() {
-        let password = $("#loginPassword").val();
-        this.state.valid.passwordEmpty = password.length == 0;
+
+        const password = $("#loginPassword").val();
 
         //reset the error message from the server as the user has modified the email/password
-        this.state.valid.errorMessage = false;
-        this.state.errorMessage = "";
+        const newValid = {
+            ...this.state.valid,
+            passwordEmpty: (password.length == 0),
+            errorMessage: false
+        };
 
-        this.setState(this.state);
+        this.setState({
+            valid: newValid,
+            errorMessage: ""
+        });
     }
 
     render() {
-        const hidden = this.props.hidden;
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '8px'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '150px',
             flex: '0 0 150px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let validationMessageStyle = {
+        const validationMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -177,9 +198,9 @@ class LoginModal extends React.Component {
             validationHidden = false;
         }
 
-        let submitDisabled = !validationHidden;
+        const submitDisabled = !validationHidden;
 
-        console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
+        console.log(`rendering login modal with validation message: '${  validationMessage  }' and validation visible: ${  validationHidden}`);
 
 
         return (
@@ -254,9 +275,20 @@ class LoginModal extends React.Component {
     }
 }
 
-var loginModal = ReactDOM.render(
-    <LoginModal/>,
-    document.querySelector("#login-modal-content")
-);
+const container = document.querySelector("#login-modal-content");
+const root = createRoot(container);
+root.render(<LoginModal ref={loginModalRef}/>);
 
-export {loginModal};
+export function showLoginModal() {
+
+    if (loginModalRef.current)
+        loginModalRef.current.show();
+
+}
+
+export function hideLoginModal() {
+
+    if (loginModalRef.current)
+        $("#login-modal").modal('hide');
+
+}

@@ -1,17 +1,8 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from 'react-dom/client';
 
-import Form from 'react-bootstrap/Form';
-import FormControl from 'react-bootstrap/FormControl';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Button from 'react-bootstrap/Button';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
-
-import { errorModal } from "./error_modal.js";
 import { MetricViewerSettings } from "./metricviewer_preferences.js";
 import { AirSyncSettings } from "./airsync_settings.js";
 
@@ -19,17 +10,20 @@ import SignedInNavbar from "./signed_in_navbar.js";
 
 import { EmailSettingsTableUser } from "./email_settings.js";
 
+
 class PreferencesPage extends React.Component {
+
     constructor(props) {
+
         super(props);
 
         let airsyncEnabled = false;
-        if (props.airsyncTimeout != -1) {
+        if (props.airsyncTimeout != -1)
             airsyncEnabled = true;
-        }
 
         this.state = {
             fullName : userName,
+            airsyncTimeout : this.props.airsyncTimeout,
             waitingUserCount : this.props.waitingUserCount,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount,
             selectedMetrics : userPreferences.flightMetrics,
@@ -37,39 +31,48 @@ class PreferencesPage extends React.Component {
             airsyncEnabled : airsyncEnabled
         };
 
-        console.log("this users prefs:");
-        console.log(this.props);
+        console.log("This users prefs:", this.props);
+
     }
 
 
     render() {
-        let adminContent = "";
-        let userNameDisplay = (
+
+        const userNameDisplay = (
             this.state.fullName.replace(/\s/g, '').length > 0
             ? `${this.state.fullName}'s Preferences`
             : "Your Preferences"
         );
-        console.log("FULL NAME: " + `'${this.state.fullName}'`);
 
-        if (this.props.isAdmin) {
-            if (this.state.airsyncEnabled) {
-                console.log("timeout is: " + this.props.airsyncTimeout);
-                adminContent = (
-                    <AirSyncSettings
-                        isVertical={false}
-                        selectedMetrics={this.state.selectedMetrics}
-                        decimalPrecision={this.state.decimalPrecision}
-                        timeout={this.props.airsyncTimeout}>
-                    </AirSyncSettings>
-                );
-            }
+        console.log(`FULL NAME: '${this.state.fullName}'`);
+
+        let adminContent = "";
+        if (this.props.isAdmin && this.state.airsyncEnabled) {
+
+            console.log(`Timeout is: ${  this.props.airsyncTimeout}`);
+            adminContent = (
+                <AirSyncSettings
+                    isVertical={false}
+                    selectedMetrics={this.state.selectedMetrics}
+                    decimalPrecision={this.state.decimalPrecision}
+                    timeout={this.props.airsyncTimeout}>
+                </AirSyncSettings>
+            );
+
         }
 
         return (
             <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
                 <div style={{flex:"0 0 auto"}}>
-                    <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                    <SignedInNavbar
+                        activePage="account"
+                        waitingUserCount={this.state.waitingUserCount}
+                        fleetManager={fleetManager}
+                        unconfirmedTailsCount={this.state.unconfirmedTailsCount}
+                        modifyTailsAccess={modifyTailsAccess}
+                        plotMapHidden={plotMapHidden}
+                    />
                 </div>
 
                 <div style={{overflowY:"auto", flex:"1 1 auto"}}>
@@ -111,11 +114,17 @@ class PreferencesPage extends React.Component {
             </div>
         );
     }
+    
 }
 
-console.log("setting preferences page with react!");
-
-var preferencesPage = ReactDOM.render(
-    <PreferencesPage userPreferences={userPreferences} isAdmin={isAdmin} airsyncTimeout={airsync_timeout} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
-   document.querySelector('#preferences-page')
+const container = document.querySelector("#preferences-page");
+const root = createRoot(container);
+root.render(
+    <PreferencesPage
+        userPreferences={userPreferences}
+        isAdmin={isAdmin}
+        airsyncTimeout={airsyncTimeout}
+        waitingUserCount={waitingUserCount}
+        unconfirmedTailsCount={unconfirmedTailsCount}
+    />
 );

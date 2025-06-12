@@ -1,48 +1,28 @@
 import 'bootstrap';
 import {Paginator} from "./paginator_component.js";
-import {confirmModal} from "./confirm_modal.js";
-import {errorModal} from "./error_modal.js";
+import { showConfirmModal } from "./confirm_modal.js";
+import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 class AirSyncUpload extends React.Component {
+
     constructor(props) {
         super(props);
-
-        this.state = {
-            expanded: false,
-        }
-    }
-
-    componentDidMount() {
-        //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
-    }
-
-    expandClicked() {
-        this.setState({
-            expanded: !expanded,
-        });
     }
 
     render() {
-        let uploadInfo = this.props.uploadInfo;
+        const uploadInfo = this.props.uploadInfo;
 
         let progressSize = uploadInfo.progressSize;
         let totalSize = uploadInfo.totalSize;
-        let expanded = this.state.expanded;
 
-        if (progressSize == undefined) progressSize = uploadInfo.bytes_uploaded;
-        if (totalSize == undefined) totalSize = uploadInfo.size_bytes;
-
-        const width = ((progressSize / totalSize) * 100).toFixed(2);
-        const sizeText = (uploadInfo.sizeBytes / 1000) + " K";
-        const progressSizeStyle = {
-            width: width + "%",
-            height: "24px",
-            textAlign: "left",
-            whiteSpace: "nowrap"
-        };
+        if (progressSize == undefined)
+            progressSize = uploadInfo.bytes_uploaded;
+        
+        if (totalSize == undefined)
+            totalSize = uploadInfo.size_bytes;
 
         const fixedFlexStyle1 = {
             flex: "0 0 15em"
@@ -61,65 +41,45 @@ class AirSyncUpload extends React.Component {
 
         let statusText = "";
 
-        let expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
-        let expandIconClasses = "fa ";
 
-        let expandDivClasses = "";
-        if (expanded) {
-            expandIconClasses += "fa-angle-double-up";
-            expandDivClasses = "m-0 mt-1 mb-4";
-        } else {
-            expandIconClasses += "fa-angle-double-down";
-            expandDivClasses = "m-0";
-        }
-
-        let progressBarClasses = "progress-bar";
         let statusClasses = "p-1 pl-2 pr-2 ml-1 card bg-light";
-        let status = uploadInfo.status;
+        const status = uploadInfo.status;
         if (status == "HASHING") {
             statusText = "Hashing";
-            progressBarClasses += " bg-warning";
             statusClasses += " border-warning text-warning";
         } else if (status == "UPLOADED") {
             statusText = "Uploaded";
-            progressBarClasses += " bg-primary";
             statusClasses += " border-primary text-primary";
         } else if (status == "UPLOADING") {
             statusText = "Uploading";
         } else if (status == "UPLOAD INCOMPLETE") {
             statusText = "Upload Incomplete";
-            progressBarClasses += " bg-warning";
             statusClasses += " border-warning text-warning";
         } else if (status == "ERROR") {
             statusText = "Import Failed";
-            progressBarClasses += " bg-danger";
             statusClasses += " border-danger text-danger";
         } else if (status == "IMPORTED") {
+
             if (uploadInfo.errorFlights == 0 && uploadInfo.warningFlights == 0) {
                 statusText = "All Flights Imported";
-                progressBarClasses += " bg-success";
                 statusClasses += " border-success text-success";
 
-            } else if (uploadInfo.errorFlights != 0 && uploadInfo.errorFlights != 0) {
+            } else if (uploadInfo.errorFlights != 0 && uploadInfo.warningFlights != 0) {
                 statusText = "Imported With Some Errors and Warnings";
-                progressBarClasses += " bg-danger";
                 statusClasses += " border-danger text-danger ";
 
             } else if (uploadInfo.errorFlights != 0) {
                 statusText = "Imported With Some Errors";
-                progressBarClasses += " bg-danger";
                 statusClasses += " border-danger text-danger ";
 
             } else if (uploadInfo.warningFlights != 0) {
                 statusText = "Imported With Some Warnings";
-                progressBarClasses += " bg-warning";
                 statusClasses += " border-warning text-warning ";
             }
+            
         }
 
-        let validClasses =
-
-            statusClasses += " mr-1 bg-light flex-fill";
+        statusClasses += " mr-1 bg-light flex-fill";
 
         return (
             <div className="m-1">
@@ -166,19 +126,9 @@ class AirSyncUploadsCard extends React.Component {
         };
     }
 
-    getUploadsCard() {
-        return this;
-    }
-
-    removeUpload(file) {
-        console.log("does nothing");
-    }
-
     submitFilter() {
-        //prep data
-        var uploadsPage = this;
-
-        var submissionData = {
+    
+        const submissionData = {
             currentPage: this.state.currentPage,
             pageSize: this.state.pageSize,
         };
@@ -189,63 +139,61 @@ class AirSyncUploadsCard extends React.Component {
             type: 'GET',
             url: '/api/airsync/uploads',
             data: submissionData,
-            success: function (response) {
+            async: true,
+            success: (response) => {
 
                 console.log(response);
 
                 $("#loading").hide();
 
                 if (response.errorTitle) {
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    console.log("Displaying error modal!");
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
-                uploadsPage.setState({
+                this.setState({
                     uploads: response.page,
                     numberPages: response.numberPages
                 });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Uploads", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Loading Uploads", errorThrown);
             },
-            async: true
         });
     }
 
     manualSync() {
         console.log("Manual AirSync update requested!");
-        confirmModal.show("Confirm Operation", "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.", () => {
-            this.requestUpdate()
-        });
+        showConfirmModal(
+            "Confirm Operation",
+            "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.",
+            () => { this.requestUpdate(); }
+        );
     }
 
     requestUpdate() {
-        let theseUploads = this;
 
         $.ajax({
             type: 'PATCH',
             url: '/api/airsync/update',
             dataType: 'json',
-            success: function (response) {
-                theseUploads.state.lastUpdateTime = "Pending";
-                theseUploads.setState(theseUploads.state);
+            async: true,
+            success: () => {
+                this.setState({ lastUpdateTime: "Pending" });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Updating:", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Updating:", errorThrown);
             },
-            async: true
         });
     }
 
 
     render() {
-        const hidden = this.props.hidden;
-        const hiddenStyle = {
-            display: "none"
-        };
 
-        const updateTimeInfo = "Last Sync Time: " + this.state.lastUpdateTime;
+        const hidden = this.props.hidden;
+
+        const updateTimeInfo = `Last Sync Time: ${  this.state.lastUpdateTime}`;
 
         return (
             <div>
@@ -276,15 +224,15 @@ class AirSyncUploadsCard extends React.Component {
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
                         updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
+                            this.setState({ currentPage: currentPage });
                         }}
                         updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
+                            this.setState({ pageSize: pageSize });
                         }}
                     />
 
                     {
-                        this.state.uploads.map((uploadInfo, index) => {
+                        this.state.uploads.map((uploadInfo) => {
                             return (
                                 <AirSyncUpload uploadInfo={uploadInfo} key={uploadInfo.identifier}/>
                             );
@@ -302,10 +250,10 @@ class AirSyncUploadsCard extends React.Component {
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
                         updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
+                            this.setState({ currentPage: currentPage });
                         }}
                         updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
+                            this.setState({ pageSize: pageSize });
                         }}
                     />
 
@@ -315,8 +263,13 @@ class AirSyncUploadsCard extends React.Component {
     }
 }
 
-var preferencesPage = ReactDOM.render(
-    <AirSyncUploadsCard numberPages={numberPages} uploads={uploads} lastUpdateTime={lastUpdateTime}
-                        currentPage={currentPage}/>,
-    document.querySelector('#airsync-uploads-page')
-)
+const container = document.querySelector("#airsync-uploads-page");
+const root = createRoot(container);
+root.render(
+    <AirSyncUploadsCard
+        numberPages={numberPages}
+        uploads={uploads}
+        lastUpdateTime={lastUpdateTime}
+        currentPage={currentPage}
+    />
+);

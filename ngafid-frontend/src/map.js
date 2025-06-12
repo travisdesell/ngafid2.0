@@ -3,23 +3,23 @@ import 'bootstrap';
 import Overlay from 'ol/Overlay';
 import { Map, View } from 'ol';
 import BingMaps from 'ol/source/BingMaps.js';
-import { fromLonLat, toLonLat } from 'ol/proj.js';
+import { fromLonLat } from 'ol/proj.js';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ.js';
 
 
 console.log("doing first load after setting state!");
 
-var styles = [
+const styles = [
     'Aerial',
     'AerialWithLabels',
     'Road',
     'RoadOnDemand'
 ];
 
-var layers = [];
-var i;
-var ii = styles.length; //do the mapquest satellite differently
+const layers = [];
+let i;
+const ii = styles.length; //do the mapquest satellite differently
 
 for (i = 0; i < ii; ++i) {
     layers.push(new TileLayer({
@@ -33,7 +33,7 @@ for (i = 0; i < ii; ++i) {
 }
 
 styles.push('SectionalCharts');
-var tms_sec = new TileLayer({
+const tms_sec = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
@@ -44,7 +44,7 @@ layers.push(tms_sec);
 
 
 styles.push('IFREnrouteLowCharts');
-var tms_enrl = new TileLayer({
+const tms_enrl = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
@@ -55,7 +55,7 @@ layers.push(tms_enrl);
 
 
 styles.push('IFREnrouteHighCharts');
-var tms_enrh = new TileLayer({
+const tms_enrh = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
@@ -65,7 +65,7 @@ var tms_enrh = new TileLayer({
 layers.push(tms_enrh);
 
 styles.push('TerminalAreaCharts');
-var tms_tac = new TileLayer({
+const tms_tac = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
@@ -76,7 +76,7 @@ layers.push(tms_tac);
 
 
 styles.push('HelicopterCharts');
-var heli = new TileLayer({
+const heli = new TileLayer({
     visible: false,
     preload: Infinity,
     source : new XYZ({
@@ -86,11 +86,11 @@ var heli = new TileLayer({
 
 layers.push(heli);
 
-var center = fromLonLat([-97.0329, 47.9253]);
+const center = fromLonLat([-97.0329, 47.9253]);
 
 layers[2].setVisible(true);
 
-var map = null;
+let map = null;
 
 function initializeMap() {
 
@@ -111,18 +111,13 @@ function initializeMap() {
     console.log("Initialized map instance: ", map);
 
 }
-var container = document.getElementById('popup');
-var content = document.getElementById('popup-content');
-var closer = document.getElementById('popup-closer');
-let overlays;
-var overlay;
+const container = document.getElementById('popup');
+const content = document.getElementById('popup-content');
+const closer = document.getElementById('popup-closer');
+let overlay;
 
-//Container is null, set overlays to empty array
-if (container == null) {
-    overlays = [];
-
-//Otherwise, create new overlay
-} else {
+//Container is not null, create new overlay
+if (container != null) {
 
     overlay = new Overlay({
         element: container,
@@ -132,10 +127,9 @@ if (container == null) {
         }
     });
 
-    overlays = [overlay];
 }
 
-var Colors = {};
+const Colors = {};
 Colors.names = {
     aqua: "#00ffff",
     //azure: "#f0ffff",
@@ -183,18 +177,18 @@ Colors.names = {
 };
 
 Colors.random = function () {
-    var result;
-    var count = 0;
-    for (var prop in this.names)
+    let result;
+    let count = 0;
+    for (const prop in this.names)
         if (Math.random() < 1 / ++count)
             result = prop;
     return result;
 };
 
 Colors.randomValue = function () {
-    var result;
-    var count = 0;
-    for (var prop in this.names)
+    let result;
+    let count = 0;
+    for (const prop in this.names)
         if (Math.random() < 1 / ++count)
             result = this.names[prop];
     return result;

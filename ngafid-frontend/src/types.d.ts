@@ -22,7 +22,7 @@ export interface NGAFIDUser {
     isFleetManager: boolean;
 }
 
-
+//TODO: Figure out the best way to reconcile this with eslint globals
 declare global {
     const waitingUserCount: number;
     const fleetManager: boolean;
