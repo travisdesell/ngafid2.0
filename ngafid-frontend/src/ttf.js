@@ -1,6 +1,6 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import Popover from 'react-bootstrap/Popover';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
@@ -175,7 +175,7 @@ class TTFCard extends React.Component {
         };
 
         const navbarContainer = document.querySelector('#navbar');
-        const navbarRoot = ReactDOM.createRoot(navbarContainer);
+        const navbarRoot = createRoot(navbarContainer);
         navbarRoot.render(
             <SignedInNavbar
                 filterVisible={false}
@@ -237,7 +237,7 @@ class TTFCard extends React.Component {
             };
 
             const outerHTML = document.createElement('div');
-            ReactDOM.createRoot(outerHTML).render(React.createElement(TTFMapPopup, popupProps));
+            createRoot(outerHTML).render(React.createElement(TTFMapPopup, popupProps));
             document.body.appendChild(outerHTML);
             this.state.popups.push(outerHTML);
 
@@ -963,7 +963,7 @@ class TTFCard extends React.Component {
 }
 
 const ttfContainer = document.querySelector('#ttf-card');
-const root = ReactDOM.createRoot(ttfContainer);
+const root = createRoot(ttfContainer);
 root.render(<TTFCard/>);
 
 console.log("Rendered ttfCard!");

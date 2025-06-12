@@ -5,7 +5,7 @@ import {showConfirmModal} from "./confirm_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 
 
 import './index.css'; //<-- include Tailwind
@@ -239,7 +239,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
 declare const user: NGAFIDUser; /* SERVER-INJECTED ⚠ */
 
-const root = ReactDOM.createRoot(
+const root = createRoot(
     document.getElementById("bug-report-page") as HTMLElement
 );
 root.render(<BugReportPage user={user}/>);  

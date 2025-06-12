@@ -4,7 +4,7 @@ import { showErrorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 
 
 import './index.css'; //<-- include Tailwind
@@ -270,7 +270,7 @@ export default class StatusPage extends React.Component {
 }
 
 
-const root = ReactDOM.createRoot(
+const root = createRoot(
     document.getElementById("status-page") as HTMLElement
 );
 root.render(<StatusPage/>);

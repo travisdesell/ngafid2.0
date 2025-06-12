@@ -1,6 +1,6 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
@@ -14,7 +14,7 @@ const fleetManager = navbarContainer.getAttribute("data-fleet-manager") === "tru
 const unconfirmedTailsCount = navbarContainer.getAttribute("data-unconfirmed-tails-count");
 const modifyTailsAccess = navbarContainer.getAttribute("data-modify-tails-access") === "true";
 const plotMapHidden = navbarContainer.getAttribute("data-plot-map-hidden") === "true";
-ReactDOM.createRoot(navbarContainer).render(
+createRoot(navbarContainer).render(
     <SignedInNavbar activePage="update event" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
                     plotMapHidden={plotMapHidden}/>
@@ -313,5 +313,5 @@ class UpdateEventCard extends React.Component {
 }
 
 const container = document.querySelector("#update-event-card");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(<UpdateEventCard/>);

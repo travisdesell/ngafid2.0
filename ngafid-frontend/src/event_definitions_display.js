@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
 import SignedInNavbar from "./signed_in_navbar";
@@ -208,5 +208,5 @@ class EventDefinitionsDisplayPage extends React.Component {
 
 
 const container = document.querySelector("#event-definitions-display-page");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(<EventDefinitionsDisplayPage />);

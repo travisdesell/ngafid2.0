@@ -4,7 +4,7 @@ import { showConfirmModal } from "./confirm_modal.js";
 import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 class AirSyncUpload extends React.Component {
 
@@ -264,7 +264,7 @@ class AirSyncUploadsCard extends React.Component {
 }
 
 const container = document.querySelector("#airsync-uploads-page");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(
     <AirSyncUploadsCard
         numberPages={numberPages}

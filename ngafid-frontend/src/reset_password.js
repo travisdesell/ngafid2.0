@@ -1,7 +1,6 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
-
+import { createRoot } from 'react-dom/client';
 import {showErrorModal} from "./error_modal.js";
 
 class ResetPasswordCard extends React.Component {
@@ -232,5 +231,5 @@ class ResetPasswordCard extends React.Component {
 }
 
 const container = document.querySelector("#reset-password-card");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(<ResetPasswordCard hidden={false}/>);

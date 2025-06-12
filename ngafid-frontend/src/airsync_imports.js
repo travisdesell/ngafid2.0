@@ -1,6 +1,6 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";
@@ -341,7 +341,11 @@ class ImportsPage extends React.Component {
 }
 
 const container = document.querySelector("#airsync-imports-page");
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(
-    <ImportsPage imports={this.state.imports} numberPages={this.state.numberPages} currentPage={this.state.currentPage}/>
+    <ImportsPage
+        imports={this.state.imports}
+        numberPages={this.state.numberPages}
+        currentPage={this.state.currentPage}
+    />
 );

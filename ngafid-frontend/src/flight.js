@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 
 class FlightPage extends React.Component {
@@ -27,7 +27,7 @@ if (doRedirectDelay === "true") {
     console.log("FlightPage component loaded...");
 
     const container = document.querySelector("#flight-page");
-    const root = ReactDOM.createRoot(container);
+    const root = createRoot(container);
     root.render(<FlightPage/>);
 
     console.log("Rendered FlightPage...");

@@ -1,6 +1,6 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
@@ -9,7 +9,7 @@ import {EventDefinitionCard} from './event_definition.js';
 
 
 const navbarContainer = document.querySelector('#navbar');
-const navbarRoot = ReactDOM.createRoot(navbarContainer);
+const navbarRoot = createRoot(navbarContainer);
 navbarRoot.render(
     <SignedInNavbar activePage="create event" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
@@ -248,5 +248,5 @@ class CreateEventCard extends React.Component {
 }
 
 const container = document.querySelector("#create-event-card");
-const createEventCard = ReactDOM.createRoot(container);
+const createEventCard = createRoot(container);
 createEventCard.render(<CreateEventCard/>);
