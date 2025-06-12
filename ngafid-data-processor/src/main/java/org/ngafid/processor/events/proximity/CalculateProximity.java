@@ -108,7 +108,10 @@ public class CalculateProximity {
         }
 
         // Leave in to verify how things work in these edge cases
-        if (startShift < 5 || endShift < 5) System.exit(1);
+        if (startShift < 5 || endShift < 5) {
+            LOG.info(String.format("Insufficient data points for rate of closure calculation: startShift=%d, endShift=%d. Skipping rate of closure calculation.", startShift, endShift));
+            return new double[0];
+        }
 
         return roc;
 
