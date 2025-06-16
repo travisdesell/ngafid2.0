@@ -174,6 +174,8 @@ class TTFCard extends React.Component {
         var navbar = ReactDOM.render(
             <SignedInNavbar
                 filterVisible={false}
+                plotMapHidden={false}
+                showMapButton={true}
                 showPlotButton={false}
                 disableMapButton={true}
                 mapVisible={this.state.mapVisible}

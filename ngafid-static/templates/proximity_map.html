@@ -1,120 +1,78 @@
 <!DOCTYPE html>
+
 <html>
-<head>
-    <!-- Theme Preload -->
-    <link rel="stylesheet" href="/css/theme-preload.css">
-    <script src="/js/theme_preload-bundle.js"></script>
 
-    <title>Proximity Map - NGAFID</title>
+    <head>
+        <!-- Theme Preload -->
+        <link rel="stylesheet" href="/css/theme-preload.css">
+        <script src="/js/theme_preload-bundle.js"></script>
 
-    <!-- Bootstrap -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
-          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <title>Proximity Map - NGAFID</title>
 
-    <!-- OpenLayers CSS and JS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
-    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+            integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
-    <!-- Custom CSS -->
-    <link rel='stylesheet' href='/css/main.css'>
-    <link rel='stylesheet' href='/css/font-awesome.min.css'>
+        <!-- OpenLayers CSS and JS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
+        <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
 
-    <style>
-        #map {
-            width: 100%;
-            height: 500px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            background-color: #f8f9fa;
-        }
+        <!-- Custom CSS -->
+        <link rel='stylesheet' href='/css/main.css'>
+        <link rel='stylesheet' href='/css/font-awesome.min.css'>
 
-        .map-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 4px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        }
-
-        .map-controls button {
-            margin: 5px;
-        }
-    </style>
-
-    <script>
-        var plotMapHidden = true;
-        console.log('Proximity map page loaded - checking JavaScript initialization');
-        window.addEventListener('load', function() {
-            console.log('OpenLayers loaded:', typeof ol !== 'undefined' ? 'Yes' : 'No');
-            if (typeof ol !== 'undefined') {
-                console.log('OpenLayers version:', ol.VERSION);
+        <style>
+            #map {
+                width: 100%;
+                height: 500px;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                background-color: #f8f9fa;
             }
-        });
-        {{{navbar_js}}}
-    </script>
-</head>
-<body>
-<div id="navbar"></div>
 
-<div id="proximity-map-page">
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-12">
+            .map-controls {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 1000;
+                background: white;
+                padding: 10px;
+                border-radius: 4px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            }
 
-                <div id="map"></div>
+            .map-controls button {
+                margin: 5px;
+            }
+        </style>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Proximity Events</h3>
-                    </div>
-                    <div class="card-body">
+        <script>
+            var plotMapHidden = true;
+            console.log('Proximity map page loaded - checking JavaScript initialization');
+            window.addEventListener('load', function() {
+                console.log('OpenLayers loaded:', typeof ol !== 'undefined' ? 'Yes' : 'No');
+                if (typeof ol !== 'undefined') {
+                    console.log('OpenLayers version:', ol.VERSION);
+                }
+            });
+            {{{navbar_js}}}
+        </script>
+    </head>
 
-                        <!-- Map controls -->
-                        <div class="map-controls">
-                            <button class="btn btn-sm btn-secondary" id="toggle-event-list">
-                                Show/Hide Event List
-                            </button>
-                        </div>
+    <body style="display: flex; flex-direction: column;">
 
-                        <!-- Events table -->
-                        <div id="events-table" class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                <tr>
-                                    <th>Flight ID</th>
-                                    <th>Other Flight ID</th>
-                                    <th>Start Time</th>
-                                    <th>End Time</th>
-                                    <th>Severity</th>
-                                    <th>Lateral Distance (ft)</th>
-                                    <th>Vertical Distance (ft)</th>
-                                    <th>Actions</th>
-                                </tr>
-                                </thead>
-                                <tbody id="events-table-body">
-                                <!-- Events will be populated here by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div> <!-- .card -->
+        <div id="proximity-map-page" class="h-full"></div>
+
+        <!-- Error Modal -->
+        <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
+            <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+                <div id='error-modal-content'>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Error Modal -->
-<div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
-    <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
-        <div id='error-modal-content'>
-        </div>
-    </div>
-</div>
-
-<!-- Load our javascript bundle (compiled React component) -->
-<script src="/js/proximity_map-bundle.js"></script>
-</body>
+        <!-- Load our javascript bundle (compiled React component) -->
+        <script src="/js/proximity_map-bundle.js"></script>
+        
+    </body>
 </html>

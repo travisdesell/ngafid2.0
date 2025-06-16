@@ -163,6 +163,8 @@
 
 }
 
+
+
 .dark-theme {
 
     --is_dark_theme: true;
@@ -216,6 +218,7 @@
     --c_mode: var(--c_mode_dark);
 
 }
+
 
 
 html, body {
@@ -741,9 +744,12 @@ html, body {
     z-index: 1000;
 }
 
+/* #endregion Map & Graph Containers */
 
 
-/* Hide Cesium Built-in Fullscreen Button */
+
+/* #region Hide Cesium Built-in Fullscreen Button */
+
 .cesium-viewer-fullscreenContainer {
     visibility: hidden;
     display: none;
@@ -756,7 +762,7 @@ html, body {
 
 
 
-/* Plotly Graphs */
+/* #region Plotly Graphs */
 
 .modebar {
     display: flex;
@@ -772,3 +778,20 @@ html, body {
 }
 
 /* #endregion Plotly Graphs */
+
+
+
+/* #region Proximity Map Popup */
+
+#popup { 
+    color : var(--c_text);
+    background-color: var(--c_bg);
+    /* color: red !important; */
+}
+
+#popup hr {
+    border-color: var(--c_border_alt);
+    margin: 0.5em 0;
+}
+
+/* #endregion Proximity Map Popup */
