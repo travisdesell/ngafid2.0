@@ -342,6 +342,25 @@ class SignedInNavbar extends React.Component {
                                     </select>
                                 </div>
                             }
+
+                            {/* Proximity Event List Button */}
+                            {
+                                (this.props.showProximityEventListButton) &&
+                                <button id="proximity-event-list-button"
+                                    className={`p-1 px-3! expand-import-button btn btn-outline-secondary flex! flex-row! items-center justify-between gap-2 ${this.props.proximityEventListVisible && "active"}`}
+                                    data-toggle="button"
+                                    title="Toggle the Proximity Event List"
+                                    aria-pressed={this.props.proximityEventListVisible}
+                                    style={buttonStyle}
+                                    onClick={() => this.props.toggleProximityEventList()}
+                                >
+                                    <i className="fa fa-exclamation p-1"/>
+                                    <div>
+                                        Toggle Proximity Events List
+                                    </div>
+                                </button>
+                            }
+
                         </ul>
 
                     </ul>
@@ -392,7 +411,7 @@ class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
                                 <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
-                                <DropdownLink name={"Proximity map"} hidden={false} href="/protected/proximity_map"/>
+                                <DropdownLink name={"Proximity Map"} hidden={false} href="/protected/proximity_map"/>
 
                                 {admin
                                     ? <div className="dropdown-divider"></div>
@@ -487,6 +506,7 @@ SignedInNavbar.defaultProps = {
     showPlotButton: false,
     showCesiumButton: false,
     showMapButton: false,
+    showProximityEventListButton: false,
     disableMapButton: false,
     plotMapHidden: true,
 }
