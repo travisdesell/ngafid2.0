@@ -1951,6 +1951,7 @@ class FlightsPage extends React.Component {
                 <div className="d-flex flex-shrink-1">
                     <SignedInNavbar
                         activePage="flights"
+                        plotMapHidden={false}
                         selectableLayers={this.state.selectableLayers}
                         showFlightPageOrientationButton={true}
                         filterVisible={true}
