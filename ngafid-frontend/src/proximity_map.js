@@ -1,7 +1,7 @@
+// At the top of your file
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import SignedInNavbar from './signed_in_navbar';
-import { errorModal } from './error_modal';
 import 'ol/ol.css';
 
 import Map from 'ol/Map';
@@ -42,7 +42,7 @@ class ProximityMapPage extends React.Component {
             const heatmapLayer1 = new Heatmap({
                 source: heatmapSource1,
                 blur: 3,
-                radius: 2,
+                radius: 1.5,
                 opacity: 0.5,
                 gradient: [
                     'rgba(0,255,0,0)',
@@ -56,7 +56,7 @@ class ProximityMapPage extends React.Component {
             const heatmapLayer2 = new Heatmap({
                 source: heatmapSource2,
                 blur: 3,
-                radius: 2,
+                radius: 1.5,
                 opacity: 0.5,
                 gradient: [
                     'rgba(0,255,0,0)',
@@ -86,24 +86,7 @@ class ProximityMapPage extends React.Component {
                 })
             });
 
-            const container = document.getElementById('popup');
-            const content = document.getElementById('popup-content');
-            const closer = document.getElementById('popup-closer');
-
-            const overlay = new Overlay({
-                element: container,
-                autoPan: true,
-                autoPanAnimation: { duration: 250 }
-            });
-            map.addOverlay(overlay);
-
-            closer.onclick = () => {
-                overlay.setPosition(undefined);
-                container.style.display = 'none';
-                closer.blur();
-                return false;
-            };
-
+            // --- MODIFIED SINGLECLICK HANDLER ---
             map.on('singleclick', function (event) {
                 map.forEachFeatureAtPixel(event.pixel, function (feature) {
                     const geometry = feature.getGeometry();
@@ -111,6 +94,36 @@ class ProximityMapPage extends React.Component {
                     const props = feature.getProperties();
                     if (!props.isMarker) return;
 
+                    const isPrimaryFlight = props.flightId === props.eventFlightId;
+                    const offset = isPrimaryFlight ? [-220, 0] : [20, 0];
+                    const positioning = isPrimaryFlight ? 'center-right' : 'center-left';
+
+                    const container = document.createElement('div');
+                    container.className = 'ol-popup';
+                    container.style.cssText = `
+                        position: absolute;
+                        background-color: white;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+                        padding: 15px;
+                        border-radius: 10px;
+                        border: 1px solid #cccccc;
+                        min-width: 200px;
+                        z-index: 100;
+                    `;
+
+                    const closer = document.createElement('a');
+                    closer.href = '#';
+                    closer.textContent = '✖';
+                    closer.className = 'ol-popup-closer';
+                    closer.style.cssText = `
+                        position: absolute;
+                        top: 2px;
+                        right: 8px;
+                        text-decoration: none;
+                    `;
+                    container.appendChild(closer);
+
+                    const content = document.createElement('div');
                     content.innerHTML = `
                         <div class="popup-content">
                             <h3>Proximity Event Details</h3>
@@ -123,8 +136,23 @@ class ProximityMapPage extends React.Component {
                             <p><strong>Severity:</strong> ${props.severity}</p>
                         </div>
                     `;
-                    container.style.display = 'block';
+                    container.appendChild(content);
+
+                    const overlay = new Overlay({
+                        element: container,
+                        positioning: positioning,
+                        offset: offset,
+                        autoPan: true,
+                        autoPanAnimation: { duration: 250 }
+                    });
+
+                    map.addOverlay(overlay);
                     overlay.setPosition(coord);
+
+                    closer.onclick = () => {
+                        map.removeOverlay(overlay);
+                        return false;
+                    };
                 });
             });
 
@@ -191,17 +219,19 @@ class ProximityMapPage extends React.Component {
             const coordinates2 = await this.loadCoordinates({ ...event, flightId: event.otherFlightId });
 
             if (coordinates1) {
+                const weight1 = Math.min(1.5, 10 / coordinates1.length);
                 coordinates1.forEach(coord => {
                     const olCoord = fromLonLat(coord);
 
                     const feature = new Feature({ geometry: new Point(olCoord) });
-                    feature.set('weight', 0.8);
+                    feature.set('weight', weight1);
                     heatmapSource1.addFeature(feature);
 
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(redPointStyle);
                     marker.setProperties({
                         isMarker: true,
+                        eventFlightId: event.flightId,
                         flightId: event.flightId,
                         otherFlightId: event.otherFlightId,
                         time: event.startTime,
@@ -214,17 +244,19 @@ class ProximityMapPage extends React.Component {
             }
 
             if (coordinates2) {
+                const weight2 = Math.min(1.5, 10 / coordinates2.length);
                 coordinates2.forEach(coord => {
                     const olCoord = fromLonLat(coord);
 
                     const feature = new Feature({ geometry: new Point(olCoord) });
-                    feature.set('weight', 0.8);
+                    feature.set('weight', weight2);
                     heatmapSource2.addFeature(feature);
 
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(blackPointStyle);
                     marker.setProperties({
                         isMarker: true,
+                        eventFlightId: event.flightId,
                         flightId: event.otherFlightId,
                         otherFlightId: event.flightId,
                         time: event.endTime,
@@ -295,25 +327,6 @@ class ProximityMapPage extends React.Component {
                                     </button>
                                 </div>
                                 <div id="map" style={{ height: '100vh', width: '100%', position: 'relative' }}></div>
-                                <div id="popup" className="ol-popup" style={{
-                                    position: 'absolute',
-                                    backgroundColor: 'white',
-                                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                                    padding: '15px',
-                                    borderRadius: '10px',
-                                    border: '1px solid #cccccc',
-                                    bottom: '12px',
-                                    left: '-50px',
-                                    minWidth: '200px',
-                                    zIndex: 100,
-                                    display: 'none'
-                                }}>
-                                    <a href="#" id="popup-closer" className="ol-popup-closer"
-                                       style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}>
-                                        ✖
-                                    </a>
-                                    <div id="popup-content"></div>
-                                </div>
                                 {showEventList && events.length > 0 && (
                                     <div className="table-responsive mt-3">
                                         <table className="table table-striped table-hover">

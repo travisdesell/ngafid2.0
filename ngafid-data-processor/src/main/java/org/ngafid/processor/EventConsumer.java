@@ -19,7 +19,7 @@ import org.ngafid.processor.events.AbstractEventScanner;
 import org.ngafid.processor.events.EventScanner;
 import org.ngafid.processor.events.LowEndingFuelScanner;
 import org.ngafid.processor.events.SpinEventScanner;
-import org.ngafid.processor.events.proximity.ProximityEventScanner;
+import proximity.service.ProximityEventScanner;
 
 import java.sql.Connection;
 import java.sql.SQLException;

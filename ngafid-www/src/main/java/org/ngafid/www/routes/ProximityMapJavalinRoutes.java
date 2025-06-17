@@ -4,8 +4,7 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.core.accounts.User;
 import org.ngafid.www.Navbar;
-import org.ngafid.www.services.ProximityEventService;
-
+import org.ngafid.service.proximity.ProximityEventService;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;

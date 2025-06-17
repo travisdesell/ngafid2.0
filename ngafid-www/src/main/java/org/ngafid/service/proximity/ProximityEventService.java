@@ -29,11 +29,15 @@ public class ProximityEventService {
                        f1.system_id as flight_system_id,
                        f2.system_id as other_flight_system_id,
                        f1.fleet_id,
+                       a1.airframe as flight_airframe,
+                       a2.airframe as other_flight_airframe,
                        em1.value as lateral_distance,
                        em2.value as vertical_distance
                 FROM events e
                 JOIN flights f1 ON e.flight_id = f1.id
                 JOIN flights f2 ON e.other_flight_id = f2.id
+                JOIN airframes a1 ON f1.airframe_id = a1.id
+                JOIN airframes a2 ON f2.airframe_id = a2.id
                 LEFT JOIN event_metadata em1 ON e.id = em1.event_id AND em1.key_id = (SELECT id FROM event_metadata_keys WHERE name = 'lateral_distance')
                 LEFT JOIN event_metadata em2 ON e.id = em2.event_id AND em2.key_id = (SELECT id FROM event_metadata_keys WHERE name = 'vertical_distance')
                 WHERE e.event_definition_id = ?
@@ -55,6 +59,8 @@ public class ProximityEventService {
                         event.put("flightSystemId", resultSet.getString("flight_system_id"));
                         event.put("otherFlightSystemId", resultSet.getString("other_flight_system_id"));
                         event.put("fleetId", resultSet.getInt("fleet_id"));
+                        event.put("flightAirframe", resultSet.getString("flight_airframe"));
+                        event.put("otherFlightAirframe", resultSet.getString("other_flight_airframe"));
                         event.put("lateralDistance", resultSet.getDouble("lateral_distance"));
                         event.put("verticalDistance", resultSet.getDouble("vertical_distance"));
                         events.add(event);

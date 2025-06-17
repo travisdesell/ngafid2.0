@@ -3,8 +3,8 @@ package org.ngafid.processor.format;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.*;
+import org.ngafid.processor.DependencyGraph;
 import org.ngafid.processor.steps.*;
-import org.ngafid.uploads.process.DependencyGraph;
 
 import java.sql.Connection;
 import java.time.OffsetDateTime;
