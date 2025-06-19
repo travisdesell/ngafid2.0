@@ -87,25 +87,47 @@
 
     <build>
         <plugins>
+
+            <!-- Kotlin -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.1</version>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+
                 <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
+                    <jvmTarget>${jvm.target}</jvmTarget>
+                    <sourceDirs>
+                        <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                        <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                    </sourceDirs>
                 </configuration>
+
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
+                        <id>compile</id>
                         <goals>
-                            <goal>single</goal>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>test-compile</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Java -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>${jvm.target}</release>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 </project>

@@ -17,6 +17,7 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
 import org.ngafid.www.routes.*;
+import org.ngafid.www.routes.api.*; //<-- For Kotlin routes
 
 import java.io.File;
 import java.sql.Connection;
@@ -44,6 +45,19 @@ public class JavalinWebServer extends WebServer {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
             config.jsonMapper(new JavalinGson(WebServer.gson, false));
+
+            //Bind Kotlin Routes
+            AuthRoutes.INSTANCE.bind(config);
+            AircraftRoutes.INSTANCE.bind(config);
+            AirSyncRoutes.INSTANCE.bind(config);
+            EventRoutes.INSTANCE.bind(config);
+            FilterRoutes.INSTANCE.bind(config);
+            FleetRoutes.INSTANCE.bind(config);
+            FlightRoutes.INSTANCE.bind(config);
+            TagRoutes.INSTANCE.bind(config);
+            UploadRoutes.INSTANCE.bind(config);
+            UserRoutes.INSTANCE.bind(config);
+
         });
 
     }

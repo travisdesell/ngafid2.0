@@ -1,3 +1,4 @@
+// AuthRoutes.kt
 package org.ngafid.www.routes.api
 
 import io.javalin.apibuilder.ApiBuilder.*
@@ -19,8 +20,8 @@ import java.util.logging.Logger
 object AuthRoutes : RouteProvider() {
     val LOG: Logger = Logger.getLogger(AuthRoutes::class.java.name)
 
-    override fun bind(app: JavalinConfig) {
-        app.router.apiBuilder {
+    override fun bind(config: JavalinConfig) {
+        config.router.apiBuilder {
             path("/api/auth") {
                 post("login", AuthRoutes::postLogin, Role.OPEN)
                 post("logout", AuthRoutes::postLogout, Role.OPEN)
