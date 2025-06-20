@@ -254,9 +254,18 @@ public class ProximityEventScanner extends AbstractEventScanner {
         LOG.info("Found " + potentialFlights.size() + " potential time matched flights.");
 
         List<Event> allEvents = new ArrayList<>();
+
+        LOG.info("Before the for loop scanning");
         for (Flight otherFlight : potentialFlights) {
-            if (otherFlight.getId() == flight.getId()) continue; // skip self or already-compared flight pairs
-            LOG.info("Scanning flight pair");
+            LOG.info("Scanning flight pair: " + otherFlight.getId() + ", " + otherFlight.getFilename());
+            if (otherFlight.getId() == flight.getId()){
+                LOG.info("Skipping  flight pair: " + otherFlight.getId() + ", " + otherFlight.getFilename());
+                continue;
+            }else {
+                LOG.info("Processing flight pair: " + otherFlight.getId() + ", " + otherFlight.getFilename());
+            }
+
+
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));
         }
