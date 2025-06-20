@@ -34,7 +34,7 @@ Afterward, we need to install a JAR file dependency to where Maven fetches your 
 Running Maven will not be possible without running this script.
 
 ```
-sh setup_dat_importing.sh
+run/setup_dat_importing
 ```
 
 ## 2. Set up the database
