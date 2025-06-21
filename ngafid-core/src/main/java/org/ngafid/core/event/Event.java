@@ -412,7 +412,7 @@ public class Event {
                     LOG.warning("Insertion skipped. Self-proximity event detected before DB insert: flight ID = " + event.getFlightId() +
                             ", otherFlightId = " + event.getOtherFlightId());
                 }else{
-                    event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+                    event.addBatch(preparedStatement, flight.getFleetId());
                 }
             }
 
@@ -428,27 +428,22 @@ public class Event {
         }
     }
 
-    public void addBatch(PreparedStatement preparedStatement, int fleetId, int flightId, int eventDefinitionId) throws SQLException {
-        this.eventDefinitionId = eventDefinitionId;
-        this.flightId = flightId;
+    public void addBatch(PreparedStatement preparedStatement, int fleetId) throws SQLException {
         this.fleetId = fleetId;
 
-        preparedStatement.setInt(1, fleetId);
-        preparedStatement.setInt(2, flightId);
-        preparedStatement.setInt(3, eventDefinitionId);
-        preparedStatement.setInt(4, startLine);
-        preparedStatement.setInt(5, endLine);
+        preparedStatement.setInt(1, this.fleetId);
+        preparedStatement.setInt(2, this.flightId);
+        preparedStatement.setInt(3, this.eventDefinitionId);
+        preparedStatement.setInt(4, this.startLine);
+        preparedStatement.setInt(5, this.endLine);
+        preparedStatement.setString(6, TimeUtils.UTCtoSQL(this.startTime));
+        preparedStatement.setString(7, TimeUtils.UTCtoSQL(this.endTime));
+        preparedStatement.setDouble(8, this.severity);
 
-        preparedStatement.setString(6, TimeUtils.UTCtoSQL(startTime));
-
-        preparedStatement.setString(7, TimeUtils.UTCtoSQL(endTime));
-
-        preparedStatement.setDouble(8, severity);
-
-        if (otherFlightId == null) {
+        if (this.otherFlightId == null) {
             preparedStatement.setNull(9, java.sql.Types.INTEGER);
         } else {
-            preparedStatement.setInt(9, otherFlightId);
+            preparedStatement.setInt(9, this.otherFlightId);
         }
 
         preparedStatement.addBatch();
@@ -460,7 +455,9 @@ public class Event {
         this.eventDefinitionId = eventDefId;
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
-            addBatch(preparedStatement, fleetId, flightId, eventDefId);
+            this.flightId = flightIdUpdated;
+            this.eventDefinitionId = eventDefId;
+            addBatch(preparedStatement, fleetIdUpdated);
             preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
