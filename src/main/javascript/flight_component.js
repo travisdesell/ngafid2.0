@@ -23,7 +23,8 @@ import { selectAircraftModal } from './select_acft_modal.js';
 import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
-import {cesiumFlightsSelected, updateCesiumButtonState} from "./cesium_buttons";
+import {cesiumFlightsSelected, updateCesiumButtonState, toggleCesiumFlightSelected, cesiumFlightIsSelected} from "./cesium_buttons";
+import { glob } from 'fs';
 
 var moment = require('moment');
 
@@ -996,12 +997,12 @@ class Flight extends React.Component {
 
         //console.log(flightInfo);
         if (!flightInfo.hasCoords) {
-            //console.log("flight " + flightInfo.id + " doesn't have coords!");
-            globeClasses += " disabled";
+            console.log("flight " + flightInfo.id + " doesn't have coords!");
+            // globeClasses += " disabled";
             globeTooltip = "Cannot display flight on the map because the flight data did not have latitude/longitude.";
             traceDisabled = true;
         } else {
-            globeTooltip = "Click the globe to display the flight on the map.";
+            globeTooltip = "Click the globe to add as a selected replay.";
         }
 
         let visitedAirports = [];
@@ -1188,7 +1189,15 @@ class Flight extends React.Component {
                                         </div>
 
                                         <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
-                                            <button className={buttonClasses + globeClasses} style={styleButton} title={globeTooltip} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                                            <button
+                                                className={`${buttonClasses} ${cesiumFlightIsSelected(this.props.flightInfo.id) ? "active" : ""} ${globeClasses}`}
+                                                style={styleButton}
+                                                id={"cesiumToggled" + this.props.flightInfo.id}
+                                                data-toggle="button"
+                                                aria-pressed={this.state.replayToggled}
+                                                aria-label={globeTooltip}
+                                                onClick={() => toggleCesiumFlightSelected(this.props.flightInfo.id)}
+                                            >
                                                 <i className="fa fa-globe p-1"></i>
                                             </button>
 
