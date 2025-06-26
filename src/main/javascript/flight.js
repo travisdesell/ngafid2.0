@@ -509,21 +509,6 @@ class FlightPage extends React.Component {
                           () => {this.removeTag(flightId, -2, false)});
     }
 
-    /**
-     * Handles clearing all selected flights for multiple flight replays
-     */
-     clearCesiumFlights() {
-         cesiumFlightsSelected.forEach((removedFlight) => {
-             console.log("Removed " + removedFlight);
-             let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
-             toggleButton.click();
-         });
-
-         if (cesiumFlightsSelected.length > 0) {
-             this.clearCesiumFlights();
-         }
-    }
-
     displayPlot() {
 
         let styles = getComputedStyle(document.documentElement);
