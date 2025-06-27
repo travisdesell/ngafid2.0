@@ -124,6 +124,15 @@ public class CalculateProximity {
             return;
         }
 
+        // Skip self-referential events
+        Integer otherFlightId = testEvent.getOtherFlightId();
+        if (otherFlightId != null && otherFlightId.equals(testEvent.getFlightId())) {
+            LOG.warning(String.format("Skipping self-referential event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
+                testEvent.getFlightId(), testEvent.getOtherFlightId(),
+                testEvent.getStartTime(), testEvent.getEndTime()));
+            return;
+        }
+
         // Check for duplicate events
         for (Event event : eventList) {
             boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId() && 

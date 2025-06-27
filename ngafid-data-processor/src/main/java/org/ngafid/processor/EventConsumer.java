@@ -19,7 +19,8 @@ import org.ngafid.processor.events.AbstractEventScanner;
 import org.ngafid.processor.events.EventScanner;
 import org.ngafid.processor.events.LowEndingFuelScanner;
 import org.ngafid.processor.events.SpinEventScanner;
-import proximity.service.ProximityEventScanner;
+import org.ngafid.processor.events.proximity.ProximityEventScanner;
+import org.ngafid.core.proximity.ProximityPointsProcessor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -128,9 +129,28 @@ public class EventConsumer extends DisjointConsumer<String, String> {
                         .filter(e -> e.getEventDefinitionId() == etc.eventId())
                         .toList();
 
-                Event.batchInsertion(connection, flight, events);
+                for (Event event : events) {
+                    LOG.info(String.format(
+                        "Preparing to insert event: flight_id=%d, other_flight_id=%s, start_time=%s, end_time=%s, event_definition_id=%d",
 
-                // Computed okay.
+                        event.getFlightId(),
+                        String.valueOf(event.getOtherFlightId()),
+                        String.valueOf(event.getStartTime()),
+                        String.valueOf(event.getEndTime()),
+                        event.getEventDefinitionId()
+                    ));
+                }
+
+                Event.batchInsertion(connection, flight, events);
+                
+
+                if (scanner instanceof ProximityEventScanner) {
+                    ProximityEventScanner proximityScanner = (ProximityEventScanner) scanner;
+                    ProximityPointsProcessor.insertProximityPointsForEvents(
+                        connection, events, proximityScanner.getProximityPointsMap()
+                    );
+                }
+
                 return new Pair<>(record, false);
             } catch (ColumnNotAvailableException e) {
                 // Some other exception happened...

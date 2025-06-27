@@ -1,7 +1,7 @@
 package proximity;
 
 import org.junit.Test;
-import proximity.service.FlightTimeLocation;
+import org.ngafid.processor.events.proximity.FlightTimeLocation;
 
 import java.sql.SQLException;
 

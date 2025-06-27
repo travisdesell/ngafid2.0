@@ -2,7 +2,6 @@ package org.ngafid.processor;
 
 
 import org.apache.parquet.io.InputFile;
-import org.jline.utils.Log;
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.Flight;

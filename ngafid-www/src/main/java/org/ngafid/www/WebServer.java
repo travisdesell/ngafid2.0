@@ -8,6 +8,7 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.proximity.ProximityPointsProcessor;
 import org.ngafid.core.util.ConvertToHTML;
 
 import java.io.*;
@@ -24,12 +25,8 @@ import java.util.logging.Logger;
 
 import static org.ngafid.core.util.SendEmail.sendAdminEmails;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import io.javalin.Javalin;
-import io.javalin.json.JavalinGson; 
-
+import java.util.List;
 
 
 /**
@@ -272,11 +269,34 @@ public abstract class WebServer {
      * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
+
+
+        try {
+            final InputStream logConfig = Files.newInputStream(new File("resources/log.properties").toPath());
+            LogManager.getLogManager().readConfiguration(logConfig);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Could not initialize log manager because: " + e.getMessage());
+        }
+
         String staticFiles = getEnvironmentVariable("WEBSERVER_STATIC_FILES");
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
+
+
+
 
         WebServer webserver = new JavalinWebServer(port, staticFiles);
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();
+/**
+        try {
+            List<Map<String, Object>> proximityEvents = ProximityPointsProcessor.getProximityEvents();
+            System.out.println("Proximity events: " + proximityEvents);
+            ProximityPointsProcessor.addProximityPoints(proximityEvents);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+ */
     }
+
 }

@@ -45,7 +45,14 @@ public class ProximityMapJavalinRoutes {
     public static void bindRoutes(Javalin app) {
         app.get("/protected/proximity_map", ProximityMapJavalinRoutes::getProximityMap);
         app.get("/protected/all_proximity_events", ProximityMapJavalinRoutes::getAllProximityEvents);
-        
+        app.get("/protected/all_proximity_points", ctx -> {
+            User user = ctx.sessionAttribute("user");
+            if (user == null) {
+                ctx.status(401).result("User not logged in");
+                return;
+            }
+            ctx.json(org.ngafid.core.proximity.ProximityPointsProcessor.getAllProximityPoints());
+        });
         app.post("/protected/coordinates/time_range", ctx -> {
             try {
                 User user = ctx.sessionAttribute("user");
@@ -60,7 +67,7 @@ public class ProximityMapJavalinRoutes {
                 long startTime = Long.parseLong(ctx.queryParam("start_time"));
                 long endTime = Long.parseLong(ctx.queryParam("end_time"));
 
-                ctx.json(ProximityEventService.getFlightCoordinatesForTimeRange(flightId, startTime, endTime));
+                ctx.json(org.ngafid.service.proximity.ProximityEventService.getFlightCoordinatesForTimeRange(flightId, startTime, endTime));
             } catch (SQLException | IOException e) {
                 LOG.severe(e.toString());
                 ctx.status(500);

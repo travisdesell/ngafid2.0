@@ -214,59 +214,33 @@ class ProximityMapPage extends React.Component {
             })
         });
 
-        for (const event of events) {
-            const coordinates1 = await this.loadCoordinates({ ...event, flightId: event.flightId });
-            const coordinates2 = await this.loadCoordinates({ ...event, flightId: event.otherFlightId });
+        // Fetch all proximity points once
+        const allProximityEvents = await this.loadProximityPoints();
+        for (const event of allProximityEvents) {
+            const eventPoints = event.points || [];
+            if (eventPoints.length === 0) continue;
+            // Use the last point for marker (or pick another logic if needed)
+            const lastPoint = eventPoints[eventPoints.length - 1];
+            const olCoord = fromLonLat([lastPoint.longitude, lastPoint.latitude]);
+            const marker = new Feature({ geometry: new Point(olCoord) });
+            marker.setStyle(redPointStyle); // Only one flight per event object now
+            marker.setProperties({
+                isMarker: true,
+                eventFlightId: event.flight_id,
+                flightId: event.flight_id,
+                time: lastPoint.timestamp,
+                lateralDistance: event.lateral_distance,
+                verticalDistance: event.vertical_distance
+            });
+            markerSource.addFeature(marker);
 
-            if (coordinates1) {
-                const weight1 = Math.min(1.5, 10 / coordinates1.length);
-                coordinates1.forEach(coord => {
-                    const olCoord = fromLonLat(coord);
-
-                    const feature = new Feature({ geometry: new Point(olCoord) });
-                    feature.set('weight', weight1);
-                    heatmapSource1.addFeature(feature);
-
-                    const marker = new Feature({ geometry: new Point(olCoord) });
-                    marker.setStyle(redPointStyle);
-                    marker.setProperties({
-                        isMarker: true,
-                        eventFlightId: event.flightId,
-                        flightId: event.flightId,
-                        otherFlightId: event.otherFlightId,
-                        time: event.startTime,
-                        flightAirframe: event.flightAirframe,
-                        otherFlightAirframe: event.otherFlightAirframe,
-                        severity: event.severity
-                    });
-                    markerSource.addFeature(marker);
-                });
-            }
-
-            if (coordinates2) {
-                const weight2 = Math.min(1.5, 10 / coordinates2.length);
-                coordinates2.forEach(coord => {
-                    const olCoord = fromLonLat(coord);
-
-                    const feature = new Feature({ geometry: new Point(olCoord) });
-                    feature.set('weight', weight2);
-                    heatmapSource2.addFeature(feature);
-
-                    const marker = new Feature({ geometry: new Point(olCoord) });
-                    marker.setStyle(blackPointStyle);
-                    marker.setProperties({
-                        isMarker: true,
-                        eventFlightId: event.flightId,
-                        flightId: event.otherFlightId,
-                        otherFlightId: event.flightId,
-                        time: event.endTime,
-                        flightAirframe: event.otherFlightAirframe,
-                        otherFlightAirframe: event.flightAirframe,
-                        severity: event.severity
-                    });
-                    markerSource.addFeature(marker);
-                });
-            }
+            // Add all points to heatmap layer
+            eventPoints.forEach(point => {
+                const olCoord = fromLonLat([point.longitude, point.latitude]);
+                const feature = new Feature({ geometry: new Point(olCoord) });
+                feature.set('weight', 10);
+                heatmapSource1.addFeature(feature);
+            });
         }
 
         const extent1 = heatmapSource1.getExtent();
@@ -277,27 +251,17 @@ class ProximityMapPage extends React.Component {
         }
     }
 
-    async loadCoordinates(event) {
-        const flightId = parseInt(event.flightId);
-        const startDate = new Date(event.startTime);
-        const endDate = new Date(event.endTime);
-        const timezoneOffset = startDate.getTimezoneOffset() * 60 * 1000;
-        const startTime = Math.floor((startDate.getTime() - timezoneOffset) / 1000);
-        const endTime = Math.floor((endDate.getTime() - timezoneOffset) / 1000);
-
+    async loadProximityPoints() {
         try {
-            const response = await fetch(`/protected/coordinates/time_range?start_time=${startTime}&end_time=${endTime}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            const response = await fetch('http://localhost:8181/protected/all_proximity_points', {
                 credentials: 'include',
-                body: JSON.stringify({ flightId })
+                headers: { 'Accept': 'application/json' }
             });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            return data.coordinates;
+            if (!response.ok) throw new Error('Failed to load proximity points');
+            return await response.json(); // [ { event_id, flight_id, points, lateral_distance, vertical_distance }, ... ]
         } catch (error) {
-            console.error('Detailed error in loadCoordinates:', error);
-            return null;
+            console.error('Error loading proximity points:', error);
+            return [];
         }
     }
 

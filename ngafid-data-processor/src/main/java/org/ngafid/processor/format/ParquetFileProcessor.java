@@ -6,7 +6,6 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.io.InputFile;
-import org.jline.utils.Log;
 import org.ngafid.core.flights.*;
 import org.ngafid.core.util.MD5;
 import org.ngafid.core.util.TimeUtils;
