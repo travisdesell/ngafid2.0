@@ -144,10 +144,14 @@ public class EventConsumer extends DisjointConsumer<String, String> {
                 Event.batchInsertion(connection, flight, events);
                 
 
+                // inserts proximity points for each event into the proximity_points table 
                 if (scanner instanceof ProximityEventScanner) {
                     ProximityEventScanner proximityScanner = (ProximityEventScanner) scanner;
                     ProximityPointsProcessor.insertProximityPointsForEvents(
-                        connection, events, proximityScanner.getProximityPointsMap()
+                        connection,
+                        events,
+                        proximityScanner.getMainFlightPointsMap(),
+                        proximityScanner.getOtherFlightPointsMap()
                     );
                 }
 

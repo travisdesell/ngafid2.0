@@ -282,21 +282,9 @@ public abstract class WebServer {
         String staticFiles = getEnvironmentVariable("WEBSERVER_STATIC_FILES");
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
 
-
-
-
         WebServer webserver = new JavalinWebServer(port, staticFiles);
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();
-/**
-        try {
-            List<Map<String, Object>> proximityEvents = ProximityPointsProcessor.getProximityEvents();
-            System.out.println("Proximity events: " + proximityEvents);
-            ProximityPointsProcessor.addProximityPoints(proximityEvents);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
- */
     }
 
 }

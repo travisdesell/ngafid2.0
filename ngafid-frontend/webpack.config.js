@@ -98,7 +98,7 @@ module.exports = {
         manage_events: "./src/manage_events.js",
         manage_fleet: "./src/manage_fleet.js",
         ngafid_cesium: __dirname + "/src/ngafid_cesium.js",
-        proximity_map: "./src/proximity_map.js",
+        proximity_map: "./src/proximity_map.tsx",
         reset_password: "./src/reset_password.js",
         severities: "./src/severities.js",
         system_ids: "./src/system_ids.js",

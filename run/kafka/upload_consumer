@@ -1,1 +1,8 @@
-mvn exec:java -pl ngafid-data-processor -Dexec.mainClass="org.ngafid.processor.UploadConsumer" -Dexec.jvmArguments="-XX:MaxRAMPercentage=95.0"
+#!/bin/bash
+
+# Change to the project root directory
+cd "$(dirname "$0")/../.."
+
+# Use the shaded JAR with dependencies directly
+java -XX:MaxRAMPercentage=95.0 -cp ngafid-data-processor/target/ngafid-data-processor-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.processor.UploadConsumer
+
