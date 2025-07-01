@@ -44,6 +44,8 @@ type ProximityMapPageState = {
     };
 };
 
+const DEBUG_ENABLED = false;
+
 const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
 
 const ICON_IMAGE_BLACK =  new Icon({
@@ -65,6 +67,35 @@ const BLACK_POINT_STYLE = new Style({
 const RED_POINT_STYLE = new Style({
     image: ICON_IMAGE_RED
 });
+
+
+function getOS():string {
+
+    const
+        userAgent = window.navigator.userAgent,
+        platform = window.navigator.platform,
+        macosPlatforms = ['macOS', 'Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
+        windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
+        iosPlatforms = ['iPhone', 'iPad', 'iPod'];
+        
+    const OS_FALLBACK_DEFAULT = 'Linux';
+
+    let os = OS_FALLBACK_DEFAULT;
+
+    if (macosPlatforms.indexOf(platform) !== -1) {
+        os = 'Mac OS';
+    } else if (windowsPlatforms.indexOf(platform) !== -1) {
+        os = 'Windows';
+    } else if (/Linux/.test(platform)) {
+        os = OS_FALLBACK_DEFAULT;
+    }
+
+    return os;
+
+}
+
+const userOS = getOS();
+
 
 // Helper: interpolate color from green to red
 function interpolateColor(value: number) {
@@ -216,6 +247,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             map.addInteraction(dragBox);
 
             dragBox.on('boxstart', () => {
+                console.log("Box Drag Started...")
                 this.setState({ boxActive: true });
             });
 
@@ -227,6 +259,9 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 const maxLat = Math.max(bottomLeft[1], topRight[1]);
                 const minLon = Math.min(bottomLeft[0], topRight[0]);
                 const maxLon = Math.max(bottomLeft[0], topRight[0]);
+
+                console.log("...Box Drag Finished!")
+                console.log(`Updating Coord Ranges: Lat: [${minLat}, ${maxLat}], Lon: [${minLon}, ${maxLon}]`);
 
                 this.setState(prevState => ({
                     ...prevState,
@@ -614,8 +649,21 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     };
 
     render() {
-        const { loading, error, showEventList, events, openPopups, map, boxInput, showGrid } = this.state;
+        const { loading, error, showEventList, events, openPopups, map, boxInput, boxActive, showGrid, gridLayer } = this.state;
         console.log('[Render] boxInput:', boxInput);
+
+
+        const debugContent = (DEBUG_ENABLED) && (
+            <div className="font-mono flex flex-col items-start justify-start bg-fuchsia-500/50 p-2 mt-2 overflow-y-auto max-h-[200px]">
+                <hr className='w-full mt-[8px] border-t border-orange-500'/>
+
+                <span>boxActive: {boxActive ? 'true' : 'false'}</span>
+                <span>showGrid: {showGrid ? 'true' : 'false'}</span>
+                <span>gridLayer: {gridLayer ? 'active' : 'inactive'}</span>
+                <span>showEventList: {showEventList ? 'true' : 'false'}</span>
+                <span>|openPopups|: {openPopups.length}</span>
+            </div>
+        );
 
         const eventList = (events.length > 0) && (
 
@@ -676,8 +724,17 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         );
 
         const errorDisplay = error ? (
-            <div className="alert alert-danger p-2! m-2!">
-                <strong>Error:</strong> {error}
+            <div className="alert alert-danger p-2! m-2! flex flex-row items-center justify-start gap-2">
+
+                {/* Display Error */}
+                <strong>Error:</strong>
+                <span>{error}</span>
+
+                {/* Close Error */}
+                <button className="ml-auto" onClick={() => this.setState({ error: null })}>
+                    <i className="fa fa-times p-1 cursor-pointer"></i>
+                </button>
+
             </div>
         ) : null;
 
@@ -770,136 +827,21 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             );
         });
 
-        // Top left box for coordinates and submit
-        const boxSelector = (
-            <div style={{
-                position: 'absolute',
-                top: 70,
-                left: 10,
-                zIndex: 200,
-                background: 'white',
-                padding: '10px',
-                borderRadius: '8px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
-            }}>
-                <form onSubmit={this.handleBoxSubmit}>
-                    <div style={{ marginBottom: 4, fontWeight: 600 }}>Select Area (Shift/Option+Drag):</div>
-                    <hr style={{ margin: '8px 0' }} />
-                    <div style={{display: 'flex', flexDirection: 'column', gap: 2}}>
-                        <label style={{fontSize: 12}}>
-                            Min Latitude:
-                            <input
-                                type="text"
-                                name="minLat"
-                                value={this.state.boxInput.minLat}
-                                onChange={this.handleBoxInputChange}
-                                style={{width: 110, marginLeft: 4}}
-                            />
-                        </label>
-                        <label style={{fontSize: 12}}>
-                            Max Latitude:
-                            <input
-                                type="text"
-                                name="maxLat"
-                                value={this.state.boxInput.maxLat}
-                                onChange={this.handleBoxInputChange}
-                                style={{width: 110, marginLeft: 4}}
-                            />
-                        </label>
-                        <label style={{fontSize: 12}}>
-                            Min Longitude:
-                            <input
-                                type="text"
-                                name="minLon"
-                                value={this.state.boxInput.minLon}
-                                onChange={this.handleBoxInputChange}
-                                style={{width: 110, marginLeft: 4}}
-                            />
-                        </label>
-                        <label style={{fontSize: 12}}>
-                            Max Longitude:
-                            <input
-                                type="text"
-                                name="maxLon"
-                                value={this.state.boxInput.maxLon}
-                                onChange={this.handleBoxInputChange}
-                                style={{width: 110, marginLeft: 4}}
-                            />
-                        </label>
-                        <label style={{fontSize: 12}}>
-                            Start Date:
-                            <input
-                                type="date"
-                                name="startDate"
-                                value={this.state.boxInput.startDate}
-                                onChange={this.handleBoxInputChange}
-                                style={{width: 140, marginLeft: 4}}
-                            />
-                        </label>
-                        <label style={{fontSize: 12}}>
-                            End Date:
-                            <input
-                                type="date"
-                                name="endDate"
-                                value={this.state.boxInput.endDate}
-                                onChange={this.handleBoxInputChange}
-                                style={{width: 140, marginLeft: 4}}
-                            />
-                        </label>
-                        <label style={{fontSize: 12, marginTop: 8}}>
-                            Severity Range: <span style={{color: 'red', fontWeight: 600}}>{this.state.boxInput.minSeverity} - {this.state.boxInput.maxSeverity}</span>
-                            <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                <input
-                                    type="range"
-                                    name="minSeverity"
-                                    min={0}
-                                    max={this.state.boxInput.maxSeverity}
-                                    value={this.state.boxInput.minSeverity}
-                                    onChange={this.handleBoxInputChange}
-                                    style={{flex: 1, accentColor: 'red'}}
-                                />
-                                <input
-                                    type="range"
-                                    name="maxSeverity"
-                                    min={this.state.boxInput.minSeverity}
-                                    max={1000}
-                                    value={this.state.boxInput.maxSeverity}
-                                    onChange={this.handleBoxInputChange}
-                                    style={{flex: 1, accentColor: 'red'}}
-                                />
-                            </div>
-                        </label>
-                    </div>
-                    <button type="submit" 
-                        style={{
-                            marginTop: 8, 
-                            width: '100%', 
-                            backgroundColor: 'var(--c_confirm_bg)', 
-                            color: 'white', 
-                            border: 'none', 
-                            borderRadius: 4, 
-                            padding: '8px 0', 
-                            fontWeight: 600, 
-                            fontSize: 16, 
-                            cursor: 'pointer',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
-                        }}
-                    >
-                        Show Events
-                    </button>
-                </form>
-            </div>
-        );
-
         // Toggle switch for grid/heatmap
         const gridToggleSwitch = (
-            <div style={{ position: 'absolute', top: 20, left: 10, zIndex: 300, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontWeight: 600, fontSize: 15 }}>Heatmap</span>
-                <label className="switch">
+            <div className="flex items-center justify-between gap-2">
+                <span className={showGrid ? 'opacity-50' : ''}  style={{ fontWeight: 600, fontSize: 15 }}>
+                    <i className="fa fa-fire mr-1"/>
+                    Heatmap
+                </span>
+                <label className="switch mb-0 justify-self-center mx-auto">
                     <input type="checkbox" checked={showGrid} onChange={this.toggleGrid} />
                     <span className="slider round"></span>
                 </label>
-                <span style={{ fontWeight: 600, fontSize: 15 }}>Grid</span>
+                <span className={`ml-auto ${showGrid ? '' : 'opacity-50'}`} style={{ fontWeight: 600, fontSize: 15 }}>
+                    <i className="fa fa-table mr-1"/>
+                    Grid
+                </span>
                 <style>{`
                     .switch {
                         position: relative;
@@ -937,6 +879,178 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             </div>
         );
 
+        const selectAreaInstructions = (
+            <span className='italic'>
+                {
+                (userOS==="Linux" || userOS==="Windows")
+                ?
+                (<span>Ctrl + Drag</span>)
+                :
+                (<span>⌘ + Drag</span>)
+                }
+            </span>
+        );
+
+        // Top left box for coordinates and submit
+        const boxSelector = (
+            <div
+                className='w-[320px]'
+                style={{
+                position: 'absolute',
+                top: 20,
+                left: 20,
+                zIndex: 200,
+                background: 'white',
+                padding: '10px',
+                borderRadius: '8px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+            }}>
+                <form onSubmit={this.handleBoxSubmit}>
+                    <div style={{ marginBottom: 4, fontWeight: 600 }}>Select Area ({selectAreaInstructions}):</div>
+                    <hr className="mt-[8px]"/>
+
+                    {gridToggleSwitch}
+
+                    <hr className="mt-[8px]"/>
+
+                    <div style={{display: 'flex', flexDirection: 'column', gap: 2}}>
+
+                        {/* Min. Latitutde */}
+                        <label className="flex! flex-row items-center justify-start gap-1" style={{fontSize: 12}}>
+                            <span className="text-nowrap">Min Latitude:</span>
+                            <input
+                                className='bg-neutral-100 w-full text-right px-1'
+                                type="text"
+                                placeholder="Enter minimum latitude..."
+                                name="minLat"
+                                value={this.state.boxInput.minLat}
+                                onChange={this.handleBoxInputChange}
+                            />
+                            <span className="w-2">°</span>
+                        </label>
+
+                        {/* Max. Latitude */}
+                        <label className="flex! flex-row items-center justify-start gap-1" style={{fontSize: 12}}>
+                            <span className="text-nowrap">Max Latitude:</span>
+                            <input
+                                className='bg-neutral-100 w-full text-right px-1'
+                                type="text"
+                                placeholder="Enter maximum latitude..."
+                                name="maxLat"
+                                value={this.state.boxInput.maxLat}
+                                onChange={this.handleBoxInputChange}
+                            />
+                            <span className="w-2">°</span>
+                        </label>
+
+                        {/* Min. Longitude */}
+                        <label className="flex! flex-row items-center justify-start gap-1" style={{fontSize: 12}}>
+                            <span className="text-nowrap">Min Longitude:</span>
+                            <input
+                                className='bg-neutral-100 w-full text-right px-1'
+                                type="text"
+                                placeholder="Enter minimum longitude..."
+                                name="minLon"
+                                value={this.state.boxInput.minLon}
+                                onChange={this.handleBoxInputChange}
+                            />
+                            <span className="w-2">°</span>
+                        </label>
+
+                        {/* Max. Longitude */}
+                        <label className="flex! flex-row items-center justify-start gap-1" style={{fontSize: 12}}>
+                            <span className="text-nowrap">Max Longitude:</span>
+                            <input
+                                className='bg-neutral-100 w-full text-right px-1'
+                                type="text"
+                                placeholder="Enter maximum longitude..."
+                                name="maxLon"
+                                value={this.state.boxInput.maxLon}
+                                onChange={this.handleBoxInputChange}
+                            />
+                            <span className="w-2">°</span>
+                        </label>
+
+                        {/* Start Date */}
+                        <label className="flex! flex-row items-center justify-start gap-1" style={{fontSize: 12}}>
+                            <span className="text-nowrap">Start Date:</span>
+                            <input
+                                className='bg-neutral-100 w-full text-right px-1 cursor-text'
+                                type="date" 
+                                name="startDate"
+                                value={this.state.boxInput.startDate}
+                                onChange={this.handleBoxInputChange}
+                            />
+                            <span className="w-2">&nbsp;</span>
+                        </label>
+
+                        {/* End Date */}
+                        <label className="flex! flex-row items-center justify-start gap-1" style={{fontSize: 12}}>
+                            <span className="text-nowrap">End Date:</span>
+                            <input
+                                className='bg-neutral-100 w-full text-right px-1 cursor-text'
+                                type="date" 
+                                name="endDate"
+                                value={this.state.boxInput.endDate}
+                                onChange={this.handleBoxInputChange}
+                            />
+                            <span className="w-2">&nbsp;</span>
+                        </label>
+
+                    </div>
+
+                    <hr/>
+
+                    {/* Severity Range Selector */}
+                    <label style={{fontSize: 12}}>
+                        Severity Range: <span style={{color: 'red', fontWeight: 600}}>{this.state.boxInput.minSeverity} <span className="text-black">-</span> {this.state.boxInput.maxSeverity}</span>
+                        <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                            <input
+                                type="range"
+                                name="minSeverity"
+                                min={0}
+                                max={this.state.boxInput.maxSeverity}
+                                value={this.state.boxInput.minSeverity}
+                                onChange={this.handleBoxInputChange}
+                                style={{flex: 1, accentColor: 'red'}}
+                            />
+                            <input
+                                type="range"
+                                name="maxSeverity"
+                                min={this.state.boxInput.minSeverity}
+                                max={1000}
+                                value={this.state.boxInput.maxSeverity}
+                                onChange={this.handleBoxInputChange}
+                                style={{flex: 1, accentColor: 'red'}}
+                            />
+                        </div>
+                    </label>
+
+                    <button type="submit" 
+                        style={{
+                            marginTop: 8, 
+                            width: '100%', 
+                            backgroundColor: 'var(--c_confirm_bg)', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: 4, 
+                            padding: '8px 0', 
+                            fontWeight: 600, 
+                            fontSize: 16, 
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        Show Events
+                    </button>
+
+                    {/* Debug Panel */}
+                    {debugContent}
+
+                </form>
+            </div>
+        );
+
         return (
             <div
                 className="w-full h-full grow flex flex-col"
@@ -959,7 +1073,6 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
                 <div className="flex flex-row flex-grow min-h-0 w-full overflow-hidden p-2 gap-2" style={{position: 'relative'}}>
 
-                    {gridToggleSwitch}
                     {/* Always render boxSelector, mapContent, loadingDisplay, and popups */}
                     {boxSelector}
                     {mapContent}
