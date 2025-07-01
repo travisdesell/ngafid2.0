@@ -369,7 +369,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         point.latitude + 0.0001
                     ]);
                     const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                    heatmapFeature.set('weight', 0.1);
+                    heatmapFeature.set('weight', 0.3);
                     heatmapSource1.addFeature(heatmapFeature);
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(RED_POINT_STYLE);
@@ -399,7 +399,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         point.latitude + 0.0001
                     ]);
                     const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                    heatmapFeature.set('weight', 0.1);
+                    heatmapFeature.set('weight', 0.3);
                     heatmapSource2.addFeature(heatmapFeature);
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(BLACK_POINT_STYLE);
