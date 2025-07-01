@@ -17,6 +17,8 @@ import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
 import DragBox from 'ol/interaction/DragBox';
 import { platformModifierKeyOnly } from 'ol/events/condition';
+import Polygon from 'ol/geom/Polygon';
+import { Fill, Stroke } from 'ol/style';
 
 type ProximityMapPageState = {
 
@@ -64,6 +66,14 @@ const RED_POINT_STYLE = new Style({
     image: ICON_IMAGE_RED
 });
 
+// Helper: interpolate color from green to red
+function interpolateColor(value: number) {
+    // value: 0 (green) to 1 (red)
+    const r = Math.round(255 * value);
+    const g = Math.round(255 * (1 - value));
+    return `rgba(${r},${g},0,0.6)`;
+}
+
 class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { openPopups: Array<{ id: string, coord: number[], data: any, position?: { left: number, top: number } }>,
     boxCoords: {
         minLat: number | null,
@@ -82,6 +92,10 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         maxSeverity: number
     },
     boxActive: boolean,
+    showGrid: boolean,
+    gridLayer: VectorLayer | null,
+    heatmapLayer1: Heatmap | null,
+    heatmapLayer2: Heatmap | null,
 }> {
     mapContainerRef: React.RefObject<HTMLDivElement | null>;
 
@@ -132,6 +146,8 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 maxSeverity: 1000
             },
             boxActive: false,
+            showGrid: false,
+            gridLayer: null,
         };
     }
 
@@ -319,22 +335,23 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     }
 
     async processEventCoordinates(events: any) {
-        const { map, heatmapLayer1, heatmapLayer2, markerSource } = this.state;
-
+        const { map, heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid } = this.state;
         if (!map || !heatmapLayer1 || !heatmapLayer2 || !markerSource) {
             console.error('Map or layers not initialized');
             return;
         }
-
-        const heatmapSource1 = heatmapLayer1.getSource();
-        const heatmapSource2 = heatmapLayer2.getSource();
-        heatmapSource1.clear();
-        heatmapSource2.clear();
+        // Remove previous grid layer if present
+        if (gridLayer) {
+            map.removeLayer(gridLayer);
+        }
+        // clear heatmap sources
+        heatmapLayer1.getSource().clear();
+        heatmapLayer2.getSource().clear();
         markerSource.clear();
 
         // Track processed unordered flight pairs
         const processedPairs = new Set<string>();
-
+        let allPoints: { latitude: number, longitude: number }[] = [];
         for (const event of events) {
             const eventId = Number(event.id);
             const mainFlightId = Number(event.flightId);
@@ -369,8 +386,8 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         point.latitude + 0.0001
                     ]);
                     const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                    heatmapFeature.set('weight', 0.3);
-                    heatmapSource1.addFeature(heatmapFeature);
+                    heatmapFeature.set('weight', 0.2);
+                    heatmapLayer1.getSource().addFeature(heatmapFeature);
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(RED_POINT_STYLE);
                     marker.setProperties({
@@ -388,6 +405,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         longitude: point.longitude
                     });
                     markerSource.addFeature(marker);
+                    allPoints.push({ latitude: point.latitude, longitude: point.longitude });
                 }
             }
 
@@ -399,8 +417,8 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         point.latitude + 0.0001
                     ]);
                     const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                    heatmapFeature.set('weight', 0.3);
-                    heatmapSource2.addFeature(heatmapFeature);
+                    heatmapFeature.set('weight', 0.2);
+                    heatmapLayer2.getSource().addFeature(heatmapFeature);
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(BLACK_POINT_STYLE);
                     marker.setProperties({
@@ -418,15 +436,16 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         longitude: point.longitude
                     });
                     markerSource.addFeature(marker);
+                    allPoints.push({ latitude: point.latitude, longitude: point.longitude });
                 }
             }
         }
 
         // Fit map to extents as before
-        const extent1 = heatmapSource1.getExtent();
-        const extent2 = heatmapSource2.getExtent();
-        const features1 = heatmapSource1.getFeatures();
-        const features2 = heatmapSource2.getFeatures();
+        const extent1 = heatmapLayer1.getSource().getExtent();
+        const extent2 = heatmapLayer2.getSource().getExtent();
+        const features1 = heatmapLayer1.getSource().getFeatures();
+        const features2 = heatmapLayer2.getSource().getFeatures();
         console.log('[processEventCoordinates] extent1:', extent1, 'features1:', features1.length);
         console.log('[processEventCoordinates] extent2:', extent2, 'features2:', features2.length);
         const isValidExtent = (extent: number[]) => {
@@ -448,6 +467,51 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             map.getView().fit(combinedExtent, { padding: [50, 50, 50, 50], maxZoom: 15 });
         } else {
             console.log('[processEventCoordinates] Not fitting map: invalid or empty extents/features.');
+        }
+
+        // Add grid-based density map if enabled
+        if (showGrid && map) {
+            const gridSize = 0.1; // degrees
+            const gridCounts: Record<string, number> = {};
+            allPoints.forEach(pt => {
+                const lat = Math.floor(pt.latitude / gridSize) * gridSize;
+                const lon = Math.floor(pt.longitude / gridSize) * gridSize;
+                const key = `${lat},${lon}`;
+                gridCounts[key] = (gridCounts[key] || 0) + 1;
+            });
+            const maxCount = Math.max(1, ...Object.values(gridCounts));
+            const features = Object.entries(gridCounts).map(([key, count]) => {
+                const [lat, lon] = key.split(',').map(Number);
+                const coords = [
+                    [lon, lat],
+                    [lon + gridSize, lat],
+                    [lon + gridSize, lat + gridSize],
+                    [lon, lat + gridSize],
+                    [lon, lat]
+                ];
+                const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
+                const polygon = new Polygon([olCoords]);
+                const intensity = count / maxCount;
+                const color = interpolateColor(intensity);
+                const feature = new Feature(polygon);
+                feature.setStyle(new Style({
+                    fill: new Fill({ color }),
+                    stroke: new Stroke({ color: 'rgba(0,0,0,0.1)', width: 1 })
+                }));
+                return feature;
+            });
+            const gridSource = new VectorSource({ features });
+            const newGridLayer = new VectorLayer({ source: gridSource, opacity: 0.7 });
+            map.addLayer(newGridLayer);
+            // Hide heatmap layers
+            heatmapLayer1.setVisible(false);
+            heatmapLayer2.setVisible(false);
+            this.setState({ gridLayer: newGridLayer });
+        } else {
+            // Show heatmap layers
+            if (heatmapLayer1) heatmapLayer1.setVisible(true);
+            if (heatmapLayer2) heatmapLayer2.setVisible(true);
+            this.setState({ gridLayer: null });
         }
     }
 
@@ -524,8 +588,33 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         window.removeEventListener('mouseup', this.handleMouseUp);
     };
 
+    toggleGrid = () => {
+        this.setState(
+            prevState => ({ showGrid: !prevState.showGrid }),
+            () => {
+                // Remove grid layer if switching to heatmap
+                const { map, gridLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
+                if (map) {
+                    if (showGrid) {
+                        // Hide heatmap layers
+                        if (heatmapLayer1) heatmapLayer1.setVisible(false);
+                        if (heatmapLayer2) heatmapLayer2.setVisible(false);
+                    } else {
+                        // Remove grid layer
+                        if (gridLayer) map.removeLayer(gridLayer);
+                        // Show heatmap layers
+                        if (heatmapLayer1) heatmapLayer1.setVisible(true);
+                        if (heatmapLayer2) heatmapLayer2.setVisible(true);
+                    }
+                }
+                // Re-process events to update map layers
+                this.processEventCoordinates(this.state.events);
+            }
+        );
+    };
+
     render() {
-        const { loading, error, showEventList, events, openPopups, map, boxInput } = this.state;
+        const { loading, error, showEventList, events, openPopups, map, boxInput, showGrid } = this.state;
         console.log('[Render] boxInput:', boxInput);
 
         const eventList = (events.length > 0) && (
@@ -611,7 +700,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
         // Render all open popups as overlays
         const popups = openPopups.map((popup, idx) => {
-            // Positioning: convert map coordinates to pixel if map is ready
+
             let left = 0, bottom = 0;
             if (map) {
                 const pixel = map.getPixelFromCoordinate(popup.coord);
@@ -802,6 +891,52 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             </div>
         );
 
+        // Toggle switch for grid/heatmap
+        const gridToggleSwitch = (
+            <div style={{ position: 'absolute', top: 20, left: 10, zIndex: 300, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontWeight: 600, fontSize: 15 }}>Heatmap</span>
+                <label className="switch">
+                    <input type="checkbox" checked={showGrid} onChange={this.toggleGrid} />
+                    <span className="slider round"></span>
+                </label>
+                <span style={{ fontWeight: 600, fontSize: 15 }}>Grid</span>
+                <style>{`
+                    .switch {
+                        position: relative;
+                        display: inline-block;
+                        width: 48px;
+                        height: 24px;
+                    }
+                    .switch input { display: none; }
+                    .slider {
+                        position: absolute;
+                        cursor: pointer;
+                        top: 0; left: 0; right: 0; bottom: 0;
+                        background-color: #ccc;
+                        transition: .4s;
+                        border-radius: 24px;
+                    }
+                    .slider:before {
+                        position: absolute;
+                        content: "";
+                        height: 18px;
+                        width: 18px;
+                        left: 3px;
+                        bottom: 3px;
+                        background-color: white;
+                        transition: .4s;
+                        border-radius: 50%;
+                    }
+                    input:checked + .slider {
+                        background-color: #2196F3;
+                    }
+                    input:checked + .slider:before {
+                        transform: translateX(24px);
+                    }
+                `}</style>
+            </div>
+        );
+
         return (
             <div
                 className="w-full h-full grow flex flex-col"
@@ -824,6 +959,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
                 <div className="flex flex-row flex-grow min-h-0 w-full overflow-hidden p-2 gap-2" style={{position: 'relative'}}>
 
+                    {gridToggleSwitch}
                     {/* Always render boxSelector, mapContent, loadingDisplay, and popups */}
                     {boxSelector}
                     {mapContent}
