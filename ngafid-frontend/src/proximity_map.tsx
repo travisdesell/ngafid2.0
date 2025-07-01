@@ -491,7 +491,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 ];
                 const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
                 const polygon = new Polygon([olCoords]);
-                const intensity = count / maxCount;
+                const intensity = Math.sqrt(count / maxCount);
                 const color = interpolateColor(intensity);
                 const feature = new Feature(polygon);
                 feature.setStyle(new Style({
