@@ -31,6 +31,7 @@ type ProximityMapPageState = {
     heatmapLayer2: Heatmap | null;
     markerSource: VectorSource | null;
 
+    draggedPopupId: string | null,
     popupContentData: {
         time: string | null;
         latitude: number | null;
@@ -129,15 +130,13 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     heatmapLayer2: Heatmap | null,
     markerLayer: VectorLayer | null,
 }> {
-    mapContainerRef: React.RefObject<HTMLDivElement | null>;
 
-    draggedPopupId: string | null;
+    mapContainerRef: React.RefObject<HTMLDivElement | null>;
     dragOffset: { x: number, y: number };
 
     constructor(props: {}) {
         super(props);
         this.mapContainerRef = React.createRef<HTMLDivElement>();
-        this.draggedPopupId = null;
         this.dragOffset = { x: 0, y: 0 };
         this.state = {
             events: [],
@@ -161,6 +160,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 severity: null,
             },
             openPopups: [],
+            draggedPopupId: null,
             boxCoords: {
                 minLat: null,
                 maxLat: null,
@@ -602,7 +602,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
     handlePopupMouseDown = (e: React.MouseEvent, popupId: string) => {
         e.preventDefault();
-        this.draggedPopupId = popupId;
+        this.setState({ draggedPopupId: popupId });
         const popupElem = (e.currentTarget.parentElement as HTMLElement);
         const rect = popupElem.getBoundingClientRect();
         this.dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -611,7 +611,10 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     };
 
     handleMouseMove = (e: MouseEvent) => {
-        if (!this.draggedPopupId || !this.mapContainerRef.current) return;
+
+        if (!this.state.draggedPopupId || !this.mapContainerRef.current)
+            return;
+
         const mapRect = this.mapContainerRef.current.getBoundingClientRect();
         let left = e.clientX - mapRect.left - this.dragOffset.x;
         let top = e.clientY - mapRect.top - this.dragOffset.y;
@@ -620,13 +623,13 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         top = Math.max(0, Math.min(top, mapRect.height - 100)); // 100 = approx height
         this.setState(prevState => ({
             openPopups: prevState.openPopups.map(p =>
-                p.id === this.draggedPopupId ? { ...p, position: { left, top } } : p
+                p.id === this.state.draggedPopupId ? { ...p, position: { left, top } } : p
             )
         }));
     };
 
     handleMouseUp = () => {
-        this.draggedPopupId = null;
+        this.setState({ draggedPopupId: null });
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.handleMouseUp);
     };
@@ -774,8 +777,9 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     bottom = pixel[1];
                 }
             }
-            //offset pop up windows
-            const offset = idx * 250;
+
+            const isGrabbing = (this.state.draggedPopupId === popup.id);
+
             return (
                 <div
                     key={popup.id}
@@ -792,14 +796,15 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         top: popup.position?.top ?? 100,
                         background: 'white',
                         transform: 'none',
-                        cursor: this.draggedPopupId === popup.id ? 'grabbing' : 'grab',
-                        userSelect: 'none',
+                        cursor: isGrabbing ? 'grabbing' : '',
                     }}
                 >
                     <div
+                        className="group"
                         style={{ fontWeight: 600, cursor: 'grab', marginBottom: 4 }}
                         onMouseDown={e => this.handlePopupMouseDown(e, popup.id)}
                     >
+                        <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
                         Proximity Event Details
                     </div>
                     <a
@@ -816,7 +821,6 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         ✖
                     </a>
                     <div>
-                        <div className="mt-2">Proximity Event Details</div>
                         <hr />
                         <div><strong>Time: </strong>{popup.data.time ?? '...'}</div>
                         <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
