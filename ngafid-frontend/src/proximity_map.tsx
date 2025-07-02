@@ -132,12 +132,14 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 }> {
 
     mapContainerRef: React.RefObject<HTMLDivElement | null>;
-    dragOffset: { x: number, y: number };
+    dragStart: { x: number, y: number };
+    popupStart: { left: number, top: number };
 
     constructor(props: {}) {
         super(props);
         this.mapContainerRef = React.createRef<HTMLDivElement>();
-        this.dragOffset = { x: 0, y: 0 };
+        this.dragStart = { x: 0, y: 0 };
+        this.popupStart = { left: 0, top: 0 };
         this.state = {
             events: [],
             loading: false,
@@ -601,13 +603,23 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     };
 
     handlePopupMouseDown = (e: React.MouseEvent, popupId: string) => {
+
         e.preventDefault();
+
         this.setState({ draggedPopupId: popupId });
+
         const popupElem = (e.currentTarget.parentElement as HTMLElement);
-        const rect = popupElem.getBoundingClientRect();
-        this.dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+        //Save the starting position
+        this.dragStart = { x: e.clientX, y: e.clientY };
+        this.popupStart = {
+                left: parseFloat(popupElem.style.left) || 0,
+                top:  parseFloat(popupElem.style.top)  || 0
+        };
+
         window.addEventListener('mousemove', this.handleMouseMove);
         window.addEventListener('mouseup', this.handleMouseUp);
+
     };
 
     handleMouseMove = (e: MouseEvent) => {
@@ -615,12 +627,17 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         if (!this.state.draggedPopupId || !this.mapContainerRef.current)
             return;
 
-        const mapRect = this.mapContainerRef.current.getBoundingClientRect();
-        let left = e.clientX - mapRect.left - this.dragOffset.x;
-        let top = e.clientY - mapRect.top - this.dragOffset.y;
+        const dx = e.clientX - this.dragStart.x;
+        const dy = e.clientY - this.dragStart.y;
+
+        let left = this.popupStart.left + dx;
+        let top = this.popupStart.top + dy;
+
         // Constrain to map
+        const mapRect = this.mapContainerRef.current.getBoundingClientRect();
         left = Math.max(0, Math.min(left, mapRect.width - 200)); // 200 = minWidth
         top = Math.max(0, Math.min(top, mapRect.height - 100)); // 100 = approx height
+        
         this.setState(prevState => ({
             openPopups: prevState.openPopups.map(p =>
                 p.id === this.state.draggedPopupId ? { ...p, position: { left, top } } : p
