@@ -32,6 +32,7 @@ type ProximityMapPageState = {
     markerSource: VectorSource | null;
 
     draggedPopupId: string | null,
+    recentPopupId: string | null,
     popupContentData: {
         time: string | null;
         latitude: number | null;
@@ -163,6 +164,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             },
             openPopups: [],
             draggedPopupId: null,
+            recentPopupId: null,
             boxCoords: {
                 minLat: null,
                 maxLat: null,
@@ -606,7 +608,10 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
         e.preventDefault();
 
-        this.setState({ draggedPopupId: popupId });
+        this.setState({
+            draggedPopupId: popupId,
+            recentPopupId: popupId,
+        });
 
         const popupElem = (e.currentTarget.parentElement as HTMLElement);
 
@@ -796,11 +801,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             }
 
             const isGrabbing = (this.state.draggedPopupId === popup.id);
+            const isRecent = (this.state.recentPopupId === popup.id);
 
             return (
                 <div
                     key={popup.id}
-                    className="ol-popup"
+                    className={`ol-popup ${isRecent ? 'z-110' : 'z-100'}`}
                     style={{
                         position: 'absolute',
                         boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
@@ -808,7 +814,6 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         borderRadius: '10px',
                         border: '1px solid #cccccc',
                         minWidth: '200px',
-                        zIndex: 100,
                         left: popup.position?.left ?? 100,
                         top: popup.position?.top ?? 100,
                         background: 'white',
