@@ -289,8 +289,8 @@ public class ProximityPointsProcessor {
                 LEFT JOIN event_metadata em1 ON e.id = em1.event_id AND em1.key_id = (SELECT id FROM event_metadata_keys WHERE name = 'lateral_distance')
                 LEFT JOIN event_metadata em2 ON e.id = em2.event_id AND em2.key_id = (SELECT id FROM event_metadata_keys WHERE name = 'vertical_distance')
                 WHERE e.event_definition_id = ?
-                  AND e.min_latitude >= ? AND e.max_latitude <= ?
-                  AND e.min_longitude >= ? AND e.max_longitude <= ?
+                  AND e.max_latitude >= ? AND e.min_latitude <= ?
+                  AND e.max_longitude >= ? AND e.min_longitude <= ?
             """);
             if (startTime != null && !startTime.isEmpty()) {
                 query.append(" AND e.start_time >= ?");
