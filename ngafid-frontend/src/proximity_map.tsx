@@ -127,6 +127,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     gridLayer: VectorLayer | null,
     heatmapLayer1: Heatmap | null,
     heatmapLayer2: Heatmap | null,
+    markerLayer: VectorLayer | null,
 }> {
     mapContainerRef: React.RefObject<HTMLDivElement | null>;
 
@@ -147,7 +148,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             heatmapLayer1: null,
             heatmapLayer2: null,
             markerSource: null,
-
+            markerLayer: null,
             popupContentData: {
                 time: null,
                 latitude: null,
@@ -324,7 +325,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 markerLayer.setVisible(mapZoom >= MARKER_VISIBILITY_ZOOM_THRESHOLD);
             });
 
-            this.setState({ map, heatmapLayer1, heatmapLayer2, markerSource }, async () => {
+            this.setState({ map, heatmapLayer1, heatmapLayer2, markerSource, markerLayer }, async () => {
                 map.updateSize();
             });
         });
@@ -370,7 +371,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     }
 
     async processEventCoordinates(events: any) {
-        const { map, heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid } = this.state;
+        const { map, heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid, markerLayer } = this.state;
         if (!map || !heatmapLayer1 || !heatmapLayer2 || !markerSource) {
             console.error('Map or layers not initialized');
             return;
@@ -537,7 +538,14 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             });
             const gridSource = new VectorSource({ features });
             const newGridLayer = new VectorLayer({ source: gridSource, opacity: 0.7 });
-            map.addLayer(newGridLayer);
+            // Remove old grid layer if present
+            if (gridLayer) map.removeLayer(gridLayer);
+            if (markerLayer) {
+                const markerLayerIndex = map.getLayers().getArray().indexOf(markerLayer);
+                map.getLayers().insertAt(markerLayerIndex, newGridLayer);
+            } else {
+                map.addLayer(newGridLayer);
+            }
             // Hide heatmap layers
             heatmapLayer1.setVisible(false);
             heatmapLayer2.setVisible(false);
