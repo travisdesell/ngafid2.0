@@ -76,7 +76,8 @@ function getOS():string {
     const
         platform = window.navigator.platform,
         macosPlatforms = ['macOS', 'Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
-        windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
+        windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
+    ;
         
     const OS_FALLBACK_DEFAULT = 'Linux';
 
