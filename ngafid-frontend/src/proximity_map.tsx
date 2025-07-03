@@ -74,11 +74,9 @@ const RED_POINT_STYLE = new Style({
 function getOS():string {
 
     const
-        userAgent = window.navigator.userAgent,
         platform = window.navigator.platform,
         macosPlatforms = ['macOS', 'Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
         windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
-        iosPlatforms = ['iPhone', 'iPad', 'iPod'];
         
     const OS_FALLBACK_DEFAULT = 'Linux';
 
