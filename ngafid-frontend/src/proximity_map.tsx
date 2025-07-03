@@ -182,7 +182,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 maxSeverity: 1000
             },
             boxActive: false,
-            showGrid: false,
+            showGrid: true,
             gridLayer: null,
         };
     }
@@ -279,7 +279,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         maxLon: maxLon.toFixed(6)
                     },
                     boxActive: false
-                }));
+                }), () => {
+                    // If grid mode is on, render empty grid overlay
+                    if (this.state.showGrid) {
+                        this.renderEmptyGridOverlay();
+                    }
+                });
             });
 
             const proximityMapPageRef = this;
@@ -513,7 +518,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         if (showGrid && map) {
             // Use bounding box from boxInput
             const { minLat, maxLat, minLon, maxLon } = this.state.boxInput;
-            const gridSize = 0.05; // degrees
+            const gridSize = 0.05;
             const gridCounts: Record<string, number> = {};
             allPoints.forEach(pt => {
                 const latKey = (Math.floor(pt.latitude / gridSize) * gridSize).toFixed(4);
@@ -598,7 +603,11 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             // Show heatmap layers
             if (heatmapLayer1) heatmapLayer1.setVisible(true);
             if (heatmapLayer2) heatmapLayer2.setVisible(true);
-            this.setState({ gridLayer: null });
+            // Remove grid layer if present
+            if (gridLayer) {
+                map.removeLayer(gridLayer);
+                this.setState({ gridLayer: null });
+            }
         }
     }
 
@@ -723,6 +732,61 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             }
         );
     };
+
+    // Helper to render an empty green grid overlay for the selected bounding box
+    renderEmptyGridOverlay = () => {
+        const { map, gridLayer, markerLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
+        if (!map || !showGrid) return;
+        // Remove previous grid layer if present
+        if (gridLayer) {
+            map.removeLayer(gridLayer);
+        }
+        // Use bounding box from boxInput
+        const { minLat, maxLat, minLon, maxLon } = this.state.boxInput;
+        const gridSize = 0.05; // degrees (should match main gridSize)
+        // Parse bounding box as numbers
+        const minLatNum = parseFloat(minLat);
+        const maxLatNum = parseFloat(maxLat);
+        const minLonNum = parseFloat(minLon);
+        const maxLonNum = parseFloat(maxLon);
+        let latStart = minLatNum, latEnd = maxLatNum, lonStart = minLonNum, lonEnd = maxLonNum;
+        if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) return;
+        if (latStart > latEnd) [latStart, latEnd] = [latEnd, latStart];
+        if (lonStart > lonEnd) [lonStart, lonEnd] = [lonEnd, lonStart];
+        const features = [];
+        for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd; lat += gridSize) {
+            for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd; lon += gridSize) {
+                const color = 'rgba(0,255,0,0.6)'; // green
+                const coords = [
+                    [lon, lat],
+                    [lon + gridSize, lat],
+                    [lon + gridSize, lat + gridSize],
+                    [lon, lat + gridSize],
+                    [lon, lat]
+                ];
+                const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
+                const polygon = new Polygon([olCoords]);
+                const feature = new Feature(polygon);
+                feature.setStyle(new Style({
+                    fill: new Fill({ color }),
+                    stroke: new Stroke({ color: 'rgba(0,0,0,0.1)', width: 1 })
+                }));
+                features.push(feature);
+            }
+        }
+        const gridSource = new VectorSource({ features });
+        const newGridLayer = new VectorLayer({ source: gridSource, opacity: 0.7 });
+        if (markerLayer) {
+            const markerLayerIndex = map.getLayers().getArray().indexOf(markerLayer);
+            map.getLayers().insertAt(markerLayerIndex, newGridLayer);
+        } else {
+            map.addLayer(newGridLayer);
+        }
+        // Hide heatmap layers
+        if (heatmapLayer1) heatmapLayer1.setVisible(false);
+        if (heatmapLayer2) heatmapLayer2.setVisible(false);
+        this.setState({ gridLayer: newGridLayer });
+    }
 
     render() {
         const { loading, error, showEventList, events, openPopups, map, boxInput, boxActive, showGrid, gridLayer } = this.state;
