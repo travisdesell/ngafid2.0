@@ -65,7 +65,7 @@
         "events": "^3.3.0",
         "globals": "^16.0.0",
         "moment": "^2.29.1",
-        "ol": "^5.3.3",
+        "ol": "^10.6.1",
         "ol-layerswitcher": "^3.8.3",
         "plotly": "^1.0.6",
         "plotly.js": "^3.0.0",

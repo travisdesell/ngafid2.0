@@ -251,7 +251,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             map.addInteraction(dragBox);
 
             dragBox.on('boxstart', () => {
-                console.log("Box Drag Started...")
+                console.log("Box Drag Started...");
                 this.setState({ boxActive: true });
             });
 
@@ -264,7 +264,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 const minLon = Math.min(bottomLeft[0], topRight[0]);
                 const maxLon = Math.max(bottomLeft[0], topRight[0]);
 
-                console.log("...Box Drag Finished!")
+                console.log("...Box Drag Finished!");
                 console.log(`Updating Coord Ranges: Lat: [${minLat}, ${maxLat}], Lon: [${minLon}, ${maxLon}]`);
 
                 this.setState(prevState => ({
@@ -389,9 +389,9 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             map.removeLayer(gridLayer);
         }
         // clear heatmap sources
-        heatmapLayer1.getSource().clear();
-        heatmapLayer2.getSource().clear();
-        markerSource.clear();
+        heatmapLayer1.getSource()!.clear();
+        heatmapLayer2.getSource()!.clear();
+        if (markerSource) markerSource.clear();
 
         // Track processed unordered flight pairs
         const processedPairs = new Set<string>();
@@ -431,7 +431,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     ]);
                     const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
                     heatmapFeature.set('weight', 0.2);
-                    heatmapLayer1.getSource().addFeature(heatmapFeature);
+                    heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(RED_POINT_STYLE);
                     marker.setProperties({
@@ -462,7 +462,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     ]);
                     const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
                     heatmapFeature.set('weight', 0.2);
-                    heatmapLayer2.getSource().addFeature(heatmapFeature);
+                    heatmapLayer2.getSource()!.addFeature(heatmapFeature);
                     const marker = new Feature({ geometry: new Point(olCoord) });
                     marker.setStyle(BLACK_POINT_STYLE);
                     marker.setProperties({
@@ -486,10 +486,10 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         }
 
         // Fit map to extents as before
-        const extent1 = heatmapLayer1.getSource().getExtent();
-        const extent2 = heatmapLayer2.getSource().getExtent();
-        const features1 = heatmapLayer1.getSource().getFeatures();
-        const features2 = heatmapLayer2.getSource().getFeatures();
+        const extent1 = heatmapLayer1.getSource()!.getExtent();
+        const extent2 = heatmapLayer2.getSource()!.getExtent();
+        const features1 = heatmapLayer1.getSource()!.getFeatures();
+        const features2 = heatmapLayer2.getSource()!.getFeatures();
         console.log('[processEventCoordinates] extent1:', extent1, 'features1:', features1.length);
         console.log('[processEventCoordinates] extent2:', extent2, 'features2:', features2.length);
         const isValidExtent = (extent: number[]) => {
