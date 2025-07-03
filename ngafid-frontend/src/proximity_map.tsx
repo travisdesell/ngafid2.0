@@ -511,35 +511,75 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
         // Add grid-based density map if enabled
         if (showGrid && map) {
-            const gridSize = 0.1; // degrees
+            // Use bounding box from boxInput
+            const { minLat, maxLat, minLon, maxLon } = this.state.boxInput;
+            const gridSize = 0.05; // degrees
             const gridCounts: Record<string, number> = {};
             allPoints.forEach(pt => {
-                const lat = Math.floor(pt.latitude / gridSize) * gridSize;
-                const lon = Math.floor(pt.longitude / gridSize) * gridSize;
-                const key = `${lat},${lon}`;
+                const latKey = (Math.floor(pt.latitude / gridSize) * gridSize).toFixed(4);
+                const lonKey = (Math.floor(pt.longitude / gridSize) * gridSize).toFixed(4);
+                const key = `${latKey},${lonKey}`;
                 gridCounts[key] = (gridCounts[key] || 0) + 1;
             });
-            const maxCount = Math.max(1, ...Object.values(gridCounts));
-            const features = Object.entries(gridCounts).map(([key, count]) => {
-                const [lat, lon] = key.split(',').map(Number);
-                const coords = [
-                    [lon, lat],
-                    [lon + gridSize, lat],
-                    [lon + gridSize, lat + gridSize],
-                    [lon, lat + gridSize],
-                    [lon, lat]
-                ];
-                const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
-                const polygon = new Polygon([olCoords]);
-                const intensity = Math.sqrt(count / maxCount);
-                const color = interpolateColor(intensity);
-                const feature = new Feature(polygon);
-                feature.setStyle(new Style({
-                    fill: new Fill({ color }),
-                    stroke: new Stroke({ color: 'rgba(0,0,0,0.1)', width: 1 })
-                }));
-                return feature;
-            });
+            // Parse bounding box as numbers
+            const minLatNum = parseFloat(minLat);
+            const maxLatNum = parseFloat(maxLat);
+            const minLonNum = parseFloat(minLon);
+            const maxLonNum = parseFloat(maxLon);
+            // Defensive: if bounding box is not valid, fallback to points extents
+            let latStart = minLatNum, latEnd = maxLatNum, lonStart = minLonNum, lonEnd = maxLonNum;
+            if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) {
+                // fallback to points extents
+                if (allPoints.length > 0) {
+                    latStart = Math.min(...allPoints.map(pt => pt.latitude));
+                    latEnd = Math.max(...allPoints.map(pt => pt.latitude));
+                    lonStart = Math.min(...allPoints.map(pt => pt.longitude));
+                    lonEnd = Math.max(...allPoints.map(pt => pt.longitude));
+                } else {
+                    latStart = latEnd = lonStart = lonEnd = 0;
+                }
+            }
+            // Ensure min < max
+            if (latStart > latEnd) [latStart, latEnd] = [latEnd, latStart];
+            if (lonStart > lonEnd) [lonStart, lonEnd] = [lonEnd, lonStart];
+            // Compute grid cells for the entire bounding box
+            const features = [];
+            let maxCount = 1;
+            if (Object.values(gridCounts).length > 0) {
+                maxCount = Math.max(1, ...Object.values(gridCounts));
+            }
+
+                console.log('[Grid Debug] gridCounts:', gridCounts);
+                console.log('[Grid Debug] maxCount:', maxCount);
+
+            for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd; lat += gridSize) {
+                for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd; lon += gridSize) {
+                    const latKey = lat.toFixed(4);
+                    const lonKey = lon.toFixed(4);
+                    const key = `${latKey},${lonKey}`;
+                    const count = gridCounts[key] || 0;
+                    const intensity = maxCount > 0 ? Math.sqrt(count / maxCount) : 0;
+                    const color = interpolateColor(intensity);
+                    if ( count > 0) {
+                        console.log(`[Grid Debug] Cell (${lat},${lon}) count:`, count, 'intensity:', intensity, 'color:', color);
+                    }
+                    const coords = [
+                        [lon, lat],
+                        [lon + gridSize, lat],
+                        [lon + gridSize, lat + gridSize],
+                        [lon, lat + gridSize],
+                        [lon, lat]
+                    ];
+                    const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
+                    const polygon = new Polygon([olCoords]);
+                    const feature = new Feature(polygon);
+                    feature.setStyle(new Style({
+                        fill: new Fill({ color }),
+                        stroke: new Stroke({ color: 'rgba(0,0,0,0.1)', width: 1 })
+                    }));
+                    features.push(feature);
+                }
+            }
             const gridSource = new VectorSource({ features });
             const newGridLayer = new VectorLayer({ source: gridSource, opacity: 0.7 });
             // Remove old grid layer if present
@@ -669,7 +709,10 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         if (heatmapLayer2) heatmapLayer2.setVisible(false);
                     } else {
                         // Remove grid layer
-                        if (gridLayer) map.removeLayer(gridLayer);
+                        if (gridLayer) {
+                            map.removeLayer(gridLayer);
+                            this.setState({ gridLayer: null });
+                        }
                         // Show heatmap layers
                         if (heatmapLayer1) heatmapLayer1.setVisible(true);
                         if (heatmapLayer2) heatmapLayer2.setVisible(true);
