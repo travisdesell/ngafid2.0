@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import SignedInNavbar from './signed_in_navbar';
 import 'ol/ol.css';
 
+
 import Map from 'ol/Map';
 import View from 'ol/View';
 import { fromLonLat, toLonLat } from 'ol/proj';
@@ -43,6 +44,17 @@ type ProximityMapPageState = {
         otherFlightId: string | null;
         otherFlightAirframe: string | null;
         severity: string | null;
+    };
+    // Distance calculation state
+    selectedPoints: Array<{
+        id: string;
+        latitude: number;
+        longitude: number;
+        altitude: number;
+    }>;
+    distances: {
+        lateral: number | null;
+        euclidean: number | null;
     };
 };
 
@@ -98,12 +110,55 @@ function getOS():string {
 const userOS = getOS();
 
 
-// Helper: interpolate color from green to red
+// Interpolate color from green to red
 function interpolateColor(value: number) {
     // value: 0 (green) to 1 (red)
     const r = Math.round(255 * value);
     const g = Math.round(255 * (1 - value));
     return `rgba(${r},${g},0,0.6)`;
+}
+
+
+export function toRadians(degrees: number): number {
+    return degrees * Math.PI / 180;
+}
+
+/**
+ * Calculates the lateral (surface) and euclidean (3D) distance between two points.
+ * @param lat1 Latitude of point 1 in degrees
+ * @param lon1 Longitude of point 1 in degrees
+ * @param alt1 Altitude of point 1 in feet (optional, default 0)
+ * @param lat2 Latitude of point 2 in degrees
+ * @param lon2 Longitude of point 2 in degrees
+ * @param alt2 Altitude of point 2 in feet (optional, default 0)
+ * @returns { lateral: feet, euclidean: feet }
+ */
+export function calculateDistanceBetweenPoints(
+    lat1: number, lon1: number, alt1: number = 0,
+    lat2: number, lon2: number, alt2: number = 0
+): { lateral: number, euclidean: number } {
+    const earthRadius = 6371000; // meters
+
+    const lat1Rad = toRadians(lat1);
+    const lat2Rad = toRadians(lat2);
+    const deltaLatRad = toRadians(lat2 - lat1);
+    const deltaLonRad = toRadians(lon2 - lon1);
+
+    // Haversine formula for lateral distance (in meters)
+    const a = Math.sin(deltaLatRad / 2) ** 2 +
+        Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+        Math.sin(deltaLonRad / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const lateralMeters = earthRadius * c;
+
+    // Convert lateral distance to feet
+    const lateral = lateralMeters * 3.28084;
+
+    // 3D distance
+    const deltaAlt = (alt2 || 0) - (alt1 || 0);
+    const euclidean = Math.sqrt(lateral ** 2 + deltaAlt ** 2);
+
+    return { lateral, euclidean };
 }
 
 class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { openPopups: Array<{ id: string, coord: number[], data: any, position?: { left: number, top: number } }>,
@@ -183,6 +238,11 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             boxActive: false,
             showGrid: true,
             gridLayer: null,
+            selectedPoints: [],
+            distances: {
+                lateral: null,
+                euclidean: null
+            },
         };
     }
 
@@ -299,6 +359,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     // Prevent duplicate popups for the same marker
                     if (proximityMapPageRef.state.openPopups.some(p => p.id === popupId)) return;
 
+                    // Limit to 2 popups maximum
+                    if (proximityMapPageRef.state.openPopups.length >= 2) {
+                        console.log('Maximum 2 popups allowed. Close one to open another.');
+                        return;
+                    }
+
                     let popupContentData = {
                         time: new Date(props.time).toLocaleString(),
                         latitude: props.latitude !== undefined ? props.latitude : null,
@@ -314,12 +380,32 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     // Add new popup to openPopups
                     const pixel = map.getPixelFromCoordinate(coord);
                     const initialPosition = pixel ? { left: pixel[0], top: pixel[1] } : { left: 100, top: 100 };
-                    proximityMapPageRef.setState(prevState => ({
-                        openPopups: [
+                    
+                    proximityMapPageRef.setState(prevState => {
+                        const newOpenPopups = [
                             ...prevState.openPopups,
                             { id: popupId, coord, data: popupContentData, position: initialPosition }
-                        ]
-                    }));
+                        ];
+
+                        // Add point to selectedPoints for distance calculation
+                        const newSelectedPoints = [
+                            ...prevState.selectedPoints,
+                            {
+                                id: popupId,
+                                latitude: props.latitude,
+                                longitude: props.longitude,
+                                altitude: props.altitudeAgl || 0 // Already in feet
+                            }
+                        ];
+
+                        return {
+                            openPopups: newOpenPopups,
+                            selectedPoints: newSelectedPoints
+                        };
+                    }, () => {
+                        // Calculate distances after state update
+                        proximityMapPageRef.calculateDistancesBetweenPoints();
+                    });
                 });
             });
 
@@ -663,7 +749,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
         const popupElem = (e.currentTarget.parentElement as HTMLElement);
 
-        //Save the starting position
+
         this.dragStart = { x: e.clientX, y: e.clientY };
         this.popupStart = {
                 left: parseFloat(popupElem.style.left) || 0,
@@ -702,6 +788,23 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         this.setState({ draggedPopupId: null });
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.handleMouseUp);
+    };
+
+    // Calculate distances between two selected points
+    calculateDistancesBetweenPoints = () => {
+        const { selectedPoints } = this.state;
+        if (selectedPoints.length !== 2) {
+            this.setState({ distances: { lateral: null, euclidean: null } });
+            return;
+        }
+
+        const [point1, point2] = selectedPoints;
+        const result = calculateDistanceBetweenPoints(
+            point1.latitude, point1.longitude, point1.altitude,
+            point2.latitude, point2.longitude, point2.altitude
+        );
+
+        this.setState({ distances: { lateral: result.lateral, euclidean: result.euclidean } });
     };
 
     toggleGrid = () => {
@@ -942,8 +1045,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         onClick={e => {
                             e.preventDefault();
                             this.setState(prevState => ({
-                                openPopups: prevState.openPopups.filter(p => p.id !== popup.id)
-                            }));
+                                openPopups: prevState.openPopups.filter(p => p.id !== popup.id),
+                                selectedPoints: prevState.selectedPoints.filter(p => p.id !== popup.id)
+                            }), () => {
+                                // Recalculate distances after removing point
+                                this.calculateDistancesBetweenPoints();
+                            });
                         }}
                     >
                         ✖
@@ -953,7 +1060,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         <div><strong>Time: </strong>{popup.data.time ?? '...'}</div>
                         <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
                         <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
-                        <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? popup.data.altitude : '...'}</div>
+                        <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? popup.data.altitude.toFixed(0) + ' ft' : '...'}</div>
                         <hr />
                         <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
                         <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
@@ -962,6 +1069,14 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
                         <hr />
                         <div><strong>Severity: </strong>{popup.data.severity ?? '...'}</div>
+                        {this.state.distances.lateral !== null && this.state.distances.euclidean !== null && this.state.selectedPoints.length === 2 && (
+                            <>
+                                <hr />
+                                <div><strong>Lateral Distance: </strong>{this.state.distances.lateral.toFixed(0)} ft</div>
+                                <div><strong>Euclidean Distance: </strong>{this.state.distances.euclidean.toFixed(0)} ft</div>
+                                <div><strong>Vertical Separation: </strong>{Math.abs(this.state.selectedPoints[0].altitude - this.state.selectedPoints[1].altitude).toFixed(0)} ft</div>
+                            </>
+                        )}
                     </div>
                 </div>
             );
