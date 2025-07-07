@@ -1073,7 +1073,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                             <>
                                 <hr />
                                 <div><strong>Lateral Distance: </strong>{this.state.distances.lateral.toFixed(0)} ft</div>
-                                <div><strong>Euclidean Distance: </strong>{this.state.distances.euclidean.toFixed(0)} ft</div>
+                                <div><strong>Euclidean (Slant) Distance: </strong>{this.state.distances.euclidean.toFixed(0)} ft</div>
                                 <div><strong>Vertical Separation: </strong>{Math.abs(this.state.selectedPoints[0].altitude - this.state.selectedPoints[1].altitude).toFixed(0)} ft</div>
                             </>
                         )}
