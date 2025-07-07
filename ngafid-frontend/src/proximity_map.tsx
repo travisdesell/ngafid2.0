@@ -730,7 +730,16 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             });
             if (!response.ok) throw new Error('Failed to load events in box');
             const events = await response.json();
-            this.setState({ events, loading: false });
+            
+            let error = null;
+
+            //No events loaded, show error
+            if (events.length === 0) {
+                error = "No events found with the given constraints! Please try again.";
+                console.log("No events found with the given constraints! Please try again.");
+            }
+            
+            this.setState({ error, events, loading: false });
             await this.processEventCoordinates(events);
             console.log('[handleBoxSubmit] map after processEventCoordinates:', this.state.map);
         } catch (error: any) {
