@@ -6,7 +6,7 @@ import 'ol/ol.css';
 
 import Map from 'ol/Map';
 import View from 'ol/View';
-import { fromLonLat, toLonLat } from 'ol/proj';
+import { fromLonLat, getTransform, toLonLat } from 'ol/proj';
 import TileLayer from 'ol/layer/Tile';
 import Heatmap from 'ol/layer/Heatmap';
 import VectorLayer from 'ol/layer/Vector';
@@ -20,6 +20,8 @@ import DragBox from 'ol/interaction/DragBox';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import Polygon from 'ol/geom/Polygon';
 import { Fill, Stroke } from 'ol/style';
+import WebGLVectorLayer from 'ol/layer/WebGLVector';
+import MultiPolygon from 'ol/geom/MultiPolygon';
 
 type ProximityMapPageState = {
 
@@ -180,7 +182,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     },
     boxActive: boolean,
     showGrid: boolean,
-    gridLayer: VectorLayer | null,
+    gridLayer: WebGLVectorLayer | null,
     heatmapLayer1: Heatmap | null,
     heatmapLayer2: Heatmap | null,
     markerLayer: VectorLayer | null,
@@ -190,11 +192,17 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     dragStart: { x: number, y: number };
     popupStart: { left: number, top: number };
 
+    gridSource: VectorSource | null;
+    gridFeature: Feature | null;
+
     constructor(props: {}) {
         super(props);
         this.mapContainerRef = React.createRef<HTMLDivElement>();
         this.dragStart = { x: 0, y: 0 };
         this.popupStart = { left: 0, top: 0 };
+        this.gridSource = null;
+        this.gridFeature = null;
+        
         this.state = {
             events: [],
             loading: false,
@@ -270,6 +278,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     'rgba(255,0,0,1)'
                 ]
             });
+            heatmapLayer1.set('interactive', false); //<-- Flag as non-interactive layer
 
             const heatmapLayer2 = new Heatmap({
                 source: heatmapSource2,
@@ -284,11 +293,13 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     'rgba(255,0,0,1)'
                 ]
             });
+            heatmapLayer2.set('interactive', false); //<-- Flag as non-interactive layer
 
             const markerLayer = new VectorLayer({
                 source: markerSource,
                 visible: false
             });
+            markerLayer.set('interactive', true); //<-- Flag as interactive layer
 
             const map = new Map({
                 target: 'map',
@@ -347,8 +358,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             });
 
             const proximityMapPageRef = this;
-            map.on('singleclick', function (event) {
-                map.forEachFeatureAtPixel(event.pixel, function (feature) {
+            map.on('singleclick', (event) => {
+
+                map.forEachFeatureAtPixel(
+                    event.pixel,
+                    (feature) => {
+
                     const geometry = feature.getGeometry() as Point | undefined;
                     if (!geometry) return;
                     const coord = geometry.getCoordinates();
@@ -374,7 +389,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         flightAirframe: props.flightAirframe || 'N/A',
                         otherFlightId: props.otherFlightId,
                         otherFlightAirframe: props.otherFlightAirframe || 'N/A',
-                        severity: props.severity.toFixed(2)
+                        severity: props.severity?.toFixed(2)
                     };
 
                     // Add new popup to openPopups
@@ -406,7 +421,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         // Calculate distances after state update
                         proximityMapPageRef.calculateDistancesBetweenPoints();
                     });
-                });
+                    },
+                    {
+                        //Exclude non-interactive layers
+                        layerFilter: (layer) => layer.get('interactive') === true
+                    }
+                );
             });
 
             map.on('moveend', () => {
@@ -470,10 +490,11 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             console.error('Map or layers not initialized');
             return;
         }
-        // Remove previous grid layer if present
-        if (gridLayer) {
-            map.removeLayer(gridLayer);
-        }
+
+        //Grid layer exists, hide it
+        if (gridLayer)
+            gridLayer.setVisible(false);
+
         // clear heatmap sources
         heatmapLayer1.getSource()!.clear();
         heatmapLayer2.getSource()!.clear();
@@ -639,59 +660,95 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 maxCount = Math.max(1, ...Object.values(gridCounts));
             }
 
-                console.log('[Grid Debug] gridCounts:', gridCounts);
-                console.log('[Grid Debug] maxCount:', maxCount);
+            console.log('[Grid Debug] gridCounts:', gridCounts);
+            console.log('[Grid Debug] maxCount:', maxCount);
 
-            for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd; lat += gridSize) {
-                for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd; lon += gridSize) {
-                    const latKey = lat.toFixed(4);
-                    const lonKey = lon.toFixed(4);
-                    const key = `${latKey},${lonKey}`;
-                    const count = gridCounts[key] || 0;
-                    const intensity = maxCount > 0 ? Math.sqrt(count / maxCount) : 0;
+
+            //Get transformation function from lon/lat to web mercator
+            const proj = getTransform('EPSG:4326', 'EPSG:3857');
+
+            //Populate grid coordinates
+            const xs:number[] = [];
+            const ys:number[] = [];
+            for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd + 1e-9; lon += gridSize) {
+                xs.push(proj([lon, 0])[0]);
+            }
+            for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd + 1e-9; lat += gridSize) {
+                ys.push(proj([0, lat])[1]);
+            }
+
+            const rows = ys.length - 1;
+            const cols = xs.length - 1;
+
+            for (let j = 0 ; j < rows ; j++) {
+
+                const y0 = ys[j];
+                const y1 = ys[j + 1];
+
+                const latVal = (Math.floor(latStart/gridSize)+j)*gridSize;
+
+                for (let i = 0 ; i < cols ; i++) {
+
+                    const x0 = xs[i];
+                    const x1 = xs[i + 1];
+
+                    const lonVal = (Math.floor(lonStart/gridSize)+i)*gridSize;
+
+                    const count = gridCounts[`${latVal.toFixed(4)},${lonVal.toFixed(4)}`]||0;
+                    const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
                     const color = interpolateColor(intensity);
-                    if ( count > 0) {
-                        console.log(`[Grid Debug] Cell (${lat},${lon}) count:`, count, 'intensity:', intensity, 'color:', color);
-                    }
-                    const coords = [
-                        [lon, lat],
-                        [lon + gridSize, lat],
-                        [lon + gridSize, lat + gridSize],
-                        [lon, lat + gridSize],
-                        [lon, lat]
-                    ];
-                    const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
-                    const polygon = new Polygon([olCoords]);
-                    const feature = new Feature(polygon);
-                    feature.setStyle(new Style({
-                        fill: new Fill({ color }),
-                        stroke: new Stroke({ color: 'rgba(0,0,0,0.1)', width: 1 })
-                    }));
-                    features.push(feature);
+
+                    if (count > 0)
+                        console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
+
+                    const polygon = new Polygon([[
+                        [x0,y0],
+                        [x1,y0],
+                        [x1,y1],
+                        [x0,y1],
+                        [x0,y0]
+                    ]]);
+
+                    const cellFeature = new Feature(polygon);
+                    cellFeature.set('kind', 'density');     //<-- Flag this feature as a density cell so it can be removed later
+                    cellFeature.set('color', color);
+
+                    features.push(cellFeature);
+
                 }
+
             }
-            const gridSource = new VectorSource({ features });
-            const newGridLayer = new VectorLayer({ source: gridSource, opacity: 0.7 });
-            // Remove old grid layer if present
-            if (gridLayer) map.removeLayer(gridLayer);
-            if (markerLayer) {
-                const markerLayerIndex = map.getLayers().getArray().indexOf(markerLayer);
-                map.getLayers().insertAt(markerLayerIndex, newGridLayer);
-            } else {
-                map.addLayer(newGridLayer);
-            }
+
+            //Clear all of the old density cells from the grid source
+            this.gridSource!.getFeatures().forEach(f => {
+
+                if (f.get('kind') === 'density')
+                    this.gridSource!.removeFeature(f);
+
+            });
+
+            //Add the new features to the grid source
+            this.gridSource!.addFeatures(features);
+
             // Hide heatmap layers
             heatmapLayer1.setVisible(false);
             heatmapLayer2.setVisible(false);
-            this.setState({ gridLayer: newGridLayer });
+
+            // Show grid layer
+            if (gridLayer)
+                gridLayer.setVisible(true);
+;
+
+            this.setState({ gridLayer: gridLayer });
+
         } else {
             // Show heatmap layers
             if (heatmapLayer1) heatmapLayer1.setVisible(true);
             if (heatmapLayer2) heatmapLayer2.setVisible(true);
-            // Remove grid layer if present
+            // Hide grid layer if present
             if (gridLayer) {
-                map.removeLayer(gridLayer);
-                this.setState({ gridLayer: null });
+                gridLayer.setVisible(false);
+                // this.setState({ gridLayer: null });
             }
         }
     }
@@ -738,7 +795,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 error = "No events found with the given constraints! Please try again.";
                 console.log("No events found with the given constraints! Please try again.");
             }
-            
+
             this.setState({ error, events, loading: false });
             await this.processEventCoordinates(events);
             console.log('[handleBoxSubmit] map after processEventCoordinates:', this.state.map);
@@ -828,10 +885,9 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         if (heatmapLayer1) heatmapLayer1.setVisible(false);
                         if (heatmapLayer2) heatmapLayer2.setVisible(false);
                     } else {
-                        // Remove grid layer
+                        // Hide grid layer
                         if (gridLayer) {
-                            map.removeLayer(gridLayer);
-                            this.setState({ gridLayer: null });
+                            gridLayer.setVisible(false);
                         }
                         // Show heatmap layers
                         if (heatmapLayer1) heatmapLayer1.setVisible(true);
@@ -845,13 +901,20 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     };
 
     // Helper to render an empty green grid overlay for the selected bounding box
-    renderEmptyGridOverlay = () => {
+    async renderEmptyGridOverlay() {
         const { map, gridLayer, markerLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
-        if (!map || !showGrid) return;
-        // Remove previous grid layer if present
-        if (gridLayer) {
-            map.removeLayer(gridLayer);
+        // if (!map || !showGrid) return;
+        if (!map) {
+            console.warn('[renderEmptyGridOverlay] Map not initialized, exiting renderEmptyGridOverlay');
+            return;
         }
+
+        console.log('[renderEmptyGridOverlay] Rendering empty grid overlay...');
+
+        // Grid layer exists, make it visible
+        if (gridLayer)
+            gridLayer.setVisible(true);
+
         // Use bounding box from boxInput
         const { minLat, maxLat, minLon, maxLon } = this.state.boxInput;
         const gridSize = 0.05; // degrees (should match main gridSize)
@@ -861,48 +924,119 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         const minLonNum = parseFloat(minLon);
         const maxLonNum = parseFloat(maxLon);
         let latStart = minLatNum, latEnd = maxLatNum, lonStart = minLonNum, lonEnd = maxLonNum;
-        if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) return;
+        if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) {
+            console.warn('Invalid bounding box coordinates, exiting renderEmptyGridOverlay');
+            return;
+        }
         if (latStart > latEnd) [latStart, latEnd] = [latEnd, latStart];
         if (lonStart > lonEnd) [lonStart, lonEnd] = [lonEnd, lonStart];
-        const features = [];
-        for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd; lat += gridSize) {
-            for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd; lon += gridSize) {
-                const color = 'rgba(0,255,0,0.6)'; // green
-                const coords = [
-                    [lon, lat],
-                    [lon + gridSize, lat],
-                    [lon + gridSize, lat + gridSize],
-                    [lon, lat + gridSize],
-                    [lon, lat]
-                ];
-                const olCoords = coords.map(([lon, lat]) => fromLonLat([lon, lat]));
-                const polygon = new Polygon([olCoords]);
-                const feature = new Feature(polygon);
-                feature.setStyle(new Style({
-                    fill: new Fill({ color }),
-                    stroke: new Stroke({ color: 'rgba(0,0,0,0.1)', width: 1 })
-                }));
-                features.push(feature);
+
+
+        //Get transformation function from lon/lat to web mercator
+        const proj = getTransform('EPSG:4326', 'EPSG:3857');
+
+        //Populate grid coordinates
+        const xs:number[] = [];
+        const ys:number[] = [];
+        for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd + 1e-9; lon += gridSize) {
+            xs.push(proj([lon, 0])[0]);
+        }
+        for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd + 1e-9; lat += gridSize) {
+            ys.push(proj([0, lat])[1]);
+        }
+
+        let itr:number = 0;
+        const rows = ys.length - 1;
+        const cols = xs.length - 1;
+        const rings3857: number[][][][] = new Array(rows * cols);
+
+        for (let j = 0 ; j < rows; j++) {
+
+            const y0 = ys[j];
+            const y1 = ys[j + 1];
+
+            for (let i = 0; i < cols; i++) {
+
+                const x0 = xs[i];
+                const x1 = xs[i + 1];
+
+                /*
+                    Create a polygon for each grid cell in EPSG:3857 coordinates
+
+                    Defined as a closed ring (i.e. explicit matching start & end points)
+                    in clockwise order starting from the top left.
+                */
+                rings3857[itr++] = [[
+                    [x0,y0],
+                    [x1,y0],
+                    [x1,y1],
+                    [x0,y1],
+                    [x0,y0]
+                ]];
+
             }
+
         }
-        const gridSource = new VectorSource({ features });
-        const newGridLayer = new VectorLayer({ source: gridSource, opacity: 0.7 });
-        if (markerLayer) {
-            const markerLayerIndex = map.getLayers().getArray().indexOf(markerLayer);
-            map.getLayers().insertAt(markerLayerIndex, newGridLayer);
+
+        let gridLayerCurrent = this.state.gridLayer;
+
+        //Grid source doesn't exist yet, create it
+        if (!this.gridSource) {
+
+            this.gridSource = new VectorSource({
+                useSpatialIndex: false,
+            });
+
+            const newGridLayer = new WebGLVectorLayer({
+                source: this.gridSource,
+                disableHitDetection: true,
+                style: {
+                    'fill-color': ['get', 'color'],     //<-- Get color attribute from feature (defaults to gray)
+                    'stroke-color': 'rgba(0,0,0,0.1)',
+                    'stroke-width': 1.00,
+                },
+                opacity: 0.7
+            });
+            newGridLayer.set('interactive', false); //<-- Flag as non-interactive layer
+
+            //Update current grid layer
+            gridLayerCurrent = newGridLayer;
+
+            if (markerLayer) {
+
+                const markerLayerIndex = map.getLayers().getArray().indexOf(markerLayer);
+                if (gridLayerCurrent)
+                    map.getLayers().insertAt(markerLayerIndex, gridLayerCurrent);
+                
+            } else if (gridLayerCurrent) {
+                map.addLayer(gridLayerCurrent);
+            }
+
+        }
+
+        //Feature doesn't exist yet, create it
+        if (!this.gridFeature) {
+            this.gridFeature = new Feature(new MultiPolygon(rings3857));
+            this.gridSource.addFeature(this.gridFeature);
+
+        //Otherwise, update existing feature coordinates
         } else {
-            map.addLayer(newGridLayer);
+            (this.gridFeature.getGeometry() as MultiPolygon).setCoordinates(rings3857);
         }
+
         // Hide heatmap layers
         if (heatmapLayer1) heatmapLayer1.setVisible(false);
         if (heatmapLayer2) heatmapLayer2.setVisible(false);
-        this.setState({ gridLayer: newGridLayer });
+        this.setState({ gridLayer: gridLayerCurrent });
+
     }
 
     render() {
         const { loading, error, showEventList, events, openPopups, map, boxInput, boxActive, showGrid, gridLayer } = this.state;
-        console.log('[Render] boxInput:', boxInput);
 
+        /*
+            console.log('[Render] boxInput:', boxInput);
+        */
 
         const debugContent = (DEBUG_ENABLED) && (
             <div className="font-mono flex flex-col items-start justify-start bg-fuchsia-500/50 p-2 mt-2 overflow-y-auto max-h-[200px]">
