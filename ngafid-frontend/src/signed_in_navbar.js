@@ -18,7 +18,9 @@ class NavLink extends React.Component {
 
     render() {
 
-        console.log("Rendering navlink: '" + this.props.name + "'");
+        /*
+            console.log("Rendering navlink: '" + this.props.name + "'");
+        */
 
         const {
             active,
@@ -159,7 +161,9 @@ class SignedInNavbar extends React.Component {
             unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
 
         let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
-        console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
+        /*
+            console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
+        */
 
         let filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
