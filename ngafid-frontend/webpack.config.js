@@ -1,3 +1,4 @@
+/* webpack.config.js */
 const webpack = require('webpack');
 const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");

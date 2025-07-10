@@ -7,7 +7,7 @@ module.exports = {
         "@tailwindcss/postcss": {
             content: [
                 "./src/**/*.{js,jsx,ts,tsx}",
-                "./public/**/*.html"
+                "./public/**/*.html",
             ],
             optimize: {
                 strip: (process.env.NODE_ENV === "production")
