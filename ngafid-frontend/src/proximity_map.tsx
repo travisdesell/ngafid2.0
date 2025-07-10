@@ -22,10 +22,13 @@ import Polygon from 'ol/geom/Polygon';
 import { Fill, Stroke } from 'ol/style';
 import WebGLVectorLayer from 'ol/layer/WebGLVector';
 import MultiPolygon from 'ol/geom/MultiPolygon';
+import WebGLTileLayer from 'ol/layer/WebGLTile';
+import DataTileSource from 'ol/source/DataTile';
 
 type ProximityMapPageState = {
 
     events: any[];
+    didFirstLoad: boolean;
     loading: boolean;
     error: string | null;
     showEventList: boolean;
@@ -205,6 +208,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         
         this.state = {
             events: [],
+            didFirstLoad: false,
             loading: false,
             error: null,
             showEventList: true,
@@ -304,7 +308,10 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             const map = new Map({
                 target: 'map',
                 layers: [
-                    new TileLayer({ source: new OSM() }),
+                    new WebGLTileLayer({
+                        source: new OSM() as unknown as DataTileSource<any>,
+                        preload: Infinity,
+                    }),
                     heatmapLayer1,
                     heatmapLayer2,
                     markerLayer
@@ -774,7 +781,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             this.setState({ error: 'Please select a box on the map first.' });
             return;
         }
-        this.setState({ loading: true, error: null });
+        this.setState({ loading: true, didFirstLoad: true, error: null });
         try {
             let url = `/protected/proximity_events_in_box?min_latitude=${minLat}&max_latitude=${maxLat}&min_longitude=${minLon}&max_longitude=${maxLon}`;
             if (startDate) url += `&start_time=${encodeURIComponent(startDate)}`;
@@ -902,8 +909,8 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
     // Helper to render an empty green grid overlay for the selected bounding box
     async renderEmptyGridOverlay() {
-        const { map, gridLayer, markerLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
-        // if (!map || !showGrid) return;
+        const { map, gridLayer, markerLayer, heatmapLayer1, heatmapLayer2 } = this.state;
+        
         if (!map) {
             console.warn('[renderEmptyGridOverlay] Map not initialized, exiting renderEmptyGridOverlay');
             return;
@@ -1032,7 +1039,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     }
 
     render() {
-        const { loading, error, showEventList, events, openPopups, map, boxInput, boxActive, showGrid, gridLayer } = this.state;
+        const { loading, error, showEventList, events, openPopups, map, boxInput, boxActive, showGrid, gridLayer, didFirstLoad } = this.state;
 
         /*
             console.log('[Render] boxInput:', boxInput);
@@ -1055,8 +1062,17 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             <div className="card flex flex-col w-[75%] h-full max-h-full overflow-clip">
 
                 {/* Header */}
-                <div className="text-2xl card-header">
-                    Proximity Events
+                <div className="text-2xl card-header flex flex-row items-center justify-between">
+
+                    <span>Proximity Events</span>
+
+                    <button
+                        className="btn"
+                        onClick={this.toggleEventList}
+                    >
+                        <i className="fa fa-times"/>
+                    </button>
+
                 </div>
 
                 <div className="card-body grow overflow-y-auto text-center text-sm w-[100%]!">
@@ -1139,6 +1155,32 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 className="map card overflow-clip m-0 flex border-[var(--c_border_alt)] w-full h-full! relative"
             ></div>
         );
+
+
+        const eventsTableDisplayToggle = (
+            <div>
+                <hr/>
+                <div className="flex items-center justify-between text-gray-500 ">
+                    <div className="flex flex-row items-center justify-between w-full">
+
+                        {/* Event Count Display */}
+                        <span className="text-sm">
+                            {events.length} Found{events.length ? '!' : '...'}
+                        </span>
+
+                        {/* Toggle Event List Button (Only visible when list is closed and we have events)*/}
+                        <button
+                            className={`btn btn-secondary ${showEventList||(events.length<=0) ? 'opacity-0 pointer-events-none' : ''}`}
+                            onClick={this.toggleEventList}
+                        >
+                            <i className="fa fa-table mr-2"></i>
+                            Reopen Event List
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+
 
         // Render all open popups as overlays
         const popups = openPopups.map((popup, idx) => {
@@ -1237,7 +1279,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     <span className="slider round"></span>
                 </label>
                 <span className={`ml-auto ${showGrid ? '' : 'opacity-50'}`} style={{ fontWeight: 600, fontSize: 15 }}>
-                    <i className="fa fa-table mr-1"/>
+                    <i className="fa fa-th mr-1"/>
                     Grid
                 </span>
                 <style>{`
@@ -1441,6 +1483,13 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     >
                         Show Events
                     </button>
+
+                    {/* Event Table Toggle */}
+                    {
+                        (didFirstLoad)
+                        &&
+                        eventsTableDisplayToggle
+                    }
 
                     {/* Debug Panel */}
                     {debugContent}
