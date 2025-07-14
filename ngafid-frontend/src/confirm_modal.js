@@ -1,9 +1,10 @@
-import 'bootstrap';
-
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-
 import { Modal } from 'bootstrap';
+
+import React, {createRef} from "react";
+import { createRoot } from 'react-dom/client';
+
+
+const confirmModalRef = createRef();
 
 
 class ConfirmModal extends React.Component {
@@ -111,9 +112,16 @@ class ConfirmModal extends React.Component {
     }
 }
 
-const confirmModal = ReactDOM.render(
-    <ConfirmModal/>,
-    document.querySelector("#confirm-modal-content")
-);
+const container = document.querySelector("#confirm-modal-content");
+const root = createRoot(container);
+root.render(<ConfirmModal ref={confirmModalRef}/>);
 
-export { confirmModal };
+
+export function showConfirmModal(title, message, submitMethod=null) {
+
+    console.log(`Showing Confirm Modal with title: '${title}' and message: '${message}'`);
+
+    //Show the modal with the given title, message, and optional submit method
+    confirmModalRef.current.show(title, message, submitMethod);
+    
+}

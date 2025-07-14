@@ -1,15 +1,15 @@
 import "bootstrap";
 
-import {errorModal} from "./error_modal.js";
-import {confirmModal} from "./confirm_modal.js";
+import {showErrorModal} from "./error_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 
 
-import './index.css' //<-- include Tailwind
-import {NGAFIDUser} from "./types.js";
+import './index.css'; //<-- include Tailwind
+import type {NGAFIDUser} from "./types";
 
 
 interface BugReportPageProps {
@@ -19,7 +19,7 @@ interface BugReportPageProps {
 
 export default class BugReportPage extends React.Component<BugReportPageProps> {
 
-    constructor(props: any) {
+    constructor(props: BugReportPageProps) {
 
         super(props);
 
@@ -40,7 +40,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
             //Get current time
             const sendStart = new Date();
-            console.log("Submitting bug report... (" + sendStart.toLocaleString() + ")");
+            console.log(`Submitting bug report... (${  sendStart.toLocaleString()  })`);
 
             //Fetch the bug report data
             const title = (document.getElementById("bug-title") as HTMLInputElement)
@@ -55,7 +55,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
             //No title / description provided, exit
             if (!title || !description) {
 
-                errorModal.show(
+                showErrorModal(
                     "Error Submitting Bug Report",
                     "Please ensure the title and description fields are filled out.",
                 );
@@ -84,12 +84,12 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                 contentType: "application/json",
                 processData: false,
                 async: true,
-                success: (response) => {
+                success: () => {
 
                     const sendEnd = new Date();
-                    console.log("Bug report submitted successfully! (" + sendEnd.toLocaleString() + ")");
+                    console.log(`Bug report submitted successfully! (${  sendEnd.toLocaleString()  })`);
 
-                    confirmModal.show(
+                    showConfirmModal(
                         "Bug Report Submitted",
                         "Your bug report has been submitted successfully. Thank you for your feedback!",
                     );
@@ -98,13 +98,13 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                 error: function (jqXHR, textStatus, errorThrown) {
 
                     const sendEnd = new Date();
-                    console.warn("Error submitting bug report. (" + sendEnd.toLocaleString() + ")");
+                    console.warn(`Error submitting bug report. (${  sendEnd.toLocaleString()  })`);
 
                     console.error(`jqXHR: ${jqXHR}`);
                     console.error(`textStatus: ${textStatus}`);
                     console.error(`errorThrown: ${errorThrown}`);
 
-                    errorModal.show(
+                    showErrorModal(
                         "Error Submitting Bug Report",
                         errorThrown,
                     );
@@ -114,7 +114,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
             });
 
 
-        }
+        };
 
         //Submit the bug report
         await submit();
@@ -228,7 +228,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
             </div>
 
-        </div>
+        </div>;
 
         return jsxOut;
 
@@ -239,7 +239,7 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
 
 declare const user: NGAFIDUser; /* SERVER-INJECTED ⚠ */
 
-const root = ReactDOM.createRoot(
+const root = createRoot(
     document.getElementById("bug-report-page") as HTMLElement
 );
 root.render(<BugReportPage user={user}/>);  

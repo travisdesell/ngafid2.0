@@ -1,14 +1,9 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 import Popover from 'react-bootstrap/Popover';
-import Accordion from 'react-bootstrap/Accordion';
-import Card from 'react-bootstrap/Card';
 import Table from 'react-bootstrap/Table';
 import Badge from 'react-bootstrap/Badge';
-import Container from 'react-bootstrap/Container';
-import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
@@ -62,7 +57,7 @@ class MapPopup extends React.Component {
 
     pin() {
         if (this.state.status == 'pinned') {
-            console.log("unpinning the popup!")
+            console.log("unpinning the popup!");
             this.setState({status : 'none'});
         } else {
             console.log("pinning the popup!");
@@ -71,14 +66,14 @@ class MapPopup extends React.Component {
     }
 
     getRelevantEvents() {
-        let timeIndex = this.props.lociData[0];
-6
-        var events = new Array();
-        console.log("events props");
-        console.log(events);
+
+        const timeIndex = this.props.lociData[0];
+
+        const events = [];
+        console.log("Events props: ", events);
 
         for (let i = 0; i < this.props.events.length; i++) {
-            let event = this.props.events[i];
+            const event = this.props.events[i];
 
             if (timeIndex >= event.startLine && timeIndex <= event.endLine) {
                 console.log("event pushed!!");
@@ -87,31 +82,33 @@ class MapPopup extends React.Component {
         }
 
         if (events.length > 0) {
-            this.state.events = events;
+            this.setState({ events: events });
         } else { 
-            this.state.events = null;
+            this.setState({ events: null });
         }
 
     }
 
     render() {
-        console.log("rendering a map popup with info:");
-        console.log(this.props);
+
+        console.log("Rendering a map popup with info:", this.props);
         this.getRelevantEvents();
 
-        var style = {
+        const style = {
             top : this.props.placement[1] + this.state.navbarWidth,
             left : this.props.placement[0],
             display : this.props.on,
             minWidth: 320
-        }
+        };
 
         if(this.state.status !== "none"){
-            let lociInfo = new Array();
+
+            const lociInfo = [];
 
             lociInfo[0] = this.props.lociData[0];
             for (let i = 1; i < this.props.lociData.length; i++) {
-                let lPrecision = (this.props.precision < 2) ? 2 : this.props.precision;
+
+                const lPrecision = (this.props.precision < 2) ? 2 : this.props.precision;
                 console.log(lPrecision);
                 if (this.props.lociData[i] == null) {
                     lociInfo[i] = "Not Available";
@@ -124,18 +121,18 @@ class MapPopup extends React.Component {
                 }
             }
 
-            let info = this.props.info;
-            let precision = this.props.precision;
-            console.log("users precision: "+precision);
+            const info = this.props.info;
+            const precision = this.props.precision;
+            console.log(`Users precision: ${precision}`);
 
-            let lgStyle = {
+            const lgStyle = {
                 backgroundColor : '#dee2e6'
             };
 
-            let lgiStyle = {
+            const lgiStyle = {
                 backgroundColor : '#dee2e6',
                 overflowX : 'auto'
-            }
+            };
 
             let eventRow = "";
 
@@ -147,10 +144,10 @@ class MapPopup extends React.Component {
                         <ListGroup style={lgiStyle} className="my-2" horizontal='sm'>
                         {
                             this.state.events.map((event, key) => {
-                                let eventColor = eventColorScheme[event.eventDefinitionId];
-                                let descriptionString = event.startTime + " to " + event.endTime + " severity: " + event.severity;
+                                const eventColor = eventColorScheme[event.eventDefinitionId];
+                                const descriptionString = `${event.startTime  } to ${  event.endTime  } severity: ${  event.severity}`;
 
-                                let badgeStyle = {
+                                const badgeStyle = {
                                     backgroundColor : eventColor
                                 };
 
@@ -231,7 +228,7 @@ class MapPopup extends React.Component {
                                                 console.log("a metric isnt available");
                                                 displayValue = "Not Available";
                                             } else {
-                                                let val = parseFloat(metric.value);
+                                                const val = parseFloat(metric.value);
                                                 displayValue = val.toFixed(precision);
                                             }
 

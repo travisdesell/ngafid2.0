@@ -112,7 +112,7 @@
                 window.location.replace("/logout_success");
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Logging Out", errorThrown);
+                showErrorModal("Error Logging Out", errorThrown);
             },
             async: true
         });

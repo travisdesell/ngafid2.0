@@ -1,14 +1,15 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from 'react-dom/client';
 
-import { errorModal } from "./error_modal.js";
+
 import SignedInNavbar from "./signed_in_navbar.js";
 
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="flight_display" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
+const navbarContainer = document.querySelector('#navbar');
+const navbarRoot = createRoot(navbarContainer);
+navbarRoot.render(
+    <SignedInNavbar activePage="flight_display" />
 );
 
 
@@ -30,7 +31,10 @@ class FlightDisplayCard extends React.Component {
     }
 }
 
-var flightDisplayCard = ReactDOM.render(
-    <FlightDisplayCard />,
-    document.querySelector('#flight-display-card')
+
+
+const container = document.querySelector("#flight-display-page");
+const root = createRoot(container);
+root.render(
+    <FlightDisplayCard />
 );

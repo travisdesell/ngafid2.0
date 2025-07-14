@@ -1,11 +1,7 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
-import Pagination from 'react-bootstrap/Pagination';
-import Form from 'react-bootstrap/Form';
-import FormCheck from 'react-bootstrap/FormCheck';
 
 
 class PaginationSorter extends React.Component {
@@ -14,8 +10,8 @@ class PaginationSorter extends React.Component {
     }
 
     render() {
-        var currentColumnName = this.props.getSortingColumn();
-        var currentOrder = this.props.getSortingOrder();
+        const currentColumnName = this.props.getSortingColumn();
+        const currentOrder = this.props.getSortingOrder();
 
         if (typeof this.props.sortOptions != 'undefined') {
             console.log("rendering pagination sorter!");
@@ -30,7 +26,7 @@ class PaginationSorter extends React.Component {
                         this.props.sortOptions.map((ruleInfo, index) => {
                             return (
                                 <Dropdown.Item as="button" key={index} onClick={() => this.props.setSortingColumn(ruleInfo)}>{ruleInfo}</Dropdown.Item>
-                            )
+                            );
                         })
                     }
                     </DropdownButton>

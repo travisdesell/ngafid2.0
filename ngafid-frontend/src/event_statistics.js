@@ -1,26 +1,26 @@
 import 'bootstrap';
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import $ from "jquery";
 
 window.jQuery = $;
 window.$ = $;
 
-let eventStats = [];
+const eventStats = [];
 airframeMap[0] = "Generic";
 
-let eventDefinitionsMap = {};
+const eventDefinitionsMap = {};
 for (let i = 0; i < eventDefinitions.length; i++) {
-    let eventDefinition = eventDefinitions[i];
-    let airframeId = eventDefinition.airframeNameId;
+    const eventDefinition = eventDefinitions[i];
+    const airframeId = eventDefinition.airframeNameId;
 
     if (!(airframeId in eventDefinitionsMap)) {
         eventDefinitionsMap[airframeId] = [];
-        console.log("map did not have airframeId: " + airframeId);
+        console.log(`map did not have airframeId: ${  airframeId}`);
     }
     eventDefinitionsMap[airframeId].push(eventDefinition);
 }
@@ -34,13 +34,13 @@ class AirframeCard extends React.Component {
         this.state = {
             expanded: false,
             isLoaded: false,
-        }
+        };
     }
 
     toggleEventInfo(eventInfo) {
-        console.log("eventInfo.infoHidden is: " + eventInfo.infoHidden);
+        console.log(`eventInfo.infoHidden is: ${  eventInfo.infoHidden}`);
         eventInfo.infoHidden = !eventInfo.infoHidden;
-        console.log("eventInfo.infoHidden changed to: " + eventInfo.infoHidden);
+        console.log(`eventInfo.infoHidden changed to: ${  eventInfo.infoHidden}`);
 
         this.setState(this.state);
     }
@@ -56,13 +56,15 @@ class AirframeCard extends React.Component {
     }
 
     getStats(airframeCard) {
+
         console.log("Acquiring event stats");
 
         $.ajax({
             type: 'GET',
             url: `/api/event/count/by-airframe/${this.props.airframeId}`,
             dataType: 'json',
-            success: function (response) {
+            async: false,
+            success: (response) => {
                 if (response.events != null) {
                     console.log("Successfully acquired event stats for airframe");
                     airframeCard.setState({
@@ -73,11 +75,11 @@ class AirframeCard extends React.Component {
                     console.log("Bad juju, must investigate");
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Getting Event Statistics", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Getting Event Statistics", errorThrown);
             },
-            async: false
         });
+        
     }
 
     render() {
@@ -88,16 +90,13 @@ class AirframeCard extends React.Component {
         }
 
         const styleButton = {};
-        let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
+        const expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
         let expandIconClasses = "fa ";
-        let expandDivClasses = "";
 
         if (this.state.expanded) {
             expandIconClasses += "fa-angle-double-up";
-            expandDivClasses = "m-0 mt-1 mb-4";
         } else {
-            expandIconClasses += "fa-angle-double-down";
-            expandDivClasses = "m-0";
+            expandIconClasses += "fa-angle-double-down"; ;
         }
 
 
@@ -105,7 +104,7 @@ class AirframeCard extends React.Component {
             <div className="m-2" style={{marginTop: marginTop, padding: "0 5 0 5", overflowX: "hidden"}}>
                 <div className="card mb-1 m-1" style={{padding: "10 10 10 10"}}>
                     <h5 style={{marginBottom: 0}}>
-                        {this.props.airframeName + " Event Statistics"}
+                        {`${this.props.airframeName  } Event Statistics`}
                         <button className={expandButtonClasses} style={styleButton}
                                 onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
                     </h5>
@@ -114,7 +113,7 @@ class AirframeCard extends React.Component {
                 <div className="row" style={{padding: "0 15 0 15"}}>
                     {
                         (!this.state.expanded || this.state.eventStats == null) ? "" : this.state.eventStats.events.map((eventInfo, eventIndex) => {
-                            let processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);
+                            const processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);
                             if (typeof eventInfo.infoHidden == 'undefined') eventInfo.infoHidden = true;
 
                             return (
@@ -127,15 +126,15 @@ class AirframeCard extends React.Component {
                                                 </div>
                                                 <button type="button" className="btn btn-outline-secondary"
                                                         style={{padding: "3 8 3 8", marginRight: "5"}} onClick={() => {
-                                                    this.toggleEventInfo(eventInfo)
+                                                    this.toggleEventInfo(eventInfo);
                                                 }}>
                                                     <i className='fa fa-info'></i>
                                                 </button>
                                                 <div className="progress flex-fill" style={{height: "24px"}}>
                                                     <div className="progress-bar" role="progressbar"
-                                                         style={{width: processedPercentage + "%"}}
+                                                         style={{width: `${processedPercentage  }%`}}
                                                          aria-valuenow={processedPercentage} aria-valuemin="0"
-                                                         aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
+                                                         aria-valuemax="100"> &nbsp; {`${eventInfo.processedFlights  } / ${  eventInfo.totalFlights  } (${  processedPercentage  }%) flights processed`} </div>
                                                 </div>
                                             </div>
                                         </h5>
@@ -228,27 +227,27 @@ class AirframeCard extends React.Component {
                                                 <tbody>
                                                 {
                                                     eventInfo.monthStats.map((stats, monthIndex) => {
-                                                        let eventPercentage = (100.0 * parseFloat(stats.flightsWithEvent) / parseFloat(stats.flightsWithoutError)).toFixed(2);
-                                                        let flightsWithEventStr = stats.flightsWithEvent + " / " + stats.flightsWithoutError + " (" + eventPercentage + "%)";
+                                                        const eventPercentage = (100.0 * parseFloat(stats.flightsWithEvent) / parseFloat(stats.flightsWithoutError)).toFixed(2);
+                                                        const flightsWithEventStr = `${stats.flightsWithEvent  } / ${  stats.flightsWithoutError  } (${  eventPercentage  }%)`;
 
-                                                        let aggEventPercentage = (100.0 * parseFloat(stats.aggFlightsWithEvent) / parseFloat(stats.aggFlightsWithoutError)).toFixed(2);
-                                                        let aggFlightsWithEventStr = stats.aggFlightsWithEvent + " / " + stats.aggFlightsWithoutError + " (" + aggEventPercentage + "%)";
+                                                        const aggEventPercentage = (100.0 * parseFloat(stats.aggFlightsWithEvent) / parseFloat(stats.aggFlightsWithoutError)).toFixed(2);
+                                                        const aggFlightsWithEventStr = `${stats.aggFlightsWithEvent  } / ${  stats.aggFlightsWithoutError  } (${  aggEventPercentage  }%)`;
 
                                                         return (
                                                             <tr key={monthIndex}>
                                                                 <td>{stats.rowName}</td>
                                                                 <td style={{textAlign: "right"}}>{flightsWithEventStr}</td>
                                                                 <td style={{textAlign: "right"}}>{stats.totalEvents}</td>
-                                                                <td style={{textAlign: "right"}}>{stats.minSeverity.toFixed(2) + " / " + stats.avgSeverity.toFixed(2) + " / " + stats.maxSeverity.toFixed(2)}</td>
+                                                                <td style={{textAlign: "right"}}>{`${stats.minSeverity.toFixed(2)  } / ${  stats.avgSeverity.toFixed(2)  } / ${  stats.maxSeverity.toFixed(2)}`}</td>
                                                                 <td style={{
                                                                     textAlign: "right",
                                                                     paddingRight: 25,
                                                                     borderRight: "1px solid grey"
-                                                                }}>{stats.minDuration.toFixed(2) + " / " + stats.avgDuration.toFixed(2) + " / " + stats.maxDuration.toFixed(2)}</td>
+                                                                }}>{`${stats.minDuration.toFixed(2)  } / ${  stats.avgDuration.toFixed(2)  } / ${  stats.maxDuration.toFixed(2)}`}</td>
                                                                 <td style={{textAlign: "right"}}>{aggFlightsWithEventStr}</td>
                                                                 <td style={{textAlign: "right"}}>{stats.aggTotalEvents}</td>
-                                                                <td style={{textAlign: "right"}}>{stats.aggMinSeverity.toFixed(2) + " / " + stats.aggAvgSeverity.toFixed(2) + " / " + stats.aggMaxSeverity.toFixed(2)}</td>
-                                                                <td style={{textAlign: "right"}}>{stats.aggMinDuration.toFixed(2) + " / " + stats.aggAvgDuration.toFixed(2) + " / " + stats.aggMaxDuration.toFixed(2)}</td>
+                                                                <td style={{textAlign: "right"}}>{`${stats.aggMinSeverity.toFixed(2)  } / ${  stats.aggAvgSeverity.toFixed(2)  } / ${  stats.aggMaxSeverity.toFixed(2)}`}</td>
+                                                                <td style={{textAlign: "right"}}>{`${stats.aggMinDuration.toFixed(2)  } / ${  stats.aggAvgDuration.toFixed(2)  } / ${  stats.aggMaxDuration.toFixed(2)}`}</td>
                                                             </tr>
                                                         );
                                                     })
@@ -280,9 +279,9 @@ class DashboardCard extends React.Component {
     }
 
     toggleEventInfo(eventInfo) {
-        console.log("eventInfo.infoHidden is: " + eventInfo.infoHidden);
+        console.log(`eventInfo.infoHidden is: ${  eventInfo.infoHidden}`);
         eventInfo.infoHidden = !eventInfo.infoHidden;
-        console.log("eventInfo.infoHidden changed to: " + eventInfo.infoHidden);
+        console.log(`eventInfo.infoHidden changed to: ${  eventInfo.infoHidden}`);
 
         this.setState(this.state);
     }
@@ -290,7 +289,7 @@ class DashboardCard extends React.Component {
     render() {
         console.log(airframeMap);
 
-        let airframeIds = Object.keys(airframeMap);
+        const airframeIds = Object.keys(airframeMap);
 
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -304,7 +303,7 @@ class DashboardCard extends React.Component {
                     {
                         airframeIds.map((airframeId, airframeIndex) => {
                             let first = true;
-                            if (airframeIndex > 0) first = false
+                            if (airframeIndex > 0) first = false;
                             return (
                                 <AirframeCard
                                     key={airframeIndex}
@@ -336,7 +335,7 @@ class DashboardCard extends React.Component {
                             <div key={airframeIndex} style={{marginTop: marginTop, padding: "0 5 0 5"}}>
                                 <div className="card mb-1 m-1" style={{padding: "10 10 10 10"}}>
                                     <h5 style={{marginBottom: 0}}>
-                                        {airframeStats.airframeName + " Events"}
+                                        {`${airframeStats.airframeName  } Events`}
                                     </h5>
                                 </div>
 
@@ -344,7 +343,7 @@ class DashboardCard extends React.Component {
 
                                     {
                                         airframeStats.events.map((eventInfo, eventIndex) => {
-                                            let processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);
+                                            const processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);
                                             if (typeof eventInfo.infoHidden == 'undefined') eventInfo.infoHidden = true;
 
                                             return (
@@ -364,17 +363,17 @@ class DashboardCard extends React.Component {
                                                                         className="btn btn-outline-secondary"
                                                                         style={{padding: "3 8 3 8", marginRight: "5"}}
                                                                         onClick={() => {
-                                                                            this.toggleEventInfo(eventInfo)
+                                                                            this.toggleEventInfo(eventInfo);
                                                                         }}>
                                                                     <i className='fa fa-info'></i>
                                                                 </button>
                                                                 <div className="progress flex-fill"
                                                                      style={{height: "24px"}}>
                                                                     <div className="progress-bar" role="progressbar"
-                                                                         style={{width: processedPercentage + "%"}}
+                                                                         style={{width: `${processedPercentage  }%`}}
                                                                          aria-valuenow={processedPercentage}
                                                                          aria-valuemin="0"
-                                                                         aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
+                                                                         aria-valuemax="100"> &nbsp; {`${eventInfo.processedFlights  } / ${  eventInfo.totalFlights  } (${  processedPercentage  }%) flights processed`} </div>
                                                                 </div>
                                                             </div>
                                                         </h5>
@@ -469,27 +468,27 @@ class DashboardCard extends React.Component {
                                                                 <tbody>
                                                                 {
                                                                     eventInfo.monthStats.map((stats, monthIndex) => {
-                                                                        let eventPercentage = (100.0 * parseFloat(stats.flightsWithEvent) / parseFloat(stats.flightsWithoutError)).toFixed(2);
-                                                                        let flightsWithEventStr = stats.flightsWithEvent + " / " + stats.flightsWithoutError + " (" + eventPercentage + "%)";
+                                                                        const eventPercentage = (100.0 * parseFloat(stats.flightsWithEvent) / parseFloat(stats.flightsWithoutError)).toFixed(2);
+                                                                        const flightsWithEventStr = `${stats.flightsWithEvent  } / ${  stats.flightsWithoutError  } (${  eventPercentage  }%)`;
 
-                                                                        let aggEventPercentage = (100.0 * parseFloat(stats.aggFlightsWithEvent) / parseFloat(stats.aggFlightsWithoutError)).toFixed(2);
-                                                                        let aggFlightsWithEventStr = stats.aggFlightsWithEvent + " / " + stats.aggFlightsWithoutError + " (" + aggEventPercentage + "%)";
+                                                                        const aggEventPercentage = (100.0 * parseFloat(stats.aggFlightsWithEvent) / parseFloat(stats.aggFlightsWithoutError)).toFixed(2);
+                                                                        const aggFlightsWithEventStr = `${stats.aggFlightsWithEvent  } / ${  stats.aggFlightsWithoutError  } (${  aggEventPercentage  }%)`;
 
                                                                         return (
                                                                             <tr key={monthIndex}>
                                                                                 <td>{stats.rowName}</td>
                                                                                 <td style={{textAlign: "right"}}>{flightsWithEventStr}</td>
                                                                                 <td style={{textAlign: "right"}}>{stats.totalEvents}</td>
-                                                                                <td style={{textAlign: "right"}}>{stats.minSeverity.toFixed(2) + " / " + stats.avgSeverity.toFixed(2) + " / " + stats.maxSeverity.toFixed(2)}</td>
+                                                                                <td style={{textAlign: "right"}}>{`${stats.minSeverity.toFixed(2)  } / ${  stats.avgSeverity.toFixed(2)  } / ${  stats.maxSeverity.toFixed(2)}`}</td>
                                                                                 <td style={{
                                                                                     textAlign: "right",
                                                                                     paddingRight: 25,
                                                                                     borderRight: "1px solid grey"
-                                                                                }}>{stats.minDuration.toFixed(2) + " / " + stats.avgDuration.toFixed(2) + " / " + stats.maxDuration.toFixed(2)}</td>
+                                                                                }}>{`${stats.minDuration.toFixed(2)  } / ${  stats.avgDuration.toFixed(2)  } / ${  stats.maxDuration.toFixed(2)}`}</td>
                                                                                 <td style={{textAlign: "right"}}>{aggFlightsWithEventStr}</td>
                                                                                 <td style={{textAlign: "right"}}>{stats.aggTotalEvents}</td>
-                                                                                <td style={{textAlign: "right"}}>{stats.aggMinSeverity.toFixed(2) + " / " + stats.aggAvgSeverity.toFixed(2) + " / " + stats.aggMaxSeverity.toFixed(2)}</td>
-                                                                                <td style={{textAlign: "right"}}>{stats.aggMinDuration.toFixed(2) + " / " + stats.aggAvgDuration.toFixed(2) + " / " + stats.aggMaxDuration.toFixed(2)}</td>
+                                                                                <td style={{textAlign: "right"}}>{`${stats.aggMinSeverity.toFixed(2)  } / ${  stats.aggAvgSeverity.toFixed(2)  } / ${  stats.aggMaxSeverity.toFixed(2)}`}</td>
+                                                                                <td style={{textAlign: "right"}}>{`${stats.aggMinDuration.toFixed(2)  } / ${  stats.aggAvgDuration.toFixed(2)  } / ${  stats.aggMaxDuration.toFixed(2)}`}</td>
                                                                             </tr>
                                                                         );
                                                                     })
@@ -518,7 +517,7 @@ class DashboardCard extends React.Component {
     }
 }
 
-var profilePage = ReactDOM.render(
-    <DashboardCard/>,
-    document.querySelector('#event-statistics-page')
-);
+
+const container = document.querySelector("#event-statistics-page");
+const root = createRoot(container);
+root.render(<DashboardCard/>);

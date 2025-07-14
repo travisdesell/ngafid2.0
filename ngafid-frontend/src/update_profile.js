@@ -1,11 +1,12 @@
 import 'bootstrap';
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
-import {errorModal} from "./error_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 class ProfilePage extends React.Component {
+
     constructor(props) {
         super(props);
 
@@ -21,7 +22,7 @@ class ProfilePage extends React.Component {
                 phone: true,
                 zip: true
             }
-        }
+        };
 
         this.emailInput = React.createRef();
         this.firstNameInput = React.createRef();
@@ -34,8 +35,14 @@ class ProfilePage extends React.Component {
         this.zipCodeInput = React.createRef();
     }
 
+    componentDidMount() {
+
+        this.setUser(user);
+
+    }
+
     setUser(user) {
-        this.state.user = user;
+        this.setState({ user: user });
 
         this.emailInput.current.value = user.email;
 
@@ -48,7 +55,7 @@ class ProfilePage extends React.Component {
         this.phoneNumberInput.current.value = user.phoneNumber;
         this.zipCodeInput.current.value = user.zipCode;
 
-        console.log("setting state!");
+        console.log("Setting state!");
         this.setState(user);
     }
 
@@ -56,7 +63,7 @@ class ProfilePage extends React.Component {
         event.preventDefault();
 
         let valid = true;
-        for (let property in this.state.valid) {
+        for (const property in this.state.valid) {
             console.log(property);
 
             if (property == false) {
@@ -67,7 +74,7 @@ class ProfilePage extends React.Component {
 
         if (!valid) return;
 
-        var submissionData = {
+        const submissionData = {
             email: this.emailInput.current.value,
             firstName: this.firstNameInput.current.value,
             lastName: this.lastNameInput.current.value,
@@ -87,116 +94,175 @@ class ProfilePage extends React.Component {
             url: '/api/user/me',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+
+                console.log("Received response: ", response);
 
                 $("#loading").hide();
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
-                profilePage.setUser(response.user);
+                this.setUser(response.user);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Submitting Account Information", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Submitting Account Information", errorThrown);
             },
-            async: true
         });
 
         console.log("submitting account!");
     }
 
     validateFirstName() {
-        let firstName = this.firstNameInput.current.value;
-        this.state.valid.firstName = firstName.length < 64;
-        this.setState(this.state);
+
+        const firstName = this.firstNameInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                firstName: (firstName.length < 64)
+            }
+        });
+
     }
 
     validateLastName() {
-        let lastName = this.lastNameInput.current.value;
-        this.state.valid.lastName = lastName.length < 64;
-        this.setState(this.state);
+
+        const lastName = this.lastNameInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                lastName: (lastName.length < 64)
+            }
+        });
+
     }
 
     validateCountry() {
-        let country = this.countrySelect.current.value;
-        this.state.valid.country = country.length < 128;
-        this.setState(this.state);
+
+        const country = this.countrySelect.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                country: (country.length < 128)
+            }
+        });
+
     }
 
     validateState() {
-        let state = this.stateSelect.current.value;
-        this.state.valid.state = state.length < 64;
-        this.setState(this.state);
+
+        const state = this.stateSelect.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                state: (state.length < 64)
+            }
+        });
+
     }
 
     validateCity() {
-        let city = this.cityInput.current.value;
-        this.state.valid.city = city.length < 64;
-        this.setState(this.city);
+
+        const city = this.cityInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                city: (city.length < 64)
+            }
+        });
+
     }
 
 
     validateAddress() {
-        let address = this.addressInput.current.value;
-        this.state.valid.address = address.length < 256;
-        this.setState(this.state);
+
+        const address = this.addressInput.current.value;
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                address: (address.length < 256)
+            }
+        });
+
     }
 
     validatePhone() {
-        let phone = this.phoneNumberInput.current.value;
-        console.log("phone: '" + phone + "'");
 
+        const phone = this.phoneNumberInput.current.value;
+        console.log("Phone: '", phone, "'");
+
+        let phoneValid;
+        
+        //Empty string --> Valid
         if (phone == "") {
-            this.state.valid.phone = true;
+            phoneValid = true;
+
+        //Otherwise, check the regex
         } else {
-            let re = /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
-            this.state.valid.phone = re.test(phone) && phone.length < 24;
+            const re = /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+            phoneValid = re.test(phone) && (phone.length < 24);
         }
 
-        this.setState(this.state);
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                phone: phoneValid
+            }
+        });
+
     }
 
     validateZip() {
-        let zip = this.zipCodeInput.current.value;
-        console.log("zip: '" + zip + "'");
 
+        const zip = this.zipCodeInput.current.value;
+        console.log("Zip Code: '", zip, "'");
+
+        let zipValid;
+
+        //Empty string --> Valid
         if (zip == "") {
-            this.state.valid.zip = true;
+            zipValid = true;
+        
+        //Otherwise, check the regex
         } else {
-            let re = /^\d{5}(?:[-\s]\d{4})?$/;
-            this.state.valid.zip = re.test(zip) && zip.length < 16;
+            const re = /^\d{5}(?:[-\s]\d{4})?$/;
+            zipValid = re.test(zip) && (zip.length < 16);
         }
 
-        this.setState(this.state);
+        this.setState({
+            valid: {
+                ...this.state.valid,
+                zip: zipValid
+            }
+        });
+
     }
 
     render() {
-        const hidden = this.props.hidden;
 
         const fgStyle = {opacity: 1.0};
 
-        let formGroupStyle = {
+        const formGroupStyle = {
             marginBottom: '8px'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '150px',
             flex: '0 0 150px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let validationMessageStyle = {
+        const validationMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -233,10 +299,10 @@ class ProfilePage extends React.Component {
 
         //check and see if any fields have been modified
         if (firstNameVal != this.state.user.firstName) {
-            console.log("first names different! '" + firstNameVal + "' vs '" + this.state.user.firstName + "'");
+            console.log(`first names different! '${  firstNameVal  }' vs '${  this.state.user.firstName  }'`);
             updateProfileDisabled = false;
         } else if (lastNameVal != this.state.user.lastName) {
-            console.log("last names different! '" + lastNameVal + "' vs '" + this.state.user.lastName + "'");
+            console.log(`last names different! '${  lastNameVal  }' vs '${  this.state.user.lastName  }'`);
             updateProfileDisabled = false;
         } else if (countrySelectVal != this.state.user.country) {
             console.log("countries different!");
@@ -265,7 +331,7 @@ class ProfilePage extends React.Component {
 
         } else if (!this.state.valid.lastName) {
             profileValidationMessage = "Last name cannot be more than 64 characters.";
-            profileVvalidationHidden = false;
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.country) {
             profileValidationMessage = "Country cannot be more than 128 characters.";
@@ -292,11 +358,11 @@ class ProfilePage extends React.Component {
             profileValidationHidden = false;
         }
 
-        console.log("updateProfileDisabled: " + updateProfileDisabled + " || " + (!profileValidationHidden));
+        console.log(`updateProfileDisabled: ${  updateProfileDisabled  } || ${  !profileValidationHidden}`);
 
         updateProfileDisabled = updateProfileDisabled || !profileValidationHidden;
 
-        console.log("rendering with profile validation message: '" + profileValidationMessage + "' and profile validation visible: " + profileValidationHidden);
+        console.log(`rendering with profile validation message: '${  profileValidationMessage  }' and profile validation visible: ${  profileValidationHidden}`);
 
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -424,7 +490,7 @@ class ProfilePage extends React.Component {
                                                 <option value="COD">Congo, the Democratic Republic of the</option>
                                                 <option value="COK">Cook Islands</option>
                                                 <option value="CRI">Costa Rica</option>
-                                                <option value="CIV">Côte d'Ivoire</option>
+                                                <option value="CIV">Côte d&#39;Ivoire</option>
                                                 <option value="HRV">Croatia</option>
                                                 <option value="CUB">Cuba</option>
                                                 <option value="CUW">Curaçao</option>
@@ -487,11 +553,11 @@ class ProfilePage extends React.Component {
                                                 <option value="KAZ">Kazakhstan</option>
                                                 <option value="KEN">Kenya</option>
                                                 <option value="KIR">Kiribati</option>
-                                                <option value="PRK">Korea, Democratic People's Republic of</option>
+                                                <option value="PRK">Korea, Democratic People&#39;s Republic of</option>
                                                 <option value="KOR">Korea, Republic of</option>
                                                 <option value="KWT">Kuwait</option>
                                                 <option value="KGZ">Kyrgyzstan</option>
-                                                <option value="LAO">Lao People's Democratic Republic</option>
+                                                <option value="LAO">Lao People&#39;s Democratic Republic</option>
                                                 <option value="LVA">Latvia</option>
                                                 <option value="LBN">Lebanon</option>
                                                 <option value="LSO">Lesotho</option>
@@ -782,10 +848,6 @@ class ProfilePage extends React.Component {
     }
 }
 
-var profilePage = ReactDOM.render(
-    <ProfilePage/>,
-    document.querySelector('#profile-page')
-);
-
-profilePage.setUser(user);
-
+const container = document.querySelector("#profile-page");
+const root = createRoot(container);
+root.render(<ProfilePage/>);

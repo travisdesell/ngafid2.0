@@ -552,6 +552,13 @@ html, body {
 .navbar .navbar-brand:hover {
     color: var(--c_text);
 }
+.navbar-brand:focus  {
+    color: var(--c_text) !important;
+}
+
+.nav-link {
+    color: var(--c_text) !important;
+}
 
 .nav-tabs .dropdown-menu {
     background-color: var(--c_bg);

@@ -1,4 +1,4 @@
-import {errorModal} from "./error_modal";
+import {showErrorModal} from "./error_modal";
 
 
 export default function GetAllDescriptions() {
@@ -8,23 +8,23 @@ export default function GetAllDescriptions() {
     $.ajax({
         type: 'GET',
         url: '/api/event/definition/description',
-        success: function (response) {
-            console.log("received response: " + response);
+        async: false,
+        success: (response) => {
+            console.log(`Received response: ${  response}`);
 
             $('#loading').hide();
 
             if (response.err_msg) {
-                errorModal.show(response.err_title, response.err_msg);
+                showErrorModal(response.err_title, response.err_msg);
             }
 
             descriptions = response;
         },
-        error: function (jqXHR, textStatus, errorThrown) {
-            errorModal.show("Error Getting Event Description", errorThrown);
+        error: (jqXHR, textStatus, errorThrown) => {
+            showErrorModal("Error Getting Event Description", errorThrown);
         },
-        async: false
     });
 
-    console.log("Returning descriptions: " + descriptions);
+    console.log(`Returning descriptions: ${  descriptions}`);
     return descriptions;
 }

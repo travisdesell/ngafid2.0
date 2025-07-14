@@ -235,9 +235,9 @@ public class AccountJavalinRoutes {
 
             if (fleet.hasAirsync(connection)) {
                 String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
-                scopes.put("airsync", "var airsync_timeout = JSON.parse('" + gson.toJson(timeout) + "');\n");
+                scopes.put("airsync", "var airsyncTimeout = JSON.parse('" + gson.toJson(timeout) + "');\n");
             } else {
-                scopes.put("airsync", "var airsync_timeout = -1;\n");
+                scopes.put("airsync", "var airsyncTimeout = -1;\n");
             }
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");

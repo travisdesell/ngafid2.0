@@ -1,8 +1,8 @@
 import 'bootstrap';
 import React from "react";
 import {createRoot} from "react-dom/client";
-import {confirmModal} from "./confirm_modal.js";
-import {errorModal} from "./error_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
+import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {Paginator} from "./paginator_component.js";
 
@@ -10,9 +10,10 @@ import SparkMD5 from "spark-md5";
 import Button from "react-bootstrap/Button";
 
 
-var paused = [];
 
-var chunkSize = 2 * 1024 * 1024; //2MB
+const paused = [];
+
+const chunkSize = 2 * 1024 * 1024; //2MB
 
 class Upload extends React.Component {
 
@@ -24,7 +25,7 @@ class Upload extends React.Component {
 
         $("#loading").show();
 
-        let uploadInfo = this.props.uploadInfo;
+        const uploadInfo = this.props.uploadInfo;
 
         console.log("Downloading Upload: ", this.props.uploadInfo);
 
@@ -35,7 +36,7 @@ class Upload extends React.Component {
                 responseType: 'blob'
             },
             async: true,
-            success: function (response) {
+            success: (response) => {
 
                 console.log("Download Upload -- Received Response: ", response);
 
@@ -44,27 +45,34 @@ class Upload extends React.Component {
                 //Encountered an error, display error modal
                 if (response.errorTitle) {
                     console.log("Displaying Error Modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
                 //Build the download link for the received ZIP file
                 const FILE_DOWNLOAD_NAME_DEFAULT = "UnknownFlightData.zip";
-                let blob = new Blob([response], {type: "application/zip"});
-                let link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = (uploadInfo.filename || FILE_DOWNLOAD_NAME_DEFAULT);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                const blob = new Blob([response], {type: "application/zip"});
+                const link = document.createElement("a");
+                if (window.URL && window.URL.createObjectURL) {
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = (uploadInfo.filename || FILE_DOWNLOAD_NAME_DEFAULT);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    showErrorModal(
+                        "Download Not Supported",
+                        "Your browser does not support downloading files using this method. Please use a different browser."
+                    );
+                }
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
 
-                let errorMessage = `${errorThrown}\n\n${textStatus}`;
+                const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Downloading Upload: ", errorMessage);
-                errorModal.show("Error Downloading Upload", errorMessage);
+                showErrorModal("Error Downloading Upload", errorMessage);
             }
         });
 
@@ -76,14 +84,12 @@ class Upload extends React.Component {
 
         $("#loading").show();
 
-        let thisUpload = this;
-
         $.ajax({
             type: 'DELETE',
             url: `/api/upload/${uploadInfo.id}`,
             dataType: 'json',
             async: true,
-            success: function (response) {
+            success: (response) => {
 
                 console.log("Remove Upload -- Received Response: ", response);
 
@@ -92,44 +98,45 @@ class Upload extends React.Component {
                 //Encountered an error, display error modal
                 if (response.errorTitle) {
                     console.log("Displaying Error Modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
                 //Remove the upload from the list
                 console.log("Remove Upload -- Removed successfully, removing from list...");
 
-                thisUpload.props.removeUpload(uploadInfo);
+                this.props.removeUpload(uploadInfo);
 
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
+
                 $("#loading").hide();
 
-                let errorMessage = `${errorThrown}\n\n${textStatus}`;
+                const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Removing Upload: ", errorMessage);
-                errorModal.show("Error Removing Upload", errorMessage);
+                showErrorModal("Error Removing Upload", errorMessage);
+
             }
+
         });
 
     }
 
     confirmRemoveUpload(uploadInfo) {
 
-        console.log("attempting to remove upload!");
-        console.log(this.props);
+        console.log("Attempting to remove upload: ", this.props);
 
-        confirmModal.show("Confirm Delete: '" + uploadInfo.filename + "'",
+        showConfirmModal(
+            `Confirm Delete: '${  uploadInfo.filename  }'`,
             "Are you sure you wish to delete this upload?\n\nThis operation will remove it from the server along with all flights and other information from the database. A backup of this upload is not stored on the server and if you wish to retrieve it you will have to re-upload it.",
-            () => {
-                this.removeUpload(uploadInfo)
-            }
+            () => { this.removeUpload(uploadInfo); }
         );
 
     }
 
     render() {
 
-        let uploadInfo = this.props.uploadInfo;
+        const uploadInfo = this.props.uploadInfo;
 
         let progressSize = uploadInfo.progressSize;
         let totalSize = uploadInfo.totalSize;
@@ -138,10 +145,10 @@ class Upload extends React.Component {
         if (totalSize == undefined) totalSize = uploadInfo.sizeBytes;
 
         const width = ((progressSize / totalSize) * 100).toFixed(2);
-        const sizeText = (progressSize / 1000).toFixed(2).toLocaleString() + "/" + (totalSize / 1000).toFixed(2).toLocaleString() + " kB (" + width + "%)";
+        const sizeText = `${(progressSize / 1000).toFixed(2).toLocaleString()  }/${  (totalSize / 1000).toFixed(2).toLocaleString()  } kB (${  width  }%)`;
 
 
-        let status = uploadInfo.status;
+        const status = uploadInfo.status;
 
         console.log("[EX] Upload Status: ", status);
 
@@ -233,7 +240,7 @@ class Upload extends React.Component {
             "statusText": "...",
             "progressBarClasses": "progress-bar bg-secondary",
             "statusClasses": "p-1 pl-2 pr-2 ml-1 card border-secondary text-secondary"
-        }
+        };
 
         //Status is listed, apply the status text and classes
         if (status in statusStates) {
@@ -250,7 +257,7 @@ class Upload extends React.Component {
 
 
         const progressSizeStyle = {
-            width: width + "%",
+            width: `${width  }%`,
             height: "34px",
             textAlign: "left",
             whiteSpace: "nowrap"
@@ -261,17 +268,17 @@ class Upload extends React.Component {
 
         //Check if ALL buttons should be disabled
         const buttonDisableStates = ["HASHING", "UPLOADING"];
-        let doButtonsDisable = buttonDisableStates.includes(status);
+        const doButtonsDisable = buttonDisableStates.includes(status);
 
         //Disable Delete buttons with no Upload Access
-        let hasDeleteAccess = (isUploader);
-        let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
-        let doDeleteButtonHide = (!hasDeleteAccess);
+        const hasDeleteAccess = (isUploader);
+        const doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
+        const doDeleteButtonHide = (!hasDeleteAccess);
 
         //Disable Delete buttons with no View Access
-        let hasDownloadAccess = true;
-        let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
-        let doDownloadButtonHide = (!hasDownloadAccess);
+        const hasDownloadAccess = true;
+        const doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
+        const doDownloadButtonHide = (!hasDownloadAccess);
 
         return (
             <div className="m-2">
@@ -374,7 +381,7 @@ class Upload extends React.Component {
 }
 
 function getUploadeIdentifier(filename, size) {
-    return (size + '-' + filename.replace(/[^0-9a-zA-Z_-]/img, ''));
+    return (`${size  }-${  filename.replace(/[^0-9a-zA-Z_-]/img, '')}`);
 }
 
 
@@ -385,7 +392,7 @@ class UploadsPage extends React.Component {
 
         this.state = {
             uploads: this.props.uploads,
-            pending_uploads: this.props.pending_uploads,
+            pendingUploads: this.props.pendingUploads,
 
             //needed for paginator
             currentPage: this.props.currentPage,
@@ -398,12 +405,13 @@ class UploadsPage extends React.Component {
 
         // console.log(`Processing MD5 Hash for File: "${file.name}" at position ${file.position}`);
 
-        var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
+        const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
             chunkSize = 2097152,                             // Read in chunks of 2MB
             chunks = Math.ceil(file.size / chunkSize),
-            currentChunk = 0,
             spark = new SparkMD5.ArrayBuffer(),
             fileReader = new FileReader();
+
+        let currentChunk = 0;
 
         fileReader.onload = function (e) {
 
@@ -414,11 +422,11 @@ class UploadsPage extends React.Component {
 
             if (currentChunk % 5 == 0) {
 
-                let state = uploadsPage.state;
+                const state = uploadsPage.state;
                 console.log("inside onload function!");
                 console.log(state);
                 console.log(file);
-                state.pending_uploads[file.position].progressSize = currentChunk * chunkSize;
+                state.pendingUploads[file.position].progressSize = currentChunk * chunkSize;
 
                 uploadsPage.setState(state);
 
@@ -428,13 +436,13 @@ class UploadsPage extends React.Component {
                 loadNext();
             } else {    //Reset progress bar for uploading...
 
-                let state = uploadsPage.state;
+                const state = uploadsPage.state;
 
-                var statusInitial = state.pending_uploads[file.position].status;
+                const statusInitial = state.pendingUploads[file.position].status;
                 if (statusInitial != "UPLOADING") {
 
-                    state.pending_uploads[file.position].progressSize = 0;
-                    state.pending_uploads[file.position].status = "UPLOADING";
+                    state.pendingUploads[file.position].progressSize = 0;
+                    state.pendingUploads[file.position].status = "UPLOADING";
 
                     // console.log(`File with identifier "${file.identifier}" at position ${file.position} transitioning to new status... "${statusInitial}" -> "UPLOADING"`);
                     uploadsPage.setState(state);
@@ -446,11 +454,11 @@ class UploadsPage extends React.Component {
         };
 
         fileReader.onerror = function () {
-            errorModal.show("File Upload Error", "Could not upload file because of an error generating it's MD5 hash. Please reload the page and try again.");
+            showErrorModal("File Upload Error", "Could not upload file because of an error generating it's MD5 hash. Please reload the page and try again.");
         };
 
         function loadNext() {
-            var start = currentChunk * chunkSize,
+            const start = currentChunk * chunkSize,
                 end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
 
             fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
@@ -464,15 +472,15 @@ class UploadsPage extends React.Component {
         // console.log(`Starting upload of file: ${file}`);
 
         //different versions of firefox have different field names
-        var filename = file.webkitRelativePath || file.fileName || file.name;
-        var identifier = file.identifier;
-        var position = file.position;
+        const filename = file.webkitRelativePath || file.fileName || file.name;
+        const identifier = file.identifier;
+        const position = file.position;
 
         paused[identifier] = false;
 
-        var numberChunks = Math.ceil(file.size / chunkSize);
+        const numberChunks = Math.ceil(file.size / chunkSize);
 
-        var uploadInfo = {};
+        const uploadInfo = {};
         uploadInfo.identifier = identifier;
         uploadInfo.filename = filename;
         uploadInfo.uploadedChunks = 0;
@@ -481,37 +489,35 @@ class UploadsPage extends React.Component {
         uploadInfo.bytesUploaded = 0;
         uploadInfo.status = 'HASHING';
 
-        var uploadsPage = this;
-
         function onFinish(md5Hash) {
 
             file.md5Hash = md5Hash;
-            console.log("got md5Hash: '" + md5Hash + "'");
-            var xhr = new XMLHttpRequest();
+            console.log(`got md5Hash: '${  md5Hash  }'`);
+            const xhr = new XMLHttpRequest();
 
             xhr.open('POST', '/api/upload');
-            xhr.onload = function () {
+            xhr.onload = () => {
 
-                console.log("New upload response: " + xhr.responseText);
-                var response = JSON.parse(xhr.responseText);
+                console.log("New upload response: ", xhr.responseText);
+                const response = JSON.parse(xhr.responseText);
 
-                var filename = (file.webkitRelativePath || file.fileName || file.name);
+                const filename = (file.webkitRelativePath || file.fileName || file.name);
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
-                    errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
-                    uploadsPage.removePendingUpload(file);
+                    showErrorModal(response.errorTitle, `${response.errorMessage  }\n\nOn file: '${  filename  }'`);
+                    this.removePendingUpload(file);
 
                 } else {
-                    var uploadInfo = response;
+                    const uploadInfo = response;
                     uploadInfo.file = file; //set the file in the response uploadInfo so it can be used later
                     uploadInfo.identifier = identifier;
                     uploadInfo.position = position;
-                    uploadsPage.updateUpload(uploadInfo);
+                    this.updateUpload(uploadInfo);
                 }
             };
 
-            var formData = new FormData();
+            const formData = new FormData();
             formData.append("request", "NEW_UPLOAD");
             formData.append("filename", filename);
             formData.append("identifier", identifier);
@@ -521,7 +527,8 @@ class UploadsPage extends React.Component {
             xhr.send(formData);
         }
 
-        var md5Hash = this.getMD5Hash(file, onFinish, this);
+        this.getMD5Hash(file, onFinish, this);
+        
     }
 
 
@@ -531,17 +538,17 @@ class UploadsPage extends React.Component {
         const progressSize = 0;
         const status = "HASHING";
         const totalSize = file.size;
-        console.log("adding filename: '" + filename + "'");
+        console.log(`adding filename: '${  filename  }'`);
 
-        let pendingUploads = this.state.pending_uploads;
+        const pendingUploads = this.state.pendingUploads;
 
-        let identifier = getUploadeIdentifier(filename, totalSize);
-        console.log("CREATED IDENTIFIER: " + identifier);
+        const identifier = getUploadeIdentifier(filename, totalSize);
+        console.log(`CREATED IDENTIFIER: ${  identifier}`);
         file.identifier = identifier;
         file.position = 0;
 
         let alreadyExists = false;
-        for (var i = 0; i < pendingUploads.length; i++) {
+        for (let i = 0; i < pendingUploads.length; i++) {
 
             // console.log(`Pending Upload Identifier (${i}): ${pendingUploads[i].identifier} /// Current Upload Identifier: ${identifier}`);
 
@@ -588,14 +595,16 @@ class UploadsPage extends React.Component {
 
         }
 
-        this.state.pending_uploads = pendingUploads;
+        this.setState({ pendingUploads: pendingUploads });
 
-        // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // let uploadStringMap = this.state.pendingUploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
         // console.log(`Updated Pending Uploads after adding new file with identifier "${file.identifier}": [${uploadStringMap}]`);
 
         if (this.state.numberPages == 0) {
-            this.state.numberPages = 1;
-            this.state.currentPage = 0;
+            this.setState({
+                numberPages: 1,
+                currentPage: 0
+            });
         }
 
         this.setState(this.state);
@@ -605,24 +614,22 @@ class UploadsPage extends React.Component {
 
     removePendingUpload(file) {
 
-        if (file.position < pending_uploads.length) {
+        if (file.position < pendingUploads.length) {
 
-            let pending_uploads = this.state.pending_uploads;
+            const pendingUploads = this.state.pendingUploads;
 
-            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // let uploadStringMap = this.state.pendingUploads.map(function(uploadItem) { return uploadItem.identifier });
             // console.log(`Removing a *pending* file upload! Original State: [${uploadStringMap}]`);
 
-            pending_uploads.splice(file.position, 1);
-            for (var i = 0; i < pending_uploads.length; i++) {
-                pending_uploads[i].position = i;
+            pendingUploads.splice(file.position, 1);
+            for (let i = 0; i < pendingUploads.length; i++) {
+                pendingUploads[i].position = i;
             }
 
-            this.state.pending_uploads = pending_uploads;
-
-            // uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier; });
+            // uploadStringMap = this.state.pendingUploads.map(function(uploadItem) { return uploadItem.identifier; });
             // console.log(`Removing a *pending* file upload! New State: [${uploadStringMap}]`);
 
-            this.setState(this.state);
+            this.setState({ pendingUploads });
         }
     }
 
@@ -636,18 +643,16 @@ class UploadsPage extends React.Component {
             //Upload position is within bounds, remove the upload
             if (uploadInfo.position < uploads.length) {
 
-                let uploads = this.state.uploads;
+                const uploads = this.state.uploads;
 
                 //Remove the upload from the list
                 uploads.splice(uploadInfo.position, 1);
-                for (var i = 0; i < uploads.length; i++) {
+                for (let i = 0; i < uploads.length; i++) {
                     uploads[i].position = i;
                 }
 
-                this.state.uploads = uploads;
-
                 //Trigger state update
-                this.setState(this.state);
+                this.setState({ uploads: uploads });
 
                 //Upload position is out of bounds, throw an error
             } else {
@@ -657,7 +662,7 @@ class UploadsPage extends React.Component {
         } catch (error) {
 
             //Display Error Modal
-            errorModal.show("Error Removing Upload Prop", error.message);
+            showErrorModal("Error Removing Upload Prop", error.message);
 
         }
 
@@ -665,86 +670,87 @@ class UploadsPage extends React.Component {
 
     updateUpload(uploadInfo) {
 
-        var file = uploadInfo.file;
-        var position = uploadInfo.position;
-        var filename = uploadInfo.filename;
+        const file = uploadInfo.file;
+        const position = uploadInfo.position;
+        const filename = uploadInfo.filename;
 
-        var chunkStatus = uploadInfo.chunkStatus;
-        var numberChunks = parseInt(uploadInfo.numberChunks);
-        var chunkNumber = chunkStatus.indexOf("0");
+        const chunkStatus = uploadInfo.chunkStatus;
+        const numberChunks = parseInt(uploadInfo.numberChunks);
+        let chunkNumber = chunkStatus.indexOf("0");
 
-        console.log("next chunk: " + chunkNumber + " of " + numberChunks);
+        console.log(`next chunk: ${  chunkNumber  } of ${  numberChunks}`);
 
         uploadInfo.progressSize = uploadInfo.bytesUploaded;
         uploadInfo.totalSize = uploadInfo.sizeBytes;
 
-        this.state.pending_uploads[uploadInfo.position] = uploadInfo;
+        // Avoid direct state mutation
+        const pendingUploads = [...this.state.pendingUploads];
+        pendingUploads[uploadInfo.position] = uploadInfo;
+        this.setState({ pendingUploads });
 
-        this.setState(this.state);
+        const startByte = parseInt(chunkNumber) * parseInt(chunkSize);
+        const endByte = Math.min(parseInt(startByte) + parseInt(chunkSize), file.size);
+        const func = (file.slice ? 'slice' : (file.mozSlice ? 'mozSlice' : (file.webkitSlice ? 'webkitSlice' : 'slice')));
+        const bytes = file[func](startByte, endByte, void 0);
 
-        var uploadsPage = this;
-
-        var startByte = parseInt(chunkNumber) * parseInt(chunkSize);
-        var endByte = Math.min(parseInt(startByte) + parseInt(chunkSize), file.size);
-        var func = (file.slice ? 'slice' : (file.mozSlice ? 'mozSlice' : (file.webkitSlice ? 'webkitSlice' : 'slice')));
-        var bytes = file[func](startByte, endByte, void 0);
-
-        var xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
         xhr.open('PUT', `/api/upload/${uploadInfo.id}/chunk/${chunkNumber}`);
-        xhr.onload = function () {
+        xhr.onload = () => {
 
-            console.log("Upload response: " + xhr.responseText);
-            var response = JSON.parse(xhr.responseText);
+            console.log("Upload response: ", xhr.responseText);
+            const response = JSON.parse(xhr.responseText);
 
             //Error in response, show error modal
             if (response.errorTitle !== undefined) {
-                errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
+                showErrorModal(response.errorTitle, `${response.errorMessage  }\n\nOn file: '${  filename  }'`);
 
-                //No error encountered, continue with upload
+            //No error encountered, continue with upload
             } else {
 
-                var uploadInfo = response;
+                const uploadInfo = response;
                 uploadInfo.file = file; //<-- Set the fileObject so we can use it for restarts
                 uploadInfo.position = position;
 
-                var numberChunks = Math.ceil(file.size / chunkSize);
-                console.log("uploaded chunk " + chunkNumber + " of " + numberChunks);
+                const numberChunks = Math.ceil(file.size / chunkSize);
+                console.log(`uploaded chunk ${  chunkNumber  } of ${  numberChunks}`);
 
-                var chunkStatus = uploadInfo.chunkStatus;
+                const chunkStatus = uploadInfo.chunkStatus;
                 chunkNumber = chunkStatus.indexOf("0");
 
                 const CHUNK_NUMBER_END = -1;
 
                 //More chunks to upload, continue with next chunk
                 if (chunkNumber > CHUNK_NUMBER_END) {
-                    console.log("uploading next chunk with response:");
-                    console.log(response);
-                    console.log("uploadInfo:");
-                    console.log(uploadInfo);
 
-                    uploadsPage.updateUpload(uploadInfo);
+                    console.log("Uploading next chunk with response:", response);
+                    console.log("uploadInfo:", uploadInfo);
 
-                    //All chunks have been uploaded, finish the upload
+                    this.updateUpload(uploadInfo);
+
+                //All chunks have been uploaded, finish the upload
                 } else {
-                    console.log("Should be finished upload!");
 
-                    uploadsPage.state.pending_uploads[uploadInfo.position] = uploadInfo;
-                    uploadsPage.setState(uploadsPage.state);
+                    console.log("Should be finished uploading...");
+
+                    const pendingUploads = [...this.state.pendingUploads];
+                    pendingUploads[uploadInfo.position] = uploadInfo;
+                    this.setState({ pendingUploads });
+
                 }
+
             }
+
         };
 
-        console.log("appending identifier: " + file.identifier);
-        var formData = new FormData();
+        console.log(`appending identifier: ${  file.identifier}`);
+        const formData = new FormData();
         formData.append("chunk", bytes, file.fileName);
         xhr.send(formData);
     }
 
     submitFilter() {
-        //prep data
-        var uploadsPage = this;
 
-        var submissionData = {
+        const submissionData = {
             currentPage: this.state.currentPage,
             pageSize: this.state.pageSize
         };
@@ -755,7 +761,8 @@ class UploadsPage extends React.Component {
             type: 'GET',
             url: '/api/upload',
             data: submissionData,
-            success: function (response) {
+            async: true,
+            success: (response) => {
 
                 console.log(response);
 
@@ -763,33 +770,33 @@ class UploadsPage extends React.Component {
 
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle, response.errorMessage);
                     return false;
                 }
 
-                console.log("got response: " + response + " " + response.sizeAll);
+                console.log("Got response: ", response, response.sizeAll);
 
-                uploadsPage.setState({
+                this.setState({
                     uploads: response.uploads,
                     numberPages: response.numberPages
                 });
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Uploads", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Loading Uploads", errorThrown);
             },
-            async: true
         });
     }
 
     render() {
-        console.log("rendering uploads!");
+
+        console.log("Rendering Uploads!");
 
         const hiddenStyle = {
             display: "none"
         };
 
         //Disable Upload buttons with no Upload Access
-        let doUploadButtonHide = (!isUploader);
+        const doUploadButtonHide = (!isUploader);
 
         return (
 
@@ -811,9 +818,9 @@ class UploadsPage extends React.Component {
 
                             {/* Render Pending Uploads */}
                             {
-                                this.state.pending_uploads.map((uploadInfo, index) => {
+                                this.state.pendingUploads.map((uploadInfo) => {
 
-                                    // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+                                    // let uploadStringMap = this.state.pendingUploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
                                     // console.log(`Previewing all Pending Uploads: ${uploadStringMap}`);
                                     // console.log(`Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
 
@@ -873,10 +880,10 @@ class UploadsPage extends React.Component {
                                     numberPages={this.state.numberPages}
                                     pageSize={this.state.pageSize}
                                     updateCurrentPage={(currentPage) => {
-                                        this.state.currentPage = currentPage;
+                                        this.setState({ currentPage: currentPage });
                                     }}
                                     updateItemsPerPage={(pageSize) => {
-                                        this.state.pageSize = pageSize;
+                                        this.setState({ pageSize: pageSize });
                                     }}
                                     doUploadButtonHide={doUploadButtonHide}
                                 />
@@ -891,6 +898,14 @@ class UploadsPage extends React.Component {
     }
 }
 
-const root = createRoot(document.querySelector('#uploads-page'));
-root.render(<UploadsPage uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages}
-                         currentPage={currentPage}/>);
+console.log("Uploads: ", uploads);
+console.log("Pending Uploads: ", pendingUploads);
+
+const container = document.querySelector('#uploads-page');
+const root = createRoot(container);
+root.render(<UploadsPage
+    uploads={uploads}
+    pendingUploads={pendingUploads ?? []}
+    numberPages={numberPages}
+    currentPage={currentPage}
+/>);
