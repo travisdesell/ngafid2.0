@@ -79,7 +79,7 @@ class ChartType(Enum):
     IFR_ENROUTE_HIGH = "ifr_enroute_high"
     HELICOPTER = "helicopter"
 
-configuration_file = "ngafid-chart-processor/chart_service_config.json"
+configuration_file = "ngafid-chart-processor/chart_service_config.default.json"
 
 def validate_date(date_str):
     """
@@ -111,7 +111,7 @@ def parse_arguments():
         "--config",
         type=str,
         help="Config file path",
-        default="ngafid-chart-processor/chart_service_config.json"
+        default="ngafid-chart-processor/chart_service_config.default.json"
     )
     logging.info(f"{sys.argv}")
     parsed = parser.parse_args()
@@ -302,7 +302,7 @@ def crop_tifs(shape_file_paths, tifs_path, cropped_tifs_path):
             "gdalwarp",
             "-cutline", shp_file_path,
             "-crop_to_cutline",
-       #     "-dstalpha",
+            "-dstalpha",
        #     "-dstnodata", "0",
             tif_file_path,
             cropped_tif_path
@@ -365,7 +365,7 @@ def convert_to_rgb(cropped_tifs_path, output_tifs_path):
             command = [
                 "gdal_translate",
                 "-of", "GTiff",
-                "-expand", "rgb",  # ✅ Force RGB, drops any alpha band
+                "-expand", "rgb",  
                 "-co", "COMPRESS=LZW",
                 "-co", "TILED=YES",
                 input_tif,
@@ -396,13 +396,15 @@ def reproject_tifs(input_tifs_path, reprojected_tifs_path):
             output_tif = os.path.join(reprojected_tifs_path, file_name)  # Keep the original file name
 
             command = [
-                "gdalwarp",
-                "-t_srs", "EPSG:3857",  # Reproject to Web Mercator
-                "-dstnodata", "0",
-                #  "-co", "TILED=YES",     # Enable tiling for efficiency
-                input_tif,
-                output_tif
+            "gdalwarp",
+            "-t_srs", "EPSG:3857",
+            "-dstalpha",
+            "-co", "TILED=YES",
+            "-co", "COMPRESS=LZW",
+            input_tif,
+            output_tif
             ]
+
 
             try:
                 subprocess.run(command, check=True)

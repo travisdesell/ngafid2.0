@@ -412,7 +412,7 @@ public class Event {
                     LOG.warning("Insertion skipped. Self-proximity event detected before DB insert: flight ID = " + event.getFlightId() +
                             ", otherFlightId = " + event.getOtherFlightId());
                 }else{
-                    event.addBatch(preparedStatement, flight.getFleetId(), flight.getId(), event.eventDefinitionId);
+                    event.addBatch(preparedStatement, flight.getFleetId(), event.flightId, event.eventDefinitionId);
                 }
             }
 

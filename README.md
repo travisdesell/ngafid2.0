@@ -34,51 +34,12 @@ Afterward, we need to install a JAR file dependency to where Maven fetches your 
 Running Maven will not be possible without running this script.
 
 ```
-sh setup_dat_importing.sh
+run/setup_dat_importing
 ```
 
 ## 2. Set up the database
 
-Install mysql on your system. For ubuntu:
-
-```
-~/ $ sudo apt install mysql-server
-```
-
-### NOTE: On most Linux distributions, the MySQL package is provided by MariaDB. MariaDB is essentially the open-source version of MySQL and fully compatible with the MySQL syntax, however make sure you are using the latest version or you may run into problems.
-
-Most distributions (with the exception of Arch and a few others) will alias MySQL to MariaDB
-i.e.
-
-```
-~/ $ sudo zypper in mysql mysql-server
-```
-
-or, for Arch:
-
-```
-~/ $ sudo pacman -S mariadb
-```
-
-You will also need to run
-
-```
-~/ $ sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
-```
-
-before starting the systemd service (see below)
-
-```
-~/ $ sudo systemctl enable --now mariadb
-```
-
-or
-
-```
-~/ $ sudo systemctl enable --now mysql
-```
-
-**the systemd service name may vary depending on your distro.
+Install MySQL (instructions are system dependent).
 
 Next we'll create the database in mysql:
 
@@ -99,7 +60,7 @@ mysql> exit
 Bye
 ```
 
-We need to store these credentials in a file called `ngafid-db/src/liquibase.properties`, along with some other
+We need to store these credentials in a file called `src/main/resources/liquibase.properties`, along with some other
 information:
 
 ```
@@ -109,12 +70,16 @@ url=jdbc:mysql://localhost/ngafid
 username=ngafid_user
 password=password
 ```
-### NOTE: liquibase.properties is in gitignore (to keep credentials private), create your own version.
 
+Make a second file `src/main/resources/liquibase.docker.properties` that mirrors this, but change the url as shwon:
 
-
-
-
+```
+changeLogFile=changelog-root.xml
+outputChangeLogFile=changelog.mysql.sql
+url=jdbc:mysql://host.docker.internal/ngafid
+username=ngafid_user
+password=password
+```
 
 You should not modify the first two lines, but lines 3-5 may need to be tweaked depending on your database setup. In
 particular, if you are using a database other than mysql you will have to tweak the URL.
@@ -125,37 +90,19 @@ Once you have done this, you can create the database tables by running the follo
 ~/ngafid2.0 $ run/liquibase/update
 ```
 
-## 3. Configure the environment
+This command can also be used to apply changes to the database schema when the changelogs have been updated.
 
-We need to set up some environmental variables that point to some important data / directories.
-
-Create a **copy** of the environment variables template file, `init_env.template.sh`, and call it `init_env.sh`. Ensure that you properly configure `init_env.sh`. You **must** address all lines marked with an exclamation point (❗).
-
-Run the command below after making changes or running from a new shell:
-
-```
-~/ngafid2.0 $ source init_env.sh
-```
-If you want these variables to be initialized automatically when you launch a new shell,
-add the following line to your `~/.bashrc` file:
-
-```bash
-source ~/ngafid2.0/init_env.sh
-```
-
-## 4. Download Data Required for Flight Processing
+## 3. Download Data Required for Flight Processing
 
 You need to download the data from the following link, and place the files in the following folder
 structure: [NGAFID Setup Data](https://drive.google.com/drive/folders/1cPMWpXCQb-I1lraFDY5Snn14UvMqu2SH?usp=drive_link).
 Request permissions if you do not have them (if you use an RIT google account you should have access by default).
 
+Make the data folder wherever you like -- you may consider using secondary storage disk for this. The terrain data is
+quite large -- you likely want it wherever your data folder is (though you can configure things however you like below).
+
 ```
 $NGAFID_DATA_FOLDER
-├── airports
-│   └── airports_parsed.csv
-├── archive
-├── runways
-│   └── runways_parsed.csv
 ├── terrain        # You will have to decompress the terrain data.
 │   ├── H11
 │   ├── H12
@@ -163,216 +110,150 @@ $NGAFID_DATA_FOLDER
 ...
 ```
 
-## 5. Running the webserver
+## 4. Configure the environment
 
-### Initialize Dependencies
+We need to set up two configuration files -- one for docker, the other for locally running services.
 
-You need Maven installed to run the following script which will build the java modules:
-From the project root (`~/ngafid2.0`), run:
-```
-run/build 
-```
+Copy `template.env` to `.env.host` and modify it to fit your setup, then modify your shell profile to source, e.g.
 
-Next we need to initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
-From ~/ngafid2.0/ngafid-frontend, run:
-```
-npm install
+```shell
+source ~/ngafid2.0/.env.host
 ```
 
-This will download the javascript dependencies.
+Similarly, copy `template.docker.env` to `.env` and modify it to fit your setup. The `docker-compose.yml` file
+is configured to automatically load all environmental variables from this file.
 
-Then, in order to compile the javascript and automatically recompile whenever you change one of the files:
-From ~/ngafid2.0/ngafid-frontend, run:
-```
-npm run watch
-```
+Note that the variables specified in the `.env` file are read by docker compose and available in the docker-compose file
+for substitution. Within Dockerfiles, however, variables will have to be manually passed as arguments.
 
- ### Launch Kafka
-Next, to launch the web server we must first initialize and start Kafka. Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart), using `ngafid2.0/resource/reconfig-server.properties`.
-On macOS, you can install Kafka with:
-```
- brew install kafka
-```
+We also pass `.env` as an `env_file` in `docker-compose.yml`, which provides the variables for use within the container.
+The `.env` file format used by docker doesn't support any scripting (e.g. source) so rather than splitting the compose
+env and container env into two separate files, a single common file is used.
 
+## 5. Build Node Modules
 
-These are the steps to setup kafka from the Kafka quickstart (above).
-Before starting the Kafka server, you must format the storage directory using a cluster ID. This step is required only once per cluster.
-
-1. Generate random claster-id:
-From the project root (`~/ngafid2.0`), run:
-```
-kafka-storage random-uuid
-```
-
-2. Run the following command to format Kafka’s log directory and generate the required meta.properties file:
-From the project root (`~/ngafid2.0`), run:
-```
-kafka-storage format -t <your-cluster-id> -c resources/reconfig-server.properties
-```
-
-
-3. Add this line to the resources/reconfig-server.properties – required for Kafka in KRaft mode (i.e., no Zookeeper).
-It tells Kafka how to form the internal metadata quorum used for coordination.
-The 1@localhost:9093 part maps the node.id to the address where the controller listens
-```
-controller.quorum.voters=1@localhost:9093
-```
-
-4. Now, launch Kafka:
-From the project root (`~/ngafid2.0`), run:
-```
-kafka-server-start resources/reconfig-server.properties
-```
-
-5. Run the following script to create the appropriate kafka topics:
-From the project root (`~/ngafid2.0`), run:
-```
-run/kafka/create_topics
-```
-
-### Launch webserver
-
-You should then be able to compile and run the webserver. 
-From the project root (`~/ngafid2.0`), run:
-```
-run/webserver
-```
-
-## 6. Data Processing
-
-The data processing pipeline consists of two Kafka consumers and one database observer -- one processes archives
-uploaded to the website, and the other two handle event processing. They should all run persistently in separate
-terminals:
-
-The upload consumer simply processes uploaded files from the `upload` topic,
- from the project root (`~/ngafid2.0`), run:
-```
-run/kafka/upload_consumer
-```
-
-The event consumer and event observer work in concert: the event observer looks for uncomputed events in fully imported
-flights and places them into the `event` topic. Then, the event consumer computes those events.  From the project root (`~/ngafid2.0`), run:
-```
-run/kafka/event_consumer
-```
+Initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
 
 ```
-run/kafka/event_observer
+~/ngafid2.0/ngafid-frontend $ npm install
 ```
 
-## 7. Workflow
+This will download the javascript dependencies. Then, in order to compile the javascript and automatically recompile
+whenever you change one of the files:
+
+```
+~/ngafid2.0/ngafid-frontend $ npm run watch
+```
+
+## 6. Run Kafka
+
+Kafka is used by the ngafid for simple message passing between processes.
+Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart) to configure kafkas storage,
+using `ngafid2.0/resource/reconfig-server.properties`. Now, launch Kafka:
+
+```
+# Launch kafka kraft 
+~/ngafid2.0 $ kafka-server-start resources/reconfig-server.properties
+```
+
+Next, run the following script to create the appropriate kafka topics:
+
+```
+~/ngafid2.0 $ run/kafka/create_topics
+```
+
+## 7. Services
+
+The NGAFID is essentially composed of several services:
+
+The upload processing service:
+
+```shell
+~/ngafid2.0 $ run/kafka/upload_consumer
+```
+
+The event processing service:
+
+```shell
+~/ngafid2.0 $ run/kafka/event_consumer
+```
+
+The event observer service -- used to queue up work for the event consumer when missing events are detected:
+
+```shell
+~/ngafid2.0 $ run/kafka/event_observer
+```
+
+The webserver:
+
+```shell
+~/ngafid2.0 $ run/webserver
+```
+
+The email consumer:
+
+```shell
+~/ngafid2.0 $ run/kafka/email_consumer
+```
+
+The airsync importer (you shouldn't run this locally unless you are working directly on it):
+
+```shell
+~/ngafid2.0 $ run/airsync_daemon
+```
+
+## 8. Launching with Docker
+
+To build and run all requires services simultaneously, we can use docker. We build the java packages and then inject
+them into docker containers:
+
+```shell
+~/ngafid2.0 $ run/build
+~/ngafid2.0 $ run/package
+```
+
+Then, build the docker images. Note, that we define a `base` image from which other service-specific images are
+dependent on. The docker build system does not handle dependencies like this properly, so in order to prevent issues you
+must run the following commands in-order:
+
+```shell
+~/ngafid2.0 $ docker compose build base # create base image
+~/ngafid2.0 $ docker compose build
+```
+
+## 9. Workflow
+
+Note that these things should work regardless of whether you launching services directly or with docker so long as your
+configuration is correct.
 
 If you modify the upload processing code in some way and want to re-add an upload to the processing queue, you may use
-the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue. From the project root (`~/ngafid2.0`), run:
-
-
+the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue:
 
 ```
-run/kafka/upload_helper --help
+~/ngafid2.0 $ run/kafka/upload_helper --help
 ```
 
 Similarly, if you modify a custom-event computation you can use the `EventHelper` to remove events from the database.
 The event observer will pick up on this and enqueue them for re-computation. You may also delete events and opt for them
-not to be recomputed. From the project root (`~/ngafid2.0`), run:
+not to be recomputed.
+
 ```
-run/kafka/event_helper --help
+~/ngafid2.0 $ run/kafka/event_helper --help
 ```
 
-## 8. Event Statistics
+## 10. Event Statistics
 
 Event statistics are to be computed and cached occasionally. If you import data and want to see it reflected on the
 website, you must update these cached tables:
 
 ```
 $ run/liquibase/daily-materialized-views
-```
-
-```
 $ run/liquibase/hourly-materialized-views
 ```
-
-
 
 You can set up a timer with `cron` or `systemd` to automatically do this on a schedule. Website features that work on
 event statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
 
-## (Optional) using the backup daemon - works on Linux systems only.
-
-As demonstrated in `init_env.sh`, the NGAFID can be backed up using a configurable set of parameters (i.e. what tables
-to backup, etc).
-First, change the first line of the file in `db/backup_database.sh` so that the argument after `source` is the path to
-the aformentioned `init_env.sh` file.
-
-Then, you will need to copy the systemd files to your systemd directory and reload the os daemons.From the project root (`~/ngafid2.0`), run:
-
-```
-~/ngafid2.0 # cp services/backup/ngafid-backup* /usr/lib/systemd/system
-~/ngafid2.0 # systemctl daemon-reload
-```
-
-To enable the backup service:
-
-```
-# systemctl enable ngafid-backup.service ngafid-backup.timer
-```
-
-If you desire to change the backup interval (default is weekly), you can override the `OnCalendar=` parameter with:
-
-```
-# systemctl edit ngafid-backup.service
-# systemctl daemon-reload
-```
-
-You may also want to check that everything has been loaded successfully.
-
-```
-# systemctl status *timer
-```
-
-To run the backup at any given time, you can now simply invoke:
-
-```
-# systemctl start ngafid-backup
-```
-
-# ngafid2.0
-
-airport database:
-http://osav-usdot.opendata.arcgis.com/datasets/a36a509eab4e43b4864fb594a35b90d6_0?filterByExtent=false&geometry=-97.201%2C47.944%2C-97.147%2C47.952
-
-runway database:
-http://osav-usdot.opendata.arcgis.com/datasets/d1b43f8a1d474b8c9c24cad4b942b74a_0?uiTab=table&geometry=-97.2%2C47.944%2C-97.146%2C47.953&filterByExtent=false
-
-required for jQuery query-builder:
-
-https://github.com/mistic100/jQuery.extendext.git
-https://github.com/olado/doT.git
-
-setting up javascript with react/webpack/babel:
-https://www.valentinog.com/blog/react-webpack-babel/
-
-For mySQL on SUSE
-https://software.opensuse.org/package/mysql-community-server
-
-For Arch:
-https://aur.archlinux.org/packages/mysql57/
-
-#not used anymore
-information on using PM2 to start/restart node servers:
-
-https://www.digitalocean.com/community/tutorials/how-to-set-up-a-node-js-application-for-production-on-centos-7
-
-information on setting up apache to use PM2:
-
-https://vedmant.com/setup-node-js-production-application-apache-multiple-virtual-host-server/
-
-if error "service unavailabile":
-http://sysadminsjourney.com/content/2010/02/01/apache-modproxy-error-13permission-denied-error-rhel/
-
-to fix:
-
-sudo /usr/sbin/setsebool -P httpd_can_network_connect 1
-
-## Chart Processing Service
+## 11. Chart Processing Service
 
 [Chart Processing Service Documentation](ngafid-chart-processor/README.md)
