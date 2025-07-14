@@ -37,6 +37,11 @@ CREATE TABLE events (
 
     severity DOUBLE NOT NULL,
 
+    min_latitude DOUBLE DEFAULT NULL,
+    max_latitude DOUBLE DEFAULT NULL,
+    min_longitude DOUBLE DEFAULT NULL,
+    max_longitude DOUBLE DEFAULT NULL,
+
     PRIMARY KEY(id),
     FOREIGN KEY(fleet_id) REFERENCES fleet(id),
     FOREIGN KEY(flight_id) REFERENCES flights(id)

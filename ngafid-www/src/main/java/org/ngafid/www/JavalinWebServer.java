@@ -27,6 +27,37 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.eclipse.jetty.server.session.DatabaseAdaptor;
+import org.eclipse.jetty.server.session.DefaultSessionCache;
+import org.eclipse.jetty.server.session.FileSessionDataStore;
+import org.eclipse.jetty.server.session.JDBCSessionDataStore;
+import org.eclipse.jetty.server.session.JDBCSessionDataStoreFactory;
+import org.eclipse.jetty.server.session.SessionCache;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.www.routes.AccountJavalinRoutes;
+import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes;
+import org.ngafid.www.routes.AirsyncJavalinRoutes;
+import org.ngafid.www.routes.AnalysisJavalinRoutes;
+import org.ngafid.www.routes.BugReportJavalinRoutes;
+import org.ngafid.www.routes.CesiumDataJavalinRoutes;
+import org.ngafid.www.routes.DataJavalinRoutes;
+import org.ngafid.www.routes.DoubleSeriesJavalinRoutes;
+import org.ngafid.www.routes.EventJavalinRoutes;
+import org.ngafid.www.routes.FlightsJavalinRoutes;
+import org.ngafid.www.routes.ImportUploadJavalinRoutes;
+import org.ngafid.www.routes.ProximityMapJavalinRoutes;
+import org.ngafid.www.routes.StartPageJavalinRoutes;
+import org.ngafid.www.routes.StatisticsJavalinRoutes;
+import org.ngafid.www.routes.StatusJavalinRoutes;
+import org.ngafid.www.routes.TagFilterJavalinRoutes;
+
+import io.javalin.Javalin;
+import io.javalin.http.staticfiles.Location;
+import io.javalin.json.JavalinGson;
+
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
     private Javalin app;
@@ -122,6 +153,7 @@ public class JavalinWebServer extends WebServer {
         EventJavalinRoutes.bindRoutes(app);
         FlightsJavalinRoutes.bindRoutes(app);
         ImportUploadJavalinRoutes.bindRoutes(app);
+        ProximityMapJavalinRoutes.bindRoutes(app);
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         CesiumDataJavalinRoutes.bindRoutes(app);

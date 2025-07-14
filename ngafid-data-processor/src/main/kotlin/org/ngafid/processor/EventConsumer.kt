@@ -21,6 +21,8 @@ import org.ngafid.processor.events.EventScanner
 import org.ngafid.processor.events.LowEndingFuelScanner
 import org.ngafid.processor.events.SpinEventScanner
 import org.ngafid.processor.events.proximity.ProximityEventScanner
+import org.ngafid.core.proximity.ProximityPointsProcessor
+
 import java.sql.Connection
 import java.sql.SQLException
 import java.util.function.Consumer
@@ -95,9 +97,32 @@ class EventConsumer protected constructor(
                         .filter { e: Event -> e.eventDefinitionId == etc.eventId }
                         .toList()
 
+                    for (event in events) {
+                        LOG.info(
+                            "Preparing to insert event: flight_id=%d, other_flight_id=%s, start_time=%s, end_time=%s, event_definition_id=%d".format(
+                                event.flightId,
+                                java.lang.String.valueOf(event.otherFlightId),
+                                java.lang.String.valueOf(event.startTime),
+                                java.lang.String.valueOf(event.endTime),
+                                event.eventDefinitionId
+                            )
+                        )
+                    }
+
                     Event.batchInsertion(connection, flight, events)
 
                     // Computed okay.
+
+                    // inserts proximity points for each event into the proximity_points table 
+                    if (scanner is ProximityEventScanner) {
+                        ProximityPointsProcessor.insertProximityPointsForEvents(
+                            connection,
+                            events,
+                            scanner.mainFlightPointsMap,
+                            scanner.otherFlightPointsMap
+                        )
+                    }
+
                     return Pair(record, false)
                 } catch (e: ColumnNotAvailableException) {
                     // Some other exception happened...

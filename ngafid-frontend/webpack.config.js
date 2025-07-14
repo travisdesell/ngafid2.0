@@ -1,3 +1,4 @@
+/* webpack.config.js */
 const webpack = require('webpack');
 const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");
@@ -103,6 +104,7 @@ module.exports = {
         manage_events: "./src/manage_events.js",
         manage_fleet: "./src/manage_fleet.js",
         ngafid_cesium: __dirname + "/src/ngafid_cesium.js",
+        proximity_map: "./src/proximity_map.tsx",
         reset_password: "./src/reset_password.js",
         severities: "./src/severities.js",
         signed_in_navbar: "./src/signed_in_navbar.js",

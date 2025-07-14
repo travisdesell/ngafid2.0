@@ -37,6 +37,9 @@ public class Event {
     private RateOfClosure rateOfClosure;
 
     private List<EventMetaData> metaDataList;
+    // Event's bounding box (where the event is located in space)
+    private Double minLatitude, maxLatitude, minLongitude, maxLongitude;
+
 
     /**
      * Start and end time must be formatted according to TimeUtils.ISO_8601. Dates in the derived column Parameters.UTC_DATE_TIME
@@ -398,11 +401,30 @@ public class Event {
     public void addMetaData(EventMetaData metaData) {
         this.metaDataList.add(metaData);
     }
+    public int getId() {
+        return id;
+    }
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setMinLatitude(Double minLatitude) { this.minLatitude = minLatitude; }
+    public void setMaxLatitude(Double maxLatitude) { this.maxLatitude = maxLatitude; }
+    public void setMinLongitude(Double minLongitude) { this.minLongitude = minLongitude; }
+    public void setMaxLongitude(Double maxLongitude) { this.maxLongitude = maxLongitude; }
+
+    public Double getMinLatitude() { return minLatitude; }
+    public Double getMaxLatitude() { return maxLatitude; }
+    public Double getMinLongitude() { return minLongitude; }
+    public Double getMaxLongitude() { return maxLongitude; }
+
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-        return connection.prepareStatement("INSERT INTO events (fleet_id, " +
-                "flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, " +
-                "other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+        return connection.prepareStatement(
+            "INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id, min_latitude, max_latitude, min_longitude, max_longitude) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            Statement.RETURN_GENERATED_KEYS
+        );
     }
 
     public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
@@ -421,7 +443,9 @@ public class Event {
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
                 int i = 0;
                 while (resultSet.next()) {
-                    events.get(i).updateDatabaseMetadata(connection, resultSet.getInt(1));
+                    int generatedId = resultSet.getInt(1);
+                    events.get(i).setId(generatedId);
+                    events.get(i).updateDatabaseMetadata(connection, generatedId);
                     i += 1;
                 }
             }
@@ -451,6 +475,20 @@ public class Event {
             preparedStatement.setInt(9, otherFlightId);
         }
 
+        if (eventDefinitionId == -1) {
+            // Set bounding box values for proximity events
+            preparedStatement.setDouble(10, minLatitude);
+            preparedStatement.setDouble(11, maxLatitude);
+            preparedStatement.setDouble(12, minLongitude);
+            preparedStatement.setDouble(13, maxLongitude);
+        } else {
+            preparedStatement.setNull(10, java.sql.Types.DOUBLE);
+            preparedStatement.setNull(11, java.sql.Types.DOUBLE);
+            preparedStatement.setNull(12, java.sql.Types.DOUBLE);
+            preparedStatement.setNull(13, java.sql.Types.DOUBLE);
+        }
+
+
         preparedStatement.addBatch();
     }
 
@@ -460,7 +498,8 @@ public class Event {
         this.eventDefinitionId = eventDefId;
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
-            addBatch(preparedStatement, fleetId, flightId, eventDefId);
+            addBatch(preparedStatement, fleetIdUpdated, flightIdUpdated, eventDefId);
+
             preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {

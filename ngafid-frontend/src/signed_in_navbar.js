@@ -14,7 +14,9 @@ class NavLink extends React.Component {
 
     render() {
 
-        console.log(`Rendering navlink: '${  this.props.name  }'`);
+        /*
+            console.log("Rendering navlink: '" + this.props.name + "'");
+        */
 
         const {
             active,
@@ -156,8 +158,10 @@ export default class SignedInNavbar extends React.Component {
         if (this.props.unconfirmedTailsCount > 0)
             unconfirmedTailsString = ` (${  this.props.unconfirmedTailsCount  })`;
 
-        const accountNotifications = ` (${  this.props.waitingUserCount + this.props.unconfirmedTailsCount  })`;
-        console.log(`Waiting Users: ${  this.props.waitingUserCount  }, Unconfirmed Tails: ${  this.props.unconfirmedTailsCount  }, Account Notifications: ${  accountNotifications}`);
+        let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
+        /*
+            console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
+        */
 
         const filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
@@ -222,7 +226,7 @@ export default class SignedInNavbar extends React.Component {
 
         const homeActive = (this.props.activePage === "welcome");
 
-        const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
+        const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics","proximity_map"];
         const eventsActive = (eventPageNames.includes(this.props.activePage));
 
         const aggregatePageNames = ["aggregate", "aggregate_trends"];
@@ -391,6 +395,7 @@ export default class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
                                 <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
+                                <DropdownLink name={"Proximity Map"} hidden={false} href="/protected/proximity_map"/>
 
                                 {admin
                                     ? <div className="dropdown-divider"></div>

@@ -26,10 +26,6 @@
 export NGAFID_REPO=<⚠ /Set/Absolute/Path/Here ⚠>  #<-- ❗ Set this to the absolute path of your ngafid repo. This is the directory where you cloned the ngafid repo.
 
 
-#Database
-export NGAFID_DB_INFO=$NGAFID_REPO/db/db_info.php
-
-
 #Data
 export NGAFID_DATA_FOLDER=$NGAFID_REPO/data        #<-- ❗ Create a data folder in the NGAFID root (if it doesn't already exist).
 export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads

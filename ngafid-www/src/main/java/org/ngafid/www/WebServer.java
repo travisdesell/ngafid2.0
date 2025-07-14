@@ -8,6 +8,7 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import org.ngafid.core.Config;
 import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.proximity.ProximityPointsProcessor;
 import org.ngafid.core.util.ConvertToHTML;
 
 import java.io.*;
@@ -22,6 +23,8 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import static org.ngafid.core.util.SendEmail.sendAdminEmails;
+
+
 
 
 /**
@@ -210,8 +213,19 @@ public abstract class WebServer {
      * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
+
+
+        try {
+            final InputStream logConfig = Files.newInputStream(new File("resources/log.properties").toPath());
+            LogManager.getLogManager().readConfiguration(logConfig);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Could not initialize log manager because: " + e.getMessage());
+        }
+
         WebServer webserver = new JavalinWebServer(Config.NGAFID_PORT, Config.NGAFID_STATIC_DIR);
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();
     }
+
 }
