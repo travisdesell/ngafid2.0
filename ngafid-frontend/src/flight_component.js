@@ -83,7 +83,7 @@ class Flight extends React.Component {
 
         $.ajax({
             type: 'GET',
-            url: `/api/flight/${this.props.flightInfo.id}/events`,
+            url: `/protected/flight/${this.props.flightInfo.id}/events`,
             data: submissionData,
             dataType: 'json',
             success: function (response) {
@@ -204,7 +204,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'GET',
-                url: `/api/flight/${this.props.flightInfo.id}/double-series`,
+                url: `/protected/flight/${this.props.flightInfo.id}/double-series`,
                 dataType: 'json',
                 success: function (response) {
                     console.log("received response double series name : ");
@@ -444,15 +444,15 @@ class Flight extends React.Component {
      */
     downloadClicked(type) {
         if (type === 'KML') {
-            window.open(`/api/flight/${this.props.flightInfo.id}/kml`);
+            window.open(`/protected/flight/${this.props.flightInfo.id}/kml`);
         } else if (type === 'XPL10') {
             selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);
         } else if (type === 'XPL11') {
             selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);
         } else if (type === 'CSV-IMP') {
-            window.open(`/api/flight/${this.props.flightInfo.id}/csv`);
+            window.open(`/protected/flight/${this.props.flightInfo.id}/csv`);
         } else if (type === 'CSV-GEN') {
-            window.open(`/api/flight/${this.props.flightInfo.id}/csv/generated`);
+            window.open(`/protected/flight/${this.props.flightInfo.id}/csv/generated`);
         }
 
     }
@@ -464,7 +464,7 @@ class Flight extends React.Component {
      * @param flightId the flightId
      **/
     submitXPlanePath(type, path, useMSL) {
-        window.open(`/api/flight/${this.props.flightInfo.id}/xplane?version=${type}&actf_path=${path}&use_msl=${useMSL}`);
+        window.open(`/protected/flight/${this.props.flightInfo.id}/xplane?version=${type}&actf_path=${path}&use_msl=${useMSL}`);
     }
 
     getCesiumData(flightId) {
@@ -633,7 +633,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'GET',
-                url: `/api/flight/${this.props.flightInfo.id}/loci-metrics`,
+                url: `/protected/flight/${this.props.flightInfo.id}/loci-metrics`,
                 data: submissionData,
                 success: function (response) {
                     console.log("got loci_metrics response");
@@ -749,7 +749,7 @@ class Flight extends React.Component {
 
                 $.ajax({
                     type: 'GET',
-                    url: `/api/flight/${this.props.flightInfo.id}/double-series/${encodeURIComponent(name)}`,
+                    url: `/protected/flight/${this.props.flightInfo.id}/double-series/${encodeURIComponent(name)}`,
                     dataType: 'json',
                     async: false,
                     success: function (response) {
@@ -764,7 +764,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'GET',
-                url: `/api/flight/${this.props.flightInfo.id}/coordinates`,
+                url: `/protected/flight/${this.props.flightInfo.id}/coordinates`,
                 success: function (response) {
 
                     var coordinates = response.coordinates;

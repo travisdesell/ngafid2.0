@@ -27,7 +27,7 @@ class TraceButtons extends React.Component {
 
             $.ajax({
                 type: 'GET',
-                url: `/api/flight/${this.props.flightId}/double-series/${seriesName}`,
+                url: `/protected/flight/${this.props.flightId}/double-series/${seriesName}`,
                 success: function (response) {
                     var trace = {
                         x: response.x,

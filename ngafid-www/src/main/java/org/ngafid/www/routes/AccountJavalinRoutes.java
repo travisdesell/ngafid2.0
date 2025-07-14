@@ -298,6 +298,32 @@ public class AccountJavalinRoutes {
         }
     }
 
+    public static void postLogin(Context ctx) {
+        String email = ctx.formParam("email");
+        String password = ctx.formParam("password");
+        if (email == null || password == null) {
+            ctx.json(new LoginResponse(false, false, false, false, "Missing email or password.", null)).status(400);
+            return;
+        }
+        try (Connection connection = Database.getConnection()) {
+            User user = User.get(connection, email, password);
+            if (user == null) {
+                ctx.json(new LoginResponse(false, false, false, false, "User not found.", null)).status(401);
+                return;
+            }
+            ctx.sessionAttribute("user", user);
+            ctx.json(new LoginResponse(false, false, false, true, "Login successful.", user));
+        } catch (org.ngafid.core.accounts.AccountException e) {
+            ctx.json(new LoginResponse(false, false, true, false, e.getMessage(), null)).status(401);
+        } catch (Exception e) {
+            ctx.json(new LoginResponse(false, false, false, false, e.getMessage(), null)).status(500);
+        }
+    }
+
+    public static void getLogin(Context ctx) {
+        ctx.status(405).result("Use POST for login");
+    }
+
     public static void bindRoutes(Javalin app) {
         app.get("/create_account", AccountJavalinRoutes::getCreateAccount);
         app.get("/forgot_password", AccountJavalinRoutes::getForgotPassword);
@@ -307,5 +333,8 @@ public class AccountJavalinRoutes {
         app.get("/protected/preferences", AccountJavalinRoutes::getUserPreferencesPage);
         app.get("/email_unsubscribe", AccountJavalinRoutes::getEmailUnsubscribe);
         app.after("/email_unsubscribe", ctx -> ctx.redirect("/"));
+        app.post("/login", AccountJavalinRoutes::postLogin);
+        app.post("/api/auth/login", AccountJavalinRoutes::postLogin);
+        app.get("/api/auth/login", AccountJavalinRoutes::getLogin);
     }
 }

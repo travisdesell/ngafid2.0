@@ -12,7 +12,7 @@
     <groupId>org.ngafid.processor</groupId>
     <artifactId>ngafid-data-processor</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>2.1.20</version>
     <name>ngafid-data-processor</name>
 
     <dependencies>

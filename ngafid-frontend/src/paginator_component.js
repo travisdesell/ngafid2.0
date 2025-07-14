@@ -188,7 +188,7 @@ class Paginator extends React.Component {
             numTotalPages = 1;
         }
 
-        let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
+        let PAGE_FLIGHTS = (window.location.pathname === "/api/flight");
 
         return (
             <div className="card border-secondary"

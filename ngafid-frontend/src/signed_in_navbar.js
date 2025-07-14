@@ -423,7 +423,7 @@ class SignedInNavbar extends React.Component {
 
                         {/* Flights Dropdown */}
                         <NavLink icon={"fa-plane"} name={"Flights"} active={this.props.activePage === "flights"}
-                                 href="/protected/flights"/>
+                                 href="/api/flight"/>
 
                         {/* Imports Button */}
                         {importsButton}

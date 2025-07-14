@@ -56,7 +56,7 @@ if (doRedirectDelay === "true") {
 
     console.log("Redirecting to flights.js...");
 
-    const REDIRECT_URL_BASE = "/protected/flights";
+    const REDIRECT_URL_BASE = "/api/flight";
 
     //Fetch the flight_id(s) from the URL
     const params = new URLSearchParams(window.location.search);

@@ -17,6 +17,17 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
 import org.ngafid.www.routes.*;
+import org.ngafid.www.routes.api.FlightRoutes;
+import org.ngafid.www.routes.api.AuthRoutes;
+import org.ngafid.www.routes.api.FilterRoutes;
+import org.ngafid.www.routes.api.EventRoutes;
+import org.ngafid.www.routes.api.TagRoutes;
+import org.ngafid.www.routes.api.UserRoutes;
+import org.ngafid.www.routes.api.AircraftRoutes;
+import org.ngafid.www.routes.api.AirSyncRoutes;
+import org.ngafid.www.routes.api.FleetRoutes;
+import org.ngafid.www.routes.api.UploadRoutes;
+
 
 import java.io.File;
 import java.sql.Connection;
@@ -44,8 +55,19 @@ public class JavalinWebServer extends WebServer {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
             config.jsonMapper(new JavalinGson(WebServer.gson, false));
-        });
 
+            // Register Kotlin API route providers
+            FlightRoutes.INSTANCE.bind(config);
+            AuthRoutes.INSTANCE.bind(config);
+            FilterRoutes.INSTANCE.bind(config);
+            EventRoutes.INSTANCE.bind(config);
+            TagRoutes.INSTANCE.bind(config);
+            UserRoutes.INSTANCE.bind(config);
+            AircraftRoutes.INSTANCE.bind(config);
+            AirSyncRoutes.INSTANCE.bind(config);
+            FleetRoutes.INSTANCE.bind(config);
+            UploadRoutes.INSTANCE.bind(config);
+        });
     }
 
     private void configureSwagger(JavalinConfig config) {
@@ -99,20 +121,20 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureRoutes() {
-        AccountJavalinRoutes.bindRoutes(app);
-        AircraftFleetTailsJavalinRoutes.bindRoutes(app);
-        AirsyncJavalinRoutes.bindRoutes(app);
-        AnalysisJavalinRoutes.bindRoutes(app);
-        DataJavalinRoutes.bindRoutes(app);
-        DoubleSeriesJavalinRoutes.bindRoutes(app);
-        EventJavalinRoutes.bindRoutes(app);
-        FlightsJavalinRoutes.bindRoutes(app);
-        ImportUploadJavalinRoutes.bindRoutes(app);
-        StartPageJavalinRoutes.bindRoutes(app);
-        StatisticsJavalinRoutes.bindRoutes(app);
-        CesiumDataJavalinRoutes.bindRoutes(app);
-        StatusJavalinRoutes.bindRoutes(app);
-        BugReportJavalinRoutes.bindRoutes(app);
+        // AccountJavalinRoutes.bindRoutes(app); // Commented out, /api/auth/* is now in Kotlin
+        // AircraftFleetTailsJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // AirsyncJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // AnalysisJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // DataJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // DoubleSeriesJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // EventJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // FlightsJavalinRoutes.bindRoutes(app); // Commented out, /api/flight is now in Kotlin
+        // ImportUploadJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        StartPageJavalinRoutes.bindRoutes(app); // Home page route enabled
+        // StatisticsJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // StringSeriesJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // TagJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
+        // UserJavalinRoutes.bindRoutes(app); // Commented out, migrated to Kotlin if applicable
     }
 
     @Override

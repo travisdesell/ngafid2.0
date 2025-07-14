@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.ngafid.core.Database
+
 import org.ngafid.core.event.Event
 import org.ngafid.core.event.EventDefinition
 import org.ngafid.core.flights.Flight

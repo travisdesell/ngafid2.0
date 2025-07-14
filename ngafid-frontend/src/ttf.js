@@ -65,7 +65,7 @@ class TTFMapPopup extends React.Component {
                         <Col>
                             <ButtonGroup>
                                 <Button variant="outline-info"
-                                        href={"/protected/flights?flight_id=" + this.props.flight_id} target="_blank">
+                                        href={"/api/flight?flight_id=" + this.props.flight_id} target="_blank">
                                     <i className="fa fa-plane p-1"></i>
                                 </Button>
                                 <Button onClick={() => this.close()} data-bs-toggle="button" variant="outline-danger">
@@ -662,7 +662,7 @@ class TTFCard extends React.Component {
             // Fetch the data.
             $.ajax({
                 type: 'GET',
-                url: '/api/flight/turn-to-final',
+                url: '/protected/flight/turn-to-final',
                 data: submissionData,
                 success: (response) => {
                     console.log("Fetched response: ", response);
