@@ -112,7 +112,7 @@ class Paginator extends React.Component {
 
                 const isZip = file['type'].includes("zip");
                 const isParquet = filename.endsWith(".parquet");
-                console.log("isZip: " + isZip, "isParquet: " + isParquet);
+                console.log(`isZip: ${isZip}, isParquet: ${isParquet}`);
 
                 if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
                     showErrorModal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
