@@ -66,8 +66,7 @@ class LoginModal extends React.Component {
 
         $.ajax({
             type: 'POST',
-            // url: '/api/auth/login',
-            url: '/login',  /* [EX] */
+            url: '/api/auth/login',
             data: submissionData,
             dataType: 'json',
             async: true,
