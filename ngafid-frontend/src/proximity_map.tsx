@@ -7,7 +7,6 @@ import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import { fromLonLat, getTransform, toLonLat } from 'ol/proj';
-import TileLayer from 'ol/layer/Tile';
 import Heatmap from 'ol/layer/Heatmap';
 import VectorLayer from 'ol/layer/Vector';
 import OSM from 'ol/source/OSM';
@@ -19,15 +18,29 @@ import Icon from 'ol/style/Icon';
 import DragBox from 'ol/interaction/DragBox';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import Polygon from 'ol/geom/Polygon';
-import { Fill, Stroke } from 'ol/style';
 import WebGLVectorLayer from 'ol/layer/WebGLVector';
 import MultiPolygon from 'ol/geom/MultiPolygon';
 import WebGLTileLayer from 'ol/layer/WebGLTile';
 import DataTileSource from 'ol/source/DataTile';
 
+
+import type { Event } from './types';
+
+type PopupContentData = {
+    time: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    altitude: number | null;
+    flightId: string | null;
+    flightAirframe: string | null;
+    otherFlightId: string | null;
+    otherFlightAirframe: string | null;
+    severity: string | null;
+};
+
 type ProximityMapPageState = {
 
-    events: any[];
+    events: Event[];
     didFirstLoad: boolean;
     loading: boolean;
     error: string | null;
@@ -37,19 +50,11 @@ type ProximityMapPageState = {
     heatmapLayer2: Heatmap | null;
     markerSource: VectorSource | null;
 
+    openPopups: Array<{ id: string, coord: number[], data: PopupContentData, position?: { left: number, top: number } }>;
     draggedPopupId: string | null,
     recentPopupId: string | null,
-    popupContentData: {
-        time: string | null;
-        latitude: number | null;
-        longitude: number | null;
-        altitude: number | null;
-        flightId: string | null;
-        flightAirframe: string | null;
-        otherFlightId: string | null;
-        otherFlightAirframe: string | null;
-        severity: string | null;
-    };
+    popupContentData: PopupContentData;
+
     // Distance calculation state
     selectedPoints: Array<{
         id: string;
@@ -166,7 +171,7 @@ export function calculateDistanceBetweenPoints(
     return { lateral, euclidean };
 }
 
-class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { openPopups: Array<{ id: string, coord: number[], data: any, position?: { left: number, top: number } }>,
+class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
     boxCoords: {
         minLat: number | null,
         maxLat: number | null,
@@ -198,7 +203,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     gridSource: VectorSource | null;
     gridFeature: Feature | null;
 
-    constructor(props: {}) {
+    constructor(props: object) {
         super(props);
         this.mapContainerRef = React.createRef<HTMLDivElement>();
         this.dragStart = { x: 0, y: 0 };
@@ -264,7 +269,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     }
 
     componentDidMount() {
-        requestAnimationFrame(() => {
+        const initMap = (() => {
             const heatmapSource1 = new VectorSource();
             const heatmapSource2 = new VectorSource();
             const markerSource = new VectorSource();
@@ -305,13 +310,15 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             });
             markerLayer.set('interactive', true); //<-- Flag as interactive layer
 
+            const openStreetMapLayer = new WebGLTileLayer({
+                source: new OSM() as unknown as DataTileSource,
+                preload: Infinity
+            });
+
             const map = new Map({
                 target: 'map',
                 layers: [
-                    new WebGLTileLayer({
-                        source: new OSM() as unknown as DataTileSource<any>,
-                        preload: Infinity,
-                    }),
+                    openStreetMapLayer,
                     heatmapLayer1,
                     heatmapLayer2,
                     markerLayer
@@ -364,7 +371,6 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 });
             });
 
-            const proximityMapPageRef = this;
             map.on('singleclick', (event) => {
 
                 map.forEachFeatureAtPixel(
@@ -379,15 +385,15 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     // Unique popup id based on coordinates and time
                     const popupId = `${props.flightId}-${props.otherFlightId}-${props.time}`;
                     // Prevent duplicate popups for the same marker
-                    if (proximityMapPageRef.state.openPopups.some(p => p.id === popupId)) return;
+                    if (this.state.openPopups.some(p => p.id === popupId)) return;
 
                     // Limit to 2 popups maximum
-                    if (proximityMapPageRef.state.openPopups.length >= 2) {
+                    if (this.state.openPopups.length >= 2) {
                         console.log('Maximum 2 popups allowed. Close one to open another.');
                         return;
                     }
 
-                    let popupContentData = {
+                    const popupContentData = {
                         time: new Date(props.time).toLocaleString(),
                         latitude: props.latitude !== undefined ? props.latitude : null,
                         longitude: props.longitude !== undefined ? props.longitude : null,
@@ -403,7 +409,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     const pixel = map.getPixelFromCoordinate(coord);
                     const initialPosition = pixel ? { left: pixel[0], top: pixel[1] } : { left: 100, top: 100 };
                     
-                    proximityMapPageRef.setState(prevState => {
+                    this.setState(prevState => {
                         const newOpenPopups = [
                             ...prevState.openPopups,
                             { id: popupId, coord, data: popupContentData, position: initialPosition }
@@ -426,7 +432,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         };
                     }, () => {
                         // Calculate distances after state update
-                        proximityMapPageRef.calculateDistancesBetweenPoints();
+                        this.calculateDistancesBetweenPoints();
                     });
                     },
                     {
@@ -450,6 +456,8 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 map.updateSize();
             });
         });
+
+        setTimeout(initMap, 0);
     }
 
     componentWillUnmount() {
@@ -469,9 +477,12 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             const events = await response.json();
             this.setState({ events, loading: false });
             return events;
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error loading events:', error);
-            this.setState({ error: error.message, loading: false });
+            if (error instanceof Error)
+                this.setState({ error: error.message, loading: false });
+            else if (typeof error === 'string') 
+                this.setState({ error, loading: false });
             return [];
         }
     }
@@ -484,15 +495,18 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             });
             if (!response.ok) throw new Error('Failed to load proximity points');
             return await response.json();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error loading proximity points:', error);
-            this.setState({ error: error.message, loading: false });
+            if (error instanceof Error)
+                this.setState({ error: error.message, loading: false });
+            else if (typeof error === 'string')
+                this.setState({ error, loading: false });
             return [];
         }
     }
 
-    async processEventCoordinates(events: any) {
-        const { map, heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid, markerLayer } = this.state;
+    async processEventCoordinates(events: Event[]) {
+        const { map, heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid } = this.state;
         if (!map || !heatmapLayer1 || !heatmapLayer2 || !markerSource) {
             console.error('Map or layers not initialized');
             return;
@@ -509,7 +523,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
         // Track processed unordered flight pairs
         const processedPairs = new Set<string>();
-        let allPoints: { latitude: number, longitude: number }[] = [];
+        const allPoints: { latitude: number, longitude: number }[] = [];
         for (const event of events) {
             const eventId = Number(event.id);
             const mainFlightId = Number(event.flightId);
@@ -613,7 +627,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                 extent.every((v) => typeof v === 'number' && isFinite(v)) &&
                 (extent[0] !== extent[2]) && (extent[1] !== extent[3]) // not a single point
             );
-        }
+        };
         if ((features1.length > 0 || features2.length > 0) && isValidExtent(extent1) && isValidExtent(extent2)) {
             const combinedExtent: [number, number, number, number] = [
                 Math.min(extent1[0], extent2[0]),
@@ -687,14 +701,14 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             const rows = ys.length - 1;
             const cols = xs.length - 1;
 
-            for (let j = 0 ; j < rows ; j++) {
+            for (let j = 0; j < rows; j++) {
 
                 const y0 = ys[j];
                 const y1 = ys[j + 1];
 
                 const latVal = (Math.floor(latStart/gridSize)+j)*gridSize;
 
-                for (let i = 0 ; i < cols ; i++) {
+                for (let i = 0; i < cols; i++) {
 
                     const x0 = xs[i];
                     const x1 = xs[i + 1];
@@ -806,8 +820,13 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
             this.setState({ error, events, loading: false });
             await this.processEventCoordinates(events);
             console.log('[handleBoxSubmit] map after processEventCoordinates:', this.state.map);
-        } catch (error: any) {
-            this.setState({ error: error.message, loading: false });
+        } catch (error) {
+
+            if (error instanceof Error)
+                this.setState({ error: error.message, loading: false });
+            else if (typeof error === 'string')
+                this.setState({ error, loading: false });
+
         }
     };
 
@@ -957,7 +976,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
         const cols = xs.length - 1;
         const rings3857: number[][][][] = new Array(rows * cols);
 
-        for (let j = 0 ; j < rows; j++) {
+        for (let j = 0; j < rows; j++) {
 
             const y0 = ys[j];
             const y1 = ys[j + 1];
@@ -1039,7 +1058,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
     }
 
     render() {
-        const { loading, error, showEventList, events, openPopups, map, boxInput, boxActive, showGrid, gridLayer, didFirstLoad } = this.state;
+        const { loading, error, showEventList, events, openPopups, boxInput, boxActive, showGrid, gridLayer, didFirstLoad } = this.state;
 
         /*
             console.log('[Render] boxInput:', boxInput);
@@ -1104,7 +1123,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         </tr>
 
                         {events.map((
-                            event: { id: React.Key | null | undefined; flightId: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; otherFlightId: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; startTime: string | number | Date; endTime: string | number | Date; severity: number; },
+                            event: Event,
                             index: number
                         ) => (
                             <tr key={event.id} className={`${index%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
@@ -1179,20 +1198,11 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                     </div>
                 </div>
             </div>
-        )
+        );
 
 
         // Render all open popups as overlays
-        const popups = openPopups.map((popup, idx) => {
-
-            let left = 0, bottom = 0;
-            if (map) {
-                const pixel = map.getPixelFromCoordinate(popup.coord);
-                if (pixel) {
-                    left = pixel[0];
-                    bottom = pixel[1];
-                }
-            }
+        const popups = openPopups.map((popup) => {
 
             const isGrabbing = (this.state.draggedPopupId === popup.id);
             const isRecent = (this.state.recentPopupId === popup.id);
@@ -1245,7 +1255,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                         <div><strong>Time: </strong>{popup.data.time ?? '...'}</div>
                         <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
                         <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
-                        <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? popup.data.altitude.toFixed(0) + ' ft' : '...'}</div>
+                        <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
                         <hr />
                         <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
                         <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
@@ -1363,7 +1373,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                                 type="text"
                                 placeholder="Enter minimum latitude..."
                                 name="minLat"
-                                value={this.state.boxInput.minLat}
+                                value={boxInput.minLat}
                                 onChange={this.handleBoxInputChange}
                             />
                             <span className="w-2">°</span>
@@ -1377,7 +1387,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                                 type="text"
                                 placeholder="Enter maximum latitude..."
                                 name="maxLat"
-                                value={this.state.boxInput.maxLat}
+                                value={boxInput.maxLat}
                                 onChange={this.handleBoxInputChange}
                             />
                             <span className="w-2">°</span>
@@ -1391,7 +1401,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                                 type="text"
                                 placeholder="Enter minimum longitude..."
                                 name="minLon"
-                                value={this.state.boxInput.minLon}
+                                value={boxInput.minLon}
                                 onChange={this.handleBoxInputChange}
                             />
                             <span className="w-2">°</span>
@@ -1405,7 +1415,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                                 type="text"
                                 placeholder="Enter maximum longitude..."
                                 name="maxLon"
-                                value={this.state.boxInput.maxLon}
+                                value={boxInput.maxLon}
                                 onChange={this.handleBoxInputChange}
                             />
                             <span className="w-2">°</span>
@@ -1418,7 +1428,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                                 className='bg-neutral-100 w-full text-right px-1 cursor-text'
                                 type="date" 
                                 name="startDate"
-                                value={this.state.boxInput.startDate}
+                                value={boxInput.startDate}
                                 onChange={this.handleBoxInputChange}
                             />
                             <span className="w-2">&nbsp;</span>
@@ -1431,7 +1441,7 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
                                 className='bg-neutral-100 w-full text-right px-1 cursor-text'
                                 type="date" 
                                 name="endDate"
-                                value={this.state.boxInput.endDate}
+                                value={boxInput.endDate}
                                 onChange={this.handleBoxInputChange}
                             />
                             <span className="w-2">&nbsp;</span>
@@ -1443,23 +1453,23 @@ class ProximityMapPage extends React.Component<{}, ProximityMapPageState & { ope
 
                     {/* Severity Range Selector */}
                     <label style={{fontSize: 12}}>
-                        Severity Range: <span style={{color: 'red', fontWeight: 600}}>{this.state.boxInput.minSeverity} <span className="text-black">-</span> {this.state.boxInput.maxSeverity}</span>
+                        Severity Range: <span style={{color: 'red', fontWeight: 600}}>{boxInput.minSeverity} <span className="text-black">-</span> {boxInput.maxSeverity}</span>
                         <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
                             <input
                                 type="range"
                                 name="minSeverity"
                                 min={0}
-                                max={this.state.boxInput.maxSeverity}
-                                value={this.state.boxInput.minSeverity}
+                                max={boxInput.maxSeverity}
+                                value={boxInput.minSeverity}
                                 onChange={this.handleBoxInputChange}
                                 style={{flex: 1, accentColor: 'red'}}
                             />
                             <input
                                 type="range"
                                 name="maxSeverity"
-                                min={this.state.boxInput.minSeverity}
-                                max={1000}
-                                value={this.state.boxInput.maxSeverity}
+                                min={boxInput.minSeverity}
+                                max={1_000}
+                                value={boxInput.maxSeverity}
                                 onChange={this.handleBoxInputChange}
                                 style={{flex: 1, accentColor: 'red'}}
                             />

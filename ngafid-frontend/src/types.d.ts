@@ -1,4 +1,11 @@
 // src/types/globals.d.ts
+
+
+
+import React from "react";
+
+
+
 export {};
 
 
@@ -25,9 +32,9 @@ export interface NGAFIDUser {
 
 export interface Event {
 
-    id: React.Key | null | undefined;
-    flightId: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined;
-    otherFlightId: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined;
+    id: React.Key;
+    flightId: string | number;
+    otherFlightId: string | number;
     startTime: string | number | Date;
     endTime: string | number | Date;
     severity: number;

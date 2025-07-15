@@ -158,7 +158,7 @@ export default class SignedInNavbar extends React.Component {
         if (this.props.unconfirmedTailsCount > 0)
             unconfirmedTailsString = ` (${  this.props.unconfirmedTailsCount  })`;
 
-        let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
+        const accountNotifications = ` (${  this.props.waitingUserCount + this.props.unconfirmedTailsCount  })`;
         /*
             console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
         */
