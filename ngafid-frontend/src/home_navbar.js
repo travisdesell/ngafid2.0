@@ -2,10 +2,13 @@ import 'bootstrap';
 import React from "react";
 import { createRoot } from 'react-dom/client';
 
-// import {loginModal} from "./login.js";
 import { showLoginModal } from "./login.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
+
+
+import './index.css'; //<-- include Tailwind
+
 
 class NavLink extends React.Component {
     render() {
@@ -25,11 +28,11 @@ class NavLink extends React.Component {
         const isCurrent = active ? (<span className="sr-only">(current)</span>) : "";
 
         return (
-            <li className={classNames}>
+            <span className={classNames}>
                 <a className="nav-link" href={href} hidden={hidden} onClick={() => onClick()}>
                     {name} {isCurrent}
                 </a>
-            </li>
+            </span>
         );
     }
 }
@@ -45,28 +48,41 @@ export default class HomeNavbar extends React.Component {
     render() {
 
         return (
-            <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
-                 style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
+            <nav
+                id='navbar'
+                className="navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between!"
+                style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}
+            >
 
-                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/">NGAFID</a>
-                <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
-                        aria-label="Toggle navigation">
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+                {/* Left Elements */}
+                <div>
 
-                <div className="collapse navbar-collapse" id="navbarNavDropdown">
-                    <ul className="navbar-nav mr-auto">
-                    </ul>
-
-                    <ul className="navbar-nav">
-                        <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
-                        <NavLink name={"Create Account"} href="/create_account"/>
-                    </ul>
+                    {/* Navbar Brand & Home Link */}
+                    <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/">
+                        NGAFID
+                    </a>
                 </div>
 
-                <div>
-                    &nbsp;<DarkModeToggle/>
+                {/* Right Elements */}
+                <div className="flex flex-row items-center justify-end">
+
+                    {/* Navlink Buttons */}
+                    {
+                        (this.props.displayNavlinkButtons)
+                        &&
+                        <>
+                            {/* Login Button */}
+                            <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
+
+                            {/* Create Account Button */}
+                            <NavLink name={"Create Account"} href="/create_account"/>
+                        </>
+                    }
+
+                    {/* Dark Mode Toggle Button */}
+                    <div className="ml-2">
+                        <DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
+                    </div>
                 </div>
 
             </nav>
@@ -74,8 +90,17 @@ export default class HomeNavbar extends React.Component {
     }
 }
 
+HomeNavbar.defaultProps = {
+    displayNavlinkButtons: true,
+};
+
+
+//Conditionally render and export a homeNavbar to keep the Login modal working
 const container = document.querySelector("#navbar");
-const navbar = createRoot(container);
-navbar.render(<HomeNavbar/>);
+let navbar = null;
+if (container) {
+    navbar = createRoot(container);
+    navbar.render(<HomeNavbar/>);
+}
 
 export {navbar as homeNavbar};
