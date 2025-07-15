@@ -27,6 +27,7 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.function.Consumer
 import java.util.logging.Logger
+import kotlin.io.use
 
 /**
  * The `event` and `event-retry` topics contain events that need to be computed. Most often this should be proximity
@@ -67,7 +68,7 @@ class EventConsumer protected constructor(
         }
 
         try {
-            Database.getConnection().use { connection ->
+            (Database.getConnection() as java.sql.Connection).use { connection ->
                 val flight = Flight.getFlight(connection, etc.flightId)
                 if (flight == null) {
                     LOG.info("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because the flight does not exist in the database. Assuming this was a stale request")

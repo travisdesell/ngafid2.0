@@ -252,10 +252,16 @@ public class StatisticsJavalinRoutes {
     }
 
     public static void getAllEventCountsByAirframe(Context ctx, boolean aggregate) {
+        // Defensive: check for user session
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            LOG.severe("User session is null in getAllEventCountsByAirframe. Returning 401.");
+            ctx.status(401).json(new ErrorResponse("Not logged in", "You must be logged in to access this endpoint."));
+            return;
+        }
         final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
 
-        User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int fleetId = user.getFleetId();
 
         // check to see if the user has upload access for this fleet.

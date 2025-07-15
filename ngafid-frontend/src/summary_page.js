@@ -151,7 +151,7 @@ class Notifications extends React.Component {
             <table>
                 <tbody>
                 {
-                    this.state.notifications.map((info, index) => {
+                    this.props.notifications.map((info, index) => {
 
                         //No notifications, don't display counter
                         if (info.count == 0)
@@ -193,7 +193,7 @@ export default class SummaryPage extends React.Component {
             datesChanged: false,
             statistics: Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {}),
             eventCounts: {},
-            notifications: <Notifications/>
+            notifications: [] // <-- fix: initialize as array, not <Notifications/>
         };
 
         this.dateChange();
@@ -235,6 +235,8 @@ export default class SummaryPage extends React.Component {
         };
 
         for (const [value] of Object.entries(this.state.eventCounts)) {
+            // Defensive: skip if value or value.names is missing
+            if (!value || !Array.isArray(value.names)) continue;
 
             //Airframe name is 'Garmin Flight Display', skip
             if (value.airframeName === "Garmin Flight Display")
@@ -244,16 +246,18 @@ export default class SummaryPage extends React.Component {
             if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
                 continue;
 
-            value.name = value.airframeName;
-            value.y = value.names;
-            value.type = "bar";
-            value.orientation = "h";
+            const plotValue = {
+                ...value,
+                name: value.airframeName,
+                y: value.names,
+                type: "bar",
+                orientation: "h",
+                x: value.aggregateTotalEventsCounts
+            };
 
             //don"t add airframes to the count plot that the fleet doesn"t have
-            if (airframes.indexOf(value.airframeName) >= 0)
-                countData.push(value);
-
-            value.x = value.aggregateTotalEventsCounts;
+            if (airframes.indexOf(plotValue.airframeName) >= 0)
+                countData.push(plotValue);
 
             //  let percents = (this.props.aggregate ? fleetPercents : ngafidPercents);
 

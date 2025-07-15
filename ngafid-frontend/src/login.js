@@ -64,6 +64,8 @@ class LoginModal extends React.Component {
             password: $("#loginPassword").val()
         };
 
+
+
         $.ajax({
             type: 'POST',
             url: '/api/auth/login',
@@ -203,73 +205,75 @@ class LoginModal extends React.Component {
 
 
         return (
-            <div className='modal-content'>
+            <form onSubmit={e => { e.preventDefault(); this.submitLogin(); }}>
+                <div className='modal-content'>
 
-                <div className='modal-header'>
-                    <h5 id='login-modal-title' className='modal-title'>Login</h5>
-                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
-                        <span aria-hidden='true'>&times;</span>
-                    </button>
-                </div>
+                    <div className='modal-header'>
+                        <h5 id='login-modal-title' className='modal-title'>Login</h5>
+                        <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
+                            <span aria-hidden='true'>&times;</span>
+                        </button>
+                    </div>
 
-                <div id='login-modal-body' className='modal-body'>
+                    <div id='login-modal-body' className='modal-body'>
 
-                    <div className="form-group" style={formGroupStyle}>
+                        <div className="form-group" style={formGroupStyle}>
+                            <div className="d-flex">
+                                <div className="p-2" style={formHeaderStyle}>
+                                    <label htmlFor="loginEmail" style={labelStyle}>Email Address</label>
+                                </div>
+                                <div className="p-2 flex-fill">
+                                    <input type="email" className="form-control" id="loginEmail"
+                                           aria-describedby="emailHelp" placeholder="Enter email (required)" required={true}
+                                           onChange={() => {
+                                               this.validateEmail();
+                                           }}/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="form-group" style={formGroupStyle}>
+                            <div className="d-flex">
+                                <div className="p-2" style={formHeaderStyle}>
+                                    <label htmlFor="loginPassword" style={labelStyle}>Password</label>
+                                </div>
+                                <div className="p-2 flex-fill">
+                                    <input type="password" className="form-control" id="loginPassword"
+                                           placeholder="Password (required)" required={true} onKeyUp={(e) => {
+                                        this.handleKeyDown(e);
+                                    }} onChange={() => {
+                                        this.validatePassword();
+                                    }}/>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="d-flex">
                             <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="loginEmail" style={labelStyle}>Email Address</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <input type="email" className="form-control" id="loginEmail"
-                                       aria-describedby="emailHelp" placeholder="Enter email (required)" required={true}
-                                       onChange={() => {
-                                           this.validateEmail();
-                                       }}/>
+                                <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="loginPassword" style={labelStyle}>Password</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <input type="password" className="form-control" id="loginPassword"
-                                       placeholder="Password (required)" required={true} onKeyUp={(e) => {
-                                    this.handleKeyDown(e);
-                                }} onChange={() => {
-                                    this.validatePassword();
-                                }}/>
+                        <div className="d-flex justify-content-end">
+                            <div className="p-2">
+                                <a href="/forgot_password">Forgot Password?</a>
                             </div>
                         </div>
+
                     </div>
 
-                    <div className="d-flex">
-                        <div className="p-2" style={formHeaderStyle}>
-                        </div>
-                        <div className="p-2 flex-fill">
-                            <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
-                        </div>
-                    </div>
-
-                    <div className="d-flex justify-content-end">
-                        <div className="p-2">
-                            <a href="/forgot_password">Forgot Password?</a>
-                        </div>
+                    <div className='modal-footer'>
+                        <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+                        <button id='loginSubmitButton' type='submit' className='btn btn-primary' onClick={() => {
+                            this.submitLogin();
+                        }} disabled={submitDisabled}>Submit
+                        </button>
                     </div>
 
                 </div>
-
-                <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
-                    <button id='loginSubmitButton' type='submit' className='btn btn-primary' onClick={() => {
-                        this.submitLogin();
-                    }} disabled={submitDisabled}>Submit
-                    </button>
-                </div>
-
-            </div>
+            </form>
         );
     }
 }
