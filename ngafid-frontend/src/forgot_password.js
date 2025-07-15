@@ -9,6 +9,7 @@ window.$ = $;
 
 
 import './index.css';
+import HomeNavbar from './home_navbar';
 
 
 class ForgotPassword extends React.Component {
@@ -168,13 +169,17 @@ class ForgotPassword extends React.Component {
         );
 
         return (
-            <div className="container my-auto pb-24">
-                <div className="row justify-content-center">
-                    <div className="col-md-6">
+            <div className="w-full h-full grow flex flex-col">  
+                {/* Navbar */}
+                <div className="w-full">
+                    <HomeNavbar displayNavlinkButtons={false}/>
+                </div>
+
+                <div className="container flex h-full">
+                    <div className="my-auto mx-auto col-md-6 w-full! min-w-fit! pb-24">
                         {
                             !this.state.registeredEmail ? forgotPasswordCard : resetPaaswordCard
                         }
-
                     </div>
                 </div>
             </div>
