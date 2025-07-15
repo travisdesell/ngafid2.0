@@ -52,7 +52,6 @@ import org.ngafid.www.routes.ProximityMapJavalinRoutes;
 import org.ngafid.www.routes.StartPageJavalinRoutes;
 import org.ngafid.www.routes.StatisticsJavalinRoutes;
 import org.ngafid.www.routes.StatusJavalinRoutes;
-import org.ngafid.www.routes.TagFilterJavalinRoutes;
 
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
