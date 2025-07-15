@@ -169,13 +169,13 @@ class ForgotPassword extends React.Component {
         );
 
         return (
-            <div className="w-full h-full grow flex flex-col">  
+            <div className="w-full h-full grow flex flex-col">
                 {/* Navbar */}
                 <div className="w-full">
                     <HomeNavbar displayNavlinkButtons={false}/>
                 </div>
 
-                <div className="container flex h-full">
+                <div className="container flex h-full overflow-y-auto">
                     <div className="my-auto mx-auto col-md-6 w-full! min-w-fit! pb-24">
                         {
                             !this.state.registeredEmail ? forgotPasswordCard : resetPaaswordCard
