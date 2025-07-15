@@ -476,8 +476,8 @@ export default class SignedInNavbar extends React.Component {
 
                     </ul>
 
-                    <div>
-                        &nbsp;<DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
+                    <div className="ml-2">
+                        <DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
                     </div>
 
                 </div>
