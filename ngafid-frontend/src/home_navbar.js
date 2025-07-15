@@ -15,12 +15,11 @@ class NavLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "#!";
-        //make unclick an empty function if its not defined
-        if (typeof onClick == 'undefined') onClick = function () {
-        };
+        if (typeof href == 'undefined')
+            href = "#!";
 
-        //console.log("rendering navlink '" + name + "', active: " + active);
+        //onClick not defined, make it an empty function
+        if (typeof onClick == 'undefined') onClick = function () { /* ... */ };
 
         const classNames = active ? "nav-item active" : "nav-item";
         const isCurrent = active ? (<span className="sr-only">(current)</span>) : "";
@@ -36,12 +35,11 @@ class NavLink extends React.Component {
 }
 
 
-class HomeNavbar extends React.Component {
+export default class HomeNavbar extends React.Component {
 
     attemptLogIn() {
         console.log("Showing login modal: ...");
         showLoginModal();
-        // loginModal.show();
     }
 
     render() {
@@ -50,7 +48,7 @@ class HomeNavbar extends React.Component {
             <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
 
-                <a className="navbar-brand" href="../../src/main/javascript">NGAFID</a>
+                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
