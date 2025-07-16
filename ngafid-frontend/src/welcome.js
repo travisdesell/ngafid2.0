@@ -1,8 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import React from "react";
 
-import {SummaryPage} from "./summary_page.js";
-
+import {SummaryPage} from "./summary_page.tsx";
 
 const container = document.querySelector("#welcome-page");
 const root = createRoot(container);
