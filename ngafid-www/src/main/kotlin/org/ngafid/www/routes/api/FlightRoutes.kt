@@ -21,6 +21,7 @@ object FlightRoutes : RouteProvider() {
                 get(FlightsJavalinRoutes::postFlights, Role.LOGGED_IN)
                 get("double-series", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames, Role.LOGGED_IN)
                 get("turn-to-final", AnalysisJavalinRoutes::postTurnToFinal, Role.LOGGED_IN)
+                get("aggregate/flight_hours_by_airframe", FlightRoutes::getAggregateFlightHoursByAirframe, Role.LOGGED_IN)
 
                 path("{fid}") {
                     // TODO: There is no reason for this to exist as a separate route from fetching normal double series.
@@ -155,5 +156,37 @@ object FlightRoutes : RouteProvider() {
             ctx.result(output)
         }
 
+    }
+
+    fun getAggregateFlightHoursByAirframe(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+        // TODO: Restore aggregate access check before production
+        // if (user == null || !user.hasAggregateView()) {
+        //     ctx.status(401).result("User does not have aggregate access.")
+        //     return
+        // }
+        Database.getConnection().use { connection ->
+            val results = mutableListOf<Map<String, Any>>()
+            val stmt = connection.prepareStatement(
+                """
+                SELECT a.airframe, v.airframe_id, v.num_flights, v.total_flight_hours
+                FROM v_aggregate_flight_hours_by_airframe v
+                JOIN airframes a ON v.airframe_id = a.id
+                ORDER BY v.num_flights DESC
+                """
+            )
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                results.add(
+                    mapOf(
+                        "airframe" to rs.getString("airframe"),
+                        "airframe_id" to rs.getInt("airframe_id"),
+                        "num_flights" to rs.getInt("num_flights"),
+                        "total_flight_hours" to rs.getDouble("total_flight_hours")
+                    )
+                )
+            }
+            ctx.json(results)
+        }
     }
 }

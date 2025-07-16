@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Path to liquibase.properties
+PROP_FILE="ngafid-db/src/liquibase.properties"
+
+# Parse properties
+DB_USER=$(grep '^username=' "$PROP_FILE" | cut -d'=' -f2)
+DB_PASS=$(grep '^password=' "$PROP_FILE" | cut -d'=' -f2)
+DB_URL=$(grep '^url=' "$PROP_FILE" | cut -d'=' -f2)
+
+# Extract database name from JDBC URL (assumes format jdbc:mysql://host:port/dbname)
+DB_NAME=$(echo "$DB_URL" | sed -E 's/.*\///')
+
+# Allow override with CLI args
+if [ $# -gt 0 ]; then
+    mysql "$@" < "$(dirname "$0")/backfill_v_aggregate_flight_hours_by_airframe.sql"
+else
+    mysql -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$(dirname "$0")/backfill_v_aggregate_flight_hours_by_airframe.sql"
+fi 
