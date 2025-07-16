@@ -489,7 +489,7 @@ class UploadsPage extends React.Component {
         uploadInfo.bytesUploaded = 0;
         uploadInfo.status = 'HASHING';
 
-        function onFinish(md5Hash) {
+        const onFinish = (md5Hash) => {
 
             file.md5Hash = md5Hash;
             console.log(`got md5Hash: '${  md5Hash  }'`);
@@ -525,7 +525,8 @@ class UploadsPage extends React.Component {
             formData.append("sizeBytes", file.size);
             formData.append("md5Hash", md5Hash);
             xhr.send(formData);
-        }
+            
+        };
 
         this.getMD5Hash(file, onFinish, this);
         
