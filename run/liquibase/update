@@ -1,2 +1,3 @@
 #!/bin/bash
-mvn -pl ngafid-db liquibase:update
+cd "$(dirname "$0")/../../ngafid-db" || exit 1
+mvn liquibase:update
