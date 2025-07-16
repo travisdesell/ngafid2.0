@@ -49,4 +49,5 @@ declare global {
     const unconfirmedTailsCount: number;
     const modifyTailsAccess: boolean;
     const plotMapHidden: boolean;
+    const airframes: string[];
 }

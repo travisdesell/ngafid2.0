@@ -11,11 +11,14 @@ import Plotly from "plotly.js";
 
 
 import "./index.css";
+import * as $ from "jquery";
+import type JQuery from "jquery";
 
 
 airframes.unshift("All Airframes");
 const index = airframes.indexOf("Garmin Flight Display");
-if (index !== -1) airframes.splice(index, 1);
+if (index !== -1)
+    airframes.splice(index, 1);
 
 
 const targetValues = {
@@ -48,7 +51,7 @@ const floatOptions = {
 
 const integerOptions = {};
 
-function formatNumberAsync(value, formattingOptions) {
+function formatNumberAsync(value: number|string, formattingOptions: Intl.NumberFormatOptions | undefined) {
     if (value || typeof value === "number") {
         return Number(value).toLocaleString("en", formattingOptions);
     } else {
@@ -56,7 +59,7 @@ function formatNumberAsync(value, formattingOptions) {
     }
 }
 
-function formatDurationAsync(seconds) {
+function formatDurationAsync(seconds: number) {
     if (seconds || typeof seconds == "number") {
         return Number(seconds / (60 * 60)).toLocaleString("en", floatOptions);
     } else {
@@ -64,13 +67,21 @@ function formatDurationAsync(seconds) {
     }
 }
 
-function fetchStatistic(stat, route, aggregate, successResponseHandler) {
+
+type SuccessResponseHandlerType = (response: { err_msg: string; err_title: string; }) => void;
+
+function fetchStatistic(
+    stat: string,
+    route: string,
+    aggregate: boolean,
+    successResponseHandler: SuccessResponseHandlerType
+) {
 
     if (aggregate)
         route = `${route}/aggregate`;
 
 
-    const errorResponseHandler = function (jqXHR, textStatus, errorThrown) {
+    const errorResponseHandler = function (jqXHR: JQuery.jqXHR<unknown>, textStatus: string, errorThrown: string) {
         console.log(jqXHR);
         console.log(textStatus);
         console.log(errorThrown);
@@ -81,17 +92,23 @@ function fetchStatistic(stat, route, aggregate, successResponseHandler) {
         type: 'GET',
         url: route,
         success: successResponseHandler,
-        // success: function(response) {
-
-        //     console.log("[EX] Response: ", response);
-        // },
         error: errorResponseHandler,
     });
 
 }
 
-class Notifications extends React.Component {
-    constructor(props) {
+
+type NotificationsState = {
+    notifications: Array<{
+        count: number;
+        message: string;
+        badgeType: string;
+        name: string|undefined;
+    }>;
+}
+
+class Notifications extends React.Component<object, NotificationsState> {
+    constructor(props: object) {
         super(props);
 
         this.state = {
@@ -99,12 +116,14 @@ class Notifications extends React.Component {
                 {
                     count: waitingUserCount,
                     message: "User(s) awaiting Access Privileges",
-                    badgeType: "badge-info"
+                    badgeType: "badge-info",
+                    name: "waitingUserCount"
                 },
                 {
                     count: unconfirmedTailsCount,
                     message: "Tail Number(s) awaiting Confirmation",
-                    badgeType: "badge-info"
+                    badgeType: "badge-info",
+                    name: "unconfirmedTailsCount"
                 }
             ]
         };
@@ -115,7 +134,7 @@ class Notifications extends React.Component {
 
     fetchStatistics() {
 
-        const successResponseHandler = (response) => {
+        const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
 
             console.log(`Got successful response for fetched stat: ${response}`);
 
@@ -126,22 +145,28 @@ class Notifications extends React.Component {
             }
 
             //Update the notification count
-            this.setState(prevState => {
-                const notifications = prevState.notifications.map((notif, idx) =>
-                    idx === idx ? {...notif, count: response} : notif
-                );
-                return { notifications };
-            });
+            const updatedState = {
+                ...this.state,
+                notifications: this.state.notifications.map((notif, idx) =>
+                    idx === idx ? { ...notif, count: response } : notif
+                )
+            } as NotificationsState;
+
+            this.setState(updatedState);
 
         };
 
         console.log("Notifications -- Fetching Statistics...");
 
-        for (const [notif] of this.state.notifications.entries()) {
+        for (const [/*...*/, notif] of this.state.notifications.entries()) {
 
             //Notification has a 'name' property, fetch the statistic
-            if (Object.hasOwn(notif, "name"))
-                fetchStatistic(notif.name, targetValues[notif.name], false, successResponseHandler);
+            if (Object.hasOwn(notif, "name")
+                && notif.name
+                && targetValues[notif.name as keyof typeof targetValues]
+            ) {
+                fetchStatistic(notif.name, targetValues[notif.name as keyof typeof targetValues], false, successResponseHandler);
+            }
 
         }
     }
@@ -151,7 +176,7 @@ class Notifications extends React.Component {
             <table>
                 <tbody>
                 {
-                    this.props.notifications.map((info, index) => {
+                    this.state.notifications.map((info, index) => {
 
                         //No notifications, don't display counter
                         if (info.count == 0)
@@ -179,8 +204,52 @@ class Notifications extends React.Component {
     }
 }
 
-export default class SummaryPage extends React.Component {
-    constructor(props) {
+
+type AggregateFlightHoursByAirframe = {
+    airframe: string;
+    airframe_id: number;
+    num_flights: number;
+    total_flight_hours: number;
+};
+
+type SummaryPageState = {
+    airframe: string;
+    startYear: number | string;
+    startMonth: number | string;
+    endYear: number | string;
+    endMonth: number | string;
+    datesChanged: boolean;
+    statistics: {
+        flightTime: number;
+        yearFlightTime: number;
+        monthFlightTime: number;
+        numberFlights: number;
+        numberAircraft: number;
+        yearNumberFlights: number;
+        monthNumberFlights: number;
+        totalEvents: number;
+        yearEvents: number;
+        monthEvents: number;
+        numberFleets: number;
+        numberUsers: number;
+        uploads: number;
+        uploadsOK: number;
+        uploadsNotImported: number;
+        uploadsWithError: number;
+        flightsWithWarning: number;
+        flightsWithError: number;
+    };
+    aggregateFlightHoursByAirframe: AggregateFlightHoursByAirframe[];
+    eventCounts: object;
+    notifications: React.ReactElement;
+}
+
+export type SummaryPageProps = {
+    aggregate: boolean;
+};
+
+export default class SummaryPage extends React.Component<SummaryPageProps, SummaryPageState> {
+    constructor(props: SummaryPageProps) {
         super(props);
 
         const date = new Date();
@@ -191,9 +260,29 @@ export default class SummaryPage extends React.Component {
             endYear: date.getFullYear(),
             endMonth: date.getMonth() + 1,
             datesChanged: false,
-            statistics: Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {}),
+            statistics: Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {} as {
+                flightTime: number;
+                yearFlightTime: number;
+                monthFlightTime: number;
+                numberFlights: number;
+                numberAircraft: number;
+                yearNumberFlights: number;
+                monthNumberFlights: number;
+                totalEvents: number;
+                yearEvents: number;
+                monthEvents: number;
+                numberFleets: number;
+                numberUsers: number;
+                uploads: number;
+                uploadsOK: number;
+                uploadsNotImported: number;
+                uploadsWithError: number;
+                flightsWithWarning: number;
+                flightsWithError: number;
+            }),
+            aggregateFlightHoursByAirframe: [],
             eventCounts: {},
-            notifications: [] // <-- fix: initialize as array, not <Notifications/>
+            notifications: <Notifications/>
         };
 
         this.dateChange();
@@ -203,9 +292,13 @@ export default class SummaryPage extends React.Component {
 
     componentDidMount() {
         this.displayPlots(this.state.airframe);
+
+        //In aggregate view, fetch aggregate flight hours by airframe
+        if (this.props.aggregate)
+            this.fetchAggregateFlightHoursByAirframe();
     }
 
-    displayPlots(selectedAirframe) {
+    displayPlots(selectedAirframe: string) {
 
         const countData = [];
         const percentData = [];
@@ -215,11 +308,11 @@ export default class SummaryPage extends React.Component {
             type: "bar",
             orientation: "h",
             hoverinfo: "y+text",
-            hovertext: [],
-            y: [],
-            x: [],
-            flightsWithEventCounts: [],
-            totalFlightsCounts: []
+            hovertext: [] as string[],
+            y: [] as string[],
+            x: [] as number[],
+            flightsWithEventCounts: [] as number[],
+            totalFlightsCounts: [] as number[]
         };
 
         const ngafidPercents = {
@@ -227,16 +320,14 @@ export default class SummaryPage extends React.Component {
             type: 'bar',
             orientation: 'h',
             hoverinfo: 'y+text',
-            hovertext: [],
-            y: [],
-            x: [],
-            flightsWithEventCounts: [],
-            totalFlightsCounts: []
+            hovertext: [] as string[],
+            y: [] as string[],
+            x: [] as number[],
+            flightsWithEventCounts: [] as number[],
+            totalFlightsCounts: [] as number[]
         };
 
-        for (const [value] of Object.entries(this.state.eventCounts)) {
-            // Defensive: skip if value or value.names is missing
-            if (!value || !Array.isArray(value.names)) continue;
+        for (const [/*...*/, value] of Object.entries(this.state.eventCounts)) {
 
             //Airframe name is 'Garmin Flight Display', skip
             if (value.airframeName === "Garmin Flight Display")
@@ -246,18 +337,16 @@ export default class SummaryPage extends React.Component {
             if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
                 continue;
 
-            const plotValue = {
-                ...value,
-                name: value.airframeName,
-                y: value.names,
-                type: "bar",
-                orientation: "h",
-                x: value.aggregateTotalEventsCounts
-            };
+            value.name = value.airframeName;
+            value.y = value.names;
+            value.type = "bar";
+            value.orientation = "h";
 
             //don"t add airframes to the count plot that the fleet doesn"t have
-            if (airframes.indexOf(plotValue.airframeName) >= 0)
-                countData.push(plotValue);
+            if (airframes.indexOf(value.airframeName) >= 0)
+                countData.push(value);
+
+            value.x = value.aggregateTotalEventsCounts;
 
             //  let percents = (this.props.aggregate ? fleetPercents : ngafidPercents);
 
@@ -315,7 +404,7 @@ export default class SummaryPage extends React.Component {
 
             for (let i = 0; i < value.flightsWithEventCounts.length; i++) {
 
-                value.x.push(100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]));
+                value.x.push(100.0 * value.flightsWithEventCounts[i] / value.totalFlightsCounts[i]);
 
 
                 let fixedText = "";
@@ -335,8 +424,8 @@ export default class SummaryPage extends React.Component {
         const plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
 
         const countLayout = {
-            title: "Event Counts",
-            barmode: "stack",
+            title: { text: "Event Counts" },
+            barmode: "stack" as const,
             //autosize: false,
             //width: 500,
             height: 750,
@@ -348,7 +437,7 @@ export default class SummaryPage extends React.Component {
                 pad: 4
             },
             legend: {
-                traceorder: "normal"
+                traceorder: "normal" as const
             },
             plot_bgcolor: "transparent",
             paper_bgcolor: plotBgColor,
@@ -364,7 +453,7 @@ export default class SummaryPage extends React.Component {
         };
 
         const percentLayout = {
-            title: "Percentage of Flights With Event",
+            title: { text: "Percentage of Flights With Event" },
             //autosize: false,
             //width: 500,
             height: 750,
@@ -376,7 +465,7 @@ export default class SummaryPage extends React.Component {
                 pad: 4
             },
             legend: {
-                traceorder: "normal"
+                traceorder: "normal" as const,
             },
             plot_bgcolor: "transparent",
             paper_bgcolor: plotBgColor,
@@ -388,7 +477,7 @@ export default class SummaryPage extends React.Component {
             },
             yaxis: {
                 gridcolor: plotGridColor,
-                autorange: "reversed"
+                autorange: "reversed" as const
             }
         };
 
@@ -398,22 +487,22 @@ export default class SummaryPage extends React.Component {
         const config = {responsive: true};
 
         Plotly.newPlot("event-counts-plot", countData, countLayout, config);
-        Plotly.newPlot("event-percents-plot", percentData, percentLayout, config);
+        Plotly.newPlot("event-percents-plot", percentData as unknown as Plotly.Data[], percentLayout, config);
     }
 
-    updateStartYear(newStartYear) {
+    updateStartYear(newStartYear: number) {
         this.setState({startYear: newStartYear, datesChanged: true});
     }
 
-    updateStartMonth(newStartMonth) {
+    updateStartMonth(newStartMonth: number) {
         this.setState({startMonth: newStartMonth, datesChanged: true});
     }
 
-    updateEndYear(newEndYear) {
+    updateEndYear(newEndYear: number) {
         this.setState({endYear: newEndYear, datesChanged: true});
     }
 
-    updateEndMonth(newEndMonth) {
+    updateEndMonth(newEndMonth: number) {
         this.setState({endMonth: newEndMonth, datesChanged: true});
     }
 
@@ -421,10 +510,12 @@ export default class SummaryPage extends React.Component {
         let startDate = `${this.state.startYear  }-`;
         let endDate = `${this.state.endYear  }-`;
 
+        const {startMonth, endMonth} = this.state as {startMonth: string, endMonth: string};
+
         //0 pad the months on the front
-        if (parseInt(this.state.startMonth) < 10) startDate += `0${  parseInt(this.state.startMonth)}`;
-        else startDate += this.state.startMonth;
-        if (parseInt(this.state.endMonth) < 10) endDate += `0${  parseInt(this.state.endMonth)}`;
+        if (parseInt(startMonth) < 10) startDate += `0${  parseInt(startMonth)}`;
+        else startDate += startMonth;
+        if (parseInt(endMonth) < 10) endDate += `0${  parseInt(endMonth)}`;
         else endDate += this.state.endMonth;
 
         const submissionData = {
@@ -438,7 +529,7 @@ export default class SummaryPage extends React.Component {
         if (this.props.aggregate)
             route = `${route}/aggregate`;
 
-        console.log(`Got date change, fetching event counts from '${route}' with date data: '${submissionData}'`);
+        console.log(`Got date change, fetching event counts from '${route}' with date data: `, submissionData);
 
         $.ajax({
             type: 'GET',
@@ -446,8 +537,6 @@ export default class SummaryPage extends React.Component {
             data: submissionData,
             async: true,
             success: (response) => {
-
-                $("#loading").hide();
 
                 //Response has an error, exit
                 if (response.err_msg) {
@@ -461,11 +550,11 @@ export default class SummaryPage extends React.Component {
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                console.log(jqXHR);
-                console.log(textStatus);
-                console.log(errorThrown);
                 showErrorModal("Error Loading Uploads", errorThrown);
-            }
+            },
+            complete: () => {
+                $("#loading").hide();
+            } 
         });
     }
 
@@ -475,15 +564,15 @@ export default class SummaryPage extends React.Component {
 
         for (const [stat, route] of Object.entries(targetValues)) {
 
-            const successResponseHandler = (response) => {
+            const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
 
                 if (response.err_msg) {
                     showErrorModal(response.err_title, response.err_msg);
                     return;
                 }
 
-                const result = {};
-                result[stat] = response;
+                const result: { [key: string]: string } = {};
+                result[stat] = (typeof response === "string" ? response : JSON.stringify(response));
                 this.setState({statistics: {...this.state.statistics, ...result}});
 
             };
@@ -494,12 +583,130 @@ export default class SummaryPage extends React.Component {
 
     }
 
-    airframeChange(airframe) {
+    airframeChange(airframe: string) {
         this.setState({airframe});
         this.displayPlots(airframe);
     }
 
+
+
+    fetchAggregateFlightHoursByAirframe() {
+
+        console.log("SummaryPage -- Fetching Aggregate Flight Hours by Airframe...");
+
+        const route = '/api/flight/aggregate/flight_hours_by_airframe';
+
+        $.ajax({
+            type: 'GET',
+            url: route,
+            async: true,
+            success: (response) => {
+
+                console.log(`Got Aggregate Flight Hours by Airframe: `, response);
+
+                //Response has an error, exit
+                if (response.err_msg) {
+                    showErrorModal(response.err_title, response.err_msg);
+                    return;
+                }
+
+                /*  
+                    airframe -> airframeName
+                    airframe_id -> airframeID
+                    num_flights -> numFlights
+                    total_flight_hours -> totalFlightHours
+                */  
+
+                this.setState({aggregateFlightHoursByAirframe: response});
+
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                showErrorModal("Error Loading Uploads", errorThrown);
+            },
+        });
+
+        console.log("Finished fetching Aggregate Flight Hours by Airframe.");
+
+    }
+
+
     FlightSummary() {
+
+        const aggregateFlightHoursByAirframeView = () => {
+            
+            //Not in aggregate view, don't display
+            if (!this.props.aggregate)
+                return null;
+
+            return (
+                <div className="
+                    fa fa-fw fa-info-circle group relative cursor-pointer
+                ">
+
+                    <div className="
+                        font-sans
+                        cursor-default
+                        pointer-events-none group-hover:pointer-events-auto hover:pointer-events-auto
+                        group-hover:block!
+                        z-100 w-128 h-fit
+                        absolute top-4 left-4
+                        bg-[var(--c_card_tab)]
+                        rounded-lg shadow-lg p-2
+                        opacity-0! group-hover:opacity-100! transform-[opacity] duration-200
+                    ">
+                        <div className="font-bold text-lg mb-4 text-center">
+                            <i className="fa fa-fw fa-clock-o my-auto mr-2"/>
+                            Aggregate Flight Hours by Airframe
+                        </div>
+                        <table className="table-hover table-fixed w-full">
+
+                            <colgroup>
+                                <col style={{width: "40%"}}/>
+                                <col style={{width: "30%"}}/>
+                                <col style={{width: "30%"}}/>
+                            </colgroup>
+
+
+                            <thead className="leading-16 text-[var(--c_text)] border-b-1">
+                                <tr>
+                                    <th>Airframe</th>
+                                    <th>Flights</th>
+                                    <th>Hours</th>
+                                </tr>
+                            </thead>
+
+
+                            <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
+
+                                {
+                                    Object.entries(this.state.aggregateFlightHoursByAirframe).map(([index, data]) => (
+                                        <tr key={index}
+                                            className={`${parseInt(index) % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
+                                            <td className="truncate whitespace-nowrap overflow-hidden">
+                                                {data.airframe}
+                                            </td>
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                                {data.num_flights}
+                                            </td>
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                                {Math.floor(data.total_flight_hours*10)/10}
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+
+                            </tbody>
+                            
+                        </table>
+                    </div>
+
+                </div>
+            );  
+
+        };
 
         let title;
         if (this.props.aggregate)
@@ -509,7 +716,10 @@ export default class SummaryPage extends React.Component {
 
         return (
             <div className="card mb-2 m-2">
-                <h4 className="card-header">{title}</h4>
+                <h4 className="card-header flex flex-row justify-between items-center">
+                    {title}
+                    {aggregateFlightHoursByAirframeView()}
+                </h4>
                 <div className="card-body">
                     {!this.props.aggregate && this.state.notifications}
                     {!this.props.aggregate && (<hr></hr>)}
@@ -544,7 +754,7 @@ export default class SummaryPage extends React.Component {
                     <hr></hr>
                     <div className="row">
                         <div className="col-sm-4">
-                            <h3>{formatDurationAsync(this.state.statistics.monthFlightTime, integerOptions)}</h3> Flight
+                            <h3>{formatDurationAsync(this.state.statistics.monthFlightTime)}</h3> Flight
                             Hours (Last 30 Days)<br></br>
                         </div>
 
@@ -608,7 +818,7 @@ export default class SummaryPage extends React.Component {
         console.log("Rendering Uploads Summary Aggregate...");
 
         //Modifes a string to be plural if the supplied is not 1
-        const pluralize = (count, stringIn) => {
+        const pluralize = (count: string | number, stringIn: string) => {
             return (count === 1 ? stringIn : `${stringIn  }s`);
         };
 
@@ -714,7 +924,7 @@ export default class SummaryPage extends React.Component {
         const hasWarnings = (this.state.statistics.flightsWithWarning > 0);
 
         //Modifes a string to be plural if the supplied is not 1
-        const pluralize = (count, stringIn) => {
+        const pluralize = (count: string | number, stringIn: string) => {
             return (count === 1 ? stringIn : `${stringIn  }s`);
         };
 
@@ -898,11 +1108,11 @@ export default class SummaryPage extends React.Component {
                                         endMonth={this.state.endMonth}
                                         datesChanged={this.state.datesChanged}
                                         dateChange={() => this.dateChange()}
-                                        airframeChange={(airframe) => this.airframeChange(airframe)}
-                                        updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
-                                        updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
-                                        updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
-                                        updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                                        airframeChange={(airframe: string) => this.airframeChange(airframe)}
+                                        updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
+                                        updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
+                                        updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
+                                        updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
                                     />
 
                                     <div className="card-body" style={{padding: "0", backgroundColor: "transparent"}}>

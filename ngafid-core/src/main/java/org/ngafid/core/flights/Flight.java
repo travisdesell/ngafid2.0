@@ -1001,7 +1001,35 @@ public class Flight {
             processingStatusStatement.executeBatch();
         }
 
+        for (Flight flight : flights) {
+            updateAggregateFlightHoursByAirframe(connection, flight);
+        }
+    }
 
+    /**
+     * Updates the v_aggregate_flight_hours_by_airframe table for a given flight.
+     * Only updates if the flight status is SUCCESS or WARNING. Do we need to add failed as well?
+     */
+    public static void updateAggregateFlightHoursByAirframe(Connection connection, Flight flight) throws SQLException {
+        // Clarify if we need this
+        //  if (flight.status != FlightStatus.SUCCESS && flight.status != FlightStatus.WARNING) return;
+        if (flight.startDateTime == null || flight.endDateTime == null) return;
+        try {
+            java.sql.Timestamp start = java.sql.Timestamp.valueOf(flight.startDateTime);
+            java.sql.Timestamp end = java.sql.Timestamp.valueOf(flight.endDateTime);
+            double hours = (end.getTime() - start.getTime()) / 1000.0 / 3600.0;
+            if (hours <= 0) return;
+            String sql = "INSERT INTO v_aggregate_flight_hours_by_airframe (airframe_id, num_flights, total_flight_hours) " +
+                         "VALUES (?, 1, ?) " +
+                         "ON DUPLICATE KEY UPDATE num_flights = num_flights + 1, total_flight_hours = total_flight_hours + VALUES(total_flight_hours)";
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, flight.airframe.getId());
+                stmt.setDouble(2, hours);
+                stmt.executeUpdate();
+            }
+        } catch (IllegalArgumentException e) {
+            // Ignore flights with invalid date format
+        }
     }
 
     private static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
