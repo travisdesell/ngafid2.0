@@ -10,91 +10,90 @@ import XYZ from 'ol/source/XYZ.js';
 
 console.log("doing first load after setting state!");
 
-const styles = [
-    'Aerial',
-    'AerialWithLabels',
-    'Road',
-    'RoadOnDemand'
-];
+function initializeMapWithKey(azureMapsKey) {
+    const styles = [
+        'Aerial',
+        'Road',
+        'RoadOnDemand'
+    ];
+    const layers = [];
+    let i;
+    const ii = styles.length;
+    for (i = 0; i < ii; ++i) {
+        let url = '';
+        if (styles[i] === 'Aerial') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+        } else if (styles[i] === 'Road') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+        } else if (styles[i] === 'RoadOnDemand') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+        }
+        layers.push(new TileLayer({
+            visible: false,
+            preload: Infinity,
+            source: new XYZ({ url })
+        }));
+    }
 
-const layers = [];
-let i;
-const ii = styles.length; //do the mapquest satellite differently
-
-for (i = 0; i < ii; ++i) {
-    layers.push(new TileLayer({
+    styles.push('SectionalCharts');
+    const tms_sec = new TileLayer({
         visible: false,
         preload: Infinity,
-        source: new BingMaps({
-            key: 'At3fIeQ6GJzbuGZpfWYkVjMDuzTuhYeFjHTzkraUafn06HMY3Eq1hDvZUlqq5Ysf',
-            imagerySet: styles[i]
-        })
-    }));
-}
+        source : new XYZ({
+            url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"})
+    });
 
-styles.push('SectionalCharts');
-const tms_sec = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_sec);
+    layers.push(tms_sec);
 
 
-styles.push('IFREnrouteLowCharts');
-const tms_enrl = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"})
-});
+    styles.push('IFREnrouteLowCharts');
+    const tms_enrl = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"})
+    });
 
-layers.push(tms_enrl);
-
-
-styles.push('IFREnrouteHighCharts');
-const tms_enrh = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_enrh);
-
-styles.push('TerminalAreaCharts');
-const tms_tac = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_tac);
+    layers.push(tms_enrl);
 
 
-styles.push('HelicopterCharts');
-const heli = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"})
-});
+    styles.push('IFREnrouteHighCharts');
+    const tms_enrh = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"})
+    });
+
+    layers.push(tms_enrh);
+
+    styles.push('TerminalAreaCharts');
+    const tms_tac = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"})
+    });
+
+    layers.push(tms_tac);
 
 
-layers.push(heli);
+    styles.push('HelicopterCharts');
+    const heli = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"})
+    });
 
-const center = fromLonLat([-97.0329, 47.9253]);
 
-layers[2].setVisible(true);
+    layers.push(heli);
 
-let map = null;
+    const center = fromLonLat([-97.0329, 47.9253]);
 
-function initializeMap() {
+    layers[2].setVisible(true);
 
-    console.log("Initializing map instance...");
+    let map = null;
 
     map = new Map({
         target: 'map',
@@ -109,8 +108,15 @@ function initializeMap() {
     });
 
     console.log("Initialized map instance: ", map);
-
 }
+
+// Fetch the key and initialize the map
+fetch('/ngafid-chart-processor/chart_service_config.default.json')
+  .then(response => response.json())
+  .then(config => {
+    initializeMapWithKey(config.azure_maps_key);
+  });
+
 const container = document.getElementById('popup');
 const content = document.getElementById('popup-content');
 const closer = document.getElementById('popup-closer');
