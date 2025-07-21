@@ -13,9 +13,12 @@ let styles = [];
 let layers = [];
 let azureMapsKey = null;
 
-function initializeMap(azureKey) {
-    azureMapsKey = azureKey;
-
+function initializeMap() {
+    const azureMapsKey = process.env.AZURE_MAPS_KEY;
+    if (!azureMapsKey) {
+        alert("Azure Maps key is missing or undefined!");
+        return;
+    }
 
     styles = [
         'Aerial',
@@ -148,8 +151,7 @@ function createBaseMapLayers(azureKey) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const azureMapsKey = process.env.AZURE_MAPS_KEY;
-  initializeMap(azureMapsKey);
+  initializeMap();
 });
 
 const container = document.getElementById('popup');
