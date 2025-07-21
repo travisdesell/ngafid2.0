@@ -4,6 +4,8 @@ const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const DeadCodePlugin = require('webpack-deadcode-plugin');
+const dotenv = require('dotenv');
+dotenv.config();
 
 
 const path = require('path');
@@ -188,6 +190,7 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
+            'process.env.AZURE_MAPS_KEY': JSON.stringify(process.env.AZURE_MAPS_KEY),
         }),
         new ShowChangedFilesPlugin(),
         new DeadCodePlugin({
