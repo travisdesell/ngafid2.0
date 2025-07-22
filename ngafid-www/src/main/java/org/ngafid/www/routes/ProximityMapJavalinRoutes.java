@@ -31,6 +31,16 @@ public class ProximityMapJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    private static void getHeatMap(Context ctx) {
+        final String templateFile = "heat_map.html";
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
+        Map<String, Object> scopes = new HashMap<>();
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
+    }
+
     public static void getAllProximityEvents(Context ctx) {
         try {
             User user = ctx.sessionAttribute("user");
@@ -50,6 +60,7 @@ public class ProximityMapJavalinRoutes {
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/proximity_map", ProximityMapJavalinRoutes::getProximityMap);
+        app.get("/protected/heat_map", ProximityMapJavalinRoutes::getHeatMap);
         app.get("/protected/proximity_events", ProximityMapJavalinRoutes::getAllProximityEvents);
         app.get("/protected/proximity_points", ctx -> {
             User user = ctx.sessionAttribute("user");

@@ -395,6 +395,7 @@ export default class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
                                 <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
                                 <DropdownLink name={"Proximity Map"} hidden={false} href="/protected/proximity_map"/>
+                                <DropdownLink name={"Heat Map"} hidden={false} href="/protected/heat_map"/>
 
                                 {admin
                                     ? <div className="dropdown-divider"></div>

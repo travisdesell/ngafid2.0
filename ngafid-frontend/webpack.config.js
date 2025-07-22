@@ -107,6 +107,7 @@ module.exports = {
         manage_fleet: "./src/manage_fleet.js",
         ngafid_cesium: __dirname + "/src/ngafid_cesium.js",
         proximity_map: "./src/proximity_map.tsx",
+        heat_map: "./src/heat_map.tsx",
         reset_password: "./src/reset_password.js",
         severities: "./src/severities.js",
         signed_in_navbar: "./src/signed_in_navbar.js",
