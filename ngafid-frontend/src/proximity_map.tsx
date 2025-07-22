@@ -956,32 +956,45 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
         this.setState({ distances: { lateral: result.lateral, euclidean: result.euclidean } });
     };
 
+    onShowGridChange = () => {
+
+        // Remove grid layer if switching to heatmap
+        const { map, gridLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
+        if (map) {
+            if (showGrid) {
+                // Hide heatmap layers
+                if (heatmapLayer1) heatmapLayer1.setVisible(false);
+                if (heatmapLayer2) heatmapLayer2.setVisible(false);
+            } else {
+                // Hide grid layer
+                if (gridLayer) {
+                    gridLayer.setVisible(false);
+                }
+                // Show heatmap layers
+                if (heatmapLayer1) heatmapLayer1.setVisible(true);
+                if (heatmapLayer2) heatmapLayer2.setVisible(true);
+            }
+        }
+        // Re-process events to update map layers
+        this.processEventCoordinates(this.state.events);
+
+    }
+
     toggleGrid = () => {
         this.setState(
             prevState => ({ showGrid: !prevState.showGrid }),
-            () => {
-                // Remove grid layer if switching to heatmap
-                const { map, gridLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
-                if (map) {
-                    if (showGrid) {
-                        // Hide heatmap layers
-                        if (heatmapLayer1) heatmapLayer1.setVisible(false);
-                        if (heatmapLayer2) heatmapLayer2.setVisible(false);
-                    } else {
-                        // Hide grid layer
-                        if (gridLayer) {
-                            gridLayer.setVisible(false);
-                        }
-                        // Show heatmap layers
-                        if (heatmapLayer1) heatmapLayer1.setVisible(true);
-                        if (heatmapLayer2) heatmapLayer2.setVisible(true);
-                    }
-                }
-                // Re-process events to update map layers
-                this.processEventCoordinates(this.state.events);
-            }
+            this.onShowGridChange
         );
     };
+
+    setShowGrid = (showGridNew: boolean) => {
+        this.setState(
+            prevState => ({ showGrid: showGridNew }),
+            this.onShowGridChange
+        );
+    }
+
+        
 
     // Helper to render an empty green grid overlay for the selected bounding box
     async renderEmptyGridOverlay() {
@@ -1346,18 +1359,28 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
         // Toggle switch for grid/heatmap
         const gridToggleSwitch = (
             <div className="flex items-center justify-between gap-2">
-                <span className={showGrid ? 'opacity-50' : ''}  style={{ fontWeight: 600, fontSize: 15 }}>
+                <button
+                    type="button"
+                    className={`cursor-pointer ${showGrid ? 'opacity-50' : ''}`}
+                    style={{ fontWeight: 600, fontSize: 15 }}
+                    onClick={() => this.setShowGrid(false)}
+                >
                     <i className="fa fa-fire mr-1"/>
                     Heatmap
-                </span>
+                </button>
                 <label className="switch mb-0 justify-self-center mx-auto">
                     <input type="checkbox" checked={showGrid} onChange={this.toggleGrid} />
                     <span className="slider round"></span>
                 </label>
-                <span className={`ml-auto ${showGrid ? '' : 'opacity-50'}`} style={{ fontWeight: 600, fontSize: 15 }}>
+                <button
+                    type="button"
+                    className={`ml-auto cursor-pointer ${showGrid ? '' : 'opacity-50'}`}
+                    style={{ fontWeight: 600, fontSize: 15 }}
+                    onClick={() => this.setShowGrid(true)}
+                >
                     <i className="fa fa-th mr-1"/>
                     Grid
-                </span>
+                </button>
                 <style>{`
                     .switch {
                         position: relative;
