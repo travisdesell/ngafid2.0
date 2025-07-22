@@ -33,7 +33,6 @@
             <plugin>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.31.1</version>
                 <configuration>
                     <searchPath>src</searchPath>
                     <propertyFile>liquibase.properties</propertyFile>
