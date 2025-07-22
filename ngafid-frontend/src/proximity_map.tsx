@@ -1587,11 +1587,11 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
                     <option value="Aerial">Aerial</option>
                     <option value="Road">Road (static)</option>
                     <option value="RoadOnDemand">Road (dynamic)</option>
-                    <option value="SectionalCharts" disabled>Sectional Charts</option>
-                    <option value="TerminalAreaCharts" disabled>Terminal Area Charts</option>
-                    <option value="IFREnrouteLowCharts" disabled>IFR Enroute Low Charts</option>
-                    <option value="IFREnrouteHighCharts" disabled>IFR Enroute High Charts</option>
-                    <option value="HelicopterCharts" disabled>Helicopter Charts</option>
+                    <option value="SectionalCharts">Sectional Charts</option>
+                    <option value="TerminalAreaCharts">Terminal Area Charts</option>
+                    <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
+                    <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
+                    <option value="HelicopterCharts">Helicopter Charts</option>
                 </select>
             </div>
         );
