@@ -1,6 +1,7 @@
 package org.ngafid.processor.terrain;
 
 import java.nio.file.NoSuchFileException;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
@@ -13,31 +14,14 @@ import com.google.common.cache.LoadingCache;
 
 public enum TerrainCache {
     ;
-    public static final String TERRAIN_DIRECTORY;
-    private static int MAX_CACHE_SIZE;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
 
-    private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
+    // private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
+    private static final LoadingCache<TileKey, SRTMTile> TILE_CACHE;
 
     static {
-        // TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
-        if (System.getenv("TERRAIN_DIRECTORY") == null) {
-            LOG.severe("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
-            LOG.severe("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            LOG.severe("export TERRAIN_DIRECTORY=<path_to_terrain_data>");
-            System.exit(1);
-        }
 
-        TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
-        //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
-
-        if (System.getenv("MAX_CACHE_SIZE") == null) {
-            LOG.warning("ERROR: 'MAX_CACHE_SIZE' environment variable not specified at runtime. Setting default to 357 (1GB).");
-
-            // Each tile is 2.8 MB, so 1000 tiles is 2.8 GB. Make the default 1GB
-            // 1 GB / 2.8 MB = 357 tiles
-            MAX_CACHE_SIZE = 357;
-        }
+        LOG.info("[EX] Initializing TerrainCache with max size: " + Config.MAX_TERRAIN_CACHE_SIZE);
 
         TILE_CACHE = CacheBuilder.newBuilder()
                 .maximumSize(Config.MAX_TERRAIN_CACHE_SIZE)
@@ -45,8 +29,8 @@ public enum TerrainCache {
                         new CacheLoader<>() {
                             @NotNull
                             @Override
-                            public SRTMTile load(@NotNull TileCoordinate coordinate) throws TerrainUnavailableException {
-                                return coordinate.getTile();
+                            public SRTMTile load(@NotNull TileKey key) throws TerrainUnavailableException, NoSuchFileException {
+                                return new SRTMTile(90 - key.latIndex, key.lonIndex - 180);
                             }
                         }
                 );
@@ -105,9 +89,11 @@ public enum TerrainCache {
             throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
         }
 
+        TileKey key = new TileKey(coordinate.latIndex, coordinate.lonIndex);
+
         SRTMTile tile = null;
         try {
-            tile = TILE_CACHE.get(coordinate);
+            tile = TILE_CACHE.get(key);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof TerrainUnavailableException te) {
                 throw te;
@@ -117,6 +103,27 @@ public enum TerrainCache {
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
 
         return (int) Math.max(0, msl - altitudeFt);
+    }
+
+    private static final class TileKey {
+
+        final int latIndex;
+        final int lonIndex;
+        TileKey(int latIndex, int lonIndex) {
+            this.latIndex = latIndex;
+            this.lonIndex = lonIndex;
+        }
+
+        @Override public int hashCode() { return Objects.hash(latIndex, lonIndex); }
+        @Override public boolean equals(Object objectTarget) {
+
+            //Target isn't a TileKey -> False
+            if (!(objectTarget instanceof TileKey k))
+                return false;
+
+            return (k.latIndex == latIndex && k.lonIndex == lonIndex);
+        }
+        
     }
 
     private record TileCoordinate(double lat, double lon, int latIndex, int lonIndex) {

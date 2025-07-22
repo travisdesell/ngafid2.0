@@ -113,7 +113,7 @@ public enum Airframes {
     //CHECKSTYLE:OFF
     public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
             Map.entry(defaultAlias("Unknown Aircraft"), ""),
-            Map.entry(defaultAlias("Garmin Flight Display"), ""),
+            // Map.entry(defaultAlias("Garmin Flight Display"), ""),    [EX]
             Map.entry(defaultAlias("Diamond DA 40"), "Diamond DA40"),
             Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
             Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
