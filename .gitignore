@@ -20,4 +20,5 @@ ngafid-airsync/target
 ngafid-chart-processor/temp
 ngafid-frontend/.webpack_cache/*
 .env
+.env.host
 ngafid-db/src/liquibase.docker.properties
