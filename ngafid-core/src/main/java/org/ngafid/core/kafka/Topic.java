@@ -25,7 +25,7 @@ public enum Topic {
     EVENT_RETRY("event-retry"),
     EVENT_DLQ("event-dlq"),
 
-    STATUS_HEARTBEAT("docker-status-heartbeat"),
+    STATUS_HEARTBEAT("docker-status-heartbeat")
     ;
 
     private final String name;
