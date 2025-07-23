@@ -22,3 +22,4 @@ ngafid-frontend/.webpack_cache/*
 .env
 .env.host
 ngafid-db/src/liquibase.docker.properties
+ngafid-email.conf
