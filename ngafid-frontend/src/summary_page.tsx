@@ -665,16 +665,18 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                             <colgroup>
                                 <col style={{width: "40%"}}/>
-                                <col style={{width: "30%"}}/>
-                                <col style={{width: "30%"}}/>
+                                <col style={{width: "20%"}}/>
+                                <col style={{width: "20%"}}/>
+                                <col style={{width: "20%"}}/>
                             </colgroup>
 
 
                             <thead className="leading-16 text-[var(--c_text)] border-b-1">
                                 <tr>
                                     <th>Airframe</th>
-                                    <th>Flights</th>
-                                    <th>Hours</th>
+                                    <th className="text-right">Flights</th>
+                                    <th className="text-right">Hours</th>
+                                    <th className="text-right">Uhmm</th>
                                 </tr>
                             </thead>
 
@@ -688,11 +690,14 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                                             <td className="truncate whitespace-nowrap overflow-hidden">
                                                 {data.airframe}
                                             </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
                                                 {data.num_flights}
                                             </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
                                                 {Math.floor(data.total_flight_hours*10)/10}
+                                            </td>
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
+                                                ...
                                             </td>
                                         </tr>
                                     ))
@@ -1067,24 +1072,58 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
     }
 
     render() {
+
+        const navbarArea = (
+            <div style={{flex: "0 0 auto"}}>
+                <SignedInNavbar
+                    activePage={this.props.aggregate ? "aggregate" : "welcome"}
+                    darkModeOnClickAlt={() => {
+                        this.displayPlots(this.state.airframe);
+                    }}
+                    waitingUserCount={waitingUserCount}
+                    fleetManager={fleetManager}
+                    unconfirmedTailsCount={unconfirmedTailsCount}
+                    modifyTailsAccess={modifyTailsAccess}
+                    plotMapHidden={plotMapHidden}
+                />
+            </div>
+        );
+
+        const timeHeader = (
+            <div className="m-2 py-4 px-3">
+                <TimeHeader
+                    className="rounded-lg! bg-(--c_card_header_bg_opaque)! border-(--c_border_alt)! border-1!"
+                    name={`Event Statistics ${this.props.aggregate ? "(Aggregate)" : ""}`}
+                    airframes={airframes}
+                    airframe={this.state.airframe}
+                    startYear={this.state.startYear}
+                    startMonth={this.state.startMonth}
+                    endYear={this.state.endYear}
+                    endMonth={this.state.endMonth}
+                    datesChanged={this.state.datesChanged}
+                    dateChange={() => this.dateChange()}
+                    airframeChange={(airframe: string) => this.airframeChange(airframe)}
+                    updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
+                    updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
+                    updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
+                    updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
+                />
+            </div>
+        );
+
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{flex: "0 0 auto"}}>
-                    <SignedInNavbar
-                        activePage={this.props.aggregate ? "aggregate" : "welcome"}
-                        darkModeOnClickAlt={() => {
-                            this.displayPlots(this.state.airframe);
-                        }}
-                        waitingUserCount={waitingUserCount}
-                        fleetManager={fleetManager}
-                        unconfirmedTailsCount={unconfirmedTailsCount}
-                        modifyTailsAccess={modifyTailsAccess}
-                        plotMapHidden={plotMapHidden}
-                    />
-                </div>
+                {/* Navbar */}
+                {navbarArea}
 
+
+                {/* Page Content Area */}
                 <div style={{overflowY: "auto", flex: "1 1 auto"}}>
+
+                    {/* Time Header */}
+                    {timeHeader}
+
                     <div className="container-fluid">
                         <div className="row">
                             <div className="col-6">{this.FlightSummary()}</div>
@@ -1098,7 +1137,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                         <div className="row">
                             <div className="col-lg-12">
                                 <div className="card mb-2 m-2">
-                                    <TimeHeader
+                                    {/* <TimeHeader
                                         name="Event Statistics"
                                         airframes={airframes}
                                         airframe={this.state.airframe}
@@ -1113,7 +1152,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                                         updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
                                         updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
                                         updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
-                                    />
+                                    /> */}
+
+                                    <h4 className="card-header">Event Counts and Percentages</h4>
 
                                     <div className="card-body" style={{padding: "0", backgroundColor: "transparent"}}>
                                         <div className="row" style={{margin: "0"}}>

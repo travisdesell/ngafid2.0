@@ -30,79 +30,90 @@ export default class TimeHeader extends React.Component {
         let exportButton = null;
         if ('exportCSV' in this.props) {
             exportButton = (
-                <div className="col-auto">
-                    <button className="btn btn-outline-primary" onClick={() => this.props.exportCSV()}>Export</button>
-                </div>
+                <>
+                    <button className="btn btn-outline-primary" onClick={() => this.props.exportCSV()}>
+                        Export
+                    </button>
+                    <div className="vertical-separator"/>
+                </>
             );
         }
 
         let airframe = null;
         if ('airframe' in this.props) {
             airframe = (
-               <div className="col-auto">
-                   <div className="dropdown">
-                       <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                           {this.props.airframe}
-                       </button>
-                       <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            {
-                                this.props.airframes.map((airframeName, index) => {
-                                    return (
-                                        <a
-                                            key={index} 
-                                            className="dropdown-item"
-                                            onClick={() => this.props.airframeChange(airframeName)}
-                                        >
-                                            {airframeName}
-                                        </a>
-                                    );
-                                })
-                            }
-                       </div>
-                   </div>
-               </div>
+                <div className="dropdown">
+                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {this.props.airframe}
+                    </button>
+                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {
+                            this.props.airframes.map((airframeName, index) => {
+                                return (
+                                    <a
+                                        key={index}
+                                        className="dropdown-item"
+                                        onClick={() => this.props.airframeChange(airframeName)}
+                                    >
+                                        {airframeName}
+                                    </a>
+                                );
+                            })
+                        }
+                    </div>
+                </div>
             );
         }
         let tags = null;
         if ('tagName' in this.props) {
             tags = (
-                <div className="col-auto">
-                    <div className="dropdown">
-                        <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {this.props.tagName}
-                        </button>
-                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            {
-                                this.props.tagNames.map((tagName, index) => {
-                                    return (
-                                        <a key={index} className="dropdown-item" onClick={() => this.props.tagNameChange(tagName)} onChange={event => this.props.updateTags(event.target.value)}>{tagName}</a>
-                                    );
-                                })
-                            }
-                        </div>
+                <div className="dropdown">
+                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {this.props.tagName}
+                    </button>
+                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {
+                            this.props.tagNames.map((tagName, index) => {
+                                return (
+                                    <a key={index} className="dropdown-item" onClick={() => this.props.tagNameChange(tagName)} onChange={event => this.props.updateTags(event.target.value)}>{tagName}</a>
+                                );
+                            })
+                        }
                     </div>
                 </div>
             );
         }
 
         return  (
-            <div className="form-row justify-content-center d-flex align-items-center" style={{ textAlign: 'center' }}>
+            <div className="flex flex-row items-center justify-start gap-4" style={{ textAlign: 'center' }}>
+
+                {/* Export Button */}
                 { exportButton }
 
-                <div className="col-auto">
-                    { tags }
-                </div>
-                <div className="col-auto">
-                    { airframe } 
-                </div>
-                <div className="col-auto">
+                {/* Tags */}
+                { tags }
+
+                {/* Airframe Drop-down */}
+                { airframe }
+
+                <div className="vertical-separator"/>
+
+                {/* Start and End Date Selectors */}
+                <div className="flex flex-row items-center justify-start gap-4">
                     <div className="input-group">
                         <div className="input-group-prepend">
                             <div className="time-selector">
 
-                                &nbsp;Start Date&nbsp;
+                                <span className="mx-3">Start Date</span>
 
-                                <select id="start-year-select" className="custom-select" value={this.props.startYear} onChange={event => this.props.updateStartYear(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
+                                {/* Start Date -- Year Select */}
+                                <select
+                                    id="start-year-select"
+                                    className="custom-select rounded-r-none! cursor-pointer"
+                                    value={this.props.startYear}
+                                    onChange={event => this.props.updateStartYear(event.target.value)}
+                                    style={{ width: "fit-content", border: "1px solid var(--c_border_alt)" }}
+                                >
                                     {
                                         this.state.years.map((year, index) => {
                                             if (year <= this.props.endYear)
@@ -114,8 +125,15 @@ export default class TimeHeader extends React.Component {
                                         })
                                     }
                                 </select>
-                                &nbsp;
-                                <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
+
+                                {/* Start Date -- Month Select */}
+                                <select
+                                    id="start-month-select"
+                                    className="custom-select rounded-l-none! cursor-pointer"
+                                    value={this.props.startMonth}
+                                    onChange={event => this.props.updateStartMonth(event.target.value)}
+                                    style={{ width: "fit-content", border: "1px solid var(--c_border_alt)" }}
+                                >
                                     {
                                         this.state.months.map((month, index) => {
                                             return (
@@ -127,16 +145,21 @@ export default class TimeHeader extends React.Component {
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="col-auto">
                     <div className="input-group">
                         <div className="input-group-prepend">
                             <div className="time-selector">
 
-                                &nbsp;End Date&nbsp;
-                                
-                                <select id="end-year-select" className="custom-select" value={this.props.endYear} onChange={event => this.props.updateEndYear(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
+                                <span className="mx-3">End Date</span>
+
+                                {/* End Date -- Year Select */}
+                                <select
+                                    id="end-year-select"
+                                    className="custom-select rounded-r-none! cursor-pointer"
+                                    value={this.props.endYear}
+                                    onChange={event => this.props.updateEndYear(event.target.value)}
+                                    style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}
+                                >
                                     {
                                         this.state.years.map((year, index) => {
                                             if (year >= this.props.startYear)
@@ -148,8 +171,15 @@ export default class TimeHeader extends React.Component {
                                         })
                                     }
                                 </select>
-                                &nbsp;
-                                <select id="end-month-select" className="custom-select" value={this.props.endMonth} onChange={event => this.props.updateEndMonth(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
+
+                                {/* End Date -- Month Select */}
+                                <select
+                                    id="end-month-select"
+                                    className="custom-select rounded-l-none! cursor-pointer"
+                                    value={this.props.endMonth}
+                                    onChange={event => this.props.updateEndMonth(event.target.value)}
+                                    style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}
+                                >
                                     {
                                         this.state.months.map((month, index) => {
                                             return (
@@ -165,9 +195,20 @@ export default class TimeHeader extends React.Component {
 
                 { additionalHeaderContents }
 
-                <div className="col-auto mr-5">
-                    <button className="btn btn-primary btn-outline-primary" onClick={() => this.props.dateChange()} disabled={!this.props.datesChanged}>{this.state.buttonContent}</button>
-                </div>
+                <div className="vertical-separator"/>
+
+                {/* Update Button */}
+                <button
+                    className="
+                        btn btn-primary
+                        disabled:cursor-not-allowed disabled:grayscale
+                        disabled:content-['XD']
+                    "
+                    onClick={() => this.props.dateChange()}
+                    disabled={!this.props.datesChanged}
+                >
+                    {this.state.buttonContent}
+                </button>
 
                 { additionalRowContents }
             </div>
@@ -176,7 +217,7 @@ export default class TimeHeader extends React.Component {
 
     render() {
         return (
-            <div className="row card-header d-flex" style={{padding:"7 20 7 20", margin:"0"}}>
+            <div className={`row card-header d-flex ${this.props.className}`} style={{padding:"7 20 7 20", margin:"0"}}>
                 <h4 className="mr-auto" style={{margin:"4 0 4 0", alignContent:"center"}}>{this.props.name}</h4>
                 { this.makeHeaderContents(this.props.extraHeaderComponents, this.props.extraRowComponents) }
             </div>
