@@ -190,19 +190,25 @@ public class StatusJavalinRoutes {
             }
         }
 
-        //Service name in Docker services list, check via heartbeat
+        //Service name in Docker services list...
         if (DOCKER_SERVICES.contains(service)) {
 
+            //...Not using Docker -> Unchecked
+            if (!DockerServiceHeartbeat.USING_DOCKER) {
+                ctx.json(new ServiceStatusResult(ServiceStatus.UNCHECKED, "Detected as not using Docker, but this is in the Docker services list"));
+                return;
+            }
+
+            //...Otherwise, check via heartbeat
             LOG.log(Level.INFO, "Docker service detected: {0}", service);
             ServiceStatusResult r = checkDockerHeartbeat(service);
             LOG.log(Level.INFO, "Docker service {0} status: {1} - {2}", new Object[]{service, r.status(), r.message()});
 
             ctx.json(r);
             return;
-        }
 
         //Using Docker but service not in list -> Unchecked
-        if (DockerServiceHeartbeat.USING_DOCKER) {
+        } else if (DockerServiceHeartbeat.USING_DOCKER) {
             ctx.json(new ServiceStatusResult(ServiceStatus.UNCHECKED, "Detected as using Docker, but this is not in the Docker services list"));
             return;
         }
