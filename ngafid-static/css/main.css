@@ -88,6 +88,10 @@
     --c_card_header_bg_dark : rgba(50, 50, 50, 0.70);
     --c_card_header_bg : var(--c_card_header_bg_light);
 
+    --c_card_header_bg_opaque_light : rgba(248, 255, 250);
+    --c_card_header_bg_opaque_dark : rgba(50, 50, 50);
+    --c_card_header_bg_opaque : var(--c_card_header_bg_opaque_light);
+
     --c_card_bg_light : rgba(248, 255, 250, 0.65);
     --c_card_bg_dark : rgba(75, 75, 75, 0.65);
     --c_card_bg : var(--c_card_bg_light);
@@ -192,6 +196,7 @@
     --c_dropdown_bg : var(--c_dropdown_bg_dark);
 
     --c_card_header_bg : var(--c_card_header_bg_dark);
+    --c_card_header_bg_opaque : var(--c_card_header_bg_opaque_dark);
     --c_card_bg : var(--c_card_bg_dark);
     --c_card_bg_alt : var(--c_card_bg_alt_dark);
     --c_card_tab : var(--c_card_tab_dark);
@@ -779,3 +784,15 @@ html, body {
 }
 
 /* #endregion Plotly Graphs */
+
+
+
+
+/* Vertical Separator */
+.vertical-separator {
+    width: 2px;
+    background-color: var(--c_border_alt);
+    border-left: 1px solid var(--c_border);
+    height: 100%;
+    display: inline-block;
+}
