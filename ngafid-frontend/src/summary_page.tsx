@@ -1136,23 +1136,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                         <div className="row">
                             <div className="col-lg-12">
-                                <div className="card mb-2 m-2">
-                                    {/* <TimeHeader
-                                        name="Event Statistics"
-                                        airframes={airframes}
-                                        airframe={this.state.airframe}
-                                        startYear={this.state.startYear}
-                                        startMonth={this.state.startMonth}
-                                        endYear={this.state.endYear}
-                                        endMonth={this.state.endMonth}
-                                        datesChanged={this.state.datesChanged}
-                                        dateChange={() => this.dateChange()}
-                                        airframeChange={(airframe: string) => this.airframeChange(airframe)}
-                                        updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
-                                        updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
-                                        updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
-                                        updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
-                                    /> */}
+                                <div className="card mx-2 mb-4 mt-8">
 
                                     <h4 className="card-header">Event Counts and Percentages</h4>
 
