@@ -12,6 +12,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Topic;
 
 public class DockerServiceHeartbeatMonitor implements Runnable {
@@ -31,6 +32,12 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
     }
 
     public static DockerServiceHeartbeatMonitor initialize() { 
+
+        //Not running in Docker, do not start heartbeat
+        if (!DockerServiceHeartbeat.USING_DOCKER) {
+            LOG.log(Level.WARNING, "Detected running outside of Docker, heartbeat monitor will not be started.");
+            return null;
+        }
 
         DockerServiceHeartbeatMonitor monitorOut;
 
