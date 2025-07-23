@@ -36,7 +36,11 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
 
         //Create the consumer properties
         Properties consumerProps = new Properties();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, System.getenv().getOrDefault("KAFKA_BOOTSTRAP","kafka:9093"));
+        String bootstrap = System.getenv("KAFKA_BOOTSTRAP");
+        if (bootstrap == null || bootstrap.isEmpty()) {
+            throw new RuntimeException("KAFKA_BOOTSTRAP environment variable must be set!");
+        }
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "ngafid-heartbeat-monitor");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());

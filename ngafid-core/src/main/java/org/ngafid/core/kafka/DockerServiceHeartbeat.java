@@ -75,7 +75,11 @@ public class DockerServiceHeartbeat {
 
         //Get properties for the heartbeat producer
         final Properties heartbeatProps = new Properties();
-        heartbeatProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, System.getenv().getOrDefault("KAFKA_BOOTSTRAP", "kafka:9093"));
+        String bootstrap = System.getenv("KAFKA_BOOTSTRAP");
+        if (bootstrap == null || bootstrap.isEmpty()) {
+            throw new RuntimeException("KAFKA_BOOTSTRAP environment variable must be set!");
+        }
+        heartbeatProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         heartbeatProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         heartbeatProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 

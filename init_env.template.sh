@@ -57,5 +57,5 @@ export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_pref
 if (echo "$0" | grep -q "template"); then
     echo "⚠ This file is intended to be used as a template. Please make a copy called 'init_env.sh' and use that instead."
 fi
-
-echo "NGAFID environment variables set."
+#Kafka bootstrap port
+export KAFKA_BOOTSTRAP=localhost:9092
