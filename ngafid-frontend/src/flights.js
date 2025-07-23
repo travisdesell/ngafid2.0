@@ -9,7 +9,7 @@ import {showErrorModal} from "./error_modal.js";
 import {showConfirmModal} from "./confirm_modal.js";
 
 import {Filter, isValidFilter} from './filter.js';
-import {Paginator} from './paginator_component.js';
+import {Paginator} from './paginator_component.tsx';
 import {FlightsCard} from './flights_card_component.js';
 import Plotly from 'plotly.js';
 import {timeZones} from "./time_zones.js";
