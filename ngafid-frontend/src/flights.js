@@ -963,11 +963,12 @@ class FlightsPage extends React.Component {
 
     submitFilter(resetCurrentPage = false) {
 
-        console.log(
-            `Submitting filter! `
-            + `currentPage: ${  this.state.currentPage
-             }, pageSize: ${  this.state.pageSize
-             }, sortByColumn: ${  this.state.sortColumn}`
+        console.log(`Submitting filter!`,
+            `currentPage: ${this.state.currentPage},
+            pageSize: ${this.state.pageSize},
+            sortByColumn: ${this.state.sortColumn},
+            resetCurrentPage: ${resetCurrentPage},
+            `
         );
 
         console.log("Submitting filters:", this.state.filters);
@@ -1744,9 +1745,6 @@ class FlightsPage extends React.Component {
                 style={{flex: "0 0 auto"}}
             >
                 <Paginator
-                    submitFilter={(resetCurrentPage) => {
-                        this.submitFilter(resetCurrentPage);
-                    }}
                     items={this.state.flights}
                     itemName="flights"
                     rules={sortableColumns}
@@ -1759,10 +1757,14 @@ class FlightsPage extends React.Component {
                     getSortingOrder={() => this.getSortingOrder()}
                     sortOptions={sortableColumnsHumanReadable}
                     updateCurrentPage={(currentPage) => {
-                        this.setState({ currentPage: currentPage });
+                        this.setState({ currentPage: currentPage }, () => {
+                            this.submitFilter(false);
+                        });
                     }}
                     updateItemsPerPage={(pageSize) => {
-                        this.setState({ pageSize: pageSize });
+                        this.setState({ pageSize: pageSize }, () => {
+                            this.submitFilter(true);
+                        });
                     }}
                     location="Bottom"
                 />

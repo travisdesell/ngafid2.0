@@ -14,7 +14,6 @@ type PaginatorProps = {
     doUploadButtonHide?: boolean,
     updateCurrentPage: (page: number) => void,
     updateItemsPerPage: (pageSize: number) => void,
-    submitFilter: (resetPagination?: boolean) => void,
     sortOptions?: unknown,
     setSortingColumn: (sortColumn: string) => void,
     getSortingColumn: () => string,
@@ -75,38 +74,30 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
      ** @param pg the page to jump to
      **/
     jumpPage(page: number) {
-        if (page < this.props.numberPages && page >= 0) {
+
+        if (page < this.props.numberPages && page >= 0)
             this.props.updateCurrentPage(page);
-
-            if (typeof this.props.items === 'undefined')
-                return;
-
-            this.props.submitFilter();
-        }
+        
     }
 
     /**
      *    * jumps to the next page in this collection of queried flights
      *        */
     nextPage() {
-        this.props.updateCurrentPage(this.props.currentPage + 1);
 
-        if (typeof this.props.items === 'undefined')
-            return;
+        const newPageIndex = (this.props.currentPage + 1);
+        this.props.updateCurrentPage(newPageIndex);
 
-        this.props.submitFilter();
     }
 
     /**
      ** jumps to the previous page in this collection of queried flights
      **/
     previousPage() {
-        this.props.updateCurrentPage(this.props.currentPage - 1);
 
-        if (typeof this.props.items === 'undefined')
-            return;
+        const newPageIndex = (this.props.currentPage - 1);
+        this.props.updateCurrentPage(newPageIndex);
 
-        this.props.submitFilter();
     }
 
     /**
@@ -117,10 +108,6 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
         console.log("Re-Paginating");
         this.props.updateItemsPerPage(pageSize);
 
-        if (typeof this.props.items === 'undefined')
-            return;
-
-        this.props.submitFilter(true);
     }
 
     triggerInput() {
