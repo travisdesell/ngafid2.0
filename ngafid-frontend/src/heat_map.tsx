@@ -204,8 +204,6 @@ const mapLayerOptions = [
     { value: 'HelicopterCharts', label: 'Helicopter Charts', url: () => 'http://localhost:8187/helicopter/{z}/{x}/{-y}.png' },
 ];
 
-const initialAirframes = ["PA-28-181", "Cessna 172S", "PA-44-180", "Cirrus SR20"];
-
 const allEventNames = [
     "ANY Event",
     "Airspeed",
@@ -288,6 +286,16 @@ const eventNameToDefinitionIds: { [eventName: string]: number[] } = {
 const allDefinitionIds = Array.from(new Set(Object.values(eventNameToDefinitionIds).flat().filter(id => id !== undefined)));
 eventNameToDefinitionIds["ANY Event"] = allDefinitionIds;
 
+// Use the global airframes variable injected by the backend, if available
+let airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
+// Ensure 'All Airframes' is at the front
+if (!airframesList.includes('All Airframes')) {
+    airframesList.unshift('All Airframes');
+}
+// Remove 'Garmin Flight Display' if present
+const gfdIndex = airframesList.indexOf('Garmin Flight Display');
+if (gfdIndex !== -1) airframesList.splice(gfdIndex, 1);
+
 // =======================
 // SECTION: Main HeatMapPage Component
 // =======================
@@ -296,7 +304,7 @@ const HeatMapPage: React.FC = () => {
     // STATE HOOKS
     // =======================
     // All state variables for UI, map, events, popups, etc.
-    const [airframes, setAirframes] = useState<string[]>([...initialAirframes]);
+    const [airframes, setAirframes] = useState<string[]>(airframesList);
     const [eventNames, setEventNames] = useState<string[]>(allEventNames);
     const [eventChecked, setEventChecked] = useState<EventChecked>(() => {
         const checked: EventChecked = {};

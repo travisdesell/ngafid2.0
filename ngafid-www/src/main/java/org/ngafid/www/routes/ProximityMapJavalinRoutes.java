@@ -5,6 +5,8 @@ import io.javalin.http.Context;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.proximity.ProximityPointsProcessor;
 import org.ngafid.www.Navbar;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.Database;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -37,6 +39,16 @@ public class ProximityMapJavalinRoutes {
 
         Map<String, Object> scopes = new HashMap<>();
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        // Inject airframes variable for frontend
+        try (Connection connection = Database.getConnection()) {
+            int fleetId = user.getFleetId();
+            java.util.List<String> airframes = Airframes.getAll(connection, fleetId);
+            com.google.gson.Gson gson = new com.google.gson.Gson();
+            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+        } catch (Exception e) {
+            // fallback: empty airframes
+            scopes.put("fleet_info_js", "var airframes = [];\n");
+        }
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
     }
