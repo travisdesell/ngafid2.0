@@ -503,7 +503,11 @@ class ToggleButtonColumnManager extends React.Component {
         return (
 
             <button
-                className="ml-4 mr-2"
+                className="
+                    ml-4 mr-2
+                    scale-100 hover:scale-110 transition-transform duration-100
+                    cursor-pointer
+                "
                 onClick={disableFetching ? () => undefined : this.handleToggle}
             >
                 <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--c_tag_badge)]">
