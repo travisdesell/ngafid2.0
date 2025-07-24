@@ -14,6 +14,7 @@ import org.ngafid.core.kafka.DisjointConsumer
 import org.ngafid.core.kafka.Events
 import org.ngafid.core.kafka.Events.EventToCompute
 import org.ngafid.core.kafka.Topic
+import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.util.ColumnNotAvailableException
 import org.ngafid.core.util.filters.Pair
 import org.ngafid.processor.events.AbstractEventScanner
@@ -27,6 +28,7 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.function.Consumer
 import java.util.logging.Logger
+import java.rmi.UnknownHostException
 import kotlin.io.use
 
 /**
@@ -165,7 +167,12 @@ class EventConsumer protected constructor(
         private val LOG: Logger = Logger.getLogger(EventConsumer::class.java.name)
 
         @JvmStatic
+        @Throws(UnknownHostException::class)
         fun main(args: Array<String>) {
+
+            /* Start Docker Service Heartbeat Producer */
+            DockerServiceHeartbeat.autostart();
+
             val consumer = Events.createConsumer()
             val producer = Events.createProducer()
 

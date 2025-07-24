@@ -51,6 +51,10 @@ services:
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
   ngafid-email-consumer:
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
+      - SERVICE_NAME=ngafid-email-consumer
+      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.email
@@ -65,6 +69,10 @@ services:
 
   # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
   ngafid-upload-consumer:
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
+      - SERVICE_NAME=ngafid-upload-consumer
+      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile
@@ -84,6 +92,10 @@ services:
 
   # Event Consumer: reads from event topic and computes the events
   ngafid-event-consumer:
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
+      - SERVICE_NAME=ngafid-event-consumer
+      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-consumer
@@ -92,6 +104,10 @@ services:
   # Event Observer: scans database for events that have not been computed, and computes them.
   # This can also be used to re-compute events as potential duplicates are deleted.
   ngafid-event-observer:
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
+      - SERVICE_NAME=ngafid-event-observer
+      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-observer

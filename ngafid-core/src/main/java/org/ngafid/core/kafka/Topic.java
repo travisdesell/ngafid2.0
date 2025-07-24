@@ -1,10 +1,11 @@
 package org.ngafid.core.kafka;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.NewTopic;
-
 import java.util.Arrays;
 import java.util.List;
+
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 /**
  * Enumeration of the kafka topics and their corresponding names.
@@ -22,7 +23,10 @@ public enum Topic {
 
     EVENT("event"),
     EVENT_RETRY("event-retry"),
-    EVENT_DLQ("event-dlq");
+    EVENT_DLQ("event-dlq"),
+
+    STATUS_HEARTBEAT("docker-status-heartbeat")
+    ;
 
     private final String name;
 
@@ -30,8 +34,13 @@ public enum Topic {
         this.name = name;
     }
 
+    @Override
     public String toString() {
         return this.name;
+    }
+
+    public <K, V> void subscribeWith(KafkaConsumer<K, V> consumer) {
+        consumer.subscribe(List.of(this.toString()));
     }
 
     public static void main(String[] args) throws Exception {

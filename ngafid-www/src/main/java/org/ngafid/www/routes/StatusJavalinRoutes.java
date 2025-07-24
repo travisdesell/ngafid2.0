@@ -1,6 +1,7 @@
 package org.ngafid.www.routes;
 
 import io.javalin.http.Context;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ngafid.www.Navbar;
@@ -11,8 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+
+import org.ngafid.core.kafka.DockerServiceHeartbeat;
+import org.ngafid.www.WebServer;
 
 public class StatusJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StatusJavalinRoutes.class.getName());
@@ -20,8 +25,20 @@ public class StatusJavalinRoutes {
     public enum ServiceStatus {
         OK,
         WARNING,
-        ERROR
+        ERROR,
+        UNCHECKED,
     }
+
+
+    /**
+     * List of Docker service names
+     */
+    private static final List<String> DOCKER_SERVICES = List.of(
+        "ngafid-upload-consumer",
+        "ngafid-email-consumer",
+        "ngafid-event-consumer",
+        "ngafid-event-observer"
+    );
 
     /**
      * Maps an API route name to a systemd unit that should actually be runnin on the server.
@@ -107,7 +124,53 @@ public class StatusJavalinRoutes {
         }
     }
 
-    private record ServiceStatusResult(ServiceStatus status, String message) {
+    private record ServiceStatusResult(
+        ServiceStatus status,
+        String message,
+        Map<String, ServiceStatus> instances
+    ) {
+
+        //Constructor for when we don't want to include instances
+        public ServiceStatusResult(ServiceStatus status, String message) {
+            this(status, message, null);
+        }
+
+    }
+
+    private static ServiceStatusResult checkDockerHeartbeat(String logicalService) {
+
+        DockerServiceHeartbeatMonitor monitor = WebServer.getMonitor();
+
+        ServiceStatus aggregate = monitor.status(logicalService);
+        var instancesMap = monitor.instanceStatuses(logicalService);
+
+        return switch (aggregate) {
+
+            case OK -> new ServiceStatusResult(
+                aggregate,
+                "All instances of %s are healthy".formatted(logicalService),
+                instancesMap
+            );
+
+            case WARNING -> new ServiceStatusResult(
+                aggregate,
+                "One or more instances of %s are late".formatted(logicalService),
+                instancesMap
+            );
+
+            case ERROR   -> new ServiceStatusResult(
+                aggregate,
+                "All instances of %s have timed‑out".formatted(logicalService),
+                instancesMap
+            );
+            
+            case UNCHECKED -> new ServiceStatusResult(
+                aggregate,
+                "Unchecked: %s (This should never happen for Docker entries!)".formatted(logicalService),
+                instancesMap
+            );
+        };
+
     }
 
     private static void getServiceStatus(Context ctx) {
@@ -125,6 +188,29 @@ public class StatusJavalinRoutes {
                 ctx.json(cachedStatus.getLeft());
                 return;
             }
+        }
+
+        //Service name in Docker services list...
+        if (DOCKER_SERVICES.contains(service)) {
+
+            //...Not using Docker -> Unchecked
+            if (!DockerServiceHeartbeat.USING_DOCKER) {
+                ctx.json(new ServiceStatusResult(ServiceStatus.UNCHECKED, "Detected as not using Docker, but this is in the Docker services list"));
+                return;
+            }
+
+            //...Otherwise, check via heartbeat
+            LOG.log(Level.INFO, "Docker service detected: {0}", service);
+            ServiceStatusResult r = checkDockerHeartbeat(service);
+            LOG.log(Level.INFO, "Docker service {0} status: {1} - {2}", new Object[]{service, r.status(), r.message()});
+
+            ctx.json(r);
+            return;
+
+        //Using Docker but service not in list -> Unchecked
+        } else if (DockerServiceHeartbeat.USING_DOCKER) {
+            ctx.json(new ServiceStatusResult(ServiceStatus.UNCHECKED, "Detected as using Docker, but this is not in the Docker services list"));
+            return;
         }
 
         List<String> serviceNames = SERVICE_NAME_TO_SYSTEMD_SERVICE.getOrDefault(service, null);
