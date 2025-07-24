@@ -31,7 +31,8 @@ export default class TimeHeader extends React.Component {
         if ('exportCSV' in this.props) {
             exportButton = (
                 <>
-                    <button className="btn btn-outline-primary" onClick={() => this.props.exportCSV()}>
+                    <button className="btn btn-secondary" onClick={() => this.props.exportCSV()}>
+                        <i className="fa fa-cloud-download mr-2" aria-hidden="true"></i>
                         Export
                     </button>
                     <div className="vertical-separator"/>
@@ -83,6 +84,8 @@ export default class TimeHeader extends React.Component {
                 </div>
             );
         }
+
+        const updateButtonDisabled = !this.props.datesChanged;
 
         return  (
             <div className="flex flex-row items-center justify-start gap-4" style={{ textAlign: 'center' }}>
@@ -202,11 +205,11 @@ export default class TimeHeader extends React.Component {
                     className="
                         btn btn-primary
                         disabled:cursor-not-allowed disabled:grayscale
-                        disabled:content-['XD']
                     "
                     onClick={() => this.props.dateChange()}
-                    disabled={!this.props.datesChanged}
+                    disabled={updateButtonDisabled}
                 >
+                    <i className={`fa ${updateButtonDisabled ? 'fa-ban' : 'fa-refresh'} mr-2`} aria-hidden="true"></i>
                     {this.state.buttonContent}
                 </button>
 
