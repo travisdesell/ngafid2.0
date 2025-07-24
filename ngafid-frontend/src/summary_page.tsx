@@ -537,10 +537,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         $("#loading").show();
 
-        let route = "/api/event/count/by-airframe";
-        if (this.props.aggregate)
-            route = `${route}/aggregate`;
-
+        const route = `/api/event/count/by-airframe${this.props.aggregate ? "/aggregate" : ""}`;
         console.log(`Got date change, fetching event counts from '${route}' with date data: `, submissionData);
 
         $.ajax({
