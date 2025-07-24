@@ -3,5 +3,7 @@ import React from "react";
 import TrendsPage from "./trends";
 
 const container = document.querySelector("#trends-page");
-const root = createRoot(container);
-root.render(<TrendsPage aggregate_page={false}/>);
+if (container) {
+    const root = createRoot(container);
+    root.render(<TrendsPage aggregate_page={false}/>);
+}

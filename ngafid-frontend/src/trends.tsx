@@ -6,7 +6,7 @@ import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import { TimeHeader } from "./time_header.js";
-import GetDescription from "./get_description";
+import GetDescription from "./get_description.js";
 
 import Plotly from 'plotly.js';
 import Tooltip from "react-bootstrap/Tooltip";
@@ -15,8 +15,11 @@ import {OverlayTrigger} from "react-bootstrap";
 
 airframes.unshift("All Airframes");
 const index = airframes.indexOf("Garmin Flight Display");
-if (index !== -1) airframes.splice(index, 1);
+if (index !== -1)
+    airframes.splice(index, 1);
 
+
+//Sort incoming event names
 eventNames.sort();
 
 /*
@@ -35,21 +38,86 @@ var trace2 = {
 };
 */
 
-let countData = [];
-let percentData = [];
 
-let eventCounts = null;
 
-let eventFleetPercents = {};
-let eventNGAFIDPercents = {};
+type CSVValues = {
+    [eventName: string]: {
+        [airframeName: string]: {
+            [date: string]: {
+                eventCount: number;
+                flightsWithEventCount: number;
+                totalFlights: number;
+            };
+        };
+    };
+}
 
-class TrendsPage extends React.Component {
+type CountsData = {
+    airframeName: string;
+    name: string;
+    eventName: string;
+    x: string[];
+    y: number[];
+    dates: string[];
+    type: string;
+    hoverinfo: string;
+    hovertext: string[];
+    legendgroup: string;
+    line: {
+        dash?: string;
+        width?: number;
+    };
+    mode?: string;
+    aggregateFlightsWithEventCounts: string[];
+    aggregateTotalFlightsCounts: string[];
+    aggregateTotalEventsCounts: string[];
+    flightsWithEventCounts: { [date: string]: number };
+    totalFlightsCounts: { [date: string]: number };
+    totalEventsCounts: string[];
+}
 
-    constructor(props) {
+type TrendsData = {
+    airframeName: string;
+    eventName: string;
+    dates: string[];
+    aggregateFlightsWithEventCounts: number[];
+    aggregateTotalEventsCounts: number[];
+    aggregateTotalFlightsCounts: number[];
+    flightsWithEventCounts: number[];
+    totalEventsCounts: number[];
+    totalFlightsCounts: number[];
+}
+
+
+type TrendsPageProps = {
+    aggregate_page: boolean
+};
+
+
+type TrendsPageState = {
+    eventCounts: { [eventName:string]: { [airframeName: string]: TrendsData } },
+    countData: Plotly.Data[],
+    percentData: Plotly.Data[],
+    eventFleetPercents: { [key: string]: CountsData },
+    eventNGAFIDPercents: { [key: string]: CountsData },
+    airframe: string,
+    startYear: number,
+    startMonth: number,
+    endYear: number,
+    endMonth: number,
+    datesChanged: boolean,
+    aggregatePage: boolean,
+    eventChecked: { [key: string]: boolean },
+    eventsEmpty: { [key: string]: boolean }
+};
+
+class TrendsPage extends React.Component<TrendsPageProps, TrendsPageState> {
+
+    constructor(props: TrendsPageProps) {
         
         super(props);
-        const eventChecked = {};
-        const eventsEmpty = {};
+        const eventChecked: { [key: string]: boolean } = {};
+        const eventsEmpty: { [key: string]: boolean } = {};
 
         eventNames.unshift("ANY Event");
         for (let i = 0; i < eventNames.length; i++) {
@@ -58,10 +126,15 @@ class TrendsPage extends React.Component {
             eventChecked[eventNameCur] = false;
             eventsEmpty[eventNameCur] = true;
         }
-        eventsEmpty["ANY Event"] = false;
+        eventsEmpty["ANY Event"] = true;
 
         const date = new Date();
         this.state = {
+            eventCounts: {},
+            countData: [],
+            percentData: [],
+            eventFleetPercents: {},
+            eventNGAFIDPercents: {},
             airframe: "All Airframes",
             startYear: 2020,
             startMonth: 1,
@@ -78,24 +151,39 @@ class TrendsPage extends React.Component {
 
     componentDidMount() {
 
+        //Display the plots for the initial state
         this.displayPlots("All Airframes");
 
     }
 
     startDate() {
-        let startDate = `${this.state.startYear  }-`;
+        let startDate = `${this.state.startYear}-`;
 
-        if (parseInt(this.state.startMonth) < 10) startDate += `0${  parseInt(this.state.startMonth)}`;
-        else startDate += this.state.startMonth;
+        const startMonthNumeric = Number(this.state.startMonth);
+
+        //Start month is less than 10, add leading zero
+        if (startMonthNumeric < 10)
+            startDate += `0${startMonthNumeric}`;
+
+        //Otherwise, just append the month
+        else
+            startDate += this.state.startMonth;
 
         return startDate;
     }
 
     endDate() {
-        let endDate = `${this.state.endYear  }-`;
+        let endDate = `${this.state.endYear}-`;
 
-        if (parseInt(this.state.endMonth) < 10) endDate += `0${  parseInt(this.state.endMonth)}`;
-        else endDate += this.state.endMonth;
+        const endMonthNumeric = Number(this.state.endMonth);
+
+        //End month is less than 10, add leading zero
+        if (endMonthNumeric < 10)
+            endDate += `0${endMonthNumeric}`;
+
+        //Otherwise, just append the month
+        else
+            endDate += this.state.endMonth;
 
         return endDate;
     }
@@ -123,12 +211,12 @@ class TrendsPage extends React.Component {
                         return;
                     }
 
-                    eventCounts = response;
+                    const responseObj = response as { [eventName: string]: { [airframeName: string]: TrendsData } };
 
-                    const countsMerged = {};
-                    for (const [countsObject] of Object.entries(eventCounts)) {
+                    const countsMerged: { [airframeName: string]: TrendsData } = {};
+                    for (const countsObject of Object.values(responseObj)) {
 
-                        for (const [airframeName] of Object.entries(countsObject)) {
+                        for (const airframeName of Object.keys(countsObject)) {
 
                             if (airframeName === "Garmin Flight Display")
                                 continue;
@@ -150,7 +238,7 @@ class TrendsPage extends React.Component {
                                     totalFlightsCounts: [...countsAirframe.totalFlightsCounts]
                                 };
 
-                                //Airframe name is already in the merged counts object, add the counts
+                            //Airframe name is already in the merged counts object, add the counts
                             } else {
 
                                 for (let i = 0; i < countsAirframe.dates.length; i++) {
@@ -172,7 +260,12 @@ class TrendsPage extends React.Component {
 
                     }
 
-                    eventCounts["ANY Event"] = countsMerged;
+                    this.setState(() => ({
+                        eventCounts: {
+                            ...responseObj,
+                            ["ANY Event"]: countsMerged
+                        }
+                    }));
 
                     this.displayPlots(this.state.airframe);
 
@@ -188,24 +281,27 @@ class TrendsPage extends React.Component {
     }
 
     exportCSV() {
+
         const selectedAirframe = this.state.airframe;
 
-        const eventNames = [];
-        const airframeNames = [];
-        const dates = [];
-        const csvValues = {};
+        const eventNames: string[] = [];
+        const airframeNames: string[] = [];
+        const dates: string[] = [];
+        const csvValues : CSVValues = {};
 
+        const { eventCounts } = this.state;
 
         for (const [eventName, countsObject] of Object.entries(eventCounts)) {
+
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
-            if (!this.state.eventChecked[eventName]) continue;
+            if (!this.state.eventChecked[eventName])
+                continue;
 
-            //make sure the eventNames array is unique names only
-            if (!eventNames.includes(eventName)) {
+            //Ensure the eventNames array contains unique names only
+            if (!eventNames.includes(eventName))
                 eventNames.push(eventName);
-            }
 
-            for (const [value] of Object.entries(countsObject)) {
+            for (const [/*...*/, value] of Object.entries(countsObject as unknown as { [key: string]: CountsData })) {
 
                 if (value.airframeName === "Garmin Flight Display")
                     continue;
@@ -217,7 +313,7 @@ class TrendsPage extends React.Component {
 
                 //Make sure the airframeNames array is unique names only
                 if (!airframeNames.includes(airframeName))
-                    airframeNames.push(airframeName);
+                        airframeNames.push(airframeName);
 
                 console.log(value.dates);
 
@@ -247,10 +343,11 @@ class TrendsPage extends React.Component {
                         csvValues[eventName][airframeName] = {};
                     }
 
-                    csvValues[eventName][airframeName][date] = {};
-                    csvValues[eventName][airframeName][date].eventCount = eventCount;
-                    csvValues[eventName][airframeName][date].flightsWithEventCount = flightsWithEventCount;
-                    csvValues[eventName][airframeName][date].totalFlights = totalFlights;
+                    csvValues[eventName][airframeName][date] = {
+                        eventCount: eventCount,
+                        flightsWithEventCount: Number(flightsWithEventCount),
+                        totalFlights: Number(totalFlights)
+                    };
                 }
             }
         }
@@ -373,29 +470,31 @@ class TrendsPage extends React.Component {
 
     }
 
-    displayPlots(selectedAirframe) {
-        console.log(`displaying plots with airframe: '${  selectedAirframe  }'`);
+    displayPlots(selectedAirframe: string) {
+        console.log(`Displaying plots with airframe: '${  selectedAirframe  }'`);
 
-        eventFleetPercents = {};
-        eventNGAFIDPercents = {};
+        this.setState({
+            eventFleetPercents: {},
+            eventNGAFIDPercents: {},
+            countData: [],
+            percentData: [],
+        });
 
-        countData = [];
-        percentData = [];
+        const newEventFleetPercents: { [key: string]: CountsData } = {};
+        const newEventNGAFIDPercents: { [key: string]: CountsData } = {};
 
 
-        const counts = eventCounts == null ? {} : eventCounts;
+        const counts = (this.state.eventCounts == null ? {} : this.state.eventCounts);
 
-        const airframeNames = [];
-        for (const [countsObject] of Object.entries(counts)) {
+        const airframeNames:string[] = [];
+        for (const countsObject of Object.values(counts)) {
 
-            for (const [value] of Object.entries(countsObject)) {
-                
-                if (value.airframeName === "Garmin Flight Display")
-                    continue;
+            for (const [/*...*/, value] of Object.entries(countsObject as { [key: string]:TrendsData })) {
 
-                if (!airframeNames.includes(value.airframeName))
-                    airframeNames.push(value.airframeName);
-                
+                const airframeName = value.airframeName;
+                if (!airframeNames.includes(airframeName))
+                    airframeNames.push(airframeName);
+
             }
 
         }
@@ -409,51 +508,51 @@ class TrendsPage extends React.Component {
             let fleetPercents = null;
             let ngafidPercents = null;
 
-            if (eventName in eventFleetPercents) {
+            if (eventName in newEventFleetPercents) {
 
-                console.log('getting existing fleetPercents!');
+                console.log('Getting existing fleetPercents!');
 
-                fleetPercents = eventFleetPercents[eventName];
-                ngafidPercents = eventNGAFIDPercents[eventName];
+                fleetPercents = newEventFleetPercents[eventName];
+                ngafidPercents = newEventNGAFIDPercents[eventName];
 
             } else {
 
-                console.log('setting initial fleetPercents!');
+                console.log('Setting initial fleetPercents!');
 
-                fleetPercents = {
-                    name: `${eventName  } - Your Fleet`,
-                    type: 'scatter',
-                    hoverinfo: 'x+text',
-                    hovertext: [],
-                    y: [],
-                    x: [],
-                    flightsWithEventCounts: {},
-                    totalFlightsCounts: {},
-                };
-                let ngafidPercentsName = `${eventName  } - `;
+                if (!fleetPercents) {
+                    fleetPercents = {
+                        name: `${eventName} - Your Fleet`,
+                        type: 'scatter',
+                        hoverinfo: 'x+text',
+                        hovertext: [],
+                        y: [],
+                        x: [],
+                        flightsWithEventCounts: {},
+                        totalFlightsCounts: {},
+                    } as unknown as CountsData;
 
-                if (this.state.aggregatePage)
-                    ngafidPercentsName += "All Fleets";
-                else
-                    ngafidPercentsName += "All Other Fleets";
+                    newEventFleetPercents[eventName] = fleetPercents;
+                }
 
-                ngafidPercents = {
-                    name: ngafidPercentsName,
-                    type: 'scatter',
-                    hoverinfo: 'x+text',
-                    hovertext: [],
-                    y: [],
-                    x: [],
-                    flightsWithEventCounts: {},
-                    totalFlightsCounts: {},
-                };
+                if (!ngafidPercents) {
+                    const ngafidPercentsName = `${eventName} - ${this.state.aggregatePage ? 'All Fleets' : 'All Other Fleets'}`;
+                    ngafidPercents = {
+                        name: ngafidPercentsName,
+                        type: 'scatter',
+                        hoverinfo: 'x+text',
+                        hovertext: [],
+                        y: [],
+                        x: [],
+                        flightsWithEventCounts: {},
+                        totalFlightsCounts: {},
+                    } as unknown as CountsData;
 
-                eventFleetPercents[eventName] = fleetPercents;
-                eventNGAFIDPercents[eventName] = ngafidPercents;
+                    newEventNGAFIDPercents[eventName] = ngafidPercents;
+                }
+
             }
 
-
-            for (let [value] of Object.entries(countsObject)) {
+            for (let [/*...*/, value] of Object.entries(countsObject as unknown as { [key: string]: CountsData })) {
 
                 //Airframe name is 'Garmin Flight Display', skip
                 if (value.airframeName === "Garmin Flight Display")
@@ -483,7 +582,7 @@ class TrendsPage extends React.Component {
 
                     };
 
-                    //Event is NOT 'ANY Event'
+                //Event is NOT 'ANY Event'
                 } else {
 
                     value = {
@@ -501,53 +600,48 @@ class TrendsPage extends React.Component {
 
                 }
 
-                //don't add airframes to the count plot that the fleet doesn't have
+                //Only add airframes to the count plot that the fleet has
                 if (airframes.indexOf(value.airframeName) >= 0) {
 
                     //Display the "ANY Event" lines under the other ones
                     if (eventName === "ANY Event") {
-                        countData.push(value);
+                        this.state.countData.push(value as Plotly.Data);
                     } else {
-                        countData.unshift(value);
+                        this.state.countData.unshift(value as Plotly.Data);
                     }
 
                 }
 
                 if (this.state.aggregatePage) {
-                    value.y = value.aggregateTotalEventsCounts;
+                    value.y = value.aggregateTotalEventsCounts.map(Number);
                 } else {
-                    value.y = value.totalEventsCounts;
+                    value.y = value.totalEventsCounts.map(Number);
                 }
                 value.hovertext = [];
 
                 for (let i = 0; i < value.dates.length; i++) {
-                    const date = value.dates[i];
 
-                    //don't add airframes to the fleet percentage plot that the fleet doesn't have
+                    const date:string = value.dates[i];
+
+                    //Only add airframes to the fleet percentage plot that the fleet has
                     if (airframes.indexOf(value.airframeName) >= 0 && !this.state.aggregatePage) {
-                        if (date in fleetPercents.flightsWithEventCounts) {
-                            //console.log("incremented fleetPercents.flightsWithEventCounts for date: " + date + " and airframe: " + value.airframeName + " initially " + fleetPercents.flightsWithEventCounts[date] + " by " + value.flightsWithEventCounts[i]);
-                            //console.log("incremented fleetPercents.totalFlightsCounts for date: " + date + " and airframe: " + value.airframeName + " initially " + fleetPercents.totalFlightsCounts[date] + " by " + value.totalFlightsCounts[i]);
 
+                        if (date in fleetPercents.flightsWithEventCounts) {
                             fleetPercents.flightsWithEventCounts[date] += value.flightsWithEventCounts[i];
                             fleetPercents.totalFlightsCounts[date] += value.totalFlightsCounts[i];
-
-                            //console.log("incremented fleetPercents.flightsWithEventCounts for date: " + date + " and airframe: " + value.airframeName + " to " + fleetPercents.flightsWithEventCounts[date] + " was incremented by " + value.flightsWithEventCounts[i]);
-                            //console.log("incremented fleetPercents.totalFlightsCounts for date: " + date + " and airframe: " + value.airframeName + " to " + fleetPercents.totalFlightsCounts[date] + " was incremented by " + value.totalFlightsCounts[i]);
                         } else {
                             fleetPercents.flightsWithEventCounts[date] = value.flightsWithEventCounts[i];
                             fleetPercents.totalFlightsCounts[date] = value.totalFlightsCounts[i];
-
-                            //console.log("resetting fleetPercents for date: " + date + " and airframe: " + value.airframeName + " to " + fleetPercents.flightsWithEventCounts[date]);
                         }
+
                     }
 
                     if (date in ngafidPercents.flightsWithEventCounts) {
-                        ngafidPercents.flightsWithEventCounts[date] += value.aggregateFlightsWithEventCounts[i];
-                        ngafidPercents.totalFlightsCounts[date] += value.aggregateTotalFlightsCounts[i];
+                        ngafidPercents.flightsWithEventCounts[date] += Number(value.aggregateFlightsWithEventCounts[i]);
+                        ngafidPercents.totalFlightsCounts[date] += Number(value.aggregateTotalFlightsCounts[i]);
                     } else {
-                        ngafidPercents.flightsWithEventCounts[date] = value.aggregateFlightsWithEventCounts[i];
-                        ngafidPercents.totalFlightsCounts[date] = value.aggregateTotalFlightsCounts[i];
+                        ngafidPercents.flightsWithEventCounts[date] = Number(value.aggregateFlightsWithEventCounts[i]);
+                        ngafidPercents.totalFlightsCounts[date] = Number(value.aggregateTotalFlightsCounts[i]);
                     }
                 }
 
@@ -592,11 +686,11 @@ class TrendsPage extends React.Component {
 
             };
 
-            countData.push(airframeLegendHighlight);
+            this.state.countData.push(airframeLegendHighlight);
 
         }
 
-        for (const [eventName, fleetValueOrig] of Object.entries(eventFleetPercents)) {
+        for (const [eventName, fleetValueOrig] of Object.entries(newEventFleetPercents)) {
 
             console.log("Event Name: ", eventName);
 
@@ -637,14 +731,14 @@ class TrendsPage extends React.Component {
 
             //Push fleet values...
             if (!this.state.aggregatePage) {
-                percentData.push(fleetValue);
+                this.state.percentData.push(fleetValue as Plotly.Data);
                 fleetValue.x = [];
                 fleetValue.y = [];
 
                 for (const date of Object.keys(fleetValue.flightsWithEventCounts).sort()) {
                     fleetValue.x.push(date);
 
-                    let v = 100.0 * (parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]));
+                    let v = 100.0 * (fleetValue.flightsWithEventCounts[date] / fleetValue.totalFlightsCounts[date]);
                     if (isNaN(v)) v = 0.0;
                     fleetValue.y.push(v);
 
@@ -663,7 +757,7 @@ class TrendsPage extends React.Component {
             }
 
             //Push NGAFID data...
-            let ngafidValue = eventNGAFIDPercents[eventName];
+            let ngafidValue = newEventNGAFIDPercents[eventName];
 
 
             //NGAFID VALUE -- Event name is 'ANY Event'
@@ -703,13 +797,13 @@ class TrendsPage extends React.Component {
 
             }
 
-            percentData.push(ngafidValue);
+            this.state.percentData.push(ngafidValue as Plotly.Data);
             ngafidValue.x = [];
             ngafidValue.y = [];
             for (const date of Object.keys(ngafidValue.flightsWithEventCounts).sort()) {
                 ngafidValue.x.push(date);
 
-                let v = 100.0 * parseFloat(ngafidValue.flightsWithEventCounts[date]) / parseFloat(ngafidValue.totalFlightsCounts[date]);
+                let v = 100.0 * ngafidValue.flightsWithEventCounts[date] / ngafidValue.totalFlightsCounts[date];
                 if (isNaN(v)) v = 0.0;
 
                 ngafidValue.y.push(v);
@@ -742,7 +836,7 @@ class TrendsPage extends React.Component {
 
         const countLayout = {
             title: {text: 'Event Counts Over Time'},
-            hovermode: "x unified",
+            hovermode: "x unified" as const,
             autosize: true,
             margin: {
                 l: 50,
@@ -765,7 +859,7 @@ class TrendsPage extends React.Component {
             yaxis: {
                 gridcolor: plotGridColor
             }
-        };
+        } as Plotly.Layout;
 
         const percentLayout = {
             title: {text: 'Percentage of Flights With Event Over Time'},
@@ -792,7 +886,7 @@ class TrendsPage extends React.Component {
             yaxis: {
                 gridcolor: plotGridColor
             }
-        };
+        } as Plotly.Layout;
 
         const config = {responsive: true};
 
@@ -802,8 +896,8 @@ class TrendsPage extends React.Component {
         console.log(percentData);
         */
 
-        Plotly.newPlot('count-trends-plot', countData, countLayout, config);
-        Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
+        Plotly.newPlot('count-trends-plot', this.state.countData, countLayout, config);
+        Plotly.newPlot('percent-trends-plot', this.state.percentData, percentLayout, config);
 
         console.log("Hiding loading spinner");
         $('#loading').hide();
@@ -811,7 +905,7 @@ class TrendsPage extends React.Component {
     }
 
 
-    checkEvent(eventName) {
+    checkEvent(eventName: string) {
 
         console.log("Checking event: '", eventName, "'");
         this.setState(prevState => {
@@ -824,7 +918,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    updateStartYear(newStartYear) {
+    updateStartYear(newStartYear: number) {
 
         console.log("Setting new start year to: ", newStartYear);
         this.setState({startYear: newStartYear, datesChanged: true});
@@ -832,7 +926,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    updateStartMonth(newStartMonth) {
+    updateStartMonth(newStartMonth: number) {
 
         console.log("Setting new start month to: ", newStartMonth);
         this.setState({startMonth: newStartMonth, datesChanged: true});
@@ -840,7 +934,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    updateEndYear(newEndYear) {
+    updateEndYear(newEndYear: number) {
 
         console.log("Setting new end year to: ", newEndYear);
         this.setState({endYear: newEndYear, datesChanged: true});
@@ -848,7 +942,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    updateEndMonth(newEndMonth) {
+    updateEndMonth(newEndMonth: number) {
 
         console.log("Setting new end month to: ", newEndMonth);
         this.setState({endMonth: newEndMonth, datesChanged: true});
@@ -884,9 +978,14 @@ class TrendsPage extends React.Component {
                 updatedEventsEmpty[eventNameCur] = true;
             }
 
-            for (const [eventName] of Object.entries(data)) {
+            const dataTyped = data as { [eventName: string]: { [airframeName: string]: TrendsData } };
+            for (const [eventName] of Object.entries(dataTyped)) {
                 updatedEventsEmpty[eventName] = false;
             }
+
+            //Has at least one event data, mark "ANY Event" as non-empty
+            if (Object.keys(dataTyped).length > 0)
+                updatedEventsEmpty["ANY Event"] = false;
 
             this.setState({ eventsEmpty: updatedEventsEmpty }, () => {
                 this.displayPlots(this.state.airframe);
@@ -896,7 +995,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    airframeChange(airframe) {
+    airframeChange(airframe: string) {
         this.setState({airframe});
         this.displayPlots(airframe);
     }
@@ -904,7 +1003,7 @@ class TrendsPage extends React.Component {
     render() {
 
         const activePageName = (this.state.aggregatePage ? "aggregate_trends" : "trends");
-        const timeHeaderTitle = (this.state.aggregatePage ? "Aggregate Event Trends" : "Event Trends");
+        const timeHeaderTitle = (this.state.aggregatePage ? "Event Trends (Aggregate)" : "Event Trends");
 
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
@@ -932,11 +1031,11 @@ class TrendsPage extends React.Component {
                                     endMonth={this.state.endMonth}
                                     datesChanged={this.state.datesChanged}
                                     dateChange={() => this.dateChange()}
-                                    airframeChange={(airframe) => this.airframeChange(airframe)}
-                                    updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
-                                    updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
-                                    updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
-                                    updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                                    airframeChange={(airframe: string) => this.airframeChange(airframe)}
+                                    updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
+                                    updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
+                                    updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
+                                    updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
                                 />
                                 <div className="card-body" style={{padding: "0"}}>
@@ -997,14 +1096,14 @@ class TrendsPage extends React.Component {
                                                 flex: "1 1 auto",
                                                 minHeight: "0",
                                                 height: "100%",
-                                                widhth: "100%"
+                                                width: "100%"
                                             }}></div>
                                             <hr style={{margin: "0", borderTop: "8px solid var(--c_card_bg)"}}></hr>
                                             <div id="percent-trends-plot" className="flex-fill" style={{
                                                 flex: "1 1 auto",
                                                 minHeight: "0",
                                                 height: "100%",
-                                                widhth: "100%"
+                                                width: "100%"
                                             }}></div>
                                         </div>
                                     </div>
