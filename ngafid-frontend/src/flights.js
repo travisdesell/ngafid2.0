@@ -1791,8 +1791,7 @@ class FlightsPage extends React.Component {
                     height: SEARCH_CONTAINER_HEIGHT,
                     backgroundColor: `rgba(0, 0, 255, ${CONTAINER_BACKGROUND_COLOR_ALPHA})`
                 }}>
-                {/* {this.state.filterVisible && searchFilters} */}
-                {searchFilters}
+                {this.state.filterVisible && searchFilters}
                 {searchResults}
                 {searchPaginator}
             </div>
