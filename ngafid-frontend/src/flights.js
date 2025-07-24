@@ -946,8 +946,8 @@ class FlightsPage extends React.Component {
             success: (response) => {
 
                 console.log("Received filters response: ", response);
-
                 storedFilters = response;
+
             },
             error: (jqXHR, textStatus, errorThrown) => {
 
@@ -970,12 +970,11 @@ class FlightsPage extends React.Component {
              }, sortByColumn: ${  this.state.sortColumn}`
         );
 
-        console.log("Submitting filters:");
-        console.log(this.state.filters);
+        console.log("Submitting filters:", this.state.filters);
 
         $("#loading").show();
 
-        //Reset the current page to 0 if the page size or filter have changed
+        //Page size or filter have changed, reset the current page to 0
         let currentPage = this.state.currentPage;
         if (resetCurrentPage === true)
             currentPage = 0;
@@ -1005,45 +1004,47 @@ class FlightsPage extends React.Component {
             type: 'GET',
             url: "/api/flight",
             data: submissionData,
-            timeout: 0, //set timeout to be unlimited for slow queries
+            timeout: 0, //<-- Unlimited timeout for slow queries
             async: true,
-            success: (response) => {
+            success: (response, jqXHR) => {
 
                 console.log("'Get Flights' response:", response);
-
-                $("#loading").hide();
-
-                if (response.errorTitle) {
-                    console.log("Error in 'Get Flights', displaying error modal!");
-                    showErrorModal(response.errorTitle, response.errorMessage);
-                    return false;
-                }
+                console.log("'Get Flights' jqXHR:", jqXHR);
 
                 //Response is empty, show error modal
-                if (response == "NO_RESULTS") {
+                const JQXHR_NO_CONTENT = 'nocontent';
+                if (jqXHR === JQXHR_NO_CONTENT) {
 
                     console.log("'Get Flights' -- No flights found with the given parameters!");
                     showErrorModal(
                         "No flights found with the given parameters!",
                         "Please try a different query."
                     );
+                    return;
 
-                    //Response is valid, update the flights
-                } else {
-
-                    this.setState({
-                        flights: response.flights,
-                        currentPage: currentPage,
-                        numberPages: response.numberPages,
-                    });
                 }
+
+                //Response is invalid, show error modal
+                if (response.errorTitle) {
+                    console.log("Error in 'Get Flights', displaying error modal!");
+                    showErrorModal(response.errorTitle, response.errorMessage);
+                    return;
+                }
+
+                //Response is valid, update the flights
+                this.setState({
+                    flights: response.flights,
+                    currentPage: currentPage,
+                    numberPages: response.numberPages,
+                });
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-
                 console.log("Error loading flights: ", jqXHR, textStatus, errorThrown);
-
                 showErrorModal("Error Loading Flights", errorThrown);
+            },
+            complete: () => {
+                console.log("Flight loading complete!");
                 $("#loading").hide();
             }
         });
@@ -1052,9 +1053,7 @@ class FlightsPage extends React.Component {
 
     setAvailableLayers(plotLayers) {
 
-        console.log("changing selectable layers on navbar");
-        console.log(plotLayers);
-
+        console.log("Changing selectable layers on Navbar:", plotLayers);
         this.setState({selectableLayers: plotLayers});
 
     }
@@ -1080,7 +1079,7 @@ class FlightsPage extends React.Component {
             id: flightId,
         };
 
-        console.log(`Creating a new tag for flight # ${  this.state.flightId}`);
+        console.log(`Creating a new tag for flight #${this.state.flightId}`);
 
         $.ajax({
             type: "POST",
@@ -1790,7 +1789,8 @@ class FlightsPage extends React.Component {
                     height: SEARCH_CONTAINER_HEIGHT,
                     backgroundColor: `rgba(0, 0, 255, ${CONTAINER_BACKGROUND_COLOR_ALPHA})`
                 }}>
-                {this.state.filterVisible && searchFilters}
+                {/* {this.state.filterVisible && searchFilters} */}
+                {searchFilters}
                 {searchResults}
                 {searchPaginator}
             </div>

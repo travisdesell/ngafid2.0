@@ -227,8 +227,7 @@ public class FlightsJavalinRoutes {
             List<Flight> flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
             if (flights.isEmpty()) {
-                //ctx.json("NO_RESULTS").status(204);
-                ctx.json("NO_RESULTS").status(200); //(Using 200 instead of 204 since we're manually detecting the NO_RESULTS output in the front end)
+                ctx.status(204);
             } else {
                 ctx.json(new FlightsResponse(flights, numberPages)).status(200);
             }
