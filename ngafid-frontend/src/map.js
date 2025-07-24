@@ -16,7 +16,7 @@ let azureMapsKey = null;
 function initializeMap() {
     const azureMapsKey = process.env.AZURE_MAPS_KEY;
     if (!azureMapsKey) {
-        alert("Azure Maps key is missing or undefined!");
+        log("Azure Maps key is missing or undefined!");
         return;
     }
 

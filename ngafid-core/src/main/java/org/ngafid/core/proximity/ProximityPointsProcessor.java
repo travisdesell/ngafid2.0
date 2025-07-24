@@ -264,11 +264,16 @@ public class ProximityPointsProcessor {
      * @param endTime optional end time
      * @param minSeverity optional minimum severity
      * @param maxSeverity optional maximum severity
+     * @param airframe optional airframe filter (if null, no airframe filtering is applied)
      * @return a list of proximity events within the bounding box
      * @throws SQLException if there is an error accessing the database
      */
-    public static List<Map<String, Object>> getProximityEventsInBox(double minLat, double maxLat, double minLon, double maxLon, String startTime, String endTime, Double minSeverity, Double maxSeverity) throws SQLException {
+    public static List<Map<String, Object>> getProximityEventsInBox(double minLat, double maxLat, double minLon, double maxLon, String startTime, String endTime, Double minSeverity, Double maxSeverity, String airframe) throws SQLException {
         List<Map<String, Object>> events = new ArrayList<>();
+        
+        // Debug logging
+        LOG.info("getProximityEventsInBox called with airframe: '" + airframe + "'");
+        
         try (Connection connection = Database.getConnection()) {
             StringBuilder query = new StringBuilder("""
                 SELECT e.id, e.flight_id, e.other_flight_id, e.start_time, e.end_time, 
@@ -292,6 +297,15 @@ public class ProximityPointsProcessor {
                   AND e.max_latitude >= ? AND e.min_latitude <= ?
                   AND e.max_longitude >= ? AND e.min_longitude <= ?
             """);
+            
+            // Add airframe filtering if specified
+            if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
+                query.append(" AND (a1.airframe = ? OR a2.airframe = ?)");
+                LOG.info("Adding airframe filter for: '" + airframe + "'");
+            } else {
+                LOG.info("No airframe filter applied (airframe: '" + airframe + "')");
+            }
+            
             if (startTime != null && !startTime.isEmpty()) {
                 query.append(" AND e.start_time >= ?");
             }
@@ -305,6 +319,9 @@ public class ProximityPointsProcessor {
                 query.append(" AND e.severity <= ?");
             }
             query.append(" ORDER BY e.start_time DESC");
+            
+            LOG.info("Generated SQL query: " + query.toString());
+            
             try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
                 int idx = 1;
                 statement.setInt(idx++, PROXIMITY_EVENT_DEFINITION_ID);
@@ -312,6 +329,14 @@ public class ProximityPointsProcessor {
                 statement.setDouble(idx++, maxLat);
                 statement.setDouble(idx++, minLon);
                 statement.setDouble(idx++, maxLon);
+                
+                // Set airframe parameters if filtering is applied
+                if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
+                    statement.setString(idx++, airframe);
+                    statement.setString(idx++, airframe);
+                    LOG.info("Set airframe parameters at indices " + (idx-2) + " and " + (idx-1) + ": '" + airframe + "'");
+                }
+                
                 if (startTime != null && !startTime.isEmpty()) {
                     Timestamp ts = parseDateOrTimestamp(startTime, false);
                     if (ts != null) statement.setTimestamp(idx++, ts);
@@ -351,6 +376,8 @@ public class ProximityPointsProcessor {
                 }
             }
         }
+        
+        LOG.info("Returning " + events.size() + " proximity events");
         return events;
     }
 

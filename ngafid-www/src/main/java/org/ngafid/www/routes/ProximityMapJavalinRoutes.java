@@ -94,7 +94,8 @@ public class ProximityMapJavalinRoutes {
             String endTime = ctx.queryParam("end_time");
             Double minSeverity = ctx.queryParam("min_severity") != null ? Double.parseDouble(ctx.queryParam("min_severity")) : 0.0;
             Double maxSeverity = ctx.queryParam("max_severity") != null ? Double.parseDouble(ctx.queryParam("max_severity")) : 1000.0;
-            ctx.json(org.ngafid.core.proximity.ProximityPointsProcessor.getProximityEventsInBox(minLat, maxLat, minLon, maxLon, startTime, endTime, minSeverity, maxSeverity));
+            String airframe = ctx.queryParam("airframe");
+            ctx.json(org.ngafid.core.proximity.ProximityPointsProcessor.getProximityEventsInBox(minLat, maxLat, minLon, maxLon, startTime, endTime, minSeverity, maxSeverity, airframe));
         });
     }
 }
