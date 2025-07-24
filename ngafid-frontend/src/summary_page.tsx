@@ -68,18 +68,19 @@ function formatDurationAsync(seconds: number) {
 }
 
 
-type SuccessResponseHandlerType = (response: { err_msg: string; err_title: string; }) => void;
+type SuccessResponseHandlerType<ResponseType> = (response: ResponseType) => void;
 
-function fetchStatistic(
+async function fetchStatistic<ResponseType>(
     stat: string,
     route: string,
     aggregate: boolean,
-    successResponseHandler: SuccessResponseHandlerType
+    successResponseHandler: SuccessResponseHandlerType<ResponseType>
 ) {
+
+    console.log(`Fetching statistic '${stat}' from route '${route}' with aggregate=${aggregate}...`);
 
     if (aggregate)
         route = `${route}/aggregate`;
-
 
     const errorResponseHandler = function (jqXHR: JQuery.jqXHR<unknown>, textStatus: string, errorThrown: string) {
         console.log(jqXHR);
@@ -93,6 +94,9 @@ function fetchStatistic(
         url: route,
         success: successResponseHandler,
         error: errorResponseHandler,
+        complete: (jqXHR) => {
+            console.log(`Finished fetching statistic '${stat}' from route '${route}' with aggregate=${aggregate}. (Status: ${jqXHR.status})`);
+        }
     });
 
 }
@@ -134,38 +138,46 @@ class Notifications extends React.Component<object, NotificationsState> {
 
     fetchStatistics() {
 
-        const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
-
-            console.log(`Got successful response for fetched stat: ${response}`);
-
-            //Response has an error, exit
-            if (response.err_msg) {
-                showErrorModal(response.err_title, response.err_msg);
-                return;
-            }
-
-            //Update the notification count
-            const updatedState = {
-                ...this.state,
-                notifications: this.state.notifications.map((notif, idx) =>
-                    idx === idx ? { ...notif, count: response } : notif
-                )
-            } as NotificationsState;
-
-            this.setState(updatedState);
-
-        };
 
         console.log("Notifications -- Fetching Statistics...");
 
-        for (const [/*...*/, notif] of this.state.notifications.entries()) {
+        for (const [i, notif] of this.state.notifications.entries()) {
+
+            type NotificationType = {
+                count: number;
+                message: string;
+                badgeType: string;
+                name: string | undefined;
+                err_msg?: string;
+                err_title?: string;
+            };
+
+            const successResponseHandler = (response:NotificationType) => {
+
+                console.log(`Got successful response for fetched stat: ${response}`);
+
+                //Response has an error, exit
+                if (response.err_msg) {
+                    showErrorModal(response.err_title, response.err_msg);
+                    return;
+                }
+
+                //Update the notification count
+                this.setState(prev => ({
+                    notifications: prev.notifications.map((n, j) =>
+                        j === i ? { ...n, count: response.count } : n
+                    )
+                }));
+
+            };
+
 
             //Notification has a 'name' property, fetch the statistic
             if (Object.hasOwn(notif, "name")
                 && notif.name
                 && targetValues[notif.name as keyof typeof targetValues]
             ) {
-                fetchStatistic(notif.name, targetValues[notif.name as keyof typeof targetValues], false, successResponseHandler);
+                fetchStatistic<NotificationType>(notif.name, targetValues[notif.name as keyof typeof targetValues], false, successResponseHandler);
             }
 
         }
@@ -558,11 +570,11 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         });
     }
 
-    fetchStatistics() {
+    async fetchStatistics() {
 
         console.log("SummaryPage -- Fetching Statistics...");
 
-        for (const [stat, route] of Object.entries(targetValues)) {
+        for await (const [stat, route] of Object.entries(targetValues)) {
 
             const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
 
@@ -573,7 +585,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                 const result: { [key: string]: string } = {};
                 result[stat] = (typeof response === "string" ? response : JSON.stringify(response));
-                this.setState({statistics: {...this.state.statistics, ...result}});
+                this.setState(prev => ({
+                    statistics: {...prev.statistics, ...result}
+                }));
 
             };
 
@@ -665,9 +679,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                             <colgroup>
                                 <col style={{width: "40%"}}/>
-                                <col style={{width: "20%"}}/>
-                                <col style={{width: "20%"}}/>
-                                <col style={{width: "20%"}}/>
+                                <col style={{width: "30%"}}/>
+                                <col style={{width: "30%"}}/>
                             </colgroup>
 
 
@@ -676,7 +689,6 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                                     <th>Airframe</th>
                                     <th className="text-right">Flights</th>
                                     <th className="text-right">Hours</th>
-                                    <th className="text-right">Uhmm</th>
                                 </tr>
                             </thead>
 
@@ -695,9 +707,6 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                                             </td>
                                             <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
                                                 {Math.floor(data.total_flight_hours*10)/10}
-                                            </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
-                                                ...
                                             </td>
                                         </tr>
                                     ))
