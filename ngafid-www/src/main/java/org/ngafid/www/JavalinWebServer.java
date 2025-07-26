@@ -1,5 +1,7 @@
 package org.ngafid.www;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.UnauthorizedResponse;
@@ -16,12 +18,15 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
+import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.routes.*;
+import org.ngafid.www.routes.api.*;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -43,7 +48,25 @@ public class JavalinWebServer extends WebServer {
     protected void preInitialize() {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
-            config.jsonMapper(new JavalinGson(WebServer.gson, false));
+
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter())
+                    .create();
+            config.jsonMapper(new JavalinGson(gson, false));
+            config.bundledPlugins.enableRouteOverview("/api");
+
+            AircraftRoutes.INSTANCE.bind(config);
+            AirSyncRoutes.INSTANCE.bind(config);
+            AuthRoutes.INSTANCE.bind(config);
+            EventRoutes.INSTANCE.bind(config);
+            FilterRoutes.INSTANCE.bind(config);
+            FleetRoutes.INSTANCE.bind(config);
+            FlightRoutes.INSTANCE.bind(config);
+            TagRoutes.INSTANCE.bind(config);
+            UploadRoutes.INSTANCE.bind(config);
+            UserRoutes.INSTANCE.bind(config);
+
+            configureSwagger(config);
         });
 
     }
