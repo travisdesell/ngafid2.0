@@ -351,7 +351,7 @@ public class Event {
     }
 
     public int getOtherFlightId() {
-        return otherFlightId;
+        return otherFlightId != null ? otherFlightId : -1;
     }
 
     public String toString() {
@@ -408,10 +408,11 @@ public class Event {
     public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Event event : events) {
+                event.flightId = flight.getId();
                 if (event.getFlightId() == event.getOtherFlightId()) {
                     LOG.warning("Insertion skipped. Self-proximity event detected before DB insert: flight ID = " + event.getFlightId() +
                             ", otherFlightId = " + event.getOtherFlightId());
-                }else{
+                } else {
                     event.addBatch(preparedStatement, flight.getFleetId(), event.flightId, event.eventDefinitionId);
                 }
             }

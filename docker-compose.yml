@@ -36,6 +36,7 @@ services:
         HOST_AIRPORTS: ${HOST_AIRPORTS}
         CONTAINER_AIRPORTS: ${CONTAINER_AIRPORTS}
         HOST_UPLOAD_DIR: ${HOST_UPLOAD_DIR}
+        NGAFID_PARALLELISM: 2
     image: ngafid-base
 
   # This must run and complete before everything else to create the Kafka topics
@@ -53,14 +54,16 @@ services:
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.email
+    restart: always
     <<: *ngafid-service-common
 
   # AirSync sync daemon
-  # ngafid-airsync-importer:
-  #   build:
-  #     context: .
-  #     dockerfile: ngafid-airsync/Dockerfile
-  #   <<: *ngafid-service-common
+  ngafid-airsync-importer:
+    build:
+      context: .
+      dockerfile: ngafid-airsync/Dockerfile
+    restart: always
+    <<: *ngafid-service-common
 
   # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
   ngafid-upload-consumer:
@@ -69,7 +72,8 @@ services:
       dockerfile: ngafid-data-processor/Dockerfile
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 3
+    restart: always
     <<: *ngafid-service-common
 
   # Webserver
