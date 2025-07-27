@@ -1,7 +1,7 @@
 // eslint.config.js
 import { defineConfig, globalIgnores } from "eslint/config";
 
-import globals from "globals";
+import globals, { node } from "globals";
 import compat from "eslint-plugin-compat";
 
 import reactPlugin from "eslint-plugin-react";
@@ -13,7 +13,6 @@ import tsParser from "@typescript-eslint/parser";
 
 import importPlugin from 'eslint-plugin-import';
 import js from '@eslint/js';
-import WebpackDeadcodePlugin from "webpack-deadcode-plugin";
 
 export default defineConfig([
 
@@ -48,6 +47,8 @@ export default defineConfig([
             },
 
             globals: {
+
+                ...node,
 
                 //Browser globals
                 ...globals.browser,

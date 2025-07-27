@@ -22,9 +22,11 @@ import WebGLVectorLayer from 'ol/layer/WebGLVector';
 import MultiPolygon from 'ol/geom/MultiPolygon';
 import WebGLTileLayer from 'ol/layer/WebGLTile';
 import DataTileSource from 'ol/source/DataTile';
-
-
+import { createBaseMapLayers } from './map.js';
+import TileLayer from 'ol/layer/Tile';
+import XYZ from 'ol/source/XYZ';
 import type { Event } from './types';
+
 
 type PopupContentData = {
     time: string | null;
@@ -46,6 +48,9 @@ type ProximityMapPageState = {
     error: string | null;
     showEventList: boolean;
     map: Map | null;
+    baseLayers: TileLayer<XYZ>[];
+    baseLayerStyles: string[];
+    mapStyle: string;
     heatmapLayer1: Heatmap | null;
     heatmapLayer2: Heatmap | null;
     markerSource: VectorSource | null;
@@ -203,6 +208,10 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
     gridSource: VectorSource | null;
     gridFeature: Feature | null;
 
+    private heatmapLayer1: Heatmap | null = null;
+    private heatmapLayer2: Heatmap | null = null;
+    private markerLayer: VectorLayer | null = null;
+
     constructor(props: object) {
         super(props);
         this.mapContainerRef = React.createRef<HTMLDivElement>();
@@ -218,6 +227,9 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
             error: null,
             showEventList: true,
             map: null,
+            baseLayers: [],
+            baseLayerStyles: [],
+            mapStyle: 'Road',
             heatmapLayer1: null,
             heatmapLayer2: null,
             markerSource: null,
@@ -269,6 +281,44 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
     }
 
     componentDidMount() {
+        const azureMapsKey = process.env.AZURE_MAPS_KEY;
+        const baseLayerStyles = [
+            'Aerial',
+            'Road',
+            'RoadOnDemand',
+            'SectionalCharts',
+            'IFREnrouteLowCharts',
+            'IFREnrouteHighCharts',
+            'TerminalAreaCharts',
+            'HelicopterCharts'
+        ];
+        const baseLayers: TileLayer<XYZ>[] = baseLayerStyles.map(style => {
+            let url = '';
+            if (style === 'Aerial') {
+                url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+            } else if (style === 'Road') {
+                url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+            } else if (style === 'RoadOnDemand') {
+                url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+            } else if (style === 'SectionalCharts') {
+                url = "http://localhost:8187/sectional/{z}/{x}/{-y}.png";
+            } else if (style === 'IFREnrouteLowCharts') {
+                url = "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png";
+            } else if (style === 'IFREnrouteHighCharts') {
+                url = "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png";
+            } else if (style === 'TerminalAreaCharts') {
+                url = "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png";
+            } else if (style === 'HelicopterCharts') {
+                url = "http://localhost:8187/helicopter/{z}/{x}/{-y}.png";
+            }
+            const layer = new TileLayer({
+                visible: style === this.state.mapStyle,
+                preload: Infinity,
+                source: new XYZ({ url })
+            });
+            layer.set('name', style);
+            return layer;
+        });
         const initMap = (() => {
             const heatmapSource1 = new VectorSource();
             const heatmapSource2 = new VectorSource();
@@ -318,7 +368,7 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
             const map = new Map({
                 target: 'map',
                 layers: [
-                    openStreetMapLayer,
+                    ...baseLayers,
                     heatmapLayer1,
                     heatmapLayer2,
                     markerLayer
@@ -452,7 +502,7 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
                 markerLayer.setVisible(mapZoom >= MARKER_VISIBILITY_ZOOM_THRESHOLD);
             });
 
-            this.setState({ map, heatmapLayer1, heatmapLayer2, markerSource, markerLayer }, async () => {
+            this.setState({ map, baseLayers, baseLayerStyles, heatmapLayer1, heatmapLayer2, markerSource, markerLayer }, async () => {
                 map.updateSize();
             });
         });
@@ -462,9 +512,20 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
 
     componentWillUnmount() {
         const { map } = this.state;
-        if (map) map.setTarget(undefined);
+        if (this.state.map) this.state.map.setTarget(undefined);
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.handleMouseUp);
+
+        // Remove custom layers from the map when component unmounts
+        if (this.heatmapLayer1) {
+            this.state.map?.removeLayer(this.heatmapLayer1);
+        }
+        if (this.heatmapLayer2) {
+            this.state.map?.removeLayer(this.heatmapLayer2);
+        }
+        if (this.markerLayer && this.state.map) {
+            this.state.map.removeLayer(this.markerLayer);
+        }
     }
 
     async loadEvents() {
@@ -506,15 +567,11 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
     }
 
     async processEventCoordinates(events: Event[]) {
-        const { map, heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid } = this.state;
-        if (!map || !heatmapLayer1 || !heatmapLayer2 || !markerSource) {
-            console.error('Map or layers not initialized');
+        const { heatmapLayer1, heatmapLayer2, markerSource, gridLayer, showGrid } = this.state;
+        if (!heatmapLayer1 || !heatmapLayer2 || !markerSource) {
+            console.error('Heatmap or marker layers not initialized');
             return;
         }
-
-        //Grid layer exists, hide it
-        if (gridLayer)
-            gridLayer.setVisible(false);
 
         // clear heatmap sources
         heatmapLayer1.getSource()!.clear();
@@ -636,13 +693,13 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
                 Math.max(extent1[3], extent2[3])
             ];
             console.log('[processEventCoordinates] fitting map to combinedExtent:', combinedExtent);
-            map.getView().fit(combinedExtent, { padding: [50, 50, 50, 50], maxZoom: 15 });
+            this.state.map?.getView().fit(combinedExtent, { padding: [50, 50, 50, 50], maxZoom: 15 });
         } else {
             console.log('[processEventCoordinates] Not fitting map: invalid or empty extents/features.');
         }
 
         // Add grid-based density map if enabled
-        if (showGrid && map) {
+        if (showGrid && this.state.map) {
             // Use bounding box from boxInput
             const { minLat, maxLat, minLon, maxLon } = this.state.boxInput;
             const gridSize = 0.05;
@@ -899,32 +956,45 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
         this.setState({ distances: { lateral: result.lateral, euclidean: result.euclidean } });
     };
 
+    onShowGridChange = () => {
+
+        // Remove grid layer if switching to heatmap
+        const { map, gridLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
+        if (map) {
+            if (showGrid) {
+                // Hide heatmap layers
+                if (heatmapLayer1) heatmapLayer1.setVisible(false);
+                if (heatmapLayer2) heatmapLayer2.setVisible(false);
+            } else {
+                // Hide grid layer
+                if (gridLayer) {
+                    gridLayer.setVisible(false);
+                }
+                // Show heatmap layers
+                if (heatmapLayer1) heatmapLayer1.setVisible(true);
+                if (heatmapLayer2) heatmapLayer2.setVisible(true);
+            }
+        }
+        // Re-process events to update map layers
+        this.processEventCoordinates(this.state.events);
+
+    }
+
     toggleGrid = () => {
         this.setState(
             prevState => ({ showGrid: !prevState.showGrid }),
-            () => {
-                // Remove grid layer if switching to heatmap
-                const { map, gridLayer, heatmapLayer1, heatmapLayer2, showGrid } = this.state;
-                if (map) {
-                    if (showGrid) {
-                        // Hide heatmap layers
-                        if (heatmapLayer1) heatmapLayer1.setVisible(false);
-                        if (heatmapLayer2) heatmapLayer2.setVisible(false);
-                    } else {
-                        // Hide grid layer
-                        if (gridLayer) {
-                            gridLayer.setVisible(false);
-                        }
-                        // Show heatmap layers
-                        if (heatmapLayer1) heatmapLayer1.setVisible(true);
-                        if (heatmapLayer2) heatmapLayer2.setVisible(true);
-                    }
-                }
-                // Re-process events to update map layers
-                this.processEventCoordinates(this.state.events);
-            }
+            this.onShowGridChange
         );
     };
+
+    setShowGrid = (showGridNew: boolean) => {
+        this.setState(
+            prevState => ({ showGrid: showGridNew }),
+            this.onShowGridChange
+        );
+    }
+
+        
 
     // Helper to render an empty green grid overlay for the selected bounding box
     async renderEmptyGridOverlay() {
@@ -1057,6 +1127,15 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
 
     }
 
+    handleMapLayerChange = (newMapStyle: string) => {
+        const { baseLayers, baseLayerStyles, map } = this.state;
+        if (!map) return;
+        baseLayers.forEach((layer, idx) => {
+            layer.setVisible(baseLayerStyles[idx] === newMapStyle);
+        });
+        this.setState({ mapStyle: newMapStyle });
+    };
+
     render() {
         const { loading, error, showEventList, events, openPopups, boxInput, boxActive, showGrid, gridLayer, didFirstLoad } = this.state;
 
@@ -1171,7 +1250,7 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
                 id="map"
                 ref={this.mapContainerRef}
                 style={{ minHeight: "500px" }}
-                className="map card overflow-clip m-0 flex border-[var(--c_border_alt)] w-full h-full! relative"
+                className="map card overflow-clip m-0 flex border-[var(--c_border_alt)] w-full h-full! relative bg-[var(--c_bg)]!"
             ></div>
         );
 
@@ -1280,18 +1359,28 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
         // Toggle switch for grid/heatmap
         const gridToggleSwitch = (
             <div className="flex items-center justify-between gap-2">
-                <span className={showGrid ? 'opacity-50' : ''}  style={{ fontWeight: 600, fontSize: 15 }}>
+                <button
+                    type="button"
+                    className={`cursor-pointer ${showGrid ? 'opacity-50' : ''}`}
+                    style={{ fontWeight: 600, fontSize: 15 }}
+                    onClick={() => this.setShowGrid(false)}
+                >
                     <i className="fa fa-fire mr-1"/>
                     Heatmap
-                </span>
+                </button>
                 <label className="switch mb-0 justify-self-center mx-auto">
                     <input type="checkbox" checked={showGrid} onChange={this.toggleGrid} />
                     <span className="slider round"></span>
                 </label>
-                <span className={`ml-auto ${showGrid ? '' : 'opacity-50'}`} style={{ fontWeight: 600, fontSize: 15 }}>
+                <button
+                    type="button"
+                    className={`ml-auto cursor-pointer ${showGrid ? '' : 'opacity-50'}`}
+                    style={{ fontWeight: 600, fontSize: 15 }}
+                    onClick={() => this.setShowGrid(true)}
+                >
                     <i className="fa fa-th mr-1"/>
                     Grid
-                </span>
+                </button>
                 <style>{`
                     .switch {
                         position: relative;
@@ -1508,20 +1597,42 @@ class ProximityMapPage extends React.Component<object, ProximityMapPageState & {
             </div>
         );
 
+        // Map layer dropdown for the navbar
+        const mapLayerDropdown = (
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '16px', marginRight: '8px', height: '56px' }}>
+                <select
+                    className="custom-select"
+                    id="mapLayerSelect"
+                    style={{ marginLeft: "1px", height: "36px", minHeight: "36px", maxHeight: "36px", border: "1px solid rgb(108, 117, 125)", alignSelf: 'center' }}
+                    value={this.state.mapStyle}
+                    onChange={e => this.handleMapLayerChange(e.target.value)}
+                >
+                    <option value="Aerial">Aerial</option>
+                    <option value="Road">Road (static)</option>
+                    <option value="RoadOnDemand">Road (dynamic)</option>
+                    <option value="SectionalCharts">Sectional Charts</option>
+                    <option value="TerminalAreaCharts">Terminal Area Charts</option>
+                    <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
+                    <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
+                    <option value="HelicopterCharts">Helicopter Charts</option>
+                </select>
+            </div>
+        );
+
         return (
             <div
                 className="w-full h-full grow flex flex-col"
                 id="proximity-map-page-content"
                 style={{position: 'relative'}}
             >
-
-                {/* Navbar */}
+                {/* Navbar with dropdown */}
                 <div style={{flex: "0 0 auto"}}>
                     <SignedInNavbar
                         activePage="proximity_map"
                         showProximityEventListButton={true}
                         toggleProximityEventList={this.toggleEventList}
                         plotMapHidden={false}
+                        mapLayerDropdown={mapLayerDropdown}
                     />
                 </div>
 

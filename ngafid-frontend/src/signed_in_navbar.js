@@ -238,6 +238,7 @@ export default class SignedInNavbar extends React.Component {
             <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
                 <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">NGAFID</a>
+                {this.props.mapLayerDropdown}
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
@@ -333,7 +334,6 @@ export default class SignedInNavbar extends React.Component {
                                             onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
                                         <option value="Aerial">Aerial</option>
-                                        <option value="AerialWithLabels">Aerial with labels</option>
                                         <option value="Road">Road (static)</option>
                                         <option value="RoadOnDemand">Road (dynamic)</option>
                                         <option value="SectionalCharts">Sectional Charts</option>
@@ -395,6 +395,7 @@ export default class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
                                 <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
                                 <DropdownLink name={"Proximity Map"} hidden={false} href="/protected/proximity_map"/>
+                                <DropdownLink icon={"fa-fire"} name={"Heat Map"} hidden={false} href="/protected/heat_map"/>
 
                                 {admin
                                     ? <div className="dropdown-divider"></div>
