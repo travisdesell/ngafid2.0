@@ -62,7 +62,7 @@ public class EventObserver {
                         List<Flight> flights = getApplicableFlightsWithoutEvent(connection, event);
                         for (Flight flight : flights) {
                             producer.send(new ProducerRecord<>(Topic.EVENT.toString(), objectMapper.writeValueAsString(new Events.EventToCompute(flight.getId(), event.getId()))));
-                            flight.insertComputedEvents(connection, List.of(event));
+                            // Removed premature flight.insertComputedEvents() call - EventConsumer will handle this after successful processing
                         }
                     }
                 } catch (JsonProcessingException e) {

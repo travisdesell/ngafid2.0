@@ -173,21 +173,6 @@ interface EventTypeHandler {
     processFunction: (events: any[], map: Map | null, layers: any) => Promise<void>;
 }
 
-const eventTypeRegistry: { [definitionId: number]: EventTypeHandler } = {
-    [-1]: {
-        name: "Proximity",
-        endpoint: "/protected/proximity_events_in_box",
-        processFunction: async (events, map, layers) => {
-            // This will be implemented below
-            console.log("Processing proximity events:", events.length);
-        }
-    }
-    // Future event types can be added here:
-    // [1]: { name: "Low Pitch", endpoint: "/protected/low_pitch_events_in_box", processFunction: ... },
-    // [2]: { name: "High Pitch", endpoint: "/protected/high_pitch_events_in_box", processFunction: ... },
-    // etc.
-};
-
 const azureMapsKey = process.env.AZURE_MAPS_KEY;
 
 // Marker visibility threshold (same as proximity map)
@@ -331,7 +316,7 @@ const HeatMapPage: React.FC = () => {
     const [overlayLayer, setOverlayLayer] = useState<VectorLayer<VectorSource> | null>(null);
     const [overlayFeature, setOverlayFeature] = useState<Feature<Polygon> | null>(null);
     const [error, setError] = useState<string | null>(null);
-    
+
     // Proximity functionality state
     const [proximityEvents, setProximityEvents] = useState<ProximityEvent[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -351,13 +336,13 @@ const HeatMapPage: React.FC = () => {
         maxSeverity: number;
         boxCoords: { minLat: string, maxLat: string, minLon: string, maxLon: string };
     } | null>(null);
-    
+
     // Popup and distance calculation state
-    const [openPopups, setOpenPopups] = useState<Array<{ 
-        id: string, 
-        coord: number[], 
-        data: PopupContentData, 
-        position?: { left: number, top: number } 
+    const [openPopups, setOpenPopups] = useState<Array<{
+        id: string,
+        coord: number[],
+        data: PopupContentData,
+        position?: { left: number, top: number }
     }>>([]);
     const [selectedPoints, setSelectedPoints] = useState<Array<{
         id: string;
@@ -369,7 +354,22 @@ const HeatMapPage: React.FC = () => {
         lateral: number | null;
         euclidean: number | null;
     }>({ lateral: null, euclidean: null });
-    
+
+
+    // Data structure for proximity event points
+    interface ProximityEventPoints {
+        eventId: number;
+        mainFlightId: number;
+        otherFlightId: number;
+        mainFlightPoints: any[];
+        otherFlightPoints: any[];
+        severity: number;
+        airframe: string;
+        otherAirframe: string;
+    }
+    // Add a new state for proximity event points
+    const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
+
     // =======================
     // POPUP DRAGGING FUNCTIONALITY
     // =======================
@@ -452,7 +452,7 @@ const HeatMapPage: React.FC = () => {
         };
     }, []);
     // =================== END POPUP DRAGGING FUNCTIONALITY ===================
-    
+
     // Map ref must be defined before using in handlers
     const mapRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -468,7 +468,7 @@ const HeatMapPage: React.FC = () => {
                     gridSource.removeFeature(f);
             });
         }
-        
+
         // Hide layers
         if (heatmapLayer1) heatmapLayer1.setVisible(false);
         if (heatmapLayer2) heatmapLayer2.setVisible(false);
@@ -481,7 +481,7 @@ const HeatMapPage: React.FC = () => {
             console.log('No previous params, considering changed');
             return true; // First time, so consider it changed
         }
-        
+
         const currentParams = {
             airframe,
             startYear,
@@ -492,7 +492,7 @@ const HeatMapPage: React.FC = () => {
             maxSeverity,
             boxCoords
         };
-        
+
         const changed = (
             previousParams.airframe !== currentParams.airframe ||
             previousParams.startYear !== currentParams.startYear ||
@@ -506,13 +506,13 @@ const HeatMapPage: React.FC = () => {
             previousParams.boxCoords.minLon !== currentParams.boxCoords.minLon ||
             previousParams.boxCoords.maxLon !== currentParams.boxCoords.maxLon
         );
-        
+
         console.log('Parameter change check:', {
             previous: previousParams,
             current: currentParams,
             changed: changed
         });
-        
+
         return changed;
     };
 
@@ -579,16 +579,22 @@ const HeatMapPage: React.FC = () => {
      * This logic is modeled after the working implementation in proximity_map.tsx.
      */
 
-    // Handle grid/heatmap toggle for proximity events
+        // Handle grid/heatmap toggle for both proximity and regular events
     const handleGridToggle = () => {
-        // Toggle the showGrid state and re-render the map overlay
-        const newShowGrid = !showGrid;
-        setShowGrid(newShowGrid);
-        // Reprocess proximity events if we have any, using the new value
-        if (proximityEvents.length > 0) {
-            processProximityEventCoordinates(proximityEvents, newShowGrid);
-        }
-    };
+            // Toggle the showGrid state and re-render the map overlay
+            const newShowGrid = !showGrid;
+            setShowGrid(newShowGrid);
+            // Reprocess events if we have any, using the new value
+            if (proximityEventPoints.length > 0) {
+                // Check if we have proximity events or regular events
+                const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== null);
+                if (hasProximityEvents) {
+                    processProximityEventCoordinates(proximityEventPoints, newShowGrid);
+                } else {
+                    processSingleEventCoordinates(proximityEventPoints, newShowGrid);
+                }
+            }
+        };
 
     // Grid/Heatmap icon-only toggle, highlight active icon
     const gridToggleSwitch = (
@@ -619,7 +625,17 @@ const HeatMapPage: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                 }}
-                onClick={() => setShowGrid(false)}
+                onClick={() => {
+                    setShowGrid(false);
+                    if (proximityEventPoints.length > 0) {
+                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== null);
+                        if (hasProximityEvents) {
+                            processProximityEventCoordinates(proximityEventPoints, false);
+                        } else {
+                            processSingleEventCoordinates(proximityEventPoints, false);
+                        }
+                    }
+                }}
             >
                 <i className="fa fa-fire" />
             </span>
@@ -639,7 +655,17 @@ const HeatMapPage: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                 }}
-                onClick={() => setShowGrid(true)}
+                onClick={() => {
+                    setShowGrid(true);
+                    if (proximityEventPoints.length > 0) {
+                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== null);
+                        if (hasProximityEvents) {
+                            processProximityEventCoordinates(proximityEventPoints, true);
+                        } else {
+                            processSingleEventCoordinates(proximityEventPoints, true);
+                        }
+                    }
+                }}
             >
                 <i className="fa fa-th" />
             </span>
@@ -688,7 +714,7 @@ const HeatMapPage: React.FC = () => {
      * @param events The proximity events to render
      * @param useShowGrid Optional override for the grid/heatmap toggle
      */
-    const processProximityEventCoordinates = async (events: ProximityEvent[], useShowGrid?: boolean) => {
+    const processProximityEventCoordinates = async (allEventPoints: ProximityEventPoints[], useShowGrid?: boolean) => {
         if (!heatmapLayer1 || !heatmapLayer2 || !markerSource) {
             console.error('Heatmap or marker layers not initialized');
             return;
@@ -696,109 +722,80 @@ const HeatMapPage: React.FC = () => {
         // Use the passed showGrid value or fall back to state
         const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
         console.log('[processProximityEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
-        
+
         // Clear heatmap sources
         heatmapLayer1.getSource()!.clear();
         heatmapLayer2.getSource()!.clear();
         if (markerSource) markerSource.clear();
-        
-        // Track processed unordered flight pairs
-        const processedPairs = new Set<string>();
+
+        // Track all points for grid
         const allPoints: { latitude: number, longitude: number }[] = [];
-        
-        for (const event of events) {
-            const eventId = Number(event.id);
-            const mainFlightId = Number(event.flightId);
-            const otherFlightId = Number(event.otherFlightId);
-            
-            // Create an unordered key for the pair
-            const pairKey = [Math.min(mainFlightId, otherFlightId), Math.max(mainFlightId, otherFlightId)].join('-');
-            if (processedPairs.has(pairKey)) continue;
-            processedPairs.add(pairKey);
-            
-            // Fetch points for main flight
-            const mainFlightResp = await fetch(`/protected/proximity_points_for_flight?event_id=${eventId}&flight_id=${mainFlightId}`, {
-                credentials: 'include',
-                headers: { 'Accept': 'application/json' }
-            });
-            const mainFlightData = await mainFlightResp.json();
-            
-            // Fetch points for other flight
-            const otherFlightResp = await fetch(`/protected/proximity_points_for_flight?event_id=${eventId}&flight_id=${otherFlightId}`, {
-                credentials: 'include',
-                headers: { 'Accept': 'application/json' }
-            });
-            const otherFlightData = await otherFlightResp.json();
-            
-            // Add points for main flight (RED)
-            if (mainFlightData && mainFlightData.points && mainFlightData.points.length > 0) {
-                for (const point of mainFlightData.points) {
-                    const olCoord = fromLonLat([
-                        point.longitude + 0.0001,
-                        point.latitude + 0.0001
-                    ]);
-                    const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                    heatmapFeature.set('weight', 0.2);
-                    heatmapLayer1.getSource()!.addFeature(heatmapFeature);
-                    const marker = new Feature({ geometry: new Point(olCoord) });
-                    marker.setStyle(RED_POINT_STYLE);
-                    marker.setProperties({
-                        isMarker: true,
-                        flightId: mainFlightId,
-                        otherFlightId: otherFlightId,
-                        time: point.timestamp,
-                        flightAirframe: mainFlightData.flight_airframe,
-                        otherFlightAirframe: otherFlightData.flight_airframe || 'N/A',
-                        severity: mainFlightData.lateral_distance,
-                        altitudeAgl: point.altitude_agl,
-                        lateralDistance: mainFlightData.lateral_distance,
-                        verticalDistance: mainFlightData.vertical_distance,
-                        latitude: point.latitude,
-                        longitude: point.longitude
-                    });
-                    markerSource.addFeature(marker);
-                    allPoints.push({ latitude: point.latitude, longitude: point.longitude });
-                }
+
+        for (const eventPoints of allEventPoints) {
+            // RED: mainFlightPoints
+            for (const point of eventPoints.mainFlightPoints) {
+                const olCoord = fromLonLat([
+                    point.longitude + 0.0001,
+                    point.latitude + 0.0001
+                ]);
+                const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
+                heatmapFeature.set('weight', 0.2);
+                heatmapLayer1.getSource()!.addFeature(heatmapFeature);
+                const marker = new Feature({ geometry: new Point(olCoord) });
+                marker.setStyle(RED_POINT_STYLE);
+                marker.setProperties({
+                    isMarker: true,
+                    flightId: eventPoints.mainFlightId,
+                    otherFlightId: eventPoints.otherFlightId,
+                    time: point.timestamp,
+                    flightAirframe: eventPoints.airframe,
+                    otherFlightAirframe: eventPoints.otherAirframe,
+                    severity: eventPoints.severity,
+                    altitudeAgl: point.altitude_agl,
+                    lateralDistance: point.lateral_distance,
+                    verticalDistance: point.vertical_distance,
+                    latitude: point.latitude,
+                    longitude: point.longitude
+                });
+                markerSource.addFeature(marker);
+                allPoints.push({ latitude: point.latitude, longitude: point.longitude });
             }
-            
-            // Add points for other flight (BLACK)
-            if (otherFlightData && otherFlightData.points && otherFlightData.points.length > 0) {
-                for (const point of otherFlightData.points) {
-                    const olCoord = fromLonLat([
-                        point.longitude + 0.0001,
-                        point.latitude + 0.0001
-                    ]);
-                    const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                    heatmapFeature.set('weight', 0.2);
-                    heatmapLayer2.getSource()!.addFeature(heatmapFeature);
-                    const marker = new Feature({ geometry: new Point(olCoord) });
-                    marker.setStyle(BLACK_POINT_STYLE);
-                    marker.setProperties({
-                        isMarker: true,
-                        flightId: otherFlightId,
-                        otherFlightId: mainFlightId,
-                        time: point.timestamp,
-                        flightAirframe: otherFlightData.flight_airframe,
-                        otherFlightAirframe: mainFlightData.flight_airframe || 'N/A',
-                        severity: otherFlightData.lateral_distance,
-                        altitudeAgl: point.altitude_agl,
-                        lateralDistance: otherFlightData.lateral_distance,
-                        verticalDistance: otherFlightData.vertical_distance,
-                        latitude: point.latitude,
-                        longitude: point.longitude
-                    });
-                    markerSource.addFeature(marker);
-                    allPoints.push({ latitude: point.latitude, longitude: point.longitude });
-                }
+            // BLACK: otherFlightPoints
+            for (const point of eventPoints.otherFlightPoints) {
+                const olCoord = fromLonLat([
+                    point.longitude + 0.0001,
+                    point.latitude + 0.0001
+                ]);
+                const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
+                heatmapFeature.set('weight', 0.2);
+                heatmapLayer2.getSource()!.addFeature(heatmapFeature);
+                const marker = new Feature({ geometry: new Point(olCoord) });
+                marker.setStyle(BLACK_POINT_STYLE);
+                marker.setProperties({
+                    isMarker: true,
+                    flightId: eventPoints.otherFlightId,
+                    otherFlightId: eventPoints.mainFlightId,
+                    time: point.timestamp,
+                    flightAirframe: eventPoints.otherAirframe,
+                    otherFlightAirframe: eventPoints.airframe,
+                    severity: eventPoints.severity,
+                    altitudeAgl: point.altitude_agl,
+                    lateralDistance: point.lateral_distance,
+                    verticalDistance: point.vertical_distance,
+                    latitude: point.latitude,
+                    longitude: point.longitude
+                });
+                markerSource.addFeature(marker);
+                allPoints.push({ latitude: point.latitude, longitude: point.longitude });
             }
         }
-        
+
         // Fit map to extents
         const extent1 = heatmapLayer1.getSource()!.getExtent();
         const extent2 = heatmapLayer2.getSource()!.getExtent();
         const features1 = heatmapLayer1.getSource()!.getFeatures();
         const features2 = heatmapLayer2.getSource()!.getFeatures();
-        
+
         const isValidExtent = (extent: number[]) => {
             return (
                 Array.isArray(extent) &&
@@ -807,7 +804,7 @@ const HeatMapPage: React.FC = () => {
                 (extent[0] !== extent[2]) && (extent[1] !== extent[3])
             );
         };
-        
+
         if ((features1.length > 0 || features2.length > 0) && isValidExtent(extent1) && isValidExtent(extent2)) {
             const combinedExtent: [number, number, number, number] = [
                 Math.min(extent1[0], extent2[0]),
@@ -817,7 +814,7 @@ const HeatMapPage: React.FC = () => {
             ];
             map?.getView().fit(combinedExtent, { padding: [50, 50, 50, 50], maxZoom: 15 });
         }
-        
+
         // Add grid-based density map if enabled
         if (shouldShowGrid && map && gridSource) {
             console.log('[processProximityEventCoordinates] Rendering grid...');
@@ -834,7 +831,7 @@ const HeatMapPage: React.FC = () => {
             const maxLatNum = parseFloat(boxCoords.maxLat);
             const minLonNum = parseFloat(boxCoords.minLon);
             const maxLonNum = parseFloat(boxCoords.maxLon);
-            
+
             let latStart = minLatNum, latEnd = maxLatNum, lonStart = minLonNum, lonEnd = maxLonNum;
             if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) {
                 if (allPoints.length > 0) {
@@ -846,18 +843,18 @@ const HeatMapPage: React.FC = () => {
                     latStart = latEnd = lonStart = lonEnd = 0;
                 }
             }
-            
+
             if (latStart > latEnd) [latStart, latEnd] = [latEnd, latStart];
             if (lonStart > lonEnd) [lonStart, lonEnd] = [lonEnd, lonStart];
-            
+
             const features = [];
             let maxCount = 1;
             if (Object.values(gridCounts).length > 0) {
                 maxCount = Math.max(1, ...Object.values(gridCounts));
             }
-            
+
             const proj = getTransform('EPSG:4326', 'EPSG:3857');
-            
+
             const xs: number[] = [];
             const ys: number[] = [];
             for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd + 1e-9; lon += gridSize) {
@@ -866,58 +863,58 @@ const HeatMapPage: React.FC = () => {
             for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd + 1e-9; lat += gridSize) {
                 ys.push(proj([0, lat])[1]);
             }
-            
+
             const rows = ys.length - 1;
             const cols = xs.length - 1;
-            
+
             for (let j = 0; j < rows; j++) {
                 const y0 = ys[j];
                 const y1 = ys[j + 1];
                 const latVal = (Math.floor(latStart / gridSize) + j) * gridSize;
-                
+
                 for (let i = 0; i < cols; i++) {
                     const x0 = xs[i];
                     const x1 = xs[i + 1];
                     const lonVal = (Math.floor(lonStart / gridSize) + i) * gridSize;
-                    
+
                     const count = gridCounts[`${latVal.toFixed(4)},${lonVal.toFixed(4)}`] || 0;
                     const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
                     const color = interpolateColor(intensity);
-                    
+
                     if (count > 0) {
                         console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
                     }
-                    
-                    const polygon = new Polygon([[ 
+
+                    const polygon = new Polygon([[
                         [x0, y0],
                         [x1, y0],
                         [x1, y1],
                         [x0, y1],
                         [x0, y0]
                     ]]);
-                    
+
                     const cellFeature = new Feature(polygon);
                     cellFeature.set('kind', 'density');
                     cellFeature.set('color', color);
-                    
+
                     features.push(cellFeature);
                 }
             }
-            
+
             // Clear old density cells
             gridSource.getFeatures().forEach(f => {
                 if (f.get('kind') === 'density')
                     gridSource.removeFeature(f);
             });
-            
+
             // Add new features
             gridSource.addFeatures(features);
             console.log('[processProximityEventCoordinates] Added grid features:', features.length, 'Grid source now has:', gridSource.getFeatures().length);
-            
+
             // Hide heatmap layers
             heatmapLayer1.setVisible(false);
             heatmapLayer2.setVisible(false);
-            
+
             // Show grid layer
             if (gridLayer) {
                 gridLayer.setVisible(true);
@@ -937,6 +934,185 @@ const HeatMapPage: React.FC = () => {
         }
     };
 
+    // Dedicated function to render single-flight (non-proximity) events
+    const processSingleEventCoordinates = async (singleEventPoints: any[], useShowGrid?: boolean) => {
+        if (!heatmapLayer1 || !markerSource) {
+            console.error('Heatmap or marker layers not initialized');
+            return;
+        }
+        
+        // Use the passed showGrid value or fall back to state
+        const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
+        console.log('[processSingleEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
+        
+        // Clear heatmap and marker sources
+        heatmapLayer1.getSource()!.clear();
+        if (markerSource) markerSource.clear();
+
+        // Track all points for extent and grid
+        const allPoints: { latitude: number, longitude: number }[] = [];
+
+        for (const eventPoints of singleEventPoints) {
+            for (const point of eventPoints.mainFlightPoints) {
+                const olCoord = fromLonLat([
+                    point.longitude + 0.0001,
+                    point.latitude + 0.0001
+                ]);
+                const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
+                heatmapFeature.set('weight', 0.2);
+                heatmapLayer1.getSource()!.addFeature(heatmapFeature);
+                const marker = new Feature({ geometry: new Point(olCoord) });
+                marker.setStyle(RED_POINT_STYLE);
+                marker.setProperties({
+                    isMarker: true,
+                    flightId: eventPoints.mainFlightId,
+                    otherFlightId: null, // Single events don't have other flights
+                    time: point.timestamp,
+                    flightAirframe: eventPoints.airframe,
+                    otherFlightAirframe: null,
+                    severity: eventPoints.severity,
+                    altitudeAgl: point.altitude_agl,
+                    latitude: point.latitude,
+                    longitude: point.longitude
+                });
+                markerSource.addFeature(marker);
+                allPoints.push({ latitude: point.latitude, longitude: point.longitude });
+            }
+        }
+
+        // Fit map to extents
+        const extent = heatmapLayer1.getSource()!.getExtent();
+        const features = heatmapLayer1.getSource()!.getFeatures();
+        const isValidExtent = (extent: number[]) => {
+            return (
+                Array.isArray(extent) &&
+                extent.length === 4 &&
+                extent.every((v) => typeof v === 'number' && isFinite(v)) &&
+                (extent[0] !== extent[2]) && (extent[1] !== extent[3])
+            );
+        };
+        if (features.length > 0 && isValidExtent(extent)) {
+            map?.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 15 });
+        }
+
+        // Add grid-based density map if enabled
+        if (shouldShowGrid && map && gridSource) {
+            console.log('[processSingleEventCoordinates] Rendering grid...');
+            const gridSize = 0.05;
+            const gridCounts: Record<string, number> = {};
+            allPoints.forEach(pt => {
+                const latKey = (Math.floor(pt.latitude / gridSize) * gridSize).toFixed(4);
+                const lonKey = (Math.floor(pt.longitude / gridSize) * gridSize).toFixed(4);
+                const key = `${latKey},${lonKey}`;
+                gridCounts[key] = (gridCounts[key] || 0) + 1;
+            });
+            
+            // Parse bounding box as numbers
+            const minLatNum = parseFloat(boxCoords.minLat);
+            const maxLatNum = parseFloat(boxCoords.maxLat);
+            const minLonNum = parseFloat(boxCoords.minLon);
+            const maxLonNum = parseFloat(boxCoords.maxLon);
+
+            let latStart = minLatNum, latEnd = maxLatNum, lonStart = minLonNum, lonEnd = maxLonNum;
+            if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) {
+                if (allPoints.length > 0) {
+                    latStart = Math.min(...allPoints.map(pt => pt.latitude));
+                    latEnd = Math.max(...allPoints.map(pt => pt.latitude));
+                    lonStart = Math.min(...allPoints.map(pt => pt.longitude));
+                    lonEnd = Math.max(...allPoints.map(pt => pt.longitude));
+                } else {
+                    latStart = latEnd = lonStart = lonEnd = 0;
+                }
+            }
+
+            if (latStart > latEnd) [latStart, latEnd] = [latEnd, latStart];
+            if (lonStart > lonEnd) [lonStart, lonEnd] = [lonEnd, lonStart];
+
+            const features = [];
+            let maxCount = 1;
+            if (Object.values(gridCounts).length > 0) {
+                maxCount = Math.max(1, ...Object.values(gridCounts));
+            }
+
+            const proj = getTransform('EPSG:4326', 'EPSG:3857');
+
+            const xs: number[] = [];
+            const ys: number[] = [];
+            for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd + 1e-9; lon += gridSize) {
+                xs.push(proj([lon, 0])[0]);
+            }
+            for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd + 1e-9; lat += gridSize) {
+                ys.push(proj([0, lat])[1]);
+            }
+
+            const rows = ys.length - 1;
+            const cols = xs.length - 1;
+
+            for (let j = 0; j < rows; j++) {
+                const y0 = ys[j];
+                const y1 = ys[j + 1];
+                const latVal = (Math.floor(latStart / gridSize) + j) * gridSize;
+
+                for (let i = 0; i < cols; i++) {
+                    const x0 = xs[i];
+                    const x1 = xs[i + 1];
+                    const lonVal = (Math.floor(lonStart / gridSize) + i) * gridSize;
+
+                    const count = gridCounts[`${latVal.toFixed(4)},${lonVal.toFixed(4)}`] || 0;
+                    const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
+                    const color = interpolateColor(intensity);
+
+                    if (count > 0) {
+                        console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
+                    }
+
+                    const polygon = new Polygon([[
+                        [x0, y0],
+                        [x1, y0],
+                        [x1, y1],
+                        [x0, y1],
+                        [x0, y0]
+                    ]]);
+
+                    const cellFeature = new Feature(polygon);
+                    cellFeature.set('kind', 'density');
+                    cellFeature.set('color', color);
+
+                    features.push(cellFeature);
+                }
+            }
+
+            // Clear old density cells
+            gridSource.getFeatures().forEach(f => {
+                if (f.get('kind') === 'density')
+                    gridSource.removeFeature(f);
+            });
+
+            // Add new features
+            gridSource.addFeatures(features);
+            console.log('[processSingleEventCoordinates] Added grid features:', features.length, 'Grid source now has:', gridSource.getFeatures().length);
+
+            // Hide heatmap layers
+            heatmapLayer1.setVisible(false);
+
+            // Show grid layer
+            if (gridLayer) {
+                gridLayer.setVisible(true);
+                console.log('[processSingleEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
+            } else {
+                console.warn('[processSingleEventCoordinates] gridLayer is null!');
+            }
+        } else {
+            // Show heatmap layers
+            if (heatmapLayer1) heatmapLayer1.setVisible(true);
+            // Hide grid layer if present
+            if (gridLayer) {
+                gridLayer.setVisible(false);
+                console.log('[processSingleEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
+            }
+        }
+    };
+
     // Map initialization and layer switching
     useEffect(() => {
         if (mapRef.current && !map) {
@@ -945,12 +1121,12 @@ const HeatMapPage: React.FC = () => {
                 visible: opt.value === mapStyle,
                 source: new XYZ({ url: opt.url() })
             }));
-            
+
             // Create heatmap sources and layers
             const heatmapSource1 = new VectorSource();
             const heatmapSource2 = new VectorSource();
             const markerSource = new VectorSource();
-            
+
             const heatmapLayer1 = new Heatmap({
                 source: heatmapSource1,
                 blur: 3,
@@ -965,7 +1141,7 @@ const HeatMapPage: React.FC = () => {
                 ]
             });
             heatmapLayer1.set('interactive', false);
-            
+
             const heatmapLayer2 = new Heatmap({
                 source: heatmapSource2,
                 blur: 3,
@@ -980,23 +1156,34 @@ const HeatMapPage: React.FC = () => {
                 ]
             });
             heatmapLayer2.set('interactive', false);
-            
+
             // Create marker layer for individual points
             const markerLayer = new VectorLayer({
                 source: markerSource,
                 style: (feature) => {
                     const props = feature.getProperties();
-                    return props.isMarker ? (props.flightId === props.otherFlightId ? RED_POINT_STYLE : BLACK_POINT_STYLE) : undefined;
+
+                    if (!props.isMarker) return undefined;
+                    
+                    // For proximity events: red for main flight, black for other flight
+                    // For regular events: red for all points
+                    if (props.otherFlightId) {
+                        // Proximity event - use red/black based on which flight this point belongs to
+                        return props.flightId === props.otherFlightId ? RED_POINT_STYLE : BLACK_POINT_STYLE;
+                    } else {
+                        // Regular event - use red for all points
+                        return RED_POINT_STYLE;
+                    }
                 },
                 zIndex: 1001
             });
             markerLayer.set('interactive', true); // Make markers interactive
-            
+
             // Create grid source and layer
             const gridSource = new VectorSource({
                 useSpatialIndex: false,
             });
-            
+
             const gridLayer = new WebGLVectorLayer({
                 source: gridSource,
                 disableHitDetection: true,
@@ -1008,7 +1195,7 @@ const HeatMapPage: React.FC = () => {
                 opacity: 0.7
             });
             gridLayer.set('interactive', false);
-            
+
             // Create overlay vector layer for selection box
             const vectorSource = new VectorSource();
             const vectorLayer = new VectorLayer({
@@ -1018,7 +1205,7 @@ const HeatMapPage: React.FC = () => {
                 }),
                 zIndex: 1000
             });
-            
+
             const olMap = new Map({
                 target: mapRef.current,
                 layers: [...layers, heatmapLayer1, heatmapLayer2, markerLayer, gridLayer, vectorLayer],
@@ -1027,7 +1214,7 @@ const HeatMapPage: React.FC = () => {
                     zoom: 4
                 })
             });
-            
+
             // DragBox for coordinate selection
             const dragBox = new DragBox({ condition: platformModifierKeyOnly });
             olMap.addInteraction(dragBox);
@@ -1054,7 +1241,7 @@ const HeatMapPage: React.FC = () => {
                 vectorSource.addFeature(feature);
                 setOverlayFeature(feature);
             });
-            
+
             // =======================
             // SECTION: Restrict to 2 Selected Points/Popups & Distance Calculation
             // =======================
@@ -1088,7 +1275,11 @@ const HeatMapPage: React.FC = () => {
                     const coord = geometry.getCoordinates();
                     const props = feature.getProperties();
                     if (!props.isMarker) return;
-                    const popupId = `${props.flightId}-${props.otherFlightId}-${props.time}`;
+                    console.log('props.severity:', props.severity, 'type:', typeof props.severity, 'props:', props);
+                    // Generate popup ID based on whether it's a proximity event or regular event
+                    const popupId = props.otherFlightId 
+                        ? `${props.flightId}-${props.otherFlightId}-${props.time}` 
+                        : `${props.flightId}-${props.time}`;
                     // Prevent duplicate popups for the same marker
                     if (openPopups.some(p => p.id === popupId)) return;
                     // Use callback form to get latest selectedPoints
@@ -1159,7 +1350,7 @@ const HeatMapPage: React.FC = () => {
                     markerLayer.setVisible(mapZoom >= MARKER_VISIBILITY_ZOOM_THRESHOLD);
                 }
             });
-            
+
             setMap(olMap);
             setOverlayLayer(vectorLayer);
             setHeatmapLayer1(heatmapLayer1);
@@ -1185,7 +1376,6 @@ const HeatMapPage: React.FC = () => {
     // Handlers for event checkboxes, airframe selection, date pickers, etc.
     const handleCheckEvent = (eventName: string) => {
         setEventChecked(prev => ({ ...prev, [eventName]: !prev[eventName] }));
-        
         // Clear previous parameters when Proximity or ANY Event is deselected
         if ((eventName === "Proximity" || eventName === "ANY Event") && eventChecked[eventName]) {
             setPreviousParams(null);
@@ -1213,150 +1403,154 @@ const HeatMapPage: React.FC = () => {
         setEndMonth(Number(m));
         setDatesChanged(true);
     };
-    
-    // Proximity event fetching and processing
-    const fetchProximityEvents = async () => {
-        if (!boxCoords.minLat || !boxCoords.maxLat || !boxCoords.minLon || !boxCoords.maxLon) {
-            setError('No area is selected. Please select an area on the map.');
-            return [];
+
+    // --- Refactored Event Fetching and Points Aggregation ---
+    // 1. Fetch events matching filters (all types)
+    const fetchEvents = async (filters: {
+        airframe: string;
+        eventDefinitionIds: number[];
+        startDate: string;
+        endDate: string;
+        minLat: number;
+        maxLat: number;
+        minLon: number;
+        maxLon: number;
+        minSeverity: number;
+        maxSeverity: number;
+    }) => {
+        let url = `/protected/events_filtered?`;
+        if (filters.airframe) url += `airframe=${encodeURIComponent(filters.airframe)}&`;
+        url += `event_definition_ids=${filters.eventDefinitionIds.join(",")}&` +
+            `start_date=${filters.startDate}&end_date=${filters.endDate}&` +
+            `area_min_lat=${filters.minLat}&area_max_lat=${filters.maxLat}&` +
+            `area_min_lon=${filters.minLon}&area_max_lon=${filters.maxLon}`;
+        url += `&min_severity=${filters.minSeverity}&max_severity=${filters.maxSeverity}`;
+        console.log('[DEBUG] Fetching events:', filters, url);
+        const response = await fetch(url, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('Failed to load events');
+        const events = await response.json();
+        console.log(`[DEBUG] Events fetched: count=${events.length}`);
+        if (events.length > 0) {
+            console.log('[DEBUG] First event:', events[0]);
+            // Debug: Check what event definition IDs we actually received
+            const receivedEventDefinitionIds = [...new Set(events.map((e: any) => e.event_definition_id))];
+            console.log('[DEBUG] Received event definition IDs:', receivedEventDefinitionIds);
+            console.log('[DEBUG] Requested event definition IDs:', filters.eventDefinitionIds);
+            
+            // Check if we received any events that don't match our requested IDs
+            const unexpectedEvents = events.filter((e: any) => !filters.eventDefinitionIds.includes(e.event_definition_id));
+            if (unexpectedEvents.length > 0) {
+                console.warn('[DEBUG] Received events with unexpected definition IDs:', unexpectedEvents.map((e: any) => e.event_definition_id));
+            }
         }
-        
-        // Clear previous search results before fetching new data
-        clearMapLayers();
-        
-        const { minLat, maxLat, minLon, maxLon } = boxCoords;
-        const startDate = `${startYear}-${startMonth.toString().padStart(2, '0')}-01`;
-        const endDate = `${endYear}-${endMonth.toString().padStart(2, '0')}-${new Date(endYear, endMonth, 0).getDate()}`;
-        
-        let url = `/protected/proximity_events_in_box?min_latitude=${minLat}&max_latitude=${maxLat}&min_longitude=${minLon}&max_longitude=${maxLon}`;
-        if (startDate) url += `&start_time=${encodeURIComponent(startDate)}`;
-        if (endDate) url += `&end_time=${encodeURIComponent(endDate)}`;
-        if (minSeverity !== 0) url += `&min_severity=${minSeverity}`;
-        if (maxSeverity !== 1000) url += `&max_severity=${maxSeverity}`;
-        if (airframe !== "All Airframes") url += `&airframe=${encodeURIComponent(airframe)}`;
-        
-        console.log('Fetching proximity events with URL:', url);
-        console.log('Airframe parameter:', airframe);
-        
+        return events;
+    };
+
+    // Helper to check if event is a proximity event
+    const isProximityEvent = (event: any) => {
+        return event.event_definition_id === -1 || event.event_definition_id === -2 || event.event_definition_id === -3;
+    };
+
+    // Main orchestration: fetch events, then fetch points for each event (simple for loop, easy to extend)
+    const processEventsAndPoints = async (filters: {
+        airframe: string;
+        eventDefinitionIds: number[];
+        startDate: string;
+        endDate: string;
+        minLat: number;
+        maxLat: number;
+        minLon: number;
+        maxLon: number;
+    }) => {
+        setLoading(true);
+        setError(null);
         try {
-            const response = await fetch(url, {
-                credentials: 'include',
-                headers: { 'Accept': 'application/json' }
+            const events = await fetchEvents({
+                ...filters,
+                minSeverity,
+                maxSeverity
             });
-            if (!response.ok) throw new Error('Failed to load proximity events in box');
-            const events = await response.json();
-            
-            console.log('Received proximity events:', events.length);
-            if (events.length > 0) {
-                console.log('First event airframes:', {
-                    flightAirframe: events[0].flightAirframe,
-                    otherFlightAirframe: events[0].otherFlightAirframe
-                });
+            if (!events.length) {
+                setError("No events found with the given constraints!");
+                setProximityEventPoints([]);
+                setLoading(false);
+                return [];
             }
-            
-            if (events.length === 0) {
-                setError("No proximity events found with the given constraints! Please try again.");
-            } else {
-                setError(null);
-            }
-            
-            setProximityEvents(events);
-            console.log('[fetchProximityEvents] setProximityEvents called with events.length:', events.length);
-            return events;
-        } catch (error) {
-            console.error('Error loading proximity events:', error);
-            if (error instanceof Error) {
-                setError(error.message);
-            } else if (typeof error === 'string') {
-                setError(error);
-            }
-            return [];
-        }
-    };
-    
-    // Generic event fetching for multiple event types
-    const fetchEventsForDefinitionIds = async (definitionIds: number[]) => {
-        if (!boxCoords.minLat || !boxCoords.maxLat || !boxCoords.minLon || !boxCoords.maxLon) {
-            setError('No area is selected. Please select an area on the map.');
-            return [];
-        }
-        
-        // Clear previous search results before fetching new data
-        clearMapLayers();
-        
-        const { minLat, maxLat, minLon, maxLon } = boxCoords;
-        const startDate = `${startYear}-${startMonth.toString().padStart(2, '0')}-01`;
-        const endDate = `${endYear}-${endMonth.toString().padStart(2, '0')}-${new Date(endYear, endMonth, 0).getDate()}`;
-        
-        console.log('Fetching events for definition IDs:', definitionIds);
-        
-        const allEvents: any[] = [];
-        let hasErrors = false;
-        
-        // Group definition IDs by their handlers
-        const definitionGroups: { [handlerKey: string]: number[] } = {};
-        
-        for (const definitionId of definitionIds) {
-            const handler = eventTypeRegistry[definitionId];
-            if (handler) {
-                const handlerKey = handler.endpoint;
-                if (!definitionGroups[handlerKey]) {
-                    definitionGroups[handlerKey] = [];
-                }
-                definitionGroups[handlerKey].push(definitionId);
-            } else {
-                console.warn(`No handler found for event definition ID: ${definitionId}`);
-            }
-        }
-        
-        // Fetch events for each handler group
-        for (const [endpoint, ids] of Object.entries(definitionGroups)) {
-            try {
-                // For now, we only have proximity events implemented
-                if (endpoint === "/protected/proximity_events_in_box") {
-                    let url = `${endpoint}?min_latitude=${minLat}&max_latitude=${maxLat}&min_longitude=${minLon}&max_longitude=${maxLon}`;
-                    if (startDate) url += `&start_time=${encodeURIComponent(startDate)}`;
-                    if (endDate) url += `&end_time=${encodeURIComponent(endDate)}`;
-                    if (minSeverity !== 0) url += `&min_severity=${minSeverity}`;
-                    if (maxSeverity !== 1000) url += `&max_severity=${maxSeverity}`;
-                    if (airframe !== "All Airframes") url += `&airframe=${encodeURIComponent(airframe)}`;
-                    
-                    console.log(`Fetching events from ${endpoint} for IDs:`, ids);
-                    
-                    const response = await fetch(url, {
-                        credentials: 'include',
-                        headers: { 'Accept': 'application/json' }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Failed to load events from ${endpoint}`);
+            const allProximityEventPoints = [];
+            const allSingleEventPoints = [];
+            const processedPairs = new Set<string>();
+            for (const event of events) {
+                if (isProximityEvent(event)) {
+                    // Deduplicate unordered flight pairs
+                    const mainFlightId = event.flight_id;
+                    const otherFlightId = event.other_flight_id;
+                    const pairKey = [Math.min(mainFlightId, otherFlightId), Math.max(mainFlightId, otherFlightId)].join('-');
+                    if (processedPairs.has(pairKey)) {
+                        continue; // skip duplicate pair
                     }
-                    
-                    const events = await response.json();
-                    console.log(`Received ${events.length} events from ${endpoint}`);
-                    allEvents.push(...events);
+                    processedPairs.add(pairKey);
+                    const eventId = event.id;
+                    const mainUrl = `/protected/proximity_points_filtered?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    const otherUrl = `/protected/proximity_points_filtered?event_id=${eventId}&flight_id=${otherFlightId}`;
+                    const [mainResp, otherResp] = await Promise.all([
+                        fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } }),
+                        fetch(otherUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } })
+                    ]);
+                    const mainData = await mainResp.json();
+                    const otherData = await otherResp.json();
+                    allProximityEventPoints.push({
+                        eventId: eventId,
+                        mainFlightId: mainFlightId,
+                        otherFlightId: otherFlightId,
+                        mainFlightPoints: mainData.points || mainData || [],
+                        otherFlightPoints: otherData.points || otherData || [],
+                        severity: event.severity,
+                        airframe: event.airframe,
+                        otherAirframe: event.otherAirframe
+                    });
+                } else {
+                    // Regular event: fetch points for just the main flight
+                    const mainFlightId = event.flight_id;
+                    const eventId = event.id;
+                    const mainUrl = `/protected/event_points_filtered?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    const mainResp = await fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+                    const mainData = await mainResp.json();
+                    allSingleEventPoints.push({
+                        eventId: eventId,
+                        mainFlightId: mainFlightId,
+                        otherFlightId: null,
+                        mainFlightPoints: mainData.points || mainData || [],
+                        otherFlightPoints: [],
+                        severity: event.severity,
+                        airframe: event.airframe,
+                        otherAirframe: null
+                    });
                 }
-                // Future event types can be added here:
-                // else if (endpoint === "/protected/low_pitch_events_in_box") { ... }
-                // else if (endpoint === "/protected/high_pitch_events_in_box") { ... }
-                
-            } catch (error) {
-                console.error(`Error fetching events from ${endpoint}:`, error);
-                hasErrors = true;
             }
+            setProximityEventPoints([...allProximityEventPoints, ...allSingleEventPoints]);
+            setLoading(false);
+            
+            // Clear all layers first
+            clearMapLayers();
+            
+            // Process events based on type - only one type at a time
+            if (allProximityEventPoints.length > 0) {
+                // We have proximity events - process them
+                processProximityEventCoordinates(allProximityEventPoints, showGrid);
+            } else if (allSingleEventPoints.length > 0) {
+                // We have regular events - process them
+                processSingleEventCoordinates(allSingleEventPoints, showGrid);
+            }
+            
+            return [...allProximityEventPoints, ...allSingleEventPoints];
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+            setLoading(false);
+            setProximityEventPoints([]);
+            return [];
         }
-        
-        if (allEvents.length === 0 && !hasErrors) {
-            setError("No events found with the given constraints! Please try again.");
-        } else if (allEvents.length > 0) {
-            setError(null);
-        }
-        
-        setProximityEvents(allEvents);
-        console.log('[fetchEventsForDefinitionIds] setProximityEvents called with allEvents.length:', allEvents.length);
-        return allEvents;
     };
-    
+
     const handleDateChange = async () => {
         // Gather checked events
         const selectedEvents = allEventNames.filter(e => eventChecked[e]);
@@ -1374,26 +1568,34 @@ const HeatMapPage: React.FC = () => {
             setError('No area is selected. Please select an area on the map.');
             return;
         }
-        
+
         // Get event definition IDs for selected events
-        const selectedEventDefinitions = selectedEvents.map(eventName => ({
-            eventName,
-            definitionIds: eventNameToDefinitionIds[eventName] || []
-        }));
+        const selectedDefinitionIds: number[] = [];
+        for (const eventName of selectedEvents) {
+            const definitionIds = eventNameToDefinitionIds[eventName] || [];
+            selectedDefinitionIds.push(...definitionIds);
+        }
+        selectedDefinitionIds.sort();
         
-        const query: HeatmapQuery = {
-            date: {
-                startYear,
-                startMonth,
-                endYear,
-                endMonth
-            },
-            airframe,
-            coordinates: boxCoords,
-            events: selectedEvents
-        };
-        
-        // Remove overlay feature
+        console.log('[DEBUG] Selected events:', selectedEvents);
+        console.log('[DEBUG] Selected definition IDs:', selectedDefinitionIds);
+
+        if (selectedDefinitionIds.length > 0) {
+            await processEventsAndPoints({
+                airframe,
+                eventDefinitionIds: selectedDefinitionIds,
+                startDate: `${startYear}-${startMonth.toString().padStart(2, '0')}-01`,
+                endDate: `${endYear}-${endMonth.toString().padStart(2, '0')}-${new Date(endYear, endMonth, 0).getDate()}`,
+                minLat: minLat ? parseFloat(minLat) : 0,
+                maxLat: maxLat ? parseFloat(maxLat) : 0,
+                minLon: minLon ? parseFloat(minLon) : 0,
+                maxLon: maxLon ? parseFloat(maxLon) : 0
+            });
+        } else {
+            setError('No valid event definition IDs selected.');
+        }
+        setDatesChanged(false);
+        // Remove overlay feature (grayed out area) when updating
         if (overlayLayer && overlayFeature) {
             const source = overlayLayer.getSource();
             if (source) {
@@ -1401,89 +1603,6 @@ const HeatMapPage: React.FC = () => {
             }
             setOverlayFeature(null);
         }
-        
-        // Check if Proximity is selected
-        const hasProximity = selectedEvents.includes("Proximity");
-        
-        console.log('handleDateChange:', {
-            selectedEvents,
-            hasProximity,
-            airframe,
-            startYear,
-            endYear,
-            boxCoords
-        });
-        
-        if (hasProximity || selectedEvents.includes("ANY Event")) {
-            // Check if parameters have changed or if this is the first time
-            const paramsChanged = haveParametersChanged();
-            
-            console.log('Proximity or ANY Event selected, paramsChanged:', paramsChanged);
-            
-            if (paramsChanged) {
-                console.log('Parameters changed, fetching new events');
-                // Handle events
-                setLoading(true);
-                try {
-                    let events: any[] = [];
-                    
-                    if (selectedEvents.includes("ANY Event")) {
-                        // Get all definition IDs for ANY Event
-                        const allDefinitionIds = eventNameToDefinitionIds["ANY Event"];
-                        console.log('Fetching ANY Event with definition IDs:', allDefinitionIds);
-                        events = await fetchEventsForDefinitionIds(allDefinitionIds);
-                    } else {
-                        // Get definition IDs for selected events
-                        const selectedDefinitionIds: number[] = [];
-                        for (const eventName of selectedEvents) {
-                            const definitionIds = eventNameToDefinitionIds[eventName] || [];
-                            selectedDefinitionIds.push(...definitionIds);
-                        }
-                        console.log('Fetching selected events with definition IDs:', selectedDefinitionIds);
-                        events = await fetchEventsForDefinitionIds(selectedDefinitionIds);
-                    }
-                    
-                    console.log('Fetched events:', events.length);
-                    if (events.length > 0) {
-                        // For now, we only have proximity processing implemented
-                        // In the future, we'll need to route different event types to their processors
-                        await processProximityEventCoordinates(events, showGrid);
-                    }
-                    
-                    // Update previous parameters after successful processing
-                    setPreviousParams({
-                        airframe,
-                        startYear,
-                        startMonth,
-                        endYear,
-                        endMonth,
-                        minSeverity,
-                        maxSeverity,
-                        boxCoords
-                    });
-                } catch (error) {
-                    console.error('Error processing events:', error);
-                } finally {
-                    setLoading(false);
-                }
-            } else {
-                console.log('Parameters unchanged, using existing event data');
-            }
-        } else {
-            console.log('No proximity or ANY event selected, showing alert');
-            // For now, just show the alert for other event types
-            const alertMessage = {
-                query,
-                selectedEventDefinitions,
-                totalDefinitionIds: selectedEventDefinitions.flatMap(e => e.definitionIds).length
-            };
-            alert("Heatmap Query:\n" + JSON.stringify(alertMessage, null, 2));
-        }
-        
-        setDatesChanged(false);
-    };
-    const handleExportCSV = () => {
-        // Placeholder for export logic
     };
 
     // Add coordinate input boxes to the TimeHeader row, with toggle above
@@ -1537,8 +1656,58 @@ const HeatMapPage: React.FC = () => {
     // Wrap the main content in a full-height flex container
     return (
         <div style={{ overflowX: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+            {/* Scoped CSS override for Bootstrap grid spacing */}
+            <style>{`
+                #heat-map-top-menu .row,
+                #heat-map-top-menu .form-row,
+                #heat-map-top-menu .col-auto,
+                #heat-map-top-menu .col-auto:not(:last-child) {
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                }
+            `}</style>
             <div style={{ flex: '0 0 auto' }}>
                 <SignedInNavbar activePage="heat_map" mapLayerDropdown={mapLayerDropdown} />
+            </div>
+            {/* Top menu row: Airframes dropdown, Severity slider, Date selector */}
+            <div id="heat-map-top-menu" style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 32px 0 32px',
+                background: 'white',
+                zIndex: 10
+            }}>
+                {/* Left: Title */}
+                <h4 style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>Event Heat Map</h4>
+                {/* Right: Controls group */}
+                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {/* Remove mapLayerDropdown from here */}
+                    <div style={{ width: 'auto', margin: 0, padding: 0 }}>{severitySlider}</div>
+                    <div style={{ width: 'auto', margin: 0, padding: 0 }}>
+                        <TimeHeader
+                            name=""
+                            airframes={airframes}
+                            airframe={airframe}
+                            startYear={startYear}
+                            startMonth={startMonth}
+                            endYear={endYear}
+                            endMonth={endMonth}
+                            datesChanged={true}
+                            dateChange={handleDateChange}
+                            airframeChange={handleAirframeChange}
+                            updateStartYear={handleStartYear}
+                            updateStartMonth={handleStartMonth}
+                            updateEndYear={handleEndYear}
+                            updateEndMonth={handleEndMonth}
+                            extraHeaderComponents={extraHeaderComponents}
+                            severitySliderComponent={null}
+                        />
+                    </div>
+                </div>
             </div>
             {/* Error Banner */}
             {error && (
@@ -1564,24 +1733,6 @@ const HeatMapPage: React.FC = () => {
                     <div className="row" style={{ height: '100%' }}>
                         <div className="col-lg-12" style={{ height: '100%' }}>
                             <div className="card m-2" style={{ height: '100%', display: 'flex', flexDirection: 'column', flex: '1 1 auto' }}>
-                                <TimeHeader
-                                    name="Heat Map Event Selection"
-                                    airframes={airframes}
-                                    airframe={airframe}
-                                    startYear={startYear}
-                                    startMonth={startMonth}
-                                    endYear={endYear}
-                                    endMonth={endMonth}
-                                    datesChanged={true}
-                                    dateChange={handleDateChange}
-                                    airframeChange={handleAirframeChange}
-                                    updateStartYear={handleStartYear}
-                                    updateStartMonth={handleStartMonth}
-                                    updateEndYear={handleEndYear}
-                                    updateEndMonth={handleEndMonth}
-                                    extraHeaderComponents={extraHeaderComponents}
-                                    severitySliderComponent={severitySlider}
-                                />
                                 <div className="card-body" style={{ padding: 0, background: 'transparent', flex: '1 1 auto', minHeight: 0, display: 'flex', position: 'relative' }}>
                                     <div className="row" style={{ margin: 0, padding: 0, background: 'transparent', flex: 1, height: '100%' }}>
                                         <div className="col-lg-2" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', paddingLeft: 16, paddingTop: 16 }}>
@@ -1600,97 +1751,101 @@ const HeatMapPage: React.FC = () => {
                                         <div className="col-lg-10" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', position: 'relative' }}>
                                             {gridToggleSwitch}
                                             <div ref={mapRef} style={{ width: '100%', height: '100%', background: 'transparent', margin: 0, padding: 0, position: 'relative' }} />
-                                            
+
                                             {/* Render all open popups as overlays */}
                                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 1000 }}>
-                                            {openPopups.map((popup) => {
-                                                const isGrabbing = (draggedPopupId === popup.id);
-                                                const isRecent = (recentPopupId === popup.id);
+                                                {openPopups.map((popup) => {
+                                                    const isGrabbing = (draggedPopupId === popup.id);
+                                                    const isRecent = (recentPopupId === popup.id);
 
-                                                return (
-                                                    <div
-                                                        key={popup.id}
-                                                        className={`ol-popup ${isRecent ? 'z-110' : 'z-100'}`}
-                                                        style={{
-                                                            position: 'absolute',
-                                                            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                                                            padding: '15px',
-                                                            borderRadius: '10px',
-                                                            border: '1px solid #cccccc',
-                                                            minWidth: '200px',
-                                                            left: popup.position?.left ?? 100,
-                                                            top: popup.position?.top ?? 100,
-                                                            background: 'white',
-                                                            transform: 'none',
-                                                            cursor: isGrabbing ? 'grabbing' : '',
-                                                            zIndex: isRecent ? 110 : 100,
-                                                            pointerEvents: 'auto',
-                                                        }}
-                                                    >
+                                                    return (
                                                         <div
-                                                            className="group"
-                                                            style={{ fontWeight: 600, cursor: 'grab', marginBottom: 4, userSelect: isGrabbing ? 'none' : 'auto' }}
-                                                            onMouseDown={e => { console.log('Popup mouse down', popup.id, e); handlePopupMouseDown(e, popup.id); }}
-                                                        >
-                                                            <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
-                                                            Proximity Event Details
-                                                        </div>
-                                                        <a
-                                                            href="#"
-                                                            className="ol-popup-closer"
-                                                            style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}
-                                                            onClick={e => {
-                                                                e.preventDefault();
-                                                                setOpenPopups(prevPopups => 
-                                                                    prevPopups.filter(p => p.id !== popup.id)
-                                                                );
-                                                                setSelectedPoints(prevPoints => {
-                                                                    const newSelectedPoints = prevPoints.filter(p => p.id !== popup.id);
-                                                                    
-                                                                    // Recalculate distances after removing point
-                                                                    if (newSelectedPoints.length === 2) {
-                                                                        const [point1, point2] = newSelectedPoints;
-                                                                        const result = calculateDistanceBetweenPoints(
-                                                                            point1.latitude, point1.longitude, point1.altitude,
-                                                                            point2.latitude, point2.longitude, point2.altitude
-                                                                        );
-                                                                        setDistances({ lateral: result.lateral, euclidean: result.euclidean });
-                                                                    } else {
-                                                                        setDistances({ lateral: null, euclidean: null });
-                                                                    }
-                                                                    
-                                                                    return newSelectedPoints;
-                                                                });
+                                                            key={popup.id}
+                                                            className={`ol-popup ${isRecent ? 'z-110' : 'z-100'}`}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                                                                padding: '15px',
+                                                                borderRadius: '10px',
+                                                                border: '1px solid #cccccc',
+                                                                minWidth: '200px',
+                                                                left: popup.position?.left ?? 100,
+                                                                top: popup.position?.top ?? 100,
+                                                                background: 'white',
+                                                                transform: 'none',
+                                                                cursor: isGrabbing ? 'grabbing' : '',
+                                                                zIndex: isRecent ? 110 : 100,
+                                                                pointerEvents: 'auto',
                                                             }}
                                                         >
-                                                            ✖
-                                                        </a>
-                                                        <div>
-                                                            <hr />
-                                                            <div><strong>Time: </strong>{popup.data.time ?? '...'}</div>
-                                                            <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
-                                                            <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
-                                                            <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
-                                                            <hr />
-                                                            <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
-                                                            <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
-                                                            <hr />
-                                                            <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
-                                                            <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
-                                                            <hr />
-                                                            <div><strong>Severity: </strong>{popup.data.severity ?? '...'}</div>
-                                                            {distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
-                                                                <>
-                                                                    <hr />
-                                                                    <div><strong>Lateral Distance: </strong>{distances.lateral.toFixed(0)} ft</div>
-                                                                    <div><strong>Euclidean (Slant) Distance: </strong>{distances.euclidean.toFixed(0)} ft</div>
-                                                                    <div><strong>Vertical Separation: </strong>{Math.abs(selectedPoints[0].altitude - selectedPoints[1].altitude).toFixed(0)} ft</div>
-                                                                </>
-                                                            )}
+                                                            <div
+                                                                className="group"
+                                                                style={{ fontWeight: 600, cursor: 'grab', marginBottom: 4, userSelect: isGrabbing ? 'none' : 'auto' }}
+                                                                onMouseDown={e => { console.log('Popup mouse down', popup.id, e); handlePopupMouseDown(e, popup.id); }}
+                                                            >
+                                                                <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
+                                                                {popup.data.otherFlightId ? 'Proximity Event Details' : 'Event Details'}
+                                                            </div>
+                                                            <a
+                                                                href="#"
+                                                                className="ol-popup-closer"
+                                                                style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}
+                                                                onClick={e => {
+                                                                    e.preventDefault();
+                                                                    setOpenPopups(prevPopups =>
+                                                                        prevPopups.filter(p => p.id !== popup.id)
+                                                                    );
+                                                                    setSelectedPoints(prevPoints => {
+                                                                        const newSelectedPoints = prevPoints.filter(p => p.id !== popup.id);
+
+                                                                        // Recalculate distances after removing point
+                                                                        if (newSelectedPoints.length === 2) {
+                                                                            const [point1, point2] = newSelectedPoints;
+                                                                            const result = calculateDistanceBetweenPoints(
+                                                                                point1.latitude, point1.longitude, point1.altitude,
+                                                                                point2.latitude, point2.longitude, point2.altitude
+                                                                            );
+                                                                            setDistances({ lateral: result.lateral, euclidean: result.euclidean });
+                                                                        } else {
+                                                                            setDistances({ lateral: null, euclidean: null });
+                                                                        }
+
+                                                                        return newSelectedPoints;
+                                                                    });
+                                                                }}
+                                                            >
+                                                                ✖
+                                                            </a>
+                                                            <div>
+                                                                <hr />
+                                                                <div><strong>Time: </strong>{popup.data.time ?? '...'}</div>
+                                                                <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
+                                                                <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
+                                                                <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
+                                                                <hr />
+                                                                <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
+                                                                <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
+                                                                {popup.data.otherFlightId && (
+                                                                    <>
+                                                                        <hr />
+                                                                        <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
+                                                                        <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
+                                                                    </>
+                                                                )}
+                                                                <hr />
+                                                                <div><strong>Severity: </strong>{parseFloat(String(popup.data.severity)).toFixed(2)}</div>
+                                                                {popup.data.otherFlightId && distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
+                                                                    <>
+                                                                        <hr />
+                                                                        <div><strong>Lateral Distance: </strong>{distances.lateral.toFixed(0)} ft</div>
+                                                                        <div><strong>Euclidean (Slant) Distance: </strong>{distances.euclidean.toFixed(0)} ft</div>
+                                                                        <div><strong>Vertical Separation: </strong>{Math.abs(selectedPoints[0].altitude - selectedPoints[1].altitude).toFixed(0)} ft</div>
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     </div>

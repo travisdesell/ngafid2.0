@@ -97,7 +97,12 @@ public class ProximityPointsProcessor {
                 if (otherPoints != null) {
                     for (ProximityPointData point : otherPoints) {
                         stmt.setInt(1, event.getId());
-                        stmt.setInt(2, event.getOtherFlightId());
+                        Integer otherFlightId = event.getOtherFlightId();
+                        if (otherFlightId != null) {
+                            stmt.setInt(2, otherFlightId);
+                        } else {
+                            stmt.setNull(2, java.sql.Types.INTEGER);
+                        }
                         stmt.setDouble(3, point.getLatitude());
                         stmt.setDouble(4, point.getLongitude());
                         stmt.setTimestamp(5, Timestamp.from(point.getTimestamp().toInstant()));
@@ -381,4 +386,183 @@ public class ProximityPointsProcessor {
         return events;
     }
 
+    public static List<Pair<Integer, Integer>> getEventFlightPairs(
+        String airframe, Integer eventDefinitionId, java.sql.Date startDate, java.sql.Date endDate,
+        double areaMinLat, double areaMaxLat, double areaMinLon, double areaMaxLon
+    ) throws SQLException {
+        List<Pair<Integer, Integer>> pairs = new ArrayList<>();
+        try (Connection connection = Database.getConnection()) {
+            StringBuilder sql = new StringBuilder(
+                "SELECT e.id, e.flight_id " +
+                "FROM events e " +
+                "JOIN flights f ON e.flight_id = f.id " +
+                "JOIN airframes a ON f.airframe_id = a.id " +
+                "WHERE DATE(e.start_time) BETWEEN ? AND ? " +
+                "AND e.max_latitude >= ? AND e.min_latitude <= ? " +
+                "AND e.max_longitude >= ? AND e.min_longitude <= ?"
+            );
+            if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
+                sql.append(" AND a.airframe = ?");
+            }
+            if (eventDefinitionId != null) {
+                sql.append(" AND e.event_definition_id = ?");
+            }
+            // Debug log the SQL and parameters
+            System.out.println("[DEBUG] getEventFlightPairs SQL: " + sql.toString());
+            System.out.println("[DEBUG] Parameters: startDate=" + startDate + ", endDate=" + endDate + ", areaMinLat=" + areaMinLat + ", areaMaxLat=" + areaMaxLat + ", areaMinLon=" + areaMinLon + ", areaMaxLon=" + areaMaxLon + ", airframe=" + airframe + ", eventDefinitionId=" + eventDefinitionId);
+            try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+                int idx = 1;
+                stmt.setDate(idx++, startDate);
+                stmt.setDate(idx++, endDate);
+                stmt.setDouble(idx++, areaMinLat);
+                stmt.setDouble(idx++, areaMaxLat);
+                stmt.setDouble(idx++, areaMinLon);
+                stmt.setDouble(idx++, areaMaxLon);
+                if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
+                    stmt.setString(idx++, airframe);
+                }
+                if (eventDefinitionId != null) {
+                    stmt.setInt(idx++, eventDefinitionId);
+                }
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        int eventId = rs.getInt(1);
+                        int flightId = rs.getInt(2);
+                        pairs.add(new Pair<>(eventId, flightId));
+                    }
+                }
+            }
+            System.out.println("[DEBUG] getEventFlightPairs found " + pairs.size() + " pairs.");
+            if (!pairs.isEmpty()) {
+                System.out.println("[DEBUG] Event/Flight pairs:");
+                for (Pair<Integer, Integer> pair : pairs) {
+                    System.out.println("  event_id=" + pair.first() + ", flight_id=" + pair.second());
+                }
+            }
+        }
+        return pairs;
+    }
+
+    public static List<Map<String, Object>> getProximityPointsForEventFlightPairs(List<Pair<Integer, Integer>> pairs) throws SQLException {
+        List<Map<String, Object>> allPoints = new ArrayList<>();
+        if (pairs.isEmpty()) return allPoints;
+
+        try (Connection connection = Database.getConnection()) {
+            StringBuilder sql = new StringBuilder("SELECT * FROM proximity_points WHERE ");
+            for (int i = 0; i < pairs.size(); i++) {
+                if (i > 0) sql.append(" OR ");
+                sql.append("(event_id = ? AND flight_id = ?)");
+            }
+            sql.append(" ORDER BY event_id, flight_id, timestamp");
+
+            try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+                int idx = 1;
+                for (Pair<Integer, Integer> pair : pairs) {
+                    stmt.setInt(idx++, pair.first());
+                    stmt.setInt(idx++, pair.second());
+                }
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> point = new HashMap<>();
+                        point.put("event_id", rs.getInt("event_id"));
+                        point.put("flight_id", rs.getInt("flight_id"));
+                        point.put("latitude", rs.getDouble("latitude"));
+                        point.put("longitude", rs.getDouble("longitude"));
+                        point.put("timestamp", rs.getTimestamp("timestamp"));
+                        point.put("altitude_agl", rs.getDouble("altitude_agl"));
+                        point.put("lateral_distance", rs.getDouble("lateral_distance"));
+                        point.put("vertical_distance", rs.getDouble("vertical_distance"));
+                        allPoints.add(point);
+                    }
+                }
+            }
+        }
+        return allPoints;
+    }
+
+    public static List<Map<String, Object>> getFilteredEvents(
+        String airframe, List<Integer> eventDefinitionIds, java.sql.Date startDate, java.sql.Date endDate,
+        double areaMinLat, double areaMaxLat, double areaMinLon, double areaMaxLon,
+        Double minSeverity, Double maxSeverity
+    ) throws SQLException {
+        List<Map<String, Object>> events = new ArrayList<>();
+        try (Connection connection = Database.getConnection()) {
+            StringBuilder sql = new StringBuilder(
+                "SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, e.other_flight_id, e.start_line, e.end_line, e.start_time, e.end_time, e.severity, e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, a.airframe as airframe_name, oa.airframe as other_airframe_name " +
+                "FROM events e " +
+                "JOIN flights f ON e.flight_id = f.id " +
+                "JOIN airframes a ON f.airframe_id = a.id " +
+                "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id " +
+                "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id " +
+                "WHERE DATE(e.start_time) BETWEEN ? AND ? " +
+                "AND e.max_latitude >= ? AND e.min_latitude <= ? " +
+                "AND e.max_longitude >= ? AND e.min_longitude <= ?"
+            );
+            if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
+                sql.append(" AND a.airframe = ?");
+            }
+            if (eventDefinitionIds != null && !eventDefinitionIds.isEmpty()) {
+                sql.append(" AND e.event_definition_id IN (");
+                for (int i = 0; i < eventDefinitionIds.size(); i++) {
+                    if (i > 0) sql.append(",");
+                    sql.append("?");
+                }
+                sql.append(")");
+            }
+            if (minSeverity != null) {
+                sql.append(" AND e.severity >= ?");
+            }
+            if (maxSeverity != null) {
+                sql.append(" AND e.severity <= ?");
+            }
+            System.out.println("[DEBUG] getFilteredEvents SQL: " + sql.toString());
+            System.out.println("[DEBUG] Parameters: startDate=" + startDate + ", endDate=" + endDate + ", areaMinLat=" + areaMinLat + ", areaMaxLat=" + areaMaxLat + ", areaMinLon=" + areaMinLon + ", areaMaxLon=" + areaMaxLon + ", airframe=" + airframe + ", eventDefinitionIds=" + eventDefinitionIds);
+            try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+                int idx = 1;
+                stmt.setDate(idx++, startDate);
+                stmt.setDate(idx++, endDate);
+                stmt.setDouble(idx++, areaMinLat);
+                stmt.setDouble(idx++, areaMaxLat);
+                stmt.setDouble(idx++, areaMinLon);
+                stmt.setDouble(idx++, areaMaxLon);
+                if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
+                    stmt.setString(idx++, airframe);
+                }
+                if (eventDefinitionIds != null && !eventDefinitionIds.isEmpty()) {
+                    for (Integer eventDefinitionId : eventDefinitionIds) {
+                        stmt.setInt(idx++, eventDefinitionId);
+                    }
+                }
+                if (minSeverity != null) {
+                    stmt.setDouble(idx++, minSeverity);
+                }
+                if (maxSeverity != null) {
+                    stmt.setDouble(idx++, maxSeverity);
+                }
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> event = new HashMap<>();
+                        event.put("id", rs.getInt("id"));
+                        event.put("fleet_id", rs.getInt("fleet_id"));
+                        event.put("event_definition_id", rs.getInt("event_definition_id"));
+                        event.put("other_flight_id", rs.getInt("other_flight_id"));
+                        event.put("start_line", rs.getInt("start_line"));
+                        event.put("end_line", rs.getInt("end_line"));
+                        event.put("start_time", rs.getTimestamp("start_time"));
+                        event.put("end_time", rs.getTimestamp("end_time"));
+                        event.put("severity", rs.getDouble("severity"));
+                        event.put("min_latitude", rs.getDouble("min_latitude"));
+                        event.put("max_latitude", rs.getDouble("max_latitude"));
+                        event.put("min_longitude", rs.getDouble("min_longitude"));
+                        event.put("max_longitude", rs.getDouble("max_longitude"));
+                        event.put("airframe", rs.getString("airframe_name"));
+                        event.put("otherAirframe", rs.getString("other_airframe_name"));
+                        events.add(event);
+                    }
+                }
+            }
+            System.out.println("[DEBUG] getFilteredEvents found " + events.size() + " events.");
+        }
+        return events;
+    }
 } 

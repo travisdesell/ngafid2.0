@@ -104,10 +104,35 @@ public class ProximityMapJavalinRoutes {
             double maxLon = Double.parseDouble(ctx.queryParam("max_longitude"));
             String startTime = ctx.queryParam("start_time");
             String endTime = ctx.queryParam("end_time");
-            Double minSeverity = ctx.queryParam("min_severity") != null ? Double.parseDouble(ctx.queryParam("min_severity")) : 0.0;
-            Double maxSeverity = ctx.queryParam("max_severity") != null ? Double.parseDouble(ctx.queryParam("max_severity")) : 1000.0;
             String airframe = ctx.queryParam("airframe");
-            ctx.json(org.ngafid.core.proximity.ProximityPointsProcessor.getProximityEventsInBox(minLat, maxLat, minLon, maxLon, startTime, endTime, minSeverity, maxSeverity, airframe));
+            String eventDefinitionIdsParam = ctx.queryParam("event_definition_ids");
+            List<Integer> eventDefinitionIds = new ArrayList<>();
+            if (eventDefinitionIdsParam != null && !eventDefinitionIdsParam.isEmpty()) {
+                String[] ids = eventDefinitionIdsParam.split(",");
+                for (String id : ids) {
+                    try {
+                        eventDefinitionIds.add(Integer.valueOf(id.trim()));
+                    } catch (NumberFormatException e) {
+                        LOG.warning("Invalid event definition ID: " + id);
+                    }
+                }
+            }
+            java.sql.Date startDate = java.sql.Date.valueOf(ctx.queryParam("start_date"));
+            java.sql.Date endDate = java.sql.Date.valueOf(ctx.queryParam("end_date"));
+            double areaMinLat = Double.parseDouble(ctx.queryParam("area_min_lat"));
+            double areaMaxLat = Double.parseDouble(ctx.queryParam("area_max_lat"));
+            double areaMinLon = Double.parseDouble(ctx.queryParam("area_min_lon"));
+            double areaMaxLon = Double.parseDouble(ctx.queryParam("area_max_lon"));
+            // Parse severity filters
+            Double minSeverity = ctx.queryParam("min_severity") != null ? Double.valueOf(ctx.queryParam("min_severity")) : null;
+            Double maxSeverity = ctx.queryParam("max_severity") != null ? Double.valueOf(ctx.queryParam("max_severity")) : null;
+
+            List<java.util.Map<String, Object>> events = org.ngafid.core.proximity.ProximityPointsProcessor.getFilteredEvents(
+                airframe, eventDefinitionIds, startDate, endDate,
+                areaMinLat, areaMaxLat, areaMinLon, areaMaxLon,
+                minSeverity, maxSeverity
+            );
+            ctx.json(events);
         });
     }
 }

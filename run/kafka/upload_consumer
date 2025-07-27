@@ -21,4 +21,4 @@ JAVA_OPTS="
 export MAX_CACHE_SIZE=75
 
 # Use the shaded JAR with dependencies directly
-exec taskset -c 0-3 java $JAVA_OPTS -cp ngafid-data-processor/target/ngafid-data-processor-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.processor.UploadConsumer
+exec java $JAVA_OPTS -cp ngafid-data-processor/target/ngafid-data-processor-1.0-SNAPSHOT-jar-with-dependencies.jar org.ngafid.processor.UploadConsumer

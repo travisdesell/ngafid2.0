@@ -1,6 +1,7 @@
 package org.ngafid.core.event;
 
 import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.util.TimeUtils;
 
@@ -12,8 +13,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
+
+import static org.ngafid.core.flights.Parameters.LATITUDE;
+import static org.ngafid.core.flights.Parameters.LONGITUDE;
 
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
@@ -353,7 +358,7 @@ public class Event {
         this.endLine = endLine;
     }
 
-    public int getOtherFlightId() {
+    public Integer getOtherFlightId() {
         return otherFlightId;
     }
 
@@ -418,6 +423,53 @@ public class Event {
     public Double getMinLongitude() { return minLongitude; }
     public Double getMaxLongitude() { return maxLongitude; }
 
+    /**
+     * Calculate and set bounding box coordinates for this event based on flight data
+     * @param doubleTimeSeries The flight's double time series data containing latitude and longitude
+     */
+    public void calculateCoordinates(Map<String, DoubleTimeSeries> doubleTimeSeries) {
+        if (doubleTimeSeries == null) {
+            return;
+        }
+
+        DoubleTimeSeries latitudeSeries = doubleTimeSeries.get(LATITUDE);
+        DoubleTimeSeries longitudeSeries = doubleTimeSeries.get(LONGITUDE);
+        
+        if (latitudeSeries == null || longitudeSeries == null) {
+            return;
+        }
+        
+        double minLat = Double.POSITIVE_INFINITY;
+        double maxLat = Double.NEGATIVE_INFINITY;
+        double minLon = Double.POSITIVE_INFINITY;
+        double maxLon = Double.NEGATIVE_INFINITY;
+        
+        // Calculate bounding box from start to end line
+        for (int i = startLine; i <= endLine && i < latitudeSeries.size() && i < longitudeSeries.size(); i++) {
+            double lat = latitudeSeries.get(i);
+            double lon = longitudeSeries.get(i);
+            
+            // Skip invalid coordinates (0,0 or NaN)
+            if (lat != 0.0 && lon != 0.0 && !Double.isNaN(lat) && !Double.isNaN(lon)) {
+                if (lat < minLat) minLat = lat;
+                if (lat > maxLat) maxLat = lat;
+                if (lon < minLon) minLon = lon;
+                if (lon > maxLon) maxLon = lon;
+            }
+        }
+        
+        // Check if we found valid coordinates
+        if (minLat == Double.POSITIVE_INFINITY || maxLat == Double.NEGATIVE_INFINITY ||
+            minLon == Double.POSITIVE_INFINITY || maxLon == Double.NEGATIVE_INFINITY) {
+            return;
+        }
+        
+        // Set the calculated coordinates
+        this.minLatitude = minLat;
+        this.maxLatitude = maxLat;
+        this.minLongitude = minLon;
+        this.maxLongitude = maxLon;
+    }
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement(
@@ -430,14 +482,24 @@ public class Event {
     public static void batchInsertion(Connection connection, Flight flight, List<Event> events) throws SQLException, IOException {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Event event : events) {
-                if (event.getFlightId() == event.getOtherFlightId()) {
-                    LOG.warning("Insertion skipped. Self-proximity event detected before DB insert: flight ID = " + event.getFlightId() +
-                            ", otherFlightId = " + event.getOtherFlightId());
-                }else{
-                    event.addBatch(preparedStatement, flight.getFleetId(), event.flightId, event.eventDefinitionId);
+                // Calculate coordinates for all events if they don't already have them
+                if (event.minLatitude == null && flight.getDoubleTimeSeriesMap() != null) {
+                    event.calculateCoordinates(flight.getDoubleTimeSeriesMap());
                 }
+                
+                // Not-proximity events are created with placeholder IDs ( flightId = 0) 
+                // in the Pipeline context because at that point the flight hasn't been inserted into the database yet,
+                // so we can't use the event's flight ID. We must use the current flight's ID (flight.getId()) 
+                // which gets set after the flight is inserted into the database.
+                // Proximity events are created with actual flight IDs in EventConsumer context (after flights exist in DB)
+                int flightIdToUse;
+                if (event.eventDefinitionId == -1 && event.flightId > 0) {
+                    flightIdToUse = event.flightId;
+                } else {
+                    flightIdToUse = flight.getId();
+                }
+                event.addBatch(preparedStatement, flight.getFleetId(), flightIdToUse, event.eventDefinitionId);
             }
-
             preparedStatement.executeBatch();
 
             try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
@@ -475,8 +537,8 @@ public class Event {
             preparedStatement.setInt(9, otherFlightId);
         }
 
-        if (eventDefinitionId == -1) {
-            // Set bounding box values for proximity events
+        // Set bounding box values for events that have coordinates calculated
+        if (minLatitude != null && maxLatitude != null && minLongitude != null && maxLongitude != null) {
             preparedStatement.setDouble(10, minLatitude);
             preparedStatement.setDouble(11, maxLatitude);
             preparedStatement.setDouble(12, minLongitude);
@@ -496,6 +558,38 @@ public class Event {
             throws IOException, SQLException {
         this.flightId = flightIdUpdated;
         this.eventDefinitionId = eventDefId;
+
+        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
+            addBatch(preparedStatement, fleetIdUpdated, flightIdUpdated, eventDefId);
+
+            preparedStatement.executeBatch();
+
+            try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+                if (resultSet.next()) {
+                    int eventId = resultSet.getInt(1);
+                    updateDatabaseMetadata(connection, eventId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Update database with coordinate calculation support
+     * @param connection Database connection
+     * @param flight Flight object containing time series data for coordinate calculation
+     * @param fleetIdUpdated Updated fleet ID
+     * @param flightIdUpdated Updated flight ID  
+     * @param eventDefId Updated event definition ID
+     */
+    public void updateDatabase(Connection connection, Flight flight, int fleetIdUpdated, int flightIdUpdated, int eventDefId)
+            throws IOException, SQLException {
+        this.flightId = flightIdUpdated;
+        this.eventDefinitionId = eventDefId;
+
+        // Calculate coordinates if not already set
+        if (this.minLatitude == null && flight.getDoubleTimeSeriesMap() != null) {
+            this.calculateCoordinates(flight.getDoubleTimeSeriesMap());
+        }
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             addBatch(preparedStatement, fleetIdUpdated, flightIdUpdated, eventDefId);
