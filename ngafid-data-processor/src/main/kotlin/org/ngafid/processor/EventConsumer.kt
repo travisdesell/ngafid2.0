@@ -27,7 +27,6 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.function.Consumer
 import java.util.logging.Logger
-import kotlin.io.use
 
 /**
  * The `event` and `event-retry` topics contain events that need to be computed. Most often this should be proximity
@@ -116,7 +115,7 @@ class EventConsumer protected constructor(
 
                     // inserts proximity points for each event into the proximity_points table 
                     if (scanner is ProximityEventScanner) {
-                        ProximityPointsProcessor.insertProximityPointsForEvents(
+                        ProximityPointsProcessor.insertCoordinatesForEvents(
                             connection,
                             events,
                             scanner.mainFlightPointsMap,

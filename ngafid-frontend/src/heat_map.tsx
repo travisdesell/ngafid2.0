@@ -77,8 +77,6 @@ interface ProximityEvent {
     severity: number;
     flightAirframe: string;
     otherFlightAirframe: string;
-    lateralDistance: number;
-    verticalDistance: number;
 }
 
 // Constants for proximity functionality
@@ -289,6 +287,8 @@ const HeatMapPage: React.FC = () => {
     // STATE HOOKS
     // =======================
     // All state variables for UI, map, events, popups, etc.
+
+
     const [airframes, setAirframes] = useState<string[]>(airframesList);
     const [eventNames, setEventNames] = useState<string[]>(allEventNames);
     const [eventChecked, setEventChecked] = useState<EventChecked>(() => {
@@ -587,7 +587,7 @@ const HeatMapPage: React.FC = () => {
             // Reprocess events if we have any, using the new value
             if (proximityEventPoints.length > 0) {
                 // Check if we have proximity events or regular events
-                const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== null);
+                const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0);
                 if (hasProximityEvents) {
                     processProximityEventCoordinates(proximityEventPoints, newShowGrid);
                 } else {
@@ -628,7 +628,7 @@ const HeatMapPage: React.FC = () => {
                 onClick={() => {
                     setShowGrid(false);
                     if (proximityEventPoints.length > 0) {
-                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== null);
+                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0);
                         if (hasProximityEvents) {
                             processProximityEventCoordinates(proximityEventPoints, false);
                         } else {
@@ -658,7 +658,7 @@ const HeatMapPage: React.FC = () => {
                 onClick={() => {
                     setShowGrid(true);
                     if (proximityEventPoints.length > 0) {
-                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== null);
+                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0);
                         if (hasProximityEvents) {
                             processProximityEventCoordinates(proximityEventPoints, true);
                         } else {
@@ -732,6 +732,11 @@ const HeatMapPage: React.FC = () => {
         const allPoints: { latitude: number, longitude: number }[] = [];
 
         for (const eventPoints of allEventPoints) {
+            // Ensure mainFlightPoints is an array
+            if (!Array.isArray(eventPoints.mainFlightPoints)) {
+                console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
+                continue;
+            }
             // RED: mainFlightPoints
             for (const point of eventPoints.mainFlightPoints) {
                 const olCoord = fromLonLat([
@@ -752,8 +757,6 @@ const HeatMapPage: React.FC = () => {
                     otherFlightAirframe: eventPoints.otherAirframe,
                     severity: eventPoints.severity,
                     altitudeAgl: point.altitude_agl,
-                    lateralDistance: point.lateral_distance,
-                    verticalDistance: point.vertical_distance,
                     latitude: point.latitude,
                     longitude: point.longitude
                 });
@@ -761,6 +764,11 @@ const HeatMapPage: React.FC = () => {
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
             }
             // BLACK: otherFlightPoints
+            // Ensure otherFlightPoints is an array
+            if (!Array.isArray(eventPoints.otherFlightPoints)) {
+                console.warn(`otherFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.otherFlightPoints);
+                continue;
+            }
             for (const point of eventPoints.otherFlightPoints) {
                 const olCoord = fromLonLat([
                     point.longitude + 0.0001,
@@ -780,8 +788,6 @@ const HeatMapPage: React.FC = () => {
                     otherFlightAirframe: eventPoints.airframe,
                     severity: eventPoints.severity,
                     altitudeAgl: point.altitude_agl,
-                    lateralDistance: point.lateral_distance,
-                    verticalDistance: point.vertical_distance,
                     latitude: point.latitude,
                     longitude: point.longitude
                 });
@@ -881,10 +887,6 @@ const HeatMapPage: React.FC = () => {
                     const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
                     const color = interpolateColor(intensity);
 
-                    if (count > 0) {
-                        console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
-                    }
-
                     const polygon = new Polygon([[
                         [x0, y0],
                         [x1, y0],
@@ -909,7 +911,6 @@ const HeatMapPage: React.FC = () => {
 
             // Add new features
             gridSource.addFeatures(features);
-            console.log('[processProximityEventCoordinates] Added grid features:', features.length, 'Grid source now has:', gridSource.getFeatures().length);
 
             // Hide heatmap layers
             heatmapLayer1.setVisible(false);
@@ -953,6 +954,11 @@ const HeatMapPage: React.FC = () => {
         const allPoints: { latitude: number, longitude: number }[] = [];
 
         for (const eventPoints of singleEventPoints) {
+            // Ensure mainFlightPoints is an array
+            if (!Array.isArray(eventPoints.mainFlightPoints)) {
+                console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
+                continue;
+            }
             for (const point of eventPoints.mainFlightPoints) {
                 const olCoord = fromLonLat([
                     point.longitude + 0.0001,
@@ -966,10 +972,10 @@ const HeatMapPage: React.FC = () => {
                 marker.setProperties({
                     isMarker: true,
                     flightId: eventPoints.mainFlightId,
-                    otherFlightId: null, // Single events don't have other flights
+                    otherFlightId: 0, // Single events don't have other flights
                     time: point.timestamp,
                     flightAirframe: eventPoints.airframe,
-                    otherFlightAirframe: null,
+                    otherFlightAirframe: '',
                     severity: eventPoints.severity,
                     altitudeAgl: point.altitude_agl,
                     latitude: point.latitude,
@@ -1418,7 +1424,7 @@ const HeatMapPage: React.FC = () => {
         minSeverity: number;
         maxSeverity: number;
     }) => {
-        let url = `/protected/events_filtered?`;
+        let url = `/protected/proximity_events_in_box?`;
         if (filters.airframe) url += `airframe=${encodeURIComponent(filters.airframe)}&`;
         url += `event_definition_ids=${filters.eventDefinitionIds.join(",")}&` +
             `start_date=${filters.startDate}&end_date=${filters.endDate}&` +
@@ -1465,7 +1471,7 @@ const HeatMapPage: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const events = await fetchEvents({
+            const events: any[] = await fetchEvents({
                 ...filters,
                 minSeverity,
                 maxSeverity
@@ -1476,8 +1482,8 @@ const HeatMapPage: React.FC = () => {
                 setLoading(false);
                 return [];
             }
-            const allProximityEventPoints = [];
-            const allSingleEventPoints = [];
+            const allProximityEventPoints: ProximityEventPoints[] = [];
+            const allSingleEventPoints: ProximityEventPoints[] = [];
             const processedPairs = new Set<string>();
             for (const event of events) {
                 if (isProximityEvent(event)) {
@@ -1490,41 +1496,67 @@ const HeatMapPage: React.FC = () => {
                     }
                     processedPairs.add(pairKey);
                     const eventId = event.id;
-                    const mainUrl = `/protected/proximity_points_filtered?event_id=${eventId}&flight_id=${mainFlightId}`;
-                    const otherUrl = `/protected/proximity_points_filtered?event_id=${eventId}&flight_id=${otherFlightId}`;
-                    const [mainResp, otherResp] = await Promise.all([
-                        fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } }),
-                        fetch(otherUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } })
-                    ]);
-                    const mainData = await mainResp.json();
-                    const otherData = await otherResp.json();
-                    allProximityEventPoints.push({
-                        eventId: eventId,
-                        mainFlightId: mainFlightId,
-                        otherFlightId: otherFlightId,
-                        mainFlightPoints: mainData.points || mainData || [],
-                        otherFlightPoints: otherData.points || otherData || [],
-                        severity: event.severity,
-                        airframe: event.airframe,
-                        otherAirframe: event.otherAirframe
-                    });
+                    const mainUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    const otherUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${otherFlightId}`;
+                    
+                    console.log(`Fetching proximity points for event ${eventId}: mainFlightId=${mainFlightId}, otherFlightId=${otherFlightId}`);
+                    console.log(`Main URL: ${mainUrl}`);
+                    console.log(`Other URL: ${otherUrl}`);
+                    
+                    try {
+                        const [mainResp, otherResp] = await Promise.all([
+                            fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } }),
+                            fetch(otherUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } })
+                        ]);
+                        
+                        // Check if both responses are successful
+                        if (!mainResp.ok || !otherResp.ok) {
+                            console.warn(`Failed to fetch proximity points for event ${eventId}: main=${mainResp.status}, other=${otherResp.status}`);
+                            continue; // Skip this event if we can't get its points
+                        }
+                        
+                        const mainData = await mainResp.json();
+                        const otherData = await otherResp.json();
+                        allProximityEventPoints.push({
+                            eventId: eventId,
+                            mainFlightId: mainFlightId,
+                            otherFlightId: otherFlightId,
+                            mainFlightPoints: mainData.points || mainData || [],
+                            otherFlightPoints: otherData.points || otherData || [],
+                            severity: event.severity,
+                            airframe: event.airframe,
+                            otherAirframe: event.otherAirframe
+                        });
+                    } catch (error) {
+                        console.warn(`Error fetching proximity points for event ${eventId}:`, error);
+                        continue; // Skip this event if there's an error
+                    }
                 } else {
                     // Regular event: fetch points for just the main flight
                     const mainFlightId = event.flight_id;
                     const eventId = event.id;
-                    const mainUrl = `/protected/event_points_filtered?event_id=${eventId}&flight_id=${mainFlightId}`;
-                    const mainResp = await fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } });
-                    const mainData = await mainResp.json();
-                    allSingleEventPoints.push({
-                        eventId: eventId,
-                        mainFlightId: mainFlightId,
-                        otherFlightId: null,
-                        mainFlightPoints: mainData.points || mainData || [],
-                        otherFlightPoints: [],
-                        severity: event.severity,
-                        airframe: event.airframe,
-                        otherAirframe: null
-                    });
+                    const mainUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    try {
+                        const mainResp = await fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+                        if (!mainResp.ok) {
+                            console.warn(`Failed to fetch event points for event ${eventId}: ${mainResp.status} ${mainResp.statusText}`);
+                            continue; // Skip this event if we can't get its points
+                        }
+                        const mainData = await mainResp.json();
+                        allSingleEventPoints.push({
+                            eventId: eventId,
+                            mainFlightId: mainFlightId,
+                            otherFlightId: 0, // Use 0 instead of null for regular events
+                            mainFlightPoints: mainData.points || mainData || [],
+                            otherFlightPoints: [],
+                            severity: event.severity,
+                            airframe: event.airframe,
+                            otherAirframe: '' // Use empty string instead of null
+                        });
+                    } catch (error) {
+                        console.warn(`Error fetching event points for event ${eventId}:`, error);
+                        continue; // Skip this event if there's an error
+                    }
                 }
             }
             setProximityEventPoints([...allProximityEventPoints, ...allSingleEventPoints]);

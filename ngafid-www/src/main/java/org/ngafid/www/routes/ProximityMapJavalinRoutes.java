@@ -3,15 +3,11 @@ package org.ngafid.www.routes;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.core.accounts.User;
-import org.ngafid.core.proximity.ProximityPointsProcessor;
 import org.ngafid.www.Navbar;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.Database;
 
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,44 +49,41 @@ public class ProximityMapJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
-    public static void getAllProximityEvents(Context ctx) {
-        try {
-            User user = ctx.sessionAttribute("user");
-            if (user == null) {
-                ctx.status(401);
-                ctx.result("User not logged in");
-                return;
-            }
-
-            ctx.json(ProximityPointsProcessor.getProximityEvents());
-        } catch (SQLException e) {
-            LOG.severe(e.toString());
-            ctx.status(500);
-            ctx.result(e.toString());
-        }
-    }
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/proximity_map", ProximityMapJavalinRoutes::getProximityMap);
         app.get("/protected/heat_map", ProximityMapJavalinRoutes::getHeatMap);
-        app.get("/protected/proximity_events", ProximityMapJavalinRoutes::getAllProximityEvents);
-        app.get("/protected/proximity_points", ctx -> {
+        app.get("/protected/proximity_points_for_event_and_flight", ctx -> {
             User user = ctx.sessionAttribute("user");
             if (user == null) {
                 ctx.status(401).result("User not logged in");
                 return;
             }
-            ctx.json(org.ngafid.core.proximity.ProximityPointsProcessor.getAllProximityPoints());
-        });
-        app.get("/protected/proximity_points_for_flight", ctx -> {
-            User user = ctx.sessionAttribute("user");
-            if (user == null) {
-                ctx.status(401).result("User not logged in");
-                return;
+            try {
+                String eventIdParam = ctx.queryParam("event_id");
+                String flightIdParam = ctx.queryParam("flight_id");
+                
+                if (eventIdParam == null || flightIdParam == null) {
+                    LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
+                    ctx.status(400).result("Missing required parameters: event_id and flight_id");
+                    return;
+                }
+                
+                int eventId = Integer.parseInt(eventIdParam);
+                int flightId = Integer.parseInt(flightIdParam);
+                
+                LOG.info("Fetching proximity points for event_id=" + eventId + ", flight_id=" + flightId);
+                
+                Map<String, Object> result = org.ngafid.core.proximity.ProximityPointsProcessor.getCoordinates(eventId, flightId);
+                ctx.json(result);
+            } catch (NumberFormatException e) {
+                LOG.severe("Invalid number format: " + e.getMessage());
+                ctx.status(400).result("Invalid number format for event_id or flight_id");
+            } catch (Exception e) {
+                LOG.severe("Error fetching proximity points: " + e.getMessage());
+                e.printStackTrace();
+                ctx.status(500).result("Internal server error: " + e.getMessage());
             }
-            int eventId = Integer.parseInt(ctx.queryParam("event_id"));
-            int flightId = Integer.parseInt(ctx.queryParam("flight_id"));
-            ctx.json(org.ngafid.core.proximity.ProximityPointsProcessor.getProximityPointsForEventAndFlight(eventId, flightId));
         });
         app.get("/protected/proximity_events_in_box", ctx -> {
             User user = ctx.sessionAttribute("user");
@@ -98,14 +91,19 @@ public class ProximityMapJavalinRoutes {
                 ctx.status(401).result("User not logged in");
                 return;
             }
-            double minLat = Double.parseDouble(ctx.queryParam("min_latitude"));
-            double maxLat = Double.parseDouble(ctx.queryParam("max_latitude"));
-            double minLon = Double.parseDouble(ctx.queryParam("min_longitude"));
-            double maxLon = Double.parseDouble(ctx.queryParam("max_longitude"));
-            String startTime = ctx.queryParam("start_time");
-            String endTime = ctx.queryParam("end_time");
             String airframe = ctx.queryParam("airframe");
             String eventDefinitionIdsParam = ctx.queryParam("event_definition_ids");
+            String startDate = ctx.queryParam("start_date");
+            String endDate = ctx.queryParam("end_date");
+            double areaMinLat = Double.parseDouble(ctx.queryParam("area_min_lat"));
+            double areaMaxLat = Double.parseDouble(ctx.queryParam("area_max_lat"));
+            double areaMinLon = Double.parseDouble(ctx.queryParam("area_min_lon"));
+            double areaMaxLon = Double.parseDouble(ctx.queryParam("area_max_lon"));
+            // Parse severity filters
+            Double minSeverity = ctx.queryParam("min_severity") != null ? Double.valueOf(ctx.queryParam("min_severity")) : null;
+            Double maxSeverity = ctx.queryParam("max_severity") != null ? Double.valueOf(ctx.queryParam("max_severity")) : null;
+
+            // Parse event definition IDs
             List<Integer> eventDefinitionIds = new ArrayList<>();
             if (eventDefinitionIdsParam != null && !eventDefinitionIdsParam.isEmpty()) {
                 String[] ids = eventDefinitionIdsParam.split(",");
@@ -117,22 +115,18 @@ public class ProximityMapJavalinRoutes {
                     }
                 }
             }
-            java.sql.Date startDate = java.sql.Date.valueOf(ctx.queryParam("start_date"));
-            java.sql.Date endDate = java.sql.Date.valueOf(ctx.queryParam("end_date"));
-            double areaMinLat = Double.parseDouble(ctx.queryParam("area_min_lat"));
-            double areaMaxLat = Double.parseDouble(ctx.queryParam("area_max_lat"));
-            double areaMinLon = Double.parseDouble(ctx.queryParam("area_min_lon"));
-            double areaMaxLon = Double.parseDouble(ctx.queryParam("area_max_lon"));
-            // Parse severity filters
-            Double minSeverity = ctx.queryParam("min_severity") != null ? Double.valueOf(ctx.queryParam("min_severity")) : null;
-            Double maxSeverity = ctx.queryParam("max_severity") != null ? Double.valueOf(ctx.queryParam("max_severity")) : null;
 
-            List<java.util.Map<String, Object>> events = org.ngafid.core.proximity.ProximityPointsProcessor.getFilteredEvents(
-                airframe, eventDefinitionIds, startDate, endDate,
-                areaMinLat, areaMaxLat, areaMinLon, areaMaxLon,
-                minSeverity, maxSeverity
-            );
-            ctx.json(events);
+            try {
+                List<java.util.Map<String, Object>> events = org.ngafid.core.proximity.ProximityPointsProcessor.getEvents(
+                    airframe, eventDefinitionIds, java.sql.Date.valueOf(startDate), java.sql.Date.valueOf(endDate),
+                    areaMinLat, areaMaxLat, areaMinLon, areaMaxLon,
+                    minSeverity, maxSeverity
+                );
+                ctx.json(events);
+            } catch (SQLException e) {
+                LOG.severe(e.toString());
+                ctx.status(500).result(e.toString());
+            }
         });
     }
 }
