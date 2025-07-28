@@ -3,6 +3,7 @@ package org.ngafid.core.flights;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.proximity.ProximityPointsProcessor;
 import org.ngafid.core.util.FlightTag;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.core.util.filters.Filter;
@@ -986,8 +987,26 @@ public class Flight {
             warningPreparedStatement.executeBatch();
         }
 
-        for (Flight flight : flights)
+        for (Flight flight : flights) {
             Event.batchInsertion(connection, flight, flight.events);
+            
+            // Insert coordinate points for heat map processor
+            if (!flight.events.isEmpty()) {
+                // Process non-proximity events (events with event definition ID != -1)
+                List<Event> nonProximityEvents = flight.events.stream()
+                    .filter(event -> event.getEventDefinitionId() != -1)
+                    .toList();
+                
+                if (!nonProximityEvents.isEmpty()) {
+                    try {
+                        ProximityPointsProcessor.insertCoordinatesForNonProximityEvents(
+                            connection, nonProximityEvents, flight);
+                    } catch (SQLException e) {
+                        System.err.println("Failed to insert proximity points for flight " + flight.getId() + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
 
         try (PreparedStatement processingStatusStatement = connection.prepareStatement("UPDATE flights SET " +
                 "status = ? WHERE id = ?")) {

@@ -2,8 +2,13 @@ package org.ngafid.core.proximity;
 
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.core.flights.Parameters;
 
 import java.sql.*;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -12,14 +17,20 @@ public class ProximityPointsProcessor {
 
 
 
-    public static void insertCoordinatesForEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
+    public static void insertCoordinatesForProximityEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
+
+        
         String sql = "INSERT INTO proximity_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl, lateral_distance, vertical_distance) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int inserted = 0;
             for (Event event : events) {
+                LOG.info("Processing event ID: " + event.getId() + ", Flight ID: " + event.getFlightId());
+                
                 List<ProximityPointData> mainPoints = mainFlightPointsMap.get(event);
+                LOG.info("Main points for event " + event.getId() + ": " + (mainPoints != null ? mainPoints.size() : "null"));
+                
                 if (mainPoints != null) {
                     for (ProximityPointData point : mainPoints) {
                         stmt.setInt(1, event.getId());
@@ -34,7 +45,10 @@ public class ProximityPointsProcessor {
                         inserted++;
                     }
                 }
+                
                 List<ProximityPointData> otherPoints = otherFlightPointsMap.get(event);
+                LOG.info("Other points for event " + event.getId() + ": " + (otherPoints != null ? otherPoints.size() : "null"));
+                
                 if (otherPoints != null) {
                     for (ProximityPointData point : otherPoints) {
                         stmt.setInt(1, event.getId());
@@ -57,6 +71,121 @@ public class ProximityPointsProcessor {
             }
             stmt.executeBatch();
             LOG.info("Inserted " + inserted + " proximity points (duplicated for both flights per event).");
+        }
+    }
+
+
+    /**
+     * Insert coordinates for regular (non-proximity) events by extracting flight data points
+     * during the event's time window.
+     * 
+     * @param connection Database connection
+     * @param events List of events to process
+     * @param flight The flight containing the time series data
+     * @throws SQLException if database operation fails
+     */
+    public static void insertCoordinatesForNonProximityEvents(Connection connection, List<Event> events, Flight flight) throws SQLException {
+        
+        String sql = "INSERT INTO proximity_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            int inserted = 0;
+            
+            // Get flight time series data
+            Map<String, DoubleTimeSeries> doubleTimeSeries = flight.getDoubleTimeSeriesMap();
+
+            
+            DoubleTimeSeries latitudeSeries = doubleTimeSeries.get(Parameters.LATITUDE);
+            DoubleTimeSeries longitudeSeries = doubleTimeSeries.get(Parameters.LONGITUDE);
+            DoubleTimeSeries altitudeSeries = doubleTimeSeries.get(Parameters.ALT_AGL);
+
+            Map<String, StringTimeSeries> stringTimeSeries = flight.getStringTimeSeriesMap();
+            
+
+            StringTimeSeries timestampSeries = stringTimeSeries.get(Parameters.UTC_DATE_TIME);
+
+            if (latitudeSeries == null || longitudeSeries == null || timestampSeries == null) {
+                LOG.warning("Required coordinate columns not available for flight " + flight.getId());
+                LOG.warning("latitudeSeries: " + (latitudeSeries == null ? "null" : "found"));
+                LOG.warning("longitudeSeries: " + (longitudeSeries == null ? "null" : "found"));
+                LOG.warning("timestampSeries: " + (timestampSeries == null ? "null" : "found"));
+                return;
+            }
+            
+            for (Event event : events) {
+                LOG.info("Processing event ID: " + event.getId() + ", flightId: " + event.getFlightId() + 
+                        ", startLine: " + event.getStartLine() + ", endLine: " + event.getEndLine() + 
+                        ", eventDefinitionId: " + event.getEventDefinitionId());
+                
+                int validPointsForEvent = 0;
+                int skippedPointsForEvent = 0;
+                
+                // Extract points from startLine to endLine
+                for (int i = event.getStartLine(); i <= event.getEndLine() && i < latitudeSeries.size() && i < longitudeSeries.size() && i < timestampSeries.size(); i++) {
+                    double latitude = latitudeSeries.get(i);
+                    double longitude = longitudeSeries.get(i);
+                    
+
+                    // Skip invalid coordinates (0,0, NaN, or infinite values)
+                    if (latitude == 0.0 && longitude == 0.0 || 
+                        Double.isNaN(latitude) || Double.isNaN(longitude) ||
+                        Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
+                        LOG.warning("Skipping invalid coordinates at index " + i + ": lat=" + latitude + ", lon=" + longitude);
+                        skippedPointsForEvent++;
+                        continue;
+                    }
+                    
+                    stmt.setInt(1, event.getId());
+                    stmt.setInt(2, event.getFlightId());
+                    stmt.setDouble(3, latitude);
+                    stmt.setDouble(4, longitude);
+                    
+                    // Convert timestamp string to Timestamp
+                    String timestampStr = timestampSeries.get(i);
+                    if (timestampStr != null) {
+                        try {
+                            // Parse ISO 8601 timestamp to Timestamp
+                            OffsetDateTime odt = OffsetDateTime.parse(timestampStr);
+                            stmt.setTimestamp(5, Timestamp.from(odt.toInstant()));
+                        } catch (Exception e) {
+                            LOG.warning("Failed to parse timestamp: " + timestampStr + " for event " + event.getId() + " at line " + i);
+                            skippedPointsForEvent++;
+                            continue;
+                        }
+                    } else {
+                        stmt.setNull(5, java.sql.Types.TIMESTAMP);
+                    }
+                    
+                    // Set altitude if available
+                    if (altitudeSeries != null && i < altitudeSeries.size()) {
+                        double altitude = altitudeSeries.get(i);
+                        // Log the first few altitude values to debug
+                        if (i < event.getStartLine() + 3) {
+                            LOG.info("Altitude at index " + i + ": " + altitude);
+                        }
+                        if (Double.isNaN(altitude) || Double.isInfinite(altitude)) {
+                            LOG.warning("Invalid altitude value at index " + i + ": " + altitude + " for event " + event.getId());
+                            stmt.setNull(6, java.sql.Types.DOUBLE);
+                        } else {
+                            stmt.setDouble(6, altitude);
+                        }
+                    } else {
+                        LOG.warning("Altitude series not available or index " + i + " out of bounds for event " + event.getId());
+                        stmt.setNull(6, java.sql.Types.DOUBLE);
+                    }
+                    
+                    stmt.addBatch();
+                    inserted++;
+                    validPointsForEvent++;
+                }
+                
+                LOG.info("Event " + event.getId() + ": " + validPointsForEvent + " valid points, " + skippedPointsForEvent + " skipped points");
+            }
+            
+            LOG.info("Executing batch insert for " + inserted + " total points...");
+            stmt.executeBatch();
+            LOG.info("Successfully inserted " + inserted + " points for regular events.");
         }
     }
 
