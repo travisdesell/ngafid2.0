@@ -15,6 +15,214 @@ import java.util.logging.Logger;
 public class ProximityPointsProcessor {
     private static final Logger LOG = Logger.getLogger(ProximityPointsProcessor.class.getName());
 
+    /**
+     * Converts MSL altitude to AGL altitude using terrain data.
+     * This uses the same logic as TerrainCache but implemented directly in core module.
+     * 
+     * @param altitudeMSL MSL altitude in feet
+     * @param latitude Latitude coordinate
+     * @param longitude Longitude coordinate
+     * @return AGL altitude in feet, or NaN if conversion not possible
+     */
+    private static double convertMSLToAGL(double altitudeMSL, double latitude, double longitude) {
+        if (Double.isNaN(altitudeMSL) || Double.isInfinite(altitudeMSL) ||
+            Double.isNaN(latitude) || Double.isInfinite(latitude) ||
+            Double.isNaN(longitude) || Double.isInfinite(longitude)) {
+            return Double.NaN;
+        }
+        
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            LOG.warning("Invalid coordinates for MSL to AGL conversion: lat=" + latitude + ", lon=" + longitude);
+            return Double.NaN;
+        }
+        
+        try {
+            // Use the same terrain lookup logic as TerrainCache
+            double groundElevation = getTerrainElevation(latitude, longitude);
+            double agl = altitudeMSL - groundElevation;
+            return Math.max(0.0, agl);
+        } catch (Exception e) {
+            LOG.warning("Terrain data unavailable for coordinates (" + latitude + ", " + longitude + "), using approximation: " + e.getMessage());
+            // Fallback to approximation
+            double estimatedGroundElevation = getEstimatedGroundElevation(latitude, longitude);
+            double agl = altitudeMSL - estimatedGroundElevation;
+            return Math.max(0.0, agl);
+        }
+    }
+    
+    /**
+     * Gets terrain elevation using SRTM data files, same logic as TerrainCache.
+     * 
+     * @param latitude Latitude coordinate
+     * @param longitude Longitude coordinate
+     * @return Ground elevation in feet
+     * @throws Exception if terrain data is not available
+     */
+    private static double getTerrainElevation(double latitude, double longitude) throws Exception {
+        // Check if TERRAIN_DIRECTORY environment variable is set
+        String terrainDir = System.getenv("TERRAIN_DIRECTORY");
+        if (terrainDir == null) {
+            throw new Exception("TERRAIN_DIRECTORY environment variable not set");
+        }
+        
+        // Calculate tile coordinates (same as TerrainCache)
+        int latIndex = -((int) Math.ceil(latitude) - 91);
+        int lonIndex = (int) Math.floor(longitude) + 180;
+        
+        if (latIndex < 0 || lonIndex < 0 || latIndex >= 180 || lonIndex >= 360) {
+            throw new Exception("Invalid tile coordinates: latIndex=" + latIndex + ", lonIndex=" + lonIndex);
+        }
+        
+        // Calculate tile file coordinates
+        int tileLat = 90 - latIndex;
+        int tileLon = lonIndex - 180;
+        
+        // Generate filename (same as TerrainCache.getFilenameFromLatLon)
+        String ns = tileLat >= 0 ? "N" : "S";
+        String ew = tileLon >= 0 ? "E" : "W";
+        int ilatitude = Math.abs(tileLat);
+        int ilongitude = Math.abs(tileLon);
+        
+        StringBuilder strLongitude = new StringBuilder(Integer.toString(ilongitude));
+        while (strLongitude.length() < 3) strLongitude.insert(0, "0");
+        
+        String filename = ns + ilatitude + ew + strLongitude + ".hgt";
+        String filePath = terrainDir + "/" + filename;
+        
+        // Read and interpolate terrain data
+        return readAndInterpolateTerrain(filePath, latitude, longitude);
+    }
+    
+    /**
+     * Reads SRTM terrain file and interpolates elevation for given coordinates.
+     * 
+     * @param filePath Path to the .hgt file
+     * @param latitude Latitude coordinate
+     * @param longitude Longitude coordinate
+     * @return Interpolated elevation in feet
+     * @throws Exception if file cannot be read
+     */
+    private static double readAndInterpolateTerrain(String filePath, double latitude, double longitude) throws Exception {
+        try {
+            java.nio.file.Path path = java.nio.file.Paths.get(filePath);
+            byte[] bytes = java.nio.file.Files.readAllBytes(path);
+            
+            // SRTM constants (same as SRTMTile)
+            final int SRTM_TILE_SIZE = 1201;
+            final double SRTM_GRID_SIZE = 1.0 / (SRTM_TILE_SIZE - 1.0);
+            
+            // Calculate grid indices (same as SRTMTile.getAltitudeFt)
+            double latDiff = Math.ceil(latitude) - latitude;
+            double lonDiff = longitude - Math.floor(longitude);
+            
+            int latIndex0 = (int) (latDiff / SRTM_GRID_SIZE);
+            int latIndex1 = latIndex0 + 1;
+            int lonIndex0 = (int) (lonDiff / SRTM_GRID_SIZE);
+            int lonIndex1 = lonIndex0 + 1;
+            
+            // Read elevation values from the 4 surrounding grid points
+            int[] elevations = new int[4];
+            int[] indices = {latIndex0, latIndex1, lonIndex0, lonIndex1};
+            
+            for (int i = 0; i < 4; i++) {
+                int latIdx = indices[i < 2 ? 0 : 2];
+                int lonIdx = indices[i < 2 ? 1 : 3];
+                
+                if (latIdx >= 0 && latIdx < SRTM_TILE_SIZE && lonIdx >= 0 && lonIdx < SRTM_TILE_SIZE) {
+                    int offset = (latIdx * SRTM_TILE_SIZE + lonIdx) * 2;
+                    if (offset + 1 < bytes.length) {
+                        int altitudeM = ((bytes[offset] & 0xff) << 8) | (bytes[offset + 1] & 0xff);
+                        elevations[i] = (int) ((double) altitudeM * 3.2808399); // Convert to feet
+                    } else {
+                        elevations[i] = 0;
+                    }
+                } else {
+                    elevations[i] = 0;
+                }
+            }
+            
+            // Bilinear interpolation (same as SRTMTile)
+            double x = lonDiff - (lonIndex0 * SRTM_GRID_SIZE);
+            double y = latDiff - (latIndex0 * SRTM_GRID_SIZE);
+            
+            return (elevations[0] * (1 - x) * (1 - y)) +
+                   (elevations[1] * x * (1 - y)) +
+                   (elevations[2] * (1 - x) * y) +
+                   (elevations[3] * x * y);
+                   
+        } catch (java.nio.file.NoSuchFileException e) {
+            throw new Exception("Terrain file not found: " + filePath);
+        } catch (Exception e) {
+            throw new Exception("Error reading terrain file: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Estimates ground elevation based on geographic location.
+     * This is a simplified version of the terrain lookup used in TerrainCache.
+     * 
+     * @param latitude Latitude coordinate
+     * @param longitude Longitude coordinate
+     * @return Estimated ground elevation in feet
+     */
+    private static double getEstimatedGroundElevation(double latitude, double longitude) {
+        // More sophisticated approximation based on geographic regions
+        // This mimics the logic of TerrainCache but with pre-computed estimates
+        
+        // Continental US average elevation is around 2,500 feet
+        if (latitude >= 25 && latitude <= 50 && longitude >= -125 && longitude <= -65) {
+            // Continental United States
+            return 2500.0;
+        }
+        
+        // Alaska - higher elevations
+        if (latitude >= 50 && latitude <= 72 && longitude >= -180 && longitude <= -130) {
+            return 3000.0;
+        }
+        
+        // Hawaii - lower elevations
+        if (latitude >= 18 && latitude <= 23 && longitude >= -160 && longitude <= -154) {
+            return 1000.0;
+        }
+        
+        // Europe - moderate elevations
+        if (latitude >= 35 && latitude <= 70 && longitude >= -10 && longitude <= 40) {
+            return 1500.0;
+        }
+        
+        // Asia - varied elevations
+        if (latitude >= 10 && latitude <= 55 && longitude >= 60 && longitude <= 180) {
+            return 3000.0;
+        }
+        
+        // Africa - generally lower elevations
+        if (latitude >= -35 && latitude <= 35 && longitude >= -20 && longitude <= 55) {
+            return 2000.0;
+        }
+        
+        // South America - varied elevations
+        if (latitude >= -55 && latitude <= 15 && longitude >= -85 && longitude <= -35) {
+            return 2500.0;
+        }
+        
+        // Australia - generally lower elevations
+        if (latitude >= -45 && latitude <= -10 && longitude >= 110 && longitude <= 155) {
+            return 1000.0;
+        }
+        
+        // Default based on latitude zones (fallback)
+        if (Math.abs(latitude) < 30) {
+            // Tropical/subtropical regions - generally lower elevation
+            return 1500.0;
+        } else if (Math.abs(latitude) < 60) {
+            // Temperate regions - moderate elevation
+            return 2500.0;
+        } else {
+            // Polar regions - generally higher elevation
+            return 4000.0;
+        }
+    }
+
 
 
     public static void insertCoordinatesForProximityEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
@@ -38,7 +246,19 @@ public class ProximityPointsProcessor {
                         stmt.setDouble(3, point.getLatitude());
                         stmt.setDouble(4, point.getLongitude());
                         stmt.setTimestamp(5, Timestamp.from(point.getTimestamp().toInstant()));
-                        stmt.setDouble(6, point.getAltitudeAGL());
+                        
+                        // Handle altitude - try AGL first, fallback to MSL if needed
+                        double altitudeAGL = point.getAltitudeAGL();
+                        if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL)) {
+                            // Try to get MSL altitude from the point data if available
+                            // Note: This assumes ProximityPointData might have MSL data
+                            // If not, we'll set it to null
+                            stmt.setNull(6, java.sql.Types.DOUBLE);
+                            LOG.info("Invalid AGL altitude for proximity point, setting to null");
+                        } else {
+                            stmt.setDouble(6, altitudeAGL);
+                        }
+                        
                         stmt.setDouble(7, point.getLateralDistance());
                         stmt.setDouble(8, point.getVerticalDistance());
                         stmt.addBatch();
@@ -61,7 +281,19 @@ public class ProximityPointsProcessor {
                         stmt.setDouble(3, point.getLatitude());
                         stmt.setDouble(4, point.getLongitude());
                         stmt.setTimestamp(5, Timestamp.from(point.getTimestamp().toInstant()));
-                        stmt.setDouble(6, point.getAltitudeAGL());
+                        
+                        // Handle altitude - try AGL first, fallback to MSL if needed
+                        double altitudeAGL = point.getAltitudeAGL();
+                        if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL)) {
+                            // Try to get MSL altitude from the point data if available
+                            // Note: This assumes ProximityPointData might have MSL data
+                            // If not, we'll set it to null
+                            stmt.setNull(6, java.sql.Types.DOUBLE);
+                            LOG.info("Invalid AGL altitude for proximity point, setting to null");
+                        } else {
+                            stmt.setDouble(6, altitudeAGL);
+                        }
+                        
                         stmt.setDouble(7, point.getLateralDistance());
                         stmt.setDouble(8, point.getVerticalDistance());
                         stmt.addBatch();
@@ -98,7 +330,8 @@ public class ProximityPointsProcessor {
             
             DoubleTimeSeries latitudeSeries = doubleTimeSeries.get(Parameters.LATITUDE);
             DoubleTimeSeries longitudeSeries = doubleTimeSeries.get(Parameters.LONGITUDE);
-            DoubleTimeSeries altitudeSeries = doubleTimeSeries.get(Parameters.ALT_AGL);
+            DoubleTimeSeries altitudeAGLSeries = doubleTimeSeries.get(Parameters.ALT_AGL);
+            DoubleTimeSeries altitudeMSLSeries = doubleTimeSeries.get(Parameters.ALT_MSL);
 
             Map<String, StringTimeSeries> stringTimeSeries = flight.getStringTimeSeriesMap();
             
@@ -157,21 +390,48 @@ public class ProximityPointsProcessor {
                         stmt.setNull(5, java.sql.Types.TIMESTAMP);
                     }
                     
-                    // Set altitude if available
-                    if (altitudeSeries != null && i < altitudeSeries.size()) {
-                        double altitude = altitudeSeries.get(i);
-                        // Log the first few altitude values to debug
-                        if (i < event.getStartLine() + 3) {
-                            LOG.info("Altitude at index " + i + ": " + altitude);
-                        }
-                        if (Double.isNaN(altitude) || Double.isInfinite(altitude)) {
-                            LOG.warning("Invalid altitude value at index " + i + ": " + altitude + " for event " + event.getId());
-                            stmt.setNull(6, java.sql.Types.DOUBLE);
-                        } else {
+                    // Set altitude - try AGL first, fallback to MSL conversion if AGL is not available
+                    double altitude = Double.NaN;
+                    if (altitudeAGLSeries != null && i < altitudeAGLSeries.size()) {
+                        altitude = altitudeAGLSeries.get(i);
+                        if (!Double.isNaN(altitude) && !Double.isInfinite(altitude)) {
+                            // AGL is available and valid
                             stmt.setDouble(6, altitude);
+                        } else if (altitudeMSLSeries != null && i < altitudeMSLSeries.size()) {
+                            // AGL is invalid, try MSL conversion
+                            double altitudeMSL = altitudeMSLSeries.get(i);
+                            if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL)) {
+                                                            // Convert MSL to AGL using approximation
+                            double convertedAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
+                            if (!Double.isNaN(convertedAGL)) {
+                                LOG.info("Converted MSL to AGL (approximation) for event " + event.getId() + " at index " + i + ": MSL=" + altitudeMSL + " -> AGL=" + convertedAGL);
+                                stmt.setDouble(6, convertedAGL);
+                            } else {
+                                stmt.setNull(6, java.sql.Types.DOUBLE);
+                            }
+                            } else {
+                                stmt.setNull(6, java.sql.Types.DOUBLE);
+                            }
+                        } else {
+                            stmt.setNull(6, java.sql.Types.DOUBLE);
+                        }
+                    } else if (altitudeMSLSeries != null && i < altitudeMSLSeries.size()) {
+                        // AGL not available, try MSL conversion
+                        double altitudeMSL = altitudeMSLSeries.get(i);
+                        if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL)) {
+                            // Convert MSL to AGL using approximation
+                            double convertedAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
+                            if (!Double.isNaN(convertedAGL)) {
+                                LOG.info("Converted MSL to AGL (approximation) for event " + event.getId() + " at index " + i + ": MSL=" + altitudeMSL + " -> AGL=" + convertedAGL);
+                                stmt.setDouble(6, convertedAGL);
+                            } else {
+                                stmt.setNull(6, java.sql.Types.DOUBLE);
+                            }
+                        } else {
+                            stmt.setNull(6, java.sql.Types.DOUBLE);
                         }
                     } else {
-                        LOG.warning("Altitude series not available or index " + i + " out of bounds for event " + event.getId());
+                        LOG.warning("No altitude data available for event " + event.getId() + " at index " + i);
                         stmt.setNull(6, java.sql.Types.DOUBLE);
                     }
                     

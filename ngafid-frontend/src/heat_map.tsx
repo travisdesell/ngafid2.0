@@ -171,15 +171,14 @@ interface EventTypeHandler {
     processFunction: (events: any[], map: Map | null, layers: any) => Promise<void>;
 }
 
-const azureMapsKey = process.env.AZURE_MAPS_KEY;
+let azureMapsKey = process.env.AZURE_MAPS_KEY;
 
-// Marker visibility threshold (same as proximity map)
 const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
 
 const mapLayerOptions = [
-    { value: 'Aerial', label: 'Aerial', url: () => `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` },
-    { value: 'Road', label: 'Road (static)', url: () => `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` },
-    { value: 'RoadOnDemand', label: 'Road (dynamic)', url: () => `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` },
+    { value: 'Aerial', label: 'Aerial', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
+    { value: 'Road', label: 'Road (static)', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
+    { value: 'RoadOnDemand', label: 'Road (dynamic)', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
     { value: 'SectionalCharts', label: 'Sectional Charts', url: () => 'http://localhost:8187/sectional/{z}/{x}/{-y}.png' },
     { value: 'TerminalAreaCharts', label: 'Terminal Area Charts', url: () => 'http://localhost:8187/terminal-area/{z}/{x}/{-y}.png' },
     { value: 'IFREnrouteLowCharts', label: 'IFR Enroute Low Charts', url: () => 'http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png' },
@@ -1123,10 +1122,17 @@ const HeatMapPage: React.FC = () => {
     useEffect(() => {
         if (mapRef.current && !map) {
             // Create layers for each style
-            const layers = mapLayerOptions.map(opt => new TileLayer({
-                visible: opt.value === mapStyle,
-                source: new XYZ({ url: opt.url() })
-            }));
+            const layers = mapLayerOptions.map(opt => {
+                const url = opt.url();
+                if (!url) {
+                    console.warn(`Skipping layer ${opt.value} - no URL available (Azure Maps key may be missing)`);
+                    return null;
+                }
+                return new TileLayer({
+                    visible: opt.value === mapStyle,
+                    source: new XYZ({ url })
+                });
+            }).filter((layer): layer is TileLayer<XYZ> => layer !== null);
 
             // Create heatmap sources and layers
             const heatmapSource1 = new VectorSource();
@@ -1368,9 +1374,15 @@ const HeatMapPage: React.FC = () => {
         }
         // Layer switching
         if (map) {
-            map.getLayers().forEach((layer, idx) => {
-                if (layer instanceof TileLayer) {
-                    layer.setVisible(mapLayerOptions[idx].value === mapStyle);
+            const tileLayers = map.getLayers().getArray().filter(layer => layer instanceof TileLayer);
+            tileLayers.forEach((layer, idx) => {
+                if (layer instanceof TileLayer && mapLayerOptions[idx]) {
+                    const url = mapLayerOptions[idx].url();
+                    if (url) {
+                        layer.setVisible(mapLayerOptions[idx].value === mapStyle);
+                    } else {
+                        layer.setVisible(false);
+                    }
                 }
             });
         }
