@@ -40,6 +40,8 @@ import Icon from 'ol/style/Icon';
 import { getTransform } from 'ol/proj';
 import WebGLVectorLayer from 'ol/layer/WebGLVector';
 import MultiPolygon from 'ol/geom/MultiPolygon';
+import Circle from 'ol/style/Circle';
+import Stroke from 'ol/style/Stroke';
 
 // Helper types
 interface EventChecked {
@@ -159,9 +161,11 @@ interface PopupContentData {
     altitude: number | null;
     flightId: string | null;
     flightAirframe: string | null;
-    otherFlightId: string | null;
+    otherFlightId: string | number | null;
     otherFlightAirframe: string | null;
     severity: string | null;
+    eventId: number | null;
+    eventType: string | null;
 }
 
 // Event type registry for handling different event types
@@ -268,6 +272,18 @@ const eventNameToDefinitionIds: { [eventName: string]: number[] } = {
 const allDefinitionIds = Array.from(new Set(Object.values(eventNameToDefinitionIds).flat().filter(id => id !== undefined)));
 eventNameToDefinitionIds["ANY Event"] = allDefinitionIds;
 
+// Function to get event type name from event definition ID
+function getEventTypeName(eventDefinitionId: number): string {
+    for (const [eventName, definitionIds] of Object.entries(eventNameToDefinitionIds)) {
+        // Skip "ANY Event" to avoid returning it for specific events
+        if (eventName === "ANY Event") continue;
+        if (definitionIds.includes(eventDefinitionId)) {
+            return eventName;
+        }
+    }
+    return `Event ${eventDefinitionId}`;
+}
+
 // Use the global airframes variable injected by the backend, if available
 let airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
 // Ensure 'All Airframes' is at the front
@@ -358,8 +374,9 @@ const HeatMapPage: React.FC = () => {
     // Data structure for proximity event points
     interface ProximityEventPoints {
         eventId: number;
+        eventDefinitionId: number;
         mainFlightId: number;
-        otherFlightId: number;
+        otherFlightId: number | null;
         mainFlightPoints: any[];
         otherFlightPoints: any[];
         severity: number;
@@ -585,9 +602,9 @@ const HeatMapPage: React.FC = () => {
             setShowGrid(newShowGrid);
             // Reprocess events if we have any, using the new value
             if (proximityEventPoints.length > 0) {
-                // Check if we have proximity events or regular events
-                const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0);
-                if (hasProximityEvents) {
+                            // Check if we have proximity events or regular events
+            const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0 && event.otherFlightId !== null);
+            if (hasProximityEvents) {
                     processProximityEventCoordinates(proximityEventPoints, newShowGrid);
                 } else {
                     processSingleEventCoordinates(proximityEventPoints, newShowGrid);
@@ -627,7 +644,7 @@ const HeatMapPage: React.FC = () => {
                 onClick={() => {
                     setShowGrid(false);
                     if (proximityEventPoints.length > 0) {
-                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0);
+                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0 && event.otherFlightId !== null);
                         if (hasProximityEvents) {
                             processProximityEventCoordinates(proximityEventPoints, false);
                         } else {
@@ -657,7 +674,7 @@ const HeatMapPage: React.FC = () => {
                 onClick={() => {
                     setShowGrid(true);
                     if (proximityEventPoints.length > 0) {
-                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0);
+                        const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0 && event.otherFlightId !== null);
                         if (hasProximityEvents) {
                             processProximityEventCoordinates(proximityEventPoints, true);
                         } else {
@@ -743,12 +760,14 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 0.2);
+                heatmapFeature.set('weight', 1.5); // Increased weight for better visibility
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                 const marker = new Feature({ geometry: new Point(olCoord) });
                 marker.setStyle(RED_POINT_STYLE);
                 marker.setProperties({
                     isMarker: true,
+                    eventId: eventPoints.eventId,
+                    eventDefinitionId: eventPoints.eventDefinitionId,
                     flightId: eventPoints.mainFlightId,
                     otherFlightId: eventPoints.otherFlightId,
                     time: point.timestamp,
@@ -763,7 +782,7 @@ const HeatMapPage: React.FC = () => {
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
             }
             // BLACK: otherFlightPoints
-            // Ensure otherFlightPoints is an array
+
             if (!Array.isArray(eventPoints.otherFlightPoints)) {
                 console.warn(`otherFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.otherFlightPoints);
                 continue;
@@ -774,12 +793,14 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 0.2);
+                heatmapFeature.set('weight', 1.5);
                 heatmapLayer2.getSource()!.addFeature(heatmapFeature);
                 const marker = new Feature({ geometry: new Point(olCoord) });
                 marker.setStyle(BLACK_POINT_STYLE);
                 marker.setProperties({
                     isMarker: true,
+                    eventId: eventPoints.eventId,
+                    eventDefinitionId: eventPoints.eventDefinitionId,
                     flightId: eventPoints.otherFlightId,
                     otherFlightId: eventPoints.mainFlightId,
                     time: point.timestamp,
@@ -944,6 +965,7 @@ const HeatMapPage: React.FC = () => {
         // Use the passed showGrid value or fall back to state
         const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
         console.log('[processSingleEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
+        console.log('[processSingleEventCoordinates] singleEventPoints:', singleEventPoints);
         
         // Clear heatmap and marker sources
         heatmapLayer1.getSource()!.clear();
@@ -953,25 +975,30 @@ const HeatMapPage: React.FC = () => {
         const allPoints: { latitude: number, longitude: number }[] = [];
 
         for (const eventPoints of singleEventPoints) {
+            console.log('[processSingleEventCoordinates] Processing eventPoints:', eventPoints);
             // Ensure mainFlightPoints is an array
             if (!Array.isArray(eventPoints.mainFlightPoints)) {
                 console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
                 continue;
             }
+            console.log('[processSingleEventCoordinates] mainFlightPoints array length:', eventPoints.mainFlightPoints.length);
             for (const point of eventPoints.mainFlightPoints) {
+                console.log('[processSingleEventCoordinates] Processing point:', point);
                 const olCoord = fromLonLat([
                     point.longitude + 0.0001,
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 0.2);
+                heatmapFeature.set('weight', 1.5);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                 const marker = new Feature({ geometry: new Point(olCoord) });
                 marker.setStyle(RED_POINT_STYLE);
                 marker.setProperties({
                     isMarker: true,
+                    eventId: eventPoints.eventId,
+                    eventDefinitionId: eventPoints.eventDefinitionId,
                     flightId: eventPoints.mainFlightId,
-                    otherFlightId: 0, // Single events don't have other flights
+                    otherFlightId: null, // Single events don't have other flights
                     time: point.timestamp,
                     flightAirframe: eventPoints.airframe,
                     otherFlightAirframe: '',
@@ -982,8 +1009,13 @@ const HeatMapPage: React.FC = () => {
                 });
                 markerSource.addFeature(marker);
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
+                console.log('[processSingleEventCoordinates] Added point to allPoints. Total points:', allPoints.length);
             }
         }
+
+        console.log('[processSingleEventCoordinates] Total points processed:', allPoints.length);
+        console.log('[processSingleEventCoordinates] Heatmap features count:', heatmapLayer1.getSource()!.getFeatures().length);
+        console.log('[processSingleEventCoordinates] Marker features count:', markerSource.getFeatures().length);
 
         // Fit map to extents
         const extent = heatmapLayer1.getSource()!.getExtent();
@@ -1116,6 +1148,40 @@ const HeatMapPage: React.FC = () => {
                 console.log('[processSingleEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
         }
+        
+        console.log('[processSingleEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
+        
+        // Test: Manually zoom to the point location
+        if (map && allPoints.length > 0) {
+            const point = allPoints[0];
+            console.log('[processSingleEventCoordinates] Manually zooming to point:', point);
+            const center = fromLonLat([point.longitude, point.latitude]);
+            map.getView().setCenter(center);
+            map.getView().setZoom(10);
+            console.log('[processSingleEventCoordinates] Map should now be centered on the point');
+            
+            // Debug: Check marker layer
+            const layers = map.getLayers();
+            console.log('[processSingleEventCoordinates] Total map layers:', layers.getLength());
+            for (let i = 0; i < layers.getLength(); i++) {
+                const layer = layers.getArray()[i];
+                console.log(`[processSingleEventCoordinates] Layer ${i}:`, layer.get('name') || layer.constructor.name, 'visible:', layer.getVisible());
+                if ('getSource' in layer && (layer as any).getSource() === markerSource) {
+                    console.log('[processSingleEventCoordinates] Found marker layer!');
+                    console.log('[processSingleEventCoordinates] Marker layer visible:', layer.getVisible());
+                    console.log('[processSingleEventCoordinates] Marker layer features:', (layer as any).getSource()?.getFeatures().length);
+                    // Force marker layer to be visible
+                    layer.setVisible(true);
+                }
+                if ('getSource' in layer && (layer as any).getSource() === heatmapLayer1.getSource()) {
+                    console.log('[processSingleEventCoordinates] Found heatmap layer!');
+                    console.log('[processSingleEventCoordinates] Heatmap layer visible:', layer.getVisible());
+                    console.log('[processSingleEventCoordinates] Heatmap layer features:', (layer as any).getSource()?.getFeatures().length);
+                    // Force heatmap layer to be visible
+                    layer.setVisible(true);
+                }
+            }
+        }
     };
 
     // Map initialization and layer switching
@@ -1141,9 +1207,9 @@ const HeatMapPage: React.FC = () => {
 
             const heatmapLayer1 = new Heatmap({
                 source: heatmapSource1,
-                blur: 3,
-                radius: 2,
-                opacity: 0.5,
+                blur: 2,
+                radius: 5,
+                opacity: 0.3,
                 gradient: [
                     'rgba(0,255,0,0)',
                     'rgba(0,255,0,1)',
@@ -1312,7 +1378,9 @@ const HeatMapPage: React.FC = () => {
                                 flightAirframe: props.flightAirframe || 'N/A',
                                 otherFlightId: props.otherFlightId,
                                 otherFlightAirframe: props.otherFlightAirframe || 'N/A',
-                                severity: props.severity?.toFixed(2)
+                                severity: props.severity?.toFixed(2),
+                                eventId: props.eventId || null,
+                                eventType: props.eventDefinitionId ? getEventTypeName(props.eventDefinitionId) : null
                             };
                             const pixel = olMap.getPixelFromCoordinate(coord);
                             const initialPosition = pixel ? { left: pixel[0], top: pixel[1] } : { left: 100, top: 100 };
@@ -1531,6 +1599,7 @@ const HeatMapPage: React.FC = () => {
                         const otherData = await otherResp.json();
                         allProximityEventPoints.push({
                             eventId: eventId,
+                            eventDefinitionId: event.event_definition_id,
                             mainFlightId: mainFlightId,
                             otherFlightId: otherFlightId,
                             mainFlightPoints: mainData.points || mainData || [],
@@ -1548,6 +1617,8 @@ const HeatMapPage: React.FC = () => {
                     const mainFlightId = event.flight_id;
                     const eventId = event.id;
                     const mainUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    console.log(`[processEventsAndPoints] Fetching regular event points for event ${eventId}, flight ${mainFlightId}`);
+                    console.log(`[processEventsAndPoints] URL: ${mainUrl}`);
                     try {
                         const mainResp = await fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } });
                         if (!mainResp.ok) {
@@ -1555,16 +1626,19 @@ const HeatMapPage: React.FC = () => {
                             continue; // Skip this event if we can't get its points
                         }
                         const mainData = await mainResp.json();
+                        console.log(`[processEventsAndPoints] Received data for event ${eventId}:`, mainData);
                         allSingleEventPoints.push({
                             eventId: eventId,
+                            eventDefinitionId: event.event_definition_id,
                             mainFlightId: mainFlightId,
-                            otherFlightId: 0, // Use 0 instead of null for regular events
+                            otherFlightId: null, // Use null for regular events
                             mainFlightPoints: mainData.points || mainData || [],
                             otherFlightPoints: [],
                             severity: event.severity,
                             airframe: event.airframe,
                             otherAirframe: '' // Use empty string instead of null
                         });
+                        console.log(`[processEventsAndPoints] Added to allSingleEventPoints. Total count:`, allSingleEventPoints.length);
                     } catch (error) {
                         console.warn(`Error fetching event points for event ${eventId}:`, error);
                         continue; // Skip this event if there's an error
@@ -1577,13 +1651,19 @@ const HeatMapPage: React.FC = () => {
             // Clear all layers first
             clearMapLayers();
             
+            console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
+            
             // Process events based on type - only one type at a time
             if (allProximityEventPoints.length > 0) {
                 // We have proximity events - process them
+                console.log('[processEventsAndPoints] Processing proximity events');
                 processProximityEventCoordinates(allProximityEventPoints, showGrid);
             } else if (allSingleEventPoints.length > 0) {
                 // We have regular events - process them
+                console.log('[processEventsAndPoints] Processing single events');
                 processSingleEventCoordinates(allSingleEventPoints, showGrid);
+            } else {
+                console.log('[processEventsAndPoints] No events to process');
             }
             
             return [...allProximityEventPoints, ...allSingleEventPoints];
@@ -1828,7 +1908,12 @@ const HeatMapPage: React.FC = () => {
                                                                 onMouseDown={e => { console.log('Popup mouse down', popup.id, e); handlePopupMouseDown(e, popup.id); }}
                                                             >
                                                                 <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
-                                                                {popup.data.otherFlightId ? 'Proximity Event Details' : 'Event Details'}
+                                                                <div>
+                                                                    <div>{popup.data.eventType || 'Event'}</div>
+                                                                    <div style={{ fontSize: '0.8em', color: '#666', marginTop: '2px' }}>
+                                                                        Event ID: {popup.data.eventId || 'N/A'}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                             <a
                                                                 href="#"
@@ -1869,7 +1954,7 @@ const HeatMapPage: React.FC = () => {
                                                                 <hr />
                                                                 <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
                                                                 <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
-                                                                {popup.data.otherFlightId && (
+                                                                {popup.data.otherFlightId && popup.data.otherFlightId !== null && popup.data.otherFlightId !== 0 && popup.data.otherFlightId !== '0' && (
                                                                     <>
                                                                         <hr />
                                                                         <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
@@ -1878,7 +1963,7 @@ const HeatMapPage: React.FC = () => {
                                                                 )}
                                                                 <hr />
                                                                 <div><strong>Severity: </strong>{parseFloat(String(popup.data.severity)).toFixed(2)}</div>
-                                                                {popup.data.otherFlightId && distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
+                                                                {distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
                                                                     <>
                                                                         <hr />
                                                                         <div><strong>Lateral Distance: </strong>{distances.lateral.toFixed(0)} ft</div>
