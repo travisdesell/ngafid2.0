@@ -16,14 +16,10 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import SignedInNavbar from "./signed_in_navbar";
 import { TimeHeader } from "./time_header.js";
-import GetDescription from "./get_description";
-import Tooltip from "react-bootstrap/Tooltip";
-import { OverlayTrigger } from "react-bootstrap";
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
-import OSM from 'ol/source/OSM';
 import DragBox from 'ol/interaction/DragBox';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import { fromLonLat, toLonLat } from 'ol/proj';
@@ -39,7 +35,6 @@ import Point from 'ol/geom/Point';
 import Icon from 'ol/style/Icon';
 import { getTransform } from 'ol/proj';
 import WebGLVectorLayer from 'ol/layer/WebGLVector';
-import MultiPolygon from 'ol/geom/MultiPolygon';
 import Circle from 'ol/style/Circle';
 import Stroke from 'ol/style/Stroke';
 
@@ -47,55 +42,12 @@ import Stroke from 'ol/style/Stroke';
 interface EventChecked {
     [eventName: string]: boolean;
 }
-interface EventsEmpty {
-    [eventName: string]: boolean;
-}
-
-// Add HeatmapQuery interface
-interface HeatmapQuery {
-    date: {
-        startYear: number;
-        startMonth: number;
-        endYear: number;
-        endMonth: number;
-    };
-    airframe: string;
-    coordinates: {
-        minLat: string;
-        maxLat: string;
-        minLon: string;
-        maxLon: string;
-    };
-    events: string[];
-}
-
-// Proximity event interface
-interface ProximityEvent {
-    id: number;
-    flightId: number;
-    otherFlightId: number;
-    startTime: string;
-    endTime: string;
-    severity: number;
-    flightAirframe: string;
-    otherFlightAirframe: string;
-}
 
 // Constants for proximity functionality
-const ICON_IMAGE_BLACK = new Icon({
-    src: '/images/black-point.png',
-    scale: 0.05,
-    anchor: [0.5, 0.5],
-});
-
 const ICON_IMAGE_RED = new Icon({
     src: '/images/red-point.png',
     scale: 0.05,
     anchor: [0.5, 0.5],
-});
-
-const BLACK_POINT_STYLE = new Style({
-    image: ICON_IMAGE_BLACK
 });
 
 const RED_POINT_STYLE = new Style({
@@ -103,11 +55,7 @@ const RED_POINT_STYLE = new Style({
 });
 
 const BLUE_POINT_STYLE = new Style({
-    image: new Circle({
-        radius: 6,
-        fill: new Fill({ color: '#2563eb' }), // Nice blue color
-        stroke: new Stroke({ color: 'white', width: 2 })
-    })
+    image: ICON_IMAGE_RED
 });
 
 // Interpolate color from green to red
@@ -181,14 +129,7 @@ interface PopupContentData {
     eventType: string | null;
     eventTypes?: string[] | null; // Array of all event types at this location
 }
-
-// Event type registry for handling different event types
-interface EventTypeHandler {
-    name: string;
-    endpoint: string;
-    processFunction: (events: any[], map: Map | null, layers: any) => Promise<void>;
-}
-
+// The key should be stored in .env   AZURE_MAPS_KEY=****
 let azureMapsKey = process.env.AZURE_MAPS_KEY;
 
 const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
@@ -319,16 +260,10 @@ const HeatMapPage: React.FC = () => {
 
 
     const [airframes, setAirframes] = useState<string[]>(airframesList);
-    const [eventNames, setEventNames] = useState<string[]>(allEventNames);
     const [eventChecked, setEventChecked] = useState<EventChecked>(() => {
         const checked: EventChecked = {};
         for (const name of allEventNames) checked[name] = false;
         return checked;
-    });
-    const [eventsEmpty, setEventsEmpty] = useState<EventsEmpty>(() => {
-        const empty: EventsEmpty = {};
-        for (const name of allEventNames) empty[name] = false;
-        return empty;
     });
     const [airframe, setAirframe] = useState<string>("All Airframes");
     const [startYear, setStartYear] = useState<number>(2020);
@@ -347,7 +282,6 @@ const HeatMapPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     // Proximity functionality state
-    const [proximityEvents, setProximityEvents] = useState<ProximityEvent[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [heatmapLayer1, setHeatmapLayer1] = useState<Heatmap | null>(null);
     const [heatmapLayer2, setHeatmapLayer2] = useState<Heatmap | null>(null);
@@ -355,16 +289,6 @@ const HeatMapPage: React.FC = () => {
     const [markerLayer, setMarkerLayer] = useState<VectorLayer | null>(null);
     const [gridLayer, setGridLayer] = useState<WebGLVectorLayer | null>(null);
     const [gridSource, setGridSource] = useState<VectorSource | null>(null);
-    const [previousParams, setPreviousParams] = useState<{
-        airframe: string;
-        startYear: number;
-        startMonth: number;
-        endYear: number;
-        endMonth: number;
-        minSeverity: number;
-        maxSeverity: number;
-        boxCoords: { minLat: string, maxLat: string, minLon: string, maxLon: string };
-    } | null>(null);
 
     // Popup and distance calculation state
     const [openPopups, setOpenPopups] = useState<Array<{
@@ -527,46 +451,6 @@ const HeatMapPage: React.FC = () => {
         if (gridLayer) gridLayer.setVisible(false);
     };
 
-    // Function to check if parameters have changed
-    const haveParametersChanged = () => {
-        if (!previousParams) {
-            console.log('No previous params, considering changed');
-            return true; // First time, so consider it changed
-        }
-
-        const currentParams = {
-            airframe,
-            startYear,
-            startMonth,
-            endYear,
-            endMonth,
-            minSeverity,
-            maxSeverity,
-            boxCoords
-        };
-
-        const changed = (
-            previousParams.airframe !== currentParams.airframe ||
-            previousParams.startYear !== currentParams.startYear ||
-            previousParams.startMonth !== currentParams.startMonth ||
-            previousParams.endYear !== currentParams.endYear ||
-            previousParams.endMonth !== currentParams.endMonth ||
-            previousParams.minSeverity !== currentParams.minSeverity ||
-            previousParams.maxSeverity !== currentParams.maxSeverity ||
-            previousParams.boxCoords.minLat !== currentParams.boxCoords.minLat ||
-            previousParams.boxCoords.maxLat !== currentParams.boxCoords.maxLat ||
-            previousParams.boxCoords.minLon !== currentParams.boxCoords.minLon ||
-            previousParams.boxCoords.maxLon !== currentParams.boxCoords.maxLon
-        );
-
-        console.log('Parameter change check:', {
-            previous: previousParams,
-            current: currentParams,
-            changed: changed
-        });
-
-        return changed;
-    };
 
     // Handlers for severity sliders
     const handleMinSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -628,7 +512,7 @@ const HeatMapPage: React.FC = () => {
      *     the heatmap (default) or a grid-based density map overlay, depending on showGrid.
      *   - The grid overlay is built using OpenLayers WebGLVectorLayer and colored cells.
      *
-     * This logic is modeled after the working implementation in proximity_map.tsx.
+     * This logic provides grid/heatmap toggle functionality for proximity and regular events.
      */
 
         // Handle grid/heatmap toggle for both proximity and regular events
@@ -1443,7 +1327,7 @@ const HeatMapPage: React.FC = () => {
         // Create markers from coordinate registry
         Object.values(newCoordinateRegistry).forEach((group) => {
             const marker = new Feature({ geometry: new Point(group.coord) });
-            marker.setStyle(RED_POINT_STYLE); // Single events always use red
+            marker.setStyle(BLUE_POINT_STYLE); // Single events now use blue for better visibility
             
             // Use the first event's properties for the marker
             const firstEvent = group.events[0];
@@ -1607,38 +1491,6 @@ const HeatMapPage: React.FC = () => {
         }
         
         console.log('[processSingleEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
-        
-        // Test: Manually zoom to the point location
-        if (map && allPoints.length > 0) {
-            const point = allPoints[0];
-            console.log('[processSingleEventCoordinates] Manually zooming to point:', point);
-            const center = fromLonLat([point.longitude, point.latitude]);
-            map.getView().setCenter(center);
-            map.getView().setZoom(10);
-            console.log('[processSingleEventCoordinates] Map should now be centered on the point');
-            
-            // Debug: Check marker layer
-            const layers = map.getLayers();
-            console.log('[processSingleEventCoordinates] Total map layers:', layers.getLength());
-            for (let i = 0; i < layers.getLength(); i++) {
-                const layer = layers.getArray()[i];
-                console.log(`[processSingleEventCoordinates] Layer ${i}:`, layer.get('name') || layer.constructor.name, 'visible:', layer.getVisible());
-                if ('getSource' in layer && (layer as any).getSource() === markerSource) {
-                    console.log('[processSingleEventCoordinates] Found marker layer!');
-                    console.log('[processSingleEventCoordinates] Marker layer visible:', layer.getVisible());
-                    console.log('[processSingleEventCoordinates] Marker layer features:', (layer as any).getSource()?.getFeatures().length);
-                    // Force marker layer to be visible
-                    layer.setVisible(true);
-                }
-                if ('getSource' in layer && (layer as any).getSource() === heatmapLayer1.getSource()) {
-                    console.log('[processSingleEventCoordinates] Found heatmap layer!');
-                    console.log('[processSingleEventCoordinates] Heatmap layer visible:', layer.getVisible());
-                    console.log('[processSingleEventCoordinates] Heatmap layer features:', (layer as any).getSource()?.getFeatures().length);
-                    // Force heatmap layer to be visible
-                    layer.setVisible(true);
-                }
-            }
-        }
     };
 
     // Map initialization and layer switching
@@ -1784,7 +1636,7 @@ const HeatMapPage: React.FC = () => {
              *     - Vertical separation
              *   These are shown at the bottom of both popups.
              *
-             * This logic matches the robust approach from proximity_map.tsx and ensures consistent user experience.
+             * This logic provides robust popup management and distance calculation functionality.
              *
              * Key state:
              *   - openPopups: Array of currently open popups (max 2)
@@ -1927,8 +1779,6 @@ const HeatMapPage: React.FC = () => {
         setEventChecked(prev => ({ ...prev, [eventName]: !prev[eventName] }));
         // Clear previous parameters when Proximity or ANY Event is deselected
         if ((eventName === "Proximity" || eventName === "ANY Event") && eventChecked[eventName]) {
-            setPreviousParams(null);
-            setProximityEvents([]);
             clearMapLayers();
         }
     };
@@ -2039,8 +1889,8 @@ const HeatMapPage: React.FC = () => {
                     }
                     processedPairs.add(pairKey);
                     const eventId = event.id;
-                    const mainUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
-                    const otherUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${otherFlightId}`;
+                                const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
+            const otherUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${otherFlightId}`;
                     
                     console.log(`Fetching proximity points for event ${eventId}: mainFlightId=${mainFlightId}, otherFlightId=${otherFlightId}`);
                     console.log(`Main URL: ${mainUrl}`);
@@ -2079,7 +1929,7 @@ const HeatMapPage: React.FC = () => {
                     // Regular event: fetch points for just the main flight
                     const mainFlightId = event.flight_id;
                     const eventId = event.id;
-                    const mainUrl = `/protected/proximity_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
                     console.log(`[processEventsAndPoints] Fetching regular event points for event ${eventId}, flight ${mainFlightId}`);
                     console.log(`[processEventsAndPoints] URL: ${mainUrl}`);
                     try {

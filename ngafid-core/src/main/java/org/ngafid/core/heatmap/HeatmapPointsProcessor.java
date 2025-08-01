@@ -61,7 +61,7 @@ public class HeatmapPointsProcessor {
     public static void insertCoordinatesForProximityEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
 
 
-        String sql = "INSERT INTO proximity_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl, lateral_distance, vertical_distance) " +
+        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl, lateral_distance, vertical_distance) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -115,12 +115,9 @@ public class HeatmapPointsProcessor {
                         stmt.setDouble(4, point.getLongitude());
                         stmt.setTimestamp(5, Timestamp.from(point.getTimestamp().toInstant()));
 
-                        // Handle altitude - try AGL first, fallback to MSL if needed
+                        // Handle altitude - try AGL first, set to null if not evailable
                         double altitudeAGL = point.getAltitudeAGL();
                         if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL)) {
-                            // Try to get MSL altitude from the point data if available
-                            // Note: This assumes ProximityPointData might have MSL data
-                            // If not, we'll set it to null
                             stmt.setNull(6, java.sql.Types.DOUBLE);
                             LOG.info("Invalid AGL altitude for proximity point, setting to null");
                         } else {
@@ -151,13 +148,12 @@ public class HeatmapPointsProcessor {
      */
     public static void insertCoordinatesForNonProximityEvents(Connection connection, List<Event> events, Flight flight) throws SQLException {
 
-        String sql = "INSERT INTO proximity_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) " +
+        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int inserted = 0;
 
-            // Get flight time series data
             Map<String, DoubleTimeSeries> doubleTimeSeries = flight.getDoubleTimeSeriesMap();
 
 
@@ -252,7 +248,7 @@ public class HeatmapPointsProcessor {
                         // AGL not available, try MSL conversion
                         double altitudeMSL = altitudeMSLSeries.get(i);
                         if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL)) {
-                            // Convert MSL to AGL using approximation
+
                             double convertedAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
                             if (!Double.isNaN(convertedAGL)) {
                                 LOG.info("Converted MSL to AGL (approximation) for event " + event.getId() + " at index " + i + ": MSL=" + altitudeMSL + " -> AGL=" + convertedAGL);
@@ -290,7 +286,7 @@ public class HeatmapPointsProcessor {
         List<Map<String, Object>> points = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
             String query = "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe, pp.lateral_distance, pp.vertical_distance " +
-                           "FROM proximity_points pp " +
+                           "FROM heatmap_points pp " +
                            "JOIN flights f ON pp.flight_id = f.id " +
                            "JOIN airframes a ON f.airframe_id = a.id " +
                            "WHERE pp.event_id = ? AND pp.flight_id = ? " +

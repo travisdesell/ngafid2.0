@@ -133,7 +133,7 @@ class EventConsumer protected constructor(
 
                     // Computed okay.
 
-                    // inserts proximity points for each event into the proximity_points table 
+                    // inserts proximity points for each event into the heatmap_points table 
                     if (scanner is ProximityEventScanner) {
                         LOG.info("Processing proximity events - calling insertCoordinatesForEvents")
                         HeatmapPointsProcessor.insertCoordinatesForProximityEvents(

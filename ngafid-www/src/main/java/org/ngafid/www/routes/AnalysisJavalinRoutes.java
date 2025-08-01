@@ -249,6 +249,155 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    public static void getHeatMap(Context ctx) {
+        final String templateFile = "heat_map.html";
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
+        Map<String, Object> scopes = new HashMap<>();
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        // Inject airframes variable for frontend
+        try (Connection connection = Database.getConnection()) {
+            int fleetId = user.getFleetId();
+            java.util.List<String> airframes = Airframes.getAll(connection, fleetId);
+            com.google.gson.Gson gson = new com.google.gson.Gson();
+            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+        } catch (Exception e) {
+            // fallback: empty airframes
+            scopes.put("fleet_info_js", "var airframes = [];\n");
+        }
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
+    }
+
+    public static void getHeatmapPointsForEventAndFlight(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        try {
+            String eventIdParam = ctx.queryParam("event_id");
+            String flightIdParam = ctx.queryParam("flight_id");
+            
+            if (eventIdParam == null || flightIdParam == null) {
+                LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
+                ctx.status(400).result("Missing required parameters: event_id and flight_id");
+                return;
+            }
+            
+            int eventId = Integer.parseInt(eventIdParam);
+            int flightId = Integer.parseInt(flightIdParam);
+            
+            LOG.info("Fetching proximity points for event_id=" + eventId + ", flight_id=" + flightId);
+            
+            Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getCoordinates(eventId, flightId);
+            ctx.json(result);
+        } catch (NumberFormatException e) {
+            LOG.severe("Invalid number format: " + e.getMessage());
+            ctx.status(400).result("Invalid number format for event_id or flight_id");
+        } catch (Exception e) {
+            LOG.severe("Error fetching proximity points: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).result("Internal server error: " + e.getMessage());
+        }
+    }
+
+    public static void getHeatmapPointsForFlight(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        try {
+            String eventIdParam = ctx.queryParam("event_id");
+            String flightIdParam = ctx.queryParam("flight_id");
+            
+            if (eventIdParam == null || flightIdParam == null) {
+                LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
+                ctx.status(400).result("Missing required parameters: event_id and flight_id");
+                return;
+            }
+            
+            int eventId = Integer.parseInt(eventIdParam);
+            int flightId = Integer.parseInt(flightIdParam);
+            
+            LOG.info("Fetching heatmap points for event_id=" + eventId + ", flight_id=" + flightId);
+            
+            Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getCoordinates(eventId, flightId);
+            ctx.json(result);
+        } catch (NumberFormatException e) {
+            LOG.severe("Invalid number format: " + e.getMessage());
+            ctx.status(400).result("Invalid number format for event_id or flight_id");
+        } catch (Exception e) {
+            LOG.severe("Error fetching heatmap points: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).result("Internal server error: " + e.getMessage());
+        }
+    }
+
+    public static void getHeatmapPoints(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        try {
+            // This endpoint can be used for general heatmap points queries
+            // For now, return empty result - implement as needed
+            Map<String, Object> result = new HashMap<>();
+            result.put("points", new ArrayList<>());
+            ctx.json(result);
+        } catch (Exception e) {
+            LOG.severe("Error fetching heatmap points: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).result("Internal server error: " + e.getMessage());
+        }
+    }
+
+    public static void getProximityEventsInBox(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        String airframe = ctx.queryParam("airframe");
+        String eventDefinitionIdsParam = ctx.queryParam("event_definition_ids");
+        String startDate = ctx.queryParam("start_date");
+        String endDate = ctx.queryParam("end_date");
+        double areaMinLat = Double.parseDouble(ctx.queryParam("area_min_lat"));
+        double areaMaxLat = Double.parseDouble(ctx.queryParam("area_max_lat"));
+        double areaMinLon = Double.parseDouble(ctx.queryParam("area_min_lon"));
+        double areaMaxLon = Double.parseDouble(ctx.queryParam("area_max_lon"));
+        // Parse severity filters
+        Double minSeverity = ctx.queryParam("min_severity") != null ? Double.valueOf(ctx.queryParam("min_severity")) : null;
+        Double maxSeverity = ctx.queryParam("max_severity") != null ? Double.valueOf(ctx.queryParam("max_severity")) : null;
+
+        // Parse event definition IDs
+        List<Integer> eventDefinitionIds = new ArrayList<>();
+        if (eventDefinitionIdsParam != null && !eventDefinitionIdsParam.isEmpty()) {
+            String[] ids = eventDefinitionIdsParam.split(",");
+            for (String id : ids) {
+                try {
+                    eventDefinitionIds.add(Integer.valueOf(id.trim()));
+                } catch (NumberFormatException e) {
+                    LOG.warning("Invalid event definition ID: " + id);
+                }
+            }
+        }
+
+        try {
+            List<java.util.Map<String, Object>> events = org.ngafid.core.heatmap.HeatmapPointsProcessor.getEvents(
+                airframe, eventDefinitionIds, java.sql.Date.valueOf(startDate), java.sql.Date.valueOf(endDate),
+                areaMinLat, areaMaxLat, areaMinLon, areaMaxLon,
+                minSeverity, maxSeverity
+            );
+            ctx.json(events);
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.status(500).result(e.toString());
+        }
+    }
+
     public static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
@@ -499,6 +648,11 @@ public class AnalysisJavalinRoutes {
         // app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
 
         app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
+        app.get("/protected/heat_map", AnalysisJavalinRoutes::getHeatMap);
+        app.get("/protected/heatmap_points_for_event_and_flight", AnalysisJavalinRoutes::getHeatmapPointsForEventAndFlight);
+        app.get("/protected/heatmap_points_for_flight", AnalysisJavalinRoutes::getHeatmapPointsForFlight);
+        app.get("/protected/heatmap_points", AnalysisJavalinRoutes::getHeatmapPoints);
+        app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
 
         // app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 
