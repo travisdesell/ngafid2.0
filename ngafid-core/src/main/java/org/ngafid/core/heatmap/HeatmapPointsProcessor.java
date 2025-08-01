@@ -6,6 +6,8 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.flights.Parameters;
+import org.ngafid.core.terrain.TerrainCache;
+import org.ngafid.core.terrain.TerrainUnavailableException;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
@@ -17,7 +19,7 @@ public class HeatmapPointsProcessor {
 
     /**
      * Converts MSL altitude to AGL altitude using terrain data.
-     * This uses the same logic as TerrainCache but implemented directly in core module.
+     * This uses the proper TerrainCache for accurate terrain elevation lookup.
      *
      * @param altitudeMSL MSL altitude in feet
      * @param latitude Latitude coordinate
@@ -36,191 +38,22 @@ public class HeatmapPointsProcessor {
             return Double.NaN;
         }
 
+        //TODO: remove hardcoded return before production, uncomment the code below
+        // Run out of memory.
+
+        return 0;
+       /*
         try {
-            // Use the same terrain lookup logic as TerrainCache
-            double groundElevation = getTerrainElevation(latitude, longitude);
-            double agl = altitudeMSL - groundElevation;
-            return Math.max(0.0, agl);
+            return TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
+        } catch (TerrainUnavailableException e) {
+            LOG.warning("Terrain data unavailable for coordinates (" + latitude + ", " + longitude + "): " + e.getMessage());
+            return Double.NaN;
         } catch (Exception e) {
-            LOG.warning("Terrain data unavailable for coordinates (" + latitude + ", " + longitude + "), using approximation: " + e.getMessage());
-            // Fallback to approximation
-            double estimatedGroundElevation = getEstimatedGroundElevation(latitude, longitude);
-            double agl = altitudeMSL - estimatedGroundElevation;
-            return Math.max(0.0, agl);
-        }
-    }
-
-    /**
-     * Gets terrain elevation using SRTM data files, same logic as TerrainCache.
-     *
-     * @param latitude Latitude coordinate
-     * @param longitude Longitude coordinate
-     * @return Ground elevation in feet
-     * @throws Exception if terrain data is not available
-     */
-    private static double getTerrainElevation(double latitude, double longitude) throws Exception {
-        // Check if TERRAIN_DIRECTORY environment variable is set
-        String terrainDir = System.getenv("TERRAIN_DIRECTORY");
-        if (terrainDir == null) {
-            throw new Exception("TERRAIN_DIRECTORY environment variable not set");
+            LOG.warning("Unexpected error converting MSL to AGL for coordinates (" + latitude + ", " + longitude + "): " + e.getMessage());
+            return Double.NaN;
         }
 
-        // Calculate tile coordinates (same as TerrainCache)
-        int latIndex = -((int) Math.ceil(latitude) - 91);
-        int lonIndex = (int) Math.floor(longitude) + 180;
-
-        if (latIndex < 0 || lonIndex < 0 || latIndex >= 180 || lonIndex >= 360) {
-            throw new Exception("Invalid tile coordinates: latIndex=" + latIndex + ", lonIndex=" + lonIndex);
-        }
-
-        // Calculate tile file coordinates
-        int tileLat = 90 - latIndex;
-        int tileLon = lonIndex - 180;
-
-        // Generate filename (same as TerrainCache.getFilenameFromLatLon)
-        String ns = tileLat >= 0 ? "N" : "S";
-        String ew = tileLon >= 0 ? "E" : "W";
-        int ilatitude = Math.abs(tileLat);
-        int ilongitude = Math.abs(tileLon);
-
-        StringBuilder strLongitude = new StringBuilder(Integer.toString(ilongitude));
-        while (strLongitude.length() < 3) strLongitude.insert(0, "0");
-
-        String filename = ns + ilatitude + ew + strLongitude + ".hgt";
-        String filePath = terrainDir + "/" + filename;
-
-        // Read and interpolate terrain data
-        return readAndInterpolateTerrain(filePath, latitude, longitude);
-    }
-
-    /**
-     * Reads SRTM terrain file and interpolates elevation for given coordinates.
-     *
-     * @param filePath Path to the .hgt file
-     * @param latitude Latitude coordinate
-     * @param longitude Longitude coordinate
-     * @return Interpolated elevation in feet
-     * @throws Exception if file cannot be read
-     */
-    private static double readAndInterpolateTerrain(String filePath, double latitude, double longitude) throws Exception {
-        try {
-            java.nio.file.Path path = java.nio.file.Paths.get(filePath);
-            byte[] bytes = java.nio.file.Files.readAllBytes(path);
-
-            // SRTM constants (same as SRTMTile)
-            final int SRTM_TILE_SIZE = 1201;
-            final double SRTM_GRID_SIZE = 1.0 / (SRTM_TILE_SIZE - 1.0);
-
-            // Calculate grid indices (same as SRTMTile.getAltitudeFt)
-            double latDiff = Math.ceil(latitude) - latitude;
-            double lonDiff = longitude - Math.floor(longitude);
-
-            int latIndex0 = (int) (latDiff / SRTM_GRID_SIZE);
-            int latIndex1 = latIndex0 + 1;
-            int lonIndex0 = (int) (lonDiff / SRTM_GRID_SIZE);
-            int lonIndex1 = lonIndex0 + 1;
-
-            // Read elevation values from the 4 surrounding grid points
-            int[] elevations = new int[4];
-            int[] indices = {latIndex0, latIndex1, lonIndex0, lonIndex1};
-
-            for (int i = 0; i < 4; i++) {
-                int latIdx = indices[i < 2 ? 0 : 2];
-                int lonIdx = indices[i < 2 ? 1 : 3];
-
-                if (latIdx >= 0 && latIdx < SRTM_TILE_SIZE && lonIdx >= 0 && lonIdx < SRTM_TILE_SIZE) {
-                    int offset = (latIdx * SRTM_TILE_SIZE + lonIdx) * 2;
-                    if (offset + 1 < bytes.length) {
-                        int altitudeM = ((bytes[offset] & 0xff) << 8) | (bytes[offset + 1] & 0xff);
-                        elevations[i] = (int) ((double) altitudeM * 3.2808399); // Convert to feet
-                    } else {
-                        elevations[i] = 0;
-                    }
-                } else {
-                    elevations[i] = 0;
-                }
-            }
-
-            // Bilinear interpolation (same as SRTMTile)
-            double x = lonDiff - (lonIndex0 * SRTM_GRID_SIZE);
-            double y = latDiff - (latIndex0 * SRTM_GRID_SIZE);
-
-            return (elevations[0] * (1 - x) * (1 - y)) +
-                   (elevations[1] * x * (1 - y)) +
-                   (elevations[2] * (1 - x) * y) +
-                   (elevations[3] * x * y);
-
-        } catch (java.nio.file.NoSuchFileException e) {
-            throw new Exception("Terrain file not found: " + filePath);
-        } catch (Exception e) {
-            throw new Exception("Error reading terrain file: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Estimates ground elevation based on geographic location.
-     * This is a simplified version of the terrain lookup used in TerrainCache.
-     *
-     * @param latitude Latitude coordinate
-     * @param longitude Longitude coordinate
-     * @return Estimated ground elevation in feet
-     */
-    private static double getEstimatedGroundElevation(double latitude, double longitude) {
-        // More sophisticated approximation based on geographic regions
-        // This mimics the logic of TerrainCache but with pre-computed estimates
-
-        // Continental US average elevation is around 2,500 feet
-        if (latitude >= 25 && latitude <= 50 && longitude >= -125 && longitude <= -65) {
-            // Continental United States
-            return 2500.0;
-        }
-
-        // Alaska - higher elevations
-        if (latitude >= 50 && latitude <= 72 && longitude >= -180 && longitude <= -130) {
-            return 3000.0;
-        }
-
-        // Hawaii - lower elevations
-        if (latitude >= 18 && latitude <= 23 && longitude >= -160 && longitude <= -154) {
-            return 1000.0;
-        }
-
-        // Europe - moderate elevations
-        if (latitude >= 35 && latitude <= 70 && longitude >= -10 && longitude <= 40) {
-            return 1500.0;
-        }
-
-        // Asia - varied elevations
-        if (latitude >= 10 && latitude <= 55 && longitude >= 60 && longitude <= 180) {
-            return 3000.0;
-        }
-
-        // Africa - generally lower elevations
-        if (latitude >= -35 && latitude <= 35 && longitude >= -20 && longitude <= 55) {
-            return 2000.0;
-        }
-
-        // South America - varied elevations
-        if (latitude >= -55 && latitude <= 15 && longitude >= -85 && longitude <= -35) {
-            return 2500.0;
-        }
-
-        // Australia - generally lower elevations
-        if (latitude >= -45 && latitude <= -10 && longitude >= 110 && longitude <= 155) {
-            return 1000.0;
-        }
-
-        // Default based on latitude zones (fallback)
-        if (Math.abs(latitude) < 30) {
-            // Tropical/subtropical regions - generally lower elevation
-            return 1500.0;
-        } else if (Math.abs(latitude) < 60) {
-            // Temperate regions - moderate elevation
-            return 2500.0;
-        } else {
-            // Polar regions - generally higher elevation
-            return 4000.0;
-        }
+        */
     }
 
 

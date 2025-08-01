@@ -325,7 +325,7 @@ const HeatMapPage: React.FC = () => {
     const [map, setMap] = useState<Map | null>(null);
     const [mapStyle, setMapStyle] = useState<string>('Road');
     const [boxCoords, setBoxCoords] = useState<{ minLat: string, maxLat: string, minLon: string, maxLon: string }>({ minLat: '', maxLat: '', minLon: '', maxLon: '' });
-    const [minSeverity, setMinSeverity] = useState<number>(0);
+    const [minSeverity, setMinSeverity] = useState<number>(-10000);
     const [maxSeverity, setMaxSeverity] = useState<number>(1000);
     const [showGrid, setShowGrid] = useState<boolean>(false);
     const [overlayLayer, setOverlayLayer] = useState<VectorLayer<VectorSource> | null>(null);
@@ -553,7 +553,7 @@ const HeatMapPage: React.FC = () => {
                     <input
                         type="range"
                         name="minSeverity"
-                        min={0}
+                        min={-10000}
                         max={maxSeverity}
                         value={minSeverity}
                         onChange={handleMinSeverityChange}
@@ -760,7 +760,7 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 1.5); // Increased weight for better visibility
+                heatmapFeature.set('weight', 0.7);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                 const marker = new Feature({ geometry: new Point(olCoord) });
                 marker.setStyle(RED_POINT_STYLE);
@@ -793,7 +793,7 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 1.5);
+                heatmapFeature.set('weight', 0.7);
                 heatmapLayer2.getSource()!.addFeature(heatmapFeature);
                 const marker = new Feature({ geometry: new Point(olCoord) });
                 marker.setStyle(BLACK_POINT_STYLE);
@@ -989,7 +989,7 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 1.5);
+                heatmapFeature.set('weight', 0.7);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                 const marker = new Feature({ geometry: new Point(olCoord) });
                 marker.setStyle(RED_POINT_STYLE);
@@ -1207,9 +1207,9 @@ const HeatMapPage: React.FC = () => {
 
             const heatmapLayer1 = new Heatmap({
                 source: heatmapSource1,
-                blur: 2,
-                radius: 5,
-                opacity: 0.3,
+                blur: 3,
+                radius: 4,
+                opacity: 0.9,
                 gradient: [
                     'rgba(0,255,0,0)',
                     'rgba(0,255,0,1)',
@@ -1223,8 +1223,8 @@ const HeatMapPage: React.FC = () => {
             const heatmapLayer2 = new Heatmap({
                 source: heatmapSource2,
                 blur: 3,
-                radius: 2,
-                opacity: 0.5,
+                radius: 4,
+                opacity: 0.9,
                 gradient: [
                     'rgba(0,255,0,0)',
                     'rgba(0,255,0,1)',

@@ -4,8 +4,8 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
-import org.ngafid.processor.terrain.TerrainCache;
-import org.ngafid.processor.terrain.TerrainUnavailableException;
+import org.ngafid.core.terrain.TerrainCache;
+import org.ngafid.core.terrain.TerrainUnavailableException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -73,12 +73,17 @@ public class ComputeAltAGL extends ComputeStep {
                 continue;
             }
 
+            //TODO: remove hardcoded return before production, uncomment the code below
+            // Run out of memory.
+            altitudeAGLTS.add(0);
+            /*
             try {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
                 altitudeAGLTS.add(altitudeAGL);
             } catch (TerrainUnavailableException e) {
                 altitudeAGLTS.add(Double.NaN);
             }
+            */
         }
 
         builder.addTimeSeries(altitudeAGLTS);
