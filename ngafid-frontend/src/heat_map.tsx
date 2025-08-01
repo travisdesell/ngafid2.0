@@ -115,6 +115,11 @@ function toRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
 }
 
+// Helper function to create a coordinate key for grouping events
+function createCoordinateKey(lat: number, lon: number, precision: number = 6): string {
+    return `${lat.toFixed(precision)},${lon.toFixed(precision)}`;
+}
+
 /**
  * Calculates the lateral (surface) and euclidean (3D) distance between two points.
  * @param lat1 Latitude of point 1 in degrees
@@ -166,6 +171,7 @@ interface PopupContentData {
     severity: string | null;
     eventId: number | null;
     eventType: string | null;
+    eventTypes?: string[] | null; // Array of all event types at this location
 }
 
 // Event type registry for handling different event types
@@ -386,6 +392,25 @@ const HeatMapPage: React.FC = () => {
     // Add a new state for proximity event points
     const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
 
+    // Coordinate registry to group events by location
+    interface CoordinateEventGroup {
+        coord: number[];
+        events: Array<{
+            eventId: number;
+            eventDefinitionId: number;
+            flightId: number;
+            otherFlightId: number | null;
+            time: string;
+            flightAirframe: string;
+            otherFlightAirframe: string;
+            severity: number;
+            altitudeAgl: number;
+            latitude: number;
+            longitude: number;
+        }>;
+    }
+    const [coordinateRegistry, setCoordinateRegistry] = useState<{[key: string]: CoordinateEventGroup}>({});
+
     // =======================
     // POPUP DRAGGING FUNCTIONALITY
     // =======================
@@ -484,6 +509,9 @@ const HeatMapPage: React.FC = () => {
                     gridSource.removeFeature(f);
             });
         }
+
+        // Clear coordinate registry
+        setCoordinateRegistry({});
 
         // Hide layers
         if (heatmapLayer1) heatmapLayer1.setVisible(false);
@@ -744,6 +772,10 @@ const HeatMapPage: React.FC = () => {
         heatmapLayer2.getSource()!.clear();
         if (markerSource) markerSource.clear();
 
+        // Clear coordinate registry
+        setCoordinateRegistry({});
+        const newCoordinateRegistry: {[key: string]: CoordinateEventGroup} = {};
+
         // Track all points for grid
         const allPoints: { latitude: number, longitude: number }[] = [];
 
@@ -762,10 +794,16 @@ const HeatMapPage: React.FC = () => {
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
                 heatmapFeature.set('weight', 0.7);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
-                const marker = new Feature({ geometry: new Point(olCoord) });
-                marker.setStyle(RED_POINT_STYLE);
-                marker.setProperties({
-                    isMarker: true,
+                
+                // Add to coordinate registry
+                const coordKey = createCoordinateKey(point.latitude, point.longitude);
+                if (!newCoordinateRegistry[coordKey]) {
+                    newCoordinateRegistry[coordKey] = {
+                        coord: olCoord,
+                        events: []
+                    };
+                }
+                newCoordinateRegistry[coordKey].events.push({
                     eventId: eventPoints.eventId,
                     eventDefinitionId: eventPoints.eventDefinitionId,
                     flightId: eventPoints.mainFlightId,
@@ -778,7 +816,7 @@ const HeatMapPage: React.FC = () => {
                     latitude: point.latitude,
                     longitude: point.longitude
                 });
-                markerSource.addFeature(marker);
+                
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
             }
             // BLACK: otherFlightPoints
@@ -795,13 +833,19 @@ const HeatMapPage: React.FC = () => {
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
                 heatmapFeature.set('weight', 0.7);
                 heatmapLayer2.getSource()!.addFeature(heatmapFeature);
-                const marker = new Feature({ geometry: new Point(olCoord) });
-                marker.setStyle(BLACK_POINT_STYLE);
-                marker.setProperties({
-                    isMarker: true,
+                
+                // Add to coordinate registry
+                const coordKey = createCoordinateKey(point.latitude, point.longitude);
+                if (!newCoordinateRegistry[coordKey]) {
+                    newCoordinateRegistry[coordKey] = {
+                        coord: olCoord,
+                        events: []
+                    };
+                }
+                newCoordinateRegistry[coordKey].events.push({
                     eventId: eventPoints.eventId,
                     eventDefinitionId: eventPoints.eventDefinitionId,
-                    flightId: eventPoints.otherFlightId,
+                    flightId: eventPoints.otherFlightId || 0,
                     otherFlightId: eventPoints.mainFlightId,
                     time: point.timestamp,
                     flightAirframe: eventPoints.otherAirframe,
@@ -811,10 +855,54 @@ const HeatMapPage: React.FC = () => {
                     latitude: point.latitude,
                     longitude: point.longitude
                 });
-                markerSource.addFeature(marker);
+                
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
             }
         }
+
+        // Create markers from coordinate registry
+        Object.values(newCoordinateRegistry).forEach((group) => {
+            const marker = new Feature({ geometry: new Point(group.coord) });
+            
+            // Determine marker style based on events (red for main flight, black for other flight)
+            const hasMainFlightEvents = group.events.some(e => e.otherFlightId !== null);
+            const hasOtherFlightEvents = group.events.some(e => e.otherFlightId === null);
+            
+            if (hasMainFlightEvents && hasOtherFlightEvents) {
+                // Mixed events - use red style
+                marker.setStyle(RED_POINT_STYLE);
+            } else if (hasMainFlightEvents) {
+                // Only main flight events - use red style
+                marker.setStyle(RED_POINT_STYLE);
+            } else {
+                // Only other flight events - use black style
+                marker.setStyle(BLACK_POINT_STYLE);
+            }
+            
+            // Use the first event's properties for the marker
+            const firstEvent = group.events[0];
+            marker.setProperties({
+                isMarker: true,
+                coordKey: createCoordinateKey(firstEvent.latitude, firstEvent.longitude),
+                events: group.events,
+                // Legacy properties for backward compatibility
+                eventId: firstEvent.eventId,
+                eventDefinitionId: firstEvent.eventDefinitionId,
+                flightId: firstEvent.flightId,
+                otherFlightId: firstEvent.otherFlightId,
+                time: firstEvent.time,
+                flightAirframe: firstEvent.flightAirframe,
+                otherFlightAirframe: firstEvent.otherFlightAirframe,
+                severity: firstEvent.severity,
+                altitudeAgl: firstEvent.altitudeAgl,
+                latitude: firstEvent.latitude,
+                longitude: firstEvent.longitude
+            });
+            markerSource.addFeature(marker);
+        });
+
+        // Update coordinate registry state
+        setCoordinateRegistry(newCoordinateRegistry);
 
         // Fit map to extents
         const extent1 = heatmapLayer1.getSource()!.getExtent();
@@ -971,6 +1059,10 @@ const HeatMapPage: React.FC = () => {
         heatmapLayer1.getSource()!.clear();
         if (markerSource) markerSource.clear();
 
+        // Clear coordinate registry
+        setCoordinateRegistry({});
+        const newCoordinateRegistry: {[key: string]: CoordinateEventGroup} = {};
+
         // Track all points for extent and grid
         const allPoints: { latitude: number, longitude: number }[] = [];
 
@@ -991,10 +1083,16 @@ const HeatMapPage: React.FC = () => {
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
                 heatmapFeature.set('weight', 0.7);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
-                const marker = new Feature({ geometry: new Point(olCoord) });
-                marker.setStyle(RED_POINT_STYLE);
-                marker.setProperties({
-                    isMarker: true,
+                
+                // Add to coordinate registry
+                const coordKey = createCoordinateKey(point.latitude, point.longitude);
+                if (!newCoordinateRegistry[coordKey]) {
+                    newCoordinateRegistry[coordKey] = {
+                        coord: olCoord,
+                        events: []
+                    };
+                }
+                newCoordinateRegistry[coordKey].events.push({
                     eventId: eventPoints.eventId,
                     eventDefinitionId: eventPoints.eventDefinitionId,
                     flightId: eventPoints.mainFlightId,
@@ -1007,11 +1105,41 @@ const HeatMapPage: React.FC = () => {
                     latitude: point.latitude,
                     longitude: point.longitude
                 });
-                markerSource.addFeature(marker);
+                
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
                 console.log('[processSingleEventCoordinates] Added point to allPoints. Total points:', allPoints.length);
             }
         }
+
+        // Create markers from coordinate registry
+        Object.values(newCoordinateRegistry).forEach((group) => {
+            const marker = new Feature({ geometry: new Point(group.coord) });
+            marker.setStyle(RED_POINT_STYLE); // Single events always use red
+            
+            // Use the first event's properties for the marker
+            const firstEvent = group.events[0];
+            marker.setProperties({
+                isMarker: true,
+                coordKey: createCoordinateKey(firstEvent.latitude, firstEvent.longitude),
+                events: group.events,
+                // Legacy properties for backward compatibility
+                eventId: firstEvent.eventId,
+                eventDefinitionId: firstEvent.eventDefinitionId,
+                flightId: firstEvent.flightId,
+                otherFlightId: firstEvent.otherFlightId,
+                time: firstEvent.time,
+                flightAirframe: firstEvent.flightAirframe,
+                otherFlightAirframe: firstEvent.otherFlightAirframe,
+                severity: firstEvent.severity,
+                altitudeAgl: firstEvent.altitudeAgl,
+                latitude: firstEvent.latitude,
+                longitude: firstEvent.longitude
+            });
+            markerSource.addFeature(marker);
+        });
+
+        // Update coordinate registry state
+        setCoordinateRegistry(newCoordinateRegistry);
 
         console.log('[processSingleEventCoordinates] Total points processed:', allPoints.length);
         console.log('[processSingleEventCoordinates] Heatmap features count:', heatmapLayer1.getSource()!.getFeatures().length);
@@ -1354,10 +1482,12 @@ const HeatMapPage: React.FC = () => {
                     const props = feature.getProperties();
                     if (!props.isMarker) return;
                     console.log('props.severity:', props.severity, 'type:', typeof props.severity, 'props:', props);
-                    // Generate popup ID based on whether it's a proximity event or regular event
-                    const popupId = props.otherFlightId 
-                        ? `${props.flightId}-${props.otherFlightId}-${props.time}` 
-                        : `${props.flightId}-${props.time}`;
+                    
+                    // Use the events array stored directly in marker properties (more reliable than coordinate registry)
+                    const coordKey = props.coordKey || createCoordinateKey(props.latitude, props.longitude);
+                    
+                    // Generate popup ID based on coordinates to avoid duplicates
+                    const popupId = `coord-${coordKey}`;
                     // Prevent duplicate popups for the same marker
                     if (openPopups.some(p => p.id === popupId)) return;
                     // Use callback form to get latest selectedPoints
@@ -1369,6 +1499,16 @@ const HeatMapPage: React.FC = () => {
                         // Add popup only if we can add a point
                         setOpenPopups(prevPopups => {
                             if (prevPopups.length >= 2) return prevPopups;
+                            // Get all unique event types at this location
+                            let allEventTypes: string[];
+                            if (props.events && Array.isArray(props.events) && props.events.length > 0) {
+                                // Use the events array stored in marker properties
+                                allEventTypes = [...new Set(props.events.map((e: any) => getEventTypeName(e.eventDefinitionId)))];
+                            } else {
+                                // Fallback to single event
+                                allEventTypes = [props.eventDefinitionId ? getEventTypeName(props.eventDefinitionId) : 'Unknown Event'];
+                            }
+                            
                             const popupContentData = {
                                 time: new Date(props.time).toLocaleString(),
                                 latitude: props.latitude !== undefined ? props.latitude : null,
@@ -1380,7 +1520,8 @@ const HeatMapPage: React.FC = () => {
                                 otherFlightAirframe: props.otherFlightAirframe || 'N/A',
                                 severity: props.severity?.toFixed(2),
                                 eventId: props.eventId || null,
-                                eventType: props.eventDefinitionId ? getEventTypeName(props.eventDefinitionId) : null
+                                eventType: allEventTypes.length === 1 ? allEventTypes[0] : `${allEventTypes.length} Events`,
+                                eventTypes: allEventTypes
                             };
                             const pixel = olMap.getPixelFromCoordinate(coord);
                             const initialPosition = pixel ? { left: pixel[0], top: pixel[1] } : { left: 100, top: 100 };
@@ -1910,6 +2051,11 @@ const HeatMapPage: React.FC = () => {
                                                                 <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
                                                                 <div>
                                                                     <div>{popup.data.eventType || 'Event'}</div>
+                                                                    {popup.data.eventTypes && popup.data.eventTypes.length > 1 && (
+                                                                        <div style={{ fontSize: '0.7em', color: '#888', marginTop: '1px', fontStyle: 'italic' }}>
+                                                                            {popup.data.eventTypes.join(', ')}
+                                                                        </div>
+                                                                    )}
                                                                     <div style={{ fontSize: '0.8em', color: '#666', marginTop: '2px' }}>
                                                                         Event ID: {popup.data.eventId || 'N/A'}
                                                                     </div>
