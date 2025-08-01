@@ -276,6 +276,10 @@ const HeatMapPage: React.FC = () => {
     const [boxCoords, setBoxCoords] = useState<{ minLat: string, maxLat: string, minLon: string, maxLon: string }>({ minLat: '', maxLat: '', minLon: '', maxLon: '' });
     const [minSeverity, setMinSeverity] = useState<number>(-10000);
     const [maxSeverity, setMaxSeverity] = useState<number>(1000);
+    
+    // Display values for the UI (0-1000 range for user-friendly display)
+    const [displayMinSeverity, setDisplayMinSeverity] = useState<number>(0);
+    const [displayMaxSeverity, setDisplayMaxSeverity] = useState<number>(1000);
     const [showGrid, setShowGrid] = useState<boolean>(false);
     const [overlayLayer, setOverlayLayer] = useState<VectorLayer<VectorSource> | null>(null);
     const [overlayFeature, setOverlayFeature] = useState<Feature<Polygon> | null>(null);
@@ -454,37 +458,53 @@ const HeatMapPage: React.FC = () => {
 
     // Handlers for severity sliders
     const handleMinSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Math.min(Number(e.target.value), maxSeverity);
-        setMinSeverity(value);
-        if (value > maxSeverity) setMaxSeverity(value);
+        const displayValue = Math.min(Number(e.target.value), displayMaxSeverity);
+        setDisplayMinSeverity(displayValue);
+        
+        // Map display value to actual backend value
+        // If user selects 0, we include all negative values (-10000 to displayValue)
+        const actualValue = displayValue === 0 ? -10000 : displayValue;
+        setMinSeverity(actualValue);
+        
+        if (displayValue > displayMaxSeverity) {
+            setDisplayMaxSeverity(displayValue);
+            setMaxSeverity(displayValue);
+        }
     };
+
     const handleMaxSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Math.max(Number(e.target.value), minSeverity);
-        setMaxSeverity(value);
-        if (value < minSeverity) setMinSeverity(value);
+        const displayValue = Math.max(Number(e.target.value), displayMinSeverity);
+        setDisplayMaxSeverity(displayValue);
+        setMaxSeverity(displayValue);
+        
+        if (displayValue < displayMinSeverity) {
+            setDisplayMinSeverity(displayValue);
+            const actualValue = displayValue === 0 ? -10000 : displayValue;
+            setMinSeverity(actualValue);
+        }
     };
 
     // Severity slider JSX (for top menu)
     const severitySlider = (
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 8, minWidth: 180, marginLeft: 16 }}>
             <label style={{ fontSize: 12, marginBottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ marginBottom: 2 }}>Severity Range: <span style={{ color: 'red', fontWeight: 600 }}>{minSeverity} <span style={{ color: 'black' }}>-</span> {maxSeverity}</span></span>
+                <span style={{ marginBottom: 2 }}>Severity Range: <span style={{ color: 'red', fontWeight: 600 }}>{displayMinSeverity} <span style={{ color: 'black' }}>-</span> {displayMaxSeverity}</span></span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 120 }}>
                     <input
                         type="range"
                         name="minSeverity"
-                        min={-10000}
-                        max={maxSeverity}
-                        value={minSeverity}
+                        min={0}
+                        max={displayMaxSeverity}
+                        value={displayMinSeverity}
                         onChange={handleMinSeverityChange}
                         style={{ width: 120, accentColor: 'red' }}
                     />
                     <input
                         type="range"
                         name="maxSeverity"
-                        min={minSeverity}
+                        min={displayMinSeverity}
                         max={1000}
-                        value={maxSeverity}
+                        value={displayMaxSeverity}
                         onChange={handleMaxSeverityChange}
                         style={{ width: 120, accentColor: 'red' }}
                     />
