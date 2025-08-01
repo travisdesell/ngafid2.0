@@ -1,4 +1,4 @@
-package org.ngafid.core.proximity;
+package org.ngafid.core.heatmap;
 
 import java.time.OffsetDateTime;
 

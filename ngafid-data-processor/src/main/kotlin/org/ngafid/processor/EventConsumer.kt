@@ -21,7 +21,7 @@ import org.ngafid.processor.events.EventScanner
 import org.ngafid.processor.events.LowEndingFuelScanner
 import org.ngafid.processor.events.SpinEventScanner
 import org.ngafid.processor.events.proximity.ProximityEventScanner
-import org.ngafid.core.proximity.ProximityPointsProcessor
+import org.ngafid.core.heatmap.HeatmapPointsProcessor
 
 import java.sql.Connection
 import java.sql.SQLException
@@ -136,7 +136,7 @@ class EventConsumer protected constructor(
                     // inserts proximity points for each event into the proximity_points table 
                     if (scanner is ProximityEventScanner) {
                         LOG.info("Processing proximity events - calling insertCoordinatesForEvents")
-                        ProximityPointsProcessor.insertCoordinatesForProximityEvents(
+                        HeatmapPointsProcessor.insertCoordinatesForProximityEvents(
                             connection,
                             events,
                             scanner.mainFlightPointsMap,
@@ -147,7 +147,7 @@ class EventConsumer protected constructor(
                         LOG.info("Processing regular events - calling insertCoordinatesForRegularEvents for ${events.size} events")
                         LOG.info("Scanner type: ${scanner.javaClass.simpleName}")
                         LOG.info("Flight ID: ${flight.id}")
-                        ProximityPointsProcessor.insertCoordinatesForNonProximityEvents(
+                        HeatmapPointsProcessor.insertCoordinatesForNonProximityEvents(
                             connection,
                             events,
                             flight

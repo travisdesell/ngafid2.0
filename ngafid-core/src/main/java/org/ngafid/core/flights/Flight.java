@@ -3,7 +3,7 @@ package org.ngafid.core.flights;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.proximity.ProximityPointsProcessor;
+import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.core.util.FlightTag;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.core.util.filters.Filter;
@@ -999,7 +999,7 @@ public class Flight {
                 
                 if (!nonProximityEvents.isEmpty()) {
                     try {
-                        ProximityPointsProcessor.insertCoordinatesForNonProximityEvents(
+                        HeatmapPointsProcessor.insertCoordinatesForNonProximityEvents(
                             connection, nonProximityEvents, flight);
                     } catch (SQLException e) {
                         System.err.println("Failed to insert proximity points for flight " + flight.getId() + ": " + e.getMessage());

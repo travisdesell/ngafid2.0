@@ -20,7 +20,7 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.proximity.ProximityPointData;
+import org.ngafid.core.heatmap.ProximityPointData;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.processor.events.AbstractEventScanner;
 import static org.ngafid.processor.events.proximity.CalculateProximity.addProximityIfNotInList;

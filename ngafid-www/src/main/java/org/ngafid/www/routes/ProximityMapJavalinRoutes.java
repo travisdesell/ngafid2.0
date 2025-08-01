@@ -3,6 +3,7 @@ package org.ngafid.www.routes;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.core.accounts.User;
+import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.www.Navbar;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.Database;
@@ -74,7 +75,7 @@ public class ProximityMapJavalinRoutes {
                 
                 LOG.info("Fetching proximity points for event_id=" + eventId + ", flight_id=" + flightId);
                 
-                Map<String, Object> result = org.ngafid.core.proximity.ProximityPointsProcessor.getCoordinates(eventId, flightId);
+                Map<String, Object> result = HeatmapPointsProcessor.getCoordinates(eventId, flightId);
                 ctx.json(result);
             } catch (NumberFormatException e) {
                 LOG.severe("Invalid number format: " + e.getMessage());
@@ -117,7 +118,7 @@ public class ProximityMapJavalinRoutes {
             }
 
             try {
-                List<java.util.Map<String, Object>> events = org.ngafid.core.proximity.ProximityPointsProcessor.getEvents(
+                List<java.util.Map<String, Object>> events = HeatmapPointsProcessor.getEvents(
                     airframe, eventDefinitionIds, java.sql.Date.valueOf(startDate), java.sql.Date.valueOf(endDate),
                     areaMinLat, areaMaxLat, areaMinLon, areaMaxLon,
                     minSeverity, maxSeverity
