@@ -343,8 +343,8 @@ public class HeatmapPointsProcessor {
                 "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id " +
                 "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id " +
                 "WHERE DATE(e.start_time) BETWEEN ? AND ? " +
-                "AND e.max_latitude >= ? AND e.min_latitude <= ? " +
-                "AND e.max_longitude >= ? AND e.min_longitude <= ?"
+                "AND e.min_latitude <= ? AND e.max_latitude >= ? " +
+                "AND e.min_longitude <= ? AND e.max_longitude >= ?"
             );
             if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
                 sql.append(" AND a.airframe = ?");
@@ -363,16 +363,18 @@ public class HeatmapPointsProcessor {
             if (maxSeverity != null) {
                 sql.append(" AND e.severity <= ?");
             }
+            sql.append(" ORDER BY e.id");
             System.out.println("[DEBUG] getFilteredEvents SQL: " + sql.toString());
             System.out.println("[DEBUG] Parameters: startDate=" + startDate + ", endDate=" + endDate + ", areaMinLat=" + areaMinLat + ", areaMaxLat=" + areaMaxLat + ", areaMinLon=" + areaMinLon + ", areaMaxLon=" + areaMaxLon + ", airframe=" + airframe + ", eventDefinitionIds=" + eventDefinitionIds);
+            System.out.println("[DEBUG] Spatial intersection logic: e.min_latitude <= " + areaMaxLat + " AND e.max_latitude >= " + areaMinLat + " AND e.min_longitude <= " + areaMaxLon + " AND e.max_longitude >= " + areaMinLon);
             try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
                 int idx = 1;
                 stmt.setDate(idx++, startDate);
                 stmt.setDate(idx++, endDate);
-                stmt.setDouble(idx++, areaMinLat);
                 stmt.setDouble(idx++, areaMaxLat);
-                stmt.setDouble(idx++, areaMinLon);
+                stmt.setDouble(idx++, areaMinLat);
                 stmt.setDouble(idx++, areaMaxLon);
+                stmt.setDouble(idx++, areaMinLon);
                 if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
                     stmt.setString(idx++, airframe);
                 }
@@ -407,10 +409,16 @@ public class HeatmapPointsProcessor {
                         event.put("airframe", rs.getString("airframe_name"));
                         event.put("otherAirframe", rs.getString("other_airframe_name"));
                         events.add(event);
+                        
+                        // Debug: Print event coordinates
+                        System.out.println("[DEBUG] Found event ID " + rs.getInt("id") + ": min_lat=" + rs.getDouble("min_latitude") + 
+                            ", max_lat=" + rs.getDouble("max_latitude") + ", min_lon=" + rs.getDouble("min_longitude") + 
+                            ", max_lon=" + rs.getDouble("max_longitude"));
                     }
                 }
             }
             System.out.println("[DEBUG] getFilteredEvents found " + events.size() + " events.");
+            System.out.println("[DEBUG] Event IDs found: " + events.stream().map(e -> e.get("id")).collect(java.util.stream.Collectors.toList()));
         }
         return events;
     }

@@ -102,6 +102,14 @@ const RED_POINT_STYLE = new Style({
     image: ICON_IMAGE_RED
 });
 
+const BLUE_POINT_STYLE = new Style({
+    image: new Circle({
+        radius: 6,
+        fill: new Fill({ color: '#2563eb' }), // Nice blue color
+        stroke: new Stroke({ color: 'white', width: 2 })
+    })
+});
+
 // Interpolate color from green to red
 function interpolateColor(value: number) {
     // value: 0 (green) to 1 (red)
@@ -792,7 +800,7 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 0.7);
+                heatmapFeature.set('weight', 0.4);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                 
                 // Add to coordinate registry
@@ -831,7 +839,7 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 0.7);
+                heatmapFeature.set('weight', 0.4);
                 heatmapLayer2.getSource()!.addFeature(heatmapFeature);
                 
                 // Add to coordinate registry
@@ -864,20 +872,8 @@ const HeatMapPage: React.FC = () => {
         Object.values(newCoordinateRegistry).forEach((group) => {
             const marker = new Feature({ geometry: new Point(group.coord) });
             
-            // Determine marker style based on events (red for main flight, black for other flight)
-            const hasMainFlightEvents = group.events.some(e => e.otherFlightId !== null);
-            const hasOtherFlightEvents = group.events.some(e => e.otherFlightId === null);
-            
-            if (hasMainFlightEvents && hasOtherFlightEvents) {
-                // Mixed events - use red style
-                marker.setStyle(RED_POINT_STYLE);
-            } else if (hasMainFlightEvents) {
-                // Only main flight events - use red style
-                marker.setStyle(RED_POINT_STYLE);
-            } else {
-                // Only other flight events - use black style
-                marker.setStyle(BLACK_POINT_STYLE);
-            }
+            // All markers use blue style
+            marker.setStyle(BLUE_POINT_STYLE);
             
             // Use the first event's properties for the marker
             const firstEvent = group.events[0];
@@ -1043,6 +1039,339 @@ const HeatMapPage: React.FC = () => {
         }
     };
 
+    // Dedicated function to render mixed events (both proximity and single events)
+    const processMixedEventCoordinates = async (proximityEventPoints: ProximityEventPoints[], singleEventPoints: any[], useShowGrid?: boolean) => {
+        if (!heatmapLayer1 || !heatmapLayer2 || !markerSource) {
+            console.error('Heatmap or marker layers not initialized');
+            return;
+        }
+        
+        // Use the passed showGrid value or fall back to state
+        const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
+        console.log('[processMixedEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
+        
+        // Clear heatmap and marker sources
+        heatmapLayer1.getSource()!.clear();
+        heatmapLayer2.getSource()!.clear();
+        if (markerSource) markerSource.clear();
+
+        // Clear coordinate registry
+        setCoordinateRegistry({});
+        const newCoordinateRegistry: {[key: string]: CoordinateEventGroup} = {};
+
+        // Track all points for extent and grid
+        const allPoints: { latitude: number, longitude: number }[] = [];
+
+        // Process proximity events first
+        for (const eventPoints of proximityEventPoints) {
+            // Ensure mainFlightPoints is an array
+            if (!Array.isArray(eventPoints.mainFlightPoints)) {
+                console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
+                continue;
+            }
+            // RED: mainFlightPoints
+            for (const point of eventPoints.mainFlightPoints) {
+                const olCoord = fromLonLat([
+                    point.longitude + 0.0001,
+                    point.latitude + 0.0001
+                ]);
+                const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
+                heatmapFeature.set('weight', 0.7);
+                heatmapLayer1.getSource()!.addFeature(heatmapFeature);
+                
+                // Add to coordinate registry
+                const coordKey = createCoordinateKey(point.latitude, point.longitude);
+                if (!newCoordinateRegistry[coordKey]) {
+                    newCoordinateRegistry[coordKey] = {
+                        coord: olCoord,
+                        events: []
+                    };
+                }
+                newCoordinateRegistry[coordKey].events.push({
+                    eventId: eventPoints.eventId,
+                    eventDefinitionId: eventPoints.eventDefinitionId,
+                    flightId: eventPoints.mainFlightId,
+                    otherFlightId: eventPoints.otherFlightId,
+                    time: point.timestamp,
+                    flightAirframe: eventPoints.airframe,
+                    otherFlightAirframe: eventPoints.otherAirframe,
+                    severity: eventPoints.severity,
+                    altitudeAgl: point.altitude_agl,
+                    latitude: point.latitude,
+                    longitude: point.longitude
+                });
+                
+                allPoints.push({ latitude: point.latitude, longitude: point.longitude });
+            }
+            // BLACK: otherFlightPoints
+            if (!Array.isArray(eventPoints.otherFlightPoints)) {
+                console.warn(`otherFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.otherFlightPoints);
+                continue;
+            }
+            for (const point of eventPoints.otherFlightPoints) {
+                const olCoord = fromLonLat([
+                    point.longitude + 0.0001,
+                    point.latitude + 0.0001
+                ]);
+                const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
+                heatmapFeature.set('weight', 0.7);
+                heatmapLayer2.getSource()!.addFeature(heatmapFeature);
+                
+                // Add to coordinate registry
+                const coordKey = createCoordinateKey(point.latitude, point.longitude);
+                if (!newCoordinateRegistry[coordKey]) {
+                    newCoordinateRegistry[coordKey] = {
+                        coord: olCoord,
+                        events: []
+                    };
+                }
+                newCoordinateRegistry[coordKey].events.push({
+                    eventId: eventPoints.eventId,
+                    eventDefinitionId: eventPoints.eventDefinitionId,
+                    flightId: eventPoints.otherFlightId || 0,
+                    otherFlightId: eventPoints.mainFlightId,
+                    time: point.timestamp,
+                    flightAirframe: eventPoints.otherAirframe,
+                    otherFlightAirframe: eventPoints.airframe,
+                    severity: eventPoints.severity,
+                    altitudeAgl: point.altitude_agl,
+                    latitude: point.latitude,
+                    longitude: point.longitude
+                });
+                
+                allPoints.push({ latitude: point.latitude, longitude: point.longitude });
+            }
+        }
+
+        // Process single events
+        for (const eventPoints of singleEventPoints) {
+            console.log('[processMixedEventCoordinates] Processing single eventPoints:', eventPoints);
+            // Ensure mainFlightPoints is an array
+            if (!Array.isArray(eventPoints.mainFlightPoints)) {
+                console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
+                continue;
+            }
+            console.log('[processMixedEventCoordinates] mainFlightPoints array length:', eventPoints.mainFlightPoints.length);
+            for (const point of eventPoints.mainFlightPoints) {
+                console.log('[processMixedEventCoordinates] Processing point:', point);
+                const olCoord = fromLonLat([
+                    point.longitude + 0.0001,
+                    point.latitude + 0.0001
+                ]);
+                const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
+                heatmapFeature.set('weight', 0.7);
+                heatmapLayer1.getSource()!.addFeature(heatmapFeature);
+                
+                // Add to coordinate registry
+                const coordKey = createCoordinateKey(point.latitude, point.longitude);
+                if (!newCoordinateRegistry[coordKey]) {
+                    newCoordinateRegistry[coordKey] = {
+                        coord: olCoord,
+                        events: []
+                    };
+                }
+                newCoordinateRegistry[coordKey].events.push({
+                    eventId: eventPoints.eventId,
+                    eventDefinitionId: eventPoints.eventDefinitionId,
+                    flightId: eventPoints.mainFlightId,
+                    otherFlightId: null, // Single events don't have other flights
+                    time: point.timestamp,
+                    flightAirframe: eventPoints.airframe,
+                    otherFlightAirframe: '',
+                    severity: eventPoints.severity,
+                    altitudeAgl: point.altitude_agl,
+                    latitude: point.latitude,
+                    longitude: point.longitude
+                });
+                
+                allPoints.push({ latitude: point.latitude, longitude: point.longitude });
+                console.log('[processMixedEventCoordinates] Added point to allPoints. Total points:', allPoints.length);
+            }
+        }
+
+        // Create markers from coordinate registry
+        Object.values(newCoordinateRegistry).forEach((group) => {
+            const marker = new Feature({ geometry: new Point(group.coord) });
+            
+            // All markers use blue style
+            marker.setStyle(BLUE_POINT_STYLE);
+            
+            // Use the first event's properties for the marker
+            const firstEvent = group.events[0];
+            marker.setProperties({
+                isMarker: true,
+                coordKey: createCoordinateKey(firstEvent.latitude, firstEvent.longitude),
+                events: group.events,
+                // Legacy properties for backward compatibility
+                eventId: firstEvent.eventId,
+                eventDefinitionId: firstEvent.eventDefinitionId,
+                flightId: firstEvent.flightId,
+                otherFlightId: firstEvent.otherFlightId,
+                time: firstEvent.time,
+                flightAirframe: firstEvent.flightAirframe,
+                otherFlightAirframe: firstEvent.otherFlightAirframe,
+                severity: firstEvent.severity,
+                altitudeAgl: firstEvent.altitudeAgl,
+                latitude: firstEvent.latitude,
+                longitude: firstEvent.longitude
+            });
+            markerSource.addFeature(marker);
+        });
+
+        // Update coordinate registry state
+        setCoordinateRegistry(newCoordinateRegistry);
+
+        console.log('[processMixedEventCoordinates] Total points processed:', allPoints.length);
+        console.log('[processMixedEventCoordinates] Heatmap features count:', heatmapLayer1.getSource()!.getFeatures().length);
+        console.log('[processMixedEventCoordinates] Marker features count:', markerSource.getFeatures().length);
+
+        // Fit map to extents
+        const extent1 = heatmapLayer1.getSource()!.getExtent();
+        const extent2 = heatmapLayer2.getSource()!.getExtent();
+        const features1 = heatmapLayer1.getSource()!.getFeatures();
+        const features2 = heatmapLayer2.getSource()!.getFeatures();
+
+        const isValidExtent = (extent: number[]) => {
+            return (
+                Array.isArray(extent) &&
+                extent.length === 4 &&
+                extent.every((v) => typeof v === 'number' && isFinite(v)) &&
+                (extent[0] !== extent[2]) && (extent[1] !== extent[3])
+            );
+        };
+
+        if ((features1.length > 0 || features2.length > 0) && isValidExtent(extent1) && isValidExtent(extent2)) {
+            const combinedExtent: [number, number, number, number] = [
+                Math.min(extent1[0], extent2[0]),
+                Math.min(extent1[1], extent2[1]),
+                Math.max(extent1[2], extent2[2]),
+                Math.max(extent1[3], extent2[3])
+            ];
+            map?.getView().fit(combinedExtent, { padding: [50, 50, 50, 50], maxZoom: 15 });
+        }
+
+        // Add grid-based density map if enabled
+        if (shouldShowGrid && map && gridSource) {
+            console.log('[processMixedEventCoordinates] Rendering grid...');
+            const gridSize = 0.05;
+            const gridCounts: Record<string, number> = {};
+            allPoints.forEach(pt => {
+                const latKey = (Math.floor(pt.latitude / gridSize) * gridSize).toFixed(4);
+                const lonKey = (Math.floor(pt.longitude / gridSize) * gridSize).toFixed(4);
+                const key = `${latKey},${lonKey}`;
+                gridCounts[key] = (gridCounts[key] || 0) + 1;
+            });
+            
+            // Parse bounding box as numbers
+            const minLatNum = parseFloat(boxCoords.minLat);
+            const maxLatNum = parseFloat(boxCoords.maxLat);
+            const minLonNum = parseFloat(boxCoords.minLon);
+            const maxLonNum = parseFloat(boxCoords.maxLon);
+
+            let latStart = minLatNum, latEnd = maxLatNum, lonStart = minLonNum, lonEnd = maxLonNum;
+            if (isNaN(latStart) || isNaN(latEnd) || isNaN(lonStart) || isNaN(lonEnd)) {
+                if (allPoints.length > 0) {
+                    latStart = Math.min(...allPoints.map(pt => pt.latitude));
+                    latEnd = Math.max(...allPoints.map(pt => pt.latitude));
+                    lonStart = Math.min(...allPoints.map(pt => pt.longitude));
+                    lonEnd = Math.max(...allPoints.map(pt => pt.longitude));
+                } else {
+                    latStart = latEnd = lonStart = lonEnd = 0;
+                }
+            }
+
+            if (latStart > latEnd) [latStart, latEnd] = [latEnd, latStart];
+            if (lonStart > lonEnd) [lonStart, lonEnd] = [lonEnd, lonStart];
+
+            const features = [];
+            let maxCount = 1;
+            if (Object.values(gridCounts).length > 0) {
+                maxCount = Math.max(1, ...Object.values(gridCounts));
+            }
+
+            const proj = getTransform('EPSG:4326', 'EPSG:3857');
+
+            const xs: number[] = [];
+            const ys: number[] = [];
+            for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd + 1e-9; lon += gridSize) {
+                xs.push(proj([lon, 0])[0]);
+            }
+            for (let lat = Math.floor(latStart / gridSize) * gridSize; lat <= latEnd + 1e-9; lat += gridSize) {
+                ys.push(proj([0, lat])[1]);
+            }
+
+            const rows = ys.length - 1;
+            const cols = xs.length - 1;
+
+            for (let j = 0; j < rows; j++) {
+                const y0 = ys[j];
+                const y1 = ys[j + 1];
+                const latVal = (Math.floor(latStart / gridSize) + j) * gridSize;
+
+                for (let i = 0; i < cols; i++) {
+                    const x0 = xs[i];
+                    const x1 = xs[i + 1];
+                    const lonVal = (Math.floor(lonStart / gridSize) + i) * gridSize;
+
+                    const count = gridCounts[`${latVal.toFixed(4)},${lonVal.toFixed(4)}`] || 0;
+                    const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
+                    const color = interpolateColor(intensity);
+
+                    if (count > 0) {
+                        console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
+                    }
+
+                    const polygon = new Polygon([[
+                        [x0, y0],
+                        [x1, y0],
+                        [x1, y1],
+                        [x0, y1],
+                        [x0, y0]
+                    ]]);
+
+                    const cellFeature = new Feature(polygon);
+                    cellFeature.set('kind', 'density');
+                    cellFeature.set('color', color);
+
+                    features.push(cellFeature);
+                }
+            }
+
+            // Clear old density cells
+            gridSource.getFeatures().forEach(f => {
+                if (f.get('kind') === 'density')
+                    gridSource.removeFeature(f);
+            });
+
+            // Add new features
+            gridSource.addFeatures(features);
+            console.log('[processMixedEventCoordinates] Added grid features:', features.length, 'Grid source now has:', gridSource.getFeatures().length);
+
+            // Hide heatmap layers
+            heatmapLayer1.setVisible(false);
+            heatmapLayer2.setVisible(false);
+
+            // Show grid layer
+            if (gridLayer) {
+                gridLayer.setVisible(true);
+                console.log('[processMixedEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
+            } else {
+                console.warn('[processMixedEventCoordinates] gridLayer is null!');
+            }
+        } else {
+            // Show heatmap layers
+            if (heatmapLayer1) heatmapLayer1.setVisible(true);
+            if (heatmapLayer2) heatmapLayer2.setVisible(true);
+            // Hide grid layer if present
+            if (gridLayer) {
+                gridLayer.setVisible(false);
+                console.log('[processMixedEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
+            }
+        }
+        
+        console.log('[processMixedEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'heatmapLayer2:', heatmapLayer2?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
+    };
+
     // Dedicated function to render single-flight (non-proximity) events
     const processSingleEventCoordinates = async (singleEventPoints: any[], useShowGrid?: boolean) => {
         if (!heatmapLayer1 || !markerSource) {
@@ -1081,7 +1410,7 @@ const HeatMapPage: React.FC = () => {
                     point.latitude + 0.0001
                 ]);
                 const heatmapFeature = new Feature({ geometry: new Point(olCoord) });
-                heatmapFeature.set('weight', 0.7);
+                heatmapFeature.set('weight', 0.4);
                 heatmapLayer1.getSource()!.addFeature(heatmapFeature);
                 
                 // Add to coordinate registry
@@ -1337,7 +1666,7 @@ const HeatMapPage: React.FC = () => {
                 source: heatmapSource1,
                 blur: 3,
                 radius: 4,
-                opacity: 0.9,
+                opacity: 0.8,
                 gradient: [
                     'rgba(0,255,0,0)',
                     'rgba(0,255,0,1)',
@@ -1352,7 +1681,7 @@ const HeatMapPage: React.FC = () => {
                 source: heatmapSource2,
                 blur: 3,
                 radius: 4,
-                opacity: 0.9,
+                opacity: 0.8,
                 gradient: [
                     'rgba(0,255,0,0)',
                     'rgba(0,255,0,1)',
@@ -1371,15 +1700,8 @@ const HeatMapPage: React.FC = () => {
 
                     if (!props.isMarker) return undefined;
                     
-                    // For proximity events: red for main flight, black for other flight
-                    // For regular events: red for all points
-                    if (props.otherFlightId) {
-                        // Proximity event - use red/black based on which flight this point belongs to
-                        return props.flightId === props.otherFlightId ? RED_POINT_STYLE : BLACK_POINT_STYLE;
-                    } else {
-                        // Regular event - use red for all points
-                        return RED_POINT_STYLE;
-                    }
+                    // All markers use blue style
+                    return BLUE_POINT_STYLE;
                 },
                 zIndex: 1001
             });
@@ -1789,19 +2111,22 @@ const HeatMapPage: React.FC = () => {
             setProximityEventPoints([...allProximityEventPoints, ...allSingleEventPoints]);
             setLoading(false);
             
-            // Clear all layers first
-            clearMapLayers();
+            console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
             
             console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
             
-            // Process events based on type - only one type at a time
-            if (allProximityEventPoints.length > 0) {
-                // We have proximity events - process them
-                console.log('[processEventsAndPoints] Processing proximity events');
+            // Process both types of events together
+            if (allProximityEventPoints.length > 0 && allSingleEventPoints.length > 0) {
+                // We have both types - process them together
+                console.log('[processEventsAndPoints] Processing both proximity and single events together');
+                processMixedEventCoordinates(allProximityEventPoints, allSingleEventPoints, showGrid);
+            } else if (allProximityEventPoints.length > 0) {
+                // We have only proximity events - process them
+                console.log('[processEventsAndPoints] Processing proximity events only');
                 processProximityEventCoordinates(allProximityEventPoints, showGrid);
             } else if (allSingleEventPoints.length > 0) {
-                // We have regular events - process them
-                console.log('[processEventsAndPoints] Processing single events');
+                // We have only regular events - process them
+                console.log('[processEventsAndPoints] Processing single events only');
                 processSingleEventCoordinates(allSingleEventPoints, showGrid);
             } else {
                 console.log('[processEventsAndPoints] No events to process');
@@ -1817,6 +2142,11 @@ const HeatMapPage: React.FC = () => {
     };
 
     const handleDateChange = async () => {
+        // Clear previous state immediately when starting a new search
+        setProximityEventPoints([]);
+        setError(null);
+        clearMapLayers();
+        
         // Gather checked events
         const selectedEvents = allEventNames.filter(e => eventChecked[e]);
         // Check for no events selected
