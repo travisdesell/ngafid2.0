@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import static java.util.Map.of;
 
 import org.ngafid.www.WebServer;
+import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
@@ -639,6 +640,59 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    public static void getEventColumnsValues(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        try {
+            String eventIdParam = ctx.queryParam("event_id");
+            String flightIdParam = ctx.queryParam("flight_id");
+            String timestampParam = ctx.queryParam("timestamp");
+            
+            if (eventIdParam == null || flightIdParam == null || timestampParam == null) {
+                LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam + ", timestamp=" + timestampParam);
+                ctx.status(400).result("Missing required parameters: event_id, flight_id, and timestamp");
+                return;
+            }
+            
+            int eventId = Integer.parseInt(eventIdParam);
+            int flightId = Integer.parseInt(flightIdParam);
+            
+            LOG.info("Fetching event columns values for event_id=" + eventId + ", flight_id=" + flightId + ", timestamp=" + timestampParam);
+            
+            Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getEventColumnsValues(eventId, flightId, timestampParam);
+            ctx.json(result);
+        } catch (NumberFormatException e) {
+            LOG.severe("Invalid number format: " + e.getMessage());
+            ctx.status(400).result("Invalid number format for event_id or flight_id");
+        } catch (Exception e) {
+            LOG.severe("Error fetching event columns values: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).result("Internal server error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test endpoint to check event definition retrieval
+     */
+    public static void testEventDefinition(Context ctx) {
+        int eventId = Integer.parseInt(ctx.queryParam("event_id"));
+        int flightId = Integer.parseInt(ctx.queryParam("flight_id"));
+        
+        LOG.info("Testing event definition retrieval for event_id=" + eventId + ", flight_id=" + flightId);
+        
+        try {
+            Map<String, Object> result = HeatmapPointsProcessor.getEventDefinitionColumns(eventId, flightId);
+            ctx.json(result);
+        } catch (Exception e) {
+            LOG.severe("Error in testEventDefinition: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).json(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static void bindRoutes(Javalin app) {
         app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
         // app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
@@ -653,6 +707,8 @@ public class AnalysisJavalinRoutes {
         app.get("/protected/heatmap_points_for_flight", AnalysisJavalinRoutes::getHeatmapPointsForFlight);
         app.get("/protected/heatmap_points", AnalysisJavalinRoutes::getHeatmapPoints);
         app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
+        app.get("/protected/event_columns_values", AnalysisJavalinRoutes::getEventColumnsValues);
+        app.get("/protected/test_event_definition", AnalysisJavalinRoutes::testEventDefinition);
 
         // app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 

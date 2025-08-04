@@ -128,9 +128,11 @@ interface PopupContentData {
     eventId: number | null;
     eventType: string | null;
     eventTypes?: string[] | null; // Array of all event types at this location
+    columnValues?: { [key: string]: any } | null; // Column values from the backend
 }
-// The key should be stored in .env   AZURE_MAPS_KEY=****
-let azureMapsKey = process.env.AZURE_MAPS_KEY;
+  // The key should be stored in .env   AZURE_MAPS_KEY=****
+  let azureMapsKey = process.env.AZURE_MAPS_KEY;
+  azureMapsKey = "***REMOVED***";
 
 const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
 
@@ -1717,6 +1719,17 @@ const HeatMapPage: React.FC = () => {
                                 eventType: allEventTypes.length === 1 ? allEventTypes[0] : `${allEventTypes.length} Events`,
                                 eventTypes: allEventTypes
                             };
+                            
+                            // Fetch event columns values for this event(s)
+                            if (props.flightId && props.time) {
+                                if (props.events && Array.isArray(props.events) && props.events.length > 0) {
+                                    // Multiple events - fetch columns and values for all events
+                                    fetchMultipleEventColumnsValues(props.events, props.flightId, props.time, popupId);
+                                } else if (props.eventId) {
+                                    // Single event - fetch columns and values for this event
+                                    fetchEventColumnsValues(props.eventId, props.flightId, props.time, popupId);
+                                }
+                            }
                             const pixel = olMap.getPixelFromCoordinate(coord);
                             const initialPosition = pixel ? { left: pixel[0], top: pixel[1] } : { left: 100, top: 100 };
                             const newOpenPopups = [
@@ -2118,6 +2131,115 @@ const HeatMapPage: React.FC = () => {
         </div>
     );
 
+    // =======================
+    // SECTION: Event Columns Values Fetching
+    // =======================
+    /**
+     * Fetches the relevant column names and their values for a given event ID, flight ID, and timestamp.
+     * This will be used to show what data columns are relevant for this type of event and their values.
+     */
+    const fetchEventColumnsValues = async (eventId: number, flightId: number, timestamp: string, popupId?: string) => {
+        try {
+            const response = await fetch(`/protected/event_columns_values?event_id=${eventId}&flight_id=${flightId}&timestamp=${encodeURIComponent(timestamp)}`, {
+                credentials: 'include',
+                headers: { 'Accept': 'application/json' }
+            });
+            
+            if (!response.ok) {
+                console.warn(`Failed to fetch event columns values: ${response.status} ${response.statusText}`);
+                return null;
+            }
+            
+            const data = await response.json();
+            console.log('Event columns values data:', data);
+            
+            // Update popup with column values if popupId is provided
+            if (popupId && data.column_values) {
+                const excludedColumns = new Set(["AltAGL", "AltMSL", "Latitude", "Longitude", "Lcl Date", "Lcl Time", "UTCOfst"]);
+                const filteredValues: { [key: string]: any } = {};
+                
+                Object.entries(data.column_values).forEach(([col, value]) => {
+                    if (!excludedColumns.has(col)) {
+                        filteredValues[col] = value;
+                    }
+                });
+                
+                setOpenPopups(prevPopups => 
+                    prevPopups.map(popup => 
+                        popup.id === popupId 
+                            ? { ...popup, data: { ...popup.data, columnValues: filteredValues } }
+                            : popup
+                    )
+                );
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Error fetching event columns values:', error);
+            return null;
+        }
+    };
+
+    /**
+     * Fetches relevant column names and values for multiple events and combines them.
+     * This handles cases where multiple events are associated with the same point.
+     */
+    const fetchMultipleEventColumnsValues = async (events: any[], flightId: number, timestamp: string, popupId: string) => {
+        try {
+            const allColumns = new Set<string>();
+            const allValues: { [key: string]: any } = {};
+            const eventDetails: any[] = [];
+            
+            // Columns to exclude (already shown in popup)
+            const excludedColumns = new Set(["AltAGL", "AltMSL", "Latitude", "Longitude", "Lcl Date", "Lcl Time", "UTCOfst"]);
+            
+            // Fetch columns and values for each event
+            for (const event of events) {
+                if (event.eventId && flightId) {
+                    const data = await fetchEventColumnsValues(event.eventId, flightId, timestamp);
+                    if (data && data.column_names && Array.isArray(data.column_names) && data.column_values) {
+                        // Add columns to the set to avoid duplicates, excluding specified columns
+                        data.column_names.forEach((col: string) => {
+                            if (!excludedColumns.has(col)) {
+                                allColumns.add(col);
+                            }
+                        });
+                        
+                        // Store values (later events will override earlier ones for same column)
+                        Object.entries(data.column_values).forEach(([col, value]) => {
+                            if (!excludedColumns.has(col)) {
+                                allValues[col] = value;
+                            }
+                        });
+                        
+                        eventDetails.push({
+                            eventId: event.eventId,
+                            eventType: getEventTypeName(event.eventDefinitionId),
+                            columns: data.column_names,
+                            values: data.column_values
+                        });
+                    }
+                }
+            }
+            
+            // Update the popup with column values
+            if (allColumns.size > 0) {
+                setOpenPopups(prevPopups => 
+                    prevPopups.map(popup => 
+                        popup.id === popupId 
+                            ? { ...popup, data: { ...popup.data, columnValues: allValues } }
+                            : popup
+                    )
+                );
+            }
+            
+            return { allColumns: Array.from(allColumns), allValues: allValues, eventDetails };
+        } catch (error) {
+            console.error('Error fetching multiple event columns values:', error);
+            return null;
+        }
+    };
+
     // Wrap the main content in a full-height flex container
     return (
         <div style={{ overflowX: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -2259,6 +2381,9 @@ const HeatMapPage: React.FC = () => {
                                                                     <div style={{ fontSize: '0.8em', color: '#666', marginTop: '2px' }}>
                                                                         Event ID: {popup.data.eventId || 'N/A'}
                                                                     </div>
+                                                                    <div style={{ fontSize: '0.7em', color: '#666', marginTop: '1px' }}>
+                                                                        {popup.data.time ?? '...'}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <a
@@ -2293,7 +2418,6 @@ const HeatMapPage: React.FC = () => {
                                                             </a>
                                                             <div>
                                                                 <hr />
-                                                                <div><strong>Time: </strong>{popup.data.time ?? '...'}</div>
                                                                 <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
                                                                 <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
                                                                 <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
@@ -2309,6 +2433,21 @@ const HeatMapPage: React.FC = () => {
                                                                 )}
                                                                 <hr />
                                                                 <div><strong>Severity: </strong>{parseFloat(String(popup.data.severity)).toFixed(2)}</div>
+                                                                {popup.data.columnValues && Object.keys(popup.data.columnValues).length > 0 && (
+                                                                    <>
+                                                                        <hr />
+                                                                        <div><strong>Event Data:</strong></div>
+                                                                        {Object.entries(popup.data.columnValues).map(([columnName, value]) => (
+                                                                            <div key={columnName}>
+                                                                                <strong>{columnName}: </strong>
+                                                                                {value !== null && value !== undefined ? 
+                                                                                    (typeof value === 'number' ? value.toFixed(2) : String(value)) : 
+                                                                                    'N/A'
+                                                                                }
+                                                                            </div>
+                                                                        ))}
+                                                                    </>
+                                                                )}
                                                                 {distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
                                                                     <>
                                                                         <hr />

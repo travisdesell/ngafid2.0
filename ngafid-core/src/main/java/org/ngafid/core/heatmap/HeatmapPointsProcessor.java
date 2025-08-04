@@ -11,8 +11,12 @@ import org.ngafid.core.terrain.TerrainUnavailableException;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
+import org.ngafid.core.util.TimeUtils;
 
 public class HeatmapPointsProcessor {
     private static final Logger LOG = Logger.getLogger(HeatmapPointsProcessor.class.getName());
@@ -321,6 +325,293 @@ public class HeatmapPointsProcessor {
         }
         eventMap.put("points", points);
         return eventMap;
+    }
+
+
+    /**
+     * Gets the relevant column names for a given event ID and flight ID.
+     * This method retrieves the event definition and returns the column_names
+     * that are relevant for this type of event.
+     *
+     * @param eventId The event ID
+     * @param flightId The flight ID
+     * @return Map containing event information and relevant column names
+     */
+    public static Map<String, Object> getEventDefinitionColumns(int eventId, int flightId) {
+        LOG.info("getEventDefinitionColumns called with event_id=" + eventId + ", flight_id=" + flightId);
+        Map<String, Object> result = new HashMap<>();
+        
+        try (Connection connection = Database.getConnection()) {
+            // First, get the event definition ID from the events table
+            String eventQuery = "SELECT e.event_definition_id, e.start_line, e.end_line, ed.column_names " +
+                               "FROM events e " +
+                               "JOIN event_definitions ed ON e.event_definition_id = ed.id " +
+                               "WHERE e.id = ? AND e.flight_id = ?";
+            
+            try (PreparedStatement stmt = connection.prepareStatement(eventQuery)) {
+                stmt.setInt(1, eventId);
+                stmt.setInt(2, flightId);
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        int eventDefinitionId = rs.getInt("event_definition_id");
+                        int startLine = rs.getInt("start_line");
+                        int endLine = rs.getInt("end_line");
+                        String columnNamesJson = rs.getString("column_names");
+                        
+                        LOG.info("Found event definition: id=" + eventDefinitionId + ", startLine=" + startLine + 
+                                ", endLine=" + endLine + ", columnNamesJson=" + columnNamesJson);
+                        
+                        // Parse the JSON column names
+                        List<String> columnNames = new ArrayList<>();
+                        if (columnNamesJson != null && !columnNamesJson.isEmpty()) {
+                            try {
+                                // Simple JSON array parsing for column names
+                                // Remove brackets and split by comma, then clean up quotes
+                                String cleaned = columnNamesJson.replaceAll("[\\[\\]\"]", "");
+                                String[] names = cleaned.split(",");
+                                for (String name : names) {
+                                    String trimmed = name.trim();
+                                    if (!trimmed.isEmpty()) {
+                                        columnNames.add(trimmed);
+                                    }
+                                }
+                                LOG.info("Parsed column names: " + columnNames);
+                            } catch (Exception e) {
+                                LOG.warning("Failed to parse column_names JSON: " + columnNamesJson + " for event " + eventId + ": " + e.getMessage());
+                            }
+                        } else {
+                            LOG.warning("column_names is null or empty for event " + eventId);
+                        }
+                        
+                        result.put("event_id", eventId);
+                        result.put("flight_id", flightId);
+                        result.put("event_definition_id", eventDefinitionId);
+                        result.put("start_line", startLine);
+                        result.put("end_line", endLine);
+                        result.put("column_names", columnNames);
+                        
+                        LOG.info("Found event definition columns for event " + eventId + ": " + columnNames);
+                    } else {
+                        LOG.warning("No event found for event_id=" + eventId + ", flight_id=" + flightId);
+                        result.put("error", "Event not found");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOG.severe("SQL error in getEventDefinitionColumns for event_id=" + eventId + ", flight_id=" + flightId + ": " + e.getMessage());
+            e.printStackTrace();
+            result.put("error", "Database error: " + e.getMessage());
+        }
+        
+        return result;
+    }
+
+    /**
+     * Gets the relevant column names and their values for a given event ID, flight ID, and timestamp.
+     * This method retrieves the event definition, finds the time index, and returns the values for the relevant columns.
+     *
+     * @param eventId The event ID
+     * @param flightId The flight ID
+     * @param timestamp The timestamp in ISO 8601 or MySQL format
+     * @return Map containing event information, relevant column names, and their values
+     */
+    public static Map<String, Object> getEventColumnsValues(int eventId, int flightId, String timestamp) {
+        LOG.info("getEventColumnsValues called with event_id=" + eventId + ", flight_id=" + flightId + ", timestamp=" + timestamp);
+        Map<String, Object> result = new HashMap<>();
+        
+        try (Connection connection = Database.getConnection()) {
+            // Get event definition and column names
+            Map<String, Object> eventDefinition = getEventDefinitionColumns(eventId, flightId);
+            
+            if (eventDefinition.containsKey("error")) {
+                LOG.warning("Error in getEventDefinitionColumns: " + eventDefinition.get("error"));
+                result.put("error", eventDefinition.get("error"));
+                return result;
+            }
+            
+            LOG.info("Successfully retrieved event definition for event " + eventId);
+            
+            @SuppressWarnings("unchecked")
+            List<String> columnNames = (List<String>) eventDefinition.get("column_names");
+            
+            if (columnNames == null || columnNames.isEmpty()) {
+                LOG.warning("No column names found for event " + eventId);
+                result.put("error", "No relevant columns found for this event");
+                return result;
+            }
+            
+            LOG.info("Found " + columnNames.size() + " column names: " + columnNames);
+            
+            // Get event details to find the time range
+            String eventQuery = "SELECT start_line, end_line FROM events WHERE id = ? AND flight_id = ?";
+            int startLine = -1;
+            int endLine = -1;
+            
+            try (PreparedStatement stmt = connection.prepareStatement(eventQuery)) {
+                stmt.setInt(1, eventId);
+                stmt.setInt(2, flightId);
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        startLine = rs.getInt("start_line");
+                        endLine = rs.getInt("end_line");
+                        LOG.info("Event " + eventId + " spans from index " + startLine + " to " + endLine);
+                    } else {
+                        LOG.warning("Event " + eventId + " not found for flight " + flightId);
+                        result.put("error", "Event not found");
+                        return result;
+                    }
+                }
+            }
+            
+            LOG.info("Successfully retrieved event details: start_line=" + startLine + ", end_line=" + endLine);
+            
+            // Find the time index within the event range
+            int timeIndex = getTimeIndexInRange(connection, flightId, timestamp, startLine, endLine);
+            
+            if (timeIndex == -1) {
+                // If exact match fails, use the middle of the event range as fallback
+                timeIndex = startLine + (endLine - startLine) / 2;
+                LOG.info("Exact timestamp match failed, using middle of event range: " + timeIndex);
+            }
+            
+            LOG.info("Found time index " + timeIndex + " for timestamp " + timestamp);
+            
+            // Get values for each column
+            Map<String, Object> columnValues = new HashMap<>();
+            for (String columnName : columnNames) {
+                try {
+                    LOG.info("Attempting to retrieve value for column: " + columnName + " at index: " + timeIndex);
+                    DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, columnName);
+                    if (series != null) {
+                        LOG.info("Found DoubleTimeSeries for " + columnName + " with size: " + series.size());
+                        if (timeIndex < series.size()) {
+                            double value = series.get(timeIndex);
+                            columnValues.put(columnName, value);
+                            LOG.info("Retrieved value for " + columnName + ": " + value);
+                        } else {
+                            LOG.warning("Time index " + timeIndex + " is out of bounds for series " + columnName + " (size: " + series.size() + ")");
+                            columnValues.put(columnName, null);
+                        }
+                    } else {
+                        LOG.warning("Could not retrieve DoubleTimeSeries for column " + columnName);
+                        columnValues.put(columnName, null);
+                    }
+                } catch (Exception e) {
+                    LOG.warning("Error retrieving value for column " + columnName + ": " + e.getMessage());
+                    columnValues.put(columnName, null);
+                }
+            }
+            
+            // For now, just return the column names without values to test
+            result.put("event_id", eventId);
+            result.put("flight_id", flightId);
+            result.put("timestamp", timestamp);
+            result.put("time_index", timeIndex);
+            result.put("column_names", columnNames);
+            result.put("column_values", columnValues);
+            
+            LOG.info("Successfully retrieved values for " + columnValues.size() + " columns");
+            return result;
+            
+        } catch (SQLException e) {
+            LOG.severe("SQL error in getEventColumnsValues for event_id=" + eventId + ", flight_id=" + flightId + ": " + e.getMessage());
+            e.printStackTrace();
+            result.put("error", "Database error: " + e.getMessage());
+        }
+        
+        return result;
+    }
+
+    /**
+     * Gets the time index for a given timestamp within a specific event's time range.
+     * This is a helper method to find the correct time index within the event's data.
+     *
+     * @param connection Database connection
+     * @param flightId Flight ID
+     * @param timestamp ISO 8601 timestamp string or MySQL format timestamp
+     * @param startLine The start line of the event in the flight's data
+     * @param endLine The end line of the event in the flight's data
+     * @return Time index, or -1 if not found
+     */
+    private static int getTimeIndexInRange(Connection connection, int flightId, String timestamp, int startLine, int endLine) {
+        LOG.info("getTimeIndexInRange called with flight_id=" + flightId + ", timestamp=" + timestamp + ", startLine=" + startLine + ", endLine=" + endLine);
+        try {
+            // Get UTC_DATE_TIME series
+            StringTimeSeries timestampSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, Parameters.UTC_DATE_TIME);
+            if (timestampSeries == null) {
+                LOG.warning("No UTC_DATE_TIME series found for flight " + flightId);
+                return -1;
+            }
+            
+            LOG.info("Found UTC_DATE_TIME series with " + timestampSeries.size() + " entries");
+            
+            // Parse the input timestamp - try different formats
+            OffsetDateTime targetTime = null;
+            try {
+                // First try ISO 8601 format
+                targetTime = OffsetDateTime.parse(timestamp);
+                LOG.info("Successfully parsed timestamp as ISO 8601: " + targetTime);
+            } catch (Exception e1) {
+                try {
+                    // Try MySQL format (yyyy-MM-dd HH:mm:ss.S) and convert to ISO 8601
+                    String cleanedTimestamp = timestamp.replaceAll("\\.0$", ""); // Remove .0 suffix
+                    LocalDateTime localDateTime = LocalDateTime.parse(cleanedTimestamp, 
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    targetTime = localDateTime.atOffset(ZoneOffset.UTC);
+                    LOG.info("Successfully parsed timestamp as MySQL format and converted to UTC: " + targetTime);
+                } catch (Exception e2) {
+                    LOG.warning("Failed to parse timestamp: " + timestamp + ". Tried ISO 8601 and MySQL formats.");
+                    return -1;
+                }
+            }
+            
+            // Convert target time to ISO 8601 string format for comparison
+            String targetTimeString = targetTime.format(TimeUtils.ISO_8601_FORMAT);
+            LOG.info("Target timestamp in ISO 8601 format: " + targetTimeString);
+            
+            // Find exact timestamp match within the event range
+            LOG.info("Searching for exact timestamp match within event range...");
+            LOG.info("Target timestamp in ISO 8601 format: " + targetTimeString);
+            
+            // Log first 10 timestamps from the series to see what format they're in
+            LOG.info("First 10 timestamps from UTC_DATE_TIME series:");
+            for (int i = 0; i < Math.min(10, timestampSeries.size()); i++) {
+                String seriesTimestamp = timestampSeries.get(i);
+                if (seriesTimestamp != null && !seriesTimestamp.isEmpty()) {
+                    LOG.info("  Index " + i + ": " + seriesTimestamp);
+                } else {
+                    LOG.info("  Index " + i + ": null or empty");
+                }
+            }
+            
+            for (int i = startLine; i <= endLine; i++) {
+                String seriesTimestamp = timestampSeries.get(i);
+                if (seriesTimestamp != null && !seriesTimestamp.isEmpty()) {
+                    // Compare as strings first (exact match)
+                    if (seriesTimestamp.equals(targetTimeString)) {
+                        LOG.info("Found exact timestamp match at index " + i + ": " + seriesTimestamp);
+                        return i;
+                    }
+                }
+            }
+            
+            // If we didn't find an exact match, let's log some more details
+            LOG.warning("No exact timestamp match found for: " + targetTime + " within event range (" + startLine + " to " + endLine + ")");
+            LOG.warning("Target timestamp (parsed): " + targetTime);
+            LOG.warning("First 5 available timestamps in event range:");
+            for (int i = startLine; i <= Math.min(startLine + 4, endLine); i++) {
+                String seriesTimestamp = timestampSeries.get(i);
+                if (seriesTimestamp != null && !seriesTimestamp.isEmpty()) {
+                    LOG.warning("  Index " + i + ": " + seriesTimestamp);
+                }
+            }
+            return -1;
+        } catch (Exception e) {
+            LOG.warning("Error finding time index for timestamp " + timestamp + " within event range: " + e.getMessage());
+            return -1;
+        }
     }
 
 
