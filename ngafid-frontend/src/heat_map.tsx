@@ -4,7 +4,7 @@
 //
 // This file implements the Heat Map page for the NGAFID frontend. It provides:
 //  - Event selection and filtering UI
-//  - OpenLayers map with multiple base layers
+//  - OpenLayers map with multiple base layers (Azure Maps, Sectional Charts, etc.)
 //  - Proximity event heatmap and grid overlays
 //  - Draggable popups for event details and distance calculations
 //  - State management for all of the above
@@ -16,105 +16,41 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import SignedInNavbar from "./signed_in_navbar";
 import { TimeHeader } from "./time_header.js";
+
+// OpenLayers imports
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import DragBox from 'ol/interaction/DragBox';
 import { platformModifierKeyOnly } from 'ol/events/condition';
-import { fromLonLat, toLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat, getTransform } from 'ol/proj';
 import 'ol/ol.css';
+
+// Vector and styling imports
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Polygon from 'ol/geom/Polygon';
+import Point from 'ol/geom/Point';
 import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
-import Heatmap from 'ol/layer/Heatmap';
-import Point from 'ol/geom/Point';
 import Icon from 'ol/style/Icon';
-import { getTransform } from 'ol/proj';
-import WebGLVectorLayer from 'ol/layer/WebGLVector';
 import Circle from 'ol/style/Circle';
 import Stroke from 'ol/style/Stroke';
 
-// Helper types
+// Heatmap and WebGL imports
+import Heatmap from 'ol/layer/Heatmap';
+import WebGLVectorLayer from 'ol/layer/WebGLVector';
+
+// =======================
+// SECTION: Type Definitions
+// =======================
+
 interface EventChecked {
     [eventName: string]: boolean;
 }
 
-// Constants for proximity functionality
-const ICON_IMAGE_RED = new Icon({
-    src: '/images/red-point.png',
-    scale: 0.05,
-    anchor: [0.5, 0.5],
-});
-
-const RED_POINT_STYLE = new Style({
-    image: ICON_IMAGE_RED
-});
-
-const BLUE_POINT_STYLE = new Style({
-    image: ICON_IMAGE_RED
-});
-
-// Interpolate color from green to red
-function interpolateColor(value: number) {
-    // value: 0 (green) to 1 (red)
-    const r = Math.round(255 * value);
-    const g = Math.round(255 * (1 - value));
-    return `rgba(${r},${g},0,0.6)`;
-}
-
-// Utility functions for distance calculation
-function toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
-}
-
-// Helper function to create a coordinate key for grouping events
-function createCoordinateKey(lat: number, lon: number, precision: number = 6): string {
-    return `${lat.toFixed(precision)},${lon.toFixed(precision)}`;
-}
-
-/**
- * Calculates the lateral (surface) and euclidean (3D) distance between two points.
- * @param lat1 Latitude of point 1 in degrees
- * @param lon1 Longitude of point 1 in degrees
- * @param alt1 Altitude of point 1 in feet (optional, default 0)
- * @param lat2 Latitude of point 2 in degrees
- * @param lon2 Longitude of point 2 in degrees
- * @param alt2 Altitude of point 2 in feet (optional, default 0)
- * @returns { lateral: feet, euclidean: feet }
- */
-function calculateDistanceBetweenPoints(
-    lat1: number, lon1: number, alt1: number = 0,
-    lat2: number, lon2: number, alt2: number = 0
-): { lateral: number, euclidean: number } {
-    const earthRadius = 6371000; // meters
-
-    const lat1Rad = toRadians(lat1);
-    const lat2Rad = toRadians(lat2);
-    const deltaLatRad = toRadians(lat2 - lat1);
-    const deltaLonRad = toRadians(lon2 - lon1);
-
-    // Haversine formula for lateral distance (in meters)
-    const a = Math.sin(deltaLatRad / 2) ** 2 +
-        Math.cos(lat1Rad) * Math.cos(lat2Rad) *
-        Math.sin(deltaLonRad / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const lateralMeters = earthRadius * c;
-
-    // Convert lateral distance to feet
-    const lateral = lateralMeters * 3.28084;
-
-    // 3D distance
-    const deltaAlt = (alt2 || 0) - (alt1 || 0);
-    const euclidean = Math.sqrt(lateral ** 2 + deltaAlt ** 2);
-
-    return { lateral, euclidean };
-}
-
-// Popup content data interface
 interface PopupContentData {
     time: string | null;
     latitude: number | null;
@@ -127,15 +63,44 @@ interface PopupContentData {
     severity: string | null;
     eventId: number | null;
     eventType: string | null;
-    eventTypes?: string[] | null; // Array of all event types at this location
-    columnValues?: { [key: string]: any } | null; // Column values from the backend
+    eventTypes?: string[] | null;
+    columnValues?: { [key: string]: any } | null;
 }
-  // The key should be stored in .env   AZURE_MAPS_KEY=****
-  let azureMapsKey = process.env.AZURE_MAPS_KEY;
-  azureMapsKey = "***REMOVED***";
 
-const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
+interface ProximityEventPoints {
+    eventId: number;
+    eventDefinitionId: number;
+    mainFlightId: number;
+    otherFlightId: number | null;
+    mainFlightPoints: any[];
+    otherFlightPoints: any[];
+    severity: number;
+    airframe: string;
+    otherAirframe: string;
+}
 
+interface CoordinateEventGroup {
+    coord: number[];
+    events: Array<{
+        eventId: number;
+        eventDefinitionId: number;
+        flightId: number;
+        otherFlightId: number | null;
+        time: string;
+        flightAirframe: string;
+        otherFlightAirframe: string;
+        severity: number;
+        altitudeAgl: number;
+        latitude: number;
+        longitude: number;
+    }>;
+}
+
+// =======================
+// SECTION: Constants and Configuration
+// =======================
+
+// Map layer configuration
 const mapLayerOptions = [
     { value: 'Aerial', label: 'Aerial', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
     { value: 'Road', label: 'Road (static)', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
@@ -147,6 +112,7 @@ const mapLayerOptions = [
     { value: 'HelicopterCharts', label: 'Helicopter Charts', url: () => 'http://localhost:8187/helicopter/{z}/{x}/{-y}.png' },
 ];
 
+// Event definitions mapping
 const allEventNames = [
     "ANY Event",
     "Airspeed",
@@ -186,7 +152,7 @@ const allEventNames = [
     "VSI on Final"
 ];
 
-// Mapping from event display name to event definition IDs
+// Event definition ID mappings
 const eventNameToDefinitionIds: { [eventName: string]: number[] } = {
     "ANY Event": [], // Will be filled with all IDs below
     "Airspeed": [9, 11, 12, 13, 63],
@@ -225,14 +191,103 @@ const eventNameToDefinitionIds: { [eventName: string]: number[] } = {
     "Tail Strike": [55, 71],
     "VSI on Final": [8],
 };
+
 // Fill ANY Event with all unique IDs
 const allDefinitionIds = Array.from(new Set(Object.values(eventNameToDefinitionIds).flat().filter(id => id !== undefined)));
 eventNameToDefinitionIds["ANY Event"] = allDefinitionIds;
 
-// Function to get event type name from event definition ID
+// Map styling constants
+const ICON_IMAGE_RED = new Icon({
+    src: '/images/red-point.png',
+    scale: 0.05,
+    anchor: [0.5, 0.5],
+});
+
+const RED_POINT_STYLE = new Style({
+    image: ICON_IMAGE_RED
+});
+
+const BLUE_POINT_STYLE = new Style({
+    image: ICON_IMAGE_RED
+});
+
+const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
+
+// Azure Maps configuration
+let azureMapsKey = process.env.AZURE_MAPS_KEY;
+azureMapsKey = "***REMOVED***";
+
+// Airframes configuration
+let airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
+if (!airframesList.includes('All Airframes')) {
+    airframesList.unshift('All Airframes');
+}
+const gfdIndex = airframesList.indexOf('Garmin Flight Display');
+if (gfdIndex !== -1) airframesList.splice(gfdIndex, 1);
+
+// =======================
+// SECTION: Utility Functions
+// =======================
+
+/**
+ * Interpolates color from green to red based on intensity value
+ */
+function interpolateColor(value: number): string {
+    const r = Math.round(255 * value);
+    const g = Math.round(255 * (1 - value));
+    return `rgba(${r},${g},0,0.6)`;
+}
+
+/**
+ * Converts degrees to radians
+ */
+function toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+}
+
+/**
+ * Creates a coordinate key for grouping events by location
+ */
+function createCoordinateKey(lat: number, lon: number, precision: number = 6): string {
+    return `${lat.toFixed(precision)},${lon.toFixed(precision)}`;
+}
+
+/**
+ * Calculates the lateral (surface) and euclidean (3D) distance between two points
+ */
+function calculateDistanceBetweenPoints(
+    lat1: number, lon1: number, alt1: number = 0,
+    lat2: number, lon2: number, alt2: number = 0
+): { lateral: number, euclidean: number } {
+    const earthRadius = 6371000; // meters
+
+    const lat1Rad = toRadians(lat1);
+    const lat2Rad = toRadians(lat2);
+    const deltaLatRad = toRadians(lat2 - lat1);
+    const deltaLonRad = toRadians(lon2 - lon1);
+
+    // Haversine formula for lateral distance (in meters)
+    const a = Math.sin(deltaLatRad / 2) ** 2 +
+        Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+        Math.sin(deltaLonRad / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const lateralMeters = earthRadius * c;
+
+    // Convert lateral distance to feet
+    const lateral = lateralMeters * 3.28084;
+
+    // 3D distance
+    const deltaAlt = (alt2 || 0) - (alt1 || 0);
+    const euclidean = Math.sqrt(lateral ** 2 + deltaAlt ** 2);
+
+    return { lateral, euclidean };
+}
+
+/**
+ * Gets the event type name from event definition ID
+ */
 function getEventTypeName(eventDefinitionId: number): string {
     for (const [eventName, definitionIds] of Object.entries(eventNameToDefinitionIds)) {
-        // Skip "ANY Event" to avoid returning it for specific events
         if (eventName === "ANY Event") continue;
         if (definitionIds.includes(eventDefinitionId)) {
             return eventName;
@@ -241,26 +296,16 @@ function getEventTypeName(eventDefinitionId: number): string {
     return `Event ${eventDefinitionId}`;
 }
 
-// Use the global airframes variable injected by the backend, if available
-let airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
-// Ensure 'All Airframes' is at the front
-if (!airframesList.includes('All Airframes')) {
-    airframesList.unshift('All Airframes');
-}
-// Remove 'Garmin Flight Display' if present
-const gfdIndex = airframesList.indexOf('Garmin Flight Display');
-if (gfdIndex !== -1) airframesList.splice(gfdIndex, 1);
-
 // =======================
 // SECTION: Main HeatMapPage Component
 // =======================
+
 const HeatMapPage: React.FC = () => {
     // =======================
-    // STATE HOOKS
+    // SECTION: State Management
     // =======================
-    // All state variables for UI, map, events, popups, etc.
 
-
+    // UI State
     const [airframes, setAirframes] = useState<string[]>(airframesList);
     const [eventChecked, setEventChecked] = useState<EventChecked>(() => {
         const checked: EventChecked = {};
@@ -273,22 +318,24 @@ const HeatMapPage: React.FC = () => {
     const [endYear, setEndYear] = useState<number>(new Date().getFullYear());
     const [endMonth, setEndMonth] = useState<number>(new Date().getMonth() + 1);
     const [datesChanged, setDatesChanged] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    // Map State
     const [map, setMap] = useState<Map | null>(null);
     const [mapStyle, setMapStyle] = useState<string>('Road');
     const [boxCoords, setBoxCoords] = useState<{ minLat: string, maxLat: string, minLon: string, maxLon: string }>({ minLat: '', maxLat: '', minLon: '', maxLon: '' });
-    const [minSeverity, setMinSeverity] = useState<number>(-10000);
-    const [maxSeverity, setMaxSeverity] = useState<number>(1000);
-    
-    // Display values for the UI (0-1000 range for user-friendly display)
-    const [displayMinSeverity, setDisplayMinSeverity] = useState<number>(0);
-    const [displayMaxSeverity, setDisplayMaxSeverity] = useState<number>(1000);
-    const [showGrid, setShowGrid] = useState<boolean>(false);
     const [overlayLayer, setOverlayLayer] = useState<VectorLayer<VectorSource> | null>(null);
     const [overlayFeature, setOverlayFeature] = useState<Feature<Polygon> | null>(null);
-    const [error, setError] = useState<string | null>(null);
 
-    // Proximity functionality state
-    const [loading, setLoading] = useState<boolean>(false);
+    // Severity Filter State
+    const [minSeverity, setMinSeverity] = useState<number>(-10000);
+    const [maxSeverity, setMaxSeverity] = useState<number>(1000);
+    const [displayMinSeverity, setDisplayMinSeverity] = useState<number>(0);
+    const [displayMaxSeverity, setDisplayMaxSeverity] = useState<number>(1000);
+
+    // Visualization State
+    const [showGrid, setShowGrid] = useState<boolean>(false);
     const [heatmapLayer1, setHeatmapLayer1] = useState<Heatmap | null>(null);
     const [heatmapLayer2, setHeatmapLayer2] = useState<Heatmap | null>(null);
     const [markerSource, setMarkerSource] = useState<VectorSource | null>(null);
@@ -296,7 +343,11 @@ const HeatMapPage: React.FC = () => {
     const [gridLayer, setGridLayer] = useState<WebGLVectorLayer | null>(null);
     const [gridSource, setGridSource] = useState<VectorSource | null>(null);
 
-    // Popup and distance calculation state
+    // Event Data State
+    const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
+    const [coordinateRegistry, setCoordinateRegistry] = useState<{[key: string]: CoordinateEventGroup}>({});
+
+    // Popup and Distance Calculation State
     const [openPopups, setOpenPopups] = useState<Array<{
         id: string,
         coord: number[],
@@ -314,55 +365,13 @@ const HeatMapPage: React.FC = () => {
         euclidean: number | null;
     }>({ lateral: null, euclidean: null });
 
-
-    // Data structure for proximity event points
-    interface ProximityEventPoints {
-        eventId: number;
-        eventDefinitionId: number;
-        mainFlightId: number;
-        otherFlightId: number | null;
-        mainFlightPoints: any[];
-        otherFlightPoints: any[];
-        severity: number;
-        airframe: string;
-        otherAirframe: string;
-    }
-    // Add a new state for proximity event points
-    const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
-
-    // Coordinate registry to group events by location
-    interface CoordinateEventGroup {
-        coord: number[];
-        events: Array<{
-            eventId: number;
-            eventDefinitionId: number;
-            flightId: number;
-            otherFlightId: number | null;
-            time: string;
-            flightAirframe: string;
-            otherFlightAirframe: string;
-            severity: number;
-            altitudeAgl: number;
-            latitude: number;
-            longitude: number;
-        }>;
-    }
-    const [coordinateRegistry, setCoordinateRegistry] = useState<{[key: string]: CoordinateEventGroup}>({});
-
     // =======================
-    // POPUP DRAGGING FUNCTIONALITY
+    // SECTION: Popup Dragging Functionality
     // =======================
-    // This section implements draggable popups (windows) for event details.
-    // It uses refs to track drag state and ensure global event handlers always have the latest values.
-    // This is necessary in React functional components to avoid stale closures when using global listeners.
-    //
-    // - dragStart: stores the initial mouse position when dragging starts
-    // - popupStart: stores the initial popup position when dragging starts
-    // - draggedPopupIdRef: always holds the current popup being dragged (for global handlers)
-    // - draggedPopupId: state for re-rendering and UI feedback
-    // - handlePopupMouseDown: starts the drag, attaches global listeners
-    // - handleMouseMove: updates popup position as mouse moves
-    // - handleMouseUp: ends the drag, removes listeners
+    /**
+     * Implements draggable popups for event details.
+     * Uses refs to track drag state and ensure global event handlers always have the latest values.
+     */
 
     const dragStart = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
     const popupStart = useRef<{ left: number, top: number }>({ left: 0, top: 0 });
@@ -370,42 +379,45 @@ const HeatMapPage: React.FC = () => {
     const draggedPopupIdRef = useRef<string | null>(null);
     const [recentPopupId, setRecentPopupId] = useState<string | null>(null);
 
+    // Map ref must be defined before using in handlers
+    const mapRef = React.useRef<HTMLDivElement | null>(null);
+
     // Called on popup header mousedown: starts drag and attaches listeners
     const handlePopupMouseDown = (e: React.MouseEvent, popupId: string) => {
-        console.log('handlePopupMouseDown called', popupId, e);
         e.preventDefault();
         dragStart.current = { x: e.clientX, y: e.clientY };
+        
         // Get the popup element and its current position
         const popupElem = (e.currentTarget.parentElement as HTMLElement);
         popupStart.current = {
             left: parseFloat(popupElem.style.left) || 0,
             top: parseFloat(popupElem.style.top) || 0
         };
+        
         setDraggedPopupId(popupId);
         draggedPopupIdRef.current = popupId;
         setRecentPopupId(popupId);
+        
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
-        console.log('Added global listeners for mousemove and mouseup');
-        console.log('Drag start set to', dragStart.current, 'Popup start set to', popupStart.current);
-        console.log('draggedPopupIdRef set to', draggedPopupIdRef.current);
     };
 
     // Global mousemove handler: updates popup position if dragging
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!draggedPopupIdRef.current || !mapRef.current) {
-            console.log('handleMouseMove: not dragging or mapRef missing', { draggedPopupId: draggedPopupIdRef.current, mapRef: mapRef.current });
             return;
         }
+        
         const dx = e.clientX - dragStart.current.x;
         const dy = e.clientY - dragStart.current.y;
         let left = popupStart.current.left + dx;
         let top = popupStart.current.top + dy;
+        
         // Constrain to map container
         const mapRect = mapRef.current.getBoundingClientRect();
         left = Math.max(0, Math.min(left, mapRect.width - 200)); // 200 = minWidth
         top = Math.max(0, Math.min(top, mapRect.height - 100)); // 100 = approx height
-        console.log('handleMouseMove', { dx, dy, left, top, mapRect });
+        
         setOpenPopups(prevPopups =>
             prevPopups.map(p =>
                 p.id === draggedPopupIdRef.current
@@ -417,26 +429,27 @@ const HeatMapPage: React.FC = () => {
 
     // Global mouseup handler: ends drag and removes listeners
     const handleMouseUp = useCallback(() => {
-        console.log('handleMouseUp');
         setDraggedPopupId(null);
         draggedPopupIdRef.current = null;
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
     }, [handleMouseMove]);
 
+    // Cleanup event listeners on unmount
     useEffect(() => {
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, []);
-    // =================== END POPUP DRAGGING FUNCTIONALITY ===================
+    }, [handleMouseMove]);
 
-    // Map ref must be defined before using in handlers
-    const mapRef = React.useRef<HTMLDivElement | null>(null);
+    // =======================
+    // SECTION: Map Layer Management
+    // =======================
 
-    // Now define handlePopupMouseDown after mapRef and the useCallback hooks
-    // Function to clear all map layers
+    /**
+     * Clears all map layers and resets visualization state
+     */
     const clearMapLayers = () => {
         if (heatmapLayer1) heatmapLayer1.getSource()?.clear();
         if (heatmapLayer2) heatmapLayer2.getSource()?.clear();
@@ -458,7 +471,13 @@ const HeatMapPage: React.FC = () => {
     };
 
 
-    // Handlers for severity sliders
+    // =======================
+    // SECTION: Severity Filter Management
+    // =======================
+
+    /**
+     * Handles minimum severity slider changes
+     */
     const handleMinSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const displayValue = Math.min(Number(e.target.value), displayMaxSeverity);
         setDisplayMinSeverity(displayValue);
@@ -474,6 +493,9 @@ const HeatMapPage: React.FC = () => {
         }
     };
 
+    /**
+     * Handles maximum severity slider changes
+     */
     const handleMaxSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const displayValue = Math.max(Number(e.target.value), displayMinSeverity);
         setDisplayMaxSeverity(displayValue);
@@ -486,7 +508,9 @@ const HeatMapPage: React.FC = () => {
         }
     };
 
-    // Severity slider JSX (for top menu)
+    /**
+     * Severity slider component for the top menu
+     */
     const severitySlider = (
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 8, minWidth: 180, marginLeft: 16 }}>
             <label style={{ fontSize: 12, marginBottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -516,45 +540,32 @@ const HeatMapPage: React.FC = () => {
     );
 
     // =======================
-    // SECTION: Grid/Heatmap Toggle and Rendering
+    // SECTION: Grid/Heatmap Toggle Management
     // =======================
     /**
-     * This section handles the logic for toggling between heatmap and grid visualizations
-     * for proximity events on the map. It includes:
-     *   - The showGrid state (true = grid, false = heatmap)
-     *   - The handleGridToggle function, which toggles the state and triggers re-rendering
-     *   - The processProximityEventCoordinates function, which renders either the heatmap or grid
-     *     based on the current toggle state and the loaded proximity events.
-     *
-     * Usage:
-     *   - When the user toggles the switch, handleGridToggle is called.
-     *   - This updates showGrid and immediately calls processProximityEventCoordinates
-     *     with the current proximityEvents and the new toggle value.
-     *   - processProximityEventCoordinates clears previous map layers and renders either
-     *     the heatmap (default) or a grid-based density map overlay, depending on showGrid.
-     *   - The grid overlay is built using OpenLayers WebGLVectorLayer and colored cells.
-     *
-     * This logic provides grid/heatmap toggle functionality for proximity and regular events.
+     * Handles toggling between heatmap and grid visualizations for events on the map.
+     * When toggled, reprocesses the current events with the new visualization mode.
      */
 
-        // Handle grid/heatmap toggle for both proximity and regular events
     const handleGridToggle = () => {
-            // Toggle the showGrid state and re-render the map overlay
-            const newShowGrid = !showGrid;
-            setShowGrid(newShowGrid);
-            // Reprocess events if we have any, using the new value
-            if (proximityEventPoints.length > 0) {
-                            // Check if we have proximity events or regular events
+        const newShowGrid = !showGrid;
+        setShowGrid(newShowGrid);
+        
+        // Reprocess events if we have any, using the new value
+        if (proximityEventPoints.length > 0) {
+            // Check if we have proximity events or regular events
             const hasProximityEvents = proximityEventPoints.some(event => event.otherFlightId !== 0 && event.otherFlightId !== null);
             if (hasProximityEvents) {
-                    processProximityEventCoordinates(proximityEventPoints, newShowGrid);
-                } else {
-                    processSingleEventCoordinates(proximityEventPoints, newShowGrid);
-                }
+                processProximityEventCoordinates(proximityEventPoints, newShowGrid);
+            } else {
+                processSingleEventCoordinates(proximityEventPoints, newShowGrid);
             }
-        };
+        }
+    };
 
-    // Grid/Heatmap icon-only toggle, highlight active icon
+    /**
+     * Grid/Heatmap toggle switch component with icons
+     */
     const gridToggleSwitch = (
         <div style={{
             position: 'absolute',
