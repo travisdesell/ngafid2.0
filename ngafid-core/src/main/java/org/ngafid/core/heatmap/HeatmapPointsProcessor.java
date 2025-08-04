@@ -62,8 +62,8 @@ public class HeatmapPointsProcessor {
     public static void insertCoordinatesForProximityEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
 
 
-        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl, lateral_distance, vertical_distance) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int inserted = 0;
@@ -89,8 +89,6 @@ public class HeatmapPointsProcessor {
                             stmt.setDouble(6, altitudeAGL);
                         }
 
-                        stmt.setDouble(7, point.getLateralDistance());
-                        stmt.setDouble(8, point.getVerticalDistance());
                         stmt.addBatch();
                         inserted++;
                     }
@@ -119,8 +117,6 @@ public class HeatmapPointsProcessor {
                             stmt.setDouble(6, altitudeAGL);
                         }
 
-                        stmt.setDouble(7, point.getLateralDistance());
-                        stmt.setDouble(8, point.getVerticalDistance());
                         stmt.addBatch();
                         inserted++;
                     }
@@ -261,7 +257,7 @@ public class HeatmapPointsProcessor {
         Map<String, Object> eventMap = new HashMap<>();
         List<Map<String, Object>> points = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
-            String query = "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe, pp.lateral_distance, pp.vertical_distance " +
+            String query = "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe " +
                            "FROM heatmap_points pp " +
                            "JOIN flights f ON pp.flight_id = f.id " +
                            "JOIN airframes a ON f.airframe_id = a.id " +
@@ -277,8 +273,6 @@ public class HeatmapPointsProcessor {
                             eventMap.put("event_id", rs.getInt("event_id"));
                             eventMap.put("flight_id", rs.getInt("flight_id"));
                             eventMap.put("flight_airframe", rs.getString("flight_airframe"));
-                            eventMap.put("lateral_distance", rs.getDouble("lateral_distance"));
-                            eventMap.put("vertical_distance", rs.getDouble("vertical_distance"));
                             first = false;
                         }
                         Map<String, Object> point = new HashMap<>();

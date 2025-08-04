@@ -96,6 +96,11 @@ interface CoordinateEventGroup {
     }>;
 }
 
+interface EventStatistics {
+    totalEvents: number;
+    eventsByType: { [eventType: string]: number };
+}
+
 // =======================
 // SECTION: Constants and Configuration
 // =======================
@@ -347,6 +352,12 @@ const HeatMapPage: React.FC = () => {
     const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
     const [coordinateRegistry, setCoordinateRegistry] = useState<{[key: string]: CoordinateEventGroup}>({});
 
+    // Event Statistics State
+    const [eventStatistics, setEventStatistics] = useState<EventStatistics>({
+        totalEvents: 0,
+        eventsByType: {}
+    });
+
     // Popup and Distance Calculation State
     const [openPopups, setOpenPopups] = useState<Array<{
         id: string,
@@ -463,6 +474,12 @@ const HeatMapPage: React.FC = () => {
 
         // Clear coordinate registry
         setCoordinateRegistry({});
+
+        // Reset event statistics
+        setEventStatistics({
+            totalEvents: 0,
+            eventsByType: {}
+        });
 
         // Hide layers
         if (heatmapLayer1) heatmapLayer1.setVisible(false);
@@ -953,6 +970,7 @@ const HeatMapPage: React.FC = () => {
                 gridLayer.setVisible(false);
                 console.log('[processProximityEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
+            console.log('[processProximityEventCoordinates] Heatmap mode - heatmapLayer1 visible:', heatmapLayer1?.getVisible(), 'heatmapLayer2 visible:', heatmapLayer2?.getVisible());
         }
     };
 
@@ -1284,6 +1302,7 @@ const HeatMapPage: React.FC = () => {
                 gridLayer.setVisible(false);
                 console.log('[processMixedEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
+
         }
         
         console.log('[processMixedEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'heatmapLayer2:', heatmapLayer2?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
@@ -1521,6 +1540,7 @@ const HeatMapPage: React.FC = () => {
                 gridLayer.setVisible(false);
                 console.log('[processSingleEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
+
         }
         
         console.log('[processSingleEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
@@ -1561,6 +1581,7 @@ const HeatMapPage: React.FC = () => {
                 ]
             });
             heatmapLayer1.set('interactive', false);
+            heatmapLayer1.setVisible(true); // Ensure it's visible by default
 
             const heatmapLayer2 = new Heatmap({
                 source: heatmapSource2,
@@ -1576,6 +1597,7 @@ const HeatMapPage: React.FC = () => {
                 ]
             });
             heatmapLayer2.set('interactive', false);
+            heatmapLayer2.setVisible(true); // Ensure it's visible by default
 
             // Create marker layer for individual points
             const markerLayer = new VectorLayer({
@@ -1608,6 +1630,7 @@ const HeatMapPage: React.FC = () => {
                 opacity: 0.7
             });
             gridLayer.set('interactive', false);
+            gridLayer.setVisible(false); // Ensure grid is hidden by default
 
             // Create overlay vector layer for selection box
             const vectorSource = new VectorSource();
@@ -2005,9 +2028,23 @@ const HeatMapPage: React.FC = () => {
             setProximityEventPoints([...allProximityEventPoints, ...allSingleEventPoints]);
             setLoading(false);
             
-            console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
+            // Calculate and set event statistics
+            const allEvents = [...allProximityEventPoints, ...allSingleEventPoints];
+            const statistics = calculateEventStatistics(allEvents);
+            setEventStatistics(statistics);
             
             console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
+            
+            // Debug: Check the actual data
+            if (allProximityEventPoints.length > 0) {
+                console.log('[processEventsAndPoints] Sample proximity event:', allProximityEventPoints[0]);
+                console.log('[processEventsAndPoints] Sample mainFlightPoints:', allProximityEventPoints[0].mainFlightPoints);
+                console.log('[processEventsAndPoints] Sample otherFlightPoints:', allProximityEventPoints[0].otherFlightPoints);
+            }
+            if (allSingleEventPoints.length > 0) {
+                console.log('[processEventsAndPoints] Sample single event:', allSingleEventPoints[0]);
+                console.log('[processEventsAndPoints] Sample mainFlightPoints:', allSingleEventPoints[0].mainFlightPoints);
+            }
             
             // Process both types of events together
             if (allProximityEventPoints.length > 0 && allSingleEventPoints.length > 0) {
@@ -2251,6 +2288,126 @@ const HeatMapPage: React.FC = () => {
         }
     };
 
+    /**
+     * Calculates event statistics from the current proximity event points
+     */
+    const calculateEventStatistics = (events: ProximityEventPoints[]): EventStatistics => {
+        const eventsByType: { [eventType: string]: number } = {};
+        let totalEvents = 0;
+
+        events.forEach(event => {
+            const eventTypeName = getEventTypeName(event.eventDefinitionId);
+            eventsByType[eventTypeName] = (eventsByType[eventTypeName] || 0) + 1;
+            totalEvents++;
+        });
+
+        return {
+            totalEvents,
+            eventsByType
+        };
+    };
+
+    // =======================
+    // SECTION: Information Window Component
+    // =======================
+    /**
+     * Information window component that displays event statistics and user guidance
+     */
+    const InformationWindow = () => (
+        <div style={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            zIndex: 1000,
+            background: 'white',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            minWidth: '196px',
+            maxWidth: '245px',
+            border: '1px solid #e0e0e0'
+        }}>
+            <div style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                marginBottom: '12px',
+                color: '#333',
+                borderBottom: '1px solid #e0e0e0',
+                paddingBottom: '8px'
+            }}>
+                Events Found: {eventStatistics.totalEvents}
+            </div>
+            
+            {eventStatistics.totalEvents > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {Object.entries(eventStatistics.eventsByType)
+                            .sort(([,a], [,b]) => b - a) // Sort by count descending
+                            .map(([eventType, count]) => (
+                                <div key={eventType} style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '4px 0',
+                                    fontSize: '13px',
+                                    borderBottom: '1px solid #f0f0f0'
+                                }}>
+                                    <span style={{
+                                        flex: 1,
+                                        marginRight: '8px',
+                                        color: '#666',
+                                        wordBreak: 'break-word'
+                                    }}>
+                                        {eventType}
+                                    </span>
+                                    <span style={{
+                                        fontWeight: '600',
+                                        color: '#007bff',
+                                        minWidth: '30px',
+                                        textAlign: 'right'
+                                    }}>
+                                        {count}
+                                    </span>
+                                </div>
+                            ))}
+                    </div>
+                </div>
+            )}
+            
+            <div style={{
+                fontSize: '12px',
+                color: '#666',
+                lineHeight: '1.4',
+                padding: '12px',
+                background: '#f8f9fa',
+                borderRadius: '6px',
+                border: '1px solid #e9ecef'
+            }}>
+                <div style={{ fontWeight: '500', marginBottom: '6px', color: '#495057' }}>
+                    💡 Navigation Tips:
+                </div>
+                <ul style={{
+                    margin: 0,
+                    paddingLeft: '16px',
+                    listStyleType: 'disc'
+                }}>
+                    <li style={{ marginBottom: '2px' }}>
+                        Use ⌘+drag to select map areas
+                    </li>
+                    <li style={{ marginBottom: '2px' }}>
+                        Toggle switch in the right corner to change heatmap view to grid view
+                    </li>
+                    <li style={{ marginBottom: '2px' }}>
+                        Zoom in (≥10x) to see individual event markers
+                    </li>
+                    <li style={{ marginBottom: '2px' }}>
+                        Click markers to view detailed event information
+                    </li>
+                </ul>
+            </div>
+        </div>
+    );
+
     // Wrap the main content in a full-height flex container
     return (
         <div style={{ overflowX: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -2349,6 +2506,7 @@ const HeatMapPage: React.FC = () => {
                                         <div className="col-lg-10" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', position: 'relative' }}>
                                             {gridToggleSwitch}
                                             <div ref={mapRef} style={{ width: '100%', height: '100%', background: 'transparent', margin: 0, padding: 0, position: 'relative' }} />
+                                            <InformationWindow />
 
                                             {/* Render all open popups as overlays */}
                                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 1000 }}>
