@@ -13,6 +13,9 @@ import org.ngafid.core.util.FlightTag
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
 import java.util.*
+import java.sql.PreparedStatement
+import java.time.LocalDate
+import kotlin.booleanArrayOf
 
 object FlightRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
@@ -22,6 +25,16 @@ object FlightRoutes : RouteProvider() {
                 get("double-series", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames, Role.LOGGED_IN)
                 get("turn-to-final", AnalysisJavalinRoutes::postTurnToFinal, Role.LOGGED_IN)
                 get("aggregate/flight_hours_by_airframe", FlightRoutes::getAggregateFlightHoursByAirframe, Role.LOGGED_IN)
+
+                RouteUtility.getStat("time/past-month") { ctx, stats -> ctx.json(stats.monthFlightTime()) }
+                RouteUtility.getStat("time/past-year") { ctx, stats -> ctx.json(stats.yearFlightTime()) }
+                RouteUtility.getStat("time") { ctx, stats -> ctx.json(stats.flightTime()) }
+
+                RouteUtility.getStat("count/past-month") { ctx, stats -> ctx.json(stats.monthNumberFlights()) }
+                RouteUtility.getStat("count/past-year") { ctx, stats -> ctx.json(stats.yearNumberFlights()) }
+                RouteUtility.getStat("count/with-warning") { ctx, stats -> ctx.json(stats.flightsWithWarning()) }
+                RouteUtility.getStat("count/with-error") { ctx, stats -> ctx.json(stats.flightsWithError()) }
+                RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.numberFlights()) }
 
                 path("{fid}") {
                     // TODO: There is no reason for this to exist as a separate route from fetching normal double series.
@@ -60,15 +73,6 @@ object FlightRoutes : RouteProvider() {
                     // get(FlightRoutes::getFlight, Role.LOGGED_IN)
                 }
 
-                RouteUtility.getStat("time") { ctx, stats -> ctx.json(stats.flightTime()) }
-                RouteUtility.getStat("time/past-month") { ctx, stats -> ctx.json(stats.monthFlightTime()) }
-                RouteUtility.getStat("time/past-year") { ctx, stats -> ctx.json(stats.yearFlightTime()) }
-
-                RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.numberFlights()) }
-                RouteUtility.getStat("count/past-month") { ctx, stats -> ctx.json(stats.monthNumberFlights()) }
-                RouteUtility.getStat("count/past-year") { ctx, stats -> ctx.json(stats.monthNumberFlights()) }
-                RouteUtility.getStat("count/with-warning") { ctx, stats -> ctx.json(stats.flightsWithWarning()) }
-                RouteUtility.getStat("count/with-error") { ctx, stats -> ctx.json(stats.flightsWithError()) }
             }
         }
     }
@@ -165,16 +169,46 @@ object FlightRoutes : RouteProvider() {
         //     ctx.status(401).result("User does not have aggregate access.")
         //     return
         // }
+
+
+        val startDateIn = ctx.queryParam("startDate")
+        val endDateIn = ctx.queryParam("endDate")
+
+        val startDate = if (startDateIn != null) LocalDate.parse(startDateIn) else LocalDate.MIN
+        val endDate = if (endDateIn != null) LocalDate.parse(endDateIn) else LocalDate.MAX
+
+
         Database.getConnection().use { connection ->
             val results = mutableListOf<Map<String, Any>>()
-            val stmt = connection.prepareStatement(
-                """
-                SELECT a.airframe, v.airframe_id, v.num_flights, v.total_flight_hours
-                FROM v_aggregate_flight_hours_by_airframe v
-                JOIN airframes a ON v.airframe_id = a.id
-                ORDER BY v.num_flights DESC
-                """
-            )
+
+            val dateClause = StatisticsJavalinRoutes.buildDateClause(startDate, endDate)
+            val sql = """
+                SELECT
+                    a.airframe,
+                    v.airframe_id,
+                    SUM(v.num_flights)                  AS num_flights,
+                    SUM(v.flight_time_seconds)/3600.0   AS total_flight_hours
+                FROM
+                    v_aggregate_flight_stats_by_airframe_alt v
+                JOIN
+                    airframes a ON a.id = v.airframe_id
+                WHERE
+                    (? = -1 OR v.airframe_id = ?)
+                AND
+                    $dateClause
+                GROUP
+                    BY a.airframe, v.airframe_id
+                ORDER
+                    BY a.airframe;
+            """.trimIndent()
+
+            val stmt: PreparedStatement = connection.prepareStatement(sql)
+
+            val airframeId = ctx.queryParam("airframeID")?.toInt() ?: -1
+            stmt.setInt(1, airframeId)
+            stmt.setInt(2, airframeId)
+
+
             val rs = stmt.executeQuery()
             while (rs.next()) {
                 results.add(
