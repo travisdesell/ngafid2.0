@@ -337,6 +337,10 @@ public class Event {
         return flightId;
     }
 
+    public void setFlightId(int flightId) {
+        this.flightId = flightId;
+    }
+
     public void setEventDefinitionId(int eventDefinitionId) {
         this.eventDefinitionId = eventDefinitionId;
     }
