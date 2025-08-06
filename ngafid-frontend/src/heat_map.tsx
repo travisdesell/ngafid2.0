@@ -359,7 +359,7 @@ const HeatMapPage: React.FC = () => {
     });
 
     // Navigation Tips State
-    const [navigationTipsExpanded, setNavigationTipsExpanded] = useState<boolean>(false);
+    const [navigationTipsExpanded, setNavigationTipsExpanded] = useState<boolean>(true);
 
     // Popup and Distance Calculation State
     const [openPopups, setOpenPopups] = useState<Array<{
@@ -2318,6 +2318,7 @@ const HeatMapPage: React.FC = () => {
                 </div>
             )}
             
+            {/* Map Controls */}
             <div style={{
                 fontSize: '12px',
                 color: '#666',
@@ -2327,38 +2328,41 @@ const HeatMapPage: React.FC = () => {
                 borderRadius: '6px',
                 border: '1px solid #e9ecef'
             }}>
-                <div 
+                <button
+                    className="
+                        w-full
+                        flex flex-row justify-between items-center
+                        group
+                        cursor-pointer
+                    " 
                     style={{ 
                         fontWeight: '500', 
-                        marginBottom: '6px', 
                         color: '#495057',
                         cursor: 'pointer',
                         position: 'relative'
                     }}
                     onClick={toggleNavigationTips}
                 >
+
+                    {/* Map Controls Title */}
                     <span>💡 Map Controls</span>
-                    {navigationTipsExpanded && (
-                        <span style={{
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            color: '#666',
-                            position: 'absolute',
-                            right: '0',
-                            top: '0'
-                        }}>
-                            ×
-                        </span>
-                    )}
-                </div>
+
+                    {/* Toggle Button Icon */}
+                    <i className={`fa ${navigationTipsExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} p-1
+                        scale-100 group-hover:scale-125
+                        transition-transform duration-200 ease-in-out
+                    `}/>
+
+                </button>
                 {navigationTipsExpanded && (
-                    <ul style={{
-                        margin: 0,
+                    <ul
+                        className="m-0 mt-3"
+                        style={{
                         paddingLeft: '16px',
                         listStyleType: 'disc'
                     }}>
                         <li style={{ marginBottom: '2px' }}>
-                            Use ⌘+drag to select map areas
+                            Use <b>⌘+drag</b> to select map areas
                         </li>
                         <li style={{ marginBottom: '2px' }}>
                             Toggle switch in the right corner to change heatmap view to grid view
@@ -2376,6 +2380,7 @@ const HeatMapPage: React.FC = () => {
                 )}
             </div>
         </div>
+
     );
 
     // Wrap the main content in a full-height flex container
