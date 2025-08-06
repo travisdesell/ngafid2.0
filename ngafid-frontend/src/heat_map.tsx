@@ -220,7 +220,6 @@ const MARKER_VISIBILITY_ZOOM_THRESHOLD = 15;
 
 // Azure Maps configuration
 let azureMapsKey = process.env.AZURE_MAPS_KEY;
-azureMapsKey = "DLhjEi4fqoTk7sgKCd8AsjUNfnM33aIGnwR9IZxl3BdQSeQQCfE3JQQJ99BGACYeBjFIeDgfAAAgAZMP2GP4";
 
 // Airframes configuration - define airframes if not already defined
 declare const airframes: string[] | undefined;
