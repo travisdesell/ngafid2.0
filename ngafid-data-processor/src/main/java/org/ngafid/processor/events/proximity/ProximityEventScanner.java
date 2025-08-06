@@ -203,17 +203,13 @@ public class ProximityEventScanner extends AbstractEventScanner {
                         flightInfo.latitude[i],
                         flightInfo.longitude[i],
                         TimeUtils.parseUTC(flightInfo.utc.get(i)),
-                        flightInfo.altitudeAGL[i],
-                        lateralDistance,
-                        verticalDistance
+                        flightInfo.altitudeAGL[i]
                 ));
                 currentPointsOther.add(new ProximityPointData(
                         otherFlightInfo.latitude[j],
                         otherFlightInfo.longitude[j],
                         TimeUtils.parseUTC(otherFlightInfo.utc.get(j)),
-                        otherFlightInfo.altitudeAGL[j],
-                        lateralDistance,
-                        verticalDistance
+                        otherFlightInfo.altitudeAGL[j]
                 ));
             }
 

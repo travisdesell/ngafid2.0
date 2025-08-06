@@ -4,8 +4,8 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
-import org.ngafid.core.terrain.TerrainCache;
-import org.ngafid.core.terrain.TerrainUnavailableException;
+import org.ngafid.processor.terrain.TerrainCache;
+import org.ngafid.processor.terrain.TerrainUnavailableException;
 
 import java.sql.Connection;
 import java.sql.SQLException;

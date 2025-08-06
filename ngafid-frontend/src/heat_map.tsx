@@ -216,13 +216,14 @@ const BLUE_POINT_STYLE = new Style({
     image: ICON_IMAGE_RED
 });
 
-const MARKER_VISIBILITY_ZOOM_THRESHOLD = 12;
+const MARKER_VISIBILITY_ZOOM_THRESHOLD = 15;
 
 // Azure Maps configuration
 let azureMapsKey = process.env.AZURE_MAPS_KEY;
-azureMapsKey = "***REMOVED***";
+azureMapsKey = "DLhjEi4fqoTk7sgKCd8AsjUNfnM33aIGnwR9IZxl3BdQSeQQCfE3JQQJ99BGACYeBjFIeDgfAAAgAZMP2GP4";
 
-// Airframes configuration
+// Airframes configuration - define airframes if not already defined
+declare const airframes: string[] | undefined;
 let airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
 if (!airframesList.includes('All Airframes')) {
     airframesList.unshift('All Airframes');
@@ -318,7 +319,7 @@ const HeatMapPage: React.FC = () => {
         return checked;
     });
     const [airframe, setAirframe] = useState<string>("All Airframes");
-    const [startYear, setStartYear] = useState<number>(2020);
+    const [startYear, setStartYear] = useState<number>(1990);
     const [startMonth, setStartMonth] = useState<number>(1);
     const [endYear, setEndYear] = useState<number>(new Date().getFullYear());
     const [endMonth, setEndMonth] = useState<number>(new Date().getMonth() + 1);
@@ -357,6 +358,9 @@ const HeatMapPage: React.FC = () => {
         totalEvents: 0,
         eventsByType: {}
     });
+
+    // Navigation Tips State
+    const [navigationTipsExpanded, setNavigationTipsExpanded] = useState<boolean>(false);
 
     // Popup and Distance Calculation State
     const [openPopups, setOpenPopups] = useState<Array<{
@@ -707,7 +711,7 @@ const HeatMapPage: React.FC = () => {
         }
         // Use the passed showGrid value or fall back to state
         const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
-        console.log('[processProximityEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
+
 
         // Clear heatmap sources
         heatmapLayer1.getSource()!.clear();
@@ -861,7 +865,6 @@ const HeatMapPage: React.FC = () => {
 
         // Add grid-based density map if enabled
         if (shouldShowGrid && map && gridSource) {
-            console.log('[processProximityEventCoordinates] Rendering grid...');
             const gridSize = 0.05;
             const gridCounts: Record<string, number> = {};
             allPoints.forEach(pt => {
@@ -957,7 +960,6 @@ const HeatMapPage: React.FC = () => {
             // Show grid layer
             if (gridLayer) {
                 gridLayer.setVisible(true);
-                console.log('[processProximityEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             } else {
                 console.warn('[processProximityEventCoordinates] gridLayer is null!');
             }
@@ -968,13 +970,11 @@ const HeatMapPage: React.FC = () => {
             // Hide grid layer if present
             if (gridLayer) {
                 gridLayer.setVisible(false);
-                console.log('[processProximityEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
-            console.log('[processProximityEventCoordinates] Heatmap mode - heatmapLayer1 visible:', heatmapLayer1?.getVisible(), 'heatmapLayer2 visible:', heatmapLayer2?.getVisible());
         }
     };
 
-    // Dedicated function to render mixed events (both proximity and single events)
+    // to render mixed events (both proximity and single events)
     const processMixedEventCoordinates = async (proximityEventPoints: ProximityEventPoints[], singleEventPoints: any[], useShowGrid?: boolean) => {
         if (!heatmapLayer1 || !heatmapLayer2 || !markerSource) {
             console.error('Heatmap or marker layers not initialized');
@@ -983,7 +983,7 @@ const HeatMapPage: React.FC = () => {
         
         // Use the passed showGrid value or fall back to state
         const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
-        console.log('[processMixedEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
+
         
         // Clear heatmap and marker sources
         heatmapLayer1.getSource()!.clear();
@@ -998,6 +998,7 @@ const HeatMapPage: React.FC = () => {
         const allPoints: { latitude: number, longitude: number }[] = [];
 
         // Process proximity events first
+        console.log('[processMixedEventCoordinates] Processing proximity events...');
         for (const eventPoints of proximityEventPoints) {
             // Ensure mainFlightPoints is an array
             if (!Array.isArray(eventPoints.mainFlightPoints)) {
@@ -1080,15 +1081,12 @@ const HeatMapPage: React.FC = () => {
 
         // Process single events
         for (const eventPoints of singleEventPoints) {
-            console.log('[processMixedEventCoordinates] Processing single eventPoints:', eventPoints);
             // Ensure mainFlightPoints is an array
             if (!Array.isArray(eventPoints.mainFlightPoints)) {
                 console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
                 continue;
             }
-            console.log('[processMixedEventCoordinates] mainFlightPoints array length:', eventPoints.mainFlightPoints.length);
             for (const point of eventPoints.mainFlightPoints) {
-                console.log('[processMixedEventCoordinates] Processing point:', point);
                 const olCoord = fromLonLat([
                     point.longitude + 0.0001,
                     point.latitude + 0.0001
@@ -1120,7 +1118,6 @@ const HeatMapPage: React.FC = () => {
                 });
                 
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
-                console.log('[processMixedEventCoordinates] Added point to allPoints. Total points:', allPoints.length);
             }
         }
 
@@ -1156,10 +1153,6 @@ const HeatMapPage: React.FC = () => {
         // Update coordinate registry state
         setCoordinateRegistry(newCoordinateRegistry);
 
-        console.log('[processMixedEventCoordinates] Total points processed:', allPoints.length);
-        console.log('[processMixedEventCoordinates] Heatmap features count:', heatmapLayer1.getSource()!.getFeatures().length);
-        console.log('[processMixedEventCoordinates] Marker features count:', markerSource.getFeatures().length);
-
         // Fit map to extents
         const extent1 = heatmapLayer1.getSource()!.getExtent();
         const extent2 = heatmapLayer2.getSource()!.getExtent();
@@ -1187,7 +1180,6 @@ const HeatMapPage: React.FC = () => {
 
         // Add grid-based density map if enabled
         if (shouldShowGrid && map && gridSource) {
-            console.log('[processMixedEventCoordinates] Rendering grid...');
             const gridSize = 0.05;
             const gridCounts: Record<string, number> = {};
             allPoints.forEach(pt => {
@@ -1252,10 +1244,6 @@ const HeatMapPage: React.FC = () => {
                     const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
                     const color = interpolateColor(intensity);
 
-                    if (count > 0) {
-                        console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
-                    }
-
                     const polygon = new Polygon([[
                         [x0, y0],
                         [x1, y0],
@@ -1280,7 +1268,6 @@ const HeatMapPage: React.FC = () => {
 
             // Add new features
             gridSource.addFeatures(features);
-            console.log('[processMixedEventCoordinates] Added grid features:', features.length, 'Grid source now has:', gridSource.getFeatures().length);
 
             // Hide heatmap layers
             heatmapLayer1.setVisible(false);
@@ -1289,7 +1276,6 @@ const HeatMapPage: React.FC = () => {
             // Show grid layer
             if (gridLayer) {
                 gridLayer.setVisible(true);
-                console.log('[processMixedEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             } else {
                 console.warn('[processMixedEventCoordinates] gridLayer is null!');
             }
@@ -1300,12 +1286,8 @@ const HeatMapPage: React.FC = () => {
             // Hide grid layer if present
             if (gridLayer) {
                 gridLayer.setVisible(false);
-                console.log('[processMixedEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
-
         }
-        
-        console.log('[processMixedEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'heatmapLayer2:', heatmapLayer2?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
     };
 
     // Dedicated function to render single-flight (non-proximity) events
@@ -1317,8 +1299,6 @@ const HeatMapPage: React.FC = () => {
         
         // Use the passed showGrid value or fall back to state
         const shouldShowGrid = useShowGrid !== undefined ? useShowGrid : showGrid;
-        console.log('[processSingleEventCoordinates] called. shouldShowGrid:', shouldShowGrid);
-        console.log('[processSingleEventCoordinates] singleEventPoints:', singleEventPoints);
         
         // Clear heatmap and marker sources
         heatmapLayer1.getSource()!.clear();
@@ -1332,15 +1312,12 @@ const HeatMapPage: React.FC = () => {
         const allPoints: { latitude: number, longitude: number }[] = [];
 
         for (const eventPoints of singleEventPoints) {
-            console.log('[processSingleEventCoordinates] Processing eventPoints:', eventPoints);
             // Ensure mainFlightPoints is an array
             if (!Array.isArray(eventPoints.mainFlightPoints)) {
                 console.warn(`mainFlightPoints is not an array for event ${eventPoints.eventId}:`, eventPoints.mainFlightPoints);
                 continue;
             }
-            console.log('[processSingleEventCoordinates] mainFlightPoints array length:', eventPoints.mainFlightPoints.length);
             for (const point of eventPoints.mainFlightPoints) {
-                console.log('[processSingleEventCoordinates] Processing point:', point);
                 const olCoord = fromLonLat([
                     point.longitude + 0.0001,
                     point.latitude + 0.0001
@@ -1372,7 +1349,6 @@ const HeatMapPage: React.FC = () => {
                 });
                 
                 allPoints.push({ latitude: point.latitude, longitude: point.longitude });
-                console.log('[processSingleEventCoordinates] Added point to allPoints. Total points:', allPoints.length);
             }
         }
 
@@ -1406,10 +1382,6 @@ const HeatMapPage: React.FC = () => {
         // Update coordinate registry state
         setCoordinateRegistry(newCoordinateRegistry);
 
-        console.log('[processSingleEventCoordinates] Total points processed:', allPoints.length);
-        console.log('[processSingleEventCoordinates] Heatmap features count:', heatmapLayer1.getSource()!.getFeatures().length);
-        console.log('[processSingleEventCoordinates] Marker features count:', markerSource.getFeatures().length);
-
         // Fit map to extents
         const extent = heatmapLayer1.getSource()!.getExtent();
         const features = heatmapLayer1.getSource()!.getFeatures();
@@ -1427,7 +1399,6 @@ const HeatMapPage: React.FC = () => {
 
         // Add grid-based density map if enabled
         if (shouldShowGrid && map && gridSource) {
-            console.log('[processSingleEventCoordinates] Rendering grid...');
             const gridSize = 0.05;
             const gridCounts: Record<string, number> = {};
             allPoints.forEach(pt => {
@@ -1492,10 +1463,6 @@ const HeatMapPage: React.FC = () => {
                     const intensity = (maxCount > 0 ? Math.sqrt(count / maxCount) : 0);
                     const color = interpolateColor(intensity);
 
-                    if (count > 0) {
-                        console.log(`[Grid Debug] Cell (${latVal},${lonVal}) count:`, count, 'intensity:', intensity, 'color:', color);
-                    }
-
                     const polygon = new Polygon([[
                         [x0, y0],
                         [x1, y0],
@@ -1520,7 +1487,6 @@ const HeatMapPage: React.FC = () => {
 
             // Add new features
             gridSource.addFeatures(features);
-            console.log('[processSingleEventCoordinates] Added grid features:', features.length, 'Grid source now has:', gridSource.getFeatures().length);
 
             // Hide heatmap layers
             heatmapLayer1.setVisible(false);
@@ -1528,7 +1494,6 @@ const HeatMapPage: React.FC = () => {
             // Show grid layer
             if (gridLayer) {
                 gridLayer.setVisible(true);
-                console.log('[processSingleEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             } else {
                 console.warn('[processSingleEventCoordinates] gridLayer is null!');
             }
@@ -1538,17 +1503,15 @@ const HeatMapPage: React.FC = () => {
             // Hide grid layer if present
             if (gridLayer) {
                 gridLayer.setVisible(false);
-                console.log('[processSingleEventCoordinates] gridLayer set to visible:', gridLayer.getVisible());
             }
 
         }
-        
-        console.log('[processSingleEventCoordinates] Final layer visibility - heatmapLayer1:', heatmapLayer1?.getVisible(), 'markerSource features:', markerSource?.getFeatures().length);
     };
 
     // Map initialization and layer switching
     useEffect(() => {
         if (mapRef.current && !map) {
+            console.log('[DEBUG] Initializing map...');
             // Create layers for each style
             const layers = mapLayerOptions.map(opt => {
                 const url = opt.url();
@@ -1711,7 +1674,6 @@ const HeatMapPage: React.FC = () => {
                     const coord = geometry.getCoordinates();
                     const props = feature.getProperties();
                     if (!props.isMarker) return;
-                    console.log('props.severity:', props.severity, 'type:', typeof props.severity, 'props:', props);
                     
                     // Use the events array stored directly in marker properties (more reliable than coordinate registry)
                     const coordKey = props.coordKey || createCoordinateKey(props.latitude, props.longitude);
@@ -1723,7 +1685,6 @@ const HeatMapPage: React.FC = () => {
                     // Use callback form to get latest selectedPoints
                     setSelectedPoints(prevSelectedPoints => {
                         if (prevSelectedPoints.length >= 2) {
-                            console.log('Maximum 2 points allowed. Close one to pick another.');
                             return prevSelectedPoints;
                         }
                         // Add popup only if we can add a point
@@ -1870,6 +1831,10 @@ const HeatMapPage: React.FC = () => {
         setDatesChanged(true);
     };
 
+    const toggleNavigationTips = () => {
+        setNavigationTipsExpanded(!navigationTipsExpanded);
+    };
+
     // --- Refactored Event Fetching and Points Aggregation ---
     // 1. Fetch events matching filters (all types)
     const fetchEvents = async (filters: {
@@ -1900,8 +1865,6 @@ const HeatMapPage: React.FC = () => {
             console.log('[DEBUG] First event:', events[0]);
             // Debug: Check what event definition IDs we actually received
             const receivedEventDefinitionIds = [...new Set(events.map((e: any) => e.event_definition_id))];
-            console.log('[DEBUG] Received event definition IDs:', receivedEventDefinitionIds);
-            console.log('[DEBUG] Requested event definition IDs:', filters.eventDefinitionIds);
             
             // Check if we received any events that don't match our requested IDs
             const unexpectedEvents = events.filter((e: any) => !filters.eventDefinitionIds.includes(e.event_definition_id));
@@ -1947,21 +1910,18 @@ const HeatMapPage: React.FC = () => {
             const processedPairs = new Set<string>();
             for (const event of events) {
                 if (isProximityEvent(event)) {
-                    // Deduplicate unordered flight pairs
+                    // Deduplicate within the same event to prevent processing the same flight pair twice
+                    // but allow different events with the same flight pair
                     const mainFlightId = event.flight_id;
                     const otherFlightId = event.other_flight_id;
-                    const pairKey = [Math.min(mainFlightId, otherFlightId), Math.max(mainFlightId, otherFlightId)].join('-');
+                    const eventId = event.id;
+                    const pairKey = `${eventId}-${Math.min(mainFlightId, otherFlightId)}-${Math.max(mainFlightId, otherFlightId)}`;
                     if (processedPairs.has(pairKey)) {
-                        continue; // skip duplicate pair
+                        continue; // skip duplicate pair within the same event
                     }
                     processedPairs.add(pairKey);
-                    const eventId = event.id;
-                                const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
-            const otherUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${otherFlightId}`;
-                    
-                    console.log(`Fetching proximity points for event ${eventId}: mainFlightId=${mainFlightId}, otherFlightId=${otherFlightId}`);
-                    console.log(`Main URL: ${mainUrl}`);
-                    console.log(`Other URL: ${otherUrl}`);
+                    const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
+                    const otherUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${otherFlightId}`;
                     
                     try {
                         const [mainResp, otherResp] = await Promise.all([
@@ -1997,8 +1957,7 @@ const HeatMapPage: React.FC = () => {
                     const mainFlightId = event.flight_id;
                     const eventId = event.id;
                     const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
-                    console.log(`[processEventsAndPoints] Fetching regular event points for event ${eventId}, flight ${mainFlightId}`);
-                    console.log(`[processEventsAndPoints] URL: ${mainUrl}`);
+
                     try {
                         const mainResp = await fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } });
                         if (!mainResp.ok) {
@@ -2006,7 +1965,6 @@ const HeatMapPage: React.FC = () => {
                             continue; // Skip this event if we can't get its points
                         }
                         const mainData = await mainResp.json();
-                        console.log(`[processEventsAndPoints] Received data for event ${eventId}:`, mainData);
                         allSingleEventPoints.push({
                             eventId: eventId,
                             eventDefinitionId: event.event_definition_id,
@@ -2034,30 +1992,16 @@ const HeatMapPage: React.FC = () => {
             setEventStatistics(statistics);
             
             console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
-            
-            // Debug: Check the actual data
-            if (allProximityEventPoints.length > 0) {
-                console.log('[processEventsAndPoints] Sample proximity event:', allProximityEventPoints[0]);
-                console.log('[processEventsAndPoints] Sample mainFlightPoints:', allProximityEventPoints[0].mainFlightPoints);
-                console.log('[processEventsAndPoints] Sample otherFlightPoints:', allProximityEventPoints[0].otherFlightPoints);
-            }
-            if (allSingleEventPoints.length > 0) {
-                console.log('[processEventsAndPoints] Sample single event:', allSingleEventPoints[0]);
-                console.log('[processEventsAndPoints] Sample mainFlightPoints:', allSingleEventPoints[0].mainFlightPoints);
-            }
+
             
             // Process both types of events together
             if (allProximityEventPoints.length > 0 && allSingleEventPoints.length > 0) {
-                // We have both types - process them together
-                console.log('[processEventsAndPoints] Processing both proximity and single events together');
                 processMixedEventCoordinates(allProximityEventPoints, allSingleEventPoints, showGrid);
             } else if (allProximityEventPoints.length > 0) {
                 // We have only proximity events - process them
-                console.log('[processEventsAndPoints] Processing proximity events only');
                 processProximityEventCoordinates(allProximityEventPoints, showGrid);
             } else if (allSingleEventPoints.length > 0) {
                 // We have only regular events - process them
-                console.log('[processEventsAndPoints] Processing single events only');
                 processSingleEventCoordinates(allSingleEventPoints, showGrid);
             } else {
                 console.log('[processEventsAndPoints] No events to process');
@@ -2102,9 +2046,6 @@ const HeatMapPage: React.FC = () => {
             selectedDefinitionIds.push(...definitionIds);
         }
         selectedDefinitionIds.sort();
-        
-        console.log('[DEBUG] Selected events:', selectedEvents);
-        console.log('[DEBUG] Selected definition IDs:', selectedDefinitionIds);
 
         if (selectedDefinitionIds.length > 0) {
             await processEventsAndPoints({
@@ -2134,10 +2075,8 @@ const HeatMapPage: React.FC = () => {
     // Add coordinate input boxes to the TimeHeader row, with toggle above
     const extraHeaderComponents = (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 320, height: 54, justifyContent: 'flex-end', marginTop: 8, marginLeft: 22, paddingLeft: 0, marginRight: 32 }}>
-            <span style={{ fontSize: '11px', color: '#666', marginBottom: 2, whiteSpace: 'nowrap', minWidth: 110 }}>
-                Select Area (⌘ + Drag):
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+            {/* First row: Min Lat and Min Lon */}
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                 <label style={{ marginRight: 2, fontSize: 13 }}>Min Lat:</label>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                     <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', marginRight: 4, padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.minLat} readOnly />
@@ -2145,9 +2084,12 @@ const HeatMapPage: React.FC = () => {
                 </div>
                 <label style={{ marginRight: 2, fontSize: 13 }}>Min Lon:</label>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', marginRight: 4, padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.minLon} readOnly />
+                    <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.minLon} readOnly />
                     <span style={{ opacity: 0, pointerEvents: 'none', position: 'absolute', left: 0, top: 0, width: '100%', fontSize: 12 }}>00.000000</span>
                 </div>
+            </div>
+            {/* Second row: Max Lat and Max Lon */}
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                 <label style={{ marginRight: 2, fontSize: 13 }}>Max Lat:</label>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                     <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', marginRight: 4, padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.maxLat} readOnly />
@@ -2199,7 +2141,6 @@ const HeatMapPage: React.FC = () => {
             }
             
             const data = await response.json();
-            console.log('Event columns values data:', data);
             
             // Update popup with column values if popupId is provided
             if (popupId && data.column_values) {
@@ -2318,13 +2259,12 @@ const HeatMapPage: React.FC = () => {
             position: 'absolute',
             top: 16,
             left: 16,
-            zIndex: 1000,
+            zIndex: 1,
             background: 'white',
             padding: '16px',
             borderRadius: '8px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            minWidth: '196px',
-            maxWidth: '245px',
+            width: '280px',
             border: '1px solid #e0e0e0'
         }}>
             <div style={{
@@ -2333,7 +2273,8 @@ const HeatMapPage: React.FC = () => {
                 marginBottom: '12px',
                 color: '#333',
                 borderBottom: '1px solid #e0e0e0',
-                paddingBottom: '8px'
+                paddingBottom: '8px',
+                paddingRight: '8px'
             }}>
                 Events Found: {eventStatistics.totalEvents}
             </div>
@@ -2345,29 +2286,33 @@ const HeatMapPage: React.FC = () => {
                             .sort(([,a], [,b]) => b - a) // Sort by count descending
                             .map(([eventType, count]) => (
                                 <div key={eventType} style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
                                     padding: '4px 0',
                                     fontSize: '13px',
-                                    borderBottom: '1px solid #f0f0f0'
+                                    borderBottom: '1px solid #f0f0f0',
+                                    paddingRight: '8px'
                                 }}>
-                                    <span style={{
-                                        flex: 1,
-                                        marginRight: '8px',
-                                        color: '#666',
-                                        wordBreak: 'break-word'
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
                                     }}>
-                                        {eventType}
-                                    </span>
-                                    <span style={{
-                                        fontWeight: '600',
-                                        color: '#007bff',
-                                        minWidth: '30px',
-                                        textAlign: 'right'
-                                    }}>
-                                        {count}
-                                    </span>
+                                        <span style={{
+                                            flex: 1,
+                                            marginRight: '12px',
+                                            color: '#666',
+                                            wordBreak: 'break-word'
+                                        }}>
+                                            {eventType}
+                                        </span>
+                                        <span style={{
+                                            fontWeight: '600',
+                                            color: '#007bff',
+                                            minWidth: '30px',
+                                            textAlign: 'right'
+                                        }}>
+                                            {count}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                     </div>
@@ -2383,27 +2328,53 @@ const HeatMapPage: React.FC = () => {
                 borderRadius: '6px',
                 border: '1px solid #e9ecef'
             }}>
-                <div style={{ fontWeight: '500', marginBottom: '6px', color: '#495057' }}>
-                    💡 Navigation Tips:
+                <div 
+                    style={{ 
+                        fontWeight: '500', 
+                        marginBottom: '6px', 
+                        color: '#495057',
+                        cursor: 'pointer',
+                        position: 'relative'
+                    }}
+                    onClick={toggleNavigationTips}
+                >
+                    <span>💡 Map Controls</span>
+                    {navigationTipsExpanded && (
+                        <span style={{
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            color: '#666',
+                            position: 'absolute',
+                            right: '0',
+                            top: '0'
+                        }}>
+                            ×
+                        </span>
+                    )}
                 </div>
-                <ul style={{
-                    margin: 0,
-                    paddingLeft: '16px',
-                    listStyleType: 'disc'
-                }}>
-                    <li style={{ marginBottom: '2px' }}>
-                        Use ⌘+drag to select map areas
-                    </li>
-                    <li style={{ marginBottom: '2px' }}>
-                        Toggle switch in the right corner to change heatmap view to grid view
-                    </li>
-                    <li style={{ marginBottom: '2px' }}>
-                        Zoom in (≥10x) to see individual event markers
-                    </li>
-                    <li style={{ marginBottom: '2px' }}>
-                        Click markers to view detailed event information
-                    </li>
-                </ul>
+                {navigationTipsExpanded && (
+                    <ul style={{
+                        margin: 0,
+                        paddingLeft: '16px',
+                        listStyleType: 'disc'
+                    }}>
+                        <li style={{ marginBottom: '2px' }}>
+                            Use ⌘+drag to select map areas
+                        </li>
+                        <li style={{ marginBottom: '2px' }}>
+                            Toggle switch in the right corner to change heatmap view to grid view
+                        </li>
+                        <li style={{ marginBottom: '2px' }}>
+                            Zoom in to level 15+ to see individual event markers
+                        </li>
+                        <li style={{ marginBottom: '2px' }}>
+                            Click markers to view detailed event information
+                        </li>
+                        <li style={{ marginBottom: '2px' }}>
+                            Select 2 points to calculate distances
+                        </li>
+                    </ul>
+                )}
             </div>
         </div>
     );
@@ -2411,7 +2382,7 @@ const HeatMapPage: React.FC = () => {
     // Wrap the main content in a full-height flex container
     return (
         <div style={{ overflowX: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
-            {/* Scoped CSS override for Bootstrap grid spacing */}
+            {/* Scoped CSS override for Bootstrap grid spacing and dropdown z-index */}
             <style>{`
                 #heat-map-top-menu .row,
                 #heat-map-top-menu .form-row,
@@ -2421,6 +2392,28 @@ const HeatMapPage: React.FC = () => {
                     margin-right: 0 !important;
                     padding-left: 0 !important;
                     padding-right: 0 !important;
+                }
+                
+                /* Ensure all dropdowns appear above the InformationWindow */
+                .dropdown-menu {
+                    z-index: 9999 !important;
+                    position: fixed !important;
+                }
+                
+                /* Also target Bootstrap's specific dropdown classes */
+                .dropdown-menu.show {
+                    z-index: 9999 !important;
+                    position: fixed !important;
+                }
+                
+                /* Ensure the dropdown backdrop doesn't interfere */
+                .dropdown-backdrop {
+                    z-index: 9998 !important;
+                }
+                
+                /* Force dropdowns to be above everything */
+                .dropdown {
+                    position: relative !important;
                 }
             `}</style>
             <div style={{ flex: '0 0 auto' }}>
@@ -2474,6 +2467,7 @@ const HeatMapPage: React.FC = () => {
                     </button>
                 </div>
             )}
+
             {/* Loading Indicator */}
             {loading && (
                 <div className="alert alert-info p-2 m-2 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>

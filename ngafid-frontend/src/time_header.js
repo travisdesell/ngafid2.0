@@ -12,7 +12,7 @@ export default class TimeHeader extends React.Component {
         }
 
         const years = [];
-        for (let year = 2000; year <= props.endYear; year++) {
+        for (let year = 1990; year <= props.endYear; year++) {
             years.push(year);
         }
 
