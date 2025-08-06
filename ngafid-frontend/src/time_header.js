@@ -3,7 +3,9 @@ import 'bootstrap';
 import React from "react";
 
 export default class TimeHeader extends React.Component {
+
     constructor(props) {
+
         super(props);
 
         let buttonContent = this.props.buttonContent;
@@ -17,10 +19,11 @@ export default class TimeHeader extends React.Component {
         }
 
         this.state = {
-            years : years,
-            months : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            years: years,
+            months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
             buttonContent: buttonContent,
         };
+
     }
 
     makeHeaderContents(additionalHeaderContents, additionalRowContents) {
@@ -35,7 +38,7 @@ export default class TimeHeader extends React.Component {
                         <i className="fa fa-cloud-download mr-2" aria-hidden="true"></i>
                         Export
                     </button>
-                    <div className="vertical-separator"/>
+                    <div className="vertical-separator" />
                 </>
             );
         }
@@ -85,21 +88,31 @@ export default class TimeHeader extends React.Component {
             );
         }
 
-        const updateButtonDisabled = !this.props.datesChanged;
+        const updateButtonDisabled = !this.props.datesOrAirframeChanged;
+        const updateButtonIcon = (() => {
 
-        return  (
+            //Button disabled -> Ban 🚫
+            if (updateButtonDisabled)
+                return 'fa-ban';
+
+            //All good -> Refresh 🔄
+            return 'fa-refresh';
+
+        })();
+
+        return (
             <div className="flex flex-row items-center justify-start gap-4" style={{ textAlign: 'center' }}>
 
                 {/* Export Button */}
-                { exportButton }
+                {exportButton}
 
                 {/* Tags */}
-                { tags }
+                {tags}
 
                 {/* Airframe Drop-down */}
-                { airframe }
+                {airframe}
 
-                <div className="vertical-separator"/>
+                <div className="vertical-separator" />
 
                 {/* Start and End Date Selectors */}
                 <div className="flex flex-row items-center justify-start gap-4">
@@ -139,8 +152,14 @@ export default class TimeHeader extends React.Component {
                                 >
                                     {
                                         this.state.months.map((month, index) => {
+
+                                            //Same year, can't select months after the end month
+                                            if (this.props.startYear === this.props.endYear && (index + 1) > this.props.endMonth)
+                                                return null;
+
+                                            //Otherwise, all months are valid
                                             return (
-                                                <option key={index} value={index+1}>{month}</option>
+                                                <option key={index} value={index + 1}>{month}</option>
                                             );
                                         })
                                     }
@@ -161,7 +180,7 @@ export default class TimeHeader extends React.Component {
                                     className="custom-select rounded-r-none! cursor-pointer"
                                     value={this.props.endYear}
                                     onChange={event => this.props.updateEndYear(event.target.value)}
-                                    style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}
+                                    style={{ width: "fit-content", border: "1px solid var(--c_border_alt)" }}
                                 >
                                     {
                                         this.state.years.map((year, index) => {
@@ -181,12 +200,12 @@ export default class TimeHeader extends React.Component {
                                     className="custom-select rounded-l-none! cursor-pointer"
                                     value={this.props.endMonth}
                                     onChange={event => this.props.updateEndMonth(event.target.value)}
-                                    style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}
+                                    style={{ width: "fit-content", border: "1px solid var(--c_border_alt)" }}
                                 >
                                     {
                                         this.state.months.map((month, index) => {
                                             return (
-                                                <option key={index} value={index+1}>{month}</option>
+                                                <option key={index} value={index + 1}>{month}</option>
                                             );
                                         })
                                     }
@@ -196,9 +215,9 @@ export default class TimeHeader extends React.Component {
                     </div>
                 </div>
 
-                { additionalHeaderContents }
+                {additionalHeaderContents}
 
-                <div className="vertical-separator"/>
+                <div className="vertical-separator" />
 
                 {/* Update Button */}
                 <button
@@ -209,35 +228,47 @@ export default class TimeHeader extends React.Component {
                     onClick={() => this.props.dateChange()}
                     disabled={updateButtonDisabled}
                 >
-                    <i className={`fa ${updateButtonDisabled ? 'fa-ban' : 'fa-refresh'} mr-2`} aria-hidden="true"></i>
+                    <i className={`fa ${updateButtonIcon} mr-2`} aria-hidden="true"></i>
                     {this.state.buttonContent}
                 </button>
 
-                { additionalRowContents }
-            </div>
-         );
-    }
-
-    render() {
-        return (
-            <div className={`row card-header d-flex ${this.props.className}`} style={{padding:"7 20 7 20", margin:"0"}}>
-                <h4 className="mr-auto" style={{margin:"4 0 4 0", alignContent:"center"}}>{this.props.name}</h4>
-                { this.makeHeaderContents(this.props.extraHeaderComponents, this.props.extraRowComponents) }
+                {additionalRowContents}
             </div>
         );
     }
+
+    render() {
+
+        return (
+            <div className={`row card-header d-flex ${this.props.className}`} style={{ padding: "7 20 7 20", margin: "0" }}>
+                <h4 className="mr-auto" style={{ margin: "4 0 4 0", alignContent: "center" }}>
+                    {this.props.name}
+                </h4>
+                {this.makeHeaderContents(this.props.extraHeaderComponents, this.props.extraRowComponents)}
+            </div>
+        );
+    }
+
 };
 
+
+
+
+
+
 class TurnToFinalHeaderComponents extends React.Component {
+
     constructor(props) {
         super(props);
     }
 
     makeDropdown(currentItem, items, onChange) {
+
         const dropdownStyle = {
-          maxHeight: "200px",
-          overflowY: "auto"
+            maxHeight: "200px",
+            overflowY: "auto"
         };
+
         return (
             <div className="col-auto">
                 <div className="dropdown">
@@ -256,19 +287,22 @@ class TurnToFinalHeaderComponents extends React.Component {
                 </div>
             </div>
         );
+
     }
 
     render() {
+
         const airportsHTML = this.makeDropdown(this.props.airport, this.props.airports, this.props.airportChange);
         const runwaysHTML = this.makeDropdown(this.props.runway, this.props.runways, this.props.runwayChange);
-        // var airframesHTML = this.makeDropdown(this.props.airframe, this.props.airframes, this.props.airframeChange);
         return (
             <div className='form-row'>
                 {airportsHTML}
                 {runwaysHTML}
             </div>
         );
+
     }
+
 };
 
 export { TimeHeader, TurnToFinalHeaderComponents };
