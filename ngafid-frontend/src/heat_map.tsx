@@ -301,6 +301,58 @@ function getEventTypeName(eventDefinitionId: number): string {
     return `Event ${eventDefinitionId}`;
 }
 
+/**
+ * Detects the user's operating system.
+ * Used to display OS-specific instructions.
+ * 
+ * (Invoked immediately on load to set userOS constant)
+ * 
+ * @returns The user's operating system as a string
+ */
+function getOS():string {
+
+    //Try to detect via user-agent first
+    if ('userAgentData' in navigator) {
+
+        const { platform } = (navigator as any).userAgentData;
+        switch (platform) {
+            case 'Windows':          return 'Windows';
+            case 'macOS':            return 'Mac OS';
+            case 'Android':          return 'Android';
+            case 'Chrome OS':        return 'Chrome OS';
+            case 'iOS':              return 'iOS';
+            case 'Linux':            return 'Linux';
+            default:                 return 'Unknown';
+        }
+
+    }
+
+    //If the above approach fails, use the legacy version
+    const
+        platform = window.navigator.platform,
+        macosPlatforms = ['macOS', 'Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
+        windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
+    ;
+        
+    const OS_FALLBACK_DEFAULT = 'Linux';
+
+    let os = OS_FALLBACK_DEFAULT;
+
+    if (macosPlatforms.indexOf(platform) !== -1) {
+        os = 'Mac OS';
+    } else if (windowsPlatforms.indexOf(platform) !== -1) {
+        os = 'Windows';
+    } else if (/Linux/.test(platform)) {
+        os = OS_FALLBACK_DEFAULT;
+    }
+
+    return os;
+
+}
+
+const userOS = getOS();
+
+
 // =======================
 // SECTION: Main HeatMapPage Component
 // =======================
@@ -2253,6 +2305,17 @@ const HeatMapPage: React.FC = () => {
     /**
      * Information window component that displays event statistics and user guidance
      */
+    const selectAreaInstructions = (
+        <span className='italic'>
+            {
+                (userOS==="Linux" || userOS==="Windows")
+                ?
+                (<span>Ctrl+Drag</span>)
+                :
+                (<span>⌘+Drag</span>)
+            }
+        </span>
+    );
     const InformationWindow = () => (
         <div style={{
             position: 'absolute',
@@ -2362,7 +2425,7 @@ const HeatMapPage: React.FC = () => {
                         listStyleType: 'disc'
                     }}>
                         <li style={{ marginBottom: '2px' }}>
-                            Use <b>⌘+drag</b> to select map areas
+                            Use <b>{selectAreaInstructions}</b> to select map areas
                         </li>
                         <li style={{ marginBottom: '2px' }}>
                             Toggle switch in the right corner to change heatmap view to grid view
