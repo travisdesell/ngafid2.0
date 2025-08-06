@@ -286,6 +286,67 @@ public enum Airframes {
         }
     }
 
+    public record AirframeNameID(String name, int id) { /*...*/ }
+
+    public static final int FLEET_ID_ALL = -1;
+    public static AirframeNameID[] getAllWithIds(Connection connection) throws SQLException {
+        return getAllWithIds(connection, FLEET_ID_ALL);
+    }
+    public static AirframeNameID[] getAllWithIds(Connection connection, int fleetId) throws SQLException {
+
+        ArrayList<AirframeNameID> airframes = new ArrayList<>();
+        String queryString;
+
+        //Get all airframes regardless of fleet
+        if (fleetId == FLEET_ID_ALL) {
+            
+            queryString = "SELECT airframe, id FROM airframes ORDER BY airframe";
+
+            try (PreparedStatement query = connection.prepareStatement(queryString)) {
+
+                try (ResultSet resultSet = query.executeQuery()) {
+                    while (resultSet.next()) {
+                        // airframe existed in the database, return the id
+                        String airframe = resultSet.getString(1);
+                        int id = resultSet.getInt(2);
+
+                        AirframeNameID airframeNameID = new AirframeNameID(airframe, id);
+                        airframes.add(airframeNameID);
+                    }
+                }
+
+            }
+
+        }
+        
+        //Get all airframes for a specific fleet
+        else {
+
+            queryString = "SELECT airframe, id FROM airframes INNER JOIN fleet_airframes ON " +
+                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+
+            try (PreparedStatement query = connection.prepareStatement(queryString)) {
+                query.setInt(1, fleetId);
+
+                try (ResultSet resultSet = query.executeQuery()) {
+                    while (resultSet.next()) {
+                        // airframe existed in the database, return the id
+                        String airframe = resultSet.getString(1);
+                        int id = resultSet.getInt(2);
+
+                        AirframeNameID airframeNameID = new AirframeNameID(airframe, id);
+                        airframes.add(airframeNameID);
+                    }
+                }
+
+            }
+
+        }
+
+        return airframes.toArray(AirframeNameID[]::new);
+
+    }
+
     public static ArrayList<String> getAll(Connection connection) throws SQLException {
 
         String queryString = "SELECT airframe FROM airframes ORDER BY airframe";
