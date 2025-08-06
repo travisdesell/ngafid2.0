@@ -94,6 +94,24 @@ GROUP BY
     airframe_id;
 
 
+--changeset aidan_cu:fleet-flight-counts-dated labels:flights,views
+CREATE OR REPLACE VIEW
+    v_fleet_flight_counts_dated AS
+SELECT
+    fleet_id,
+    airframe_id,
+    year,
+    month,
+    SUM(m_fleet_monthly_flight_counts.count) as count
+FROM
+    m_fleet_monthly_flight_counts
+GROUP BY
+    fleet_id,
+    airframe_id,
+    year,
+    month;
+
+
 --changeset josh:aggregate-flight-counts labels:flights,views
 CREATE VIEW
     v_aggregate_flight_counts AS
@@ -106,6 +124,24 @@ FROM
 GROUP BY
     fleet_id,
     airframe_id;
+
+
+--changeset aidan_cu:aggregate-fleet-flight-counts-dated labels:flights,views
+CREATE OR REPLACE VIEW
+    v_aggregate_flight_counts_dated AS
+SELECT
+    fleet_id,
+    airframe_id,
+    year,
+    month,
+    SUM(m_fleet_monthly_flight_counts.count) as count
+FROM
+    m_fleet_monthly_flight_counts
+GROUP BY
+    fleet_id,
+    airframe_id,
+    year,
+    month;
 
 
 --changeset josh:fleet-30-day-flight-counts labels:flights,views,materialized-views context:hourly-materialized-view runAlways:true
@@ -244,6 +280,42 @@ GROUP BY
     fleet_id,
     airframe_id;
 
+
+--changeset aidan_cu:fleet-flight-time-dated labels:flights,views
+CREATE OR REPLACE VIEW  
+    v_fleet_flight_time_dated AS
+SELECT
+    fleet_id,
+    airframe_id,
+    year,
+    month,
+    SUM(monthly.flight_time_seconds) as flight_time_seconds
+FROM
+    m_fleet_monthly_flight_time as monthly
+GROUP BY
+    fleet_id,
+    airframe_id,
+    year,
+    month;
+
+
+CREATE OR REPLACE VIEW v_aggregate_flight_stats_by_airframe_alt AS
+SELECT
+    ft.airframe_id,
+    ft.year,
+    ft.month,
+    fc.count AS num_flights,
+    ft.flight_time_seconds
+FROM
+    v_aggregate_monthly_flight_time   ft
+JOIN
+    v_aggregate_monthly_flight_counts fc
+ON
+    fc.airframe_id = ft.airframe_id
+    AND fc.year = ft.year
+    AND fc.month = ft.month;
+
+
 --changeset josh:aggregate-flight-time labels:flights,views
 CREATE VIEW
     v_aggregate_flight_time AS
@@ -254,6 +326,22 @@ FROM
     m_fleet_monthly_flight_time as monthly
 GROUP BY
     airframe_id;
+
+
+--changeset aidan_cu:aggregate-flight-time-dated labels:flights,views
+CREATE OR REPLACE VIEW
+    v_aggregate_flight_time_dated AS
+SELECT
+    airframe_id,
+    year,
+    month,
+    SUM(monthly.flight_time_seconds) as flight_time_seconds
+FROM
+    m_fleet_monthly_flight_time as monthly
+GROUP BY
+    airframe_id,
+    year,
+    month;
 
 
 --changeset josh:fleet-30-day-flight-time labels:flights,views,materialized-views context:hourly-materialized-view runAlways:true
