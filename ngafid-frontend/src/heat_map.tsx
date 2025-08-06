@@ -2486,44 +2486,36 @@ const HeatMapPage: React.FC = () => {
             <div style={{ flex: '0 0 auto' }}>
                 <SignedInNavbar activePage="heat_map" mapLayerDropdown={mapLayerDropdown} />
             </div>
-            {/* Top menu row: Airframes dropdown, Severity slider, Date selector */}
-            <div id="heat-map-top-menu" style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 32px 0 32px',
-                background: 'white',
-                zIndex: 10
-            }}>
-                {/* Left: Title */}
-                <h4 style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>Event Heat Map</h4>
-                {/* Right: Controls group */}
-                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {/* Remove mapLayerDropdown from here */}
-                    <div style={{ width: 'auto', margin: 0, padding: 0 }}>{severitySlider}</div>
-                    <div style={{ width: 'auto', margin: 0, padding: 0 }}>
-                        <TimeHeader
-                            name=""
-                            airframes={airframes}
-                            airframe={airframe}
-                            startYear={startYear}
-                            startMonth={startMonth}
-                            endYear={endYear}
-                            endMonth={endMonth}
-                            datesChanged={true}
-                            dateChange={handleDateChange}
-                            airframeChange={handleAirframeChange}
-                            updateStartYear={handleStartYear}
-                            updateStartMonth={handleStartMonth}
-                            updateEndYear={handleEndYear}
-                            updateEndMonth={handleEndMonth}
-                            extraHeaderComponents={extraHeaderComponents}
-                            severitySliderComponent={null}
-                        />
-                    </div>
+
+            {/* Time Header */}
+            <TimeHeader
+                name="Event Heat Map"
+                airframes={airframes}
+                airframe={airframe}
+                startYear={startYear}
+                startMonth={startMonth}
+                endYear={endYear}
+                endMonth={endMonth}
+                datesChanged={true}
+                dateChange={handleDateChange}
+                airframeChange={handleAirframeChange}
+                updateStartYear={handleStartYear}
+                updateStartMonth={handleStartMonth}
+                updateEndYear={handleEndYear}
+                updateEndMonth={handleEndMonth}
+                severitySliderComponent={null}
+            >
+
+                {/* Lat & Lon Selectors */}
+                {extraHeaderComponents}
+
+                {/* Severity Slider */}
+                <div style={{ width: 'auto', margin: 0, padding: 0 }}>
+                    {severitySlider}
                 </div>
-            </div>
+
+            </TimeHeader>
+                
             {/* Error Banner */}
             {error && (
                 <div className="alert alert-danger p-2 m-2 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
