@@ -377,10 +377,6 @@ const HeatMapPage: React.FC = () => {
     const [datesChanged, setDatesChanged] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
-    useEffect(() => {
-        setDatesOrAirframeChanged(true);
-    }, [datesChanged, airframe]);
 
     // Map State
     const [map, setMap] = useState<Map | null>(null);
@@ -407,6 +403,15 @@ const HeatMapPage: React.FC = () => {
     // Event Data State
     const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
     const [coordinateRegistry, setCoordinateRegistry] = useState<{[key: string]: CoordinateEventGroup}>({});
+
+    // Time Header Update State
+    const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
+    useEffect(() => {
+
+        //Allow Time Header update after any of the dependencies change
+        setDatesOrAirframeChanged(true);
+        
+    }, [eventChecked, startYear, startMonth, endYear, endMonth, airframe, boxCoords.minLat, boxCoords.maxLat, boxCoords.minLon, boxCoords.maxLon, minSeverity, maxSeverity]);
 
     // Event Statistics State
     const [eventStatistics, setEventStatistics] = useState<EventStatistics>({
@@ -2091,6 +2096,10 @@ const HeatMapPage: React.FC = () => {
     };
 
     const handleDateChange = async () => {
+
+        // Clear airframe changed flag after triggering Time Header update
+        setDatesOrAirframeChanged(false);
+
         // Clear previous state immediately when starting a new search
         setProximityEventPoints([]);
         setError(null);
