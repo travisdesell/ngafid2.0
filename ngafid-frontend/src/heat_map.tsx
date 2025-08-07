@@ -377,6 +377,10 @@ const HeatMapPage: React.FC = () => {
     const [datesChanged, setDatesChanged] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
+    useEffect(() => {
+        setDatesOrAirframeChanged(true);
+    }, [datesChanged, airframe]);
 
     // Map State
     const [map, setMap] = useState<Map | null>(null);
@@ -2694,48 +2698,74 @@ const HeatMapPage: React.FC = () => {
                                                         return (
                                                             <div
                                                                 key={popup.id}
-                                                                className={`ol-popup ${isRecent ? 'z-110' : 'z-100'}`}
+                                                                className={`
+                                                                    bg-[var(--c_card_header_bg_opaque)]
+                                                                    ol-popup ${isRecent ? 'z-110' : 'z-100'}
+                                                                    px-3 pb-3 pt-2
+                                                                `}
                                                                 style={{
                                                                     position: 'absolute',
                                                                     boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                                                                    padding: '15px',
                                                                     borderRadius: '10px',
                                                                     border: '1px solid #cccccc',
                                                                     minWidth: '200px',
                                                                     left: popup.position?.left ?? 100,
                                                                     top: popup.position?.top ?? 100,
-                                                                    background: 'white',
                                                                     transform: 'none',
-                                                                    cursor: isGrabbing ? 'grabbing' : '',
                                                                     zIndex: isRecent ? 110 : 100,
                                                                     pointerEvents: 'auto',
                                                                 }}
                                                             >
+                                                                
+                                                                {/* Grab & Drag Area */}
                                                                 <div
-                                                                    className="group"
-                                                                    style={{ fontWeight: 600, cursor: 'grab', marginBottom: 4, userSelect: isGrabbing ? 'none' : 'auto' }}
+                                                                    className={`
+                                                                        group
+                                                                        ${isGrabbing ? 'cursor-grabbing' : 'cursor-grab'}
+                                                                        mb-2
+                                                                    `}
                                                                     onMouseDown={e => { console.log('Popup mouse down', popup.id, e); handlePopupMouseDown(e, popup.id); }}
                                                                 >
-                                                                    <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
-                                                                    <div>
-                                                                        <div>{popup.data.eventType || 'Event'}</div>
-                                                                        {popup.data.eventTypes && popup.data.eventTypes.length > 1 && (
-                                                                            <div style={{ fontSize: '0.7em', color: '#888', marginTop: '1px', fontStyle: 'italic' }}>
-                                                                                {popup.data.eventTypes.join(', ')}
-                                                                            </div>
-                                                                        )}
-                                                                        <div style={{ fontSize: '0.8em', color: '#666', marginTop: '2px' }}>
-                                                                            Event ID: {popup.data.eventId || 'N/A'}
+                                                                    <span className={`
+                                                                        fa fa-arrows
+                                                                        ${isGrabbing ? 'opacity-100 select-none' : 'opacity-25 group-hover:opacity-100 select-auto'}
+                                                                        mr-2
+                                                                        scale-100 group-hover:scale-125
+                                                                        transition-all duration-200 ease-in-out
+                                                                    `}/>
+                                                                </div>
+
+                                                                {/* Event Details */}
+                                                                <div>
+
+                                                                    {/* Event Type */}
+                                                                    <div>{popup.data.eventType || 'Event'}</div>
+
+                                                                    {/* Event Types */}
+                                                                    {popup.data.eventTypes && popup.data.eventTypes.length > 1 && (
+                                                                        <div style={{ fontSize: '0.7em', color: '#888', marginTop: '1px', fontStyle: 'italic' }}>
+                                                                            {popup.data.eventTypes.join(', ')}
                                                                         </div>
-                                                                        <div style={{ fontSize: '0.7em', color: '#666', marginTop: '1px' }}>
-                                                                            {popup.data.time ?? '...'}
-                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Event ID */}
+                                                                    <div className="text-[var(--c_text_button)]" style={{ fontSize: '0.8em', marginTop: '2px' }}>
+                                                                        Event ID: {popup.data.eventId || 'N/A'}
+                                                                    </div>
+
+                                                                    {/* Event Date & Time */}
+                                                                    <div className="text-[var(--c_text_button)]" style={{ fontSize: '0.7em', marginTop: '1px' }}>
+                                                                        {popup.data.time ?? '...'}
                                                                     </div>
                                                                 </div>
+
                                                                 <a
                                                                     href="#"
-                                                                    className="ol-popup-closer"
-                                                                    style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}
+                                                                    className="
+                                                                        absolute top-2 right-3
+                                                                        ol-popup-closer no-underline
+                                                                        scale-100 hover:scale-125 transition-transform duration-200 ease-in-out
+                                                                    "
                                                                     onClick={e => {
                                                                         e.preventDefault();
                                                                         setOpenPopups(prevPopups =>
@@ -2760,12 +2790,12 @@ const HeatMapPage: React.FC = () => {
                                                                         });
                                                                     }}
                                                                 >
-                                                                    ✖
+                                                                    <i className="fa fa-times text-[var(--c_text)]" />
                                                                 </a>
                                                                 <div>
                                                                     <hr />
-                                                                    <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
-                                                                    <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
+                                                                    <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}°</div>
+                                                                    <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}°</div>
                                                                     <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
                                                                     <hr />
                                                                     <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
