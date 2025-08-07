@@ -2665,7 +2665,7 @@ const HeatMapPage: React.FC = () => {
                                         <div className="row" style={{ margin: 0, padding: 0, background: 'transparent', flex: 1, height: '100%' }}>
 
                                             {/* Event Checkboxes Column */}
-                                            <div className="col-lg-2" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', paddingLeft: 16, paddingTop: 16 }}>
+                                            <div className="col-lg-2 overflow-y-auto" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', paddingLeft: 16, paddingTop: 16 }}>
                                                 {allEventNames.map((eventName, index) => (
                                                     <div key={index} className="form-check">
                                                         <input
