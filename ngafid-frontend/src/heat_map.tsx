@@ -2630,7 +2630,7 @@ const HeatMapPage: React.FC = () => {
 
                 {/* Error Banner */}
                 {error && (
-                    <div className="alert alert-danger p-2 m-3 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
+                    <div className="alert alert-danger p-2 mx-3 mb-3 mt-2 flex flex-row items-center justify-start gap-2 z-2000">
                         <strong>Error:</strong>
                         <span>{error}</span>
                         <button className="ml-auto btn btn-link p-0" style={{fontSize: 18}} onClick={() => setError(null)}>
@@ -2642,7 +2642,7 @@ const HeatMapPage: React.FC = () => {
 
                 {/* Loading Indicator */}
                 {loading && (
-                    <div className="alert alert-info p-2 m-2 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
+                    <div className="alert alert-info p-2 mx-3 mb-3 mt-2 flex flex-row items-center justify-start gap-2 z-2000">
                         <div className="spinner-border spinner-border-sm" role="status">
                             <span className="sr-only">Loading...</span>
                         </div>
