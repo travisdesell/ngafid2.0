@@ -477,7 +477,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                     ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
                 }
 
-                if (airframes.indexOf(value.airframeName) >= 0) {
+                const fleetAirframeNames = new Set(airframes.map(a => a.name));
+                if (fleetAirframeNames.has(value.airframeName)) {
                     
                     const index = fleetPercents.y.indexOf(value.names[i]);
                     if (index !== -1) {
