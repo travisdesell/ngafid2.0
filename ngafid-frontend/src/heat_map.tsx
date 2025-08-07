@@ -584,32 +584,49 @@ const HeatMapPage: React.FC = () => {
      * Severity slider component for the top menu
      */
     const severitySlider = (
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 8, minWidth: 180, marginLeft: 16 }}>
-            <label style={{ fontSize: 12, marginBottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ marginBottom: 2 }}>Severity Range: <span style={{ color: 'red', fontWeight: 600 }}>{displayMinSeverity} <span style={{ color: 'black' }}>-</span> {displayMaxSeverity}</span></span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 120 }}>
-                    <input
-                        type="range"
-                        name="minSeverity"
-                        min={0}
-                        max={displayMaxSeverity}
-                        value={displayMinSeverity}
-                        onChange={handleMinSeverityChange}
-                        style={{ width: 120, accentColor: 'red' }}
-                    />
-                    <input
-                        type="range"
-                        name="maxSeverity"
-                        min={displayMinSeverity}
-                        max={1000}
-                        value={displayMaxSeverity}
-                        onChange={handleMaxSeverityChange}
-                        style={{ width: 120, accentColor: 'red' }}
-                    />
+        <div className="input-group">
+            <div className="input-group-prepend">
+                <div className="time-selector flex-col text-left px-3 gap-2">
+
+                    {/* Severity Range Values Indicator */}
+                    <span className="w-full flex flex-row justify-between items-center text-sm">
+
+                        <div>Severity Range:</div>
+
+                        <div className="flex flex-row items-center gap-1">
+                            <span className="text-red-500">{displayMinSeverity}</span>
+                            <span className="text-[var(--c_text)]">-</span>
+                            <span className="text-red-500">{displayMaxSeverity}</span>
+                        </div>
+                    </span>
+                        
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 120 }}>
+                        <input
+                            type="range"
+                            name="minSeverity"
+                            min={0}
+                            max={displayMaxSeverity}
+                            value={displayMinSeverity}
+                            onChange={handleMinSeverityChange}
+                            style={{ width: 120, accentColor: 'red' }}
+                        />
+                        <input
+                            type="range"
+                            name="maxSeverity"
+                            min={displayMinSeverity}
+                            max={1000}
+                            value={displayMaxSeverity}
+                            onChange={handleMaxSeverityChange}
+                            style={{ width: 120, accentColor: 'red' }}
+                        />
+                    </div>
+
+
                 </div>
-            </label>
+            </div>
         </div>
-    );
+    )
 
     // =======================
     // SECTION: Grid/Heatmap Toggle Management
@@ -2124,35 +2141,104 @@ const HeatMapPage: React.FC = () => {
     };
 
     // Add coordinate input boxes to the TimeHeader row, with toggle above
-    const extraHeaderComponents = (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 320, height: 54, justifyContent: 'flex-end', marginTop: 8, marginLeft: 22, paddingLeft: 0, marginRight: 32 }}>
-            {/* First row: Min Lat and Min Lon */}
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <label style={{ marginRight: 2, fontSize: 13 }}>Min Lat:</label>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', marginRight: 4, padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.minLat} readOnly />
-                    <span style={{ opacity: 0, pointerEvents: 'none', position: 'absolute', left: 0, top: 0, width: '100%', fontSize: 12 }}>00.000000</span>
-                </div>
-                <label style={{ marginRight: 2, fontSize: 13 }}>Min Lon:</label>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.minLon} readOnly />
-                    <span style={{ opacity: 0, pointerEvents: 'none', position: 'absolute', left: 0, top: 0, width: '100%', fontSize: 12 }}>00.000000</span>
-                </div>
-            </div>
-            {/* Second row: Max Lat and Max Lon */}
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-                <label style={{ marginRight: 2, fontSize: 13 }}>Max Lat:</label>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', marginRight: 4, padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.maxLat} readOnly />
-                    <span style={{ opacity: 0, pointerEvents: 'none', position: 'absolute', left: 0, top: 0, width: '100%', fontSize: 12 }}>00.000000</span>
-                </div>
-                <label style={{ marginRight: 2, fontSize: 13 }}>Max Lon:</label>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <input style={{ width: 92, fontSize: 12, background: 'transparent', border: 'none', borderBottom: '1px solid #bbb', padding: '0 2px', textAlign: 'center', lineHeight: '1.8', marginTop: '-2px' }} type="text" value={boxCoords.maxLon} readOnly />
-                    <span style={{ opacity: 0, pointerEvents: 'none', position: 'absolute', left: 0, top: 0, width: '100%', fontSize: 12 }}>00.000000</span>
+    const latlonInputBoxes = (
+
+        <div className="input-group">
+            <div className="input-group-prepend">
+                <div className="time-selector flex-col text-left px-3">
+
+                    {/* Latitude Row */}
+                    <div className="flex flex-row items-center justify-start text-sm gap-2 text-left">
+                        
+                        {/* Row Title */}
+                        <span className="w-16">Latitude:</span>
+
+                        {/* Min Lat. */}
+                        <div className="flex flex-row gap-1">
+                            <input
+                                placeholder="Min"
+                                className="
+                                    w-16
+                                    bg-transparent
+                                    border-b-1 border-gray-400
+                                    focus:ring-0 focus:border-gray-600 leading-7
+                                "
+                                type="text"
+                                value={boxCoords.minLat}
+                                readOnly
+                            />
+                            <span>°</span>
+                        </div>
+
+                        <span>-</span>
+
+                        {/* Max Lat. */}
+                        <div className="flex flex-row gap-1">
+                            <input
+                                placeholder="Max"
+                                className="
+                                    w-16
+                                    bg-transparent
+                                    border-b-1 border-gray-400
+                                    focus:ring-0 focus:border-gray-600 leading-7
+                                "
+                                type="text"
+                                value={boxCoords.maxLat}
+                                readOnly
+                            />
+                            <span>°</span>
+                        </div>
+
+                    </div>
+
+
+                    {/* Longitude Row */}
+                    <div className="flex flex-row items-center justify-start text-sm gap-2 mt-1">
+                        
+                        {/* Row Title */}
+                        <span className="w-16">Longitude:</span>
+
+                        {/* Min Lon. */}
+                        <div className="flex flex-row gap-1">
+                            <input
+                                placeholder="Min"
+                                className="
+                                    w-16
+                                    bg-transparent
+                                    border-b-1 border-gray-400
+                                    focus:ring-0 focus:border-gray-600 leading-7
+                                "
+                                type="text"
+                                value={boxCoords.minLon}
+                                readOnly
+                            />
+                            <span>°</span>
+                        </div>
+
+                        <span>-</span>
+
+                        {/* Max Lon. */}
+                        <div className="flex flex-row gap-1">
+                            <input
+                                placeholder="Max"
+                                className="
+                                    w-16
+                                    bg-transparent
+                                    border-b-1 border-gray-400
+                                    focus:ring-0 focus:border-gray-600 leading-7
+                                "
+                                type="text"
+                                value={boxCoords.maxLon}
+                                readOnly
+                            />
+                            <span>°</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
+
     );
 
     // Map layer dropdown for the navbar (define here, before return)
@@ -2444,6 +2530,37 @@ const HeatMapPage: React.FC = () => {
             </div>
         </div>
 
+    );
+
+    const timeHeader = (
+        <TimeHeader
+            name="Event Heat Map"
+            airframes={airframes}
+            airframe={airframe}
+            startYear={startYear}
+            startMonth={startMonth}
+            endYear={endYear}
+            endMonth={endMonth}
+            datesChanged={true}
+            dateChange={handleDateChange}
+            airframeChange={handleAirframeChange}
+            updateStartYear={handleStartYear}
+            updateStartMonth={handleStartMonth}
+            updateEndYear={handleEndYear}
+            updateEndMonth={handleEndMonth}
+            severitySliderComponent={null}
+            datesOrAirframeChanged={datesOrAirframeChanged}
+        >
+
+            {/* Lat & Lon Selectors */}
+            {latlonInputBoxes}
+
+            {/* Severity Slider */}
+            <div style={{ width: 'auto', margin: 0, padding: 0 }}>
+                {severitySlider}
+            </div>
+
+        </TimeHeader>
     );
 
     // Wrap the main content in a full-height flex container
