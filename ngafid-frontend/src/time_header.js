@@ -222,7 +222,7 @@ export default class TimeHeader extends React.Component {
                 {/* Child Components */}
                 {Children.map(this.props.children, child => {
                     return (
-                        <div className="col-auto">
+                        <div>
                             {child}
                         </div>
                     );
