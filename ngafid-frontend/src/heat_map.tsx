@@ -2403,30 +2403,33 @@ const HeatMapPage: React.FC = () => {
         </span>
     );
     const InformationWindow = () => (
-        <div style={{
-            position: 'absolute',
-            top: 16,
-            left: 16,
-            zIndex: 1,
-            background: 'white',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            width: '280px',
-            border: '1px solid #e0e0e0'
-        }}>
-            <div style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                marginBottom: '12px',
-                color: '#333',
-                borderBottom: '1px solid #e0e0e0',
-                paddingBottom: '8px',
-                paddingRight: '8px'
-            }}>
+        <div
+            className="
+                w-[280px]
+                absolute top-4 left-4
+                z-1
+                p-4
+                rounded-lg
+                bg-[var(--c_card_header_bg_opaque)]
+                shadow-md
+                border-gray-200 border-1
+            "
+        >
+            
+            {/* Events Found */}
+            <div
+                className="
+                    text-md font-semibold
+                    text-[var(--c_text)]
+                    border-gray-200
+                    mb-3
+                    pb-2 pr-2
+                "
+            >
                 Events Found: {eventStatistics.totalEvents}
             </div>
-            
+
+            {/* Total Events by Type */}
             {eventStatistics.totalEvents > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -2566,8 +2569,10 @@ const HeatMapPage: React.FC = () => {
     // Wrap the main content in a full-height flex container
     return (
         <div style={{ overflowX: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+
             {/* Scoped CSS override for Bootstrap grid spacing and dropdown z-index */}
-            <style>{`
+            <style>
+            {`
                 #heat-map-top-menu .row,
                 #heat-map-top-menu .form-row,
                 #heat-map-top-menu .col-auto,
@@ -2599,207 +2604,198 @@ const HeatMapPage: React.FC = () => {
                 .dropdown {
                     position: relative !important;
                 }
-            `}</style>
+            `}
+            </style>
+
+            {/* Navbar */}
             <div style={{ flex: '0 0 auto' }}>
                 <SignedInNavbar activePage="heat_map" mapLayerDropdown={mapLayerDropdown} />
             </div>
 
-            {/* Time Header */}
-            <TimeHeader
-                name="Event Heat Map"
-                airframes={airframes}
-                airframe={airframe}
-                startYear={startYear}
-                startMonth={startMonth}
-                endYear={endYear}
-                endMonth={endMonth}
-                datesChanged={true}
-                dateChange={handleDateChange}
-                airframeChange={handleAirframeChange}
-                updateStartYear={handleStartYear}
-                updateStartMonth={handleStartMonth}
-                updateEndYear={handleEndYear}
-                updateEndMonth={handleEndMonth}
-                severitySliderComponent={null}
-            >
+            {/* Main Content Container */}
+            <div className="p-2" style={{overflowY: "auto", flex: "1 1 auto"}}>
 
-                {/* Lat & Lon Selectors */}
-                {extraHeaderComponents}
-
-                {/* Severity Slider */}
-                <div style={{ width: 'auto', margin: 0, padding: 0 }}>
-                    {severitySlider}
-                </div>
-
-            </TimeHeader>
-                
-            {/* Error Banner */}
-            {error && (
-                <div className="alert alert-danger p-2 m-2 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
-                    <strong>Error:</strong>
-                    <span>{error}</span>
-                    <button className="ml-auto btn btn-link p-0" style={{fontSize: 18}} onClick={() => setError(null)}>
-                        <i className="fa fa-times p-1 cursor-pointer"></i>
-                    </button>
-                </div>
-            )}
-
-            {/* Loading Indicator */}
-            {loading && (
-                <div className="alert alert-info p-2 m-2 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
-                    <div className="spinner-border spinner-border-sm" role="status">
-                        <span className="sr-only">Loading...</span>
+                {/* Error Banner */}
+                {error && (
+                    <div className="alert alert-danger p-2 m-3 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
+                        <strong>Error:</strong>
+                        <span>{error}</span>
+                        <button className="ml-auto btn btn-link p-0" style={{fontSize: 18}} onClick={() => setError(null)}>
+                            <i className="fa fa-times p-1 cursor-pointer"></i>
+                        </button>
                     </div>
-                    <span>Loading proximity events...</span>
-                </div>
-            )}
-            <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <div className="container-fluid" style={{ flex: '1 1 auto', height: '100%' }}>
-                    <div className="row" style={{ height: '100%' }}>
-                        <div className="col-lg-12" style={{ height: '100%' }}>
-                            <div className="card m-2" style={{ height: '100%', display: 'flex', flexDirection: 'column', flex: '1 1 auto' }}>
-                                <div className="card-body" style={{ padding: 0, background: 'transparent', flex: '1 1 auto', minHeight: 0, display: 'flex', position: 'relative' }}>
-                                    <div className="row" style={{ margin: 0, padding: 0, background: 'transparent', flex: 1, height: '100%' }}>
-                                        <div className="col-lg-2" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', paddingLeft: 16, paddingTop: 16 }}>
-                                            {allEventNames.map((eventName, index) => (
-                                                <div key={index} className="form-check">
-                                                    <input
-                                                        className="form-check-input"
-                                                        type="checkbox"
-                                                        checked={eventChecked[eventName] || false}
-                                                        onChange={() => handleCheckEvent(eventName)}
-                                                    />
-                                                    <label className="form-check-label">{eventName}</label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="col-lg-10" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', position: 'relative' }}>
-                                            {gridToggleSwitch}
-                                            <div ref={mapRef} style={{ width: '100%', height: '100%', background: 'transparent', margin: 0, padding: 0, position: 'relative' }} />
-                                            <InformationWindow />
+                )}
 
-                                            {/* Render all open popups as overlays */}
-                                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 1000 }}>
-                                                {openPopups.map((popup) => {
-                                                    const isGrabbing = (draggedPopupId === popup.id);
-                                                    const isRecent = (recentPopupId === popup.id);
 
-                                                    return (
-                                                        <div
-                                                            key={popup.id}
-                                                            className={`ol-popup ${isRecent ? 'z-110' : 'z-100'}`}
-                                                            style={{
-                                                                position: 'absolute',
-                                                                boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                                                                padding: '15px',
-                                                                borderRadius: '10px',
-                                                                border: '1px solid #cccccc',
-                                                                minWidth: '200px',
-                                                                left: popup.position?.left ?? 100,
-                                                                top: popup.position?.top ?? 100,
-                                                                background: 'white',
-                                                                transform: 'none',
-                                                                cursor: isGrabbing ? 'grabbing' : '',
-                                                                zIndex: isRecent ? 110 : 100,
-                                                                pointerEvents: 'auto',
-                                                            }}
-                                                        >
+                {/* Loading Indicator */}
+                {loading && (
+                    <div className="alert alert-info p-2 m-2 flex flex-row items-center justify-start gap-2" style={{zIndex: 2000}}>
+                        <div className="spinner-border spinner-border-sm" role="status">
+                            <span className="sr-only">Loading...</span>
+                        </div>
+                        <span>Loading proximity events...</span>
+                    </div>
+                )}
+
+
+                {/* Main Content Area */}
+                <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div className="container-fluid" style={{ flex: '1 1 auto', height: '100%' }}>
+                        <div className="row" style={{ height: '100%' }}>
+                            <div className="col-lg-12" style={{ height: '100%' }}>
+                                <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column', flex: '1 1 auto' }}>
+
+                                    {/* Time Header */}
+                                    {timeHeader}
+
+                                    <div className="card-body" style={{ padding: 0, background: 'transparent', flex: '1 1 auto', minHeight: 0, display: 'flex', position: 'relative' }}>
+                                        <div className="row" style={{ margin: 0, padding: 0, background: 'transparent', flex: 1, height: '100%' }}>
+
+                                            {/* Event Checkboxes Column */}
+                                            <div className="col-lg-2" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', paddingLeft: 16, paddingTop: 16 }}>
+                                                {allEventNames.map((eventName, index) => (
+                                                    <div key={index} className="form-check">
+                                                        <input
+                                                            className="form-check-input"
+                                                            type="checkbox"
+                                                            checked={eventChecked[eventName] || false}
+                                                            onChange={() => handleCheckEvent(eventName)}
+                                                        />
+                                                        <label className="form-check-label">{eventName}</label>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Map and Information Window Column */}
+                                            <div className="col-lg-10" style={{ padding: 0, margin: 0, background: 'transparent', height: '100%', position: 'relative' }}>
+                                                {gridToggleSwitch}
+                                                <div ref={mapRef} style={{ width: '100%', height: '100%', background: 'transparent', margin: 0, padding: 0, position: 'relative' }} />
+                                                <InformationWindow />
+
+                                                {/* Render all open popups as overlays */}
+                                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 1000 }}>
+                                                    {openPopups.map((popup) => {
+                                                        const isGrabbing = (draggedPopupId === popup.id);
+                                                        const isRecent = (recentPopupId === popup.id);
+
+                                                        return (
                                                             <div
-                                                                className="group"
-                                                                style={{ fontWeight: 600, cursor: 'grab', marginBottom: 4, userSelect: isGrabbing ? 'none' : 'auto' }}
-                                                                onMouseDown={e => { console.log('Popup mouse down', popup.id, e); handlePopupMouseDown(e, popup.id); }}
-                                                            >
-                                                                <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
-                                                                <div>
-                                                                    <div>{popup.data.eventType || 'Event'}</div>
-                                                                    {popup.data.eventTypes && popup.data.eventTypes.length > 1 && (
-                                                                        <div style={{ fontSize: '0.7em', color: '#888', marginTop: '1px', fontStyle: 'italic' }}>
-                                                                            {popup.data.eventTypes.join(', ')}
-                                                                        </div>
-                                                                    )}
-                                                                    <div style={{ fontSize: '0.8em', color: '#666', marginTop: '2px' }}>
-                                                                        Event ID: {popup.data.eventId || 'N/A'}
-                                                                    </div>
-                                                                    <div style={{ fontSize: '0.7em', color: '#666', marginTop: '1px' }}>
-                                                                        {popup.data.time ?? '...'}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <a
-                                                                href="#"
-                                                                className="ol-popup-closer"
-                                                                style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}
-                                                                onClick={e => {
-                                                                    e.preventDefault();
-                                                                    setOpenPopups(prevPopups =>
-                                                                        prevPopups.filter(p => p.id !== popup.id)
-                                                                    );
-                                                                    setSelectedPoints(prevPoints => {
-                                                                        const newSelectedPoints = prevPoints.filter(p => p.id !== popup.id);
-
-                                                                        // Recalculate distances after removing point
-                                                                        if (newSelectedPoints.length === 2) {
-                                                                            const [point1, point2] = newSelectedPoints;
-                                                                            const result = calculateDistanceBetweenPoints(
-                                                                                point1.latitude, point1.longitude, point1.altitude,
-                                                                                point2.latitude, point2.longitude, point2.altitude
-                                                                            );
-                                                                            setDistances({ lateral: result.lateral, euclidean: result.euclidean });
-                                                                        } else {
-                                                                            setDistances({ lateral: null, euclidean: null });
-                                                                        }
-
-                                                                        return newSelectedPoints;
-                                                                    });
+                                                                key={popup.id}
+                                                                className={`ol-popup ${isRecent ? 'z-110' : 'z-100'}`}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                                                                    padding: '15px',
+                                                                    borderRadius: '10px',
+                                                                    border: '1px solid #cccccc',
+                                                                    minWidth: '200px',
+                                                                    left: popup.position?.left ?? 100,
+                                                                    top: popup.position?.top ?? 100,
+                                                                    background: 'white',
+                                                                    transform: 'none',
+                                                                    cursor: isGrabbing ? 'grabbing' : '',
+                                                                    zIndex: isRecent ? 110 : 100,
+                                                                    pointerEvents: 'auto',
                                                                 }}
                                                             >
-                                                                ✖
-                                                            </a>
-                                                            <div>
-                                                                <hr />
-                                                                <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
-                                                                <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
-                                                                <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
-                                                                <hr />
-                                                                <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
-                                                                <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
-                                                                {popup.data.otherFlightId && popup.data.otherFlightId !== null && popup.data.otherFlightId !== 0 && popup.data.otherFlightId !== '0' && (
-                                                                    <>
-                                                                        <hr />
-                                                                        <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
-                                                                        <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
-                                                                    </>
-                                                                )}
-                                                                <hr />
-                                                                <div><strong>Severity: </strong>{parseFloat(String(popup.data.severity)).toFixed(2)}</div>
-                                                                {popup.data.columnValues && Object.keys(popup.data.columnValues).length > 0 && (
-                                                                    <>
-                                                                        <hr />
-                                                                        <div><strong>Event Data:</strong></div>
-                                                                        {Object.entries(popup.data.columnValues).map(([columnName, value]) => (
-                                                                            <div key={columnName}>
-                                                                                <strong>{columnName}: </strong>
-                                                                                {value !== null && value !== undefined ? 
-                                                                                    (typeof value === 'number' ? value.toFixed(2) : String(value)) : 
-                                                                                    'N/A'
-                                                                                }
+                                                                <div
+                                                                    className="group"
+                                                                    style={{ fontWeight: 600, cursor: 'grab', marginBottom: 4, userSelect: isGrabbing ? 'none' : 'auto' }}
+                                                                    onMouseDown={e => { console.log('Popup mouse down', popup.id, e); handlePopupMouseDown(e, popup.id); }}
+                                                                >
+                                                                    <span className={`fa fa-arrows ${isGrabbing ? 'opacity-100' : 'opacity-25 group-hover:opacity-100'} mr-2`}/>
+                                                                    <div>
+                                                                        <div>{popup.data.eventType || 'Event'}</div>
+                                                                        {popup.data.eventTypes && popup.data.eventTypes.length > 1 && (
+                                                                            <div style={{ fontSize: '0.7em', color: '#888', marginTop: '1px', fontStyle: 'italic' }}>
+                                                                                {popup.data.eventTypes.join(', ')}
                                                                             </div>
-                                                                        ))}
-                                                                    </>
-                                                                )}
-                                                                {distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
-                                                                    <>
-                                                                        <hr />
-                                                                        <div><strong>Lateral Distance: </strong>{distances.lateral.toFixed(0)} ft</div>
-                                                                        <div><strong>Euclidean (Slant) Distance: </strong>{distances.euclidean.toFixed(0)} ft</div>
-                                                                        <div><strong>Vertical Separation: </strong>{Math.abs(selectedPoints[0].altitude - selectedPoints[1].altitude).toFixed(0)} ft</div>
-                                                                    </>
-                                                                )}
+                                                                        )}
+                                                                        <div style={{ fontSize: '0.8em', color: '#666', marginTop: '2px' }}>
+                                                                            Event ID: {popup.data.eventId || 'N/A'}
+                                                                        </div>
+                                                                        <div style={{ fontSize: '0.7em', color: '#666', marginTop: '1px' }}>
+                                                                            {popup.data.time ?? '...'}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <a
+                                                                    href="#"
+                                                                    className="ol-popup-closer"
+                                                                    style={{ position: 'absolute', top: 2, right: 8, textDecoration: 'none' }}
+                                                                    onClick={e => {
+                                                                        e.preventDefault();
+                                                                        setOpenPopups(prevPopups =>
+                                                                            prevPopups.filter(p => p.id !== popup.id)
+                                                                        );
+                                                                        setSelectedPoints(prevPoints => {
+                                                                            const newSelectedPoints = prevPoints.filter(p => p.id !== popup.id);
+
+                                                                            // Recalculate distances after removing point
+                                                                            if (newSelectedPoints.length === 2) {
+                                                                                const [point1, point2] = newSelectedPoints;
+                                                                                const result = calculateDistanceBetweenPoints(
+                                                                                    point1.latitude, point1.longitude, point1.altitude,
+                                                                                    point2.latitude, point2.longitude, point2.altitude
+                                                                                );
+                                                                                setDistances({ lateral: result.lateral, euclidean: result.euclidean });
+                                                                            } else {
+                                                                                setDistances({ lateral: null, euclidean: null });
+                                                                            }
+
+                                                                            return newSelectedPoints;
+                                                                        });
+                                                                    }}
+                                                                >
+                                                                    ✖
+                                                                </a>
+                                                                <div>
+                                                                    <hr />
+                                                                    <div><strong>Latitude: </strong> {popup.data.latitude !== null && popup.data.latitude !== undefined ? Number(popup.data.latitude).toFixed(5) : '...'}</div>
+                                                                    <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}</div>
+                                                                    <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
+                                                                    <hr />
+                                                                    <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
+                                                                    <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
+                                                                    {popup.data.otherFlightId && popup.data.otherFlightId !== null && popup.data.otherFlightId !== 0 && popup.data.otherFlightId !== '0' && (
+                                                                        <>
+                                                                            <hr />
+                                                                            <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
+                                                                            <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
+                                                                        </>
+                                                                    )}
+                                                                    <hr />
+                                                                    <div><strong>Severity: </strong>{parseFloat(String(popup.data.severity)).toFixed(2)}</div>
+                                                                    {popup.data.columnValues && Object.keys(popup.data.columnValues).length > 0 && (
+                                                                        <>
+                                                                            <hr />
+                                                                            <div><strong>Event Data:</strong></div>
+                                                                            {Object.entries(popup.data.columnValues).map(([columnName, value]) => (
+                                                                                <div key={columnName}>
+                                                                                    <strong>{columnName}: </strong>
+                                                                                    {value !== null && value !== undefined ? 
+                                                                                        (typeof value === 'number' ? value.toFixed(2) : String(value)) : 
+                                                                                        'N/A'
+                                                                                    }
+                                                                                </div>
+                                                                            ))}
+                                                                        </>
+                                                                    )}
+                                                                    {distances.lateral !== null && distances.euclidean !== null && selectedPoints.length === 2 && (
+                                                                        <>
+                                                                            <hr />
+                                                                            <div><strong>Lateral Distance: </strong>{distances.lateral.toFixed(0)} ft</div>
+                                                                            <div><strong>Euclidean (Slant) Distance: </strong>{distances.euclidean.toFixed(0)} ft</div>
+                                                                            <div><strong>Vertical Separation: </strong>{Math.abs(selectedPoints[0].altitude - selectedPoints[1].altitude).toFixed(0)} ft</div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -2807,6 +2803,7 @@ const HeatMapPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     );
