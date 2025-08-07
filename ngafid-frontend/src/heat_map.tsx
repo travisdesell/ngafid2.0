@@ -2421,9 +2421,9 @@ const HeatMapPage: React.FC = () => {
             {/* Events Found */}
             <div
                 className="
-                    text-md font-semibold
+                    text-base font-semibold
                     text-[var(--c_text)]
-                    border-gray-200
+                    border-gray-200 border-b-1
                     mb-3
                     pb-2 pr-2
                 "
@@ -2433,8 +2433,8 @@ const HeatMapPage: React.FC = () => {
 
             {/* Total Events by Type */}
             {eventStatistics.totalEvents > 0 && (
-                <div style={{ marginBottom: '16px' }}>
-                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <div className="mb-4">
+                    <div className="max-h-[200px] overflow-y-auto">
                         {Object.entries(eventStatistics.eventsByType)
                             .sort(([,a], [,b]) => b - a) // Sort by count descending
                             .map(([eventType, count]) => (
@@ -2449,12 +2449,14 @@ const HeatMapPage: React.FC = () => {
                                         justifyContent: 'space-between',
                                         alignItems: 'center'
                                     }}>
-                                        <span style={{
-                                            flex: 1,
-                                            marginRight: '12px',
-                                            color: '#666',
-                                            wordBreak: 'break-word'
-                                        }}>
+                                        <span
+                                            className="text-[var(--c_text_button)]"
+                                            style={{
+                                                flex: 1,
+                                                marginRight: '12px',
+                                                wordBreak: 'break-word'
+                                            }}
+                                        >
                                             {eventType}
                                         </span>
                                         <span style={{
@@ -2473,12 +2475,15 @@ const HeatMapPage: React.FC = () => {
             )}
             
             {/* Map Controls */}
-            <div style={{
-                fontSize: '12px',
-                color: '#666',
-                lineHeight: '1.4',
-                padding: '12px',
-                background: '#f8f9fa',
+            <div
+                className="
+                    text-xs
+                    leading-4
+                    p-3
+                    bg-[var(--c_dropdown_bg)]
+                    text-[var(--c_text_button)]
+                "
+            style={{
                 borderRadius: '6px',
                 border: '1px solid #e9ecef'
             }}>
@@ -2488,10 +2493,10 @@ const HeatMapPage: React.FC = () => {
                         flex flex-row justify-between items-center
                         group
                         cursor-pointer
+                        text-[var(--c_text_button_alt)]
                     " 
                     style={{ 
                         fontWeight: '500', 
-                        color: '#495057',
                         cursor: 'pointer',
                         position: 'relative'
                     }}
@@ -2499,7 +2504,13 @@ const HeatMapPage: React.FC = () => {
                 >
 
                     {/* Map Controls Title */}
-                    <span>💡 Map Controls</span>
+                    <span className="
+                        text-base
+                        flex flex-row justify-start items-center gap-2
+                    ">
+                        <span>💡</span>
+                        <span>Map Controls</span>
+                    </span>
 
                     {/* Toggle Button Icon */}
                     <i className={`fa ${navigationTipsExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} p-1
