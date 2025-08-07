@@ -656,21 +656,23 @@ const HeatMapPage: React.FC = () => {
      * Grid/Heatmap toggle switch component with icons
      */
     const gridToggleSwitch = (
-        <div style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            background: 'white',
-            padding: '4px 10px',
-            borderRadius: 5,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
-            fontSize: 18,
-            minWidth: 0
-        }}>
+        <div
+            className="bg-[var(--c_bg)]"
+            style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '4px 10px',
+                borderRadius: 5,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
+                fontSize: 18,
+                minWidth: 0
+            }}
+        >
             <span
                 title="Heatmap"
                 style={{
