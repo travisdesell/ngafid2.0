@@ -2612,13 +2612,11 @@ const HeatMapPage: React.FC = () => {
                 /* Ensure all dropdowns appear above the InformationWindow */
                 .dropdown-menu {
                     z-index: 9999 !important;
-                    position: fixed !important;
                 }
                 
                 /* Also target Bootstrap's specific dropdown classes */
                 .dropdown-menu.show {
                     z-index: 9999 !important;
-                    position: fixed !important;
                 }
                 
                 /* Ensure the dropdown backdrop doesn't interfere */
