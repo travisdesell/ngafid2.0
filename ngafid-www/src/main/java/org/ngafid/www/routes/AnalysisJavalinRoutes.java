@@ -237,7 +237,10 @@ public class AnalysisJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
-            final String fleetInfo = "var airframes = " + GSON.toJson(Airframes.getAll(connection, fleetId)) + ";\n" + "var eventNames = " + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = " + GSON.toJson(Flight.getAllTagNames(connection)) + ";\n";
+
+
+            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId); 
+            final String fleetInfo = "var airframes = " + GSON.toJson(airframes) + ";\n" + "var eventNames = " + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = " + GSON.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
