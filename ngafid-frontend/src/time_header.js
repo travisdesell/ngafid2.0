@@ -88,7 +88,17 @@ export default class TimeHeader extends React.Component {
             );
         }
 
-        const updateButtonDisabled = !this.props.datesOrAirframeChanged;
+        const updateButtonDisabled = (() => {
+
+            //Prop is undefined, assume Update button can always be enabled
+            if (this.props.datesOrAirframeChanged === undefined)
+                return false;
+
+            //Otherwise, assume button should be disabled when the value is false
+            return !this.props.datesOrAirframeChanged;
+
+        })();
+
         const updateButtonIcon = (() => {
 
             //Button disabled -> Ban 🚫
