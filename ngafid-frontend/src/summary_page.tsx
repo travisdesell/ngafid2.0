@@ -86,19 +86,33 @@ let endMonth: number = date.getMonth() + 1;
 
 function buildStartDate(year: number, month: number): string {
 
+    //Force year and month values to be numbers
+    year = +year;
+    month = +month;
+
+    console.log(`Building start date for year=${year}, month=${month}...`);
+
     let startDate = `${year}-`;
 
     //Pad the months on the front
     if (month < 10) startDate += `0${month}`;
         else startDate += month;
 
-    return `${startDate}-01`;
+    startDate = `${startDate}-01`;
+
+    console.log(`Built start date for year=${year}, month=${month}: ${startDate}`);
+    return startDate;
 
 }
 
 function buildEndDate(year: number, month: number): string {
 
-    console.log(`Building end date for year=${year}, month=${month}...`);
+    //Force year and month values to be numbers
+    year = +year;
+    month = +month;
+
+    const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date(year, month - 1));
+    console.log(`Building end date for year=${year}, month=${month} (${monthName})...`);
 
     let endDate = `${year}-`;
 
@@ -111,21 +125,26 @@ function buildEndDate(year: number, month: number): string {
 
         //Leap year, append '29'
         if ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) {
-            return `${endDate}-29`;
+            endDate = `${endDate}-29`;
 
         //Otherwise, append '28'
         } else {
-            return `${endDate}-28`;
+            endDate = `${endDate}-28`;
         }
 
     
     //April, June, September, November -> 30 days
     } else if ([4, 6, 9, 11].includes(month)) {
-        return `${endDate}-30`;
+        endDate = `${endDate}-30`;
     }
     
     //All other months -> 31 days
-    return `${endDate}-31`;
+    else {
+        endDate = `${endDate}-31`;
+    }
+
+    console.log(`Built end date for year=${year}, month=${month} (${monthName}): ${endDate}`);
+    return endDate;
 
 }
 
