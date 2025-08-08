@@ -1,6 +1,6 @@
 import 'bootstrap';
 
-import React from "react";
+import React, { Children } from "react";
 
 export default class TimeHeader extends React.Component {
 
@@ -218,6 +218,18 @@ export default class TimeHeader extends React.Component {
                 {additionalHeaderContents}
 
                 <div className="vertical-separator" />
+
+                {/* Child Components */}
+                {Children.map(this.props.children, child => {
+                    return (
+                        <>
+                            <div>
+                                {child}
+                            </div>
+                            <div className="vertical-separator" />
+                        </>
+                    );
+                })}
 
                 {/* Update Button */}
                 <button
