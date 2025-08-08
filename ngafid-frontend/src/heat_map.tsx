@@ -1700,6 +1700,7 @@ const HeatMapPage: React.FC = () => {
                 const extent = dragBox.getGeometry().getExtent();
                 const bottomLeft = toLonLat([extent[0], extent[1]]);
                 const topRight = toLonLat([extent[2], extent[3]]);
+                
                 setBoxCoords({
                     minLat: Math.min(bottomLeft[1], topRight[1]).toFixed(6),
                     maxLat: Math.max(bottomLeft[1], topRight[1]).toFixed(6),
@@ -2185,8 +2186,6 @@ const HeatMapPage: React.FC = () => {
                             <span>°</span>
                         </div>
 
-                        <span>-</span>
-
                         {/* Max Lat. */}
                         <div className="flex flex-row gap-0.5">
                             <input
@@ -2229,8 +2228,6 @@ const HeatMapPage: React.FC = () => {
                             />
                             <span>°</span>
                         </div>
-
-                        <span>-</span>
 
                         {/* Max Lon. */}
                         <div className="flex flex-row gap-0.5">
