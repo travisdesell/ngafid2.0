@@ -321,11 +321,13 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+
+            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection);
+            String fleetInfo = "var airframes = " + gson.toJson(airframes) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("getting aggreagte data info took " + (endTime - startTime) + "ms.");
+            LOG.info("Getting aggregate data info took " + (endTime - startTime) + "ms.");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
