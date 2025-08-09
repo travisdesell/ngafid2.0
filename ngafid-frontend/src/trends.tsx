@@ -117,10 +117,10 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
     const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventsEmpty);
     const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
 
-    // Effect to update datesOrAirframeChanged when dependencies change
+    //Effect to update datesOrAirframeChanged when dependencies change
     useEffect(() => {
         setDatesOrAirframeChanged(true);
-    }, [eventChecked, startYear, startMonth, endYear, endMonth, airframe]);
+    }, [startYear, startMonth, endYear, endMonth, airframe]);
 
 
     useEffect(() => {
@@ -743,6 +743,9 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
     };
 
     const dateChange = () => {
+
+        //Clear Time Header update flag
+        setDatesOrAirframeChanged(false);
 
         console.log(`[trendscard] notifying date change 2, startYear: '${startYear}', startMonth: '${startMonth}, endYear: '${endYear}', endMonth: '${endMonth}'`);
 
