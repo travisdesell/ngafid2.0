@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public enum Airframes {
@@ -299,8 +300,16 @@ public enum Airframes {
 
         //Get all airframes regardless of fleet
         if (fleetId == FLEET_ID_ALL) {
-            
-            queryString = "SELECT airframe, id FROM airframes ORDER BY airframe";
+
+            LOG.info("Getting airframe name ID pairs regardless of fleet");
+
+            queryString = """
+                SELECT
+                    airframe, id
+                FROM
+                    airframes
+                ORDER BY airframe
+            """;
 
             try (PreparedStatement query = connection.prepareStatement(queryString)) {
 
@@ -317,13 +326,23 @@ public enum Airframes {
 
             }
 
-        }
-        
         //Get all airframes for a specific fleet
-        else {
+        } else {
 
-            queryString = "SELECT airframe, id FROM airframes INNER JOIN fleet_airframes ON " +
-                "airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+            LOG.log(Level.INFO, "Getting airframe name ID pairs for fleet: {0}", fleetId);
+
+            queryString = """
+                SELECT
+                    airframe, id
+                FROM
+                    airframes
+                INNER JOIN
+                    fleet_airframes ON airframes.id = fleet_airframes.airframe_id
+                WHERE
+                    fleet_airframes.fleet_id = ?
+                ORDER BY
+                    airframe
+            """;
 
             try (PreparedStatement query = connection.prepareStatement(queryString)) {
                 query.setInt(1, fleetId);
