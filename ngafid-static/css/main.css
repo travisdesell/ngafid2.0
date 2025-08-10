@@ -52,6 +52,14 @@
     --c_text_alt_dark: #DDDDD0;
     --c_text_alt: var(--c_text_alt_light);
 
+    --c_text_button_light: #666;
+    --c_text_button_dark: #CCC;
+    --c_text_button: var(--c_text_button_light);
+
+    --c_text_button_alt_light: #495057;
+    --c_text_button_alt_dark: #bdccde;
+    --c_text_button_alt: var(--c_text_button_alt_light);
+
     /* Navbar Colors */
     --c_navbar_bg_light : rgba(208, 224, 239, 0.85);
     --c_navbar_bg_dark : rgba(0,0,0,0.85);
@@ -184,6 +192,8 @@
     --c_text : var(--c_text_dark);
     --c_text_solid : var(--c_text_solid_dark);
     --c_text_alt : var(--c_text_alt_dark);
+    --c_text_button : var(--c_text_button_dark);
+    --c_text_button_alt : var(--c_text_button_alt_dark);
 
     --c_navbar_bg : var(--c_navbar_bg_dark);
     --c_navbar_hover : var(--c_navbar_hover_dark);

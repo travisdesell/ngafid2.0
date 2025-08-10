@@ -39,6 +39,17 @@
             <version>${mustache.version}</version>
         </dependency>
 
+        <!-- Guava for caching
+        Used in ComputeAltAGL.java, the terrain cache is used to calculate Altitude Above Ground Level (AGL)
+        -->
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.4.8-jre</version>
+        </dependency>
+
+
         <!-- Testing Dependencies -->
 
         <dependency>

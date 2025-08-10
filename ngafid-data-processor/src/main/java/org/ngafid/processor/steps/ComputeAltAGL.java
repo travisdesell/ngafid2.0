@@ -79,6 +79,7 @@ public class ComputeAltAGL extends ComputeStep {
             } catch (TerrainUnavailableException e) {
                 altitudeAGLTS.add(Double.NaN);
             }
+
         }
 
         builder.addTimeSeries(altitudeAGLTS);

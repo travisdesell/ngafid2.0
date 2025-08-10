@@ -153,7 +153,10 @@ public class Pipeline implements AutoCloseable {
                         List<Flight> flights = fbuilders.stream().map(FlightBuilder::getFlight).toList();
                         Flight.batchUpdateDatabase(connection, flights);
                         for (FlightBuilder builder : fbuilders) {
-                            Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
+                            //Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
+                            // TODO: Solves (not proximity) duplicate event issue, but needs integration testing.
+                            // Event.batchInsertion is already called by Flight.batchUpdateDatabase above
+
                             TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
                             builder.getFlight().insertComputedEvents(connection, builder.getEventDefinitions());
                         }

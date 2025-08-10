@@ -8,7 +8,6 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import org.ngafid.core.Config;
 import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.proximity.ProximityPointsProcessor;
 import org.ngafid.core.util.ConvertToHTML;
 
 import java.io.*;
