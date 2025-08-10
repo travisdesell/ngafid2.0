@@ -35,7 +35,6 @@ public class MSLtoAGLConverter {
      * @return AGL altitude in feet, or NaN if conversion not possible
      */
     public static double convertMSLToAGL(double altitudeMSL, double latitude, double longitude) {
-        LOG.info("MSLtoAGLConverter.convertMSLToAGL called with: MSL=" + altitudeMSL + ", lat=" + latitude + ", lon=" + longitude);
         
         if (Double.isNaN(altitudeMSL) || Double.isInfinite(altitudeMSL) ||
             Double.isNaN(latitude) || Double.isInfinite(latitude) ||
@@ -54,21 +53,16 @@ public class MSLtoAGLConverter {
             LOG.warning("Terrain directory not configured. Cannot convert MSL to AGL. TERRAIN_DIR=" + TERRAIN_DIR);
             return Double.NaN;
         }
-        
-        LOG.info("Terrain directory configured: " + TERRAIN_DIR);
+
 
         try {
             // Get terrain elevation at the given coordinates
             double terrainElevationFt = getTerrainElevation(latitude, longitude);
-            LOG.info("Terrain elevation: " + terrainElevationFt + " ft");
             
             // AGL = MSL - terrain elevation
             double agl = altitudeMSL - terrainElevationFt;
-            LOG.info("Calculated AGL: " + agl + " ft (MSL=" + altitudeMSL + " - terrain=" + terrainElevationFt + ")");
-            
             // Ensure AGL is not negative (aircraft can't be below ground)
             double finalAgl = Math.max(0.0, agl);
-            LOG.info("Final AGL: " + finalAgl + " ft");
             return finalAgl;
             
         } catch (Exception e) {
@@ -88,7 +82,6 @@ public class MSLtoAGLConverter {
      * @throws IOException if terrain data file cannot be read
      */
     private static double getTerrainElevation(double latitude, double longitude) throws IOException {
-        // Calculate tile coordinates
         int latIndex = -((int) Math.ceil(latitude) - 91);
         int lonIndex = (int) Math.floor(longitude) + 180;
         
