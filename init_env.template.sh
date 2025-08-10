@@ -30,7 +30,7 @@ export NGAFID_REPO=<⚠ /Set/Absolute/Path/Here ⚠>  #<-- ❗ Set this to the a
 export NGAFID_DATA_FOLDER=$NGAFID_REPO/data        #<-- ❗ Create a data folder in the NGAFID root (if it doesn't already exist).
 export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
 export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
-export TERRAIN_DIRECTORY=$NGAFID_DATA_FOLDER/terrain/                       # If you don't have the data to add to the terrain directory, ask for it.
+export NGAFID_TERRAIN_DIR=$NGAFID_DATA_FOLDER/terrain/                       # If you don't have the data to add to the terrain directory, ask for it.
 export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv       # If you don't have the data for the airports directory, ask for it.
 export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv          # If you don't have the data for the runways directory, ask for it.
 
