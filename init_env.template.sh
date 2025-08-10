@@ -41,6 +41,11 @@ export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/ngafid-static/templates/
 export WEBSERVER_STATIC_FILES=ngafid-static/
 export DISABLE_PERSISTENT_SESSIONS=false   #<-- To require users to log in again after a restart, set this to true.
 
+#Azure Maps
+export AZURE_MAPS_KEY="YOUR_ACTUAL_AZURE_MAPS_KEY_HERE"  #<-- Add your Azure Maps API key here
+
+
+
 
 #Emails
 export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
