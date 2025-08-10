@@ -4,124 +4,148 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
 import {PaginationSorter} from './sorter_component.js';
-import {CesiumButtons} from "./cesium_buttons";
 import {showErrorModal} from "./error_modal.js";
+import { UploadsPage } from './uploads.js';
 
-class Paginator extends React.Component {
-    constructor(props) {
+type PaginatorProps = {
+    numberPages: number,
+    currentPage: number,
+    items?: unknown[],
+    doUploadButtonHide?: boolean,
+    updateCurrentPage: (page: number) => void,
+    updateItemsPerPage: (pageSize: number) => void,
+    sortOptions?: unknown,
+    setSortingColumn: (sortColumn: string) => void,
+    getSortingColumn: () => string,
+    setSortingOrder: (order: string) => void,
+    getSortingOrder: () => string,
+    pageSize?: number,
+    itemName?: string,
+    uploadsPage: UploadsPage,
+    location?: unknown,
+}
+
+type PaginatorState = {
+    goto_active: boolean,
+    goto_value: number,
+}
+
+class Paginator extends React.Component<PaginatorProps, PaginatorState> {
+
+    constructor(props: PaginatorProps) {
         super(props);
 
         this.state = {
             goto_active: false,
             goto_value: 1,
-            // clear_flights_active: cesiumFlightsSelected.length === 0,
         };
 
         this.previousPage = this.previousPage.bind(this);
         this.nextPage = this.nextPage.bind(this);
         this.repaginate = this.repaginate.bind(this);
-
-        this.doUploadButtonHide = props.doUploadButtonHide;
     }
 
-    updateGoto(event) {
+    updateGoto(event: React.ChangeEvent<HTMLInputElement>) {
+
         const value = event.target.value;
-        console.log(`goto updated to: '${  value  }'`);
-        if (/^\d+$/.test(value) && value > 0 && value <= this.props.numberPages) {
-            console.log("setting goto active to true!");
+        const valueNumeric = Number(value);
+        console.log(`goto updated to: '${  valueNumeric  }'`);
+
+        //Got valid value between 1 and numberPages
+        if (/^\d+$/.test(value) && valueNumeric > 0 && valueNumeric <= this.props.numberPages) {
+            console.log("Paginator - Setting goto_active to true!");
             this.setState({
                 goto_active: true,
-                goto_value: value
+                goto_value: valueNumeric
             });
 
+        //Otherwise, got invalid value
         } else {
-            console.log("setting goto active to false!");
+            console.log("Paginator - Setting goto_active to false!");
             this.setState({
                 goto_active: false
             });
         }
+        
     }
 
     /**
      ** Jumps to a page in this collection of queried flights
      ** @param pg the page to jump to
      **/
-    jumpPage(page) {
-        if (page < this.props.numberPages && page >= 0) {
+    jumpPage(page: number) {
+
+        if (page < this.props.numberPages && page >= 0)
             this.props.updateCurrentPage(page);
-
-            if (typeof this.props.items === 'undefined')
-                return;
-
-            this.props.submitFilter();
-        }
+        
     }
 
     /**
      *    * jumps to the next page in this collection of queried flights
      *        */
     nextPage() {
-        this.props.updateCurrentPage(this.props.currentPage + 1);
 
-        if (typeof this.props.items === 'undefined')
-            return;
+        const newPageIndex = (this.props.currentPage + 1);
+        this.props.updateCurrentPage(newPageIndex);
 
-        this.props.submitFilter();
     }
 
     /**
      ** jumps to the previous page in this collection of queried flights
      **/
     previousPage() {
-        this.props.updateCurrentPage(this.props.currentPage - 1);
 
-        if (typeof this.props.items === 'undefined')
-            return;
+        const newPageIndex = (this.props.currentPage - 1);
+        this.props.updateCurrentPage(newPageIndex);
 
-        this.props.submitFilter();
     }
 
     /**
      ** Repaginates the page configuration when the numPerPage field has been changed by the user
      **/
-    repaginate(pageSize) {
+    repaginate(pageSize: number) {
 
         console.log("Re-Paginating");
         this.props.updateItemsPerPage(pageSize);
 
-        if (typeof this.props.items === 'undefined')
-            return;
-
-        this.props.submitFilter(true);
     }
 
     triggerInput() {
-        console.log("input triggered!");
+        console.log("Paginator - Input triggered!");
 
         const uploadsPageRef = this.props.uploadsPage;
 
         $('#upload-file-input').trigger('click');
 
-        $('#upload-file-input:not(.bound)').addClass('bound').change(function () {
-            console.log(`number files selected: ${  this.files.length}`);
-            console.log(this.files);
+        $('#upload-file-input:not(.bound)').addClass('bound').change(function (this: HTMLElement) {
 
-            if (this.files.length > 0) {
-                const file = this.files[0];
-                const filename = file.webkitRelativePath || file.fileName || file.name;
+            const input = this as HTMLInputElement;
 
-                const isZip = file['type'].includes("zip");
-                const isParquet = filename.endsWith(".parquet");
-                console.log(`isZip: ${isZip}, isParquet: ${isParquet}`);
+            //Got no files, exit
+            if (!input.files || input.files.length === 0)
+                return;
 
-                if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                    showErrorModal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
-                } else if (!isZip && !isParquet) {
-                    showErrorModal("Malformed Filename", "Uploaded files must be zip files or a parquet file. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
-                } else {
-                    uploadsPageRef.addUpload(file);
-                }
+            console.log(`Paginator - Got ${input.files.length} files selected:`, input.files);
+            const file = input.files[0];
+            const filename = file.webkitRelativePath || file.name;
+
+            const isZip = file['type'].includes("zip");
+            const isParquet = filename.endsWith(".parquet");
+            console.log(`Paginator - isZip: ${isZip}, isParquet: ${isParquet}`);
+
+            //Bad file name -> Error
+            if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
+                showErrorModal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+
+            //Bad file type -> Error
+            } else if (!isZip && !isParquet) {
+                showErrorModal("Malformed Filename", "Uploaded files must be zip files or a parquet file. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
+
+            //All good, add the upload
+            } else {
+                uploadsPageRef.addUpload(file);
             }
+
         });
     }
 
@@ -170,23 +194,24 @@ class Paginator extends React.Component {
         }
         */
 
-        let sorter = "";
+        let sorter = null;
         if (this.props.sortOptions != null) {
             sorter = (
                 <PaginationSorter
                     sortOptions={this.props.sortOptions}
-                    setSortingColumn={(sortColumn) => this.props.setSortingColumn(sortColumn)}
+                    setSortingColumn={(sortColumn: string) => this.props.setSortingColumn(sortColumn)}
                     getSortingColumn={() => this.props.getSortingColumn()}
-                    setSortingOrder={(order) => this.props.setSortingOrder(order)}
+                    setSortingOrder={(order: string) => this.props.setSortingOrder(order)}
                     getSortingOrder={() => this.props.getSortingOrder()}
                 />
             );
         }
 
         let numTotalPages = this.props.numberPages;
-        if (this.props.numberPages == 0) {
+
+        //Require minimum of 1 page
+        if (this.props.numberPages == 0)
             numTotalPages = 1;
-        }
 
         const PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
 
@@ -250,8 +275,8 @@ class Paginator extends React.Component {
 
                             {
                                 //Show Upload Flights button on the Uploads page
-                                (window.location.pathname === "/protected/uploads") &&
-                                (!this.doUploadButtonHide) &&
+                                (window.location.pathname === "/protected/uploads" && !this.props.doUploadButtonHide)
+                                &&
                                 <button id="upload-flights-button" className="btn btn-primary btn-sm float-right mr-2"
                                         onClick={() => this.triggerInput()}>
                                     <i className="fa fa-upload"></i> Upload Flights
@@ -292,15 +317,6 @@ class Paginator extends React.Component {
                                 </DropdownButton>
                             </div>
 
-
-                            {
-                                //Show Cesium buttons on the Flights page
-                                (PAGE_FLIGHTS) &&
-                                <div className="d-flex ml-32">
-                                    <CesiumButtons location={this.props.location}/>
-                                </div>
-                            }
-
                         </div>
 
                     </div>
@@ -314,5 +330,3 @@ class Paginator extends React.Component {
 
 
 export {Paginator};
-
-

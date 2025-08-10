@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import {Paginator} from "./paginator_component.js";
+import {Paginator} from "./paginator_component.tsx";
 
 class FlightWarning extends React.Component {
     constructor(props) {

@@ -68,18 +68,19 @@ function formatDurationAsync(seconds: number) {
 }
 
 
-type SuccessResponseHandlerType = (response: { err_msg: string; err_title: string; }) => void;
+type SuccessResponseHandlerType<ResponseType> = (response: ResponseType) => void;
 
-function fetchStatistic(
+async function fetchStatistic<ResponseType>(
     stat: string,
     route: string,
     aggregate: boolean,
-    successResponseHandler: SuccessResponseHandlerType
+    successResponseHandler: SuccessResponseHandlerType<ResponseType>
 ) {
+
+    console.log(`Fetching statistic '${stat}' from route '${route}' with aggregate=${aggregate}...`);
 
     if (aggregate)
         route = `${route}/aggregate`;
-
 
     const errorResponseHandler = function (jqXHR: JQuery.jqXHR<unknown>, textStatus: string, errorThrown: string) {
         console.log(jqXHR);
@@ -93,6 +94,9 @@ function fetchStatistic(
         url: route,
         success: successResponseHandler,
         error: errorResponseHandler,
+        complete: (jqXHR) => {
+            console.log(`Finished fetching statistic '${stat}' from route '${route}' with aggregate=${aggregate}. (Status: ${jqXHR.status})`);
+        }
     });
 
 }
@@ -134,38 +138,46 @@ class Notifications extends React.Component<object, NotificationsState> {
 
     fetchStatistics() {
 
-        const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
-
-            console.log(`Got successful response for fetched stat: ${response}`);
-
-            //Response has an error, exit
-            if (response.err_msg) {
-                showErrorModal(response.err_title, response.err_msg);
-                return;
-            }
-
-            //Update the notification count
-            const updatedState = {
-                ...this.state,
-                notifications: this.state.notifications.map((notif, idx) =>
-                    idx === idx ? { ...notif, count: response } : notif
-                )
-            } as NotificationsState;
-
-            this.setState(updatedState);
-
-        };
 
         console.log("Notifications -- Fetching Statistics...");
 
-        for (const [/*...*/, notif] of this.state.notifications.entries()) {
+        for (const [i, notif] of this.state.notifications.entries()) {
+
+            type NotificationType = {
+                count: number;
+                message: string;
+                badgeType: string;
+                name: string | undefined;
+                err_msg?: string;
+                err_title?: string;
+            };
+
+            const successResponseHandler = (response:NotificationType) => {
+
+                console.log(`Got successful response for fetched stat: ${response}`);
+
+                //Response has an error, exit
+                if (response.err_msg) {
+                    showErrorModal(response.err_title, response.err_msg);
+                    return;
+                }
+
+                //Update the notification count
+                this.setState(prev => ({
+                    notifications: prev.notifications.map((n, j) =>
+                        j === i ? { ...n, count: response.count } : n
+                    )
+                }));
+
+            };
+
 
             //Notification has a 'name' property, fetch the statistic
             if (Object.hasOwn(notif, "name")
                 && notif.name
                 && targetValues[notif.name as keyof typeof targetValues]
             ) {
-                fetchStatistic(notif.name, targetValues[notif.name as keyof typeof targetValues], false, successResponseHandler);
+                fetchStatistic<NotificationType>(notif.name, targetValues[notif.name as keyof typeof targetValues], false, successResponseHandler);
             }
 
         }
@@ -525,10 +537,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         $("#loading").show();
 
-        let route = "/api/event/count/by-airframe";
-        if (this.props.aggregate)
-            route = `${route}/aggregate`;
-
+        const route = `/api/event/count/by-airframe${this.props.aggregate ? "/aggregate" : ""}`;
         console.log(`Got date change, fetching event counts from '${route}' with date data: `, submissionData);
 
         $.ajax({
@@ -558,11 +567,11 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         });
     }
 
-    fetchStatistics() {
+    async fetchStatistics() {
 
         console.log("SummaryPage -- Fetching Statistics...");
 
-        for (const [stat, route] of Object.entries(targetValues)) {
+        for await (const [stat, route] of Object.entries(targetValues)) {
 
             const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
 
@@ -573,7 +582,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                 const result: { [key: string]: string } = {};
                 result[stat] = (typeof response === "string" ? response : JSON.stringify(response));
-                this.setState({statistics: {...this.state.statistics, ...result}});
+                this.setState(prev => ({
+                    statistics: {...prev.statistics, ...result}
+                }));
 
             };
 
@@ -673,8 +684,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                             <thead className="leading-16 text-[var(--c_text)] border-b-1">
                                 <tr>
                                     <th>Airframe</th>
-                                    <th>Flights</th>
-                                    <th>Hours</th>
+                                    <th className="text-right">Flights</th>
+                                    <th className="text-right">Hours</th>
                                 </tr>
                             </thead>
 
@@ -688,10 +699,10 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                                             <td className="truncate whitespace-nowrap overflow-hidden">
                                                 {data.airframe}
                                             </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
                                                 {data.num_flights}
                                             </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
                                                 {Math.floor(data.total_flight_hours*10)/10}
                                             </td>
                                         </tr>
@@ -1067,24 +1078,58 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
     }
 
     render() {
+
+        const navbarArea = (
+            <div style={{flex: "0 0 auto"}}>
+                <SignedInNavbar
+                    activePage={this.props.aggregate ? "aggregate" : "welcome"}
+                    darkModeOnClickAlt={() => {
+                        this.displayPlots(this.state.airframe);
+                    }}
+                    waitingUserCount={waitingUserCount}
+                    fleetManager={fleetManager}
+                    unconfirmedTailsCount={unconfirmedTailsCount}
+                    modifyTailsAccess={modifyTailsAccess}
+                    plotMapHidden={plotMapHidden}
+                />
+            </div>
+        );
+
+        const timeHeader = (
+            <div className="m-2 py-4 px-3">
+                <TimeHeader
+                    className="rounded-lg! bg-(--c_card_header_bg_opaque)! border-(--c_border_alt)! border-1!"
+                    name={`Event Statistics ${this.props.aggregate ? "(Aggregate)" : ""}`}
+                    airframes={airframes}
+                    airframe={this.state.airframe}
+                    startYear={this.state.startYear}
+                    startMonth={this.state.startMonth}
+                    endYear={this.state.endYear}
+                    endMonth={this.state.endMonth}
+                    datesChanged={this.state.datesChanged}
+                    dateChange={() => this.dateChange()}
+                    airframeChange={(airframe: string) => this.airframeChange(airframe)}
+                    updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
+                    updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
+                    updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
+                    updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
+                />
+            </div>
+        );
+
         return (
             <div style={{overflowX: "hidden", display: "flex", flexDirection: "column", height: "100vh"}}>
 
-                <div style={{flex: "0 0 auto"}}>
-                    <SignedInNavbar
-                        activePage={this.props.aggregate ? "aggregate" : "welcome"}
-                        darkModeOnClickAlt={() => {
-                            this.displayPlots(this.state.airframe);
-                        }}
-                        waitingUserCount={waitingUserCount}
-                        fleetManager={fleetManager}
-                        unconfirmedTailsCount={unconfirmedTailsCount}
-                        modifyTailsAccess={modifyTailsAccess}
-                        plotMapHidden={plotMapHidden}
-                    />
-                </div>
+                {/* Navbar */}
+                {navbarArea}
 
+
+                {/* Page Content Area */}
                 <div style={{overflowY: "auto", flex: "1 1 auto"}}>
+
+                    {/* Time Header */}
+                    {timeHeader}
+
                     <div className="container-fluid">
                         <div className="row">
                             <div className="col-6">{this.FlightSummary()}</div>
@@ -1097,23 +1142,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                         <div className="row">
                             <div className="col-lg-12">
-                                <div className="card mb-2 m-2">
-                                    <TimeHeader
-                                        name="Event Statistics"
-                                        airframes={airframes}
-                                        airframe={this.state.airframe}
-                                        startYear={this.state.startYear}
-                                        startMonth={this.state.startMonth}
-                                        endYear={this.state.endYear}
-                                        endMonth={this.state.endMonth}
-                                        datesChanged={this.state.datesChanged}
-                                        dateChange={() => this.dateChange()}
-                                        airframeChange={(airframe: string) => this.airframeChange(airframe)}
-                                        updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
-                                        updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
-                                        updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
-                                        updateEndMonth={(newEndMonth: number) => this.updateEndMonth(newEndMonth)}
-                                    />
+                                <div className="card mx-2 mb-4 mt-8">
+
+                                    <h4 className="card-header">Event Counts and Percentages</h4>
 
                                     <div className="card-body" style={{padding: "0", backgroundColor: "transparent"}}>
                                         <div className="row" style={{margin: "0"}}>

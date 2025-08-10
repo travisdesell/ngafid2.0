@@ -47,6 +47,10 @@ export AZURE_MAPS_KEY="YOUR_ACTUAL_AZURE_MAPS_KEY_HERE"  #<-- Add your Azure Map
 
 
 
+#Kafka bootstrap port
+export KAFKA_BOOTSTRAP=localhost:9092
+
+
 #Emails
 export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
 export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
@@ -62,5 +66,3 @@ export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_pref
 if (echo "$0" | grep -q "template"); then
     echo "⚠ This file is intended to be used as a template. Please make a copy called 'init_env.sh' and use that instead."
 fi
-
-echo "NGAFID environment variables set."

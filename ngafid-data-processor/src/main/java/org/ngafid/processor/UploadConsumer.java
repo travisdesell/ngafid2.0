@@ -1,5 +1,7 @@
 package org.ngafid.processor;
 
+import java.net.UnknownHostException;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -12,6 +14,8 @@ import org.ngafid.core.util.filters.Pair;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import org.ngafid.core.kafka.DockerServiceHeartbeat;
 
 /**
  * Kafka consumer that reads messages from the `upload` and `upload-retry` topics.
@@ -36,7 +40,11 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
     // This should not be modified.
     private static long N_RECORDS = 1;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
+
+        /* Start Docker Service Heartbeat Producer */
+        DockerServiceHeartbeat.autostart();
+
         Properties props = Configuration.getUploadProperties();
         props.put("max.poll.records", String.valueOf(N_RECORDS));
         props.put("max.poll.interval.ms", String.valueOf(MAX_POLL_INTERVAL_MS));
@@ -51,6 +59,7 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
             LOG.severe(e.getMessage());
             e.printStackTrace();
         }
+
     }
 
     protected UploadConsumer(KafkaConsumer<String, Integer> consumer, KafkaProducer<String, Integer> producer) {

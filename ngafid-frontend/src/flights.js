@@ -9,7 +9,7 @@ import {showErrorModal} from "./error_modal.js";
 import {showConfirmModal} from "./confirm_modal.js";
 
 import {Filter, isValidFilter} from './filter.js';
-import {Paginator} from './paginator_component.js';
+import {Paginator} from './paginator_component.tsx';
 import {FlightsCard} from './flights_card_component.js';
 import Plotly from 'plotly.js';
 import {timeZones} from "./time_zones.js";
@@ -950,8 +950,8 @@ class FlightsPage extends React.Component {
             success: (response) => {
 
                 console.log("Received filters response: ", response);
-
                 storedFilters = response;
+
             },
             error: (jqXHR, textStatus, errorThrown) => {
 
@@ -967,19 +967,19 @@ class FlightsPage extends React.Component {
 
     submitFilter(resetCurrentPage = false) {
 
-        console.log(
-            `Submitting filter! `
-            + `currentPage: ${  this.state.currentPage
-             }, pageSize: ${  this.state.pageSize
-             }, sortByColumn: ${  this.state.sortColumn}`
+        console.log(`Submitting filter!`,
+            `currentPage: ${this.state.currentPage},
+            pageSize: ${this.state.pageSize},
+            sortByColumn: ${this.state.sortColumn},
+            resetCurrentPage: ${resetCurrentPage},
+            `
         );
 
-        console.log("Submitting filters:");
-        console.log(this.state.filters);
+        console.log("Submitting filters:", this.state.filters);
 
         $("#loading").show();
 
-        //Reset the current page to 0 if the page size or filter have changed
+        //Page size or filter have changed, reset the current page to 0
         let currentPage = this.state.currentPage;
         if (resetCurrentPage === true)
             currentPage = 0;
@@ -1009,45 +1009,47 @@ class FlightsPage extends React.Component {
             type: 'GET',
             url: "/api/flight",
             data: submissionData,
-            timeout: 0, //set timeout to be unlimited for slow queries
+            timeout: 0, //<-- Unlimited timeout for slow queries
             async: true,
-            success: (response) => {
+            success: (response, jqXHR) => {
 
                 console.log("'Get Flights' response:", response);
-
-                $("#loading").hide();
-
-                if (response.errorTitle) {
-                    console.log("Error in 'Get Flights', displaying error modal!");
-                    showErrorModal(response.errorTitle, response.errorMessage);
-                    return false;
-                }
+                console.log("'Get Flights' jqXHR:", jqXHR);
 
                 //Response is empty, show error modal
-                if (response == "NO_RESULTS") {
+                const JQXHR_NO_CONTENT = 'nocontent';
+                if (jqXHR === JQXHR_NO_CONTENT) {
 
                     console.log("'Get Flights' -- No flights found with the given parameters!");
                     showErrorModal(
                         "No flights found with the given parameters!",
                         "Please try a different query."
                     );
+                    return;
 
-                    //Response is valid, update the flights
-                } else {
-
-                    this.setState({
-                        flights: response.flights,
-                        currentPage: currentPage,
-                        numberPages: response.numberPages,
-                    });
                 }
+
+                //Response is invalid, show error modal
+                if (response.errorTitle) {
+                    console.log("Error in 'Get Flights', displaying error modal!");
+                    showErrorModal(response.errorTitle, response.errorMessage);
+                    return;
+                }
+
+                //Response is valid, update the flights
+                this.setState({
+                    flights: response.flights,
+                    currentPage: currentPage,
+                    numberPages: response.numberPages,
+                });
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-
                 console.log("Error loading flights: ", jqXHR, textStatus, errorThrown);
-
                 showErrorModal("Error Loading Flights", errorThrown);
+            },
+            complete: () => {
+                console.log("Flight loading complete!");
                 $("#loading").hide();
             }
         });
@@ -1056,9 +1058,7 @@ class FlightsPage extends React.Component {
 
     setAvailableLayers(plotLayers) {
 
-        console.log("changing selectable layers on navbar");
-        console.log(plotLayers);
-
+        console.log("Changing selectable layers on Navbar:", plotLayers);
         this.setState({selectableLayers: plotLayers});
 
     }
@@ -1084,7 +1084,7 @@ class FlightsPage extends React.Component {
             id: flightId,
         };
 
-        console.log(`Creating a new tag for flight # ${  this.state.flightId}`);
+        console.log(`Creating a new tag for flight #${this.state.flightId}`);
 
         $.ajax({
             type: "POST",
@@ -1749,9 +1749,6 @@ class FlightsPage extends React.Component {
                 style={{flex: "0 0 auto"}}
             >
                 <Paginator
-                    submitFilter={(resetCurrentPage) => {
-                        this.submitFilter(resetCurrentPage);
-                    }}
                     items={this.state.flights}
                     itemName="flights"
                     rules={sortableColumns}
@@ -1764,10 +1761,14 @@ class FlightsPage extends React.Component {
                     getSortingOrder={() => this.getSortingOrder()}
                     sortOptions={sortableColumnsHumanReadable}
                     updateCurrentPage={(currentPage) => {
-                        this.setState({ currentPage: currentPage });
+                        this.setState({ currentPage: currentPage }, () => {
+                            this.submitFilter(false);
+                        });
                     }}
                     updateItemsPerPage={(pageSize) => {
-                        this.setState({ pageSize: pageSize });
+                        this.setState({ pageSize: pageSize }, () => {
+                            this.submitFilter(true);
+                        });
                     }}
                     location="Bottom"
                 />

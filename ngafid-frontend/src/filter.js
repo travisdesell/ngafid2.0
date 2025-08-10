@@ -771,14 +771,6 @@ class Group extends React.Component {
         
         const loadFilterButtonId = "load-filter-button";
 
-        const errorMessageStyle = {
-            padding: '7 0 7 0',
-            margin: '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
         const styleButtonSq = {
             flex: "right",
             float: "auto"
@@ -790,14 +782,6 @@ class Group extends React.Component {
             opacity: '75%',
             fontSize: '100%',
         };
-
-        let errorHidden = true;
-        let errorMessage = "";
-        if (this.props.filters.length == 0) {
-            errorHidden = false;
-            errorMessage = "Group has no rules.";
-        }
-
 
         //console.log("GROUP: index: " + this.props.treeIndex);
         //console.log(this.props.filters);
@@ -826,8 +810,9 @@ class Group extends React.Component {
             updating state in render is illegal
         */  
 
-        const submitHidden = true;
-        const submitDisabled = true;
+        const submitHidden = false;
+        const submitDisabled = false;
+        
         // if (typeof this.props.submitButtonName !== 'undefined') {
         //     submitHidden = false;
         //     submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
@@ -1052,6 +1037,73 @@ class Group extends React.Component {
             ? this.props.filters.filters
             : [];
 
+        const isRoot = (this.props.treeIndex === "root");
+
+        const groupBottomRow =
+            (!isRoot)
+            ?
+            null
+            : (
+            <div className="flex justify-content-end">
+
+                <div className="p-2">
+
+                    {/* Filter URL Copy Button */}
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm mr-1"
+                        onClick={() => this.props.copyFilterURL()}
+                        hidden={submitHidden}
+                    >
+                        <i className='fa fa-clipboard mr-2'/>
+                        Copy Filter URL
+                    </button>
+
+                    {/* Filter Load Button */}
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm mr-1"
+                        hidden={submitHidden}
+                        onClick={(event) => this.handleLoadClick(event)}
+                        id={loadFilterButtonId}
+                        data-bs-toggle='tooltip'
+                        data-bs-placement='top'
+                        data-bs-trigger='manual'
+                        data-title='Changes Saved!'
+                    >
+                        Load a Saved Filter
+                    </button>
+
+                    {/* Filter Save Button */}
+                    <button
+                        id="save-filter-button"
+                        type="button"
+                        className="btn btn-primary btn-sm mr-1"
+                        onClick={handleSaveClick}
+                        hidden={submitHidden}
+                        disabled={this.state.saveButtonDisabled}
+                        data-bs-toggle="tooltip"
+                        data-bs-trigger='manual'
+                        data-bs-placement="top"
+                        title="Filter saved successfully"
+                    >
+                        Save Current Filter
+                    </button>
+
+                    {/* Filter Submit Button */}
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm mr-1"
+                        disabled={submitDisabled}
+                        onClick={() => this.props.submitFilter(true /*reset current page*/)}
+                        hidden={submitHidden}
+                    >
+                        {this.props.submitButtonName}
+                    </button>
+                </div>
+
+            </div>
+        );
 
         return (
             <div id="search-filter-card" className="card border-secondary" style={{margin: 0, width: "100%"}}>
@@ -1087,19 +1139,30 @@ class Group extends React.Component {
 
                     </div>
 
+                    {/* Rule & Group Buttons */}
                     <div className="p-2">
-                        <button type="button" className="btn btn-primary btn-sm mr-1"
-                                onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}>Add
-                            Rule
+                        <button
+                            type="button"
+                            className="btn btn-primary btn-sm mr-1"
+                            onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}
+                            hidden={false}
+                        >
+                            Add Rule
                         </button>
-                        <button type="button" className="btn btn-primary btn-sm mr-1"
-                                onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}>Add
-                            Group
+                        <button
+                            type="button"
+                            className="btn btn-primary btn-sm mr-1"
+                            onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}
+                        >
+                            Add Group
                         </button>
-                        <button type="button" className="btn btn-danger btn-sm"
-                                onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
-                            <i className="fa fa-times" aria-hidden="true"
-                               style={{padding: "4 4 3 4"}}/> {this.props.treeIndex === "root" ? "Clear All" : "Delete Group"}
+                        <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}
+                        >
+                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
+                            {this.props.treeIndex === "root" ? "Clear All" : "Delete Group"}
                         </button>
                     </div>
                 </div>
@@ -1154,46 +1217,11 @@ class Group extends React.Component {
                     })
                 }
 
-                <div className="d-flex justify-content-end">
-                    <div className="p-2 flex-fill">
-                        <span style={errorMessageStyle} hidden={errorHidden}>{errorMessage}</span>
-                    </div>
+                {
+                    groupBottomRow
+                }
 
-                    <div className="p-2">
-
-                        {/* Filter URL Copy Button */}
-                        <button type="button" className="btn btn-primary btn-sm mr-1"
-                                onClick={() => this.props.copyFilterURL()} hidden={submitHidden}>
-                            <i className='fa fa-clipboard mr-2'/>
-                            Copy Filter URL
-                        </button>
-
-                        {/* Filter Load Button */}
-                        <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden}
-                                onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId}
-                                data-bs-toggle='tooltip' data-bs-placement='top' data-bs-trigger='manual'
-                                data-title='Changes Saved!'>
-                            Load a Saved Filter
-                        </button>
-
-                        {/* Filter Save Button */}
-                        <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1"
-                                onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled}
-                                data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top"
-                                title="Filter saved successfully">
-                            Save Current Filter
-                        </button>
-
-                        {/* Filter Submit Button */}
-                        <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled}
-                                onClick={() => this.props.submitFilter(true /*reset current page*/)}
-                                hidden={submitHidden}>
-                            {this.props.submitButtonName}
-                        </button>
-                    </div>
-
-                </div>
-                <div className="container" style={{maxWidth: '100%', marginRight: "0"}}>
+                <div style={{maxWidth: '100%', marginRight: "0"}}>
                     <div className="d-flex flex-row-reverse">
                         {saveCard}
                         {loadCard}

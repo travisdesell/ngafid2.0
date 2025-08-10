@@ -57,13 +57,13 @@ object EventRoutes : RouteProvider() {
                     Role.LOGGED_IN
                 )
                 get(
-                    "count/by-airframe/{aid}",
-                    { ctx -> StatisticsJavalinRoutes.getOneEventCountsByAirframe(ctx) },
-                )
-                get(
                     "count/by-airframe/aggregate",
                     { ctx -> StatisticsJavalinRoutes.getAllEventCountsByAirframe(ctx, true) },
                     Role.LOGGED_IN
+                )
+                get(
+                    "count/by-airframe/{aid}",
+                    { ctx -> StatisticsJavalinRoutes.getOneEventCountsByAirframe(ctx) },
                 )
                 get(
                     "count/monthly/by-name",

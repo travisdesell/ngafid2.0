@@ -86,7 +86,7 @@ module.exports = {
     },
 
     entry: {
-        aggregate_trends: "./src/aggregate_trends.js",
+        aggregate_trends: "./src/aggregate_trends.tsx",
         aggregate: "./src/aggregate.js",
         airsync_imports: "./src/airsync_imports.js",
         airsync_uploads: "./src/airsync_uploads.js",
@@ -96,7 +96,7 @@ module.exports = {
         event_definition: "./src/event_definition.js",
         event_definitions_display: "./src/event_definitions_display.js",
         event_statistics: "./src/event_statistics.js",
-        fleet_trends: "./src/fleet_trends.js",
+        fleet_trends: "./src/fleet_trends.tsx",
         flight_display: "./src/flight_display.js",
         flight: "./src/flight.js",
         flights: "./src/flights.js",

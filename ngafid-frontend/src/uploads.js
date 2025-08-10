@@ -4,7 +4,7 @@ import {createRoot} from "react-dom/client";
 import {showConfirmModal} from "./confirm_modal.js";
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-import {Paginator} from "./paginator_component.js";
+import {Paginator} from "./paginator_component.tsx";
 
 import SparkMD5 from "spark-md5";
 import Button from "react-bootstrap/Button";
@@ -385,7 +385,7 @@ function getUploadeIdentifier(filename, size) {
 }
 
 
-class UploadsPage extends React.Component {
+export class UploadsPage extends React.Component {
 
     constructor(props) {
         super(props);

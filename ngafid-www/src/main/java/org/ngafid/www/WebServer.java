@@ -21,6 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import org.ngafid.www.routes.DockerServiceHeartbeatMonitor;
+
 import static org.ngafid.core.util.SendEmail.sendAdminEmails;
 
 
@@ -42,6 +44,12 @@ public abstract class WebServer {
     protected final int maxThreads = 32;
     protected final int minThreads = 2;
     protected final int timeOutMillis = 1000 * 60 * 5;
+
+    private static DockerServiceHeartbeatMonitor dockerServiceHeartbeatMonitor;
+
+    public static DockerServiceHeartbeatMonitor getMonitor() {
+        return dockerServiceHeartbeatMonitor;
+    }
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -213,6 +221,8 @@ public abstract class WebServer {
      */
     public static void main(String[] args) {
 
+        /* Initialize the DockerServiceHeartbeatMonitor */
+        dockerServiceHeartbeatMonitor = DockerServiceHeartbeatMonitor.initialize();
 
         try {
             final InputStream logConfig = Files.newInputStream(new File("resources/log.properties").toPath());

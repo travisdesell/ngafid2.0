@@ -1,21 +1,36 @@
 package org.ngafid.processor.format;
 
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.flights.Airframes.AliasKey;
-import org.ngafid.core.util.MD5;
-import org.ngafid.processor.Pipeline;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.Airframes.AliasKey;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.FlightMeta;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.core.util.MD5;
+import org.ngafid.processor.Pipeline;
+
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -360,16 +375,21 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
 
         String airframeType = null;
-        if (Airframes.FIXED_WING_AIRFRAMES.contains(airframeName)
-                || airframeName.contains("Garmin")) {
+
+        LOG.info("[EX] Setting airframe name '" + airframeName + "' for incoming name '" + name + "'");
+
+        //Fixed Wing Airframe
+        if (Airframes.FIXED_WING_AIRFRAMES.contains(airframeName) || airframeName.contains("Garmin")) {
             airframeType = "Fixed Wing";
+
+        //Rotorcraft
         } else if (Airframes.ROTORCRAFT.contains(airframeName)) {
             airframeType = "Rotorcraft";
+
+        //Unknown Airframe
         } else {
-            LOG.severe("Could not import flight because the aircraft type was unknown for the following airframe name: '"
-                    + airframeName + "'");
-            LOG.severe(
-                    "Please add this to the the `airframe_type` table in the database and update this method.");
+            LOG.severe("Could not import flight because the aircraft type was unknown for the following airframe name: '" + airframeName + "'");
+            LOG.severe("Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }
 

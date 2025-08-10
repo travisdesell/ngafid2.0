@@ -1,5 +1,5 @@
 import 'bootstrap';
-import {Paginator} from "./paginator_component.js";
+import {Paginator} from "./paginator_component.tsx";
 import { showConfirmModal } from "./confirm_modal.js";
 import { showErrorModal } from './error_modal.js';
 import SignedInNavbar from "./signed_in_navbar.js";

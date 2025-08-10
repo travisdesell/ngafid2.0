@@ -1,7 +1,10 @@
 package org.ngafid.core.kafka;
 
+import java.net.UnknownHostException;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -47,7 +50,11 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
         return new KafkaProducer<>(getProperties());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
+
+        /* Start Docker Service Heartbeat Producer */
+        DockerServiceHeartbeat.autostart();
+
         new EmailConsumer(Thread.currentThread(), getConsumer(), getProducer()).run();
     }
 
