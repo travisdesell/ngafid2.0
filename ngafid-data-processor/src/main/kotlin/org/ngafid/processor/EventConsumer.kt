@@ -62,9 +62,6 @@ class EventConsumer protected constructor(
 
         try {
             etc = objectMapper.readValue(record!!.value(), EventToCompute::class.java)
-            LOG.info("=== EventConsumer processing message ===")
-            LOG.info("Received EventToCompute: flightId=${etc.flightId}, eventId=${etc.eventId}")
-            LOG.info("Raw message: ${record.value()}")
         } catch (e: JsonProcessingException) {
             throw RuntimeException(e)
         }
@@ -73,14 +70,13 @@ class EventConsumer protected constructor(
             Database.getConnection().use { connection ->
                 val flight = Flight.getFlight(connection, etc.flightId)
                 if (flight == null) {
-                    LOG.info("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because the flight does not exist in the database. Assuming this was a stale request")
+                    LOG.warning("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because the flight does not exist in the database. Assuming this was a stale request")
                     return Pair(record, false)
                 }
 
                 val def = eventDefinitionMap!![etc.eventId]
-                LOG.info("Retrieved event definition: id=${def?.id}, name=${def?.name}, airframeNameId=${def?.airframeNameId}")
                 if (def == null) {
-                    LOG.info("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because there is no event with that definition in the database.")
+                    LOG.warning("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because there is no event with that definition in the database.")
                     return Pair(record, false)
                 }
 
@@ -93,9 +89,8 @@ class EventConsumer protected constructor(
                 try {
                     val allEvents = Event.getAll(connection, flight.id)
                     val existingEvents = allEvents.filter { it.eventDefinitionId == def.id }
-                    LOG.info("Found ${existingEvents.size} existing events for flight ${flight.id} and event definition ${def.id}")
                     if (existingEvents.isNotEmpty()) {
-                        LOG.info("Event already exists in database, skipping reprocessing")
+                        LOG.warning("Event already exists in database, skipping reprocessing")
                         return Pair(record, false)
                     }
                 } catch (e: Exception) {
@@ -117,25 +112,12 @@ class EventConsumer protected constructor(
                         .filter { e: Event -> e.eventDefinitionId == etc.eventId }
                         .toList()
 
-                    for (event in events) {
-                        LOG.info(
-                            "Preparing to insert event: flight_id=%d, other_flight_id=%s, start_time=%s, end_time=%s, event_definition_id=%d".format(
-                                event.flightId,
-                                java.lang.String.valueOf(event.otherFlightId),
-                                java.lang.String.valueOf(event.startTime),
-                                java.lang.String.valueOf(event.endTime),
-                                event.eventDefinitionId
-                            )
-                        )
-                    }
 
                     Event.batchInsertion(connection, flight, events)
 
-                    // Computed okay.
 
                     // inserts proximity points for each event into the heatmap_points table 
                     if (scanner is ProximityEventScanner) {
-                        LOG.info("Processing proximity events - calling insertCoordinatesForEvents")
                         HeatmapPointsProcessor.insertCoordinatesForProximityEvents(
                             connection,
                             events,
@@ -144,9 +126,6 @@ class EventConsumer protected constructor(
                         )
                     } else {
                         // For regular (non-proximity) events, insert points from flight data
-                        LOG.info("Processing regular events - calling insertCoordinatesForRegularEvents for ${events.size} events")
-                        LOG.info("Scanner type: ${scanner.javaClass.simpleName}")
-                        LOG.info("Flight ID: ${flight.id}")
                         HeatmapPointsProcessor.insertCoordinatesForNonProximityEvents(
                             connection,
                             events,
@@ -156,9 +135,7 @@ class EventConsumer protected constructor(
 
                     return Pair(record, false)
                 } catch (e: ColumnNotAvailableException) {
-                    // Some other exception happened...
                     e.printStackTrace()
-                    LOG.info("A required column was not available so the event could not be computed: " + e.message)
                     return Pair(record, true)
                 } catch (e: Exception) {
                     e.printStackTrace()
