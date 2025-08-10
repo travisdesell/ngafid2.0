@@ -73,17 +73,13 @@ public class ComputeAltAGL extends ComputeStep {
                 continue;
             }
 
-            //TODO: remove hardcoded return before production, uncomment the code below
-            // Run out of memory.
-            altitudeAGLTS.add(0);
-            /*
             try {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
                 altitudeAGLTS.add(altitudeAGL);
             } catch (TerrainUnavailableException e) {
                 altitudeAGLTS.add(Double.NaN);
             }
-            */
+
         }
 
         builder.addTimeSeries(altitudeAGLTS);
