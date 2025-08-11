@@ -842,6 +842,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
                                     updateEndMonth={updateEndMonth}
                                     exportCSV={exportCSV}
                                     datesOrAirframeChanged={datesOrAirframeChanged}
+                                    requireManualInitialUpdate
                                 />
                                 <div className="card-body" style={{ padding: "0" }}>
                                     <div className="row" style={{ margin: "0", display: "flex", height: "100%" }}>

@@ -246,7 +246,7 @@ export default class TimeHeader extends React.Component {
                 <div className="relative">
 
                     {
-                        !this.state.didFirstUpdate
+                        this.props.requireManualInitialUpdate && !this.state.didFirstUpdate
                         &&
                         <span className="absolute flex size-3">
                             <span className="absolute ml-23 -mt-1 inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
