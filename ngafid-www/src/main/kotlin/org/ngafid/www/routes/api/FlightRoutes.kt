@@ -24,6 +24,7 @@ object FlightRoutes : RouteProvider() {
                 get(FlightsJavalinRoutes::postFlights, Role.LOGGED_IN)
                 get("double-series", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames, Role.LOGGED_IN)
                 get("turn-to-final", AnalysisJavalinRoutes::postTurnToFinal, Role.LOGGED_IN)
+                get("flight_hours_by_airframe", FlightRoutes::getFlightHoursByAirframe, Role.LOGGED_IN)
                 get("aggregate/flight_hours_by_airframe", FlightRoutes::getAggregateFlightHoursByAirframe, Role.LOGGED_IN)
 
                 RouteUtility.getStat("time/past-month") { ctx, stats -> ctx.json(stats.monthFlightTime()) }
@@ -158,6 +159,67 @@ object FlightRoutes : RouteProvider() {
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replace("NaN".toRegex(), "null")
             ctx.result(output)
+        }
+
+    }
+
+    fun getFlightHoursByAirframe(ctx: Context) {
+
+        val user = SessionUtility.getUser(ctx)
+        val fleetId = user.fleetId
+
+        val startDateIn = ctx.queryParam("startDate")
+        val endDateIn = ctx.queryParam("endDate")
+
+        val startDate = if (startDateIn != null) LocalDate.parse(startDateIn) else LocalDate.MIN
+        val endDate = if (endDateIn != null) LocalDate.parse(endDateIn) else LocalDate.MAX
+
+
+        Database.getConnection().use { connection ->
+            val results = mutableListOf<Map<String, Any>>()
+
+            val dateClause = StatisticsJavalinRoutes.buildDateClause(startDate, endDate)
+            val sql = """
+                SELECT
+                    a.airframe,
+                    v.airframe_id,
+                    SUM(v.num_flights)                  AS num_flights,
+                    SUM(v.flight_time_seconds)/3600.0   AS total_flight_hours
+                FROM
+                    v_fleet_flight_stats_by_airframe v
+                JOIN
+                    airframes a ON a.id = v.airframe_id
+                WHERE
+                    ((? = -1 OR v.airframe_id = ?) AND v.fleet_id = ?)
+                AND
+                    $dateClause
+                GROUP
+                    BY a.airframe, v.airframe_id
+                ORDER
+                    BY a.airframe;
+            """.trimIndent()
+
+            val stmt: PreparedStatement = connection.prepareStatement(sql)
+
+            val airframeId = ctx.queryParam("airframeID")?.toInt() ?: -1
+            stmt.setInt(1, airframeId)
+            stmt.setInt(2, airframeId)
+
+            stmt.setInt(3, fleetId)
+
+
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                results.add(
+                    mapOf(
+                        "airframe" to rs.getString("airframe"),
+                        "airframe_id" to rs.getInt("airframe_id"),
+                        "num_flights" to rs.getInt("num_flights"),
+                        "total_flight_hours" to rs.getDouble("total_flight_hours")
+                    )
+                )
+            }
+            ctx.json(results)
         }
 
     }

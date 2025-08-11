@@ -299,6 +299,27 @@ GROUP BY
     month;
 
 
+--changeset aidan_cu:fleet-flight-stats-by-airframe labels:flights,views
+CREATE OR REPLACE VIEW v_fleet_flight_stats_by_airframe AS
+SELECT
+    ft.fleet_id,
+    ft.airframe_id,
+    ft.year,
+    ft.month,
+    fc.count AS num_flights,
+    ft.flight_time_seconds
+FROM
+    v_fleet_monthly_flight_time   ft
+JOIN
+    v_fleet_monthly_flight_counts fc
+ON
+    fc.fleet_id = ft.fleet_id
+    AND fc.airframe_id = ft.airframe_id
+    AND fc.year = ft.year
+    AND fc.month = ft.month;
+
+
+--changeset aidan_cu:v_aggregate_flight_stats_by_airframe_alt labels:flights,views
 CREATE OR REPLACE VIEW v_aggregate_flight_stats_by_airframe_alt AS
 SELECT
     ft.airframe_id,

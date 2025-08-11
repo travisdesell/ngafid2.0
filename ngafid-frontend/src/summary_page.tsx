@@ -342,7 +342,7 @@ class Notifications extends React.Component<object, NotificationsState> {
 }
 
 
-type AggregateFlightHoursByAirframe = {
+type FlightHoursByAirframe = {
     airframe: string;
     airframe_id: number;
     num_flights: number;
@@ -372,7 +372,8 @@ type SummaryPageState = {
         flightsWithWarning: number;
         flightsWithError: number;
     };
-    aggregateFlightHoursByAirframe: AggregateFlightHoursByAirframe[];
+    flightHoursByAirframe: FlightHoursByAirframe[];
+    aggregateFlightHoursByAirframe: FlightHoursByAirframe[];
     eventCounts: object;
     notifications: React.ReactElement;
 }
@@ -408,6 +409,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 flightsWithWarning: number;
                 flightsWithError: number;
             }),
+            flightHoursByAirframe: [],
             aggregateFlightHoursByAirframe: [],
             eventCounts: {},
             notifications: <Notifications/>
@@ -424,6 +426,10 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         //In aggregate view, fetch aggregate flight hours by airframe
         if (this.props.aggregate)
             this.fetchAggregateFlightHoursByAirframe();
+
+        //Otherwise, fetch fleet flight hours by airframe
+        else
+            this.fetchFlightHoursByAirframe();
     }
 
     displayPlots(selectedAirframe: AirframeNameID) {
@@ -662,8 +668,12 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         //...
         this.fetchEventCountByAirframe();
 
-        //Re-fetch aggregate flight hours by airframe if in aggregate view
-        this.fetchAggregateFlightHoursByAirframe();
+        //In aggregate view, re-fetch aggregate flight hours by airframe
+        if (this.props.aggregate) 
+            this.fetchAggregateFlightHoursByAirframe();
+        //Otherwise, re-fetch fleet flight hours by airframe
+        else
+            this.fetchFlightHoursByAirframe();
 
         //Re-fetch statistics   [TODO: Only re-fetch the date-dependent ones ?]
         this.fetchStatistics();
@@ -753,6 +763,58 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             );
 
         }
+
+    }
+
+    fetchFlightHoursByAirframe() {
+
+        console.log("SummaryPage -- Fetching Fleet Flight Hours by Airframe...");
+
+        const route = '/api/flight/flight_hours_by_airframe';
+
+        const startDate = buildStartDate(startYear, startMonth);
+        const endDate = buildEndDate(endYear, endMonth);
+
+        const submissionData = {
+            startDate: startDate,
+            endDate: endDate,
+            airframeID: this.state.airframe.id
+        };
+
+        $.ajax({
+            type: 'GET',
+            url: route,
+            data: submissionData,
+            async: true,
+            success: (response) => {
+
+                console.log(`Got Fleet Flight Hours by Airframe: `, response);
+
+                //Response has an error, exit
+                if (response.err_msg) {
+                    showErrorModal(response.err_title, response.err_msg);
+                    return;
+                }
+
+                /*  
+                    airframe -> airframeName
+                    airframe_id -> airframeID
+                    num_flights -> numFlights
+                    total_flight_hours -> totalFlightHours
+                */  
+
+                this.setState({flightHoursByAirframe: response});
+
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                showErrorModal("Error Getting Fleet Flight Hours by Airframe", errorThrown);
+            },
+        });
+
+        console.log("Finished fetching Fleet Flight Hours by Airframe.");
 
     }
 
@@ -1113,11 +1175,76 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             <i className="opacity-50 text-sm">N/A</i>
         );
 
+        const flightHoursByAirframeView = () => {
+
+            return (
+                <div className="card flex-1 h-full">
+
+                    {/* Table Header */}
+                    <div className="text-2xl card-header opacity-100">
+                        Flight Hours by Airframe
+                    </div>
+
+
+                    <div className="card-body px-12! opacity-100! text-center text-sm">
+
+                        {/* Flight Hours by Airframe Table */}
+                        <table className="table-hover table-fixed rounded-lg w-full">
+
+                            <colgroup>
+                                <col style={{width: "40%"}}/>
+                                <col style={{width: "30%"}}/>
+                                <col style={{width: "30%"}}/>
+                            </colgroup>
+
+
+                            <thead className="leading-16 text-[var(--c_text)] border-b-1">
+                                <tr>
+                                    <th>Airframe</th>
+                                    <th className="text-right">Flights</th>
+                                    <th className="text-right">Hours</th>
+                                </tr>
+                            </thead>
+
+
+                            <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
+
+                                {/* Empty spacer row */}
+                                <tr className="pointer-none bg-transparent">
+                                    <td colSpan={3} className="h-6" />
+                                </tr>
+
+                                {
+                                    Object.entries(this.state.flightHoursByAirframe).map(([index, data]) => (
+                                        <tr
+                                            key={index}
+                                            className={`${parseInt(index) % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`}
+                                        >
+                                            <td className="truncate whitespace-nowrap overflow-hidden">
+                                                {data.airframe}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {data.num_flights}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {data.total_flight_hours.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+
+                            </tbody>
+                            
+                        </table>
+
+                    </div>
+
+                </div>
+            );
+        
+        };
+
         const aggregateFlightHoursByAirframeView = () => {
-            
-            //Not in aggregate view, don't display
-            if (!this.props.aggregate)
-                return null;
 
             return (
                 <div className="card flex-1 h-full">
@@ -1359,7 +1486,11 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                             {this.props.aggregate ? this.UploadsSummaryAggregate() : this.UploadsSummary()}
 
                             {/* Aggregate Flight Hours by Airframe Table */}
-                            { aggregateFlightHoursByAirframeView() }
+                            {
+                                this.props.aggregate
+                                ? aggregateFlightHoursByAirframeView()
+                                : flightHoursByAirframeView()
+                            }
                             
                             {/* Notifications / Participation */}
                             <div className="flex flex-col h-full flex-1">
