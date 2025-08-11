@@ -786,6 +786,17 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
     };
 
+    const airframeChangeFromName = (airframeName: string) => {
+
+        //Find airframe data in list corresponding to the name
+        const airframe = airframes.find(a => a.name === airframeName);
+
+        //Got an airframe from the name, change the state
+        if (airframe)
+            airframeChange(airframe);
+
+    };
+    
     const airframeChange = (airframe: AirframeNameID) => {
         setAirframe(airframe);
     };
@@ -824,7 +835,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
                                     endMonth={endMonth}
                                     datesChanged={datesChanged}
                                     dateChange={dateChange}
-                                    airframeChange={airframeChange}
+                                    airframeChange={(airframe: string) => airframeChangeFromName(airframe)}
                                     updateStartYear={updateStartYear}
                                     updateStartMonth={updateStartMonth}
                                     updateEndYear={updateEndYear}
