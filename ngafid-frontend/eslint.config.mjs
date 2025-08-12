@@ -1,7 +1,7 @@
 // eslint.config.js
 import { defineConfig, globalIgnores } from "eslint/config";
 
-import globals, { node } from "globals";
+import globals from "globals";
 import compat from "eslint-plugin-compat";
 
 import reactPlugin from "eslint-plugin-react";
@@ -26,7 +26,6 @@ export default defineConfig([
     importPlugin.flatConfigs.recommended,
 
     {
-        ...reactRecommended,
 
         files: ["**/*.{js,jsx,ts,tsx,mjs}"],
 
@@ -48,7 +47,7 @@ export default defineConfig([
 
             globals: {
 
-                ...node,
+                ...globals.node,
 
                 //Browser globals
                 ...globals.browser,
@@ -196,7 +195,10 @@ export default defineConfig([
 
         },
 
-        ignores: [
+    },
+
+    {
+        ignores : [
             "**/node_modules/**",
             "**/dist/**",
             "**/build/**",
@@ -205,17 +207,6 @@ export default defineConfig([
             "**/tailwind.config.js",
             "**/eslint.config.mjs",
         ],
-
-    },
-
-    globalIgnores([
-        "**/node_modules/**",
-        "**/dist/**",
-        "**/build/**",
-        "**/Build/**",
-        "**/webpack.config.js",
-        "**/tailwind.config.js",
-        "**/eslint.config.mjs",
-    ]),
+    }
     
 ]);
