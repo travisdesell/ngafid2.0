@@ -1177,8 +1177,11 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         const flightHoursByAirframeView = () => {
 
+            const HAS_NO_DATA = (this.state.flightHoursByAirframe.length === 0);
+
             return (
                 <div className="card flex-1 h-full">
+
 
                     {/* Table Header */}
                     <div className="text-2xl card-header opacity-100">
@@ -1187,6 +1190,21 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
 
                     <div className="card-body px-12! opacity-100! text-center text-sm">
+
+                        {
+                            HAS_NO_DATA
+                            &&
+                            <div className="truncate whitespace-nowrap overflow-hidden italic text-yellow-500 text-base">
+
+                                {/* Status Icon */}
+                                <i className={`mr-2 scale-100 fa fa-warning`}/>
+
+                                {/* Status Name */}
+                                <span>No data available for the selected airframe(s) and date range!</span>
+
+                            </div>
+                        }
+                        
 
                         {/* Flight Hours by Airframe Table */}
                         <table className="table-hover table-fixed rounded-lg w-full">
@@ -1246,6 +1264,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         const aggregateFlightHoursByAirframeView = () => {
 
+            const HAS_NO_DATA = (this.state.aggregateFlightHoursByAirframe.length === 0);
+
             return (
                 <div className="card flex-1 h-full">
 
@@ -1256,6 +1276,21 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
 
                     <div className="card-body px-12! opacity-100! text-center text-sm">
+
+                        {
+                            HAS_NO_DATA
+                            &&
+                            <div className="truncate whitespace-nowrap overflow-hidden italic text-yellow-500 text-base">
+
+                                {/* Status Icon */}
+                                <i className={`mr-2 scale-100 fa fa-warning`}/>
+
+                                {/* Status Name */}
+                                <span>No data available for the selected airframe(s) and date range!</span>
+
+                            </div>
+                        }
+                    
 
                         {/* Aggregate Flight Hours by Airframe Table */}
                         <table className="table-hover table-fixed rounded-lg w-full">
