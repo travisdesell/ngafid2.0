@@ -54,5 +54,6 @@ declare global {
     const modifyTailsAccess: boolean;
     const plotMapHidden: boolean;
     const airframes: AirframeNameID[];
+    const tagNames: string[];
     const eventNames: string[];
 }
