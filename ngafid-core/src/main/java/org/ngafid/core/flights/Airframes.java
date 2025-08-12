@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public enum Airframes {
@@ -284,6 +285,85 @@ public enum Airframes {
 
             return airframes;
         }
+    }
+
+    public record AirframeNameID(String name, int id) { /*...*/ }
+
+    public static final int FLEET_ID_ALL = -1;
+    public static AirframeNameID[] getAllWithIds(Connection connection) throws SQLException {
+        return getAllWithIds(connection, FLEET_ID_ALL);
+    }
+    public static AirframeNameID[] getAllWithIds(Connection connection, int fleetId) throws SQLException {
+
+        ArrayList<AirframeNameID> airframes = new ArrayList<>();
+        String queryString;
+
+        //Get all airframes regardless of fleet
+        if (fleetId == FLEET_ID_ALL) {
+
+            LOG.info("Getting airframe name ID pairs regardless of fleet");
+
+            queryString = """
+                SELECT
+                    airframe, id
+                FROM
+                    airframes
+                ORDER BY airframe
+            """;
+
+            try (PreparedStatement query = connection.prepareStatement(queryString)) {
+
+                try (ResultSet resultSet = query.executeQuery()) {
+                    while (resultSet.next()) {
+                        // airframe existed in the database, return the id
+                        String airframe = resultSet.getString(1);
+                        int id = resultSet.getInt(2);
+
+                        AirframeNameID airframeNameID = new AirframeNameID(airframe, id);
+                        airframes.add(airframeNameID);
+                    }
+                }
+
+            }
+
+        //Get all airframes for a specific fleet
+        } else {
+
+            LOG.log(Level.INFO, "Getting airframe name ID pairs for fleet: {0}", fleetId);
+
+            queryString = """
+                SELECT
+                    airframe, id
+                FROM
+                    airframes
+                INNER JOIN
+                    fleet_airframes ON airframes.id = fleet_airframes.airframe_id
+                WHERE
+                    fleet_airframes.fleet_id = ?
+                ORDER BY
+                    airframe
+            """;
+
+            try (PreparedStatement query = connection.prepareStatement(queryString)) {
+                query.setInt(1, fleetId);
+
+                try (ResultSet resultSet = query.executeQuery()) {
+                    while (resultSet.next()) {
+                        // airframe existed in the database, return the id
+                        String airframe = resultSet.getString(1);
+                        int id = resultSet.getInt(2);
+
+                        AirframeNameID airframeNameID = new AirframeNameID(airframe, id);
+                        airframes.add(airframeNameID);
+                    }
+                }
+
+            }
+
+        }
+
+        return airframes.toArray(AirframeNameID[]::new);
+
     }
 
     public static ArrayList<String> getAll(Connection connection) throws SQLException {

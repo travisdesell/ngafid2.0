@@ -113,7 +113,11 @@ export default defineConfig([
                 "AbortController",
             ],
             'import/resolver': {
-                webpack: {}
+                webpack: {},
+                "node": {
+                    "extensions": [".js", ".jsx", ".ts", ".tsx", ".mjs"],
+                    "moduleDirectory": ["node_modules", "src/"],
+                }
             },
         },
 

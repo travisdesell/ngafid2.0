@@ -1,4 +1,4 @@
-// src/types/globals.d.ts
+// src/types.d.ts
 
 
 
@@ -43,12 +43,16 @@ export interface Event {
 
 
 //TODO: Figure out the best way to reconcile this with eslint globals
+export interface AirframeNameID {
+    name: string;
+    id: number;
+}
 declare global {
     const waitingUserCount: number;
     const fleetManager: boolean;
     const unconfirmedTailsCount: number;
     const modifyTailsAccess: boolean;
     const plotMapHidden: boolean;
-    const airframes: string[];
+    const airframes: AirframeNameID[];
     const eventNames: string[];
 }

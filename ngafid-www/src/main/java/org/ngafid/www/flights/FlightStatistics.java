@@ -1,12 +1,15 @@
 package org.ngafid.www.flights;
 
-import org.ngafid.core.util.TimeUtils;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.logging.Logger;
+
+import org.ngafid.core.util.TimeUtils;
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateAirframeClause;
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
 
 public enum FlightStatistics {
     ;
@@ -56,9 +59,29 @@ public enum FlightStatistics {
     public static double getTotalFlightTime(Connection connection, int fleetId, int airframeId) throws SQLException {
         return getFlightTime(connection, fleetId, airframeId, "v_fleet_flight_time");
     }
+    public static double getTotalFlightTimeDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeID) throws SQLException {
+        
+        String clause;
+        if (airframeID < 0)
+            clause = buildDateClause(startDate, endDate);
+        else
+            clause = buildDateAirframeClause(startDate, endDate, airframeID);
+
+        return getFlightTime(connection, fleetId, airframeID, "v_fleet_flight_time_dated", clause);
+    }
 
     public static double getAggregateTotalFlightTime(Connection connection, int airframeId) throws SQLException {
         return getAggregateFlightTime(connection, airframeId, "v_aggregate_flight_time", null);
+    }
+    public static double getAggregateTotalFlightTimeDated(Connection connection, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
+
+        String clause;
+        if (airframeId < 0)
+            clause = buildDateClause(startDate, endDate);
+        else
+            clause = buildDateAirframeClause(startDate, endDate, airframeId);
+
+        return getAggregateFlightTime(connection, airframeId, "v_aggregate_flight_time_dated", clause);
     }
 
     public static double get30DayFlightTime(Connection connection, int fleetId, int airframeId) throws SQLException {
@@ -118,7 +141,7 @@ public enum FlightStatistics {
             query += " WHERE " + condition;
 
         try (PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet resultSet = statement.executeQuery()) {
+            ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return resultSet.getInt(1);
             } else {
@@ -130,9 +153,30 @@ public enum FlightStatistics {
     public static int getTotalFlightCount(Connection connection, int fleetId, int airframeId) throws SQLException {
         return getFlightCount(connection, fleetId, airframeId, "v_fleet_flight_counts", null);
     }
+    public static int getTotalFlightCountDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
+
+        String clause;
+        if (airframeId < 0)
+            clause = buildDateClause(startDate, endDate);
+        else
+            clause = buildDateAirframeClause(startDate, endDate, airframeId);
+
+        return getFlightCount(connection, fleetId, airframeId, "v_fleet_flight_counts_dated", clause);
+    }
 
     public static int getAggregateTotalFlightCount(Connection connection, int airframeId) throws SQLException {
         return getAggregateFlightCount(connection, airframeId, "v_aggregate_flight_counts", null);
+    }
+    public static int getAggregateTotalFlightCountDated(Connection connection, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
+
+        String clause;
+        if (airframeId < 0)
+            clause = buildDateClause(startDate, endDate);
+        else
+            clause = buildDateAirframeClause(startDate, endDate, airframeId);
+
+        return getAggregateFlightCount(connection, airframeId, "v_aggregate_flight_counts_dated", clause);
+
     }
 
     public static int getCurrentYearFlightCount(Connection connection, int fleetId, int airframeId) throws SQLException {
