@@ -39,6 +39,20 @@
             <version>${mustache.version}</version>
         </dependency>
 
+        <!-- Guava for caching -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.4.8-jre</version>
+        </dependency>
+
+        <!-- JetBrains Annotations -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>24.1.0</version>
+        </dependency>
+
         <!-- Testing Dependencies -->
 
         <dependency>

@@ -3,6 +3,7 @@ package org.ngafid.processor.terrain;
 import java.nio.file.NoSuchFileException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +22,7 @@ public enum TerrainCache {
 
     static {
 
-        LOG.info("[EX] Initializing TerrainCache with max size: " + Config.MAX_TERRAIN_CACHE_SIZE);
+        LOG.log(Level.INFO, "Initializing TerrainCache with max size: {0}", Config.MAX_TERRAIN_CACHE_SIZE);
 
         TILE_CACHE = CacheBuilder.newBuilder()
                 .maximumSize(Config.MAX_TERRAIN_CACHE_SIZE)
@@ -144,4 +145,3 @@ public enum TerrainCache {
     }
 
 }
-

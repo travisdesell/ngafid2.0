@@ -108,4 +108,12 @@ public class EventMetaData {
 
         return metaDataList;
     }
+
+    public EventMetaDataKey getName() {
+        return name;
+    }
+
+    public double getValue() {
+        return value;
+    }
 }

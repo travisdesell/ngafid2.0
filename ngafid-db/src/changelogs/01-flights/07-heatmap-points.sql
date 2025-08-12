@@ -1,7 +1,7 @@
 --liquibase formatted sql
 
---changeset roman:proximity-points labels:flights,proximity
-CREATE TABLE proximity_points (
+--changeset roman:heatmap-points labels:flights,proximity
+CREATE TABLE heatmap_points (
     id INT NOT NULL AUTO_INCREMENT,
     event_id INT NOT NULL,
     flight_id INT NOT NULL,
@@ -9,8 +9,6 @@ CREATE TABLE proximity_points (
     longitude DOUBLE NOT NULL,
     timestamp DATETIME NOT NULL,
     altitude_agl DOUBLE,
-    lateral_distance DOUBLE,
-    vertical_distance DOUBLE,
     
     PRIMARY KEY(id),
     INDEX(event_id),

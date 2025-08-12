@@ -22,7 +22,7 @@ import org.ngafid.processor.events.EventScanner
 import org.ngafid.processor.events.LowEndingFuelScanner
 import org.ngafid.processor.events.SpinEventScanner
 import org.ngafid.processor.events.proximity.ProximityEventScanner
-import org.ngafid.core.proximity.ProximityPointsProcessor
+import org.ngafid.core.heatmap.HeatmapPointsProcessor
 
 import java.sql.Connection
 import java.sql.SQLException
@@ -65,6 +65,9 @@ class EventConsumer protected constructor(
 
         try {
             etc = objectMapper.readValue(record!!.value(), EventToCompute::class.java)
+            LOG.info("=== EventConsumer processing message ===")
+            LOG.info("Received EventToCompute: flightId=${etc.flightId}, eventId=${etc.eventId}")
+            LOG.info("Raw message: ${record.value()}")
         } catch (e: JsonProcessingException) {
             throw RuntimeException(e)
         }
@@ -78,12 +81,29 @@ class EventConsumer protected constructor(
                 }
 
                 val def = eventDefinitionMap!![etc.eventId]
+                LOG.info("Retrieved event definition: id=${def?.id}, name=${def?.name}, airframeNameId=${def?.airframeNameId}")
                 if (def == null) {
                     LOG.info("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because there is no event with that definition in the database.")
                     return Pair(record, false)
                 }
 
-                if (def.airframeNameId > 0 && def.airframeNameId == flight.airframe.id) return Pair(record, false)
+                if (def.airframeNameId > 0 && def.airframeNameId == flight.airframe.id) {
+                    LOG.info("Skipping event - airframe mismatch: event airframe=${def.airframeNameId}, flight airframe=${flight.airframe.id}")
+                    return Pair(record, false)
+                }
+                
+                // Check if this event actually exists in the database for this flight
+                try {
+                    val allEvents = Event.getAll(connection, flight.id)
+                    val existingEvents = allEvents.filter { it.eventDefinitionId == def.id }
+                    LOG.info("Found ${existingEvents.size} existing events for flight ${flight.id} and event definition ${def.id}")
+                    if (existingEvents.isNotEmpty()) {
+                        LOG.info("Event already exists in database, skipping reprocessing")
+                        return Pair(record, false)
+                    }
+                } catch (e: Exception) {
+                    LOG.warning("Error checking existing events: ${e.message}")
+                }
                 try {
                     clearExistingEvents(connection, flight, eventDefinitionMap!![etc.eventId]!!)
                     val scanner = getScanner(
@@ -116,13 +136,24 @@ class EventConsumer protected constructor(
 
                     // Computed okay.
 
-                    // inserts proximity points for each event into the proximity_points table 
+                    // inserts proximity points for each event into the heatmap_points table 
                     if (scanner is ProximityEventScanner) {
-                        ProximityPointsProcessor.insertProximityPointsForEvents(
+                        LOG.info("Processing proximity events - calling insertCoordinatesForEvents")
+                        HeatmapPointsProcessor.insertCoordinatesForProximityEvents(
                             connection,
                             events,
                             scanner.mainFlightPointsMap,
                             scanner.otherFlightPointsMap
+                        )
+                    } else {
+                        // For regular (non-proximity) events, insert points from flight data
+                        LOG.info("Processing regular events - calling insertCoordinatesForRegularEvents for ${events.size} events")
+                        LOG.info("Scanner type: ${scanner.javaClass.simpleName}")
+                        LOG.info("Flight ID: ${flight.id}")
+                        HeatmapPointsProcessor.insertCoordinatesForNonProximityEvents(
+                            connection,
+                            events,
+                            flight
                         )
                     }
 

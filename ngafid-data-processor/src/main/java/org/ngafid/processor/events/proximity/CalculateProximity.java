@@ -1,6 +1,7 @@
 package org.ngafid.processor.events.proximity;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import org.ngafid.core.airports.Airports;
@@ -135,8 +136,10 @@ public class CalculateProximity {
 
         // Check for duplicate events
         for (Event event : eventList) {
+            Integer eventOtherFlightId = event.getOtherFlightId();
+            Integer testEventOtherFlightId = testEvent.getOtherFlightId();
             boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId() && 
-                                      event.getOtherFlightId() == testEvent.getOtherFlightId());
+                                      Objects.equals(eventOtherFlightId, testEventOtherFlightId));
             boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime()) && 
                                        event.getEndTime().equals(testEvent.getEndTime()));
 

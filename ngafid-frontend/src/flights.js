@@ -16,6 +16,10 @@ import {timeZones} from "./time_zones.js";
 import CesiumPage from "./ngafid_cesium.js";
 import {cesiumFlightsSelected} from "./cesium_buttons.js";
 
+
+import './index.css'; //<-- include Tailwind
+
+
 function invalidString(str) {
     return str == null || str.length < 0 || /^\s*$/.test(str);
 }
@@ -1913,7 +1917,7 @@ class FlightsPage extends React.Component {
         );
 
         //Map Graphic Item
-        const mapDiv = (<div id="map" className="map h-100" style={{minHeight: "500px"}}></div>);
+        const mapDiv = (<div id="map" className="map h-100 bg-[var(--c_bg)]!" style={{minHeight: "500px"}}></div>);
         const mapGraphicItem = (
             <div
                 id="map-container"
