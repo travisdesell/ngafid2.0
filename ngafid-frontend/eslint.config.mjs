@@ -138,7 +138,7 @@ export default defineConfig([
 
 
 
-            /* Rules for React Hooks (...which I don't think we actually use) */
+            /* Rules for React Hooks */
             //https://react.dev/reference/rules/rules-of-hooks
             "react-hooks/rules-of-hooks": "error",
             "react-hooks/exhaustive-deps": "warn",
@@ -150,6 +150,11 @@ export default defineConfig([
 
 
 
+            /* Variable Rules */
+            //https://eslint.org/docs/latest/rules/no-var 
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-unused-vars": "warn",
+
             //https://eslint.org/docs/latest/rules/prefer-const
             "prefer-const": [
                 "error", {
@@ -157,8 +162,6 @@ export default defineConfig([
                     "ignoreReadBeforeAssign": false
                 }
             ],
-
-
 
             //https://eslint.org/docs/latest/rules/no-var 
             "no-var": "error",   /* Note: This sometimes suggests to replace 'var' with 'const' when it should be 'let' */
