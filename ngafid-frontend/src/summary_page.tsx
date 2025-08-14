@@ -84,7 +84,7 @@ let endYear: number = date.getFullYear();
 let endMonth: number = date.getMonth() + 1;
 
 
-function buildStartDate(year: number, month: number): string {
+export function buildStartDate(year: number, month: number): string {
 
     //Force year and month values to be numbers
     year = +year;
@@ -105,7 +105,7 @@ function buildStartDate(year: number, month: number): string {
 
 }
 
-function buildEndDate(year: number, month: number): string {
+export function buildEndDate(year: number, month: number): string {
 
     //Force year and month values to be numbers
     year = +year;
