@@ -76,6 +76,17 @@ export function SeveritiesPage() {
     }, []);
 
 
+    const iniitalEventFlags = useMemo(() => {
+        const checked: Record<string, boolean> = {};
+        const empty:   Record<string, boolean> = {};
+        for (const name of eventNames) {
+            checked[name] = false;
+            empty[name]   = true;
+        }
+        empty["ANY Event"] = true;
+        return { checked, empty };
+    }, []);
+
 
     const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
     const [tagName, setTagName] = useState("All Tags");
@@ -85,8 +96,8 @@ export function SeveritiesPage() {
     const [endMonth, setEndMonth] = useState(new Date().getMonth() + 1);
     const [datesChanged, setDatesChanged] = useState(false);
     const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
-    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>({});
-    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>({});
+    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(iniitalEventFlags.checked);
+    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(iniitalEventFlags.empty);
     const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
     const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
 
@@ -95,8 +106,7 @@ export function SeveritiesPage() {
     useEffect(() => {
         setDatesOrAirframeChanged(true);
     }, [startYear, startMonth, endYear, endMonth, tagName]);
-
-
+    
     useEffect(() => {
 
         displayPlot(airframe.name);
@@ -446,12 +456,12 @@ export function SeveritiesPage() {
                 const anyEvent: EventSeverityByAirframe = {};
                 for (const countsByAirframe of Object.values(next)) {
 
-                    for (const [af, arr] of Object.entries(countsByAirframe)) {
+                    for (const [airframeName, eventCountArray] of Object.entries(countsByAirframe)) {
 
-                        if (!anyEvent[af])
-                            anyEvent[af] = [];
+                        if (!anyEvent[airframeName])
+                            anyEvent[airframeName] = [];
 
-                        anyEvent[af] = anyEvent[af].concat(arr);
+                        anyEvent[airframeName] = anyEvent[airframeName].concat(eventCountArray);
                     }
 
                 }
