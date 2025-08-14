@@ -28,7 +28,7 @@ const AIRFRAME_NAMES_SKIP = ['Garmin Flight Display'];
 eventNames.sort();
 
 
-type CSVValues = {
+export type CSVValues = {
     [eventName: string]: {
         [airframeName: string]: {
             [date: string]: {
@@ -125,11 +125,12 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
     useEffect(() => {
 
-        // Fetch the monthly event counts
+        //Fetch the monthly event counts
         fetchMonthlyEventCounts();
 
-        // Display the plots for the initial state
+        //Display the plots for the initial state
         displayPlots("All Airframes");
+        
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -274,9 +275,11 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
             for (const [/*...*/, value] of Object.entries(countsObject as unknown as { [key: string]: CountsData })) {
 
-                if (value.airframeName === "Garmin Flight Display")
+                //Airframe is Garmin Flight Display, skip
+                if (airframe.name === "Garmin Flight Display")
                     continue;
 
+                //Airframe is not selected, skip
                 if (selectedAirframe.name !== value.airframeName && selectedAirframe.name !== "All Airframes")
                     continue;
 
@@ -835,7 +838,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
                                     endMonth={endMonth}
                                     datesChanged={datesChanged}
                                     dateChange={dateChange}
-                                    airframeChange={(airframe: string) => airframeChangeFromName(airframe)}
+                                    airframeChange={(airframe: string) => airframeChangeFromName(airframe)} 
                                     updateStartYear={updateStartYear}
                                     updateStartMonth={updateStartMonth}
                                     updateEndYear={updateEndYear}
