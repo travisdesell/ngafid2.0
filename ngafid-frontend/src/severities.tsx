@@ -9,7 +9,7 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import {TimeHeader} from "./time_header.js";
 import GetDescription from "./get_description.js";
 
-import Plotly, { PlotHoverEvent, PlotlyHTMLElement } from 'plotly.js';
+import Plotly from 'plotly.js';
 import {OverlayTrigger} from "react-bootstrap";
 import Tooltip from "react-bootstrap/Tooltip";
 
