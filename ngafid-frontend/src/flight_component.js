@@ -101,13 +101,14 @@ class Flight extends React.Component {
                 const events = response.events;
                 for (let i = 0; i < events.length; i++) {
                     for (let j = 0; j < eventDefinitions.content.length; j++) {
-                        if (events[i].eventDefinitionId == eventDefinitions.content.length[j].id) {
+
+                        if (events[i].eventDefinitionId == eventDefinitions.content[j].id)
                             events[i].eventDefinition = eventDefinitions.content[j];
-                        }
+
                     }
                 }
 
-                this.setState({ events: events });
+                this.setState({ events });
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 this.setState({ mapLoaded: false });
@@ -132,6 +133,8 @@ class Flight extends React.Component {
 
         }
 
+        return activeLayers;
+
     }
 
     componentWillUnmount() {
@@ -147,8 +150,9 @@ class Flight extends React.Component {
             itineraryVisible: false
         });
         
-        if (this.getActiveLayers()) {
-            for (const layer in this.getActiveLayers()) {
+        const activeLayers = this.getActiveLayers();
+        if (activeLayers) {
+            for (const layer of activeLayers) {
                 layer.setVisible(false);
             }
         }
@@ -987,7 +991,7 @@ class Flight extends React.Component {
             }
 
             //Path is visible, display the map
-            if (this.state.pathVisibile) {
+            if (this.state.pathVisible) {
 
                 this.props.showMap();
 
@@ -1089,10 +1093,11 @@ class Flight extends React.Component {
 
 
         //Events Row
+        const events = this.state.events ?? [];
         let eventsRow = FLIGHT_COMPONENT_ROW_HIDDEN;
         if (this.state.eventsVisible) {
             eventsRow = (
-                <Events className="w-100" events={this.state.events} parent={this}/>
+                <Events className="w-100" events={events} parent={this}/>
             );
         }
 
