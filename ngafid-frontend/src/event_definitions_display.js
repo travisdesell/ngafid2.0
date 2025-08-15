@@ -177,7 +177,11 @@ class EventDefinitionsDisplayPage extends React.Component {
                                                 <th style={{
                                                     paddingTop: eventPadding,
                                                 }}>
-                                                    {row[ROW_INDEX_AIRFRAME]}
+                                                    {
+                                                        row[ROW_INDEX_AIRFRAME].startsWith("Unknown Airframe")
+                                                        ? <i className="opacity-50">{row[ROW_INDEX_AIRFRAME]}</i>
+                                                        : row[ROW_INDEX_AIRFRAME]
+                                                    }
                                                 </th>
 
                                                 {/* Event Definition Text */}
