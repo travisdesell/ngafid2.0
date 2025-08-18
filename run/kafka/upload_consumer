@@ -7,6 +7,15 @@ cd "$(dirname "$0")/../.."
 # TODO: Actually fix the CPU usage problem of the UploadConsumer
 # instead of just lobotomizing it here.
 
+JAVA_OPTS="
+  -Xms256m -Xmx768m
+  -XX:+UseG1GC
+  -XX:ActiveProcessorCount=4
+  -Djava.util.concurrent.ForkJoinPool.common.parallelism=4
+  -XX:ParallelGCThreads=2
+  -XX:ConcGCThreads=2
+  -XX:CICompilerCount=2
+"
 
 export MAX_CACHE_SIZE=75
 
