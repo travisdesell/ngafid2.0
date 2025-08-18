@@ -30,8 +30,14 @@ public enum TerrainCache {
                         new CacheLoader<>() {
                             @NotNull
                             @Override
-                            public SRTMTile load(@NotNull TileKey key) throws TerrainUnavailableException, NoSuchFileException {
-                                return new SRTMTile(90 - key.latIndex, key.lonIndex - 180);
+                            public SRTMTile load(@NotNull TileKey key) throws TerrainUnavailableException {
+
+                                try {
+                                    return new SRTMTile(90 - key.latIndex, key.lonIndex - 180);
+                                } catch (NoSuchFileException e) {
+                                    LOG.log(Level.SEVERE, "Terrain tile not found: {0}", key);
+                                    throw new TerrainUnavailableException("Terrain tile not found: " + key);
+                                }
                             }
                         }
                 );

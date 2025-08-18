@@ -1700,6 +1700,7 @@ const HeatMapPage: React.FC = () => {
                 const extent = dragBox.getGeometry().getExtent();
                 const bottomLeft = toLonLat([extent[0], extent[1]]);
                 const topRight = toLonLat([extent[2], extent[3]]);
+                
                 setBoxCoords({
                     minLat: Math.min(bottomLeft[1], topRight[1]).toFixed(6),
                     maxLat: Math.max(bottomLeft[1], topRight[1]).toFixed(6),
@@ -2163,17 +2164,17 @@ const HeatMapPage: React.FC = () => {
                 <div className="time-selector flex-col text-left px-3">
 
                     {/* Latitude Row */}
-                    <div className="flex flex-row items-center justify-start text-sm gap-2 text-left">
+                    <div className="flex flex-row items-center justify-start text-sm gap-0.5 text-left">
                         
                         {/* Row Title */}
-                        <span className="w-16">Latitude:</span>
+                        <span className="w-10">Lat:</span>
 
                         {/* Min Lat. */}
-                        <div className="flex flex-row gap-1">
+                        <div className="flex flex-row gap-0.5">
                             <input
                                 placeholder="Min"
                                 className="
-                                    w-16
+                                    w-24
                                     bg-transparent
                                     border-b-1 border-gray-400
                                     focus:ring-0 focus:border-gray-600 leading-7
@@ -2185,14 +2186,12 @@ const HeatMapPage: React.FC = () => {
                             <span>°</span>
                         </div>
 
-                        <span>-</span>
-
                         {/* Max Lat. */}
-                        <div className="flex flex-row gap-1">
+                        <div className="flex flex-row gap-0.5">
                             <input
                                 placeholder="Max"
                                 className="
-                                    w-16
+                                    w-24
                                     bg-transparent
                                     border-b-1 border-gray-400
                                     focus:ring-0 focus:border-gray-600 leading-7
@@ -2208,17 +2207,17 @@ const HeatMapPage: React.FC = () => {
 
 
                     {/* Longitude Row */}
-                    <div className="flex flex-row items-center justify-start text-sm gap-2 mt-1">
+                    <div className="flex flex-row items-center justify-start text-sm gap-0.5 mt-0.5">
                         
                         {/* Row Title */}
-                        <span className="w-16">Longitude:</span>
+                        <span className="w-10">Lon:</span>
 
                         {/* Min Lon. */}
-                        <div className="flex flex-row gap-1">
+                        <div className="flex flex-row gap-0.5">
                             <input
                                 placeholder="Min"
                                 className="
-                                    w-16
+                                    w-24
                                     bg-transparent
                                     border-b-1 border-gray-400
                                     focus:ring-0 focus:border-gray-600 leading-7
@@ -2230,14 +2229,12 @@ const HeatMapPage: React.FC = () => {
                             <span>°</span>
                         </div>
 
-                        <span>-</span>
-
                         {/* Max Lon. */}
-                        <div className="flex flex-row gap-1">
+                        <div className="flex flex-row gap-0.5">
                             <input
                                 placeholder="Max"
                                 className="
-                                    w-16
+                                    w-24
                                     bg-transparent
                                     border-b-1 border-gray-400
                                     focus:ring-0 focus:border-gray-600 leading-7

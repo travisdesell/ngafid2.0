@@ -99,7 +99,6 @@ export default class TimeHeader extends React.Component {
             return !this.props.datesOrAirframeChanged;
 
         })();
-
         const updateButtonIcon = (() => {
 
             //Button disabled -> Ban 🚫

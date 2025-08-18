@@ -7,7 +7,6 @@ cd "$(dirname "$0")/../.."
 # TODO: Actually fix the CPU usage problem of the UploadConsumer
 # instead of just lobotomizing it here.
 
-
 JAVA_OPTS="
   -Xms256m -Xmx768m
   -XX:+UseG1GC

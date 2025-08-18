@@ -30,7 +30,7 @@ export NGAFID_REPO=<⚠ /Set/Absolute/Path/Here ⚠>  #<-- ❗ Set this to the a
 export NGAFID_DATA_FOLDER=$NGAFID_REPO/data        #<-- ❗ Create a data folder in the NGAFID root (if it doesn't already exist).
 export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
 export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
-export TERRAIN_DIRECTORY=$NGAFID_DATA_FOLDER/terrain/                       # If you don't have the data to add to the terrain directory, ask for it.
+export NGAFID_TERRAIN_DIR=$NGAFID_DATA_FOLDER/terrain/                       # If you don't have the data to add to the terrain directory, ask for it.
 export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv       # If you don't have the data for the airports directory, ask for it.
 export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv          # If you don't have the data for the runways directory, ask for it.
 
@@ -40,6 +40,11 @@ export NGAFID_PORT=8181     #<-- You can use whatever port you need or want to u
 export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/ngafid-static/templates/
 export WEBSERVER_STATIC_FILES=ngafid-static/
 export DISABLE_PERSISTENT_SESSIONS=false   #<-- To require users to log in again after a restart, set this to true.
+
+#Azure Maps
+export AZURE_MAPS_KEY="YOUR_ACTUAL_AZURE_MAPS_KEY_HERE"  #<-- Add your Azure Maps API key here
+
+
 
 
 #Kafka bootstrap port
