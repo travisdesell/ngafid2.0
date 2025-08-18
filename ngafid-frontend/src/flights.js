@@ -454,6 +454,8 @@ class FlightsPage extends React.Component {
 
         };
 
+
+
         this.cesiumRef = React.createRef();
         this.navRef = React.createRef();
 
@@ -466,6 +468,9 @@ class FlightsPage extends React.Component {
 
         //Initialize the map
         initializeMap();
+
+        //Update map layers to use default style
+        this.mapSelectChanged(this.state.mapStyle);
 
         //Initialize Plotly plot
         this.initializePlot();

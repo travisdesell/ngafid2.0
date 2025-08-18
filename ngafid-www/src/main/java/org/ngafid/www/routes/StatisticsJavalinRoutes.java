@@ -1,20 +1,5 @@
 package org.ngafid.www.routes;
 
-import io.javalin.Javalin;
-import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.Fleet;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.Tails;
-import org.ngafid.www.uploads.UploadStatistics;
-import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.EventStatistics;
-import org.ngafid.www.Navbar;
-import org.ngafid.www.flights.FlightStatistics;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -23,23 +8,40 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.Fleet;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.Tails;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.EventStatistics;
+import org.ngafid.www.Navbar;
 import static org.ngafid.www.WebServer.gson;
+import org.ngafid.www.flights.FlightStatistics;
+import org.ngafid.www.uploads.UploadStatistics;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 
 public class StatisticsJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
     public static class StatFetcher {
         final Connection connection;
+        final Context context;
         final User user;
         final int fleetId;
         final boolean aggregate;
 
         public StatFetcher(Connection connection, Context context, boolean aggregate) {
-            this(connection, SessionUtility.INSTANCE.getUser(context), aggregate);
+            this(connection, context, SessionUtility.INSTANCE.getUser(context), aggregate);
         }
 
-        public StatFetcher(Connection connection, User user, boolean aggregate) {
+        public StatFetcher(Connection connection, Context context, User user, boolean aggregate) {
             this.connection = connection;
+            this.context = context;
             this.user = user;
 
             if (aggregate) {
@@ -56,11 +58,21 @@ public class StatisticsJavalinRoutes {
         }
 
         public Double flightTime() throws SQLException {
-            if (aggregate()) {
-                return FlightStatistics.getAggregateTotalFlightTime(connection, 0);
-            } else {
-                return FlightStatistics.getTotalFlightTime(connection, fleetId, 0);
-            }
+
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            final String airframeIDParam = context.queryParam("airframeID");
+            final int airframeID = airframeIDParam != null ? Integer.parseInt(airframeIDParam) : -1;
+            
+            if (aggregate())
+                return FlightStatistics.getAggregateTotalFlightTimeDated(connection, startDate, endDate, airframeID);
+            else
+                return FlightStatistics.getTotalFlightTimeDated(connection, fleetId, startDate, endDate, airframeID);
+            
         }
 
         public Double yearFlightTime() throws SQLException {
@@ -79,11 +91,21 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer numberFlights() throws SQLException {
-            if (aggregate()) {
-                return FlightStatistics.getAggregateTotalFlightCount(connection, 0);
-            } else {
-                return FlightStatistics.getTotalFlightCount(connection, fleetId, 0);
-            }
+
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            final String airframeIDParam = context.queryParam("airframeID");
+            final int airframeID = airframeIDParam != null ? Integer.parseInt(airframeIDParam) : -1;
+
+            if (aggregate())
+                return FlightStatistics.getAggregateTotalFlightCountDated(connection, startDate, endDate, airframeID);
+            else
+                return FlightStatistics.getTotalFlightCountDated(connection, fleetId, startDate, endDate, airframeID);
+
         }
 
         public Integer numberAircraft() throws SQLException {
@@ -107,11 +129,21 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer totalEvents() throws SQLException {
-            if (aggregate()) {
-                return EventStatistics.getAggregateTotalEventCount(connection);
-            } else {
-                return EventStatistics.getTotalEventCount(connection, fleetId);
-            }
+        
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            final String airframeIDParam = context.queryParam("airframeID");
+            final int airframeID = airframeIDParam != null ? Integer.parseInt(airframeIDParam) : -1;
+
+            if (aggregate())
+                return EventStatistics.getAggregateTotalEventCountDated(connection, startDate, endDate, airframeID);
+            else
+                return EventStatistics.getTotalEventCountDated(connection, fleetId, startDate, endDate, airframeID);
+
         }
 
         public Integer yearEvents() throws SQLException {
@@ -139,10 +171,17 @@ public class StatisticsJavalinRoutes {
         }
 
         public UploadStatistics.UploadCounts getUploadCounts() throws SQLException {
+
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
             if (aggregate()) {
-                return UploadStatistics.getAggregateUploadCounts(connection);
+                return UploadStatistics.getAggregateUploadCountsDated(connection, startDate, endDate);
             } else {
-                return UploadStatistics.getUploadCounts(connection, fleetId);
+                return UploadStatistics.getUploadCountsDated(connection, fleetId, startDate, endDate);
             }
         }
 
@@ -176,6 +215,49 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    public static String buildDateAirframeClause(LocalDate startDate, LocalDate endDate, int airframeID) {
+
+        final String dateClause = buildDateClause(startDate, endDate);
+
+        //Handle 'All Airframes'
+        if (airframeID < 0)
+            return dateClause;
+
+        return String.format("(%s AND airframe_id = %d)", dateClause, airframeID);
+
+    }
+
+    public static String buildDateClause(LocalDate startDate, LocalDate endDate) {
+        
+        final int startYear = startDate.getYear();
+        final int startMonth = startDate.getMonthValue();
+        final int endYear = endDate.getYear();
+        final int endMonth = endDate.getMonthValue();
+
+        //Same year -> simple range
+        if (startYear == endYear) {
+            
+            return String.format(
+                "(year = %d AND month >= %d AND month <= %d)",
+                startYear, startMonth, endMonth
+            );
+
+        //Different years -> Resolve problems with month ranges
+        } else {
+            
+            return String.format(
+                "((year = %d AND month >= %d) " +
+                "OR (year = %d AND month <= %d) " +
+                "OR (year > %d AND year < %d))",
+                startYear, startMonth,
+                endYear, endMonth,
+                startYear, endYear
+            );
+
+        }
+
+    }
+
     public static void getAggregate(Context ctx) {
         final String templateFile = "aggregate.html";
 
@@ -200,7 +282,9 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n");
+
+            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection);
+            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
             long endTime = System.currentTimeMillis();
 
             LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
@@ -237,11 +321,13 @@ public class StatisticsJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+
+            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection);
+            String fleetInfo = "var airframes = " + gson.toJson(airframes) + ";\n" + "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("getting aggreagte data info took " + (endTime - startTime) + "ms.");
+            LOG.info("Getting aggregate data info took " + (endTime - startTime) + "ms.");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

@@ -207,7 +207,11 @@ class TTFCard extends React.Component {
 
     componentDidMount() {
 
+        //Display plots
         this.displayPlots();
+
+        //Update map layers to use default style
+        this.mapSelectChanged(this.state.mapStyle);
 
     }
 

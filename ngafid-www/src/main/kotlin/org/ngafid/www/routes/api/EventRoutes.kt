@@ -14,6 +14,7 @@ import org.ngafid.core.flights.Airframes
 import org.ngafid.www.routes.*
 import java.time.LocalDate
 import java.util.*
+import java.sql.SQLException
 
 object EventRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
@@ -202,8 +203,16 @@ object EventRoutes : RouteProvider() {
                 }
 
                 if (!airframeNames.containsKey(eventDefinition.airframeNameId)) {
-                    airframeNames[eventDefinition.airframeNameId] =
-                        Airframes.Airframe(connection, eventDefinition.airframeNameId).name
+
+                    try {
+                        airframeNames[eventDefinition.airframeNameId] =
+                            Airframes.Airframe(connection, eventDefinition.airframeNameId).name
+                    } catch (e: SQLException) {
+                        println("Got unknown airframe name for ID ${eventDefinition.airframeNameId}, leaving as Unknown Airframe")
+                        e.printStackTrace()
+                        airframeNames[eventDefinition.airframeNameId] = "Unknown Airframe (${eventDefinition.airframeNameId})"
+                    }
+
                 }
 
                 println("${airframeNames[eventDefinition.airframeNameId]} -> ${eventDefinition.toHumanReadable()}")

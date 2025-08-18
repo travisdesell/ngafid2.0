@@ -1,4 +1,4 @@
-import TrendsPage from "./trends";
+import { TrendsPage } from "./trends";
 import React from "react";
 import { createRoot } from "react-dom/client";
 

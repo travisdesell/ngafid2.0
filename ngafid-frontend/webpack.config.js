@@ -109,7 +109,7 @@ module.exports = {
 
         heat_map: "./src/heat_map.tsx",
         reset_password: "./src/reset_password.js",
-        severities: "./src/severities.js",
+        severities: "./src/severities.tsx",
         signed_in_navbar: "./src/signed_in_navbar.js",
         status: "./src/status_page.tsx",
         system_ids: "./src/system_ids.js",

@@ -1,14 +1,16 @@
 package org.ngafid.processor.terrain;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import java.nio.file.NoSuchFileException;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.jetbrains.annotations.NotNull;
 import org.ngafid.core.Config;
 
-import java.nio.file.NoSuchFileException;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 public enum TerrainCache {
     ;
@@ -17,6 +19,8 @@ public enum TerrainCache {
     private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
 
     static {
+
+        LOG.info("[EX] Initializing TerrainCache with max size: " + Config.MAX_TERRAIN_CACHE_SIZE);
         TILE_CACHE = CacheBuilder.newBuilder()
                 .maximumSize(Config.MAX_TERRAIN_CACHE_SIZE)
                 .build(

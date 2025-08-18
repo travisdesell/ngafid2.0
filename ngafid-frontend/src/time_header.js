@@ -22,6 +22,7 @@ export default class TimeHeader extends React.Component {
             years: years,
             months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
             buttonContent: buttonContent,
+            didFirstUpdate: false,
         };
 
     }
@@ -88,7 +89,16 @@ export default class TimeHeader extends React.Component {
             );
         }
 
-        const updateButtonDisabled = !this.props.datesOrAirframeChanged;
+        const updateButtonDisabled = (() => {
+
+            //Prop is undefined, assume Update button can always be enabled
+            if (this.props.datesOrAirframeChanged === undefined)
+                return false;
+
+            //Otherwise, assume button should be disabled when the value is false
+            return !this.props.datesOrAirframeChanged;
+
+        })();
         const updateButtonIcon = (() => {
 
             //Button disabled -> Ban 🚫
@@ -232,17 +242,33 @@ export default class TimeHeader extends React.Component {
                 })}
 
                 {/* Update Button */}
-                <button
-                    className="
-                        btn btn-primary
-                        disabled:cursor-not-allowed disabled:grayscale
-                    "
-                    onClick={() => this.props.dateChange()}
-                    disabled={updateButtonDisabled}
-                >
-                    <i className={`fa ${updateButtonIcon} mr-2`} aria-hidden="true"></i>
-                    {this.state.buttonContent}
-                </button>
+                <div className="relative">
+
+                    {
+                        this.props.requireManualInitialUpdate && !this.state.didFirstUpdate
+                        &&
+                        <span className="absolute flex size-3">
+                            <span className="absolute ml-23 -mt-1 inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                            <span className="absolute ml-23 -mt-1 inline-flex size-3 rounded-full bg-sky-500"></span>
+                        </span>
+                    }
+
+                    {/* Actual Button */}
+                    <button
+                        className="
+                            btn btn-primary
+                            disabled:cursor-not-allowed disabled:grayscale
+                        "
+                        onClick={() => {
+                            this.props.dateChange();
+                            this.setState({ didFirstUpdate: true });
+                        }}
+                        disabled={updateButtonDisabled}
+                    >
+                        <i className={`fa ${updateButtonIcon} mr-2`} aria-hidden="true"></i>
+                        {this.state.buttonContent}
+                    </button>
+                </div>
 
                 {additionalRowContents}
             </div>

@@ -3,7 +3,6 @@ package org.ngafid.core.flights;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.core.util.FlightTag;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.core.util.filters.Filter;
@@ -926,92 +925,122 @@ public class Flight {
         return Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
     }
 
-    public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights)
-            throws IOException, SQLException {
+    public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights) throws IOException, SQLException {
 
-        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
-            for (Flight flight : flights) {
-                // Ensure that the `id` values are set. This will grab them from the database if not.
+        //Create a list of flights to batch insert from the iterable
+        List<Flight> flightList = new ArrayList<>();
+        for (Flight flight : flights) {
+            flightList.add(flight);
+        }
+
+        String sql = """
+            INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            for (Flight flight : flightList) {
+                
                 flight.airframe = new Airframes.Airframe(connection, flight.airframe.getName(), flight.airframe.getType());
                 Airframes.setAirframeFleet(connection, flight.airframe.getId(), flight.fleetId);
                 Tails.setSuggestedTail(connection, flight.fleetId, flight.systemId, flight.suggestedTailNumber);
                 flight.tailNumber = Tails.getTail(connection, flight.fleetId, flight.systemId);
 
-                flight.addBatch(preparedStatement);
+                flight.addBatch(ps);
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+
+                    //Got a generated key, set the flight id
+                    if (rs.next())
+                        flight.id = rs.getInt(1);
+
+                    //Otherwise, throw an exception
+                    else
+                        throw new SQLException("Failed to retrieve generated id for flight " + flight.systemId);
+                    
+                }
+
             }
 
-            preparedStatement.executeBatch();
-            ResultSet results = preparedStatement.getGeneratedKeys();
-            for (Flight flight : flights) {
-                results.next();
-                flight.id = results.getInt(1);
+        }
+
+        //Set the flight ID for each event in the flight
+        for (Flight flight : flightList) {
+            for (Event event : flight.events) {
+                event.setFlightId(flight.id);
             }
         }
 
         try (PreparedStatement doubleTSPreparedStatement = DoubleTimeSeries.createPreparedStatement(connection)) {
-            for (Flight flight : flights)
+
+            //Insert all double time series for each flight
+            for (Flight flight : flightList)
                 for (var doubleTS : flight.doubleTimeSeries.values())
                     doubleTS.addBatch(connection, doubleTSPreparedStatement, flight.id);
+
             doubleTSPreparedStatement.executeBatch();
+
         }
 
         try (PreparedStatement stringTSPreparedStatement = StringTimeSeries.createPreparedStatement(connection)) {
-            for (Flight flight : flights)
+
+            //Insert all string time series for each flight
+            for (Flight flight : flightList)
                 for (var stringTS : flight.stringTimeSeries.values())
                     stringTS.addBatch(connection, stringTSPreparedStatement, flight.id);
 
             stringTSPreparedStatement.executeBatch();
+
         }
 
         try (PreparedStatement itineraryPreparedStatement = Itinerary.createPreparedStatement(connection);
              PreparedStatement airportPreparedStatement = Itinerary.createAirportPreparedStatement(connection);
              PreparedStatement runwayPreparedStatement = Itinerary.createRunwayPreparedStatement(connection)) {
-            for (Flight flight : flights) {
-                if (flight.itinerary != null) {
-                    for (int i = 0; i < flight.itinerary.size(); i++)
-                        flight.itinerary.get(i).addBatch(itineraryPreparedStatement, airportPreparedStatement,
-                                runwayPreparedStatement, flight.fleetId, flight.id, i);
-                }
+
+            for (Flight flight : flightList) {
+
+                //Flight has no itinerary, skip it
+                if (flight.itinerary == null)
+                    continue;
+
+                //Add itinerary, airport, and runway data for each flight
+                for (int i = 0; i < flight.itinerary.size(); i++)
+                    flight.itinerary.get(i).addBatch(
+                        itineraryPreparedStatement,
+                        airportPreparedStatement,
+                        runwayPreparedStatement,
+                        flight.fleetId,
+                        flight.id,
+                        i
+                    );
+            
             }
+
             itineraryPreparedStatement.executeBatch();
             airportPreparedStatement.executeBatch();
             runwayPreparedStatement.executeBatch();
+
         }
 
         try (PreparedStatement warningPreparedStatement = FlightWarning.createPreparedStatement(connection)) {
 
-            for (Flight flight : flights)
+            //Insert all flight warnings for each flight
+            for (Flight flight : flightList)
                 for (var e : flight.exceptions)
                     new FlightWarning(e.getMessage()).addBatch(connection, warningPreparedStatement, flight.id);
 
             warningPreparedStatement.executeBatch();
+            
         }
 
-        for (Flight flight : flights) {
+        for (Flight flight : flightList)
             Event.batchInsertion(connection, flight, flight.events);
-            
-            // Insert coordinate points for heat map processor
-            if (!flight.events.isEmpty()) {
-                // Process non-proximity events (events with event definition ID != -1)
-                List<Event> nonProximityEvents = flight.events.stream()
-                    .filter(event -> event.getEventDefinitionId() != -1)
-                    .toList();
-                
-                if (!nonProximityEvents.isEmpty()) {
-                    try {
-                        HeatmapPointsProcessor.insertCoordinatesForNonProximityEvents(
-                            connection, nonProximityEvents, flight);
-                    } catch (SQLException e) {
-                        System.err.println("Failed to insert proximity points for flight " + flight.getId() + ": " + e.getMessage());
-                    }
-                }
-            }
-        }
 
         try (PreparedStatement processingStatusStatement = connection.prepareStatement("UPDATE flights SET " +
                 "status = ? WHERE id = ?")) {
 
-            for (Flight flight : flights) {
+            for (Flight flight : flightList) {
                 processingStatusStatement.setString(1, flight.status.toString());
                 processingStatusStatement.setInt(2, flight.id);
                 processingStatusStatement.addBatch();
@@ -1020,7 +1049,7 @@ public class Flight {
             processingStatusStatement.executeBatch();
         }
 
-        for (Flight flight : flights) {
+        for (Flight flight : flightList) {
             updateAggregateFlightHoursByAirframe(connection, flight);
         }
     }
@@ -1076,7 +1105,6 @@ public class Flight {
                         fleet_id = ?,
                         flight_id = ?,
                         event_definition_id = ?
-                    ;
                 """;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             for (var def : eventDefinitions) {

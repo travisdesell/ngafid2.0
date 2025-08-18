@@ -14,9 +14,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateAirframeClause;
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
 
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
@@ -57,14 +61,13 @@ public class EventStatistics {
         if (endDate == null)
             endDate = LocalDate.now();
 
-        int startYear = startDate.getYear();
-        int startMonth = startDate.getMonthValue();
-        int endYear = endDate.getYear();
-        int endMonth = endDate.getMonthValue();
+        final String dateClause = buildDateClause(startDate, endDate);
 
-        String query = "SELECT fleet_id, event_definition_id, airframe_id, SUM(event_count) as event_count, SUM(flight_count) as flight_count FROM m_fleet_airframe_monthly_event_counts " +
-                " WHERE year >= " + startYear + " AND year <= " + endYear + " AND month >= " + startMonth + " AND month <= " + endMonth +
-                " GROUP BY fleet_id, event_definition_id, airframe_id";
+        String query = """
+            SELECT fleet_id, event_definition_id, airframe_id, SUM(event_count) as event_count, SUM(flight_count) as flight_count FROM m_fleet_airframe_monthly_event_counts
+            WHERE """ + dateClause + """
+            GROUP BY fleet_id, event_definition_id, airframe_id
+        """;
 
         try (PreparedStatement statement = connection.prepareStatement(query);
              ResultSet result = statement.executeQuery()) {
@@ -81,16 +84,48 @@ public class EventStatistics {
                 int eventDefinitionId = result.getInt("event_definition_id");
                 int airframeId = result.getInt("airframe_id");
 
+                //Fetch event name, skip when null
                 String eventName = idToEventNameMap.get(eventDefinitionId);
+                if (eventName == null) {
+                    LOG.log(Level.WARNING, "Got null event name for id {0}, skipping", eventDefinitionId);
+                    continue;
+                }
+
+                //Fetch airframe name, skip when null
                 String airframeName = idToAirframeNameMap.get(airframeId);
+                if (airframeName == null) {
+                    LOG.log(Level.WARNING, "Got null airframe name for id {0}, skipping", airframeId);
+                    continue;
+                }
 
                 EventCountsBuilder ec = eventCounts.computeIfAbsent(airframeName, EventCountsBuilder::new);
                 ec.updateAggregate(eventName, flightCount, 0, eventCount);
-                ec.setAggregateTotalFlights(eventName, fc.getAggregateCounts().get(airframeId));
+
+                final Map<Integer, Integer> aggregateCounts = fc.getAggregateCounts();
+                Integer totalFlights = aggregateCounts.getOrDefault(airframeId, null);
+
+                //Failed to find total aggregate flights for this airframe, default to 0
+                if (totalFlights == null) {
+                    LOG.log(Level.WARNING, "No total aggregate flight count found for airframe id {0}, setting to 0", airframeId);
+                    totalFlights = 0;
+                }
+                ec.setAggregateTotalFlights(eventName, totalFlights);
+
 
                 if (fleetId == fleet) {
-                    ec.update(eventName, flightCount, fc.getFleetCounts(fleet).get(airframeId), eventCount);
+
+                    final Map<Integer, Integer> fleetCounts = fc.getFleetCounts(fleet);
+                    Integer flightCountForAirframe = fleetCounts.getOrDefault(airframeId, null);
+
+                    //Failed to find flight count for this airframe in the fleet, default to 0
+                    if (flightCountForAirframe == null) {
+                        LOG.log(Level.WARNING, "No flight count found for fleet {0} and airframe id {1}, setting to 0", new Object[]{fleet, airframeId});
+                        flightCountForAirframe = 0;
+                    }
+
+                    ec.update(eventName, flightCount, flightCountForAirframe, eventCount);
                 }
+
             }
 
             return eventCounts
@@ -110,13 +145,10 @@ public class EventStatistics {
         final LocalDate startDate = startDateNullable == null ? LocalDate.of(0, 1, 1) : startDateNullable;
         final LocalDate endDate = endDateNullable == null ? LocalDate.now() : endDateNullable;
 
-        int startYear = startDate.getYear();
-        int startMonth = startDate.getMonthValue();
-        int endYear = endDate.getYear();
-        int endMonth = endDate.getMonthValue();
+        final String dateClause = buildDateClause(startDate, endDate);
 
         String query = "SELECT year, month, fleet_id, event_definition_id, airframe_id, SUM(event_count) as event_count, SUM(flight_count) as flight_count FROM m_fleet_airframe_monthly_event_counts " +
-                " WHERE year >= " + startYear + " AND year <= " + endYear + " AND month >= " + startMonth + " AND month <= " + endMonth +
+                " WHERE " + dateClause +
                 " GROUP BY fleet_id, event_definition_id, airframe_id, year, month";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -251,6 +283,24 @@ public class EventStatistics {
         return getEventCount(connection, "v_aggregate_total_event_count", null);
     }
 
+    public static int getAggregateTotalEventCountDated(Connection connection, LocalDate startDate, LocalDate endDate) throws SQLException {
+        return getAggregateTotalEventCountDated(connection, startDate, endDate, -1);
+    }
+    public static int getAggregateTotalEventCountDated(Connection connection, LocalDate startDate, LocalDate endDate, int airframeID) throws SQLException {
+
+        // final String dateClause = buildDateClause(startDate, endDate);
+        // final String dateAirframeClause = buildDateAirframeClause(startDate, endDate, airframeName);
+
+        String clause;
+        if (airframeID < 0)
+            clause = buildDateClause(startDate, endDate);
+        else
+            clause = buildDateAirframeClause(startDate, endDate, airframeID);
+
+        return getEventCount(connection, "v_aggregate_total_event_counts_dated", clause);
+    }
+
+
     /**
      * @return the total number of events for this fleet over all airframes and event types -- every event in the database associated with this fleet.
      * @throws SQLException if the table is empty
@@ -258,7 +308,22 @@ public class EventStatistics {
     public static int getTotalEventCount(Connection connection, int fleetId) throws SQLException {
         return getEventCount(connection, "v_fleet_total_event_counts", "fleet_id = " + fleetId);
     }
+    
+    public static int getTotalEventCountDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
+        return getTotalEventCountDated(connection, fleetId, startDate, endDate, -1);
+    }
+    public static int getTotalEventCountDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeID) throws SQLException {
 
+        String clause;
+        if (airframeID < 0)
+            clause = buildDateClause(startDate, endDate);
+        else
+            clause = buildDateAirframeClause(startDate, endDate, airframeID);
+
+        return getEventCount(connection, "v_fleet_total_event_counts_dated", "fleet_id = " + fleetId + " AND " + clause);
+
+    }
+    
     public static class FlightCounts {
 
         // Maps airframeId to another map, which maps fleetId to the number of flights

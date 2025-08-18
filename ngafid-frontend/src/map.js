@@ -11,12 +11,11 @@ console.log("doing first load after setting state!");
 let map = null;
 let styles = [];
 let layers = [];
-let azureMapsKey = null;
 
 function initializeMap() {
     const azureMapsKey = process.env.AZURE_MAPS_KEY;
     if (!azureMapsKey) {
-        log("Azure Maps key is missing or undefined!");
+        console.error("Azure Maps key is missing or undefined!");
         return;
     }
 
@@ -121,7 +120,7 @@ function createBaseMapLayers(azureKey) {
     const layers = [];
     for (let i = 0; i < styles.length; ++i) {
         let url = '';
-        let name = styles[i];
+        const name = styles[i];
         if (name === 'Aerial') {
             url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureKey}`;
         } else if (name === 'Road') {

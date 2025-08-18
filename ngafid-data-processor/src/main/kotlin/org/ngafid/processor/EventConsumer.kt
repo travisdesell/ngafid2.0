@@ -27,6 +27,8 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.function.Consumer
 import java.util.logging.Logger
+import java.rmi.UnknownHostException
+import kotlin.io.use
 
 /**
  * The `event` and `event-retry` topics contain events that need to be computed. Most often this should be proximity

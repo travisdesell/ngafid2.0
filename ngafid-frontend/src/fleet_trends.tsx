@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import React from "react";
-import TrendsPage from "./trends";
+import { TrendsPage } from './trends';
 
 const container = document.querySelector("#trends-page");
 if (container) {

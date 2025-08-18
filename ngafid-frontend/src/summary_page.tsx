@@ -13,12 +13,18 @@ import Plotly from "plotly.js";
 import "./index.css";
 import * as $ from "jquery";
 import type JQuery from "jquery";
+import type { AirframeNameID } from "./types";
 
 
-airframes.unshift("All Airframes");
-const index = airframes.indexOf("Garmin Flight Display");
-if (index !== -1)
-    airframes.splice(index, 1);
+const ALL_AIRFRAMES_PAIR = {
+    name: "All Airframes",
+    id: -1
+};
+airframes.unshift(ALL_AIRFRAMES_PAIR);
+const garminIndex = airframes.findIndex(airframe => airframe.name === "Garmin Flight Display");
+if (garminIndex !== -1)
+    airframes.splice(garminIndex, 1);
+
 
 
 const targetValues = {
@@ -68,12 +74,89 @@ function formatDurationAsync(seconds: number) {
 }
 
 
-type SuccessResponseHandlerType<ResponseType> = (response: ResponseType) => void;
+
+
+const date = new Date();
+
+let startYear: number = date.getFullYear();
+let startMonth: number = 1;
+let endYear: number = date.getFullYear();
+let endMonth: number = date.getMonth() + 1;
+
+
+export function buildStartDate(year: number, month: number): string {
+
+    //Force year and month values to be numbers
+    year = +year;
+    month = +month;
+
+    console.log(`Building start date for year=${year}, month=${month}...`);
+
+    let startDate = `${year}-`;
+
+    //Pad the months on the front
+    if (month < 10) startDate += `0${month}`;
+        else startDate += month;
+
+    startDate = `${startDate}-01`;
+
+    console.log(`Built start date for year=${year}, month=${month}: ${startDate}`);
+    return startDate;
+
+}
+
+export function buildEndDate(year: number, month: number): string {
+
+    //Force year and month values to be numbers
+    year = +year;
+    month = +month;
+
+    const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date(year, month - 1));
+    console.log(`Building end date for year=${year}, month=${month} (${monthName})...`);
+
+    let endDate = `${year}-`;
+
+    //Pad the months on the front
+    if (month < 10) endDate += `0${month}`;
+        else endDate += month;
+
+    //February, check for leap year
+    if (month == 2) {
+
+        //Leap year, append '29'
+        if ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) {
+            endDate = `${endDate}-29`;
+
+        //Otherwise, append '28'
+        } else {
+            endDate = `${endDate}-28`;
+        }
+
+    
+    //April, June, September, November -> 30 days
+    } else if ([4, 6, 9, 11].includes(month)) {
+        endDate = `${endDate}-30`;
+    }
+    
+    //All other months -> 31 days
+    else {
+        endDate = `${endDate}-31`;
+    }
+
+    console.log(`Built end date for year=${year}, month=${month} (${monthName}): ${endDate}`);
+    return endDate;
+
+}
 
 async function fetchStatistic<ResponseType>(
     stat: string,
     route: string,
     aggregate: boolean,
+    airframe: AirframeNameID = ALL_AIRFRAMES_PAIR,
+    startYear: number,
+    startMonth: number,
+    endYear: number,
+    endMonth: number,
     successResponseHandler: SuccessResponseHandlerType<ResponseType>
 ) {
 
@@ -86,12 +169,25 @@ async function fetchStatistic<ResponseType>(
         console.log(jqXHR);
         console.log(textStatus);
         console.log(errorThrown);
-        showErrorModal("Error Loading Statistic", errorThrown);
+        showErrorModal(`Error Loading Statistic: ${stat} (aggregate = ${aggregate})`, errorThrown);
     };
+
+    const startDate = buildStartDate(startYear, startMonth);
+    const endDate = buildEndDate(endYear, endMonth);
+
+    const submissionData = {
+        startDate: startDate,
+        endDate: endDate,
+        airframeID: airframe.id
+    };
+
+
+    console.log(`Fetching statistic '${stat}' from route '${route}' with date data: `, submissionData);
 
     $.ajax({
         type: 'GET',
         url: route,
+        data: submissionData,
         success: successResponseHandler,
         error: errorResponseHandler,
         complete: (jqXHR) => {
@@ -100,6 +196,10 @@ async function fetchStatistic<ResponseType>(
     });
 
 }
+
+type SuccessResponseHandlerType<ResponseType> = (response: ResponseType) => void;
+
+
 
 
 type NotificationsState = {
@@ -132,11 +232,11 @@ class Notifications extends React.Component<object, NotificationsState> {
             ]
         };
 
-        this.fetchStatistics();
+        this.fetchNotificationStatistics();
 
     }
 
-    fetchStatistics() {
+    fetchNotificationStatistics() {
 
 
         console.log("Notifications -- Fetching Statistics...");
@@ -171,53 +271,78 @@ class Notifications extends React.Component<object, NotificationsState> {
 
             };
 
-
             //Notification has a 'name' property, fetch the statistic
             if (Object.hasOwn(notif, "name")
                 && notif.name
                 && targetValues[notif.name as keyof typeof targetValues]
             ) {
-                fetchStatistic<NotificationType>(notif.name, targetValues[notif.name as keyof typeof targetValues], false, successResponseHandler);
+                fetchStatistic<NotificationType>(
+                    notif.name,
+                    targetValues[notif.name as keyof typeof targetValues],
+                    false,
+                    undefined,
+                    startYear,
+                    startMonth,
+                    endYear,
+                    endMonth,
+                    successResponseHandler
+                );
             }
 
         }
     }
 
     render() {
+
+        //All notification counts are 0, don't display the card
+        if (this.state.notifications.every(info => info.count === 0))
+            return null;
+
         return (
-            <table>
-                <tbody>
-                {
-                    this.state.notifications.map((info, index) => {
 
-                        //No notifications, don't display counter
-                        if (info.count == 0)
-                            return;
 
-                        //Has notifications, display counter
-                        else
-                            return (
-                                <tr key={index}>
-                                    <td style={{textAlign: "right", paddingBottom: "6"}}>
-                                                <span className={`badge ${  info.badgeType}`}>
-                                                    <i className="fa fa-fw fa-bell" aria-hidden="true"/>
-                                                    &nbsp;{Number(info.count).toLocaleString('en')}
-                                                </span>
-                                    </td>
-                                    <td style={{paddingBottom: "6", color: "var(--c_text)"}}>&nbsp;{info.message}</td>
-                                </tr>
-                            );
+            <div className="card w-full flex-1">
 
-                    })
-                }
-                </tbody>
-            </table>
+                <h4 className="card-header w-full flex` flex-row justify-between items-center">
+                    Notifications
+                </h4>
+
+                <div className="card-body px-12! w-full">
+                    <table>
+                        <tbody>
+                        {
+                            this.state.notifications.map((info, index) => {
+
+                                //No notifications, don't display counter
+                                if (info.count == 0)
+                                    return;
+
+                                //Has notifications, display counter
+                                else
+                                    return (
+                                        <tr key={index}>
+                                            <td style={{textAlign: "right", paddingBottom: "6"}}>
+                                                        <span className={`badge ${  info.badgeType}`}>
+                                                            <i className="fa fa-fw fa-bell" aria-hidden="true"/>
+                                                            &nbsp;{Number(info.count).toLocaleString('en')}
+                                                        </span>
+                                            </td>
+                                            <td style={{paddingBottom: "6", color: "var(--c_text)"}}>&nbsp;{info.message}</td>
+                                        </tr>
+                                    );
+
+                            })
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         );
     }
 }
 
 
-type AggregateFlightHoursByAirframe = {
+type FlightHoursByAirframe = {
     airframe: string;
     airframe_id: number;
     num_flights: number;
@@ -225,12 +350,8 @@ type AggregateFlightHoursByAirframe = {
 };
 
 type SummaryPageState = {
-    airframe: string;
-    startYear: number | string;
-    startMonth: number | string;
-    endYear: number | string;
-    endMonth: number | string;
-    datesChanged: boolean;
+    airframe: AirframeNameID;
+    datesOrAirframeChanged: boolean;
     statistics: {
         flightTime: number;
         yearFlightTime: number;
@@ -251,7 +372,8 @@ type SummaryPageState = {
         flightsWithWarning: number;
         flightsWithError: number;
     };
-    aggregateFlightHoursByAirframe: AggregateFlightHoursByAirframe[];
+    flightHoursByAirframe: FlightHoursByAirframe[];
+    aggregateFlightHoursByAirframe: FlightHoursByAirframe[];
     eventCounts: object;
     notifications: React.ReactElement;
 }
@@ -264,14 +386,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
     constructor(props: SummaryPageProps) {
         super(props);
 
-        const date = new Date();
         this.state = {
-            airframe: "All Airframes",
-            startYear: date.getFullYear(),
-            startMonth: 1,
-            endYear: date.getFullYear(),
-            endMonth: date.getMonth() + 1,
-            datesChanged: false,
+            airframe: airframes[0],
+            datesOrAirframeChanged: false,
             statistics: Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {} as {
                 flightTime: number;
                 yearFlightTime: number;
@@ -292,6 +409,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 flightsWithWarning: number;
                 flightsWithError: number;
             }),
+            flightHoursByAirframe: [],
             aggregateFlightHoursByAirframe: [],
             eventCounts: {},
             notifications: <Notifications/>
@@ -308,9 +426,13 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         //In aggregate view, fetch aggregate flight hours by airframe
         if (this.props.aggregate)
             this.fetchAggregateFlightHoursByAirframe();
+
+        //Otherwise, fetch fleet flight hours by airframe
+        else
+            this.fetchFlightHoursByAirframe();
     }
 
-    displayPlots(selectedAirframe: string) {
+    displayPlots(selectedAirframe: AirframeNameID) {
 
         const countData = [];
         const percentData = [];
@@ -346,7 +468,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 continue;
 
             //Current airframe name is neither the selected airframe name or 'All Airframes', skip
-            if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
+            if ((selectedAirframe.name !== value.airframeName) && (selectedAirframe.name !== "All Airframes"))
                 continue;
 
             value.name = value.airframeName;
@@ -354,8 +476,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             value.type = "bar";
             value.orientation = "h";
 
-            //don"t add airframes to the count plot that the fleet doesn"t have
-            if (airframes.indexOf(value.airframeName) >= 0)
+            //Don't add airframes to the count plot that the fleet doesn't have
+            if (airframes.some(airframe => airframe.name === value.airframeName))
                 countData.push(value);
 
             value.x = value.aggregateTotalEventsCounts;
@@ -380,7 +502,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                     ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
                 }
 
-                if (airframes.indexOf(value.airframeName) >= 0) {
+                const fleetAirframeNames = new Set(airframes.map(a => a.name));
+                if (fleetAirframeNames.has(value.airframeName)) {
                     
                     const index = fleetPercents.y.indexOf(value.names[i]);
                     if (index !== -1) {
@@ -499,43 +622,79 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         const config = {responsive: true};
 
         Plotly.newPlot("event-counts-plot", countData, countLayout, config);
+        // Plotly.newPlot("event-percents-plot", percentData as unknown as Plotly.Data[], percentLayout, config);
         Plotly.newPlot("event-percents-plot", percentData as unknown as Plotly.Data[], percentLayout, config);
     }
 
     updateStartYear(newStartYear: number) {
-        this.setState({startYear: newStartYear, datesChanged: true});
+        this.setState({datesOrAirframeChanged: true});
+        startYear = newStartYear;
     }
 
     updateStartMonth(newStartMonth: number) {
-        this.setState({startMonth: newStartMonth, datesChanged: true});
+        this.setState({datesOrAirframeChanged: true});
+        startMonth = newStartMonth;
     }
 
     updateEndYear(newEndYear: number) {
-        this.setState({endYear: newEndYear, datesChanged: true});
+        this.setState({datesOrAirframeChanged: true});
+        endYear = newEndYear;
     }
 
     updateEndMonth(newEndMonth: number) {
-        this.setState({endMonth: newEndMonth, datesChanged: true});
+        this.setState({datesOrAirframeChanged: true});
+        endMonth = newEndMonth;
+    }
+
+    airframeChangeFromName(airframeName: string) {
+
+        //Find airframe data in list corresponding to the name
+        const airframe = airframes.find(a => a.name === airframeName);
+
+        //Got an airframe from the name, change the state
+        if (airframe)
+            this.airframeChange(airframe);
+        
+    }
+
+    airframeChange(airframe: AirframeNameID) {
+        this.setState({airframe, datesOrAirframeChanged: true});
     }
 
     dateChange() {
-        let startDate = `${this.state.startYear  }-`;
-        let endDate = `${this.state.endYear  }-`;
-
-        const {startMonth, endMonth} = this.state as {startMonth: string, endMonth: string};
-
-        //0 pad the months on the front
-        if (parseInt(startMonth) < 10) startDate += `0${  parseInt(startMonth)}`;
-        else startDate += startMonth;
-        if (parseInt(endMonth) < 10) endDate += `0${  parseInt(endMonth)}`;
-        else endDate += this.state.endMonth;
-
-        const submissionData = {
-            startDate: `${startDate  }-01`,
-            endDate: `${endDate  }-28`
-        };
 
         $("#loading").show();
+
+        //...
+        this.fetchEventCountByAirframe();
+
+        //In aggregate view, re-fetch aggregate flight hours by airframe
+        if (this.props.aggregate) 
+            this.fetchAggregateFlightHoursByAirframe();
+        //Otherwise, re-fetch fleet flight hours by airframe
+        else
+            this.fetchFlightHoursByAirframe();
+
+        //Re-fetch statistics   [TODO: Only re-fetch the date-dependent ones ?]
+        this.fetchStatistics();
+
+        //Re-fetch notifications statistics
+        this.setState({notifications: <Notifications/>});
+        
+        $("#loading").show();
+
+    }
+
+    async fetchEventCountByAirframe() {
+
+
+        const startDate = buildStartDate(startYear, startMonth);
+        const endDate = buildEndDate(endYear, endMonth);
+
+        const submissionData = {
+            startDate: startDate,
+            endDate: endDate
+        };
 
         const route = `/api/event/count/by-airframe${this.props.aggregate ? "/aggregate" : ""}`;
         console.log(`Got date change, fetching event counts from '${route}' with date data: `, submissionData);
@@ -553,18 +712,19 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                     return;
                 }
 
-                this.setState({ eventCounts: response, datesChanged: false }, () => {
+                this.setState({ eventCounts: response, datesOrAirframeChanged: false }, () => {
                     this.displayPlots(this.state.airframe);
                 });
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Getting Event Counts by Airframe", errorThrown);
             },
             complete: () => {
                 $("#loading").hide();
             } 
         });
+
     }
 
     async fetchStatistics() {
@@ -574,6 +734,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         for await (const [stat, route] of Object.entries(targetValues)) {
 
             const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
+
+                console.log("Got response for statistic: ", stat, response);
 
                 if (response.err_msg) {
                     showErrorModal(response.err_title, response.err_msg);
@@ -588,18 +750,73 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
             };
 
-            fetchStatistic(stat, route, this.props.aggregate, successResponseHandler);
+            fetchStatistic(
+                stat,
+                route,
+                this.props.aggregate,
+                this.state.airframe,
+                startYear,
+                startMonth,
+                endYear,
+                endMonth,
+                successResponseHandler
+            );
 
         }
 
     }
 
-    airframeChange(airframe: string) {
-        this.setState({airframe});
-        this.displayPlots(airframe);
+    fetchFlightHoursByAirframe() {
+
+        console.log("SummaryPage -- Fetching Fleet Flight Hours by Airframe...");
+
+        const route = '/api/flight/flight_hours_by_airframe';
+
+        const startDate = buildStartDate(startYear, startMonth);
+        const endDate = buildEndDate(endYear, endMonth);
+
+        const submissionData = {
+            startDate: startDate,
+            endDate: endDate,
+            airframeID: this.state.airframe.id
+        };
+
+        $.ajax({
+            type: 'GET',
+            url: route,
+            data: submissionData,
+            async: true,
+            success: (response) => {
+
+                console.log(`Got Fleet Flight Hours by Airframe: `, response);
+
+                //Response has an error, exit
+                if (response.err_msg) {
+                    showErrorModal(response.err_title, response.err_msg);
+                    return;
+                }
+
+                /*  
+                    airframe -> airframeName
+                    airframe_id -> airframeID
+                    num_flights -> numFlights
+                    total_flight_hours -> totalFlightHours
+                */  
+
+                this.setState({flightHoursByAirframe: response});
+
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                showErrorModal("Error Getting Fleet Flight Hours by Airframe", errorThrown);
+            },
+        });
+
+        console.log("Finished fetching Fleet Flight Hours by Airframe.");
+
     }
-
-
 
     fetchAggregateFlightHoursByAirframe() {
 
@@ -607,9 +824,19 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         const route = '/api/flight/aggregate/flight_hours_by_airframe';
 
+        const startDate = buildStartDate(startYear, startMonth);
+        const endDate = buildEndDate(endYear, endMonth);
+
+        const submissionData = {
+            startDate: startDate,
+            endDate: endDate,
+            airframeID: this.state.airframe.id
+        };
+
         $.ajax({
             type: 'GET',
             url: route,
+            data: submissionData,
             async: true,
             success: (response) => {
 
@@ -635,7 +862,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                showErrorModal("Error Loading Uploads", errorThrown);
+                showErrorModal("Error Getting Aggregate Flight Hours by Airframe", errorThrown);
             },
         });
 
@@ -643,173 +870,11 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
     }
 
-
-    FlightSummary() {
-
-        const aggregateFlightHoursByAirframeView = () => {
-            
-            //Not in aggregate view, don't display
-            if (!this.props.aggregate)
-                return null;
-
-            return (
-                <div className="
-                    fa fa-fw fa-info-circle group relative cursor-pointer
-                ">
-
-                    <div className="
-                        font-sans
-                        cursor-default
-                        pointer-events-none group-hover:pointer-events-auto hover:pointer-events-auto
-                        group-hover:block!
-                        z-100 w-128 h-fit
-                        absolute top-4 left-4
-                        bg-[var(--c_card_tab)]
-                        rounded-lg shadow-lg p-2
-                        opacity-0! group-hover:opacity-100! transform-[opacity] duration-200
-                    ">
-                        <div className="font-bold text-lg mb-4 text-center">
-                            <i className="fa fa-fw fa-clock-o my-auto mr-2"/>
-                            Aggregate Flight Hours by Airframe
-                        </div>
-                        <table className="table-hover table-fixed w-full">
-
-                            <colgroup>
-                                <col style={{width: "40%"}}/>
-                                <col style={{width: "30%"}}/>
-                                <col style={{width: "30%"}}/>
-                            </colgroup>
-
-
-                            <thead className="leading-16 text-[var(--c_text)] border-b-1">
-                                <tr>
-                                    <th>Airframe</th>
-                                    <th className="text-right">Flights</th>
-                                    <th className="text-right">Hours</th>
-                                </tr>
-                            </thead>
-
-
-                            <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
-
-                                {
-                                    Object.entries(this.state.aggregateFlightHoursByAirframe).map(([index, data]) => (
-                                        <tr key={index}
-                                            className={`${parseInt(index) % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
-                                            <td className="truncate whitespace-nowrap overflow-hidden">
-                                                {data.airframe}
-                                            </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
-                                                {data.num_flights}
-                                            </td>
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden text-right">
-                                                {Math.floor(data.total_flight_hours*10)/10}
-                                            </td>
-                                        </tr>
-                                    ))
-                                }
-
-                            </tbody>
-                            
-                        </table>
-                    </div>
-
-                </div>
-            );  
-
-        };
-
-        let title;
-        if (this.props.aggregate)
-            title = "All Fleets";
-        else
-            title = "Your Fleet";
-
+    AggregateParticipationSummary() {
         return (
-            <div className="card mb-2 m-2">
-                <h4 className="card-header flex flex-row justify-between items-center">
-                    {title}
-                    {aggregateFlightHoursByAirframeView()}
-                </h4>
-                <div className="card-body">
-                    {!this.props.aggregate && this.state.notifications}
-                    {!this.props.aggregate && (<hr></hr>)}
-                    <div className="row">
-                        <div className="col-sm-4">
-                            <h3>{formatDurationAsync(this.state.statistics.flightTime)}</h3> Flight Hours <br></br>
-                        </div>
-
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</h3> Flights
-                            Without Errors <br></br>
-                        </div>
-
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.numberAircraft, integerOptions)}</h3> Aircraft <br></br>
-                        </div>
-                    </div>
-
-                    <hr></hr>
-                    <div className="row">
-                        <div className="col-sm-4">
-                            <h3>{formatDurationAsync(this.state.statistics.yearFlightTime)}</h3> Flight Hours This
-                            Year<br></br>
-                        </div>
-
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.yearNumberFlights, integerOptions)}</h3> Flights
-                            This Year<br></br>
-                        </div>
-                    </div>
-
-                    <hr></hr>
-                    <div className="row">
-                        <div className="col-sm-4">
-                            <h3>{formatDurationAsync(this.state.statistics.monthFlightTime)}</h3> Flight
-                            Hours (Last 30 Days)<br></br>
-                        </div>
-
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.monthNumberFlights, integerOptions)}</h3> Flights
-                            (Last 30 Days)<br></br>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    EventSummary() {
-        return (
-            <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
-                <h4 className="card-header">Events</h4>
-                <div className="card-body">
-                    <div className="row">
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.totalEvents, integerOptions)}</h3> Total Events<br></br>
-                        </div>
-
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.yearEvents, integerOptions)}</h3> Events This
-                            Year<br></br>
-                        </div>
-
-                        <div className="col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.monthEvents, integerOptions)}</h3> Events This
-                            Month<br></br>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    ParticipationSummary() {
-        return (
-            <div className="card mb-2 m-2">
+            <div className="card flex flex-col flex-1 h-full">
                 <h4 className="card-header">Participation</h4>
-                <div className="card-body">
+                <div className="card-body px-12!">
                     <div className="row">
                         <div className="col-sm-4">
                             <h3>{formatNumberAsync(this.state.statistics.numberFleets, integerOptions)}</h3> Fleets <br></br>
@@ -834,92 +899,92 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         };
 
         return (
-            <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
+            <div className="card flex flex-col flex-1 h-full">
                 <h4 className="card-header">Uploads (Aggregate)</h4>
-                <div className="card-body">
+                <div className="card-body px-12! flex flex-col h-full">
                     <table className="row">
-                        <tbody className="col-sm-6">
+                        <tbody className="col-sm-6 px-0">
 
-                        {/* (Total) Uploads */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_info)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-upload" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploads, "Upload")}
-                            </td>
-                        </tr>
+                            {/* (Total) Uploads */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_info)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploads, "Upload")}
+                                </td>
+                            </tr>
 
-                        {/* Uploads Processed */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_valid)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-check" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsOK, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploadsOK, "Upload")} Processed
-                            </td>
-                        </tr>
+                            {/* Uploads Processed */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_valid)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-check" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsOK, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsOK, "Upload")} Processed
+                                </td>
+                            </tr>
 
-                        {/* ⚠ Empty Row for Formatting (Helps align the bottom of the widget with the All Fleets widget) */}
-                        <tr style={{opacity: 0.00, userSelect: "none"}}>
-                            <td>
-                                    <span className="badge">
-                                        <i className="fa fa-fw fa-upload" aria-hidden="true"/>
-                                        &nbsp;
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                PLACEHOLDER ROW
-                            </td>
-                        </tr>
+                            {/* ⚠ Empty Row for Formatting (Helps align the bottom of the widget with the All Fleets widget) */}
+                            <tr style={{opacity: 0.00, userSelect: "none"}}>
+                                <td>
+                                        <span className="badge">
+                                            <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                            &nbsp;
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    PLACEHOLDER ROW
+                                </td>
+                            </tr>
 
                         </tbody>
 
-                        <tbody className="col-sm-6">
+                        <tbody className="col-sm-6 px-0">
 
-                        {/* Uploads Waiting */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_warning)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-hourglass" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import
-                            </td>
-                        </tr>
+                            {/* Uploads Waiting */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_warning)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-hourglass" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import
+                                </td>
+                            </tr>
 
-                        {/* Uploads with Errors */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_danger)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors
-                            </td>
-                        </tr>
+                            {/* Uploads with Errors */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_danger)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors
+                                </td>
+                            </tr>
 
                         </tbody>
                     </table>
@@ -940,135 +1005,135 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         };
 
         return (
-            <div className="card mb-2 m-2" style={{display: "flex", flexFlow: "column nowrap", height: "50%"}}>
+            <div className="card flex flex-col h-full flex-1">
                 <h4 className="card-header">Uploads</h4>
-                <div className="card-body h-full">
-                    <table className="row">
+                <div className="card-body px-12! flex-1 flex flex-col h-full">
+                    <table className="row w-full h-full">
                         <tbody className="col-sm-6">
 
-                        {/* (Total) Uploads */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_info)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-upload" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploads, "Upload")}
-                            </td>
-                        </tr>
+                            {/* (Total) Uploads */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_info)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploads, "Upload")}
+                                </td>
+                            </tr>
 
-                        {/* Uploads Waiting */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_warning)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-hourglass" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import
-                            </td>
-                        </tr>
+                            {/* Uploads Waiting */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_warning)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-hourglass" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsNotImported, "Upload")} awaiting Import
+                                </td>
+                            </tr>
 
-                        {/* Uploads with Errors */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_danger)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors
-                            </td>
-                        </tr>
+                            {/* Uploads with Errors */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_danger)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.uploadsWithError, "Upload")} with Errors
+                                </td>
+                            </tr>
 
                         </tbody>
 
                         <tbody className="col-sm-6">
 
-                        {/* Flights Valid */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_valid)", color: "white"}}
-                                    >
-                                        {
-                                            (hasWarnings)
-                                                ? <i className="fa fa-fw fa-check"
-                                                     style={{alignContent: "center", color: "var(--c_warning)"}}
-                                                     title="Flights with non-critical Warnings are included as Valid flights."/>
-                                                : <i className="fa fa-fw fa-check"
-                                                     style={{alignContent: "center", color: "white"}}
-                                                     title="No Flights in this Fleet have Warnings."/>
-                                        }
-                                        &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.numberFlights, "Flight")}
-                                &nbsp;Valid
-                            </td>
-                        </tr>
+                            {/* Flights Valid */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_valid)", color: "white"}}
+                                        >
+                                            {
+                                                (hasWarnings)
+                                                    ? <i className="fa fa-fw fa-check"
+                                                        style={{alignContent: "center", color: "var(--c_warning)"}}
+                                                        title="Flights with non-critical Warnings are included as Valid flights."/>
+                                                    : <i className="fa fa-fw fa-check"
+                                                        style={{alignContent: "center", color: "white"}}
+                                                        title="No Flights in this Fleet have Warnings."/>
+                                            }
+                                            &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.numberFlights, "Flight")}
+                                    &nbsp;Valid
+                                </td>
+                            </tr>
 
-                        {/* Flights with Warnings */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_warning)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.flightsWithWarning, "Flight")} with Warnings
-                            </td>
-                        </tr>
+                            {/* Flights with Warnings */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_warning)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.flightsWithWarning, "Flight")} with Warnings
+                                </td>
+                            </tr>
 
-                        {/* Flights with Errors */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_danger)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(this.state.statistics.flightsWithError, "Flight")} with Errors
-                            </td>
-                        </tr>
+                            {/* Flights with Errors */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_danger)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(this.state.statistics.flightsWithError, "Flight")} with Errors
+                                </td>
+                            </tr>
 
-                        {/* Flights Imported */}
-                        <tr>
-                            <td style={{textAlign: "right"}}>
-                                    <span
-                                        className="badge"
-                                        style={{backgroundColor: "var(--c_info)", color: "white"}}
-                                    >
-                                        <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
-                                        &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
-                                    </span>
-                            </td>
-                            <td style={{paddingBottom: "6"}}>
-                                &nbsp;{pluralize(totalFlights, "Flight")} Imported
-                            </td>
-                        </tr>
+                            {/* Flights Imported */}
+                            <tr>
+                                <td style={{textAlign: "right"}}>
+                                        <span
+                                            className="badge"
+                                            style={{backgroundColor: "var(--c_info)", color: "white"}}
+                                        >
+                                            <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
+                                        </span>
+                                </td>
+                                <td style={{paddingBottom: "6"}}>
+                                    &nbsp;{pluralize(totalFlights, "Flight")} Imported
+                                </td>
+                            </tr>
 
                         </tbody>
                     </table>
@@ -1078,6 +1143,316 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
     }
 
     render() {
+
+        const TABLE_DATA = [
+            {
+                name: "Flight Count",
+                value: formatNumberAsync(this.state.statistics.numberFlights, integerOptions),
+                yearValue: formatNumberAsync(this.state.statistics.yearNumberFlights, integerOptions),
+                monthValue: formatNumberAsync(this.state.statistics.monthNumberFlights, integerOptions)
+            },
+            {
+                name: "Flight Hours",
+                value: formatDurationAsync(this.state.statistics.flightTime),
+                yearValue: formatDurationAsync(this.state.statistics.yearFlightTime),
+                monthValue: formatDurationAsync(this.state.statistics.monthFlightTime)
+            },
+            {
+                name: "Event Count",
+                value: formatNumberAsync(this.state.statistics.totalEvents, integerOptions),
+                yearValue: formatNumberAsync(this.state.statistics.yearEvents, integerOptions),
+                monthValue: formatNumberAsync(this.state.statistics.monthEvents, integerOptions)
+            },
+            {
+                name: "Aircraft",
+                value: formatNumberAsync(this.state.statistics.numberAircraft, integerOptions),
+                yearValue: undefined,
+                monthValue: undefined
+            }
+        ];
+
+        const CELL_NOT_AVAILABLE = (
+            <i className="opacity-50 text-sm">N/A</i>
+        );
+
+        const flightHoursByAirframeView = () => {
+
+            const HAS_NO_DATA = (this.state.flightHoursByAirframe.length === 0);
+
+            return (
+                <div className="card flex-1 h-full">
+
+
+                    {/* Table Header */}
+                    <div className="text-2xl card-header opacity-100">
+                        Flight Hours by Airframe
+                    </div>
+
+
+                    <div className="card-body px-12! opacity-100! text-center text-sm">
+
+                        {
+                            HAS_NO_DATA
+                            &&
+                            <div className="truncate whitespace-nowrap overflow-hidden italic text-yellow-500 text-base">
+
+                                {/* Status Icon */}
+                                <i className={`mr-2 scale-100 fa fa-warning`}/>
+
+                                {/* Status Name */}
+                                <span>No data available for the selected airframe(s) and date range!</span>
+
+                            </div>
+                        }
+                        
+
+                        {/* Flight Hours by Airframe Table */}
+                        <table className="table-hover table-fixed rounded-lg w-full">
+
+                            <colgroup>
+                                <col style={{width: "40%"}}/>
+                                <col style={{width: "30%"}}/>
+                                <col style={{width: "30%"}}/>
+                            </colgroup>
+
+
+                            <thead className="leading-16 text-[var(--c_text)] border-b-1">
+                                <tr>
+                                    <th>Airframe</th>
+                                    <th className="text-right">Flights</th>
+                                    <th className="text-right">Hours</th>
+                                </tr>
+                            </thead>
+
+
+                            <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
+
+                                {/* Empty spacer row */}
+                                <tr className="pointer-none bg-transparent">
+                                    <td colSpan={3} className="h-6" />
+                                </tr>
+
+                                {
+                                    Object.entries(this.state.flightHoursByAirframe).map(([index, data]) => (
+                                        <tr
+                                            key={index}
+                                            className={`${parseInt(index) % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`}
+                                        >
+                                            <td className="truncate whitespace-nowrap overflow-hidden">
+                                                {data.airframe}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {data.num_flights}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {data.total_flight_hours.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+
+                            </tbody>
+                            
+                        </table>
+
+                    </div>
+
+                </div>
+            );
+        
+        };
+
+        const aggregateFlightHoursByAirframeView = () => {
+
+            const HAS_NO_DATA = (this.state.aggregateFlightHoursByAirframe.length === 0);
+
+            return (
+                <div className="card flex-1 h-full">
+
+                    {/* Table Header */}
+                    <div className="text-2xl card-header opacity-100">
+                        Aggregate Flight Hours by Airframe
+                    </div>
+
+
+                    <div className="card-body px-12! opacity-100! text-center text-sm">
+
+                        {
+                            HAS_NO_DATA
+                            &&
+                            <div className="truncate whitespace-nowrap overflow-hidden italic text-yellow-500 text-base">
+
+                                {/* Status Icon */}
+                                <i className={`mr-2 scale-100 fa fa-warning`}/>
+
+                                {/* Status Name */}
+                                <span>No data available for the selected airframe(s) and date range!</span>
+
+                            </div>
+                        }
+                    
+
+                        {/* Aggregate Flight Hours by Airframe Table */}
+                        <table className="table-hover table-fixed rounded-lg w-full">
+
+                            <colgroup>
+                                <col style={{width: "40%"}}/>
+                                <col style={{width: "30%"}}/>
+                                <col style={{width: "30%"}}/>
+                            </colgroup>
+
+
+                            <thead className="leading-16 text-[var(--c_text)] border-b-1">
+                                <tr>
+                                    <th>Airframe</th>
+                                    <th className="text-right">Flights</th>
+                                    <th className="text-right">Hours</th>
+                                </tr>
+                            </thead>
+
+
+                            <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
+
+                                {/* Empty spacer row */}
+                                <tr className="pointer-none bg-transparent">
+                                    <td colSpan={3} className="h-6" />
+                                </tr>
+
+                                {
+                                    Object.entries(this.state.aggregateFlightHoursByAirframe).map(([index, data]) => (
+                                        <tr
+                                            key={index}
+                                            className={`${parseInt(index) % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`}
+                                        >
+                                            <td className="truncate whitespace-nowrap overflow-hidden">
+                                                {data.airframe}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {data.num_flights}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {data.total_flight_hours.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+
+                            </tbody>
+                            
+                        </table>
+
+                    </div>
+
+                </div>
+            );  
+
+        };
+
+        const DISPLAY_YEAR_MONTH_COLUMNS = false;
+
+        const newSummaryTable = (
+            <div className="card flex-1 h-full">
+                <div className="text-2xl card-header opacity-100">
+                    Statistics Table
+                </div>
+
+                <div className="card-body px-12! opacity-100! text-center text-sm">
+
+                    {/* Summary Table */}
+                    <table className="table-hover table-fixed rounded-lg w-full">
+
+                        <colgroup>
+                            <col style={{ width: "25%" }} />
+                            <col style={{ width: `${DISPLAY_YEAR_MONTH_COLUMNS ? '25' : '75'}%` }} />
+                            {
+                                DISPLAY_YEAR_MONTH_COLUMNS
+                                ?<>
+                                    <col style={{ width: "25%" }} />
+                                    <col style={{ width: "25%" }} />
+                                </>
+                                : null
+                            }
+                        </colgroup>
+
+                        <thead className="leading-16 text-[var(--c_text)] border-b-1">
+                            <tr>
+                                <th>Name</th>
+                                <th className="text-right">Total</th>
+                                {
+                                    DISPLAY_YEAR_MONTH_COLUMNS
+                                    ?<>
+                                        <th className="text-right">This Year</th>
+                                        <th className="text-right">This Month</th>
+                                    </>
+                                    : null
+                                }
+                            </tr>
+                        </thead>
+
+
+                        <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
+
+                            {/* Empty spacer row */}
+                            <tr className="pointer-none bg-transparent">
+                                <td colSpan={3} className="h-6" />
+                            </tr>
+
+                            {TABLE_DATA.map((entry, index) => {
+                                return (
+                                    <React.Fragment key={entry.name}>
+                                        <tr
+                                            className={`${index % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`}
+                                        >
+
+                                            <td className="truncate whitespace-nowrap overflow-hidden">
+                                                {entry.name}
+                                            </td>
+                                            <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                {
+                                                    entry.value
+                                                    ?
+                                                    (<h3>{entry.value}</h3>)
+                                                    :
+                                                    CELL_NOT_AVAILABLE
+                                                }
+                                            </td>
+
+                                            {
+                                                DISPLAY_YEAR_MONTH_COLUMNS
+                                                ?
+                                                <>
+                                                    <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                        {
+                                                            entry.yearValue
+                                                            ?
+                                                            (<h3>{entry.yearValue}</h3>)
+                                                            :
+                                                            CELL_NOT_AVAILABLE
+                                                        }
+                                                    </td>
+                                                    <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                        {
+                                                            entry.monthValue
+                                                            ?
+                                                            (<h3>{entry.monthValue}</h3>)
+                                                            :
+                                                            CELL_NOT_AVAILABLE
+                                                        }
+                                                    </td>
+                                                </>
+                                                : null
+                                            }
+
+                                        </tr>
+                                    </React.Fragment>
+                                    );
+                                })}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        );
 
         const navbarArea = (
             <div style={{flex: "0 0 auto"}}>
@@ -1099,16 +1474,16 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             <div className="m-2 py-4 px-3">
                 <TimeHeader
                     className="rounded-lg! bg-(--c_card_header_bg_opaque)! border-(--c_border_alt)! border-1!"
-                    name={`Event Statistics ${this.props.aggregate ? "(Aggregate)" : ""}`}
-                    airframes={airframes}
-                    airframe={this.state.airframe}
-                    startYear={this.state.startYear}
-                    startMonth={this.state.startMonth}
-                    endYear={this.state.endYear}
-                    endMonth={this.state.endMonth}
-                    datesChanged={this.state.datesChanged}
+                    name={`Event Statistics Summary ${this.props.aggregate ? "(Aggregate)" : ""}`}
+                    airframes={airframes.map((airframe: AirframeNameID) => airframe.name)}
+                    airframe={this.state.airframe.name}
+                    startYear={startYear}
+                    startMonth={startMonth}
+                    endYear={endYear}
+                    endMonth={endMonth}
+                    datesOrAirframeChanged={this.state.datesOrAirframeChanged}
                     dateChange={() => this.dateChange()}
-                    airframeChange={(airframe: string) => this.airframeChange(airframe)}
+                    airframeChange={(airframe: string) => this.airframeChangeFromName(airframe)}
                     updateStartYear={(newStartYear: number) => this.updateStartYear(newStartYear)}
                     updateStartMonth={(newStartMonth: number) => this.updateStartMonth(newStartMonth)}
                     updateEndYear={(newEndYear: number) => this.updateEndYear(newEndYear)}
@@ -1123,22 +1498,60 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 {/* Navbar */}
                 {navbarArea}
 
-
                 {/* Page Content Area */}
-                <div style={{overflowY: "auto", flex: "1 1 auto"}}>
+                <div className="flex flex-col px-4 flex-1 min-h-0 overflow-y-auto">
 
                     {/* Time Header */}
                     {timeHeader}
 
-                    <div className="container-fluid">
-                        <div className="row">
-                            <div className="col-6">{this.FlightSummary()}</div>
-                            <div className="col-6" style={{display: "flex", flexDirection: "column"}}>
-                                {this.EventSummary()}
-                                {this.props.aggregate ? this.UploadsSummaryAggregate() : this.UploadsSummary()}
-                                {this.props.aggregate && this.ParticipationSummary()}
+                    {/* Tables Row */}
+                    <div className="
+                        flex flex-row items-stretch justify-between
+                        mx-4
+                        gap-4
+                    ">
+
+                        {/* Tables Row -- Summary Table (& Aggregate Flight Hours by Airframe Table) */}
+                        <div className="grid grid-cols-2 gap-4 w-full">
+
+                            {/* Summary Table */}
+                            {newSummaryTable}
+
+                            {/* Uploads Summary */}
+                            {this.props.aggregate ? this.UploadsSummaryAggregate() : this.UploadsSummary()}
+
+                            {/* Aggregate Flight Hours by Airframe Table */}
+                            {
+                                this.props.aggregate
+                                ? aggregateFlightHoursByAirframeView()
+                                : flightHoursByAirframeView()
+                            }
+                            
+                            {/* Notifications / Participation */}
+                            <div className="flex flex-col h-full flex-1">
+                                {
+                                    //Aggregate --> Participation
+                                    this.props.aggregate
+                                    ? this.AggregateParticipationSummary()
+
+                                    //Non-Aggregate --> Notifications
+                                    :
+                                    this.state.notifications
+                                }
                             </div>
+
+
                         </div>
+
+                        {/* Tables Row -- Uploads Table & (Notifications or Participation) */}
+                        {/* <div className="flex flex-col flex-1 h-full gap-4">
+
+
+                        </div> */}
+
+                    </div>
+
+                    <div className="container-fluid">
 
                         <div className="row">
                             <div className="col-lg-12">
