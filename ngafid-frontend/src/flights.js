@@ -689,8 +689,7 @@ class FlightsPage extends React.Component {
 
     addCesiumFlight(flightId, color) {
 
-        console.log("add cesium flight");
-        console.log(`in showCesium flight id from flight component ${  flightId}`);
+        console.log(`Adding Cesium Flight with ID: ${  flightId}`);
 
         this.cesiumRef.current.addFlightEntity(flightId, color);
         this.showCesiumMap();

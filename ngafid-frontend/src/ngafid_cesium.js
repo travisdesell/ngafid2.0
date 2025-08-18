@@ -13,6 +13,7 @@ import {
     PolylineOutlineMaterialProperty, CornerType
 } from "cesium";
 import {Viewer, Scene, Globe, Clock, SkyAtmosphere} from "resium";
+import { showErrorModal } from "./error_modal";
 
 
 class CesiumPage extends React.Component {
@@ -85,6 +86,8 @@ class CesiumPage extends React.Component {
             "flightId" : flightId
         };
 
+        console.log(`Fetching Cesium data for Flight ID: ${flightId}`);
+
         $.ajax({
             type : 'POST',
             url : '/protected/cesium_data',
@@ -93,11 +96,12 @@ class CesiumPage extends React.Component {
             dataType : 'json',
             async: false,
             success: (response) => {
-                console.log(response);
+                console.log("Fetched Cesium Data: ",response);
                 cesiumData = response;
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                console.log(errorThrown);
+                console.error("Error Fetching Cesium Data:", errorThrown);
+                showErrorModal("Error Fetching Cesium Data (Likely missing coordinate data...)", errorThrown);
             },
         });
 
@@ -491,7 +495,19 @@ class CesiumPage extends React.Component {
         } else {
 
             console.log("Adding flight to cesium");
-            const cesiumData = this.getCesiumData(flightId)[flightId];
+            const cesiumDataContainer = this.getCesiumData(flightId);
+
+            //Failed to load Cesium data, exit
+            if (!cesiumDataContainer) {
+                console.warn(`Failed to load Cesium data for Flight ID: ${flightId}, not adding flight entity`);
+                return;
+            }
+
+            const cesiumData = cesiumDataContainer[flightId];
+            console.log("addFlightEntity -- Cesium Data:", cesiumData);
+
+
+
             this.setState(prevState => ({
                 flightData: {
                     ...prevState.flightData,
