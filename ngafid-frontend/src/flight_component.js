@@ -387,13 +387,13 @@ class Flight extends React.Component {
                 if (!this.state.mapLoaded) {              // if points (coordinates) have not been fetched
                     // create eventPoint with placeholder coordinates
                     eventPoint = new Feature({
-                        geometry: new LineString(),
+                        geometry: new LineString([0, 0]),
                         name: 'Event'
                     });
 
                     // create outlines
                     eventOutline = new Feature({
-                        geometry: new LineString(),
+                        geometry: new LineString([0, 0]),
                         name: 'EventOutline'
                     });
 
@@ -763,14 +763,9 @@ class Flight extends React.Component {
                 success: (response) => {
 
                     const coordinates = response.coordinates;
-                    const points = this.state.points;
-                    for (let i = 0; i < coordinates.length; i++) {
-                        const point = fromLonLat(coordinates[i]);
-                        points.push(point);
-                    }
+                    const points = response.coordinates.map((lonLat) => fromLonLat(lonLat));
 
                     const color = this.state.color;
-                    //console.log(color);
 
                     const trackingPoint = new Feature({
                         geometry: new Point(points[0]),
@@ -781,13 +776,6 @@ class Flight extends React.Component {
 
                     // Initialize layers as a new array
                     const layers = [];
-
-                    // Update state with trackingPoint and layers
-                    this.setState({
-                        trackingPoint: trackingPoint,
-                        layers: layers
-                    });
-
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
                     const itinerary = this.props.flightInfo.itinerary;
@@ -874,8 +862,6 @@ class Flight extends React.Component {
                         })
                     });
 
-                    this.setState({ baseLayer });
-
                     const phaseLayer = new VectorLayer({
                         name: 'Itinerary Phases',
                         nMap: true,
@@ -892,14 +878,6 @@ class Flight extends React.Component {
                     });
 
                     baseLayer.flightState = this;
-
-                    this.setState({
-                        pathVisible: true,
-                        itineraryVisible: true,
-                        nanOffset: response.nanOffset,
-                        coordinates: response.coordinates,
-                        points: points
-                    });
 
                     // toggle visibility of itinerary
                     layers.push(baseLayer, phaseLayer);
@@ -957,7 +935,16 @@ class Flight extends React.Component {
                     console.log(extent);
                     map.getView().fit(extent, map.getSize());
 
-                    this.setState(this.state);
+                    this.setState({
+                        baseLayer,
+                        layers: [...layers],
+                        points,
+                        coordinates: response.coordinates,
+                        nanOffset: response.nanOffset,
+                        selectedPlot: 'Itinerary',
+                        pathVisible: true,
+                        itineraryVisible: true
+                    });
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
                     this.setState({
@@ -1171,7 +1158,11 @@ class Flight extends React.Component {
 
         //Itinerary Row
         let itineraryRow = FLIGHT_COMPONENT_ROW_HIDDEN;
-        if (this.state.itineraryVisible) {
+        const itineraryReady =
+            this.state.itineraryVisible
+            && Array.isArray(this.state.layers)
+            && (this.state.layers.length > 0);
+        if (itineraryReady) {
 
             itineraryRow = (
                 <Itinerary
