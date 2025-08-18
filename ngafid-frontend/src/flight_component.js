@@ -387,13 +387,13 @@ class Flight extends React.Component {
                 if (!this.state.mapLoaded) {              // if points (coordinates) have not been fetched
                     // create eventPoint with placeholder coordinates
                     eventPoint = new Feature({
-                        geometry: new LineString([0, 0]),
+                        geometry: new LineString(),
                         name: 'Event'
                     });
 
                     // create outlines
                     eventOutline = new Feature({
-                        geometry: new LineString([0, 0]),
+                        geometry: new LineString(),
                         name: 'EventOutline'
                     });
 
@@ -972,55 +972,56 @@ class Flight extends React.Component {
         //2D map layer already loaded for this flight...
         } else {
 
-            this.setState(prevState => ({
-                mapLoaded: false,
-                pathVisible: !prevState.pathVisible,
-                itineraryVisible: !prevState.itineraryVisible
-            }));
+            const nextPathVisible = !this.state.pathVisible;
+            const nextItineraryVisible = !this.state.itineraryVisible;
 
-            console.log("Already rendered: ", this.state.layers);
+            let nextSelected = this.state.selectedPlot;
 
-            for (let i = 0; i < this.state.layers.length; i++) {
+            //Path isn't visible yet...
+            if (!nextPathVisible) {
 
-                const layer = this.state.layers[i];
-                console.log("Layer: ", layer);
+                for (const layer of (this.state.layers || [])) {
 
-                //Layer values are visible and the path is not, hide the layer
-                if (layer.values_.visible && !this.state.pathVisible) {
+                    if (layer.getVisible())
+                        nextSelected = layer.get('name') ?? layer.values_?.name;
 
-                    this.setState({ selectedPlot: layer.values_.name });
                     layer.setVisible(false);
 
-                    //Layer values match selected plot and the path is visible, show the layer
-                } else if (layer.values_.name === this.state.selectedPlot && this.state.pathVisible) {
+                }
 
-                    layer.setVisible(true);
+            //Otherwise...
+            } else {
 
+                for (const layer of (this.state.layers || [])) {
+                    const name = layer.get('name') ?? layer.values_?.name;
+                    layer.setVisible(name === nextSelected);
                 }
 
             }
 
-            //Event layer not found, visibility of events
-            if (this.state.eventLayer != null) {
-                this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
-                this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
+            //Ensure events follow the path's visibility
+            if (this.state.eventLayer) {
+                const showEvents = nextPathVisible && this.state.eventsVisible;
+                this.state.eventLayer.setVisible(showEvents);
+                this.state.eventOutlineLayer.setVisible(showEvents);
             }
 
-            //Path is visible, display the map
-            if (this.state.pathVisible) {
-
+            //Showing the path again, refit and show the map
+            if (nextPathVisible && this.state.baseLayer) {
                 this.props.showMap();
-
                 const extent = this.state.baseLayer.getSource().getExtent();
-                console.log(extent);
                 map.getView().fit(extent, map.getSize());
-
             }
 
             //Trigger state update
-            this.setState(this.state);
+            this.setState({
+                pathVisible: nextPathVisible,
+                itineraryVisible: nextItineraryVisible,
+                selectedPlot: nextSelected
+            });
 
         }
+
     }
 
     /**
@@ -1430,10 +1431,11 @@ class Flight extends React.Component {
 
                                             {/* Map Toggle */}
                                             <button
-                                                className={buttonClasses}
+                                                className={`${buttonClasses} ${this.state.pathVisible ? 'active' : ''}`}
                                                 style={styleButton}
                                                 id={`mapToggle-${this.props.flightInfo.id}`}
                                                 data-bs-toggle="button"
+                                                aria-pressed={this.state.pathVisible}
                                                 onClick={() => this.mapClicked()}
                                                 disabled={this.state.mapButtonDisabled}
                                             >
