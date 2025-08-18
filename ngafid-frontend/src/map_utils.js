@@ -80,16 +80,18 @@ function paletteGenerator(colors, pos) {
  * Generates the layer for Stall Index
  *
  * @param spData the DoubleTimeSeries with the stall index data
+ * @param points the flight tracking points
+ * @param trackingPoint the current tracking point of the flight
  * @param layers the collection of layers to add this new layer to
  * @param flight the flight object that has data pertaining to the flight
  */
-function generateStallLayer(spData, layers, flight) {
+function generateStallLayer(spData, points, trackingPoint, layers, flight) {
     const spPhases = [], spOutlinePhases = [];
     if (spData != null) {
         for(let i = 0; i < spData.length; i++){
             const val = spData[i];
             const feat = new Feature({
-                geometry : new LineString(flight.state.points.slice(i, i+2)),
+                geometry : new LineString(points.slice(i, i+2)),
                 name : "SP"
             });
             feat.setId(i);
@@ -104,7 +106,7 @@ function generateStallLayer(spData, layers, flight) {
             ]);
 
             const outFeat = new Feature({
-                geometry : new LineString(flight.state.points.slice(i, i+2)),
+                geometry : new LineString(points.slice(i, i+2)),
                 name : "Stall Index Outline"
             });
 
@@ -116,7 +118,7 @@ function generateStallLayer(spData, layers, flight) {
         }
     }
 
-    spPhases.push(flight.state.trackingPoint);
+    spPhases.push(trackingPoint);
 
     const spLayer = new VectorLayer({
         name : 'Stall Index' ,
@@ -153,16 +155,18 @@ function generateStallLayer(spData, layers, flight) {
  * Generates the layer for LOC-I Index
  *
  * @param spData the DoubleTimeSeries with the LOC-I index data
+ * @param points the flight tracking points
+ * @param trackingPoint the current tracking point of the flight
  * @param layers the collection of layers to add this new layer to
  * @param flight the flight object that has data pertaining to the flight
  */
-function generateLOCILayer(lociData, layers, flight) {
+function generateLOCILayer(lociData, points, trackingPoint, layers, flight) {
     const lociPhases = [], lociOutlinePhases = [];
     if (lociData != null) {
         for(let i = 0; i < lociData.length; i++){
             const val = lociData[i];
             const feat = new Feature({
-                geometry : new LineString(flight.state.points.slice(i, i+2)),
+                geometry : new LineString(points.slice(i, i+2)),
                 name : "LOC-I Index"
             });
             feat.setId(i);
@@ -177,7 +181,7 @@ function generateLOCILayer(lociData, layers, flight) {
             ]);
 
             const outFeat = new Feature({
-                geometry : new LineString(flight.state.points.slice(i, i+2)),
+                geometry : new LineString(points.slice(i, i+2)),
                 name : "LOC-I Index Outline"
             });
 
@@ -190,7 +194,7 @@ function generateLOCILayer(lociData, layers, flight) {
     }
 
 
-    lociPhases.push(flight.state.trackingPoint);
+    lociPhases.push(trackingPoint);
 
     const lociLayer = new VectorLayer({
         name : 'LOC-I Index' ,

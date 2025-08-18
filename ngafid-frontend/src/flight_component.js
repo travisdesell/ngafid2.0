@@ -27,6 +27,7 @@ import {cesiumFlightsSelected} from "./cesium_buttons";
 import { plotlyLayoutGlobal } from './flights.js';
 
 import moment from 'moment';
+import { rejects } from 'assert';
 
 
 class Flight extends React.Component {
@@ -77,45 +78,51 @@ class Flight extends React.Component {
         this.zoomChanged = this.zoomChanged.bind(this);
     }
 
-    fetchEvents() {
+    async fetchEvents() {
 
-        const submissionData = {
-            eventDefinitionsLoaded: eventDefinitions.loaded
-        };
+        return await new Promise((resolve, reject) => {
 
-        $.ajax({
-            type: 'GET',
-            url: `/api/flight/${this.props.flightInfo.id}/events`,
-            data: submissionData,
-            dataType: 'json',
-            async: false,
-            success: (response) => {
+            const submissionData = {
+                eventDefinitionsLoaded: eventDefinitions.loaded
+            };
 
-                console.log("Received response events data:", response);
+            $.ajax({
+                type: 'GET',
+                url: `/api/flight/${this.props.flightInfo.id}/events`,
+                data: submissionData,
+                dataType: 'json',
+                async: true,
+                success: (response) => {
 
-                if (!eventDefinitions.loaded) {
-                    eventDefinitions.content = response.definitions;
-                    eventDefinitions.loaded = true;
-                }
+                    console.log("Received response events data:", response);
 
-                const events = response.events;
-                for (let i = 0; i < events.length; i++) {
-                    for (let j = 0; j < eventDefinitions.content.length; j++) {
-
-                        if (events[i].eventDefinitionId == eventDefinitions.content[j].id)
-                            events[i].eventDefinition = eventDefinitions.content[j];
-
+                    if (!eventDefinitions.loaded) {
+                        eventDefinitions.content = response.definitions;
+                        eventDefinitions.loaded = true;
                     }
-                }
 
-                this.setState({ events });
-            },
-            error: (jqXHR, textStatus, errorThrown) => {
-                this.setState({ mapLoaded: false });
+                    const events = response.events;
+                    for (let i = 0; i < events.length; i++) {
+                        for (let j = 0; j < eventDefinitions.content.length; j++) {
 
-                showErrorModal("Error Loading Flight Events", errorThrown);
-            },
+                            if (events[i].eventDefinitionId == eventDefinitions.content[j].id)
+                                events[i].eventDefinition = eventDefinitions.content[j];
+
+                        }
+                    }
+
+                    this.setState({ events }, () => resolve(this.state.events));
+
+                },
+                error: (jqXHR, textStatus, errorThrown) => {
+                    this.setState({ mapLoaded: false });
+                    showErrorModal("Error Loading Flight Events", errorThrown);
+                    reject(errorThrown);
+                },
+            });
+
         });
+
     }
 
     getActiveLayers() {
@@ -346,7 +353,7 @@ class Flight extends React.Component {
         target.setState({color: event.target.value});
     }
 
-    exclamationClicked() {
+    async exclamationClicked() {
 
         console.log("Exclamation clicked!");
 
@@ -354,16 +361,17 @@ class Flight extends React.Component {
 
             console.log("Loading events!");
 
-            this.setState({
-                eventsLoaded: true,
-                eventsVisible: true
-            });
+            const events = await this.fetchEvents();
+            console.log("Got Flight Events: ", events);
 
-            this.fetchEvents();
 
-            console.log("Got events: ", this.state.events);
+            //Failed to load events, exit
+            if (!events) {
+                console.error("Events are undefined, exiting!");
+                return;
+            }
 
-            const events = this.state.events;
+            // this.setState({ eventsVisible: true });
 
             // create list of event Features to display on map //
             for (let i = 0; i < events.length; i++) {
@@ -447,6 +455,8 @@ class Flight extends React.Component {
 
             this.setState({
                 ...this.state,
+                eventsLoaded: true,
+                eventsVisible: true,
                 eventLayer: eventLayer,
                 eventOutlineLayer: eventOutlineLayer
             });
@@ -699,7 +709,7 @@ class Flight extends React.Component {
         }));
     }
 
-    mapClicked() {
+    async mapClicked() {
 
         //Flagged as not having coordinate info, exit
         if (this.props.flightInfo.has_coords === "0")
@@ -711,7 +721,7 @@ class Flight extends React.Component {
             this.props.showMap();
             this.setState({ mapLoaded: true });
 
-            this.fetchEvents();
+            await this.fetchEvents();
             console.log("Events Fetched: ", this.state.events);
 
             //TODO: get upset probability data here
@@ -830,6 +840,8 @@ class Flight extends React.Component {
                         }
                     }
 
+                    console.log("[EX] Flight Points: ", points);
+                    console.log("[EX] Flight Tracking Point: ", trackingPoint);
                     const baseLayer = new VectorLayer({
                         name: 'Itinerary',
                         description: 'Itinerary with Phases',
@@ -855,7 +867,7 @@ class Flight extends React.Component {
                                     geometry: new LineString(points),
                                     name: 'Line'
                                 }),
-                                this.state.trackingPoint,
+                                trackingPoint,
                             ]
                         })
                     });
@@ -893,8 +905,8 @@ class Flight extends React.Component {
                     const lociData = this.state.seriesData.get('LOC-I Index');
                     const spData = this.state.seriesData.get('Stall Index');
 
-                    generateStallLayer(spData, layers, this);
-                    generateLOCILayer(lociData, layers, this);
+                    generateStallLayer(spData, points, trackingPoint, layers, this);
+                    generateLOCILayer(lociData, points, trackingPoint, layers, this);
 
                     console.log("adding layers!");
                     for (let i = 0; i < layers.length; i++) {
@@ -953,7 +965,7 @@ class Flight extends React.Component {
                 },
             });
 
-            //2D map layer already loaded for this flight...
+        //2D map layer already loaded for this flight...
         } else {
 
             this.setState(prevState => ({
