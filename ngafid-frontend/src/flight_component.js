@@ -70,6 +70,8 @@ class Flight extends React.Component {
             eventOutlineLayer: null,
             replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
             cesiumFlightEnabled: false,
+
+            mapButtonDisabled: false,
         };
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -958,8 +960,10 @@ class Flight extends React.Component {
                     this.setState(this.state);
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    this.setState({ mapLoaded: false });
-                    this.setState(this.state);
+                    this.setState({
+                        mapLoaded: false,
+                        mapButtonDisabled: true,
+                    });
 
                     showErrorModal("Error Loading Flight Coordinates", errorThrown);
                 },
@@ -1431,6 +1435,7 @@ class Flight extends React.Component {
                                                 id={`mapToggle-${this.props.flightInfo.id}`}
                                                 data-bs-toggle="button"
                                                 onClick={() => this.mapClicked()}
+                                                disabled={this.state.mapButtonDisabled}
                                             >
                                                 <i className="fa fa-map-o p-1"/>
                                             </button>
