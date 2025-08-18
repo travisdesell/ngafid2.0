@@ -2630,7 +2630,12 @@ const HeatMapPage: React.FC = () => {
 
             {/* Navbar */}
             <div style={{ flex: '0 0 auto' }}>
-                <SignedInNavbar activePage="heat_map" mapLayerDropdown={mapLayerDropdown} />
+                <SignedInNavbar
+                    activePage="heat_map"
+                    mapLayerDropdown={mapLayerDropdown}
+                    waitingUserCount={waitingUserCount}
+                    unconfirmedTailsCount={unconfirmedTailsCount}
+                />
             </div>
 
             {/* Main Content Container */}
