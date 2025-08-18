@@ -1,6 +1,7 @@
 package org.ngafid.processor.terrain;
 
 import java.nio.file.NoSuchFileException;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,19 +17,27 @@ public enum TerrainCache {
     ;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
 
-    private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
+    // private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
+    private static final LoadingCache<TileKey, SRTMTile> TILE_CACHE;
 
     static {
 
-        LOG.info("[EX] Initializing TerrainCache with max size: " + Config.MAX_TERRAIN_CACHE_SIZE);
+        LOG.log(Level.INFO, "Initializing TerrainCache with max size: {0}", Config.MAX_TERRAIN_CACHE_SIZE);
+
         TILE_CACHE = CacheBuilder.newBuilder()
                 .maximumSize(Config.MAX_TERRAIN_CACHE_SIZE)
                 .build(
                         new CacheLoader<>() {
                             @NotNull
                             @Override
-                            public SRTMTile load(@NotNull TileCoordinate coordinate) throws TerrainUnavailableException {
-                                return coordinate.getTile();
+                            public SRTMTile load(@NotNull TileKey key) throws TerrainUnavailableException {
+
+                                try {
+                                    return new SRTMTile(90 - key.latIndex, key.lonIndex - 180);
+                                } catch (NoSuchFileException e) {
+                                    LOG.log(Level.SEVERE, "Terrain tile not found: {0}", key);
+                                    throw new TerrainUnavailableException("Terrain tile not found: " + key);
+                                }
                             }
                         }
                 );
@@ -87,9 +96,11 @@ public enum TerrainCache {
             throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
         }
 
+        TileKey key = new TileKey(coordinate.latIndex, coordinate.lonIndex);
+
         SRTMTile tile = null;
         try {
-            tile = TILE_CACHE.get(coordinate);
+            tile = TILE_CACHE.get(key);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof TerrainUnavailableException te) {
                 throw te;
@@ -99,6 +110,27 @@ public enum TerrainCache {
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
 
         return (int) Math.max(0, msl - altitudeFt);
+    }
+
+    private static final class TileKey {
+
+        final int latIndex;
+        final int lonIndex;
+        TileKey(int latIndex, int lonIndex) {
+            this.latIndex = latIndex;
+            this.lonIndex = lonIndex;
+        }
+
+        @Override public int hashCode() { return Objects.hash(latIndex, lonIndex); }
+        @Override public boolean equals(Object objectTarget) {
+
+            //Target isn't a TileKey -> False
+            if (!(objectTarget instanceof TileKey k))
+                return false;
+
+            return (k.latIndex == latIndex && k.lonIndex == lonIndex);
+        }
+        
     }
 
     private record TileCoordinate(double lat, double lon, int latIndex, int lonIndex) {
