@@ -326,27 +326,37 @@ class CesiumPage extends React.Component {
     }
 
     addEventEntity(event, flightId) {
-        
+
+        console.log(`Adding event entity: (Event ID: ${event.id}, Flight ID: ${flightId})...`);
+
+        //Event entity already exists, remove it
         if (event.id in this.state.activeEventEntites) {
             
+            console.log(`Event entity already exists, removing instead: ${event.id}`);
+
             const eventEntity = this.state.activeEventEntites[event.id];
             this.viewer.entities.remove(eventEntity);
             delete this.state.activeEventEntites[event.id];
 
+        //Otherwise, add it
         } else {
+
             const infoAgl = this.state.flightData[flightId].flightGeoInfoAgl;
             const eventStartLine = event.startLine*3 - 3;
             const eventEndLine = event.endLine*3 + 3;
-            console.log(`Start line : ${  eventStartLine  } End Line : ${  eventEndLine}`);
             const eventCoordinates = infoAgl.slice(eventStartLine, eventEndLine);
-            const entity = this.getEventEntity(event, flightId, eventCoordinates, event.color); 
-            this.viewer.entities.add(entity);
-            const updatedActiveEventEntites = { ...this.state.activeEventEntites, [event.id]: entity };
+            const entity = this.getEventEntity(event, flightId, eventCoordinates, event.color);
+
+            const addedEntity = this.viewer.entities.add(entity);
+            const updatedActiveEventEntites = {
+                ...this.state.activeEventEntites,
+                [event.id]: addedEntity
+            };
+
             this.setState({ activeEventEntites: updatedActiveEventEntites });
-            console.log(event);
+
         }
 
-        this.setState(this.state);
     }
 
     removeFlightEntities(flightId) {
@@ -401,14 +411,24 @@ class CesiumPage extends React.Component {
         }
     }
     
-    zoomToEventEntity(eventId, flightId) {
+    async zoomToEventEntity(eventId, flightId) {
+
+        console.log(`Attempting to zoom to event entity: (Event ID: ${eventId}, Flight ID: ${flightId})...`);
 
         const eventEntity = this.state.activeEventEntites[eventId];
 
-        console.log(`Zooming to event entity: (Event ID: ${eventId}, Flight ID: ${flightId})`);
+        if (!eventEntity) {
+            console.warn("Event entity not found!");
+            return;
+        }
 
-        this.viewer.zoomTo(eventEntity);
-        this.setState({ currentZoomedEntity: eventEntity });
+        const zoomSuccess = await this.viewer.zoomTo(eventEntity);
+        if (zoomSuccess) {
+            console.log("Zoomed to event entity successfully.");
+            this.setState({ currentZoomedEntity: eventEntity });
+        } else {
+            console.warn("Failed to zoom to event entity.");
+        }
     }
 
     addDefaultEntities(flightId, color) {
