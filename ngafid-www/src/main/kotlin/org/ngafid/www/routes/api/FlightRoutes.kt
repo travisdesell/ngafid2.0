@@ -101,8 +101,14 @@ object FlightRoutes : RouteProvider() {
 
     fun putFlightAssociateTag(ctx: Context) {
         val tagId = Objects.requireNonNull(ctx.pathParam("tid")).toInt()
+        val flightId = ctx.pathParam("fid").toInt()
 
         Database.getConnection().use { connection ->
+
+            //Attempt to associate the tag with the flight
+            Flight.associateTag(flightId, tagId, connection)
+
+            //Verify that the tag is now associated with the flight
             ctx.json(Objects.requireNonNull<FlightTag>(Flight.getTag(connection, tagId)))
         }
     }
