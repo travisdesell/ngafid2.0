@@ -1,5 +1,5 @@
 import 'bootstrap';
-import React from "react";
+import React, { useEffect } from "react";
 import {Colors} from "./map.js";
 import { showErrorModal } from './error_modal.js';
 import {timeZones} from "./time_zones.js";
@@ -484,28 +484,6 @@ class Rule extends React.Component {
 
 export function Group(props) {
 
-    // constructor(props) {
-
-    //     super(props);
-
-    //     const colorRand = Colors.randomValue();
-
-    //     this.state = {
-    //         showSavePopover: false,
-    //         showLoadPopover: false,
-    //         loadPopoverTarget: "",
-    //         savePopoverTarget: "",
-    //         saveButtonDisabled: true,
-    //         storedFilters: props.storedFilters,
-    //         editingFilter: {},
-    //         filterSaved: false,
-    //         filterName: "",
-    //         filterColor: colorRand
-    //     };
-
-    //     this.handleColorChange = this.handleColorChange.bind(this);
-    // }
-
     const [showSavePopover, setShowSavePopover] = React.useState(false);
     const [showLoadPopover, setShowLoadPopover] = React.useState(false);
     const [loadPopoverTarget, setLoadPopoverTarget] = React.useState(null);
@@ -515,6 +493,73 @@ export function Group(props) {
     const [filterSaved, setFilterSaved] = React.useState(false);
     const [filterName, setFilterName] = React.useState("");
     const [filterColor, setFilterColor] = React.useState(Colors.randomValue());
+    const [filterValid, setFilterValid] = React.useState(false);
+    const [filterNeedsApplied, setFilterNeedsApplied] = React.useState(false);
+
+
+    /*
+        Use filter/rule signatures so that a ping symbol will appear
+        over the Apply Current Filter button after changes are made
+        to the filters/rules.
+    */
+    const normalizeFilter = React.useCallback(function normalize(node) {
+
+        //Target node is an unexpected type, just return it
+        if (!node || typeof node !== "object")
+            return node;
+
+        //Got a group node....
+        if (node.type === "GROUP")
+            return {
+                type: "GROUP",
+                condition: (node.condition === "OR")
+                    ? "OR"
+                    : "AND",
+                filters: Array.isArray(node.filters) ? node.filters.map(normalize) : []
+            };
+        
+        //Got a rule node...
+        if (node.type === "RULE")
+            return {
+                type: "RULE",
+                inputs: Array.isArray(node.inputs)
+                    ? node.inputs.map(v => (v ?? ""))
+                    : []
+            };
+        
+        //Got unknown node type, use type as placeholder
+        return { type: node.type };
+
+    }, []);
+
+    const stableStringify = React.useCallback(function stringify(obj) {
+
+        //Got unexpected object input, just stringify it
+        if (obj === null || typeof obj !== "object")
+            return JSON.stringify(obj);
+
+        //Got array input, stringify each element
+        if (Array.isArray(obj))
+            return `[${obj.map(stringify).join(",")}]`;
+        
+        const keys = Object.keys(obj).sort();
+        return `{${keys.map(k => `${JSON.stringify(k)}:${stringify(obj[k])}`).join(",")}}`;
+
+    }, []);
+
+    const getFilterSig = React.useCallback(
+        (f) => stableStringify(normalizeFilter(f ?? {})),
+        [stableStringify, normalizeFilter]
+    );
+
+    const currentSig = getFilterSig(props.getFilter());
+    const [appliedSig, setAppliedSig] = React.useState(() => getFilterSig(props.getFilter()));
+
+    useEffect(() => {
+        setFilterNeedsApplied(currentSig !== appliedSig);
+    }, [currentSig, appliedSig]);
+
+
 
     //Disable save button when the filter is empty
     const saveButtonDisabled = (group) => {
@@ -546,9 +591,14 @@ export function Group(props) {
         const filterJSON = JSON.parse(saved.filter);
         props.setFilter(filterJSON);
         
+        const savedFilterSignature = getFilterSig(filterJSON);
+        setAppliedSig(savedFilterSignature);
+        setFilterNeedsApplied(false);
+
+
         setTimeout(() => {
             props.submitFilter();
-        }, 50);
+        }, 0);
 
     };
 
@@ -790,7 +840,7 @@ export function Group(props) {
         console.log("Rendering Filters:", filters);
 
         const submitHidden = false;
-        const submitDisabled = false;
+        const submitDisabled = isValidFilter(props.getFilter(), props.rules) === false;
 
         let saveCard = "";
         if (showSavePopover) {
@@ -882,14 +932,19 @@ export function Group(props) {
                                         <div style={{width: "100%"}} className="d-flex flex-row">
 
                                             {/* Primary Button (+ Name) */}
-                                            <button type="button" className="m-1 btn btn-secondary"
-                                                    onClick={() => setFilterFromSaved(filter)} key={index} style={{
-                                                width: "100%",
-                                                lineHeight: '1',
-                                                fontSize: '100%',
-                                                backgroundColor: 'var(--c_tag_badge)',
-                                                color: 'var(--c_text)'
-                                            }} title="Filter Info">
+                                            <button
+                                                type="button"
+                                                className="m-1 btn btn-secondary"
+                                                onClick={() => setFilterFromSaved(filter) }
+                                                key={index} style={{
+                                                    width: "100%",
+                                                    lineHeight: '1',
+                                                    fontSize: '100%',
+                                                    backgroundColor: 'var(--c_tag_badge)',
+                                                    color: 'var(--c_text)'
+                                                }}
+                                                title="Filter Info"
+                                            >
 
                                                 <div className="d-flex flex-row">
                                                     <span className="badge badge-pill badge-primary" style={{
@@ -1053,7 +1108,7 @@ export function Group(props) {
                     <button
                         id="save-filter-button"
                         type="button"
-                        className="btn btn-primary btn-sm mr-1"
+                        className={`btn btn-primary btn-sm mr-1 ${submitDisabled ? 'grayscale-100 cursor-not-allowed' : ''}`}
                         onClick={handleSaveClick}
                         // hidden={submitHidden}
                         disabled={saveButtonIsDisabled}
@@ -1068,12 +1123,27 @@ export function Group(props) {
                     {/* Filter Submit Button */}
                     <button
                         type="button"
-                        className="btn btn-primary btn-sm mr-1"
+                        className={`btn btn-primary btn-sm mr-1 relative ${submitDisabled ? 'grayscale-100 cursor-not-allowed' : ''}`}
                         disabled={submitDisabled}
-                        onClick={() => props.submitFilter(true /*reset current page*/)}
+                        onClick={() => {
+                            setFilterNeedsApplied(false);
+                            props.submitFilter(true /*<-- reset current page */);
+                            setTimeout(() => {
+                                const postSubmitSig = getFilterSig(props.getFilter());
+                                setAppliedSig(postSubmitSig);
+                            }, 0);
+                        }}
                         hidden={submitHidden}
                     >
                         {props.submitButtonName}
+                        {
+                            (filterNeedsApplied && !submitDisabled)
+                            &&
+                            <span className="absolute flex size-3 right-0 top-0 -mr-1.5 -mt-1.5">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                                <span className="absolute inline-flex size-3 rounded-full bg-sky-500"></span>
+                            </span>
+                        }
                     </button>
                 </div>
 
