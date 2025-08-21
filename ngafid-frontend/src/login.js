@@ -90,9 +90,6 @@ class LoginModal extends React.Component {
                     return false;
                 }
 
-                //login was successful or had a server error, we can hide the modal
-                $("#login-modal").modal('hide');
-
                 if (response.errorTitle) {
                     console.log("Displaying error modal!");
                     hideLoginModal();
@@ -114,6 +111,9 @@ class LoginModal extends React.Component {
                 hideLoginModal();
                 showErrorModal("Error Submitting Account Information", errorThrown);
             },
+            complete: () => {
+                $("#loading").hide();
+            }
         });
 
     }
