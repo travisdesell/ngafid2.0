@@ -282,6 +282,8 @@ class ManageFleetPage extends React.Component {
         const user = this.state.user;
         const fleetName = user?.fleet?.name || "";
 
+        const deniedUsersCount = this.state.fleetUsers.filter(u => u.fleetAccess.accessType === "DENIED").length;
+
         return (
             <div>
                 <SignedInNavbar
@@ -340,16 +342,21 @@ class ManageFleetPage extends React.Component {
                                 </div>
 
                                 {/* Toggle Denied Users */}
-                                <button
-                                    className="btn btn-outline-primary ml-auto"
-                                    onClick={() => this.setState({showDeniedUsers: !this.state.showDeniedUsers})}
-                                    style={{
-                                        lineHeight: "1.5",
-                                        fontSize: "1rem",
-                                    }}
-                                >
-                                    {this.state.showDeniedUsers ? "Hide Denied Users" : "Show Denied Users"}
-                                </button>
+                                {
+                                    (deniedUsersCount > 0)
+                                    &&
+                                    <button
+                                        className="btn btn-primary ml-auto w-54 flex! flex-row! items-center justify-between gap-2!"
+                                        onClick={() => this.setState({showDeniedUsers: !this.state.showDeniedUsers})}
+                                        style={{
+                                            lineHeight: "1.5",
+                                            fontSize: "1rem",
+                                        }}
+                                    >
+                                        <i className={`fa ${this.state.showDeniedUsers ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                        <div>{this.state.showDeniedUsers ? "Hide Denied Users" : "Show Denied Users"} ({deniedUsersCount})</div>
+                                    </button>
+                                }
 
 
                             </div>
