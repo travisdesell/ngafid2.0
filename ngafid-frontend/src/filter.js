@@ -1111,7 +1111,7 @@ export function Group(props) {
                         className={`btn btn-primary btn-sm mr-1 ${submitDisabled ? 'grayscale-100 cursor-not-allowed' : ''}`}
                         onClick={handleSaveClick}
                         // hidden={submitHidden}
-                        disabled={saveButtonIsDisabled}
+                        disabled={submitDisabled||saveButtonIsDisabled}
                         data-bs-toggle="tooltip"
                         data-bs-trigger='manual'
                         data-bs-placement="top"
