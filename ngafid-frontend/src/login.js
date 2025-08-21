@@ -75,7 +75,6 @@ class LoginModal extends React.Component {
             success: (response) => {
 
                 $("#loginPassword").val("");
-                $("#loading").hide();
 
                 if (response.loggedOut) {
                     console.log("User was logged out...");
@@ -107,7 +106,6 @@ class LoginModal extends React.Component {
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                $("#loading").hide();
                 hideLoginModal();
                 showErrorModal("Error Submitting Account Information", errorThrown);
             },
