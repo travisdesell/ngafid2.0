@@ -425,6 +425,10 @@ html, body {
     transition : 0.10s;
 }
 
+
+.dropdown-menu.show {
+    display: block !important;
+}
 .dropdown-toggle {
     background-color: var(--c_button_bg);
     color: var(--c_text);
