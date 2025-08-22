@@ -17,6 +17,8 @@ import CesiumPage from "./ngafid_cesium.js";
 import {cesiumFlightsSelected} from "./cesium_buttons.js";
 
 
+import { TAG_ID_NONE, TAG_ID_ALL } from "./tags_component.js";
+
 import './index.css'; //<-- include Tailwind
 
 
@@ -1291,12 +1293,12 @@ class FlightsPage extends React.Component {
 
         console.log(`un-associating tag #${  tagId  } with flight #${  flightId}`);
 
-        if (tagId == null || tagId == -1) {
-            showErrorModal("Please select a flight to remove first!", "Cannot remove any flights!");
+        if (tagId == null || tagId == TAG_ID_NONE) {
+            showErrorModal("Please select a tag to remove first!", "Unable to remove any tags!");
             return;
         }
 
-        const all = (tagId == -2);
+        const all = (tagId == TAG_ID_ALL);
         const submissionData = {
             flight_id: flightId,
             tag_id: tagId,
@@ -1329,38 +1331,43 @@ class FlightsPage extends React.Component {
                     //Permanently deleting a tag
                     if (isPermanent) {
 
-                        console.log(`permanent deletion of tag with id: ${  tagId}`);
-                        for (let i = 0; i < this.state.flights.length; i++) {
-                            const flight = this.state.flights[i];
-                            if (flight.id == flightId) {
-                                const tags = flight.tags;
-                                tags.splice(tags.indexOf(response.tag) - 1, 1);
-                            }
-                        }
+                        console.log(`Confirmed permanent deletion of tagId ${tagId} (removing from all flights).`);
 
-                        //Clearing all tags from a flight
-                    } else if (response.allTagsCleared) {
+                        this.setState(prev => ({
+                            flights: prev.flights.map(f => ({
+                                ...f,
+                                tags: (f.tags || []).filter(t => t.hashId !== tagId)
+                            }))
+                        }));
 
-                        for (let i = 0; i < this.state.flights.length; i++) {
-                            const flight = this.state.flights[i];
-                            if (flight.id == flightId) {
-                                flight.tags = [];
-                            }
-                        }
 
-                        //Removing a tag from a flight
+                    //Clearing all tags from a flight
+                    } else if (all) {
+
+                        console.log(`Confirmed clearing all tags from flight with ID: ${  flightId}`);
+
+                        this.setState(prev => ({
+                            flights: prev.flights.map(f =>
+                                (f.id === flightId)
+                                    ? { ...f, tags: [] }
+                                    : f
+                            )
+                        }));
+
+                    //Removing a tag from a flight
                     } else {
 
-                        for (let i = 0; i < this.state.flights.length; i++) {
-                            const flight = this.state.flights[i];
-                            if (flight.id == flightId) {
-                                const tags = flight.tags;
-                                tags.splice(tags.indexOf(response.tag) - 1, 1);
-                            }
-                        }
+                        console.log(`Confirmed removal of tag with ID: ${  tagId} from flight with ID: ${  flightId}`);
+
+                        this.setState(prev => ({
+                            flights: prev.flights.map(f =>
+                                (f.id === flightId)
+                                    ? { ...f, tags: (f.tags || []).filter(t => t.hashId !== tagId) }
+                                    : f
+                            )
+                        }));
 
                     }
-                    this.setState(this.state);
 
                     resolve(response);
                 },
@@ -1427,7 +1434,7 @@ class FlightsPage extends React.Component {
         showConfirmModal(
             "Confirm action",
             `Are you sure you would like to remove all the tags from flight #${ flightId  }?`,
-            () => { this.removeTag(flightId, -2, false); }
+            () => { this.removeTag(flightId, TAG_ID_ALL, false); }
         );
 
     }
