@@ -48,8 +48,8 @@ jobs:
             
       - name: Build and Generate JavaDoc
         run: |
-          # First compile all modules to resolve dependencies
-          mvn clean compile -DskipTests
+          # First install all modules to resolve dependencies
+          mvn clean install -DskipTests
           # Then generate JavaDoc for all modules
           mvn javadoc:javadoc -DskipTests
           # Create a combined JavaDoc site
