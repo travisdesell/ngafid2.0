@@ -1,5 +1,8 @@
 name: Publish JavaDoc to GitHub Pages
 
+# IMPORTANT: Make sure GitHub Pages is configured to use "GitHub Actions" as source
+# Go to Settings → Pages → Source → Select "GitHub Actions"
+
 on:
   push:
     branches: [ main, roman/feature/javadoc-github-pages ]
@@ -79,3 +82,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
