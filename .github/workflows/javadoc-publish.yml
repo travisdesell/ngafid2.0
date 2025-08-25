@@ -46,9 +46,12 @@ jobs:
           # Install the local DAT2CSV JAR file into Maven repository
           mvn install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
             
-      - name: Generate JavaDoc
+      - name: Build and Generate JavaDoc
         run: |
-          mvn clean javadoc:javadoc -DskipTests
+          # First compile all modules to resolve dependencies
+          mvn clean compile -DskipTests
+          # Then generate JavaDoc for all modules
+          mvn javadoc:javadoc -DskipTests
           # Create a combined JavaDoc site
           mkdir -p target/site/javadoc
           echo "<html><head><title>NGAFID 2.0 JavaDoc</title></head><body>" > target/site/javadoc/index.html
