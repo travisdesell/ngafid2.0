@@ -17,7 +17,7 @@
     </modules>
 
     <properties>
-        <kotlin.version>1.9.22</kotlin.version>
+        <kotlin.version>2.0.21</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <jvm.target>21</jvm.target>
@@ -118,7 +118,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
-            <version>2.19.0</version>
+            <version>2.17.0</version>
         </dependency>
 
         <!-- Testing Dependencies -->
@@ -167,15 +167,6 @@
                     <args>
                         <arg>-Xjvm-default=all</arg>
                     </args>
-                    <jvmArgs>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</jvmArg>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</jvmArg>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</jvmArg>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</jvmArg>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</jvmArg>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</jvmArg>
-                        <jvmArg>--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</jvmArg>
-                    </jvmArgs>
                 </configuration>
 
                 <executions>
