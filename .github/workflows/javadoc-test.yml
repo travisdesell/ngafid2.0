@@ -2,7 +2,7 @@ name: Test JavaDoc Generation
 
 on:
   push:
-    branches: [ roman/feature/javadoc-github-pages ]
+    branches: [ roman/feature/javadoc-github-pages, aidan_cu/main_july2025 ]
     paths:
       - '**/*.java'
       - '**/*.kt'
@@ -41,26 +41,26 @@ jobs:
         run: |
           mvn clean install -DskipTests
           
-          echo "🔍 Running JavaDoc generation with verbose output..."
+          echo "Running JavaDoc generation with verbose output..."
           mvn javadoc:javadoc -DskipTests -X | grep -E "(javadoc|target|html)" || echo "No javadoc output found"
           
-          echo "✅ JavaDoc generation test completed!"
+          echo "JavaDoc generation test completed!"
           
           # Check what was actually generated
-          echo "📁 Checking generated files..."
+          echo "Checking generated files..."
           find . -name "*.html" -path "*/target/*" | head -10
-          echo "📁 Checking target directories..."
+          echo "Checking target directories..."
           find . -name "target" -type d
-          echo "📁 Checking if apidocs directory exists..."
+          echo "Checking if apidocs directory exists..."
           ls -la target/site/ 2>/dev/null || echo "target/site/ not found"
           ls -la target/site/apidocs/ 2>/dev/null || echo "target/site/apidocs/ not found"
           
           # Check if any JavaDoc was generated at all
-          echo "📁 Checking for any JavaDoc files..."
+          echo "Checking for any JavaDoc files..."
           find . -name "*.html" | grep -i javadoc || echo "No JavaDoc HTML files found"
           find . -name "*.html" | head -5 || echo "No HTML files found at all"
           
-          echo "🚀 Ready for merge to main branch for production deployment"
+          echo "Ready for merge to main branch for production deployment"
           
       - name: Upload JavaDoc as Artifact
         uses: actions/upload-artifact@v4
