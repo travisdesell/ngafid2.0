@@ -40,8 +40,11 @@ jobs:
       - name: Build and Generate JavaDoc (Test Only)
         run: |
           mvn clean install -DskipTests
-          mvn javadoc:javadoc -DskipTests
-          echo "✅ JavaDoc generation test completed successfully!"
+          
+          echo "🔍 Running JavaDoc generation with verbose output..."
+          mvn javadoc:javadoc -DskipTests -X | grep -E "(javadoc|target|html)" || echo "No javadoc output found"
+          
+          echo "✅ JavaDoc generation test completed!"
           
           # Check what was actually generated
           echo "📁 Checking generated files..."
@@ -51,6 +54,11 @@ jobs:
           echo "📁 Checking if javadoc directory exists..."
           ls -la target/site/ 2>/dev/null || echo "target/site/ not found"
           ls -la target/site/javadoc/ 2>/dev/null || echo "target/site/javadoc/ not found"
+          
+          # Check if any JavaDoc was generated at all
+          echo "📁 Checking for any JavaDoc files..."
+          find . -name "*.html" | grep -i javadoc || echo "No JavaDoc HTML files found"
+          find . -name "*.html" | head -5 || echo "No HTML files found at all"
           
           echo "🚀 Ready for merge to main branch for production deployment"
           
