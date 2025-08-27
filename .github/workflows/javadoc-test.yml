@@ -1,0 +1,53 @@
+name: Test JavaDoc Generation
+
+on:
+  push:
+    branches: [ roman/feature/javadoc-github-pages ]
+    paths:
+      - '**/*.java'
+      - '**/*.kt'
+      - '**/pom.xml'
+      - '.github/workflows/javadoc-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test-javadoc:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-kotlin-2.0.21
+          restore-keys: |
+            ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-
+            ${{ runner.os }}-m2-
+            
+      - name: Setup DAT2CSV
+        run: |
+          mvn install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+            
+      - name: Build and Generate JavaDoc (Test Only)
+        run: |
+          mvn clean install -DskipTests
+          mvn javadoc:javadoc -DskipTests
+          echo "✅ JavaDoc generation test completed successfully!"
+          echo "📁 Generated files in target/site/javadoc/"
+          echo "🚀 Ready for merge to main branch for production deployment"
+          
+      - name: Upload JavaDoc as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: javadoc-test
+          path: target/site/javadoc
+          retention-days: 7
