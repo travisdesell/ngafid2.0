@@ -51,9 +51,9 @@ jobs:
           find . -name "*.html" -path "*/target/*" | head -10
           echo "📁 Checking target directories..."
           find . -name "target" -type d
-          echo "📁 Checking if javadoc directory exists..."
+          echo "📁 Checking if apidocs directory exists..."
           ls -la target/site/ 2>/dev/null || echo "target/site/ not found"
-          ls -la target/site/javadoc/ 2>/dev/null || echo "target/site/javadoc/ not found"
+          ls -la target/site/apidocs/ 2>/dev/null || echo "target/site/apidocs/ not found"
           
           # Check if any JavaDoc was generated at all
           echo "📁 Checking for any JavaDoc files..."
@@ -67,8 +67,8 @@ jobs:
         with:
           name: javadoc-test
           path: |
-            target/site/javadoc
-            target/site
+            **/target/site/apidocs
+            **/target/site
             target
           retention-days: 7
         continue-on-error: true
