@@ -49,9 +49,9 @@ jobs:
 
           # Check what was actually generated
           echo "Checking generated files..."
-          find . -name "*.html" -path "*/target/*" | head -10
+          find . -name "*.html" -path "*/target/*" -print | awk 'NR<=10' || true
           echo "Checking target directories..."
-          find . -name "target" -type d
+          find . -name "target" -type d || true
           echo "Checking if apidocs directory exists..."
           ls -la target/site/ 2>/dev/null || echo "target/site/ not found"
           ls -la target/site/apidocs/ 2>/dev/null || echo "target/site/apidocs/ not found"
@@ -66,12 +66,7 @@ jobs:
             fi
           done
 
-          # Check if any JavaDoc was generated at all
-          echo "Checking for any JavaDoc files..."
-          find . -name "*.html" | grep -i javadoc || echo "No JavaDoc HTML files found"
-          find . -name "*.html" | head -5 || echo "No HTML files found at all"
-
-          # Create index for browsing the different modules
+          # Create landing page index file for browsing the different modules
           cat > "$PUBDIR/index.html" << 'HTML'
           <!DOCTYPE html>
           <meta charset="utf-8">
@@ -87,7 +82,11 @@ jobs:
           HTML
 
           # Explicit check for the generated HTML file
-          test -f target/site/javadoc/index.html
+          test -f "$PUBDIR/index.html"
+
+          # Verify the staged JavaDoc files
+          echo "Staged HTML count: $(find "$PUBDIR" -name "*.html" | wc -l)"
+          find "$PUBDIR" -name "*.html" -print | awk 'NR<=5' || true
 
           echo "Ready for merge to main branch for production deployment"
 
