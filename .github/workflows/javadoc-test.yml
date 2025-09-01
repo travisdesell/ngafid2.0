@@ -2,28 +2,28 @@ name: Test JavaDoc Generation
 
 on:
   push:
-    branches: [ roman/feature/javadoc-github-pages, aidan_cu/main_july2025 ]
+    branches: [roman/feature/javadoc-github-pages, aidan_cu/main_july2025]
     paths:
-      - '**/*.java'
-      - '**/*.kt'
-      - '**/pom.xml'
-      - '.github/workflows/javadoc-test.yml'
+      - "**/*.java"
+      - "**/*.kt"
+      - "**/pom.xml"
+      - ".github/workflows/javadoc-test.yml"
   workflow_dispatch:
 
 jobs:
   test-javadoc:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          
+          java-version: "21"
+          distribution: "temurin"
+
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -32,20 +32,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-
             ${{ runner.os }}-m2-
-            
+
       - name: Setup DAT2CSV
         run: |
           mvn install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
-            
+
       - name: Build and Generate JavaDoc (Test Only)
         run: |
-          mvn clean install -DskipTests
-          
+          set -euo pipefail
+          mvn -B -ntp clean install -DskipTests
+              
           echo "Running JavaDoc generation with verbose output..."
-          mvn javadoc:javadoc -DskipTests -X | grep -E "(javadoc|target|html)" || echo "No javadoc output found"
-          
+          mvn -B -ntp -DskipTests javadoc:javadoc -X
+
           echo "JavaDoc generation test completed!"
-          
+
           # Check what was actually generated
           echo "Checking generated files..."
           find . -name "*.html" -path "*/target/*" | head -10
@@ -54,21 +55,46 @@ jobs:
           echo "Checking if apidocs directory exists..."
           ls -la target/site/ 2>/dev/null || echo "target/site/ not found"
           ls -la target/site/apidocs/ 2>/dev/null || echo "target/site/apidocs/ not found"
-          
+
+          # Stage per-module outputs (under target/site/javadoc/<module>/)
+          PUBDIR=target/site/javadoc
+          rm -rf "$PUBDIR" && mkdir -p "$PUBDIR"
+          for module in ngafid-core ngafid-www ngafid-data-processor ngafid-db ngafid-airsync; do
+            if [ -d "$module/target/site/apidocs" ]; then
+              mkdir -p "$PUBDIR/$module"
+              cp -r "$module/target/site/apidocs/"* "$PUBDIR/$module"/
+            fi
+          done
+
           # Check if any JavaDoc was generated at all
           echo "Checking for any JavaDoc files..."
           find . -name "*.html" | grep -i javadoc || echo "No JavaDoc HTML files found"
           find . -name "*.html" | head -5 || echo "No HTML files found at all"
-          
+
+          # Create index for browsing the different modules
+          cat > "$PUBDIR/index.html" << 'HTML'
+          <!DOCTYPE html>
+          <meta charset="utf-8">
+          <title>NGAFID JavaDoc</title>
+          <h1>NGAFID JavaDoc</h1>
+          <ul>
+            <li><a href="ngafid-core/">ngafid-core</a></li>
+            <li><a href="ngafid-www/">ngafid-www</a></li>
+            <li><a href="ngafid-data-processor/">ngafid-data-processor</a></li>
+            <li><a href="ngafid-db/">ngafid-db</a></li>
+            <li><a href="ngafid-airsync/">ngafid-airsync</a></li>
+          </ul>
+          HTML
+
+          # Explicit check for the generated HTML file
+          test -f target/site/javadoc/index.html
+
           echo "Ready for merge to main branch for production deployment"
-          
+
       - name: Upload JavaDoc as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: javadoc-test
-          path: |
-            **/target/site/apidocs
-            **/target/site
-            target
+          path: target/site/javadoc
           retention-days: 7
         continue-on-error: true
