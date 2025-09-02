@@ -214,8 +214,25 @@
                         <source>21</source>
                         <doclint>none</doclint>
                         <failOnError>false</failOnError>
+
+                        <!-- Ensure both Java and Kotlin outputs are on the classpath -->
+                        <additionalOptions>
+                            <additionalOption>-Xdoclint:none</additionalOption>
+                            <additionalOption>--ignore-source-errors</additionalOption>
+                            <additionalOption>-classpath</additionalOption>
+                            <additionalOption>
+                                ${project.build.outputDirectory}
+                            </additionalOption>
+                        </additionalOptions>
+
+                        <!-- Add Kotlin sources to sourcepath for package discovery (Won't actually be parsed) -->
+                        <sourcepath>
+                            ${project.build.sourceDirectory}:${project.basedir}/src/main/kotlin
+                        </sourcepath>
+
                     </configuration>
                 </plugin>
+
             </plugins>
         </pluginManagement>
 

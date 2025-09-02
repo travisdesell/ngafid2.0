@@ -57,32 +57,59 @@ jobs:
           ls -la target/site/apidocs/ 2>/dev/null || echo "target/site/apidocs/ not found"
 
           # Stage per-module outputs (under target/site/javadoc/<module>/)
-          PUBDIR=target/site/javadoc
-          rm -rf "$PUBDIR" && mkdir -p "$PUBDIR"
-          for module in ngafid-core ngafid-www ngafid-data-processor ngafid-db ngafid-airsync; do
-            if [ -d "$module/target/site/apidocs" ]; then
-              mkdir -p "$PUBDIR/$module"
-              cp -r "$module/target/site/apidocs/"* "$PUBDIR/$module"/
+          PUBDIR="target/site/javadoc"
+          rm -rf "$PUBDIR"
+          mkdir -p "$PUBDIR"
+
+          modules=(ngafid-core ngafid-www ngafid-data-processor ngafid-airsync ngafid-db)
+
+          for module in "${modules[@]}"; do
+            src="$module/target/site/apidocs"
+            dest="$PUBDIR/$module"
+
+            # Directory exists, count the HTML files
+            if [[ -d "$src" ]]; then
+              mkdir -p "$dest"
+              # Copy even when directory only has subdirectories/dotfiles
+              cp -R "$src"/. "$dest"/ || true
+              count=$(find "$dest" -type f -name '*.html' | wc -l | tr -d '[:space:]')
+            else
+              count=0
+            fi
+
+            # Got HTML files for this module, record it for the index
+            if [[ "$count" -gt 0 ]]; then
+              echo "Staged: $module ($count html files)"
+              index_items+=("  <li><a href=\"$module/\">$module</a> <small>($count files)</small></li>")
+            # Otherwise, record it as missing
+            else
+              echo "Skip: $module (no docs)"
+              # Non-clickable, struck-through entry
+              index_items+=("  <li><span class=\"missing\" title=\"No Javadoc found\">$module</span></li>")
             fi
           done
 
           # Create landing page index file for browsing the different modules
-          cat > "$PUBDIR/index.html" << 'HTML'
-          <!DOCTYPE html>
-          <meta charset="utf-8">
-          <title>NGAFID JavaDoc</title>
-          <h1>NGAFID JavaDoc</h1>
-          <ul>
-            <li><a href="ngafid-core/">ngafid-core</a></li>
-            <li><a href="ngafid-www/">ngafid-www</a></li>
-            <li><a href="ngafid-data-processor/">ngafid-data-processor</a></li>
-            <li><a href="ngafid-db/">ngafid-db</a></li>
-            <li><a href="ngafid-airsync/">ngafid-airsync</a></li>
-          </ul>
-          HTML
+          # (Modules without any JavaDoc will be made non-clickable)
+          {
+            printf '%s\n' '<!DOCTYPE html>'
+            printf '%s\n' '<meta charset="utf-8">'
+            printf '%s\n' '<title>NGAFID JavaDoc</title>'
+            printf '%s\n' '<style>'
+            printf '%s\n' '.missing { text-decoration: line-through; opacity: .6; cursor: not-allowed; }'
+            printf '%s\n' 'body { font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 24px; }'
+            printf '%s\n' 'h1 { margin: 0 0 12px; }'
+            printf '%s\n' 'ul { margin: 12px 0 0; padding-left: 20px; }'
+            printf '%s\n' 'small { opacity: .7; }'
+            printf '%s\n' '</style>'
+            printf '%s\n' '<h1>NGAFID JavaDoc</h1>'
+            printf '%s\n' '<ul>'
+            printf '%s\n' "${index_items[@]}"
+            printf '%s\n' '</ul>'
+          } > "$PUBDIR/index.html"
 
           # Explicit check for the generated HTML file
-          test -f "$PUBDIR/index.html"
+          test -f "$PUBDIR/index.html" || { echo "ERROR: $PUBDIR/index.html was not created"; exit 1; }
 
           # Verify the staged JavaDoc files
           echo "Staged HTML count: $(find "$PUBDIR" -name "*.html" | wc -l)"
