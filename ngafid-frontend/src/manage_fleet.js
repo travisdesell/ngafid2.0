@@ -178,7 +178,8 @@ class ManageFleetPage extends React.Component {
             fleetUsers: [],
             waitingUserCount: this.props.waitingUserCount,
             unconfirmedTailsCount: this.props.unconfirmedTailsCount,
-            showDeniedUsers: false
+            showDeniedUsers: false,
+            inviteEmailValid: false,
         };
     }
 
@@ -258,6 +259,8 @@ class ManageFleetPage extends React.Component {
             return;
         }
         this.sendEmail(email);
+
+        this.setState({ inviteEmailValid: false });
     };
 
     handleFleetUserUpdated = (updated) => {
@@ -283,6 +286,8 @@ class ManageFleetPage extends React.Component {
         const fleetName = user?.fleet?.name || "";
 
         const deniedUsersCount = this.state.fleetUsers.filter(u => u.fleetAccess.accessType === "DENIED").length;
+
+        const { inviteEmailValid } = this.state;
 
         return (
             <div>
@@ -327,14 +332,20 @@ class ManageFleetPage extends React.Component {
                                             type="email"
                                             placeholder="Enter user email"
                                             name="email"
-                                            pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                                            autoComplete="email"
                                             title="Please enter a valid email address"
                                             required
-                                            className="form-control mr-1"
+                                            className="form-control mr-1 peer"
+                                            ref={(el) => (this.inviteInput = el)}
+                                            onInput={() => this.setState({ inviteEmailValid: this.inviteInput?.checkValidity() })}
                                         />
 
                                         {/* Submit Invite Button */}
-                                        <button className="btn btn-primary" type="submit">
+                                        <button
+                                            className="btn btn-primary peer-invalid:button-disabled"
+                                            type="submit"
+                                            disabled={!inviteEmailValid}
+                                        >
                                             Invite
                                         </button>
 
