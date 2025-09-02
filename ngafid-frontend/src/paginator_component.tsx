@@ -232,9 +232,9 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
 
                         <div className="row" style={{alignContent: "start", marginLeft: "0em", marginRight: "auto"}}>
 
-                            <button className="btn btn-sm btn-info mr-2" disabled>
+                            <div className="btn btn-sm btn-info mr-2 pointer-events-none">
                                 Page: {this.props.currentPage + 1} of {numTotalPages}
-                            </button>
+                            </div>
 
                             <Pagination size="sm" className="m-0 mr-2">
                                 <Pagination.First disabled={this.props.currentPage === 0}
