@@ -1450,7 +1450,7 @@ class Flight extends React.Component {
 
                                             {/* (OUTDATED / DISABLED!) Replay Button */}
                                             <button
-                                                className={buttonClasses}
+                                                className={`${buttonClasses} cursor-not-allowed`}
                                                 style={styleButton}
                                                 disabled={true}
                                                 title={"The external replay system is deprecated.\nCesium flight replays can now be viewed on this page with the globe buttons."}
