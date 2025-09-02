@@ -53,10 +53,13 @@ class LoginModal extends React.Component {
             }
         }
 
-        if (!valid) return;
+        //Got validation error, exit
+        if (!valid)
+            return;
+
         console.log("Submitting login!");
 
-        $("#login-modal").modal('show');
+        $("#login-modal").modal('hide');
         $("#loading").show();
 
         const submissionData = {
@@ -264,9 +267,13 @@ class LoginModal extends React.Component {
 
                     <div className='modal-footer'>
                         <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
-                        <button id='loginSubmitButton' type='submit' className='btn btn-primary' onClick={() => {
-                            this.submitLogin();
-                        }} disabled={submitDisabled}>Submit
+                        <button
+                            id='loginSubmitButton'
+                            type='submit'
+                            className='btn btn-primary'
+                            disabled={submitDisabled}
+                        >
+                            Submit
                         </button>
                     </div>
 
