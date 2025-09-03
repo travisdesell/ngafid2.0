@@ -837,6 +837,27 @@ class ProfilePage extends React.Component {
                                     </div>
                                 </div>
 
+                                <hr className="my-4" />
+                                
+                                <div className="d-flex">
+                                    <div className="p-2" style={formHeaderStyle}>
+                                        <label style={labelStyle}>Security</label>
+                                    </div>
+                                    <div className="p-2 flex-fill">
+                                        <div className="d-flex align-items-center">
+                                            <div className="flex-fill">
+                                                <h6 className="mb-1">Two-Factor Authentication</h6>
+                                                <p className="text-muted mb-0 small">Add an extra layer of security to your account</p>
+                                            </div>
+                                            <div className="p-2">
+                                                <a href="/two-factor-settings" className="btn btn-outline-primary">
+                                                    <i className="fas fa-shield-alt"></i> Manage 2FA
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </form>
 
                         </div>

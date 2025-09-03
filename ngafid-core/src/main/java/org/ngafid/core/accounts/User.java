@@ -32,6 +32,12 @@ public final class User implements Serializable {
     private boolean admin;
     private boolean aggregateView;
     private String passwordToken;
+    
+    // 2FA fields
+    private boolean twoFactorEnabled = false;
+    private String twoFactorSecret;
+    private String backupCodes;
+    private boolean twoFactorSetupComplete = false;
 
     private UserEmailPreferences userEmailPreferences;
 
@@ -89,6 +95,28 @@ public final class User implements Serializable {
         admin = resultSet.getBoolean(11);
         aggregateView = resultSet.getBoolean(12);
         passwordToken = resultSet.getString(13);
+        
+        // 2FA fields - handle null values for backward compatibility
+        try {
+            twoFactorEnabled = resultSet.getBoolean(14);
+        } catch (SQLException e) {
+            twoFactorEnabled = false;
+        }
+        try {
+            twoFactorSecret = resultSet.getString(15);
+        } catch (SQLException e) {
+            twoFactorSecret = null;
+        }
+        try {
+            backupCodes = resultSet.getString(16);
+        } catch (SQLException e) {
+            backupCodes = null;
+        }
+        try {
+            twoFactorSetupComplete = resultSet.getBoolean(17);
+        } catch (SQLException e) {
+            twoFactorSetupComplete = false;
+        }
     }
 
     /**
@@ -250,7 +278,8 @@ public final class User implements Serializable {
     private static final String USER_ROW_QUERY = """
                 SELECT
                     id, email, first_name, last_name, country, state, city,
-                    address, phone_number, zip_code, admin, aggregate_view, password_token
+                    address, phone_number, zip_code, admin, aggregate_view, password_token,
+                    two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete
                 FROM
                     user
             """;
@@ -956,6 +985,39 @@ public final class User implements Serializable {
             LOG.info(query.toString());
             query.executeUpdate();
         }
+    }
+
+    // 2FA getter and setter methods
+    public boolean isTwoFactorEnabled() {
+        return twoFactorEnabled;
+    }
+
+    public void setTwoFactorEnabled(boolean twoFactorEnabled) {
+        this.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    public String getTwoFactorSecret() {
+        return twoFactorSecret;
+    }
+
+    public void setTwoFactorSecret(String twoFactorSecret) {
+        this.twoFactorSecret = twoFactorSecret;
+    }
+
+    public String getBackupCodes() {
+        return backupCodes;
+    }
+
+    public void setBackupCodes(String backupCodes) {
+        this.backupCodes = backupCodes;
+    }
+
+    public boolean isTwoFactorSetupComplete() {
+        return twoFactorSetupComplete;
+    }
+
+    public void setTwoFactorSetupComplete(boolean twoFactorSetupComplete) {
+        this.twoFactorSetupComplete = twoFactorSetupComplete;
     }
 
     @Override
