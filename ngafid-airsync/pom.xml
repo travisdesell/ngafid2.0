@@ -13,7 +13,7 @@
     <groupId>org.ngafid.airsync</groupId>
 
     <properties>
-        <jvm.target>21</jvm.target>
+        <!-- Inherit jvm.target from parent -->
     </properties>
 
     <dependencies>
@@ -36,38 +36,19 @@
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-
                 <configuration>
-                    <jvmTarget>${jvm.target}</jvmTarget>
                     <sourceDirs>
                         <sourceDir>${project.basedir}/src/main/java</sourceDir>
                         <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
                     </sourceDirs>
                 </configuration>
-
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
                 <configuration>
-                    <release>21</release>
+                    <release>${jvm.target}</release>
                 </configuration>
             </plugin>
 

@@ -1,0 +1,126 @@
+name: Test JavaDoc Generation
+
+on:
+  push:
+    branches: [roman/feature/javadoc-github-pages, aidan_cu/main_july2025]
+    paths:
+      - "**/*.java"
+      - "**/*.kt"
+      - "**/pom.xml"
+      - ".github/workflows/javadoc-test.yml"
+  workflow_dispatch:
+
+jobs:
+  test-javadoc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-kotlin-2.0.21
+          restore-keys: |
+            ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-
+            ${{ runner.os }}-m2-
+
+      - name: Setup DAT2CSV
+        run: |
+          mvn install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+
+      - name: Build and Generate JavaDoc (Test Only)
+        run: |
+          set -euo pipefail
+          mvn -B -ntp clean install -DskipTests
+              
+          echo "Running JavaDoc generation with verbose output..."
+          mvn -B -ntp -DskipTests javadoc:javadoc -X
+
+          echo "JavaDoc generation test completed!"
+
+          # Check what was actually generated
+          echo "Checking generated files..."
+          find . -name "*.html" -path "*/target/*" -print | awk 'NR<=10' || true
+          echo "Checking target directories..."
+          find . -name "target" -type d || true
+          echo "Checking if apidocs directory exists..."
+          ls -la target/site/ 2>/dev/null || echo "target/site/ not found"
+          ls -la target/site/apidocs/ 2>/dev/null || echo "target/site/apidocs/ not found"
+
+          # Stage per-module outputs (under target/site/javadoc/<module>/)
+          PUBDIR="target/site/javadoc"
+          rm -rf "$PUBDIR"
+          mkdir -p "$PUBDIR"
+
+          modules=(ngafid-core ngafid-www ngafid-data-processor ngafid-airsync ngafid-db)
+
+          for module in "${modules[@]}"; do
+            src="$module/target/site/apidocs"
+            dest="$PUBDIR/$module"
+
+            # Directory exists, count the HTML files
+            if [[ -d "$src" ]]; then
+              mkdir -p "$dest"
+              # Copy even when directory only has subdirectories/dotfiles
+              cp -R "$src"/. "$dest"/ || true
+              count=$(find "$dest" -type f -name '*.html' | wc -l | tr -d '[:space:]')
+            else
+              count=0
+            fi
+
+            # Got HTML files for this module, record it for the index
+            if [[ "$count" -gt 0 ]]; then
+              echo "Staged: $module ($count html files)"
+              index_items+=("  <li><a href=\"$module/\">$module</a> <small>($count files)</small></li>")
+            # Otherwise, record it as missing
+            else
+              echo "Skip: $module (no docs)"
+              # Non-clickable, struck-through entry
+              index_items+=("  <li><span class=\"missing\" title=\"No Javadoc found\">$module</span></li>")
+            fi
+          done
+
+          # Create landing page index file for browsing the different modules
+          # (Modules without any JavaDoc will be made non-clickable)
+          {
+            printf '%s\n' '<!DOCTYPE html>'
+            printf '%s\n' '<meta charset="utf-8">'
+            printf '%s\n' '<title>NGAFID JavaDoc</title>'
+            printf '%s\n' '<style>'
+            printf '%s\n' '.missing { text-decoration: line-through; opacity: .6; cursor: not-allowed; }'
+            printf '%s\n' 'body { font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 24px; }'
+            printf '%s\n' 'h1 { margin: 0 0 12px; }'
+            printf '%s\n' 'ul { margin: 12px 0 0; padding-left: 20px; }'
+            printf '%s\n' 'small { opacity: .7; }'
+            printf '%s\n' '</style>'
+            printf '%s\n' '<h1>NGAFID JavaDoc</h1>'
+            printf '%s\n' '<ul>'
+            printf '%s\n' "${index_items[@]}"
+            printf '%s\n' '</ul>'
+          } > "$PUBDIR/index.html"
+
+          # Explicit check for the generated HTML file
+          test -f "$PUBDIR/index.html" || { echo "ERROR: $PUBDIR/index.html was not created"; exit 1; }
+
+          # Verify the staged JavaDoc files
+          echo "Staged HTML count: $(find "$PUBDIR" -name "*.html" | wc -l)"
+          find "$PUBDIR" -name "*.html" -print | awk 'NR<=5' || true
+
+          echo "Ready for merge to main branch for production deployment"
+
+      - name: Upload JavaDoc as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: javadoc-test
+          path: target/site/javadoc
+          retention-days: 7
+        continue-on-error: true
