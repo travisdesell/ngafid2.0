@@ -9,6 +9,8 @@ import { AirSyncSettings } from "./airsync_settings.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import { EmailSettingsTableUser } from "./email_settings.js";
+import MultifleetInvites from './multifleet_invites.tsx';
+import { showErrorModal } from './error_modal.js';
 
 
 class PreferencesPage extends React.Component {
@@ -28,13 +30,37 @@ class PreferencesPage extends React.Component {
             unconfirmedTailsCount : this.props.unconfirmedTailsCount,
             selectedMetrics : userPreferences.flightMetrics,
             decimalPrecision : userPreferences.decimalPrecision,
-            airsyncEnabled : airsyncEnabled
+            airsyncEnabled : airsyncEnabled,
+            multifleetInvites : []
         };
 
         console.log("This users prefs:", this.props);
 
     }
 
+    componentDidMount() {
+
+        $.ajax({
+            type: 'GET',
+            url: `/api/user/multifleet-invites`,
+            async: true,
+            success: (response) => {
+                console.log("Fetched Multifleet invites:", response);
+                this.setState({ multifleetInvites: response });
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.error("There was an error fetching Multifleet invites:", errorThrown);
+                showErrorModal("Error fetching Multifleet invites", errorThrown);
+            }
+        });
+
+    }
+
+    removeMultifleetInviteLocally = (fleetName) => {
+        const updatedInvites = this.state.multifleetInvites.filter(invite => invite.fleetName !== fleetName);
+        this.setState({ multifleetInvites: updatedInvites });
+        console.log(`Removed invite for fleet '${fleetName}' locally.`);
+    };
 
     render() {
 
@@ -83,14 +109,24 @@ class PreferencesPage extends React.Component {
                                 <h5 className="card-header">
                                     {userNameDisplay}
                                 </h5>
+
+                                {/* Multifleet Invites */}
+                                <MultifleetInvites
+                                    invites={this.state.multifleetInvites}
+                                    removeMultifleetInviteLocally={this.removeMultifleetInviteLocally}
+                                />
+
+                                {/* Metric Viewer Settings */}
                                 <MetricViewerSettings
                                     isVertical={false}
                                     selectedMetrics={this.state.selectedMetrics}
                                     decimalPrecision={this.state.decimalPrecision}>
                                 </MetricViewerSettings>
 
+                                {/* Admin Content */}
                                 {adminContent}
 
+                                {/* User Email Preferences */}
                                 <div className="card-body">
                                     <div className="col" style={{padding:"0 0 0 0"}}>
                                         <div className="card-alt card">

@@ -42,6 +42,12 @@ export interface Event {
 }
 
 
+export type MultifleetInvite = {
+    fleetName: string,
+    inviteEmail: string,
+}
+
+
 //TODO: Figure out the best way to reconcile this with eslint globals
 export interface AirframeNameID {
     name: string;
