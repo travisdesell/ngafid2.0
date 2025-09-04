@@ -88,7 +88,7 @@ class LoginModal extends React.Component {
                         },
                         errorMessage: response.message
                     }));
-                    homeNavbar.logOut();
+                    $("#login-modal").modal('show');
                     return false;
                 }
 
