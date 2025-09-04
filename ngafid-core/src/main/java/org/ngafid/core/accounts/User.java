@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.sql.*;
 import java.util.Date;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -37,18 +38,19 @@ public final class User implements Serializable {
 
     /**
      * The following are references to the fleet the user has access to (if it has
-     * approved access
-     * or management rights to a fleet), and the access level the user has on that
-     * fleet.
+     * approved access or management rights to a fleet), and the access level
+     * the user has on that fleet.
      */
     private Fleet fleet;
     private FleetAccess fleetAccess;
+
+    private int fleetSelected;
 
     private User() {
     }
 
     public User(Connection connection, int id, String email, String firstName, String lastName, String address, String city, String country, String state, String zipCode, String phoneNumber,
-                boolean admin, boolean aggregateView, int fleetId) throws SQLException, AccountException {
+                boolean admin, boolean aggregateView, int fleetId, int fleetSelected) throws SQLException, AccountException {
         this.id = id;
         this.email = email;
         this.firstName = firstName;
@@ -65,6 +67,8 @@ public final class User implements Serializable {
 
         this.fleet = Fleet.get(connection, fleetId);
         this.fleetAccess = FleetAccess.get(connection, id, fleetId);
+
+        this.fleetSelected = fleetSelected;
     }
 
     private User(Connection connection, int fleetId, ResultSet resultSet) throws SQLException, AccountException {
@@ -89,6 +93,7 @@ public final class User implements Serializable {
         admin = resultSet.getBoolean(11);
         aggregateView = resultSet.getBoolean(12);
         passwordToken = resultSet.getString(13);
+        fleetSelected = resultSet.getInt(14);
     }
 
     /**
@@ -250,7 +255,8 @@ public final class User implements Serializable {
     private static final String USER_ROW_QUERY = """
                 SELECT
                     id, email, first_name, last_name, country, state, city,
-                    address, phone_number, zip_code, admin, aggregate_view, password_token
+                    address, phone_number, zip_code, admin, aggregate_view, password_token,
+                    fleet_selected
                 FROM
                     user
             """;
@@ -551,32 +557,85 @@ public final class User implements Serializable {
     public static User get(Connection connection, String email, String pass) throws SQLException, AccountException {
         User user = User.get(connection, email);
 
+        //User not found -> Null
         if (user == null) {
+            LOG.log(Level.WARNING, "Failed to find an account with email: {0}", email);
             return null;
         }
 
+        //Failed to authenticate -> AccountException
         if (!new PasswordAuthentication().authenticate(pass.toCharArray(), user.passwordToken)) {
-            LOG.info("User password was incorrect.");
+            LOG.log(Level.INFO, "User password was incorrect for email: {0}", email);
             throw new AccountException("Login Error", "Incorrect password.");
         }
 
-        // for now, it should be just one user per fleet
+        //Get all the fleets this user has access to
         ArrayList<FleetAccess> allFleets = FleetAccess.get(connection, user.getId());
 
-        if (allFleets.size() > 1) {
-            LOG.severe("ERROR: user had access to multiple fleets (" + allFleets.size()
-                    + "), this should never happen (yet)!.");
-            throw new AccountException("Fleet Error", "User is associated with multiple fleets");
-        } else if (allFleets.isEmpty()) {
+        //User has no access to any fleet -> Null
+        if (allFleets.isEmpty()) {
             LOG.severe("ERROR: user did not have access to ANY fleet. This should never happen.");
             return null;
         }
 
-        user.fleetAccess = allFleets.get(0);
+        final int USER_FLEET_SELECTED_NONE = -1;
+        
+        //Select this user's currently-selected fleet from the database [user -> fleet_selected]
+        int selectedFleetId = USER_FLEET_SELECTED_NONE;
+        final String selectedSql = "SELECT fleet_selected FROM user WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(selectedSql)) {
+            statement.setInt(1, user.getId());
+            LOG.info(statement.toString());
+            try (ResultSet resultSet = statement.executeQuery()) {
 
-        user.fleet = Fleet.get(connection, user.fleetAccess.getFleetId());
+                if (resultSet.next())
+                    selectedFleetId = resultSet.getInt(1);
 
-        // Get the email preferences for this user
+            }
+        }
+
+        FleetAccess fleetAccessResolved = null;
+
+        //User has a selected fleet, see if they have access to it
+        if (selectedFleetId != USER_FLEET_SELECTED_NONE) {
+
+            for (FleetAccess fleetAccess : allFleets) {
+
+                //Current fleetAccess matches the selectedFleetId, use it
+                if (fleetAccess.getFleetId() == selectedFleetId) {
+                    fleetAccessResolved = fleetAccess;
+                    break;
+                }
+
+            }
+
+            //Failed to find the user's selected fleet in their fleet access list
+            if (fleetAccessResolved == null)
+                LOG.log(Level.WARNING, "User's selected fleet ({0}) was not found in their fleet access list.", selectedFleetId);
+
+        }
+
+        //No resolved fleet access, default to the first accessible fleet
+        if (fleetAccessResolved == null) {
+
+            fleetAccessResolved = allFleets.get(0);
+
+            //Update the user's selected fleet in the database
+            final String updateSql = "UPDATE user SET fleet_selected = ? WHERE id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(updateSql)) {
+                statement.setInt(1, fleetAccessResolved.getFleetId());
+                statement.setInt(2, user.getId());
+                LOG.info(statement.toString());
+                statement.executeUpdate();
+            }
+
+        }
+
+        //Apply the resolved fleet and fleet access to the user
+        user.fleetAccess = fleetAccessResolved;
+        user.fleet = Fleet.get(connection, fleetAccessResolved.getFleetId());
+
+        //Get the email preferences for this user
         user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
 
         return user;
@@ -595,6 +654,29 @@ public final class User implements Serializable {
                 return new User(resultSet);
             }
         }
+    }
+
+    /**
+     * [EX]
+     */
+    public int getSelectedFleetId() {
+        return fleetSelected;
+    }
+
+    /**
+     * [EX]
+     */
+    public void setSelectedFleetId(Connection connection, int fleetId) throws SQLException {
+
+        try (PreparedStatement query = connection
+                .prepareStatement("UPDATE user SET fleet_selected = ? WHERE id = ?")) {
+            query.setInt(1, fleetId);
+            query.setInt(2, this.id);
+            query.executeUpdate();
+        }
+
+        this.fleetSelected = fleetId;
+        
     }
 
     /**
