@@ -3,6 +3,8 @@ import React from 'react';
 
 import $ from 'jquery';
 
+import InfoHint from './info_hint';
+
 window.jQuery = $;
 window.$ = $;
 
@@ -351,10 +353,7 @@ class EmailSettingsTableManager extends React.Component {
             <div className="w-full">
 
                 {/* Mass-Toggle Instruction */}
-                <div className="opacity-50 my-4">
-                    <i className="fa fa-info-circle mr-2"/>
-                    Use the buttons next to each item to mass-toggle that email notification option for all users.
-                </div>
+                <InfoHint message={"Use the buttons next to each item to mass-toggle that email notification option for all users."} />
 
                 {/* Email Settings Table */}
                 <table className="table-hover rounded-lg w-full">
