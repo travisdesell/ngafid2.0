@@ -32,6 +32,7 @@ object UserRoutes : RouteProvider() {
 
                 path("multifleet-invites") {
                     get(UserRoutes::getMultifleetInvites, Role.LOGGED_IN)
+                    post("accept", UserRoutes::acceptMultifleetInvite, Role.LOGGED_IN)
                     post("decline", UserRoutes::removeMultifleetInvite, Role.LOGGED_IN)
                 }
 
@@ -253,7 +254,27 @@ object UserRoutes : RouteProvider() {
 
     @Throws (SQLException::class)
     fun acceptMultifleetInvite(ctx: Context) {
-        /*...*/
+        
+        val user = SessionUtility.getUser(ctx)
+        val fleetName = ctx.formParam("fleetName")!!
+        val fleet = Fleet.get(Database.getConnection(), fleetName)
+        val fleetId = fleet.getId()
+
+        //Create fleet access entry for this user (with VIEW access)
+        FleetAccess.create(
+            Database.getConnection(),
+            user.id,
+            fleetId,
+            "VIEW"
+        )
+
+        LOG.info("Accepted Multifleet access for user: ${user.email} on fleet: ${fleetName}")
+
+        //Remove the invite now that it has been accepted
+        removeMultifleetInvite(ctx)
+
+        ctx.status(200)
+
     }
 
     fun getEmailPreferencesMe(ctx: Context) {

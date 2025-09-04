@@ -1,6 +1,8 @@
 import React from "react";
 import type { MultifleetInvite } from "./types";
 import { showConfirmModal } from "./confirm_modal";
+import { showErrorModal } from "./error_modal";
+import { error } from "jquery";
 
 
 interface MultifleetInviteDecline extends MultifleetInvite {
@@ -23,6 +25,7 @@ const declineInvite = ({ fleetName, inviteEmail, removeMultifleetInviteLocally }
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error declining invite:', errorThrown);
+                showErrorModal("Error accepting invite:", errorThrown);
             }
         });
 
@@ -38,6 +41,45 @@ const declineInvite = ({ fleetName, inviteEmail, removeMultifleetInviteLocally }
     );
 
 };
+
+
+interface MultifleetInviteAccept extends MultifleetInvite {
+    removeMultifleetInviteLocally: (fleetName: string) => void;
+}
+const acceptInvite = ({ fleetName, inviteEmail, removeMultifleetInviteLocally }: MultifleetInviteAccept) => {
+
+    const onConfirmAccept = () => {
+
+        $.ajax({
+            type: 'POST',
+            url: `/api/user/multifleet-invites/accept`,
+            async: true,
+            data: {
+                fleetName,
+            },
+            success: (response) => {
+                removeMultifleetInviteLocally(fleetName);
+                console.log('Successfully accepted invite to fleet:', fleetName);
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log('Error accepting invite:', errorThrown);
+                showErrorModal("Error accepting invite:", errorThrown);
+            }
+        });
+
+    };
+
+    showConfirmModal(
+        "Accept Invite",
+        `Are you sure you want to accept the invite to join the fleet "${fleetName}"?`,
+        () => {
+            console.log("Attempting to accept invite for:", fleetName, inviteEmail);
+            onConfirmAccept();
+        }
+    );
+
+};
+
 
 interface MultifleetInviteBadgeProps {
     fleetName: string;
@@ -61,7 +103,10 @@ function MultifleetInviteBadge({ fleetName, inviteEmail, removeMultifleetInviteL
             <div className="ml-1 flex flex-row gap-2">
 
                 {/* Accept Button */}
-                <button className="btn btn-primary">
+                <button
+                    className="btn btn-primary"
+                    onClick={() => acceptInvite({ fleetName, inviteEmail, removeMultifleetInviteLocally })}
+                >
                     <i className="fa fa-check mr-2" />
                     Accept
                 </button>
