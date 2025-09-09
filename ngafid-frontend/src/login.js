@@ -65,13 +65,18 @@ class LoginModal extends React.Component {
             }
         }
 
-        if (!valid) return;
+        //Got validation error, exit
+        if (!valid)
+            return;
+
         console.log("Submitting login!");
+
 
         // Set submitting state to prevent duplicates
         this.setState({ isSubmitting: true });
 
-        $("#login-modal").modal('show');
+        $("#login-modal").modal('hide');
+
         $("#loading").show();
 
         const submissionData = {
@@ -330,7 +335,15 @@ class LoginModal extends React.Component {
 
                     <div className='modal-footer'>
                         <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
-                        <button id='loginSubmitButton' type='submit' className='btn btn-primary' disabled={submitDisabled}>Submit
+
+                        <button
+                            id='loginSubmitButton'
+                            type='submit'
+                            className='btn btn-primary'
+                            disabled={submitDisabled}
+                        >
+                            Submit
+
                         </button>
                     </div>
 

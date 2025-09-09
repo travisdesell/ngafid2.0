@@ -369,11 +369,14 @@ const HeatMapPage: React.FC = () => {
         for (const name of allEventNames) checked[name] = false;
         return checked;
     });
+
+    const date = new Date();
+
     const [airframe, setAirframe] = useState<string>("All Airframes");
-    const [startYear, setStartYear] = useState<number>(1990);
+    const [startYear, setStartYear] = useState<number>(date.getFullYear());
     const [startMonth, setStartMonth] = useState<number>(1);
-    const [endYear, setEndYear] = useState<number>(new Date().getFullYear());
-    const [endMonth, setEndMonth] = useState<number>(new Date().getMonth() + 1);
+    const [endYear, setEndYear] = useState<number>(date.getFullYear());
+    const [endMonth, setEndMonth] = useState<number>(date.getMonth() + 1);
     const [datesChanged, setDatesChanged] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);

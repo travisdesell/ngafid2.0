@@ -87,13 +87,14 @@ export function SeveritiesPage() {
         return { checked, empty };
     }, []);
 
+    const date = new Date();
 
     const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
     const [tagName, setTagName] = useState("All Tags");
-    const [startYear, setStartYear] = useState(2020);
+    const [startYear, setStartYear] = useState(date.getFullYear());
     const [startMonth, setStartMonth] = useState(1);
-    const [endYear, setEndYear] = useState(new Date().getFullYear());
-    const [endMonth, setEndMonth] = useState(new Date().getMonth() + 1);
+    const [endYear, setEndYear] = useState(date.getFullYear());
+    const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
     const [datesChanged, setDatesChanged] = useState(false);
     const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
     const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(iniitalEventFlags.checked);

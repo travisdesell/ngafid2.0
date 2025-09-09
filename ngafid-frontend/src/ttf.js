@@ -140,7 +140,7 @@ class TTFCard extends React.Component {
 
             minRoll: 25.0,
 
-            startYear: 2000,
+            startYear: date.getFullYear(),
             startMonth: 1,
             endYear: date.getFullYear(),
             endMonth: date.getMonth() + 1,

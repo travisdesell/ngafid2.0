@@ -107,7 +107,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
     // const [eventFleetPercents, setEventFleetPercents] = useState<{ [key: string]: CountsData }>({});
     // const [eventNGAFIDPercents, setEventNGAFIDPercents] = useState<{ [key: string]: CountsData }>({});
     const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
-    const [startYear, setStartYear] = useState<number>(2020);
+    const [startYear, setStartYear] = useState<number>(date.getFullYear());
     const [startMonth, setStartMonth] = useState<number>(1);
     const [endYear, setEndYear] = useState<number>(date.getFullYear());
     const [endMonth, setEndMonth] = useState<number>(date.getMonth() + 1);
