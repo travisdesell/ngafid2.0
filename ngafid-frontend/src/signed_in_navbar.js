@@ -9,6 +9,109 @@ import { showErrorModal } from './error_modal.js';
 
 
 
+function MultifleetSelectDropdown() {
+
+    let fleetsWithAccess = [];
+    let fleetCurrent = {};
+
+    //Fetch fleets the user has access to
+    $.ajax({
+        type: 'GET',
+        url: `/api/user/fleet-access`,
+        async: false,
+        success: (response) => {
+            console.log("Fetched Fleet Access:", response);
+            fleetsWithAccess = response;
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+            console.error("There was an error fetching Fleet Access:", errorThrown);
+            showErrorModal("Error fetching Fleet Access", errorThrown);
+        }
+    });
+
+    //Fetch the user's current fleet
+    $.ajax({
+        type: 'GET',
+        url: `/api/fleet`,
+        async: false,
+        success: (response) => {
+            console.log("Fetched Fleet:", response);
+            fleetCurrent = response;
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+            console.error("There was an error fetching your current fleet:", errorThrown);
+            showErrorModal("Error fetching your current fleet", errorThrown);
+        }
+    });
+
+    
+    const switchToFleet = (fleetIdSelected) => {
+
+        $.ajax({
+            type: 'PUT',
+            url: '/api/user/select-fleet',
+            data: { fleetIdSelected },
+            dataType: 'json',
+            success: (response) => {
+                console.log("Successfully left selected fleet:", response);
+                //Reload page to update everything
+                window.location.reload();
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                $('#loading').hide();
+                console.error("There was an error updating selected fleet:", errorThrown);
+            }
+        });
+
+    };
+
+    return (
+        <div className="nav-item dropdown">
+            <a
+                className={`nav-link dropdown-toggle`}
+                style={{color: "var(--c_text)"}}
+                href="#!"
+                id="navbarDropdownMenuLink"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+            >
+                <i className="fa fa-fw fa-paper-plane mr-2" aria-hidden="true" />
+                <span>{fleetCurrent.name}</span>
+            </a>
+            <div
+                className="dropdown-menu dropdown-menu-right text-right"
+                aria-labelledby="navbarDropdownMenuLink"
+            >
+
+                {
+                    (fleetsWithAccess.length > 0)
+                    ? (
+                        fleetsWithAccess.map((fleet) => (
+                            <button
+                                key={fleet.fleetId}
+                                className="dropdown-item"
+                                onClick={() => switchToFleet(fleet.fleetId)}
+                                style={{ color: "var(--c-text)" }}
+                            >
+                                {fleet.fleetName} {fleet.isSelected ? "(Current)" : ""}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="dropdown-item" style={{ color: "var(--c-text)" }}>
+                            No Fleets Available
+                        </div>
+                    )
+                }
+                
+            </div>
+        </div>
+    );
+
+}
+
+
 class NavLink extends React.Component {
 
     render() {
@@ -235,10 +338,23 @@ export default class SignedInNavbar extends React.Component {
         const accountsActive = (this.props.activePage === "account");
 
         return (
-            <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
-                 style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
-                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">NGAFID</a>
+            <nav
+                id='navbar'
+                className="navbar navbar-expand-lg navbar-light"
+                style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}
+            >
+
+                {/* Brand Logo */}
+                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">
+                    NGAFID
+                </a>
+
+                {/* Fleet Select Dropdown */}
+                <MultifleetSelectDropdown/>
+
+                {/* Map Dropdown */}
                 {this.props.mapLayerDropdown}
+
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
