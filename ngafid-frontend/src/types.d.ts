@@ -47,6 +47,12 @@ export type MultifleetInvite = {
     inviteEmail: string,
 }
 
+export type MultifleetSelectWithAccess = {
+    fleetName: string,
+    fleetId: number,
+    accessType: accessType,
+}
+
 
 //TODO: Figure out the best way to reconcile this with eslint globals
 export interface AirframeNameID {
