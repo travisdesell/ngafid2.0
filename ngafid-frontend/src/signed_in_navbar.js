@@ -21,7 +21,10 @@ function MultifleetSelectDropdown() {
         async: false,
         success: (response) => {
             console.log("Fetched Fleet Access:", response);
-            fleetsWithAccess = response;
+
+            //Filter out fleets that the user does not have access to
+            const ACCESS_TYPES_DISALLOWED = ['WAITING', 'DENIED'];
+            fleetsWithAccess = response.filter(fleet => !ACCESS_TYPES_DISALLOWED.includes(fleet.accessType));
         },
         error: (jqXHR, textStatus, errorThrown) => {
             console.error("There was an error fetching Fleet Access:", errorThrown);
