@@ -1,8 +1,8 @@
+// ngafid-frontend/src/multifleet/multifleet_invites.tsx
 import React from "react";
-import type { MultifleetInvite } from "./types";
-import { showConfirmModal } from "./confirm_modal";
-import { showErrorModal } from "./error_modal";
-import { error } from "jquery";
+import type { MultifleetInvite } from "../types";
+import { showConfirmModal } from "../confirm_modal";
+import { showErrorModal } from "../error_modal";
 
 
 interface MultifleetInviteDecline extends MultifleetInvite {
@@ -19,7 +19,7 @@ const declineInvite = ({ fleetName, inviteEmail, removeMultifleetInviteLocally }
             data: {
                 fleetName,
             },
-            success: (response) => {
+            success: () => {
                 removeMultifleetInviteLocally(fleetName);
                 console.log('Successfully declined invite to fleet:', fleetName);
             },
@@ -57,7 +57,7 @@ const acceptInvite = ({ fleetName, inviteEmail, removeMultifleetInviteLocally }:
             data: {
                 fleetName,
             },
-            success: (response) => {
+            success: () => {
                 removeMultifleetInviteLocally(fleetName);
                 console.log('Successfully accepted invite to fleet:', fleetName);
             },
@@ -150,7 +150,7 @@ export function MultifleetInvites({ invites, removeMultifleetInviteLocally }: Mu
                         Fleet Invites
                     </h6>
                     <div className="form-group my-4 px-4">
-                        <div className="d-flex">
+                        <div className="flex flex-row flex-wrap items-center justify-start gap-4">
                             {invites.map((invite) => (
                                 <MultifleetInviteBadge
                                     key={invite.fleetName}
