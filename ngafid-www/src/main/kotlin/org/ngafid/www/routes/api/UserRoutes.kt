@@ -10,6 +10,7 @@ import org.ngafid.core.Database
 import org.ngafid.core.accounts.EmailType
 import org.ngafid.core.accounts.Fleet
 import org.ngafid.core.accounts.FleetAccess
+import org.ngafid.core.accounts.FleetAccessNamed
 import org.ngafid.core.accounts.User
 import org.ngafid.core.util.SendEmail
 import org.ngafid.www.ErrorResponse
@@ -57,6 +58,9 @@ object UserRoutes : RouteProvider() {
                     put("email-prefs", UserRoutes::putEmailPreferencesMe, Role.LOGGED_IN)
                 }
 
+                get("fleet-access", UserRoutes::getUserFullFleetAccess, Role.LOGGED_IN)
+                put("select-fleet", UserRoutes::putUserFleetSelected, Role.LOGGED_IN)
+                put("leave-fleet", UserRoutes::putUserLeaveCurrentFleet, Role.LOGGED_IN)
 
                 path("{uid}") {
                     get(UserRoutes::getOne, Role.LOGGED_IN, Role.MANAGER_ONLY)
@@ -67,6 +71,71 @@ object UserRoutes : RouteProvider() {
 
             }
         }
+    }
+
+    fun putUserFleetSelected(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+        val fleetIdSelected = ctx.formParam("fleetIdSelected")!!.toInt()
+
+        Database.getConnection().use { connection ->
+
+            //Check that the user has access to this fleet
+            var hasAccess = false
+            val allFleets:ArrayList<FleetAccess> = FleetAccess.get(connection, user.getId())
+            for (fleetAccess in allFleets) {
+                if (fleetAccess.fleetId == fleetIdSelected) {
+                    hasAccess = true
+                    break
+                }
+            }
+
+            //User has no access -> reject request
+            if (!hasAccess) {
+                AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to select this fleet.")
+                ctx.status(401)
+                ctx.result("User did not have access to select this fleet.")
+
+            //Otherwise, update their selected fleet
+            } else {
+                user.setSelectedFleetId(connection, fleetIdSelected)
+                ctx.status(200)
+                ctx.json(user)
+            }
+            
+        }
+
+    }
+
+    fun putUserLeaveCurrentFleet(ctx: Context) {
+
+        val user = SessionUtility.getUser(ctx)
+
+        try {
+            user.leaveSelectedFleet(Database.getConnection())
+        } catch (e: SQLException) {
+            LOG.severe("Error when user ${user.getId()} attempted to leave fleet ${user.getFleetId()}: ${e.message}")
+            ctx.status(500)
+            ctx.result("Error when attempting to leave fleet.")
+            return
+        }
+
+        ctx.status(200)
+        ctx.json(user)
+
+    }
+
+    @Throws(SQLException::class)
+    fun getUserFullFleetAccess(ctx: Context) {
+
+        val user = SessionUtility.getUser(ctx)
+
+        //Get all the fleets this user has access to
+        Database.getConnection().use { connection ->
+            val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.get(connection, user.getId())
+            ctx.status(200)
+            ctx.json(allFleets)
+        }
+
     }
 
     fun patchUserFleetAccess(ctx: Context) {
@@ -165,6 +234,7 @@ object UserRoutes : RouteProvider() {
     data class MultifleetInviteResponse(
         val inviteEmail: String,
         val fleetName: String,
+        val fleetId: Int = -1
     )
 
     @Throws(SQLException::class)
@@ -194,7 +264,8 @@ object UserRoutes : RouteProvider() {
                 invites.add(
                     MultifleetInviteResponse(
                         inviteEmail = inviteEmail,
-                        fleetName = fleetName
+                        fleetName = fleetName,
+                        fleetId = fleetId
                     )
                 )
                 
