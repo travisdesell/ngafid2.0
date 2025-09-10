@@ -67,8 +67,10 @@ public final class User implements Serializable {
 
         this.fleet = Fleet.get(connection, fleetId);
         this.fleetAccess = FleetAccess.get(connection, id, fleetId);
-
         this.fleetSelected = fleetSelected;
+
+        LOG.log(Level.INFO, "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}, Fleet Selected: {3}", new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType(), this.fleetSelected});
+
     }
 
     private User(Connection connection, int fleetId, ResultSet resultSet) throws SQLException, AccountException {
@@ -77,6 +79,8 @@ public final class User implements Serializable {
         // get the access level of the user for this fleet
         fleetAccess = FleetAccess.get(connection, id, fleetId);
         fleet = Fleet.get(connection, fleetId);
+
+        LOG.log(Level.INFO, "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}", new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType()});
     }
 
     private User(ResultSet resultSet) throws SQLException {
@@ -594,6 +598,8 @@ public final class User implements Serializable {
             }
         }
 
+        LOG.log(Level.INFO, "Attempting to resolve Fleet Access for user with ID ({0}). Selected Fleet ID: {1}", new Object[]{user.getId(), selectedFleetId});
+
         FleetAccess fleetAccessResolved = null;
 
         //User has a selected fleet, see if they have access to it
@@ -620,6 +626,8 @@ public final class User implements Serializable {
 
             fleetAccessResolved = allFleets.get(0);
 
+            LOG.log(Level.INFO, "Defaulting to first fleet in user's fleet access list with ID: {0}", fleetAccessResolved.getFleetId());
+
             //Update the user's selected fleet in the database
             final String updateSql = "UPDATE user SET fleet_selected = ? WHERE id = ?";
             try (PreparedStatement statement = connection.prepareStatement(updateSql)) {
@@ -634,6 +642,12 @@ public final class User implements Serializable {
         //Apply the resolved fleet and fleet access to the user
         user.fleetAccess = fleetAccessResolved;
         user.fleet = Fleet.get(connection, fleetAccessResolved.getFleetId());
+
+        LOG.log(
+            Level.INFO,
+            "Resolved fleet access for user with ID ({0}). Fleet ID: {1} / Access Type: {2}",
+            new Object[]{user.getId(), user.fleet.getId(), user.fleetAccess.getAccessType()}
+        );
 
         //Get the email preferences for this user
         user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
@@ -657,26 +671,150 @@ public final class User implements Serializable {
     }
 
     /**
-     * [EX]
+     * Get's the currently-selected fleet ID for this user.
+     * 
+     * @return the currently-selected fleet ID for this user
      */
-    public int getSelectedFleetId() {
+    public Integer getSelectedFleetId() {
         return fleetSelected;
     }
 
     /**
-     * [EX]
+     * Attempts to set the user's currently-selected fleet to the fleet with the
+     * given ID. Their fleet and fleet access will also be updated to match the newly
+     * selected fleet.
+     * 
+     * @param connection is the connection to the database
+     * @param fleetId    is the ID of the fleet to select
      */
-    public void setSelectedFleetId(Connection connection, int fleetId) throws SQLException {
+    public void setSelectedFleetId(Connection connection, int fleetId) throws SQLException, AccountException {
 
-        try (PreparedStatement query = connection
-                .prepareStatement("UPDATE user SET fleet_selected = ? WHERE id = ?")) {
+        LOG.log(Level.INFO, "Attempting to set selected fleet to fleet with ID: {0} for user with ID: {1}", new Object[]{fleetId, this.id});
+
+        final String sql = "UPDATE user SET fleet_selected = ? WHERE id = ?";
+        try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, fleetId);
             query.setInt(2, this.id);
             query.executeUpdate();
         }
 
+        //Update fleet selected
         this.fleetSelected = fleetId;
+
+        LOG.log(Level.INFO, "Updated selected fleet to fleet with ID: {0}", fleetId);
+
+        //Update fleet and fleet access
+        this.fleet = Fleet.get(connection, fleetId);
+        this.fleetAccess = FleetAccess.get(connection, this.id, fleetId);
         
+        LOG.log(Level.INFO, "Updated user's fleet access to fleet with ID: {0} / Access Type: {1}", new Object[]{this.fleet.getId(), this.fleetAccess.getAccessType()});
+
+    }
+
+    /**
+     * Attempts to leave whatever the user's currently-selected fleet is.
+     * The user will be switched to another available fleet (prioritizing
+     * fleets with higher access levels). If a switch is not possible, then
+     * the user will not be allowed to leave their current fleet. Managers
+     * cannot leave their own fleet, and as an additional redundancy check,
+     * the fleet cannot be left without at least one manager remaining.
+     * 
+     * @param connection is the connection to the database
+     */
+    public void leaveSelectedFleet(Connection connection) throws SQLException {
+
+        LOG.log(Level.INFO, "Attempting to leave currently-selected fleet with ID: {0} for user with ID: {1}", new Object[]{this.fleet.getId(), this.id});
+
+        //Need to guarantee that another fleet is selected after leaving the current one...
+        FleetAccess nextFleet = null;
+        final String[] fleetAccessLevelPriority = {FleetAccess.MANAGER, FleetAccess.UPLOAD, FleetAccess.VIEW, FleetAccess.WAITING, FleetAccess.DENIED};
+        final String[] fleetAccessLevelFallbackAllowed = {FleetAccess.MANAGER, FleetAccess.UPLOAD, FleetAccess.VIEW};
+
+        //First, get all the fleets this user has access to
+        ArrayList<FleetAccess> allFleets = FleetAccess.get(connection, this.getId());
+
+        //Find the next best fleet to switch to
+        for (String accessLevel : fleetAccessLevelPriority) {
+            nextFleet = allFleets.stream()
+                .filter(fa -> fa.getAccessType().equals(accessLevel) && fa.getFleetId() != this.fleet.getId())
+                .findFirst()
+                .orElse(null);
+
+            //Got a match, stop searching
+            if (nextFleet != null)
+                break;
+
+        }
+
+        /*
+            Guarantee that after leaving the fleet, there will be at least one other
+            user with manager access to the fleet.
+
+            This is a redundancy check, since the User shouldn't be able to ever be
+            able to leave a fleet if they are a manager at all.
+        */
+        final String guaranteeManagerSQL = """
+            SELECT COUNT(*) FROM fleet_access
+            WHERE fleet_id = ? AND type = 'MANAGER' AND user_id != ?
+            """;
+        try (PreparedStatement query = connection.prepareStatement(guaranteeManagerSQL)) {
+            query.setInt(1, this.fleet.getId());
+            query.setInt(2, this.id);
+            try (ResultSet resultSet = query.executeQuery()) {
+
+                //Got a result...
+                if (resultSet.next()) {
+
+                    int managerCount = resultSet.getInt(1);
+
+                    //No other managers, disallow leaving
+                    if (managerCount == 0) {
+                        LOG.severe("User attempted to leave their selected fleet, but they were the last manager of that fleet. Leaving the fleet was disallowed.");
+                        throw new SQLException("Unable to leave the current fleet, as there would be no other managers left.");
+                    }
+
+                //Otherwise, disallow leaving
+                } else {
+                    LOG.severe("Failed to guarantee that there would be at least one other manager in the fleet after leaving. Leaving the fleet was disallowed.");
+                    throw new SQLException("Unable to leave the current fleet, failed to guarantee that there would be at least one other manager in the fleet after leaving.");
+                }
+
+            }
+        }
+
+        //No next fleet found, disallow leaving
+        if (nextFleet == null) {
+            LOG.severe("User attempted to leave their selected fleet, but no other fleets were available to switch to. Leaving the fleet was disallowed.");
+            throw new SQLException("Unable to leave the current fleet, no other fleets are available to switch to.");
+        }
+
+        //Next fleet found, but it is not an allowed access level to switch to, disallow leaving
+        if (!Arrays.asList(fleetAccessLevelFallbackAllowed).contains(nextFleet.getAccessType())) {
+            LOG.severe("User attempted to leave their selected fleet, but the only other fleets available to switch to were not allowed. Leaving the fleet was disallowed.");
+            throw new SQLException("Unable to leave the current fleet, no other fleets are available to switch to.");
+        }
+
+        //Next fleet found and it is an allowed access level to switch to
+        LOG.log(Level.INFO, "Found fallback fleet with ID ({0}) and access level ({1}) to switch to after leaving current fleet.", new Object[]{nextFleet.getFleetId(), nextFleet.getAccessType()});
+
+        //Remove the user's access to the currently-selected fleet
+        final String removeSQL = "DELETE FROM fleet_access WHERE user_id = ? AND fleet_id = ?";
+        try (PreparedStatement query = connection.prepareStatement(removeSQL)) {
+            query.setInt(1, this.id);
+            query.setInt(2, this.fleet.getId());
+            query.executeUpdate();
+        }
+
+        //Switch to the next fleet
+        try {
+            this.setSelectedFleetId(connection, nextFleet.getFleetId());
+        } catch (AccountException e) {
+            LOG.log(Level.SEVERE, "Failed to set selected fleet: {0}", e.getMessage());
+            throw new SQLException("Failed to set selected fleet after leaving current fleet.", e);
+        }
+
+        LOG.info("Successfully left the previously-selected fleet.");
+
     }
 
     /**
