@@ -3,6 +3,7 @@ import React from "react";
 import { createRoot } from 'react-dom/client';
 import { showErrorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
+import { showHelpModal } from './help_modal.js';
 
 class TwoFactorSettings extends React.Component {
     constructor(props) {
@@ -276,7 +277,8 @@ class TwoFactorSettings extends React.Component {
                         loading: false
                     });
                     
-                    showSuccessMessage("New backup codes have been generated successfully!");
+                    // showSuccessMessage("New backup codes have been generated successfully!");
+                    showHelpModal("New backup codes have been generated successfully!");
                 } else {
                     showErrorModal("Failed to generate backup codes", response.message);
                     this.setState({ loading: false });
@@ -367,20 +369,20 @@ class TwoFactorSettings extends React.Component {
                                 <strong>Two-factor authentication is enabled</strong>
                                 <p className="mb-0">Your account is protected with an additional layer of security.</p>
                             </div>
-                            <div className="d-flex gap-2">
+                            <div className="flex flex-row items-center justify-between">
+                                <button 
+                                    className="btn btn-warning" 
+                                    onClick={() => this.setState({ setupStep: 'backup' })}
+                                    disabled={this.state.loading}
+                                >
+                                    Generate New Backup Codes
+                                </button>
                                 <button 
                                     className="btn btn-danger" 
                                     onClick={() => this.setState({ setupStep: 'disable' })}
                                     disabled={this.state.loading}
                                 >
                                     {this.state.loading ? 'Loading...' : 'Disable 2FA'}
-                                </button>
-                                <button 
-                                    className="btn btn-secondary" 
-                                    onClick={() => this.setState({ setupStep: 'backup' })}
-                                    disabled={this.state.loading}
-                                >
-                                    Generate New Backup Codes
                                 </button>
                             </div>
                         </div>
@@ -474,24 +476,26 @@ class TwoFactorSettings extends React.Component {
                         value={this.state.password}
                         onChange={(e) => this.setState({ password: e.target.value })}
                     />
-                    <button 
-                        className="btn btn-danger me-2" 
-                        onClick={this.disable2FA.bind(this)}
-                        disabled={this.state.loading || !this.state.password}
-                    >
-                        {this.state.loading ? 'Disabling...' : 'Disable 2FA'}
-                    </button>
-                    <button 
-                        className="btn btn-secondary" 
-                        onClick={() => {
-                            this.setState({ setupStep: 'initial', password: '' });
-                            // Refresh the 2FA status after going back
-                            setTimeout(() => this.refresh2FAStatus(), 500);
-                        }}
-                        disabled={this.state.loading}
-                    >
-                        Cancel
-                    </button>
+                    <div className="flex flex-row items-center justify-between">
+                        <button 
+                            className="btn btn-danger me-2" 
+                            onClick={this.disable2FA.bind(this)}
+                            disabled={this.state.loading || !this.state.password}
+                        >
+                            {this.state.loading ? 'Disabling...' : 'Disable 2FA'}
+                        </button>
+                        <button 
+                            className="btn btn-secondary" 
+                            onClick={() => {
+                                this.setState({ setupStep: 'initial', password: '' });
+                                // Refresh the 2FA status after going back
+                                setTimeout(() => this.refresh2FAStatus(), 500);
+                            }}
+                            disabled={this.state.loading}
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -548,24 +552,28 @@ class TwoFactorSettings extends React.Component {
                         value={this.state.password}
                         onChange={(e) => this.setState({ password: e.target.value })}
                     />
-                    <button 
-                        className="btn btn-primary me-2" 
-                        onClick={this.generateNewBackupCodes.bind(this)}
-                        disabled={this.state.loading || !this.state.password}
+                    <div
+                        className="flex flex-row items-center justify-between"
                     >
-                        {this.state.loading ? 'Generating...' : 'Generate New Codes'}
-                    </button>
-                    <button 
-                        className="btn btn-secondary" 
-                        onClick={() => {
-                            this.setState({ setupStep: 'initial', password: '' });
-                            // Refresh the 2FA status after going back
-                            setTimeout(() => this.refresh2FAStatus(), 500);
-                        }}
-                        disabled={this.state.loading}
-                    >
-                        Cancel
-                    </button>
+                        <button 
+                            className="btn btn-primary me-2" 
+                            onClick={this.generateNewBackupCodes.bind(this)}
+                            disabled={this.state.loading || !this.state.password}
+                        >
+                            {this.state.loading ? 'Generating...' : 'Generate New Codes'}
+                        </button>
+                        <button 
+                            className="btn btn-secondary" 
+                            onClick={() => {
+                                this.setState({ setupStep: 'initial', password: '' });
+                                // Refresh the 2FA status after going back
+                                setTimeout(() => this.refresh2FAStatus(), 500);
+                            }}
+                            disabled={this.state.loading}
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -576,7 +584,11 @@ class TwoFactorSettings extends React.Component {
         if (this.state.initialLoading) {
             return (
                 <div>
-                    <SignedInNavbar />
+                    <SignedInNavbar
+                        activePage="two_factor_settings"
+                        waitingUserCount={waitingUserCount}
+                        unconfirmedTailsCount={unconfirmedTailsCount}
+                    />
                     <div className="container mt-4">
                         <div className="row">
                             <div className="col-md-8 mx-auto">
@@ -595,7 +607,11 @@ class TwoFactorSettings extends React.Component {
 
         return (
             <div>
-                <SignedInNavbar />
+                <SignedInNavbar
+                    activePage="two_factor_settings"
+                    waitingUserCount={waitingUserCount}
+                    unconfirmedTailsCount={unconfirmedTailsCount}
+                />
                 <div className="container mt-4">
                     <div className="row">
                         <div className="col-md-8 mx-auto">
