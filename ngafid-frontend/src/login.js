@@ -31,7 +31,8 @@ class LoginModal extends React.Component {
             setup2FA: false,
             storedEmail: "",
             storedPassword: "",
-            isSubmitting: false
+            isSubmitting: false,
+            setupStep: 'authenticator',
         };
     }
 
@@ -84,12 +85,23 @@ class LoginModal extends React.Component {
             password: this.state.requires2FA ? this.state.storedPassword : $("#loginPassword").val()
         };
 
-        // Only add totpCode if it's not empty
-        if (this.state.totpCode && this.state.totpCode.trim() !== '') {
-            submissionData.totpCode = this.state.totpCode;
+        //2FA code is required...
+        if (this.state.requires2FA) {
+
+            const code = (this.state.totpCode || "").trim();
+
+            //...Using backup code
+            if (this.state.setupStep === 'backup')
+                submissionData.backupCode = code;
+
+            //...Using authenticator app
+            else
+                submissionData.totpCode = code;
+
         }
 
-        console.log("Submitting login data:", submissionData);
+        const submissionDataLogSafe = { ...submissionData, password: '****' };
+        console.log("Submitting login data:", submissionDataLogSafe);
 
 
 
@@ -112,7 +124,7 @@ class LoginModal extends React.Component {
                         },
                         errorMessage: response.message
                     }));
-                    homeNavbar.logOut();
+                    $("#login-modal").modal('show');
                     return false;
                 }
 
@@ -122,6 +134,9 @@ class LoginModal extends React.Component {
                         requires2FA: true,
                         storedEmail: $("#loginEmail").val(),
                         storedPassword: $("#loginPassword").val()
+                    }, ()=> {
+                        $("#2fa-modal-content").show();
+                        $("#login-modal").modal('show');
                     });
                     $("#loading").hide();
                     return;
@@ -184,6 +199,13 @@ class LoginModal extends React.Component {
         const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
         const email = $("#loginEmail").val();
+        console.log("Validating Email: ", email);
+
+        if (!email) {
+            console.error("Email is null or undefined! Unable to validate.");
+            return;
+        }
+
         const newValid = {
             ...this.state.valid,
             email: re.test(String(email).toLowerCase()),
@@ -200,6 +222,12 @@ class LoginModal extends React.Component {
     validatePassword() {
 
         const password = $("#loginPassword").val();
+        console.log("Validating Password...");
+
+        if (!password) {
+            console.error("Password is null or undefined! Unable to validate.");
+            return;
+        }
 
         //reset the error message from the server as the user has modified the email/password
         const newValid = {
@@ -353,55 +381,127 @@ class LoginModal extends React.Component {
     }
 
     render2FAInput() {
+
+        console.log("Rendering 2FA input step...");
+
+        const isBackupInput = (this.state.setupStep === 'backup');
+
+        const toggleLinkMessage = isBackupInput ? "Use authenticator app instead" : "Use backup code instead";
+        const toggleLink = (
+            <small className="text-muted">
+                <a
+                    href="#"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        this.setState({
+                            setupStep: isBackupInput ? 'authenticator' : 'backup',
+                            totpCode: ""
+                        });
+                    }}
+                >
+                    {toggleLinkMessage}
+                </a>
+            </small>
+        );
+
+        const errorMessage = (
+            this.state.valid.errorMessage && (
+                <div className="alert alert-danger" role="alert">
+                    {this.state.errorMessage}
+                </div>
+            )
+        );
+
+        const formInputLength = (isBackupInput ? 8 : 6);
+
+        const prompt = (this.state.setupStep === 'backup')
+            ? "Enter your 8-digit backup code:"
+            : "Enter the 6-digit code from your authenticator app:";
+
         return (
-            <div className='modal-content'>
+            <div
+                className='modal-content'
+                id='2fa-modal-content'
+            >
+
+                {/* Modal Header */}
                 <div className='modal-header'>
+
+                    {/* Modal Title */}
                     <h5 className='modal-title'>Two-Factor Authentication</h5>
+
+                    {/* Close Button */}
                     <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
 
-                <div className='modal-body'>                    <div className="text-center mb-3">
-                        <i className="fas fa-shield-alt fa-3x text-primary"></i>
+                {/* Modal Body */}
+                <div className='modal-body'>
+
+                    {/* Shield Icon */}
+                    <div className="text-center mb-3 w-full">
+                        <i className="fa fa-shield fa-3x text-primary"></i>
                     </div>
-                    <p className="text-center">Enter the 6-digit code from your authenticator app:</p>
-                    <input 
-                        type="text" 
-                        className="form-control text-center" 
-                        placeholder="000000"
-                        maxLength="6"
+
+                    {/* Error Message */}
+                    {errorMessage}
+
+                    {/* Enter Code Prompt */}
+                    <p className="text-center">
+                        {prompt}
+                    </p>
+
+                    {/* Single-use Warning */}
+                    {
+                        (isBackupInput)
+                        &&
+                        <div className="font-bold text-xs my-2 text-center">
+                            Backup codes are single-use!
+                        </div>
+                    }
+
+                    {/* Code Input Field */}
+                    <input
+                        type="text"
+                        className="form-control text-center"
+                        placeholder={"0".repeat(formInputLength)}
+                        maxLength={formInputLength}
                         value={this.state.totpCode}
                         onChange={(e) => this.setState({ totpCode: e.target.value })}
                         onKeyPress={(e) => {
-                            if (e.key === 'Enter' && this.state.totpCode.length === 6) {
+                            if (e.key === 'Enter' && this.state.totpCode.length === formInputLength) {
                                 this.submitLogin();
                             }
                         }}
                         style={{ fontSize: '18px', letterSpacing: '2px' }}
                         autoFocus
                     />
+
+                    {/* Supported Apps */}
                     <small className="text-muted mt-2 d-block text-center">
                         Supported apps: Google Authenticator, Microsoft Authenticator, Authy, 1Password, etc.
                     </small>
-                    <div className="text-center mt-3">
-                        <small className="text-muted">
-                            <a href="#" onClick={(e) => {
-                                e.preventDefault();
-                                this.setState({ setupStep: 'backup' });
-                            }}>
-                                Use backup code instead
-                            </a>
-                        </small>
+                    
+                    {/* Code Input Mode Toggle */}
+                    <div className="flex items-center justify-center">
+                        {toggleLink}
                     </div>
                 </div>
 
+                {/* Modal Footer */}
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>
-                    <button 
-                        className='btn btn-primary' 
+
+                    {/* Cancel Button */}
+                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
+                        Cancel
+                    </button>
+
+                    {/* Verify Button */}
+                    <button
+                        className='btn btn-primary'
                         onClick={() => this.submitLogin()}
-                        disabled={this.state.totpCode.length !== 6}
+                        disabled={this.state.totpCode.length !== formInputLength}
                     >
                         Verify
                     </button>
@@ -428,7 +528,7 @@ class LoginModal extends React.Component {
                         <h6><i className="fas fa-info-circle"></i> Two-Factor Authentication Required</h6>
                         <p className="mb-0">Your account requires two-factor authentication for enhanced security. Please set it up now to continue.</p>
                     </div>
-                    <p className="text-center">You'll be redirected to the security settings page where you can:</p>
+                    <p className="text-center">You&apos;ll be redirected to the security settings page where you can:</p>
                     <ul className="list-unstyled">
                         <li><i className="fas fa-check text-success"></i> Scan a QR code with your authenticator app</li>
                         <li><i className="fas fa-check text-success"></i> Verify the setup with a 6-digit code</li>
