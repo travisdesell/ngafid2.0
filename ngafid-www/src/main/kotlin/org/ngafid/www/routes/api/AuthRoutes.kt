@@ -54,9 +54,17 @@ object AuthRoutes : RouteProvider() {
     fun postLogin(ctx: Context) {
         val email: String = ctx.formParam("email")!!
         val password: String = ctx.formParam("password")!!
-        val totpCode: String? = ctx.formParam("totpCode")
+        val totpCodeParam: String? = ctx.formParam("totpCode")
+        val backupCodeParam: String? = ctx.formParam("backupCode")
 
-        LOG.info("Login attempt for email: $email, TOTP provided: ${totpCode != null}")
+        //Resolve which code to use
+        val incomingCode: String? = when {
+            !totpCodeParam.isNullOrBlank() -> totpCodeParam
+            !backupCodeParam.isNullOrBlank() -> backupCodeParam
+            else -> null
+        }
+
+        LOG.info("Login attempt for email: $email, TOTP provided: ${!totpCodeParam.isNullOrBlank()}, backup provided: ${!backupCodeParam.isNullOrBlank()}")
 
         try {
             Database.getConnection().use { connection ->
@@ -80,32 +88,74 @@ object AuthRoutes : RouteProvider() {
                 }
 
                 // Check if 2FA is enabled and requires code
-                LOG.info("2FA Debug - Enabled: ${user.isTwoFactorEnabled}, SetupComplete: ${user.isTwoFactorSetupComplete}, TOTPCode: $totpCode")
-                if (user.isTwoFactorEnabled && user.isTwoFactorSetupComplete && (totpCode == null || totpCode.isBlank())) {
+                LOG.info("2FA Debug - Enabled: ${user.isTwoFactorEnabled}, Setup Complete: ${user.isTwoFactorSetupComplete}, Incoming Code: ${!incomingCode.isNullOrBlank()}")
+                if (user.isTwoFactorEnabled && user.isTwoFactorSetupComplete && incomingCode.isNullOrBlank()) {
                     LOG.info("User has 2FA enabled, code required.")
                     ctx.json(LoginResponse(false, false, false, false, "2FA_CODE_REQUIRED", user))
                     return
                 }
 
                 // Verify 2FA code if provided
-                if (user.isTwoFactorEnabled && user.isTwoFactorSetupComplete && totpCode != null && totpCode.isNotEmpty()) {
+                if (user.isTwoFactorEnabled && user.isTwoFactorSetupComplete && !incomingCode.isNullOrBlank()) {
+
+                    val codeFormatted = incomingCode.replace(Regex("[^0-9]"), "")    //<-- Remove non-numeric characters
+
                     try {
-                        val secret = user.getTwoFactorSecret()
-                        LOG.info("2FA Debug - Secret: $secret")
-                        if (secret == null) {
-                            LOG.info("2FA secret is null, cannot verify code.")
-                            ctx.json(LoginResponse(true, false, false, false, "2FA configuration error.", null))
-                            return
+
+                        when {
+
+                            /* Code of length 6, assume TOTP */
+                            (codeFormatted.length == 6) -> {
+                                val secret = user.getTwoFactorSecret()
+                                LOG.info("2FA Debug - Secret: $secret")
+                                if (secret == null) {
+                                    LOG.info("2FA secret is null, cannot verify code.")
+                                    ctx.json(LoginResponse(true, false, false, false, "2FA configuration error.", null))
+                                    return
+                                }
+                                LOG.info("Verifying 2FA code: $incomingCode against secret: $secret")
+                                if (!TwoFactorAuthService.verifyCode(secret, incomingCode.toInt())) {
+                                    LOG.info("Invalid 2FA code provided.")
+                                    ctx.json(LoginResponse(true, false, false, false, "Invalid 2FA code.", null))
+                                    return
+                                }
+                                LOG.info("2FA code verification successful (TOTP)")
+                            }
+
+                            /* Code of length 8, assume backup code */
+                            (codeFormatted.length == 8) -> {
+                                val backupCodes = user.getBackupCodes()
+                                if (backupCodes == null) {
+                                    LOG.info("No backup codes available for user.")
+                                    ctx.json(LoginResponse(true, false, false, false, "No backup codes available.", null))
+                                    return
+                                }
+                                val hashedInputCode = TwoFactorAuthService.hashBackupCode(codeFormatted)
+                                LOG.info("Verifying backup code: $codeFormatted (hashed: $hashedInputCode)")
+                                if (!backupCodes.contains(hashedInputCode)) {
+                                    LOG.info("Invalid backup code provided.")
+                                    ctx.json(LoginResponse(true, false, false, false, "Invalid backup code.", null))
+                                    return
+                                }
+                                LOG.info("2FA code verification successful (Backup Code)")
+
+                                //Remove the used backup code
+                                val updatedCodes = backupCodes.split(",").filter { it != hashedInputCode }
+                                user.setBackupCodes(updatedCodes.joinToString(","))
+                                updateUserBackupCodes(connection, user.id, updatedCodes.joinToString(","))
+                                LOG.info("Backup code accepted and consumed")
+                            }
+
+                            /* Invalid code length */
+                            else -> {
+                                LOG.info("Invalid 2FA code format provided: $incomingCode")
+                                ctx.json(LoginResponse(true, false, false, false, "Invalid 2FA code format.", null))
+                                return
+                            }
+
                         }
-                        LOG.info("Verifying 2FA code: $totpCode against secret: $secret")
-                        if (!TwoFactorAuthService.verifyCode(secret, totpCode.toInt())) {
-                            LOG.info("Invalid 2FA code provided.")
-                            ctx.json(LoginResponse(true, false, false, false, "Invalid 2FA code.", null))
-                            return
-                        }
-                        LOG.info("2FA code verification successful")
                     } catch (e: NumberFormatException) {
-                        LOG.info("Invalid 2FA code format provided: $totpCode")
+                        LOG.info("Invalid 2FA code format provided: $incomingCode")
                         ctx.json(LoginResponse(true, false, false, false, "Invalid 2FA code format.", null))
                         return
                     } catch (e: Exception) {
