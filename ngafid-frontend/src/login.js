@@ -361,9 +361,10 @@ class LoginModal extends React.Component {
 
                     </div>
 
+                    {/* Modal Footer */}
                     <div className='modal-footer'>
-                        <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
 
+                        {/* Submit Button */}
                         <button
                             id='loginSubmitButton'
                             type='submit'
@@ -371,8 +372,13 @@ class LoginModal extends React.Component {
                             disabled={submitDisabled}
                         >
                             Submit
-
                         </button>
+
+                        {/* Close Button */}
+                        <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
+                            Close
+                        </button>
+
                     </div>
 
                 </div>
@@ -492,11 +498,6 @@ class LoginModal extends React.Component {
                 {/* Modal Footer */}
                 <div className='modal-footer'>
 
-                    {/* Cancel Button */}
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
-                        Cancel
-                    </button>
-
                     {/* Verify Button */}
                     <button
                         className='btn btn-primary'
@@ -504,6 +505,11 @@ class LoginModal extends React.Component {
                         disabled={this.state.totpCode.length !== formInputLength}
                     >
                         Verify
+                    </button>
+
+                    {/* Cancel Button */}
+                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
+                        Cancel
                     </button>
                 </div>
             </div>
@@ -537,9 +543,11 @@ class LoginModal extends React.Component {
                 </div>
 
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>
                     <button className='btn btn-primary' onClick={() => this.initiate2FASetup()}>
                         <i className="fas fa-shield-alt"></i> Set Up 2FA
+                    </button>
+                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
+                        Cancel
                     </button>
                 </div>
             </div>
