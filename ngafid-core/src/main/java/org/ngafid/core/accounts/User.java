@@ -96,26 +96,19 @@ public final class User implements Serializable {
         aggregateView = resultSet.getBoolean(12);
         passwordToken = resultSet.getString(13);
         
-        // 2FA fields - handle null values for backward compatibility
+        // 2FA fields 
+        twoFactorEnabled = false;
+        twoFactorSecret = null;
+        backupCodes = null;
+        twoFactorSetupComplete = false;
+        
         try {
             twoFactorEnabled = resultSet.getBoolean(14);
-        } catch (SQLException e) {
-            twoFactorEnabled = false;
-        }
-        try {
             twoFactorSecret = resultSet.getString(15);
-        } catch (SQLException e) {
-            twoFactorSecret = null;
-        }
-        try {
             backupCodes = resultSet.getString(16);
-        } catch (SQLException e) {
-            backupCodes = null;
-        }
-        try {
             twoFactorSetupComplete = resultSet.getBoolean(17);
         } catch (SQLException e) {
-            twoFactorSetupComplete = false;
+            LOG.info("2FA columns not found in database schema, using default values: " + e.getMessage());
         }
     }
 

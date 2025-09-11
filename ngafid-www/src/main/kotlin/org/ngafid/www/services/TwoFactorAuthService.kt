@@ -178,7 +178,6 @@ object TwoFactorAuthService {
      * @throws IllegalArgumentException if code is null or hashedCodes is null
      */
     fun verifyBackupCode(code: String, hashedCodes: List<String>): Boolean {
-        val hashedCode = hashBackupCode(code)
-        return hashedCodes.contains(hashedCode)
+        return hashedCodes.contains(hashBackupCode(code))
     }
 }
