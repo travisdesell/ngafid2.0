@@ -5,35 +5,35 @@ import { createRoot } from 'react-dom/client';
 import { showErrorModal } from './error_modal.js';
 import $ from 'jquery';
 
-import { homeNavbar } from './home_navbar.js';
-
 window.jQuery = $;
 window.$ = $;
 
 
 const loginModalRef = createRef();
+const loginModalstateDefault = {
+    valid: {
+        email: false,
+        emailEmpty: true,
+        passwordEmpty: true,
+        loginMessage: false
+    },
+    errorMessage: "",
+    requires2FA: false,
+    totpCode: "",
+    setup2FA: false,
+    storedEmail: "",
+    storedPassword: "",
+    isSubmitting: false,
+    setupStep: 'authenticator',
+};
 
 
 class LoginModal extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            valid: {
-                email: false,
-                emailEmpty: true,
-                passwordEmpty: true,
-                loginMessage: false
-            },
-            errorMessage: "",
-            requires2FA: false,
-            totpCode: "",
-            setup2FA: false,
-            storedEmail: "",
-            storedPassword: "",
-            isSubmitting: false,
-            setupStep: 'authenticator',
-        };
+        this.state = { ...loginModalstateDefault };
+
     }
 
     handleKeyDown(e) {
@@ -44,8 +44,10 @@ class LoginModal extends React.Component {
     }
 
     show() {
-        this.validateEmail();
-        this.validatePassword();
+
+        //Reset to initial state
+        this.setState({...loginModalstateDefault});
+
         $("#login-modal").modal('show');
     }
 
@@ -374,11 +376,6 @@ class LoginModal extends React.Component {
                             Submit
                         </button>
 
-                        {/* Close Button */}
-                        <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
-                            Close
-                        </button>
-
                     </div>
 
                 </div>
@@ -506,11 +503,6 @@ class LoginModal extends React.Component {
                     >
                         Verify
                     </button>
-
-                    {/* Cancel Button */}
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
-                        Cancel
-                    </button>
                 </div>
             </div>
         );
@@ -545,9 +537,6 @@ class LoginModal extends React.Component {
                 <div className='modal-footer'>
                     <button className='btn btn-primary' onClick={() => this.initiate2FASetup()}>
                         <i className="fas fa-shield-alt"></i> Set Up 2FA
-                    </button>
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
-                        Cancel
                     </button>
                 </div>
             </div>
