@@ -274,7 +274,8 @@ class TwoFactorSettings extends React.Component {
                         backupCodes: response.backupCodes,
                         showBackupCodes: true,
                         password: '',
-                        loading: false
+                        loading: false,
+                        setupStep: 'complete'
                     });
                     
                     // showSuccessMessage("New backup codes have been generated successfully!");
@@ -440,20 +441,23 @@ class TwoFactorSettings extends React.Component {
                                 onChange={(e) => this.setState({ verificationCode: e.target.value })}
                                 style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '2px' }}
                             />
-                            <button 
-                                className="btn btn-primary me-2" 
-                                onClick={this.verify2FASetup.bind(this)}
-                                disabled={this.state.loading || this.state.verificationCode.length !== 6}
-                            >
-                                {this.state.loading ? 'Verifying...' : 'Verify & Enable'}
-                            </button>
-                            <button 
-                                className="btn btn-secondary" 
-                                onClick={() => this.setState({ setupStep: 'initial' })}
-                                disabled={this.state.loading}
-                            >
-                                Cancel
-                            </button>
+
+                            <div className="flex flex-row items-center justify-between">
+                                <button 
+                                    className="btn btn-primary me-2" 
+                                    onClick={this.verify2FASetup.bind(this)}
+                                    disabled={this.state.loading || this.state.verificationCode.length !== 6}
+                                >
+                                    {this.state.loading ? 'Verifying...' : 'Verify & Enable'}
+                                </button>
+                                <button 
+                                    className="btn btn-secondary" 
+                                    onClick={() => this.setState({ setupStep: 'initial' })}
+                                    disabled={this.state.loading}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
