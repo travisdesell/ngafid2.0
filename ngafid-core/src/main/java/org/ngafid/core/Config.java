@@ -37,27 +37,27 @@ public class Config {
         // Load properties file
         loadProperties();
         
-        // Initialize configuration values with fallback to environment variables
-        PARALLELISM = getIntProperty("ngafid.parallelism", "NGAFID_PARALLELISM", Runtime.getRuntime().availableProcessors());
-        NGAFID_PORT = getIntProperty("ngafid.port", "NGAFID_PORT", 8181);
-        MAX_TERRAIN_CACHE_SIZE = getIntProperty("ngafid.max.terrain.cache.size", "MAX_TERRAIN_CACHE_SIZE", 384);
+        // Initialize configuration values from properties file
+        PARALLELISM = getIntPropertyInternal("ngafid.parallelism", Runtime.getRuntime().availableProcessors());
+        NGAFID_PORT = getIntPropertyInternal("ngafid.port", 8181);
+        MAX_TERRAIN_CACHE_SIZE = getIntPropertyInternal("ngafid.max.terrain.cache.size", 384);
 
-        NGAFID_USE_MARIA_DB = getBooleanProperty("ngafid.use.maria.db", "NGAFID_USE_MARIA_DB", false);
-        NGAFID_EMAIL_ENABLED = getBooleanProperty("ngafid.email.enabled", "NGAFID_EMAIL_ENABLED", false);
-        DISABLE_PERSISTENT_SESSIONS = getBooleanProperty("ngafid.disable.persistent.sessions", "DISABLE_PERSISTANT_SESSIONS", false);
+        NGAFID_USE_MARIA_DB = getBooleanPropertyInternal("ngafid.use.maria.db", false);
+        NGAFID_EMAIL_ENABLED = getBooleanPropertyInternal("ngafid.email.enabled", false);
+        DISABLE_PERSISTENT_SESSIONS = getBooleanPropertyInternal("ngafid.disable.persistent.sessions", false);
 
-        AIRPORTS_FILE = getStringProperty("ngafid.airports.file", "AIRPORTS_FILE");
-        RUNWAYS_FILE = getStringProperty("ngafid.runways.file", "RUNWAYS_FILE");
-        NGAFID_UPLOAD_DIR = getStringProperty("ngafid.upload.dir", "NGAFID_UPLOAD_DIR");
-        NGAFID_ARCHIVE_DIR = getStringProperty("ngafid.archive.dir", "NGAFID_ARCHIVE_DIR");
-        NGAFID_STATIC_DIR = getStringProperty("ngafid.static.dir", "NGAFID_STATIC_DIR");
-        NGAFID_TERRAIN_DIR = getStringProperty("ngafid.terrain.dir", "NGAFID_TERRAIN_DIR");
+        AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
+        RUNWAYS_FILE = getStringProperty("ngafid.runways.file");
+        NGAFID_UPLOAD_DIR = getStringProperty("ngafid.upload.dir");
+        NGAFID_ARCHIVE_DIR = getStringProperty("ngafid.archive.dir");
+        NGAFID_STATIC_DIR = getStringProperty("ngafid.static.dir");
+        NGAFID_TERRAIN_DIR = getStringProperty("ngafid.terrain.dir");
         MUSTACHE_TEMPLATE_DIR = NGAFID_STATIC_DIR + "/templates";
-        NGAFID_DB_INFO = getStringProperty("ngafid.db.info", "NGAFID_DB_INFO");
-        KAFKA_CONFIG_FILE = getStringProperty("ngafid.kafka.config.file", "KAFKA_CONFIG_FILE");
-        EMAIL_INFO_FILE = getStringProperty("ngafid.email.info", "EMAIL_INFO_FILE");
-        NGAFID_ADMIN_EMAILS = getStringProperty("ngafid.admin.emails", "NGAFID_ADMIN_EMAILS", "");
-        LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file", "LOG_PROPERTIES_FILE", "resources/log.properties");
+        NGAFID_DB_INFO = getStringProperty("ngafid.db.info");
+        KAFKA_CONFIG_FILE = getStringProperty("ngafid.kafka.config.file");
+        EMAIL_INFO_FILE = getStringProperty("ngafid.email.info");
+        NGAFID_ADMIN_EMAILS = getStringProperty("ngafid.admin.emails", "");
+        LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file", "resources/log.properties");
     }
     
     private static void loadProperties() {
@@ -93,11 +93,11 @@ public class Config {
         }
     }
     
-    private static String getStringProperty(String propertyKey, String envKey) {
-        return getStringProperty(propertyKey, envKey, null);
+    private static String getStringProperty(String propertyKey) {
+        return getStringProperty(propertyKey, null);
     }
     
-    private static String getStringProperty(String propertyKey, String envKey, String defaultValue) {
+    private static String getStringProperty(String propertyKey, String defaultValue) {
         // First try system property (can be set via -D)
         String systemProperty = System.getProperty(propertyKey);
         if (systemProperty != null) {
@@ -123,27 +123,22 @@ public class Config {
             return propertyValue;
         }
         
-        // Finally try environment variable
-        String envValue = System.getenv(envKey);
-        if (envValue != null) {
-            return envValue;
-        }
+      
         
         if (defaultValue != null) {
             return defaultValue;
         }
         
         // If no value found and no default, throw exception
-        System.err.println("ERROR: Configuration value not found for property '" + propertyKey + "' or environment variable '" + envKey + "'");
+        System.err.println("ERROR: Configuration value not found for property '" + propertyKey + "'");
         System.err.println("Please either:");
         System.err.println("1. Set the property in ngafid.properties file");
-        System.err.println("2. Set the environment variable: export " + envKey + "=<value>");
-        System.err.println("3. Set the system property: -D" + propertyKey + "=<value>");
-        throw new RuntimeException("Configuration value not found for '" + propertyKey + "' or '" + envKey + "'");
+        System.err.println("2. Set the system property: -D" + propertyKey + "=<value>");
+        throw new RuntimeException("Configuration value not found for '" + propertyKey + "'");
     }
     
-    private static int getIntProperty(String propertyKey, String envKey, int defaultValue) {
-        String value = getStringProperty(propertyKey, envKey, String.valueOf(defaultValue));
+    private static int getIntPropertyInternal(String propertyKey, int defaultValue) {
+        String value = getStringProperty(propertyKey, String.valueOf(defaultValue));
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
@@ -152,46 +147,28 @@ public class Config {
         }
     }
     
-    private static boolean getBooleanProperty(String propertyKey, String envKey, boolean defaultValue) {
-        String value = getStringProperty(propertyKey, envKey, String.valueOf(defaultValue));
+    private static boolean getBooleanPropertyInternal(String propertyKey, boolean defaultValue) {
+        String value = getStringProperty(propertyKey, String.valueOf(defaultValue));
         return Boolean.parseBoolean(value);
     }
 
-    // Backward compatibility methods - these are deprecated but kept for existing code
-    @Deprecated
-    public static String getEnvironmentVariable(String key, String defaultValue) {
-        String value = System.getenv(key);
-        return value == null ? defaultValue : value;
-    }
-
-    @Deprecated
-    public static String getEnvironmentVariable(String key) {
-        String value = System.getenv(key);
-        if (value == null) {
-            System.err.println("ERROR: '" + key + "' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export " + key + "=<value>");
-            throw new RuntimeException("Environment variable '" + key + "' not set.");
-        }
-
-        return value;
-    }
+    // Legacy environment variable methods removed - use getProperty() methods instead
     
     // New methods for property-based configuration
     public static String getProperty(String key) {
-        return getStringProperty(key, key.toUpperCase().replace('.', '_'), null);
+        return getStringProperty(key, null);
     }
     
     public static String getProperty(String key, String defaultValue) {
-        return getStringProperty(key, key.toUpperCase().replace('.', '_'), defaultValue);
+        return getStringProperty(key, defaultValue);
     }
     
     public static int getIntProperty(String key, int defaultValue) {
-        return getIntProperty(key, key.toUpperCase().replace('.', '_'), defaultValue);
+        return getIntPropertyInternal(key, defaultValue);
     }
     
     public static boolean getBooleanProperty(String key, boolean defaultValue) {
-        return getBooleanProperty(key, key.toUpperCase().replace('.', '_'), defaultValue);
+        return getBooleanPropertyInternal(key, defaultValue);
     }
     
     /**
