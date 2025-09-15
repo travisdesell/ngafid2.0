@@ -1,0 +1,119 @@
+# NGAFID Unified Configuration Properties Template
+# This single file handles all environments: development, Docker, and production
+# Run ./setup-ngafid.sh to automatically configure this file
+
+# =============================================================================
+# ENVIRONMENT DETECTION
+# =============================================================================
+# The application automatically detects the environment:
+# - If /.dockerenv file exists -> Docker environment
+# - Otherwise -> Development environment
+# No environment variables needed!
+
+# =============================================================================
+# REPOSITORY AND DATA PATHS
+# =============================================================================
+# Development paths (used when not in Docker)
+ngafid.repo.path=/path/to/your/ngafid2.0/
+ngafid.data.folder=${ngafid.repo.path}data
+ngafid.upload.dir=${ngafid.data.folder}/uploads
+ngafid.archive.dir=${ngafid.data.folder}/archive
+ngafid.terrain.dir=${ngafid.data.folder}/terrain
+
+# Docker paths (automatically used when in Docker environment)
+ngafid.docker.repo.path=/app/
+ngafid.docker.data.folder=/mnt/data
+ngafid.docker.upload.dir=/mnt/uploads
+ngafid.docker.archive.dir=/mnt/archive
+ngafid.docker.terrain.dir=/mnt/terrain
+
+# =============================================================================
+# DATA FILES
+# =============================================================================
+# Development data files
+ngafid.airports.file=${ngafid.data.folder}/airports/airports_parsed.csv
+ngafid.runways.file=${ngafid.data.folder}/runways/runways_parsed.csv
+
+# Docker data files
+ngafid.docker.airports.file=/mnt/data/airports.csv
+ngafid.docker.runways.file=/mnt/data/runways.csv
+
+# =============================================================================
+# WEB SERVER CONFIGURATION
+# =============================================================================
+ngafid.port=8181
+ngafid.static.dir=ngafid-static
+ngafid.mustache.template.dir=${ngafid.static.dir}/templates
+ngafid.disable.persistent.sessions=false
+
+# Docker static directory
+ngafid.docker.static.dir=/mnt/static
+ngafid.docker.mustache.template.dir=/mnt/static/templates
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# Development database
+ngafid.db.info=${ngafid.repo.path}ngafid-db/src/liquibase.properties
+
+# Docker database
+ngafid.docker.db.info=/etc/ngafid-db.conf
+
+# =============================================================================
+# EMAIL CONFIGURATION
+# =============================================================================
+ngafid.email.info=${ngafid.repo.path}email_info.txt
+ngafid.admin.emails=your-admin@example.com
+ngafid.email.enabled=false
+
+# Docker email
+ngafid.docker.email.info=/etc/email.conf
+
+# =============================================================================
+# KAFKA CONFIGURATION
+# =============================================================================
+# Development Kafka
+ngafid.kafka.bootstrap.servers=localhost:9092
+ngafid.kafka.config.file=${ngafid.repo.path}resources/reconfig-server.properties
+
+# Docker Kafka
+ngafid.docker.kafka.bootstrap.servers=kafka:9093
+ngafid.docker.kafka.config.file=/etc/connect-standalone-docker.properties
+
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# =============================================================================
+ngafid.parallelism=0
+ngafid.max.terrain.cache.size=0
+
+# =============================================================================
+# BACKUP CONFIGURATION
+# =============================================================================
+ngafid.backup.dir=${ngafid.repo.path}backups
+ngafid.backup.tables=user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads
+
+# Docker backup
+ngafid.docker.backup.dir=/mnt/backups
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+ngafid.log.properties.file=${ngafid.repo.path}resources/log.properties
+
+# =============================================================================
+# EXTERNAL SERVICES
+# =============================================================================
+ngafid.azure.maps.key=YOUR_AZURE_MAPS_API_KEY_HERE
+
+# =============================================================================
+# DOCKER SERVICE CONFIGURATION
+# =============================================================================
+# Service name for Docker heartbeat monitoring (auto-detected if not set)
+ngafid.service.name=ngafid-service
+
+# Heartbeat interval for Docker services
+ngafid.heartbeat.interval.ms=10000
+
+# Docker-specific service names (auto-detected from class names)
+ngafid.docker.service.name=ngafid-service
+ngafid.docker.heartbeat.interval.ms=10000
