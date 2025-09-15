@@ -1,21 +1,14 @@
 FROM eclipse-temurin:24
 
-ARG HOST_DB_INFO
-ARG CONTAINER_DB_INFO
-ARG HOST_KAFKA_CONFIG
-ARG CONTAINER_KAFKA_CONFIG
-ARG HOST_EMAIL_INFO
-ARG CONTAINER_EMAIL_INFO
-ARG HOST_AIRPORTS
-ARG CONTAINER_AIRPORTS
-ARG HOST_RUNWAYS
-ARG CONTAINER_RUNWAYS
-
-COPY $HOST_DB_INFO $CONTAINER_DB_INFO
-COPY $HOST_KAFKA_CONFIG $CONTAINER_KAFKA_CONFIG
-COPY $HOST_EMAIL_INFO $CONTAINER_EMAIL_INFO
+# Copy configuration files directly (no environment variables needed)
+COPY ngafid-core/src/main/resources/ngafid.properties /app/ngafid.properties
+COPY ngafid-db-docker.conf /etc/ngafid-db.conf
+COPY email-docker.conf /etc/email.conf
 COPY resources/log.properties /etc/log.properties
-COPY $HOST_AIRPORTS $CONTAINER_AIRPORTS
-COPY $HOST_RUNWAYS $CONTAINER_RUNWAYS
 
+# Copy data files
+COPY resources/airports.csv /etc/airports.csv
+COPY resources/runways.csv /etc/runways.csv
+
+# Set log configuration
 ENV LOG_CONFIG=/etc/log.properties

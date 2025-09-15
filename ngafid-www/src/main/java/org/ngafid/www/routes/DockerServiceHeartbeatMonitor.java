@@ -12,6 +12,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.ngafid.core.Config;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Topic;
 
@@ -43,9 +44,9 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
 
         //Create the consumer properties
         Properties consumerProps = new Properties();
-        String bootstrap = System.getenv("KAFKA_BOOTSTRAP");
+        String bootstrap = Config.getProperty("ngafid.kafka.bootstrap.servers", "localhost:9092");
         if (bootstrap == null || bootstrap.isEmpty()) {
-            throw new RuntimeException("KAFKA_BOOTSTRAP environment variable must be set!");
+            throw new RuntimeException("ngafid.kafka.bootstrap.servers property must be set!");
         }
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "ngafid-heartbeat-monitor");

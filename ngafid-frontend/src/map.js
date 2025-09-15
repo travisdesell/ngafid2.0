@@ -13,8 +13,8 @@ let styles = [];
 let layers = [];
 
 function initializeMap() {
-    const azureMapsKey = process.env.AZURE_MAPS_KEY;
-    if (!azureMapsKey) {
+    // Azure Maps key is now injected from backend via template
+    if (typeof azureMapsKey === 'undefined' || !azureMapsKey) {
         console.error("Azure Maps key is missing or undefined!");
         return;
     }

@@ -1,12 +1,10 @@
 version: "1.0"
 
-# Split this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
-# itself.
+# Common configuration for all NGAFID services
+# No environment variables needed - everything configured via properties files
 x-ngafid-service-common-base: &ngafid-service-common-base
   extra_hosts:
     - "host.docker.internal:host-gateway"
-  env_file:
-    - .env
 
 x-ngafid-service-common: &ngafid-service-common
   <<: *ngafid-service-common-base
@@ -14,29 +12,18 @@ x-ngafid-service-common: &ngafid-service-common
     ngafid-kafka-topics:
       condition: service_completed_successfully
   volumes:
-    - $HOST_UPLOAD_DIR:$CONTAINER_UPLOAD_DIR
-    - $HOST_ARCHIVE_DIR:$CONTAINER_ARCHIVE_DIR
-    - $HOST_STATIC_DIR:$CONTAINER_STATIC_DIR
-    - $HOST_TERRAIN_DIR:$CONTAINER_TERRAIN_DIR
+    # Mount the properties file and data directories
+    - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
+    - ./data/uploads:/mnt/uploads
+    - ./data/archive:/mnt/archive
+    - ./ngafid-static:/mnt/static
+    - ./data/terrain:/mnt/terrain
 
 services:
   base:
-    env_file:
-      - .env
     build:
       context: .
-      args:
-        HOST_DB_INFO: ${HOST_DB_INFO}
-        CONTAINER_DB_INFO: ${CONTAINER_DB_INFO}
-        HOST_KAFKA_CONFIG: ${HOST_KAFKA_CONFIG}
-        CONTAINER_KAFKA_CONFIG: ${CONTAINER_KAFKA_CONFIG}
-        HOST_EMAIL_INFO: ${HOST_EMAIL_INFO}
-        CONTAINER_EMAIL_INFO: ${CONTAINER_EMAIL_INFO}
-        HOST_RUNWAYS: ${HOST_RUNWAYS}
-        CONTAINER_RUNWAYS: ${CONTAINER_RUNWAYS}
-        HOST_AIRPORTS: ${HOST_AIRPORTS}
-        CONTAINER_AIRPORTS: ${CONTAINER_AIRPORTS}
-        HOST_UPLOAD_DIR: ${HOST_UPLOAD_DIR}
+      # No build args needed - everything configured via properties files
     image: ngafid-base
 
   # This must run and complete before everything else to create the Kafka topics
@@ -51,10 +38,6 @@ services:
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
   ngafid-email-consumer:
-    environment:
-      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
-      - SERVICE_NAME=ngafid-email-consumer
-      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.email
@@ -69,10 +52,6 @@ services:
 
   # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
   ngafid-upload-consumer:
-    environment:
-      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
-      - SERVICE_NAME=ngafid-upload-consumer
-      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile
@@ -92,10 +71,6 @@ services:
 
   # Event Consumer: reads from event topic and computes the events
   ngafid-event-consumer:
-    environment:
-      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
-      - SERVICE_NAME=ngafid-event-consumer
-      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-consumer
@@ -104,10 +79,6 @@ services:
   # Event Observer: scans database for events that have not been computed, and computes them.
   # This can also be used to re-compute events as potential duplicates are deleted.
   ngafid-event-observer:
-    environment:
-      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP}
-      - SERVICE_NAME=ngafid-event-observer
-      - HEARTBEAT_INTERVAL_MS=10000
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-observer

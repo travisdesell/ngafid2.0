@@ -193,7 +193,7 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
-            'process.env.AZURE_MAPS_KEY': JSON.stringify(process.env.AZURE_MAPS_KEY),
+            // Azure Maps key is now injected from backend via template, not build-time env vars
         }),
         new ShowChangedFilesPlugin(),
         new DeadCodePlugin({
