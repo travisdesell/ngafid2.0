@@ -248,6 +248,13 @@ public class Config {
     }
     
     /**
+     * Public method to check if running in Docker environment
+     */
+    public static boolean isDockerEnvironment() {
+        return IS_DOCKER_ENVIRONMENT;
+    }
+    
+    /**
      * Detects if the application is running inside a Docker container
      * by checking for the presence of /.dockerenv file
      */

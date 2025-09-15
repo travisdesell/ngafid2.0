@@ -1,7 +1,3 @@
-version: "1.0"
-
-# Common configuration for all NGAFID services
-# No environment variables needed - everything configured via properties files
 x-ngafid-service-common-base: &ngafid-service-common-base
   extra_hosts:
     - "host.docker.internal:host-gateway"
