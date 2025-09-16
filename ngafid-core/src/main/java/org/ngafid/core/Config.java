@@ -34,7 +34,6 @@ public class Config {
         // Check Docker environment once and cache the result
         IS_DOCKER_ENVIRONMENT = isRunningInDocker();
         
-        // Load properties file
         loadProperties();
         
         // Initialize configuration values from properties file
@@ -81,7 +80,6 @@ public class Config {
                 properties.load(input);
                 System.out.println("Loaded unified configuration from " + PROPERTIES_FILE);
                 
-                // Resolve variable substitutions
                 resolveVariableSubstitutions();
             } else {
                 System.err.println("Properties file " + PROPERTIES_FILE + " not found!");
@@ -103,7 +101,7 @@ public class Config {
         // Use cached Docker environment check
         boolean isDocker = IS_DOCKER_ENVIRONMENT;
         
-        // Try environment-specific property first, then fallback to general property
+        // Try Docker-specific property first, then fallback to general property
         String propertyValue = null;
         if (isDocker) {
             String dockerPropertyKey = propertyKey.replace("ngafid.", "ngafid.docker.");
@@ -128,7 +126,7 @@ public class Config {
     }
     
 
-    // New methods for property-based configuration
+    // Public methods for property-based configuration
     public static String getProperty(String key) {
         return getStringProperty(key);
     }
@@ -148,7 +146,7 @@ public class Config {
             String value = getStringProperty(key);
             return Integer.parseInt(value);
         } catch (RuntimeException e) {
-            // Property not found, use default
+            
             return defaultValue;
         }
     }
@@ -163,7 +161,7 @@ public class Config {
             String value = getStringProperty(key);
             return Boolean.parseBoolean(value);
         } catch (RuntimeException e) {
-            // Property not found, use default
+    
             return defaultValue;
         }
     }
@@ -237,7 +235,6 @@ public class Config {
             java.io.File dockerEnv = new java.io.File("/.dockerenv");
             boolean exists = dockerEnv.exists();
             
-            // Only log once to avoid spam
             if (!environmentLogged) {
                 System.out.println("Checking /.dockerenv: " + exists);
                 if (exists) {
