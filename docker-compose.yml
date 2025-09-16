@@ -38,7 +38,8 @@ services:
   ngafid-email-consumer:
     build:
       context: .
-      dockerfile: ngafid-core/Dockerfile.email
+      dockerfile: Dockerfile
+    command: ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar", "org.ngafid.core.kafka.EmailConsumer"]
     <<: *ngafid-service-common
 
   # AirSync sync daemon
