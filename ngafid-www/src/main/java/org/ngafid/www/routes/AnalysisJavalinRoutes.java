@@ -273,9 +273,18 @@ public class AnalysisJavalinRoutes {
             scopes.put("fleet_info_js", "var airframes = [];\n");
         }
         
-        // Inject Azure Maps API key from properties
-        String azureMapsKey = Config.getProperty("ngafid.azure.maps.key", "");
-        scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
+        // Inject Azure Maps API key from properties (only if configured)
+        try {
+            String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
+            if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
+                scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
+            } else {
+                scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
+            }
+        } catch (RuntimeException e) {
+            // Azure Maps key not configured - maps will use fallback layers
+            scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
+        }
         
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -574,9 +583,18 @@ public class AnalysisJavalinRoutes {
 
             scopes.put("cesium_data", GSON.toJson(flights));
             
-            // Inject Azure Maps API key from properties
-            String azureMapsKey = Config.getProperty("ngafid.azure.maps.key", "");
-            scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
+            // Inject Azure Maps API key from properties (only if configured)
+            try {
+                String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
+                if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
+                    scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
+                } else {
+                    scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
+                }
+            } catch (RuntimeException e) {
+                // Azure Maps key not configured - maps will use fallback layers
+                scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
+            }
 
             // This is for webpage section
             final String templateFile = "ngafid_cesium.html";
