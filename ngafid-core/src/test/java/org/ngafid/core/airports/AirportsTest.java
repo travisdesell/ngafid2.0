@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class AirportsTest {
     @BeforeAll
     static void setup() {
-        // Sample CSV data for airports
         String csvData = "0,AAA,111,test,0.0,0.0\n" +
                          "0,BBB,222,test,1.0,1.0\n" +
                          "0,CCC,333,medium,2.0,2.0\n";

@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class RunwayTest {
     @BeforeAll
     static void setup() {
-        // Sample CSV data for airports
         String csvData = "0,XYZ,999,test,0.0,0.0\n";
         Map<String, Airport> iata = new HashMap<>();
         Map<String, Airport> site = new HashMap<>();

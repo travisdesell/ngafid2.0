@@ -22,7 +22,9 @@ public final class Airports {
     private static final HashMap<String, Airport> SITE_NUMBER_TO_AIRPORT;
     private static final HashMap<String, Airport> IATA_TO_AIRPORT;
 
-    private static final boolean TEST_MODE = Boolean.getBoolean("testMode");
+    private static final boolean TEST_MODE =
+        Boolean.getBoolean("testMode") ||
+        "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
 
     private Airports() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -223,14 +225,6 @@ public final class Airports {
                 }
             }
         }
-
-        /*
-         * if (nearestAirport != null) {
-         * LOG.info("nearest airport: " + nearestAirport + ", " + minDistance);
-         * } else {
-         * LOG.info("nearest airport: NULL");
-         * }
-         */
 
         return nearestAirport;
     }
