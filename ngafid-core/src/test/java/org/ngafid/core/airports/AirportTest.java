@@ -1,10 +1,37 @@
 package org.ngafid.core.airports;
 
 import org.apache.commons.lang3.mutable.MutableDouble;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;
 
 class AirportTest {
+    @BeforeAll
+    static void setup() {
+        String csvData = "0,GHI,789,large,50.0,60.0\n";
+        Map<String, Airport> iata = new HashMap<>();
+        Map<String, Airport> site = new HashMap<>();
+        Map<String, ArrayList<Airport>> geo = new HashMap<>();
+        for (String line : csvData.split("\\n")) {
+            String[] values = line.split(",");
+            String iataCode = values[1];
+            String siteNumber = values[2];
+            String type = values[3];
+            double latitude = Double.parseDouble(values[4]);
+            double longitude = Double.parseDouble(values[5]);
+            Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
+            Runway runway1 = new Runway(siteNumber, "RWY1", 50.1, 60.1, 50.2, 60.2);
+            Runway runway2 = new Runway(siteNumber, "RWY2", 51.0, 61.0, 51.1, 61.1);
+            airport.addRunway(runway1);
+            airport.addRunway(runway2);
+            iata.put(iataCode, airport);
+            site.put(siteNumber, airport);
+            geo.computeIfAbsent(airport.geoHash, k -> new ArrayList<>()).add(airport);
+        }
+        Airports.injectTestData(iata, site, geo);
+    }
+
     @Test
     void testConstructorAndToString() {
         Airport airport = new Airport("ABC", "123", "small", 10.0, 20.0);
@@ -49,4 +76,3 @@ class AirportTest {
         assertNull(airport.getRunway("NONEXISTENT"));
     }
 }
-

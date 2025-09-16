@@ -1,14 +1,38 @@
 package org.ngafid.core.airports;
 
 import org.apache.commons.lang3.mutable.MutableDouble;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AirportsTest {
+    @BeforeAll
+    static void setup() {
+        // Sample CSV data for airports
+        String csvData = "0,AAA,111,test,0.0,0.0\n" +
+                         "0,BBB,222,test,1.0,1.0\n" +
+                         "0,CCC,333,medium,2.0,2.0\n";
+        Map<String, Airport> iata = new HashMap<>();
+        Map<String, Airport> site = new HashMap<>();
+        Map<String, ArrayList<Airport>> geo = new HashMap<>();
+        for (String line : csvData.split("\\n")) {
+            String[] values = line.split(",");
+            String iataCode = values[1];
+            String siteNumber = values[2];
+            String type = values[3];
+            double latitude = Double.parseDouble(values[4]);
+            double longitude = Double.parseDouble(values[5]);
+            Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
+            iata.put(iataCode, airport);
+            site.put(siteNumber, airport);
+            geo.computeIfAbsent(airport.geoHash, k -> new ArrayList<>()).add(airport);
+        }
+        Airports.injectTestData(iata, site, geo);
+    }
+
     @Test
     void testCalculateDistanceInKilometer() {
         double dist = Airports.calculateDistanceInKilometer(0.0, 0.0, 0.0, 1.0);
@@ -29,18 +53,18 @@ class AirportsTest {
 
     @Test
     void testShortestDistanceBetweenLineAndPointFt() {
-        double dist = Airports.shortestDistanceBetweenLineAndPointFt(0.0, 0.5, 0.0, 0.0, 0.0, 1.0);
+        double dist = Airports.shortestDistanceBetweenLineAndPointFt(1.0, 0.5, 0.0, 0.0, 0.0, 1.0);
         assertTrue(dist > 0);
     }
 
     @Test
     void testGetAirportsMap() {
-        // This test assumes Airports.getAirport returns null for unknown codes
         List<String> codes = List.of("AAA", "BBB");
         Map<String, Airport> map = Airports.getAirports(codes);
         assertEquals(2, map.size());
         assertTrue(map.containsKey("AAA"));
         assertTrue(map.containsKey("BBB"));
+        assertFalse(map.containsKey("CCC"));
     }
 
     @Test
@@ -51,7 +75,7 @@ class AirportsTest {
     @Test
     void testGetNearestAirportWithinNull() {
         MutableDouble dist = new MutableDouble(Double.MAX_VALUE);
-        Airport nearest = Airports.getNearestAirportWithin(0.0, 0.0, 1.0, dist);
+        Airport nearest = Airports.getNearestAirportWithin(10.0, 10.0, 1.0, dist);
         assertNull(nearest);
         assertEquals(Double.MAX_VALUE, dist.doubleValue());
     }
