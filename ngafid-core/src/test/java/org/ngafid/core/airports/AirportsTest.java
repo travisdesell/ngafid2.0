@@ -78,4 +78,14 @@ class AirportsTest {
         assertNull(nearest);
         assertEquals(Double.MAX_VALUE, dist.doubleValue());
     }
+
+    @Test
+    void testGetNearestAirportWithinFindsAirport() {
+        MutableDouble dist = new MutableDouble(Double.MAX_VALUE);
+        // Use coordinates that match the first airport in the test data (0.0, 0.0)
+        Airport nearest = Airports.getNearestAirportWithin(0.0, 0.0, 10000.0, dist);
+        assertNotNull(nearest);
+        assertEquals("AAA", nearest.iataCode);
+        assertTrue(dist.doubleValue() < 10000.0);
+    }
 }
