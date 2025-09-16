@@ -1,5 +1,3 @@
-version: "1.0"
-
 # Split this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
 # itself.
 x-ngafid-service-common-base: &ngafid-service-common-base
@@ -18,6 +16,7 @@ x-ngafid-service-common: &ngafid-service-common
     - $HOST_ARCHIVE_DIR:$CONTAINER_ARCHIVE_DIR
     - $HOST_STATIC_DIR:$CONTAINER_STATIC_DIR
     - $HOST_TERRAIN_DIR:$CONTAINER_TERRAIN_DIR
+    - $HOST_KAFKA_CONFIG:$CONTAINER_KAFKA_CONFIG
 
 services:
   base:
