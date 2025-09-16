@@ -38,13 +38,13 @@ public class Config {
         loadProperties();
         
         // Initialize configuration values from properties file
-        PARALLELISM = getIntPropertyInternal("ngafid.parallelism", Runtime.getRuntime().availableProcessors());
-        NGAFID_PORT = getIntPropertyInternal("ngafid.port", 8181);
-        MAX_TERRAIN_CACHE_SIZE = getIntPropertyInternal("ngafid.max.terrain.cache.size", 384);
+        PARALLELISM = getIntPropertyWithDefault("ngafid.parallelism", Runtime.getRuntime().availableProcessors());
+        NGAFID_PORT = getIntPropertyWithDefault("ngafid.port", 8181);
+        MAX_TERRAIN_CACHE_SIZE = getIntPropertyWithDefault("ngafid.max.terrain.cache.size", 384);
 
-        NGAFID_USE_MARIA_DB = getBooleanPropertyInternal("ngafid.use.maria.db", false);
-        NGAFID_EMAIL_ENABLED = getBooleanPropertyInternal("ngafid.email.enabled", false);
-        DISABLE_PERSISTENT_SESSIONS = getBooleanPropertyInternal("ngafid.disable.persistent.sessions", false);
+        NGAFID_USE_MARIA_DB = getBooleanPropertyWithDefault("ngafid.use.maria.db", false);
+        NGAFID_EMAIL_ENABLED = getBooleanPropertyWithDefault("ngafid.email.enabled", false);
+        DISABLE_PERSISTENT_SESSIONS = getBooleanPropertyWithDefault("ngafid.disable.persistent.sessions", false);
 
         AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
         RUNWAYS_FILE = getStringProperty("ngafid.runways.file");
@@ -56,8 +56,8 @@ public class Config {
         NGAFID_DB_INFO = getStringProperty("ngafid.db.info");
         KAFKA_CONFIG_FILE = getStringProperty("ngafid.kafka.config.file");
         EMAIL_INFO_FILE = getStringProperty("ngafid.email.info");
-        NGAFID_ADMIN_EMAILS = getStringProperty("ngafid.admin.emails", "");
-        LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file", "resources/log.properties");
+        NGAFID_ADMIN_EMAILS = getStringProperty("ngafid.admin.emails");
+        LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file");
     }
     
     private static void loadProperties() {
@@ -94,10 +94,6 @@ public class Config {
     }
     
     private static String getStringProperty(String propertyKey) {
-        return getStringProperty(propertyKey, null);
-    }
-    
-    private static String getStringProperty(String propertyKey, String defaultValue) {
         // First try system property (can be set via -D)
         String systemProperty = System.getProperty(propertyKey);
         if (systemProperty != null) {
@@ -123,13 +119,7 @@ public class Config {
             return propertyValue;
         }
         
-      
-        
-        if (defaultValue != null) {
-            return defaultValue;
-        }
-        
-        // If no value found and no default, throw exception
+        // If no value found, throw exception
         System.err.println("ERROR: Configuration value not found for property '" + propertyKey + "'");
         System.err.println("Please either:");
         System.err.println("1. Set the property in ngafid.properties file");
@@ -137,38 +127,45 @@ public class Config {
         throw new RuntimeException("Configuration value not found for '" + propertyKey + "'");
     }
     
-    private static int getIntPropertyInternal(String propertyKey, int defaultValue) {
-        String value = getStringProperty(propertyKey, String.valueOf(defaultValue));
+
+    // New methods for property-based configuration
+    public static String getProperty(String key) {
+        return getStringProperty(key);
+    }
+    
+    public static int getIntProperty(String key) {
+        String value = getStringProperty(key);
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid integer value for " + propertyKey + ": " + value);
+            System.err.println("Invalid integer value for " + key + ": " + value);
+            throw new RuntimeException("Invalid integer value for '" + key + "': " + value);
+        }
+    }
+    
+    private static int getIntPropertyWithDefault(String key, int defaultValue) {
+        try {
+            String value = getStringProperty(key);
+            return Integer.parseInt(value);
+        } catch (RuntimeException e) {
+            // Property not found, use default
             return defaultValue;
         }
     }
     
-    private static boolean getBooleanPropertyInternal(String propertyKey, boolean defaultValue) {
-        String value = getStringProperty(propertyKey, String.valueOf(defaultValue));
+    public static boolean getBooleanProperty(String key) {
+        String value = getStringProperty(key);
         return Boolean.parseBoolean(value);
     }
-
-    // Legacy environment variable methods removed - use getProperty() methods instead
     
-    // New methods for property-based configuration
-    public static String getProperty(String key) {
-        return getStringProperty(key, null);
-    }
-    
-    public static String getProperty(String key, String defaultValue) {
-        return getStringProperty(key, defaultValue);
-    }
-    
-    public static int getIntProperty(String key, int defaultValue) {
-        return getIntPropertyInternal(key, defaultValue);
-    }
-    
-    public static boolean getBooleanProperty(String key, boolean defaultValue) {
-        return getBooleanPropertyInternal(key, defaultValue);
+    private static boolean getBooleanPropertyWithDefault(String key, boolean defaultValue) {
+        try {
+            String value = getStringProperty(key);
+            return Boolean.parseBoolean(value);
+        } catch (RuntimeException e) {
+            // Property not found, use default
+            return defaultValue;
+        }
     }
     
     /**
