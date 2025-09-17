@@ -1,21 +1,19 @@
 FROM eclipse-temurin:24
 
-ARG HOST_DB_INFO
-ARG CONTAINER_DB_INFO
-ARG HOST_KAFKA_CONFIG
-ARG CONTAINER_KAFKA_CONFIG
-ARG HOST_EMAIL_INFO
-ARG CONTAINER_EMAIL_INFO
-ARG HOST_AIRPORTS
-ARG CONTAINER_AIRPORTS
-ARG HOST_RUNWAYS
-ARG CONTAINER_RUNWAYS
-
-COPY $HOST_DB_INFO $CONTAINER_DB_INFO
-COPY $HOST_KAFKA_CONFIG $CONTAINER_KAFKA_CONFIG
-COPY $HOST_EMAIL_INFO $CONTAINER_EMAIL_INFO
+# Copy configuration files 
+COPY ngafid-core/src/main/resources/ngafid.properties /app/ngafid.properties
 COPY resources/log.properties /etc/log.properties
-COPY $HOST_AIRPORTS $CONTAINER_AIRPORTS
-COPY $HOST_RUNWAYS $CONTAINER_RUNWAYS
 
+# Copy data files
+COPY resources/airports.csv /etc/airports.csv
+COPY resources/runways.csv /etc/runways.csv
+
+# Copy JAR files
+RUN mkdir -p /opt/ngafid-core
+COPY ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/ngafid-core/ngafid-core.jar
+
+# Set log configuration
 ENV LOG_CONFIG=/etc/log.properties
+
+# Default command (can be overridden in docker-compose.yml)
+CMD ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar", "org.ngafid.www.NgafidWebServer"]

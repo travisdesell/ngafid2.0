@@ -192,8 +192,7 @@ module.exports = {
             ],
         }),
         new webpack.DefinePlugin({
-            CESIUM_BASE_URL: JSON.stringify("/cesium"),
-            'process.env.AZURE_MAPS_KEY': JSON.stringify(process.env.AZURE_MAPS_KEY),
+            CESIUM_BASE_URL: JSON.stringify("/cesium")
         }),
         new ShowChangedFilesPlugin(),
         new DeadCodePlugin({
