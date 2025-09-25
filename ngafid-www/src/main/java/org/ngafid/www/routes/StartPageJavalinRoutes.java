@@ -32,7 +32,7 @@ public class StartPageJavalinRoutes {
     }
 
     private static void getHome(Context ctx, Message message) {
-        final String homeTemplateFileName = "home.html";
+        final String homeTemplateFileName = "index.html";
         Map<String, Object> scopes = new HashMap<>();
 
         if (message != null) {
@@ -49,8 +49,8 @@ public class StartPageJavalinRoutes {
         ctx.render(templateFile);
     }
 
-    private static void getWelcome(Context ctx, List<Message> messages) {
-        final String templateFile = "welcome.html";
+    private static void getSummary(Context ctx, List<Message> messages) {
+        final String templateFile = "summary.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -80,8 +80,8 @@ public class StartPageJavalinRoutes {
 //        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
 
         app.get("/protected/waiting", StartPageJavalinRoutes::getWaiting);
-        app.get("/protected/welcome", ctx -> getWelcome(ctx, new ArrayList<>()));
-//        app.get("/protected/*", ctx -> getWelcome(ctx, List.of(new Message("danger", "The page you attempted to access does not exist."))));
+        app.get("/protected/summary", ctx -> getSummary(ctx, new ArrayList<>()));
+//        app.get("/protected/*", ctx -> getSummary(ctx, List.of(new Message("danger", "The page you attempted to access does not exist."))));
     }
 
 }

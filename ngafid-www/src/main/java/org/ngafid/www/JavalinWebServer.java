@@ -242,7 +242,7 @@ public class JavalinWebServer extends WebServer {
             }
         });
 
-        // To redirect users to the welcome page.
+        // To redirect users to the summary page.
         app.before("/", ctx -> {
             User user = ctx.sessionAttribute("user");
             if (user != null) {
@@ -251,7 +251,7 @@ public class JavalinWebServer extends WebServer {
                     ctx.redirect(previousURI);
                     ctx.sessionAttribute("previous_uri", null);
                 } else {
-                    ctx.redirect("/protected/welcome");
+                    ctx.redirect("/protected/summary");
                 }
             }
         });
