@@ -21,6 +21,7 @@ object FleetRoutes : RouteProvider() {
                     }
                 }, Role.LOGGED_IN)
                 get("count/aggregate", { ctx -> Database.getConnection().use { ctx.json(Fleet.getNumberFleets(it)) } })
+                get("names", FleetRoutes::getNames, Role.LOGGED_IN)
             }
         }
     }
@@ -32,4 +33,14 @@ object FleetRoutes : RouteProvider() {
             ctx.json(Fleet.get(connection, user.fleetId))
         }
     }
+
+    fun getNames(ctx: Context) {
+        
+        //Get the name of all fleets in the database
+        Database.getConnection().use { connection ->
+            ctx.json(Fleet.getAllFleetNames(connection))
+        }
+
+    }
+
 }
