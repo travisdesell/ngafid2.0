@@ -109,6 +109,26 @@ public class Fleet implements Serializable {
     }
 
     /**
+     * Gets all fleet names in this database
+     * 
+     * @param connection the database connection
+     * @return a {@link List} of all the fleet names
+     */
+    public static List<String> getAllFleetNames(Connection connection) throws SQLException {
+        String queryString = "SELECT fleet_name FROM fleet";
+
+        try (PreparedStatement ps = connection.prepareStatement(queryString); ResultSet rs = ps.executeQuery()) {
+            List<String> fleetNames = new ArrayList<>();
+
+            while (rs.next()) {
+                fleetNames.add(rs.getString(1));
+            }
+
+            return fleetNames;
+        }
+    }
+
+    /**
      * Checks to see a fleet with the supplied name already exists in the database.
      *
      * @param connection A connection to the mysql database.

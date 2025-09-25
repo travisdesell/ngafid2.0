@@ -6,6 +6,7 @@ import io.javalin.http.Context
 import org.ngafid.core.Database
 import org.ngafid.core.flights.Flight
 import org.ngafid.core.flights.Tails
+import org.ngafid.core.flights.Airframes
 import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.UpdateTailResponse
 import org.ngafid.www.routes.Role
 import org.ngafid.www.routes.RouteProvider
@@ -23,6 +24,11 @@ object AircraftRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/aircraft") {
+
+                path("airframes") {
+                    get(AircraftRoutes::getAllAirframeNameIds, Role.LOGGED_IN)
+                }
+
                 path("system-id") {
                     get(AircraftRoutes::getAllSystemIds, Role.LOGGED_IN)
                     patch("{sid}", AircraftRoutes::patchSystemId, Role.LOGGED_IN, Role.UPLOADER_ONLY)
@@ -37,6 +43,19 @@ object AircraftRoutes : RouteProvider() {
                 RouteUtility.getStat("count", { ctx, stats -> ctx.json(stats.numberAircraft()) })
             }
         }
+    }
+
+    fun getAllAirframeNameIds(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+
+        if (!user.hasViewAccess(user.fleetId))
+            ctx.status(401);
+
+        Database.getConnection().use { connection ->
+            ctx.json(Airframes.getAllWithIds(connection, user.fleetId))
+
+        }
+        
     }
 
     fun getAllSystemIds(ctx: Context) {
