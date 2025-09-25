@@ -8,8 +8,6 @@ import React from "react";
 
 export {};
 
-
-
 export enum accessType {
     DENIED="DENIED",
     WAITING="WAITING",
@@ -41,12 +39,22 @@ export interface Event {
 
 }
 
+export type AirframeEventCounts = {
+    airframeName: string;
+    names: Array<string>;   //<-- Event names
+    totalEventsCounts: Array<number>;  //<-- Total counts for each event name
+};
 
-//TODO: Figure out the best way to reconcile this with eslint globals
+export type ErrorResponse = {
+    errorTitle: string;
+    errorMessage: string;
+}
+
 export interface AirframeNameID {
     name: string;
     id: number;
 }
+
 declare global {
     const waitingUserCount: number;
     const fleetManager: boolean;
@@ -56,4 +64,8 @@ declare global {
     const airframes: AirframeNameID[];
     const tagNames: string[];
     const eventNames: string[];
+
+    interface Window {
+        reactRoot: React.ReactRoot;
+    }
 }
