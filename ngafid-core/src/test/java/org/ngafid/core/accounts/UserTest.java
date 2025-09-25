@@ -2129,6 +2129,7 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing user with non-user object")
     public void testUserEqualsWithNonUserObject() {
         User user = user1Fleet1;
         String nonUserObject = "not a user";
@@ -2139,11 +2140,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different IDs")
     public void testUserEqualsWithDifferentId() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different ID but same email
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 999); // Different ID
@@ -2174,11 +2175,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different emails")
     public void testUserEqualsWithDifferentEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different email but same ID
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 998); // Different ID
@@ -2209,11 +2210,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different first names")
     public void testUserEqualsWithDifferentFirstName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different first name
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 997); // Different ID
@@ -2244,11 +2245,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different last names")
     public void testUserEqualsWithDifferentLastName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different last name
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 996); // Different ID
@@ -2279,11 +2280,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different countries")
     public void testUserEqualsWithDifferentCountry() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different country
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 995); // Different ID
@@ -2314,6 +2315,7 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different states")
     public void testUserEqualsWithDifferentState() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
