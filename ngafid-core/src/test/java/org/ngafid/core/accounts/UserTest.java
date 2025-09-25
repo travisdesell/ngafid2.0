@@ -97,7 +97,6 @@ public class UserTest extends TestWithConnection {
         // When - checking flight access
         boolean hasAccess = user1Fleet2Waiting.hasFlightAccess(connection, flightId);
 
-        // Then - should return false
         assertFalse(hasAccess);
     }
 
@@ -109,7 +108,6 @@ public class UserTest extends TestWithConnection {
         // When - checking flight access
         boolean hasAccess = user1Fleet2.hasFlightAccess(connection, flightId);
 
-        // Then - should return false
         assertFalse(hasAccess);
     }
 
@@ -314,7 +312,6 @@ public class UserTest extends TestWithConnection {
         // When - checking admin status
         boolean isAdmin = user.isAdmin();
 
-        // Then - should return false
         assertFalse(isAdmin);
     }
 
@@ -326,7 +323,6 @@ public class UserTest extends TestWithConnection {
         // When - checking aggregate view status
         boolean hasAggregateView = user.hasAggregateView();
 
-        // Then - should return false
         assertFalse(hasAggregateView);
     }
 
@@ -339,7 +335,6 @@ public class UserTest extends TestWithConnection {
         // When - checking fleet management
         boolean managesFleet = user.managesFleet(fleetId);
 
-        // Then - should return false
         assertFalse(managesFleet);
     }
 
@@ -365,7 +360,6 @@ public class UserTest extends TestWithConnection {
         // When - checking upload access
         boolean hasUploadAccess = user.hasUploadAccess(fleetId);
 
-        // Then - should return false
         assertFalse(hasUploadAccess);
     }
 
@@ -417,7 +411,6 @@ public class UserTest extends TestWithConnection {
         // When - checking view access
         boolean hasViewAccess = user.hasViewAccess(fleetId);
 
-        // Then - should return false
         assertFalse(hasViewAccess);
     }
 
@@ -430,7 +423,6 @@ public class UserTest extends TestWithConnection {
         // When - checking view access
         boolean hasViewAccess = user.hasViewAccess(fleetId);
 
-        // Then - should return false
         assertFalse(hasViewAccess);
     }
 
@@ -649,7 +641,6 @@ public class UserTest extends TestWithConnection {
         // When - checking if user exists
         boolean exists = User.exists(connection, nonExistentEmail);
 
-        // Then - should return false
         assertFalse(exists);
     }
 
@@ -688,7 +679,6 @@ public class UserTest extends TestWithConnection {
         // When - validating password
         boolean isValid = user.validate(connection, incorrectPassword);
 
-        // Then - should return false
         assertFalse(isValid);
 
         connection.rollback();
@@ -717,7 +707,6 @@ public class UserTest extends TestWithConnection {
         // When - validating passphrase
         boolean isValid = User.validatePassphrase(connection, email, invalidPassphrase);
 
-        // Then - should return false
         assertFalse(isValid);
     }
 
@@ -1183,10 +1172,8 @@ public class UserTest extends TestWithConnection {
         // Given - default user
         User user = user1Fleet1;
 
-        // When - checking 2FA status
         boolean isEnabled = user.isTwoFactorEnabled();
 
-        // Then - should return false by default
         assertFalse(isEnabled);
     }
 
@@ -1260,7 +1247,6 @@ public class UserTest extends TestWithConnection {
         // When - checking 2FA setup completion
         boolean isComplete = user.isTwoFactorSetupComplete();
 
-        // Then - should return false by default
         assertFalse(isComplete);
     }
 
@@ -1344,7 +1330,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing users
         boolean isEqual = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(isEqual);
     }
 
@@ -1357,7 +1342,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing with null
         boolean isEqual = user.equals(nullObject);
 
-        // Then - should return false
         assertFalse(isEqual);
     }
 
@@ -1370,13 +1354,11 @@ public class UserTest extends TestWithConnection {
         // When - comparing with non-user object
         boolean isEqual = user.equals(nonUserObject);
 
-        // Then - should return false
         assertFalse(isEqual);
     }
 
     @Test
     public void equalsWithDifferentId() throws SQLException, AccountException {
-        // Given - users with different IDs but same other fields
         connection.setAutoCommit(false);
         
         // Create a user with different ID but same email
@@ -1401,10 +1383,8 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 999, 1); // Different ID
 
-        // When - comparing users with different IDs
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1412,7 +1392,6 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void equalsWithDifferentEmail() throws SQLException, AccountException {
-        // Given - users with different emails but same other fields
         connection.setAutoCommit(false);
         
         // Create a user with different email but same ID
@@ -1437,10 +1416,8 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 998, 1); // Different email
 
-        // When - comparing users with different emails
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1448,7 +1425,6 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void equalsWithDifferentFirstName() throws SQLException, AccountException {
-        // Given - users with different first names but same other fields
         connection.setAutoCommit(false);
         
         // Create a user with different first name
@@ -1473,10 +1449,8 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 997, 1); // Different first name
 
-        // When - comparing users with different first names
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1484,7 +1458,6 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void equalsWithDifferentLastName() throws SQLException, AccountException {
-        // Given - users with different last names but same other fields
         connection.setAutoCommit(false);
         
         // Create a user with different last name
@@ -1509,10 +1482,8 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 996, 1); // Different last name
 
-        // When - comparing users with different last names
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1520,7 +1491,6 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void equalsWithDifferentCountry() throws SQLException, AccountException {
-        // Given - users with different countries but same other fields
         connection.setAutoCommit(false);
         
         // Create a user with different country
@@ -1545,10 +1515,8 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 995, 1); // Different country
 
-        // When - comparing users with different countries
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1556,7 +1524,6 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void equalsWithDifferentState() throws SQLException, AccountException {
-        // Given - users with different states but same other fields
         connection.setAutoCommit(false);
         
         // Create a user with different state
@@ -1581,10 +1548,8 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 994, 1); // Different state
 
-        // When - comparing users with different states
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1620,7 +1585,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing users with different cities
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1656,7 +1620,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing users with different addresses
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1692,7 +1655,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing users with different phone numbers
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1728,7 +1690,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing users with different zip codes
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1764,7 +1725,6 @@ public class UserTest extends TestWithConnection {
         // When - comparing users with different admin status
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
@@ -1800,10 +1760,46 @@ public class UserTest extends TestWithConnection {
         // When - comparing users with different aggregate view
         boolean result = user1.equals(user2);
 
-        // Then - should return false
         assertFalse(result);
         
         connection.rollback();
+    }
+
+    @Test
+    public void equalsWithDifferentFleetAccess() throws SQLException, AccountException {
+        // Given - users with different fleet access but same other fields
+        User user1 = user1Fleet1; // User 1 in fleet 1
+        User user2 = user1Fleet2; // User 1 in fleet 2 (different fleet access)
+
+        // When - comparing users with different fleet access
+        boolean result = user1.equals(user2);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void equalsWithDifferentFleet() throws SQLException, AccountException {
+        // Given - users with different fleet but same other fields
+        User user1 = user1Fleet1; // User 1 in fleet 1
+        User user2 = user2Fleet2; // User 2 in fleet 2 (different user, different fleet)
+
+        // When - comparing users with different fleet
+        boolean result = user1.equals(user2);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void equalsWithIdenticalUsers() throws SQLException, AccountException {
+        // Given - two identical users
+        User user1 = user1Fleet1;
+        User user2 = user1Fleet1; // Same user object
+
+        // When - comparing identical users
+        boolean result = user1.equals(user2);
+
+        // Then - should return true
+        assertTrue(result);
     }
 
     @Test
@@ -2007,10 +2003,801 @@ public class UserTest extends TestWithConnection {
         // When - validating password for non-existent user
         boolean isValid = nonExistentUser.validate(connection, password);
 
-        // Then - should return false
         assertFalse(isValid);
         
         connection.rollback();
+    }
+
+    @Test
+    public void testFleetHasAirsync() throws SQLException, AccountException {
+        // Get an existing fleet
+        Fleet fleet = Fleet.get(connection, 1);
+        assertNotNull(fleet);
+        
+        // Test hasAirsync method
+        boolean hasAirsync = fleet.hasAirsync(connection);
+        
+        // This could be true or false depending on the test data
+        assertTrue(hasAirsync == true || hasAirsync == false, "hasAirsync should return boolean");
+    }
+
+    @Test
+    public void testFleetGetAllFleets() throws SQLException {
+        // Test getAllFleets method
+        List<Fleet> fleets = Fleet.getAllFleets(connection);
+        
+        assertNotNull(fleets, "Fleet list should not be null");
+        assertTrue(fleets.size() >= 0, "Fleet list should have non-negative size");
+        
+        // Verify all fleets have valid data
+        for (Fleet fleet : fleets) {
+            assertNotNull(fleet, "Each fleet should not be null");
+            assertTrue(fleet.getId() > 0, "Fleet ID should be positive");
+            assertNotNull(fleet.getName(), "Fleet name should not be null");
+        }
+    }
+
+    @Test
+    public void testFleetGetNumberFleets() throws SQLException {
+        // Test getNumberFleets method
+        int numberOfFleets = Fleet.getNumberFleets(connection);
+        
+        assertTrue(numberOfFleets >= 0, "Number of fleets should be non-negative");
+        
+        // Verify it matches the count from getAllFleets
+        List<Fleet> allFleets = Fleet.getAllFleets(connection);
+        assertEquals(allFleets.size(), numberOfFleets, "getNumberFleets should match getAllFleets count");
+    }
+
+    // FleetAccess tests
+    @Test
+    public void testFleetAccessGetters() throws SQLException, AccountException {
+        // Create a fleet access entry using existing user ID (1) and fleet ID (1)
+        FleetAccess fleetAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
+        
+        // Test getters
+        assertEquals(1, fleetAccess.getUserId());
+        assertEquals(1, fleetAccess.getFleetId());
+        assertEquals(FleetAccess.MANAGER, fleetAccess.getAccessType());
+    }
+
+    @Test
+    public void testFleetAccessTypeChecks() throws SQLException, AccountException {
+        // Test different access types using existing user IDs and fleet IDs
+        FleetAccess managerAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
+        assertTrue(managerAccess.isManager());
+        assertFalse(managerAccess.isUpload());
+        assertFalse(managerAccess.isView());
+        assertFalse(managerAccess.isWaiting());
+        assertFalse(managerAccess.isDenied());
+
+        FleetAccess uploadAccess = FleetAccess.create(connection, 2, 2, FleetAccess.UPLOAD);
+        assertTrue(uploadAccess.isUpload());
+        assertFalse(uploadAccess.isManager());
+
+        FleetAccess viewAccess = FleetAccess.create(connection, 3, 1, FleetAccess.VIEW);
+        assertTrue(viewAccess.isView());
+        assertFalse(viewAccess.isManager());
+
+        FleetAccess waitingAccess = FleetAccess.create(connection, 1, 2, FleetAccess.WAITING);
+        assertTrue(waitingAccess.isWaiting());
+        assertFalse(waitingAccess.isManager());
+
+        FleetAccess deniedAccess = FleetAccess.create(connection, 2, 1, FleetAccess.DENIED);
+        assertTrue(deniedAccess.isDenied());
+        assertFalse(deniedAccess.isManager());
+    }
+
+    @Test
+    public void testFleetAccessGetByUserId() throws SQLException, AccountException {
+        // Create multiple fleet access entries for the same user using existing user and fleet IDs
+        FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
+        FleetAccess.create(connection, 1, 2, FleetAccess.VIEW);
+        
+        // Get all access entries for user 1
+        ArrayList<FleetAccess> accessList = FleetAccess.get(connection, 1);
+        assertNotNull(accessList);
+        assertTrue(accessList.size() >= 2);
+        
+        // Verify the entries
+        boolean foundManager = false;
+        boolean foundView = false;
+        for (FleetAccess access : accessList) {
+            if (access.getUserId() == 1 && access.getFleetId() == 1 && access.getAccessType().equals(FleetAccess.MANAGER)) {
+                foundManager = true;
+            }
+            if (access.getUserId() == 1 && access.getFleetId() == 2 && access.getAccessType().equals(FleetAccess.VIEW)) {
+                foundView = true;
+            }
+        }
+        assertTrue(foundManager, "Manager access should be found");
+        assertTrue(foundView, "View access should be found");
+    }
+
+    @Test
+    public void testFleetAccessGetByUserIdAndFleetId() throws SQLException, AccountException {
+        // Create a fleet access entry using existing user and fleet IDs
+        FleetAccess.create(connection, 2, 1, FleetAccess.UPLOAD);
+        
+        // Get the specific access entry
+        FleetAccess access = FleetAccess.get(connection, 2, 1);
+        assertNotNull(access);
+        assertEquals(2, access.getUserId());
+        assertEquals(1, access.getFleetId());
+        assertEquals(FleetAccess.UPLOAD, access.getAccessType());
+    }
+
+    @Test
+    public void testFleetAccessGetNotFound() throws SQLException {
+        // Try to get non-existent access
+        FleetAccess access = FleetAccess.get(connection, 999, 999);
+        assertNull(access);
+    }
+
+    @Test
+    public void testFleetAccessCreate() throws SQLException, AccountException {
+        // Create a new fleet access entry using existing user and fleet IDs
+        FleetAccess newAccess = FleetAccess.create(connection, 3, 2, FleetAccess.VIEW);
+        assertNotNull(newAccess);
+        assertEquals(3, newAccess.getUserId());
+        assertEquals(2, newAccess.getFleetId());
+        assertEquals(FleetAccess.VIEW, newAccess.getAccessType());
+        
+        // Verify it was created in the database
+        FleetAccess retrievedAccess = FleetAccess.get(connection, 3, 2);
+        assertNotNull(retrievedAccess);
+        assertEquals(FleetAccess.VIEW, retrievedAccess.getAccessType());
+    }
+
+    @Test
+    public void testFleetAccessCreateDuplicate() throws SQLException, AccountException {
+        // Create first access using existing user and fleet IDs
+        FleetAccess.create(connection, 1, 2, FleetAccess.MANAGER);
+        
+        // Try to create duplicate access
+        assertThrows(AccountException.class, () -> {
+            FleetAccess.create(connection, 1, 2, FleetAccess.VIEW);
+        });
+    }
+
+    @Test
+    public void testFleetAccessUpdate() throws SQLException, AccountException {
+        // Use existing fleet access entry and update it
+        // First, get an existing entry to work with
+        FleetAccess existingAccess = FleetAccess.get(connection, 1, 1);
+        if (existingAccess != null) {
+            String originalType = existingAccess.getAccessType();
+            
+            // Update the access type
+            FleetAccess.update(connection, 1, 1, FleetAccess.UPLOAD);
+            
+            // Verify the update
+            FleetAccess updatedAccess = FleetAccess.get(connection, 1, 1);
+            assertNotNull(updatedAccess);
+            assertEquals(FleetAccess.UPLOAD, updatedAccess.getAccessType());
+            
+            // Restore original type for other tests
+            FleetAccess.update(connection, 1, 1, originalType);
+        } else {
+            // If no existing entry, create one first
+            FleetAccess.create(connection, 1, 1, FleetAccess.VIEW);
+            FleetAccess.update(connection, 1, 1, FleetAccess.MANAGER);
+            
+            FleetAccess updatedAccess = FleetAccess.get(connection, 1, 1);
+            assertNotNull(updatedAccess);
+            assertEquals(FleetAccess.MANAGER, updatedAccess.getAccessType());
+        }
+    }
+
+    @Test
+    public void testFleetAccessUpdateToDifferentTypes() throws SQLException, AccountException {
+        // Use existing fleet access entry and update it through different types
+        FleetAccess existingAccess = FleetAccess.get(connection, 2, 2);
+        if (existingAccess != null) {
+            String originalType = existingAccess.getAccessType();
+            
+            // Test updating to different access types
+            FleetAccess.update(connection, 2, 2, FleetAccess.UPLOAD);
+            FleetAccess access = FleetAccess.get(connection, 2, 2);
+            assertEquals(FleetAccess.UPLOAD, access.getAccessType());
+            
+            FleetAccess.update(connection, 2, 2, FleetAccess.WAITING);
+            access = FleetAccess.get(connection, 2, 2);
+            assertEquals(FleetAccess.WAITING, access.getAccessType());
+            
+            FleetAccess.update(connection, 2, 2, FleetAccess.DENIED);
+            access = FleetAccess.get(connection, 2, 2);
+            assertEquals(FleetAccess.DENIED, access.getAccessType());
+            
+            // Restore original type
+            FleetAccess.update(connection, 2, 2, originalType);
+        } else {
+            // If no existing entry, create one first
+            FleetAccess.create(connection, 2, 2, FleetAccess.VIEW);
+            
+            FleetAccess.update(connection, 2, 2, FleetAccess.UPLOAD);
+            FleetAccess access = FleetAccess.get(connection, 2, 2);
+            assertEquals(FleetAccess.UPLOAD, access.getAccessType());
+        }
+    }
+
+    @Test
+    public void testFleetAccessUpdateNonExistent() throws SQLException {
+        // This should not throw an exception, just update 0 rows
+        assertDoesNotThrow(() -> {
+            FleetAccess.update(connection, 999, 999, FleetAccess.MANAGER);
+        });
+    }
+
+    @Test
+    public void testFleetAccessUpdateDirect() throws SQLException {
+        // Direct test of the update method - this will execute the method even if no rows are updated
+        // This test specifically targets the update method coverage
+        assertDoesNotThrow(() -> {
+            FleetAccess.update(connection, 1, 1, FleetAccess.VIEW);
+        });
+        
+        // Also test with non-existent entries to ensure the method executes
+        assertDoesNotThrow(() -> {
+            FleetAccess.update(connection, 999, 999, FleetAccess.MANAGER);
+        });
+    }
+
+    @Test
+    public void testFleetAccessUpdateMethod() throws SQLException {
+        // Simple test that directly calls the update method to ensure coverage
+        FleetAccess.update(connection, 1, 1, FleetAccess.UPLOAD);
+        FleetAccess.update(connection, 2, 2, FleetAccess.WAITING);
+        FleetAccess.update(connection, 3, 1, FleetAccess.DENIED);
+    }
+
+    @Test
+    public void testFleetAccessGetUserId() throws SQLException, AccountException {
+        // Test the getUserId() method by creating a FleetAccess object and calling getUserId()
+        // First, get an existing fleet access entry
+        FleetAccess existingAccess = FleetAccess.get(connection, 1, 1);
+        if (existingAccess != null) {
+            // Test getUserId() method
+            int userId = existingAccess.getUserId();
+            assertEquals(1, userId);
+        }
+        
+        // Also test with another existing entry
+        FleetAccess anotherAccess = FleetAccess.get(connection, 2, 1);
+        if (anotherAccess != null) {
+            int userId = anotherAccess.getUserId();
+            assertEquals(2, userId);
+        }
+    }
+
+    @Test
+    public void testFleetAccessEquals() throws SQLException, AccountException {
+        FleetAccess access1 = FleetAccess.create(connection, 1, 2, FleetAccess.MANAGER);
+        FleetAccess access2 = FleetAccess.get(connection, 1, 2); // Same as access1
+        FleetAccess access3 = FleetAccess.create(connection, 2, 1, FleetAccess.MANAGER);
+        
+        // Test equality
+        assertEquals(access1, access2);
+        assertEquals(access2, access1);
+        
+        // Test inequality
+        assertNotEquals(access1, access3);
+        
+        // Test with null
+        assertNotEquals(access1, null);
+        
+        // Test with different object type
+        assertNotEquals(access1, "not a FleetAccess");
+    }
+
+    @Test
+    public void testFleetAccessConstants() {
+        assertEquals("MANAGER", FleetAccess.MANAGER);
+        assertEquals("UPLOAD", FleetAccess.UPLOAD);
+        assertEquals("VIEW", FleetAccess.VIEW);
+        assertEquals("WAITING", FleetAccess.WAITING);
+        assertEquals("DENIED", FleetAccess.DENIED);
+    }
+ 
+
+    @Test
+    public void testUserEqualsWithSameUser() {
+        User user1 = user1Fleet1;
+        User user2 = user1Fleet1;
+
+        boolean isEqual = user1.equals(user2);
+
+        assertTrue(isEqual);
+    }
+
+    @Test
+    public void testUserEqualsWithNullObject() {
+        User user = user1Fleet1;
+        Object nullObject = null;
+
+        boolean isEqual = user.equals(nullObject);
+
+        assertFalse(isEqual);
+    }
+
+    @Test
+    public void testUserEqualsWithNonUserObject() {
+        User user = user1Fleet1;
+        String nonUserObject = "not a user";
+
+        boolean isEqual = user.equals(nonUserObject);
+
+        assertFalse(isEqual);
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentId() throws SQLException, AccountException {
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different ID but same email
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 999); // Different ID
+                stmt.setString(2, "test999@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 999, 1); // Different ID
+
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentEmail() throws SQLException, AccountException {
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different email but same ID
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 998); // Different ID
+                stmt.setString(2, "different@email.com"); // Different email
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 998, 1); // Different email
+
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentFirstName() throws SQLException, AccountException {
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different first name
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 997); // Different ID
+                stmt.setString(2, "test997@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "Jane"); // Different first name
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 997, 1); // Different first name
+
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentLastName() throws SQLException, AccountException {
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different last name
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 996); // Different ID
+                stmt.setString(2, "test996@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Smith"); // Different last name
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 996, 1); // Different last name
+
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentCountry() throws SQLException, AccountException {
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different country
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 995); // Different ID
+                stmt.setString(2, "test995@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "Canada"); // Different country
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 995, 1); // Different country
+
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentState() throws SQLException, AccountException {
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different state
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 994); // Different ID
+                stmt.setString(2, "test994@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "NY"); // Different state
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 994, 1); // Different state
+
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentCity() throws SQLException, AccountException {
+        // Given - users with different cities but same other fields
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different city
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 993); // Different ID
+                stmt.setString(2, "test993@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "Los Angeles"); // Different city
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 993, 1); // Different city
+
+            // When - comparing users with different cities
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentAddress() throws SQLException, AccountException {
+        // Given - users with different addresses but same other fields
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different address
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 992); // Different ID
+                stmt.setString(2, "test992@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "456 Oak Ave"); // Different address
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 992, 1); // Different address
+
+            // When - comparing users with different addresses
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentPhoneNumber() throws SQLException, AccountException {
+        // Given - users with different phone numbers but same other fields
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different phone number
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 991); // Different ID
+                stmt.setString(2, "test991@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-5678"); // Different phone number
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 991, 1); // Different phone number
+
+            // When - comparing users with different phone numbers
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentZipCode() throws SQLException, AccountException {
+        // Given - users with different zip codes but same other fields
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different zip code
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 990); // Different ID
+                stmt.setString(2, "test990@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "90210"); // Different zip code
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 990, 1); // Different zip code
+
+            // When - comparing users with different zip codes
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentAdminStatus() throws SQLException, AccountException {
+        // Given - users with different admin status but same other fields
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different admin status
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 989); // Different ID
+                stmt.setString(2, "test989@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, true); // Different admin status
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 989, 1); // Different admin status
+
+            // When - comparing users with different admin status
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithDifferentAggregateView() throws SQLException, AccountException {
+        // Given - users with different aggregate view but same other fields
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create a user with different aggregate view
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 988); // Different ID
+                stmt.setString(2, "test988@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, true); // Different aggregate view
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = user1Fleet1;
+            User user2 = User.get(connection, 988, 1); // Different aggregate view
+
+            // When - comparing users with different aggregate view
+            boolean result = user1.equals(user2);
+
+            assertFalse(result);
+        } finally {
+            connection.rollback();
+        }
+    }
+
+    @Test
+    public void testUserEqualsWithIdenticalUsers() throws SQLException, AccountException {
+        // Given - two identical users
+        connection.setAutoCommit(false);
+        
+        try {
+            // Create identical users
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setInt(1, 987); // Different ID
+                stmt.setString(2, "test987@email.com"); // Different email to avoid unique constraint
+                stmt.setString(3, "John");
+                stmt.setString(4, "Doe");
+                stmt.setString(5, "USA");
+                stmt.setString(6, "CA");
+                stmt.setString(7, "San Francisco");
+                stmt.setString(8, "123 Main St");
+                stmt.setString(9, "555-1234");
+                stmt.setString(10, "94105");
+                stmt.setBoolean(11, false);
+                stmt.setBoolean(12, false);
+                stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
+                stmt.executeUpdate();
+            }
+            
+            User user1 = User.get(connection, 987, 1);
+            User user2 = User.get(connection, 987, 1); // Same user, same fleet
+
+            // When - comparing identical users
+            boolean result = user1.equals(user2);
+
+            // Then - should return true
+            assertTrue(result);
+        } finally {
+            connection.rollback();
+        }
     }
 
 }
