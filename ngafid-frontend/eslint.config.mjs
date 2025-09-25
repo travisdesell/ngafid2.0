@@ -112,7 +112,7 @@ export default defineConfig([
                 "AbortController",
             ],
             'import/resolver': {
-                webpack: {},
+                typescript: true,
                 "node": {
                     "extensions": [".js", ".jsx", ".ts", ".tsx", ".mjs"],
                     "moduleDirectory": ["node_modules", "src/"],
@@ -125,7 +125,8 @@ export default defineConfig([
             ...tsPlugin.configs['recommended'].rules,
 
             
-            /* JSX Rules */
+                /* JSX Rules */
+
             //https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/react-in-jsx-scope.md
             "react/react-in-jsx-scope": "off",
 
@@ -134,11 +135,12 @@ export default defineConfig([
 
 
 
-            "react/prop-types": "off",              /* <-- PropTypes are deprecated, just use TypeScript instead 🤝 */
+            "react/prop-types": "off",     /* <-- PropTypes are deprecated, just use TypeScript instead 🤝 */
 
 
 
-            /* Rules for React Hooks */
+                /* Rules for React Hooks */
+
             //https://react.dev/reference/rules/rules-of-hooks
             "react-hooks/rules-of-hooks": "error",
             "react-hooks/exhaustive-deps": "warn",
@@ -150,7 +152,8 @@ export default defineConfig([
 
 
 
-            /* Variable Rules */
+                /* Variable Rules */
+                
             //https://eslint.org/docs/latest/rules/no-var 
             "no-unused-vars": "off",
             "@typescript-eslint/no-unused-vars": "warn",
@@ -168,7 +171,8 @@ export default defineConfig([
 
 
 
-            /* String Formatting Rules */
+                /* String Formatting Rules */
+
             //https://eslint.org/docs/latest/rules/no-useless-concat
             "no-useless-concat": "error",
             //https://eslint.org/docs/latest/rules/prefer-template
@@ -185,18 +189,37 @@ export default defineConfig([
             
 
 
-            /* Semicolon Rules */
+                /* Semicolon Rules */
+
             //https://eslint.org/docs/latest/rules/semi
             "semi": ["error", "always"],
             "semi-spacing": ["error", { "before": false, "after": true }],
 
 
 
-            /* Unreached Code Rules */
+                /* Unreached Code Rules */
+
             //https://eslint.org/docs/latest/rules/no-unreachable
             "no-unreachable": "error",
 
+
+                /* TypeScript Rules */
+            //https://typescript-eslint.io/rules/array-type/
+            "@typescript-eslint/array-type": ["error", { "default": "generic" }], //<-- Use Array<T> instead of T[]
+
+            //https://typescript-eslint.io/rules/consistent-type-definitions/
+            "@typescript-eslint/consistent-type-definitions": ["error", "interface"], //<-- Use 'interface' instead of 'type' for object types
+
         },
+
+        overrides: [
+            {
+                files: ["vite.config.mts"],
+                parserOptions: {
+                    project: './tsconfig.node.json',
+                },
+            }
+        ]
 
     },
 
@@ -206,7 +229,6 @@ export default defineConfig([
             "**/dist/**",
             "**/build/**",
             "**/Build/**",
-            "**/webpack.config.js",
             "**/tailwind.config.js",
             "**/eslint.config.mjs",
         ],
