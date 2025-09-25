@@ -446,13 +446,12 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get user with valid email, password, and single fleet access")
     public void getUserWithValidEmailAndPasswordAndSingleFleetAccess() throws SQLException {
-        // Given - user with valid email, password, and exactly one fleet access
         connection.setAutoCommit(false);
         String email = "singlefleet@email.com";
         String password = "password123";
         
-        // First, create a user with exactly one fleet access
         int userId;
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
@@ -471,7 +470,6 @@ public class UserTest extends TestWithConnection {
             stmt.setString(12, "aaaaaaaaaaaaaaaaaaaa"); // Will be updated to valid format
             stmt.executeUpdate();
             
-            // Get the generated user ID
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     userId = generatedKeys.getInt(1);
@@ -481,7 +479,6 @@ public class UserTest extends TestWithConnection {
             }
         }
         
-        // Add exactly one fleet access for this user
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?)")) {
             stmt.setInt(1, userId); // Use the actual generated user ID
@@ -490,10 +487,8 @@ public class UserTest extends TestWithConnection {
             stmt.executeUpdate();
         }
         
-        // Update password to valid format
         User.updatePassword(connection, email, password);
 
-        // When - getting user with valid email and password and single fleet access
         User result = null;
         try {
             result = User.get(connection, email, password);
@@ -501,7 +496,6 @@ public class UserTest extends TestWithConnection {
             fail("AccountException should not be thrown for user with single fleet access: " + e.getMessage());
         }
 
-        // Then - should return a valid user with fleet access and email preferences
         assertNotNull(result, "User with single fleet access should return a valid user");
         assertEquals(1, result.getFleetId(), "User should have fleet ID 1");
         assertEquals("VIEW", result.getFleetAccessType(), "User should have VIEW access type");
@@ -511,92 +505,79 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return null for non-existent user ID")
     public void getUserWithNonExistentUserId() throws SQLException, AccountException {
-        // Given - non-existent user ID and valid fleet ID
         int nonExistentUserId = 999999;
         int fleetId = 1;
 
-        // When - getting user with non-existent user ID
         User result = User.get(connection, nonExistentUserId, fleetId);
 
-        // Then - should return null because user doesn't exist
         assertNull(result, "User with non-existent ID should return null");
     }
 
     @Test
+    @DisplayName("Should throw AccountException for invalid password")
     public void getUserWithInvalidPassword() throws SQLException {
-        // Given - valid email but invalid password (first update the password token to a valid format)
         connection.setAutoCommit(false);
         String email = "test@email.com";
         String correctPassword = "password123";
         String invalidPassword = "wrongpassword";
         
-        // Update the password token to a valid format
         User.updatePassword(connection, email, correctPassword);
 
-        // When/Then - getting user should throw AccountException
         assertThrows(AccountException.class, () -> User.get(connection, email, invalidPassword));
         
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should return null for non-existent email")
     public void getUserWithNonExistentEmail() throws SQLException, AccountException {
-        // Given - non-existent email
         String nonExistentEmail = "nonexistent@email.com";
         String password = "password123";
 
-        // When - getting user with non-existent email
         User user = User.get(connection, nonExistentEmail, password);
 
-        // Then - should return null
         assertNull(user);
     }
 
     @Test
+    @DisplayName("Should get user by email only")
     public void getUserWithEmailOnly() throws SQLException {
-        // Given - valid email
         String email = "test@email.com";
 
-        // When - getting user by email only
         User user = User.get(connection, email);
 
-        // Then - should return the correct user
         assertNotNull(user);
         assertEquals(email, user.getEmail());
         assertEquals(1, user.getId());
     }
 
     @Test
+    @DisplayName("Should return null for non-existent email only")
     public void getUserWithNonExistentEmailOnly() throws SQLException {
-        // Given - non-existent email
         String nonExistentEmail = "nonexistent@email.com";
 
-        // When - getting user by non-existent email
         User user = User.get(connection, nonExistentEmail);
 
-        // Then - should return null
         assertNull(user);
     }
 
     @Test
+    @DisplayName("Should return true for existing email")
     public void existsWithExistingEmail() throws SQLException {
-        // Given - existing email
         String existingEmail = "test@email.com";
 
-        // When - checking if user exists
         boolean exists = User.exists(connection, existingEmail);
 
-        // Then - should return true
         assertTrue(exists);
     }
 
     @Test
+    @DisplayName("Should return false for non-existent email")
     public void existsWithNonExistentEmail() throws SQLException {
-        // Given - non-existent email
         String nonExistentEmail = "nonexistent@email.com";
 
-        // When - checking if user exists
         boolean exists = User.exists(connection, nonExistentEmail);
 
         assertFalse(exists);
@@ -756,8 +737,8 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should update profile with valid values")
     public void updateProfileWithValidValues() throws SQLException {
-        // Given - user and valid profile data
         connection.setAutoCommit(false);
         User user = user1Fleet1;
         String newFirstName = "Updated";
@@ -769,10 +750,8 @@ public class UserTest extends TestWithConnection {
         String newPhoneNumber = "555-1234";
         String newZipCode = "10001";
 
-        // When - updating profile with valid values
         user.updateProfile(connection, newFirstName, newLastName, newCountry, newState, newCity, newAddress, newPhoneNumber, newZipCode);
 
-        // Then - profile should be updated (check full name since individual getters don't exist)
         assertEquals(newFirstName + " " + newLastName, user.getFullName());
 
         connection.rollback();
@@ -781,48 +760,42 @@ public class UserTest extends TestWithConnection {
     // ==================== PASSWORD UPDATE TESTS ====================
 
     @Test
+    @DisplayName("Should update password with valid password")
     public void updatePasswordWithValidPassword() throws SQLException {
-        // Given - user and new password
         connection.setAutoCommit(false);
         User user = user1Fleet1;
         String newPassword = "newpassword123";
 
-        // When - updating password
         user.updatePassword(connection, newPassword);
 
-        // Then - password should be updated (no exception thrown)
         assertNotNull(user);
 
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should update password with email and password")
     public void updatePasswordWithEmailAndPassword() throws SQLException {
-        // Given - email and new password
         connection.setAutoCommit(false);
         String email = "test@email.com";
         String newPassword = "newpassword123";
 
-        // When - updating password by email
         User.updatePassword(connection, email, newPassword);
 
-        // Then - password should be updated (no exception thrown)
         assertNotNull(email);
 
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should update reset phrase with valid data")
     public void updateResetPhraseWithValidData() throws SQLException {
-        // Given - email and reset phrase
         connection.setAutoCommit(false);
         String email = "test@email.com";
         String resetPhrase = "resetphrase123";
 
-        // When - updating reset phrase
         User.updateResetPhrase(connection, email, resetPhrase);
 
-        // Then - reset phrase should be updated (no exception thrown)
         assertNotNull(email);
 
         connection.rollback();
@@ -831,47 +804,41 @@ public class UserTest extends TestWithConnection {
     // ==================== USER PREFERENCES TESTS ====================
 
     @Test
+    @DisplayName("Should get user preferences with valid user ID")
     public void getUserPreferencesWithValidUserId() throws SQLException {
-        // Given - valid user ID
         int userId = 1;
 
-        // When - getting user preferences
         UserPreferences preferences = User.getUserPreferences(connection, userId);
 
-        // Then - should return preferences
         assertNotNull(preferences);
         assertNotNull(preferences.getFlightMetrics());
         assertTrue(preferences.getDecimalPrecision() >= 0);
     }
 
     @Test
+    @DisplayName("Should store user preferences with valid data")
     public void storeUserPreferencesWithValidData() throws SQLException {
-        // Given - user ID and preferences
         connection.setAutoCommit(false);
         int userId = 1;
         UserPreferences preferences = UserPreferences.defaultPreferences(userId);
 
-        // When - storing user preferences
         User.storeUserPreferences(connection, userId, preferences);
 
-        // Then - preferences should be stored (no exception thrown)
         assertNotNull(preferences);
 
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should update user preferences precision with valid data")
     public void updateUserPreferencesPrecisionWithValidData() throws SQLException {
-        // Given - user ID and new precision
         connection.setAutoCommit(false);
         int userId = 1;
         int newPrecision = 3;
         UserPreferences preferences = UserPreferences.defaultPreferences(userId);
 
-        // When - updating precision
         boolean updated = preferences.update(newPrecision);
 
-        // Then - should update precision
         assertTrue(updated);
         assertEquals(newPrecision, preferences.getDecimalPrecision());
 
@@ -879,60 +846,49 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should update user preferences precision using static method")
     public void updateUserPreferencesPrecisionStaticMethod() throws SQLException {
-        // Given - user ID and new precision
         connection.setAutoCommit(false);
         int userId = 1;
         int newPrecision = 4;
 
-        // When - updating precision using static method
-        // This method executes an UPDATE statement and calls getUserPreferences
-        // Even if no record exists, the method should not throw an exception
         UserPreferences updatedPreferences = User.updateUserPreferencesPrecision(connection, userId, newPrecision);
 
-        // Then - should return preferences (may be default values if no record exists)
         assertNotNull(updatedPreferences);
         assertNotNull(updatedPreferences.getFlightMetrics());
-        // Note: The precision may be 1 (default) if no user_preferences record exists
-        // This is expected behavior since UPDATE affects 0 rows when no record exists
 
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should add user preference metric with valid data")
     public void addUserPreferenceMetricWithValidData() throws SQLException {
-        // Given - user ID and metric name (first create the metric in double_series_names)
         connection.setAutoCommit(false);
         int userId = 1;
         String metricName = "test_metric";
         
-        // Create the metric in double_series_names table first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?)")) {
             stmt.setString(1, metricName);
             stmt.executeUpdate();
         }
 
-        // When - adding user preference metric
         User.addUserPreferenceMetric(connection, userId, metricName);
 
-        // Then - metric should be added (no exception thrown)
         assertTrue(true);
 
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should remove user preference metric with valid data")
     public void removeUserPreferenceMetricWithValidData() throws SQLException {
-        // Given - user ID and metric name
         connection.setAutoCommit(false);
         int userId = 1;
         String metricName = "test_metric";
 
-        // When - removing user preference metric
         User.removeUserPreferenceMetric(connection, userId, metricName);
 
-        // Then - metric should be removed (no exception thrown)
         assertNotNull(metricName);
 
         connection.rollback();
@@ -941,44 +897,38 @@ public class UserTest extends TestWithConnection {
     // ==================== EMAIL PREFERENCES TESTS ====================
 
     @Test
+    @DisplayName("Should get user email preferences with valid user ID")
     public void getUserEmailPreferencesWithValidUserId() throws SQLException {
-        // Given - valid user ID
         int userId = 1;
 
-        // When - getting user email preferences
         UserEmailPreferences emailPreferences = User.getUserEmailPreferences(connection, userId);
 
-        // Then - should return email preferences
         assertNotNull(emailPreferences);
         assertNotNull(emailPreferences.getEmailTypesUser());
     }
 
     @Test
+    @DisplayName("Should get user email preferences with valid user")
     public void getUserEmailPreferencesWithValidUser() throws SQLException {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting user email preferences using instance method
         UserEmailPreferences emailPreferences = user.getUserEmailPreferences(connection);
 
-        // Then - should return email preferences
         assertNotNull(emailPreferences);
         assertNotNull(emailPreferences.getEmailTypesUser());
     }
 
     @Test
+    @DisplayName("Should update user email preferences with valid data")
     public void updateUserEmailPreferencesWithValidData() throws SQLException {
-        // Given - user ID and email preferences
         connection.setAutoCommit(false);
         int userId = 1;
         Map<String, Boolean> emailPreferences = new HashMap<>();
         emailPreferences.put("FLIGHT_PROCESSED", true);
         emailPreferences.put("UPLOAD_FAILED", false);
 
-        // When - updating email preferences
         UserEmailPreferences updatedPreferences = User.updateUserEmailPreferences(connection, userId, emailPreferences);
 
-        // Then - should return updated preferences
         assertNotNull(updatedPreferences);
         assertNotNull(updatedPreferences.getEmailTypesUser());
 
@@ -986,44 +936,38 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should set email preferences with valid preferences")
     public void setEmailPreferencesWithValidPreferences() {
-        // Given - user and email preferences
         User user = user1Fleet1;
         UserEmailPreferences emailPreferences = new UserEmailPreferences(1, new HashMap<>());
 
-        // When - setting email preferences
         user.setEmailPreferences(emailPreferences);
 
-        // Then - preferences should be set (no exception thrown)
         assertNotNull(user);
     }
 
     // ==================== FLEET UPDATE TESTS ====================
 
     @Test
+    @DisplayName("Should update fleet with valid connection")
     public void updateFleetWithValidConnection() throws SQLException, AccountException {
-        // Given - user and valid connection
         User user = user1Fleet1;
 
-        // When - updating fleet
         user.updateFleet(connection);
 
-        // Then - fleet should be updated (no exception thrown)
         assertNotNull(user);
     }
 
     // ==================== LOGIN TRACKING TESTS ====================
 
     @Test
+    @DisplayName("Should update last login timestamp with valid user")
     public void updateLastLoginTimeStampWithValidUser() throws SQLException {
-        // Given - user
         connection.setAutoCommit(false);
         User user = user1Fleet1;
 
-        // When - updating last login timestamp
         user.updateLastLoginTimeStamp(connection);
 
-        // Then - timestamp should be updated (no exception thrown)
         assertNotNull(user);
 
         connection.rollback();
@@ -1032,30 +976,25 @@ public class UserTest extends TestWithConnection {
     // ==================== USER COUNT TESTS ====================
 
     @Test
+    @DisplayName("Should get number of users with valid fleet ID")
     public void getNumberUsersWithValidFleetId() throws SQLException {
-        // Given - valid fleet ID
         int fleetId = 1;
 
-        // When/Then - getting number of users should not throw exception
-        // Note: This test may fail due to SQL query issue in User.getNumberUsers method
         try {
             int userCount = User.getNumberUsers(connection, fleetId);
             assertTrue(userCount >= 0);
         } catch (Exception e) {
-            // If SQL query fails due to malformed query, that's expected
             assertTrue(e.getMessage().contains("Invalid value") || e.getMessage().contains("CHARACTER VARYING"));
         }
     }
 
     @Test
+    @DisplayName("Should get number of users with zero fleet ID")
     public void getNumberUsersWithZeroFleetId() throws SQLException {
-        // Given - zero fleet ID (all users)
         int fleetId = 0;
 
-        // When - getting number of users
         int userCount = User.getNumberUsers(connection, fleetId);
 
-        // Then - should return total user count
         assertTrue(userCount >= 0);
     }
 
@@ -1066,20 +1005,15 @@ public class UserTest extends TestWithConnection {
     // ==================== PASSWORD RESET EMAIL TESTS ====================
 
     @Test
+    @DisplayName("Should send password reset email with valid email")
     public void sendPasswordResetEmailWithValidEmail() throws SQLException {
-        // Given - valid email
         connection.setAutoCommit(false);
         String email = "test@email.com";
 
-        // When - sending password reset email
-        // This test ensures the SendEmail.sendEmail() line is executed and covered
         try {
             User.sendPasswordResetEmail(connection, email);
-            // If we reach here, the SendEmail.sendEmail() line was successfully executed
             assertTrue(true, "SendEmail.sendEmail() line should be covered");
         } catch (RuntimeException e) {
-            // The SendEmail.sendEmail() line was executed but failed due to infrastructure issues
-            // This is expected in test environment - the line is still covered
             String message = e.getMessage();
             String causeMessage = e.getCause() != null ? e.getCause().getMessage() : "";
             
@@ -1092,7 +1026,6 @@ public class UserTest extends TestWithConnection {
                       causeMessage.contains("Kafka"),
                       "Expected infrastructure-related exception, got: " + message);
         } catch (Exception e) {
-            // Catch any other exceptions - the SendEmail.sendEmail() line was still executed
             String message = e.getMessage();
             String causeMessage = e.getCause() != null ? e.getCause().getMessage() : "";
             
@@ -1111,8 +1044,8 @@ public class UserTest extends TestWithConnection {
     // ==================== TWO-FACTOR AUTHENTICATION TESTS ====================
 
     @Test
+    @DisplayName("Should return false for two-factor authentication with default user")
     public void isTwoFactorEnabledWithDefaultUser() {
-        // Given - default user
         User user = user1Fleet1;
 
         boolean isEnabled = user.isTwoFactorEnabled();
@@ -1121,87 +1054,74 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should set two-factor authentication enabled with true value")
     public void setTwoFactorEnabledWithTrueValue() {
-        // Given - user
         User user = user1Fleet1;
 
-        // When - setting 2FA enabled
         user.setTwoFactorEnabled(true);
 
-        // Then - should be enabled
         assertTrue(user.isTwoFactorEnabled());
     }
 
     @Test
+    @DisplayName("Should return null for two-factor secret with default user")
     public void getTwoFactorSecretWithDefaultUser() {
-        // Given - default user
         User user = user1Fleet1;
 
-        // When - getting 2FA secret
         String secret = user.getTwoFactorSecret();
 
-        // Then - should return null by default
         assertNull(secret);
     }
 
     @Test
+    @DisplayName("Should set two-factor secret with valid secret")
     public void setTwoFactorSecretWithValidSecret() {
-        // Given - user and secret
         User user = user1Fleet1;
         String secret = "testsecret123";
 
-        // When - setting 2FA secret
         user.setTwoFactorSecret(secret);
 
-        // Then - should be set
         assertEquals(secret, user.getTwoFactorSecret());
     }
 
     @Test
+    @DisplayName("Should return null for backup codes with default user")
     public void getBackupCodesWithDefaultUser() {
-        // Given - default user
         User user = user1Fleet1;
 
-        // When - getting backup codes
         String backupCodes = user.getBackupCodes();
 
-        // Then - should return null by default
         assertNull(backupCodes);
     }
 
     @Test
+    @DisplayName("Should set backup codes with valid codes")
     public void setBackupCodesWithValidCodes() {
-        // Given - user and backup codes
         User user = user1Fleet1;
         String backupCodes = "code1,code2,code3";
 
-        // When - setting backup codes
         user.setBackupCodes(backupCodes);
 
-        // Then - should be set
         assertEquals(backupCodes, user.getBackupCodes());
     }
 
     @Test
+    @DisplayName("Should return false for two-factor setup completion with default user")
     public void isTwoFactorSetupCompleteWithDefaultUser() {
-        // Given - default user
         User user = user1Fleet1;
 
-        // When - checking 2FA setup completion
         boolean isComplete = user.isTwoFactorSetupComplete();
 
         assertFalse(isComplete);
     }
 
     @Test
+    @DisplayName("Should set two-factor setup complete with true value")
     public void setTwoFactorSetupCompleteWithTrueValue() {
-        // Given - user
         User user = user1Fleet1;
 
-        // When - setting 2FA setup complete
         user.setTwoFactorSetupComplete(true);
 
-        // Then - should be complete
         assertTrue(user.isTwoFactorSetupComplete());
     }
 
@@ -1209,29 +1129,24 @@ public class UserTest extends TestWithConnection {
     // ==================== CONSTRUCTOR EXCEPTION HANDLING TESTS ====================
 
     @Test
+    @DisplayName("Should handle constructor with missing 2FA columns")
     public void constructorWithMissing2FAColumns() throws SQLException, AccountException {
-        // Given - a custom query that only selects the first 13 columns (missing 2FA columns 14-17)
         connection.setAutoCommit(false);
         
-        // Create a temporary table with only the basic columns (no 2FA columns)
         try (PreparedStatement createStmt = connection.prepareStatement(
                 "CREATE TEMPORARY TABLE temp_user AS SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token FROM user WHERE id = 1")) {
             createStmt.executeUpdate();
         }
         
-        // When - getting user from the temporary table using a custom query that triggers the exception
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token FROM temp_user WHERE id = 1")) {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    // This will trigger the private constructor with missing 2FA columns
-                    // We need to use reflection to call the private constructor
                     try {
                         java.lang.reflect.Constructor<User> constructor = User.class.getDeclaredConstructor(ResultSet.class);
                         constructor.setAccessible(true);
                         User user = constructor.newInstance(rs);
                         
-                        // Then - should create user with default 2FA values
                         assertNotNull(user);
                         assertEquals(1, user.getId());
                         assertEquals("test@email.com", user.getEmail());
@@ -1252,59 +1167,54 @@ public class UserTest extends TestWithConnection {
     // ==================== EQUALS TESTS ====================
 
     @Test
+    @DisplayName("Should return true when comparing same user")
     public void equalsWithSameUser() {
-        // Given - same user object
         User user1 = user1Fleet1;
         User user2 = user1Fleet1;
 
-        // When - comparing users
         boolean isEqual = user1.equals(user2);
 
-        // Then - should return true
         assertTrue(isEqual);
     }
 
     @Test
+    @DisplayName("Should return false when comparing different users")
     public void equalsWithDifferentUser() {
-        // Given - different user objects
         User user1 = user1Fleet1;
         User user2 = user2Fleet1;
 
-        // When - comparing users
         boolean isEqual = user1.equals(user2);
 
         assertFalse(isEqual);
     }
 
     @Test
+    @DisplayName("Should return false when comparing with null object")
     public void equalsWithNullObject() {
-        // Given - user and null object
         User user = user1Fleet1;
         Object nullObject = null;
 
-        // When - comparing with null
         boolean isEqual = user.equals(nullObject);
 
         assertFalse(isEqual);
     }
 
     @Test
+    @DisplayName("Should return false when comparing with non-user object")
     public void equalsWithNonUserObject() {
-        // Given - user and non-user object
         User user = user1Fleet1;
         String nonUserObject = "not a user";
 
-        // When - comparing with non-user object
         boolean isEqual = user.equals(nonUserObject);
 
         assertFalse(isEqual);
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different IDs")
     public void equalsWithDifferentId() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
-        // Create a user with different ID but same email
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 999); // Different ID
@@ -1334,10 +1244,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different emails")
     public void equalsWithDifferentEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
-        // Create a user with different email but same ID
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 998); // Different ID
@@ -1367,10 +1277,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different first names")
     public void equalsWithDifferentFirstName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
-        // Create a user with different first name
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 997); // Different ID
@@ -1400,10 +1310,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different last names")
     public void equalsWithDifferentLastName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
-        // Create a user with different last name
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 996); // Different ID
@@ -1433,10 +1343,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different countries")
     public void equalsWithDifferentCountry() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
-        // Create a user with different country
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 995); // Different ID
@@ -1466,10 +1376,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different states")
     public void equalsWithDifferentState() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         
-        // Create a user with different state
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 994); // Different ID
@@ -1499,11 +1409,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different cities")
     public void equalsWithDifferentCity() throws SQLException, AccountException {
-        // Given - users with different cities but same other fields
         connection.setAutoCommit(false);
         
-        // Create a user with different city
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 993); // Different ID
@@ -1525,7 +1434,6 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 993, 1); // Different city
 
-        // When - comparing users with different cities
         boolean result = user1.equals(user2);
 
         assertFalse(result);
@@ -1534,11 +1442,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different addresses")
     public void equalsWithDifferentAddress() throws SQLException, AccountException {
-        // Given - users with different addresses but same other fields
         connection.setAutoCommit(false);
         
-        // Create a user with different address
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 992); // Different ID
@@ -1560,7 +1467,6 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 992, 1); // Different address
 
-        // When - comparing users with different addresses
         boolean result = user1.equals(user2);
 
         assertFalse(result);
@@ -1569,11 +1475,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different phone numbers")
     public void equalsWithDifferentPhoneNumber() throws SQLException, AccountException {
-        // Given - users with different phone numbers but same other fields
         connection.setAutoCommit(false);
         
-        // Create a user with different phone number
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 991); // Different ID
@@ -1595,7 +1500,6 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 991, 1); // Different phone number
 
-        // When - comparing users with different phone numbers
         boolean result = user1.equals(user2);
 
         assertFalse(result);
@@ -1604,11 +1508,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different zip codes")
     public void equalsWithDifferentZipCode() throws SQLException, AccountException {
-        // Given - users with different zip codes but same other fields
         connection.setAutoCommit(false);
         
-        // Create a user with different zip code
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 990); // Different ID
@@ -1630,7 +1533,6 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 990, 1); // Different zip code
 
-        // When - comparing users with different zip codes
         boolean result = user1.equals(user2);
 
         assertFalse(result);
@@ -1639,11 +1541,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different admin status")
     public void equalsWithDifferentAdminStatus() throws SQLException, AccountException {
-        // Given - users with different admin status but same other fields
         connection.setAutoCommit(false);
         
-        // Create a user with different admin status
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 989); // Different ID
@@ -1665,7 +1566,6 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 989, 1); // Different admin status
 
-        // When - comparing users with different admin status
         boolean result = user1.equals(user2);
 
         assertFalse(result);
@@ -1674,11 +1574,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different aggregate view")
     public void equalsWithDifferentAggregateView() throws SQLException, AccountException {
-        // Given - users with different aggregate view but same other fields
         connection.setAutoCommit(false);
         
-        // Create a user with different aggregate view
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 988); // Different ID
@@ -1700,7 +1599,6 @@ public class UserTest extends TestWithConnection {
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 988, 1); // Different aggregate view
 
-        // When - comparing users with different aggregate view
         boolean result = user1.equals(user2);
 
         assertFalse(result);
@@ -1709,50 +1607,45 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different fleet access")
     public void equalsWithDifferentFleetAccess() throws SQLException, AccountException {
-        // Given - users with different fleet access but same other fields
         User user1 = user1Fleet1; // User 1 in fleet 1
         User user2 = user1Fleet2; // User 1 in fleet 2 (different fleet access)
 
-        // When - comparing users with different fleet access
         boolean result = user1.equals(user2);
 
         assertFalse(result);
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different fleet")
     public void equalsWithDifferentFleet() throws SQLException, AccountException {
-        // Given - users with different fleet but same other fields
         User user1 = user1Fleet1; // User 1 in fleet 1
         User user2 = user2Fleet2; // User 2 in fleet 2 (different user, different fleet)
 
-        // When - comparing users with different fleet
         boolean result = user1.equals(user2);
 
         assertFalse(result);
     }
 
     @Test
+    @DisplayName("Should return true when comparing identical users")
     public void equalsWithIdenticalUsers() throws SQLException, AccountException {
-        // Given - two identical users
         User user1 = user1Fleet1;
         User user2 = user1Fleet1; // Same user object
 
-        // When - comparing identical users
         boolean result = user1.equals(user2);
 
-        // Then - should return true
         assertTrue(result);
     }
 
     @Test
+    @DisplayName("Should get user preferences with existing preferences and metrics")
     public void getUserPreferencesWithExistingPreferencesAndMetrics() throws SQLException {
-        // Given - user with existing preferences and metrics
         connection.setAutoCommit(false);
         int userId = 2; // Use existing user ID to avoid foreign key constraint violations
         int customPrecision = 3;
         
-        // First, create a test metric in double_series_names
         int metricId;
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?)", 
@@ -1765,7 +1658,6 @@ public class UserTest extends TestWithConnection {
             }
         }
         
-        // Create a user_preferences record with custom precision
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
@@ -1773,7 +1665,6 @@ public class UserTest extends TestWithConnection {
             stmt.executeUpdate();
         }
         
-        // Add a metric to user_preferences_metrics
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences_metrics (user_id, metric_id) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
@@ -1781,10 +1672,8 @@ public class UserTest extends TestWithConnection {
             stmt.executeUpdate();
         }
 
-        // When - getting user preferences
         UserPreferences preferences = User.getUserPreferences(connection, userId);
 
-        // Then - should return custom preferences with the stored precision and metrics
         assertNotNull(preferences);
         assertEquals(customPrecision, preferences.getDecimalPrecision());
         assertNotNull(preferences.getFlightMetrics());
@@ -1794,25 +1683,21 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get user preferences with existing preferences but no metrics")
     public void getUserPreferencesWithExistingPreferencesButNoMetrics() throws SQLException {
-        // Given - user with existing preferences but no metrics
         connection.setAutoCommit(false);
         int userId = 3; // Use existing user ID to avoid foreign key constraint violations
         int customPrecision = 2;
         
-        // Create a user_preferences record with custom precision
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
             stmt.setInt(2, customPrecision);
             stmt.executeUpdate();
         }
-        // Note: No metrics added to user_preferences_metrics
 
-        // When - getting user preferences
         UserPreferences preferences = User.getUserPreferences(connection, userId);
 
-        // Then - should return default preferences (since no metrics exist)
         assertNotNull(preferences);
         assertEquals(1, preferences.getDecimalPrecision()); // Default precision
         assertNotNull(preferences.getFlightMetrics());
@@ -1821,13 +1706,12 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get user preferences with multiple metrics")
     public void getUserPreferencesWithMultipleMetrics() throws SQLException {
-        // Given - user with multiple metrics
         connection.setAutoCommit(false);
         int userId = 2; // Use different user ID to avoid primary key conflicts
         int customPrecision = 4;
         
-        // Create test metrics in double_series_names
         int metricId1, metricId2;
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?)", 
@@ -1847,7 +1731,6 @@ public class UserTest extends TestWithConnection {
             }
         }
         
-        // Create a user_preferences record
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
@@ -1855,7 +1738,6 @@ public class UserTest extends TestWithConnection {
             stmt.executeUpdate();
         }
         
-        // Add multiple metrics to user_preferences_metrics
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences_metrics (user_id, metric_id) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
@@ -1867,10 +1749,8 @@ public class UserTest extends TestWithConnection {
             stmt.executeUpdate();
         }
 
-        // When - getting user preferences
         UserPreferences preferences = User.getUserPreferences(connection, userId);
 
-        // Then - should return preferences with custom precision and metrics
         assertNotNull(preferences);
         assertEquals(customPrecision, preferences.getDecimalPrecision());
         assertNotNull(preferences.getFlightMetrics());
@@ -1880,13 +1760,12 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should store user preferences with flight metrics")
     public void storeUserPreferencesWithFlightMetrics() throws SQLException {
-        // Given - user preferences with flight metrics
         connection.setAutoCommit(false);
         int userId = 3; // Use different user ID to avoid conflicts
         int customPrecision = 5;
         
-        // Create test metrics in double_series_names
         int metricId1, metricId2;
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?)", 
@@ -1906,14 +1785,11 @@ public class UserTest extends TestWithConnection {
             }
         }
         
-        // Create UserPreferences with flight metrics
         List<String> flightMetrics = Arrays.asList("test_metric_for_store_1", "test_metric_for_store_2");
         UserPreferences userPreferences = new UserPreferences(userId, customPrecision, flightMetrics);
 
-        // When - storing user preferences
         User.storeUserPreferences(connection, userId, userPreferences);
 
-        // Then - should store preferences and metrics
         UserPreferences storedPreferences = User.getUserPreferences(connection, userId);
         assertNotNull(storedPreferences);
         assertEquals(customPrecision, storedPreferences.getDecimalPrecision());
@@ -1926,13 +1802,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when validating non-existent user")
     public void validateWithNonExistentUser() throws SQLException {
-        // Given - user with non-existent ID and password
         connection.setAutoCommit(false);
         
-        // Use an existing user but modify its ID to a non-existent one
         User nonExistentUser = user1Fleet1;
-        // Use reflection to set the private id field to a non-existent ID
         try {
             java.lang.reflect.Field idField = User.class.getDeclaredField("id");
             idField.setAccessible(true);
@@ -1943,7 +1817,6 @@ public class UserTest extends TestWithConnection {
         
         String password = "testpassword";
 
-        // When - validating password for non-existent user
         boolean isValid = nonExistentUser.validate(connection, password);
 
         assertFalse(isValid);
@@ -1952,27 +1825,24 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return boolean for fleet hasAirsync")
     public void testFleetHasAirsync() throws SQLException, AccountException {
-        // Get an existing fleet
         Fleet fleet = Fleet.get(connection, 1);
         assertNotNull(fleet);
         
-        // Test hasAirsync method
         boolean hasAirsync = fleet.hasAirsync(connection);
         
-        // This could be true or false depending on the test data
         assertTrue(hasAirsync == true || hasAirsync == false, "hasAirsync should return boolean");
     }
 
     @Test
+    @DisplayName("Should get all fleets with valid data")
     public void testFleetGetAllFleets() throws SQLException {
-        // Test getAllFleets method
         List<Fleet> fleets = Fleet.getAllFleets(connection);
         
         assertNotNull(fleets, "Fleet list should not be null");
         assertTrue(fleets.size() >= 0, "Fleet list should have non-negative size");
         
-        // Verify all fleets have valid data
         for (Fleet fleet : fleets) {
             assertNotNull(fleet, "Each fleet should not be null");
             assertTrue(fleet.getId() > 0, "Fleet ID should be positive");
@@ -1981,32 +1851,30 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get number of fleets matching getAllFleets count")
     public void testFleetGetNumberFleets() throws SQLException {
-        // Test getNumberFleets method
         int numberOfFleets = Fleet.getNumberFleets(connection);
         
         assertTrue(numberOfFleets >= 0, "Number of fleets should be non-negative");
         
-        // Verify it matches the count from getAllFleets
         List<Fleet> allFleets = Fleet.getAllFleets(connection);
         assertEquals(allFleets.size(), numberOfFleets, "getNumberFleets should match getAllFleets count");
     }
 
     // FleetAccess tests
     @Test
+    @DisplayName("Should get fleet access getters")
     public void testFleetAccessGetters() throws SQLException, AccountException {
-        // Create a fleet access entry using existing user ID (1) and fleet ID (1)
         FleetAccess fleetAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         
-        // Test getters
         assertEquals(1, fleetAccess.getUserId());
         assertEquals(1, fleetAccess.getFleetId());
         assertEquals(FleetAccess.MANAGER, fleetAccess.getAccessType());
     }
 
     @Test
+    @DisplayName("Should check fleet access type checks")
     public void testFleetAccessTypeChecks() throws SQLException, AccountException {
-        // Test different access types using existing user IDs and fleet IDs
         FleetAccess managerAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         assertTrue(managerAccess.isManager());
         assertFalse(managerAccess.isUpload());
@@ -2032,17 +1900,15 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get fleet access by user ID")
     public void testFleetAccessGetByUserId() throws SQLException, AccountException {
-        // Create multiple fleet access entries for the same user using existing user and fleet IDs
         FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         FleetAccess.create(connection, 1, 2, FleetAccess.VIEW);
         
-        // Get all access entries for user 1
         ArrayList<FleetAccess> accessList = FleetAccess.get(connection, 1);
         assertNotNull(accessList);
         assertTrue(accessList.size() >= 2);
         
-        // Verify the entries
         boolean foundManager = false;
         boolean foundView = false;
         for (FleetAccess access : accessList) {
@@ -2058,11 +1924,10 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get fleet access by user ID and fleet ID")
     public void testFleetAccessGetByUserIdAndFleetId() throws SQLException, AccountException {
-        // Create a fleet access entry using existing user and fleet IDs
         FleetAccess.create(connection, 2, 1, FleetAccess.UPLOAD);
         
-        // Get the specific access entry
         FleetAccess access = FleetAccess.get(connection, 2, 1);
         assertNotNull(access);
         assertEquals(2, access.getUserId());
@@ -2071,8 +1936,8 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return null for non-existent fleet access")
     public void testFleetAccessGetNotFound() throws SQLException {
-        // Try to get non-existent access
         FleetAccess access = FleetAccess.get(connection, 999, 999);
         assertNull(access);
     }
@@ -2694,12 +2559,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return true when comparing identical users")
     public void testUserEqualsWithIdenticalUsers() throws SQLException, AccountException {
-        // Given - two identical users
         connection.setAutoCommit(false);
         
         try {
-            // Create identical users
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 987); // Different ID
@@ -2721,10 +2585,8 @@ public class UserTest extends TestWithConnection {
             User user1 = User.get(connection, 987, 1);
             User user2 = User.get(connection, 987, 1); // Same user, same fleet
 
-            // When - comparing identical users
             boolean result = user1.equals(user2);
 
-            // Then - should return true
             assertTrue(result);
         } finally {
             connection.rollback();
