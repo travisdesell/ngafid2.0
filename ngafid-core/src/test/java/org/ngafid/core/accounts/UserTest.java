@@ -2,6 +2,7 @@ package org.ngafid.core.accounts;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.ngafid.core.TestWithConnection;
 
 import java.sql.PreparedStatement;
@@ -39,6 +40,7 @@ public class UserTest extends TestWithConnection {
     // ==================== GET USER BY ID TESTS ====================
 
     @Test
+    @DisplayName("Should get user with valid ID and fleet ID")
     public void getUserWithValidIdAndFleetId() throws SQLException, AccountException {
         int userId = 1;
         int fleetId = 1;
@@ -50,6 +52,7 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get user with valid ID and different fleet ID")
     public void getUserWithValidIdAndDifferentFleetId() throws SQLException, AccountException {
         int userId = 1;
         int fleetId = 2;
@@ -61,6 +64,7 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should get admin user")
     public void getUserWithAdminUser() throws SQLException, AccountException {
         int userId = 2;
         int fleetId = 1;
@@ -74,6 +78,7 @@ public class UserTest extends TestWithConnection {
     // ==================== FLIGHT ACCESS TESTS ====================
 
     @Test
+    @DisplayName("Should deny flight access with invalid flight ID")
     public void hasFlightAccessWithInvalidFlightId() throws SQLException {
         int invalidFlightId = 0;
 
@@ -82,6 +87,7 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should deny flight access for denied user")
     public void hasFlightAccessWithDeniedUser() throws SQLException {
         int flightId = 0;
 
@@ -90,76 +96,67 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should deny flight access for waiting user")
     public void hasFlightAccessWithWaitingUser() throws SQLException {
-        // Given - user with waiting fleet access
         int flightId = 1;
 
-        // When - checking flight access
         boolean hasAccess = user1Fleet2Waiting.hasFlightAccess(connection, flightId);
 
         assertFalse(hasAccess);
     }
 
     @Test
+    @DisplayName("Should deny flight access for user from different fleet")
     public void hasFlightAccessWithDifferentFleet() throws SQLException {
-        // Given - user from different fleet trying to access flight
         int flightId = 1;
 
-        // When - checking flight access
         boolean hasAccess = user1Fleet2.hasFlightAccess(connection, flightId);
 
         assertFalse(hasAccess);
     }
 
     @Test
+    @DisplayName("Should grant flight access for valid flight in same fleet")
     public void hasFlightAccessWithValidFlightInSameFleet() throws SQLException {
-        // Given - user with valid fleet access and flight in same fleet
         int flightId = 1;
 
-        // When - checking flight access
         boolean hasAccess = user1Fleet1.hasFlightAccess(connection, flightId);
 
-        // Then - should return true
         assertTrue(hasAccess);
     }
 
     @Test
+    @DisplayName("Should grant flight access for multiple valid flights")
     public void hasFlightAccessWithMultipleValidFlights() throws SQLException {
-        // Given - user with valid fleet access and multiple flights in same fleet
         int flightId1 = 1;
         int flightId2 = 2;
 
-        // When - checking flight access for both flights
         boolean hasAccess1 = user1Fleet1.hasFlightAccess(connection, flightId1);
         boolean hasAccess2 = user1Fleet1.hasFlightAccess(connection, flightId2);
 
-        // Then - should return true for both
         assertTrue(hasAccess1);
         assertTrue(hasAccess2);
     }
 
     @Test
+    @DisplayName("Should grant flight access for admin user")
     public void hasFlightAccessWithAdminUser() throws SQLException {
-        // Given - admin user with valid fleet access
         int flightId = 1;
 
-        // When - checking flight access
         boolean hasAccess = user2Fleet1.hasFlightAccess(connection, flightId);
 
-        // Then - should return true
         assertTrue(hasAccess);
     }
 
     // ==================== CREATE NEW FLEET USER TESTS ====================
 
     @Test
+    @DisplayName("Should throw exception when creating user with duplicate email and fleet")
     public void createNewFleetUserWithDuplicateEmailAndFleet() throws SQLException, AccountException {
-        // Given - existing user email and fleet name
         connection.setAutoCommit(false);
         String duplicateEmail = user1Fleet1.getEmail();
         String existingFleetName = "Test Fleet with ID 1";
 
-        // When/Then - creating user should throw AccountException
         assertThrows(AccountException.class, () -> User.createNewFleetUser(
                 connection, duplicateEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", existingFleetName
         ));
@@ -168,13 +165,12 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should throw exception when creating user with duplicate email")
     public void createNewFleetUserWithDuplicateEmail() throws SQLException, AccountException {
-        // Given - existing user email but new fleet name
         connection.setAutoCommit(false);
         String duplicateEmail = user1Fleet1.getEmail();
         String newFleetName = "Fleet that doesn't exist 1000";
 
-        // When/Then - creating user should throw AccountException
         assertThrows(AccountException.class, () -> User.createNewFleetUser(
                 connection, duplicateEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", newFleetName
         ));
@@ -183,13 +179,12 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should throw exception when creating user with duplicate fleet")
     public void createNewFleetUserWithDuplicateFleet() throws SQLException, AccountException {
-        // Given - new email but existing fleet name
         connection.setAutoCommit(false);
         String newEmail = "coolemail@mail.com";
         String existingFleetName = "Test Fleet with ID 1";
 
-        // When/Then - creating user should throw AccountException
         assertThrows(AccountException.class, () -> User.createNewFleetUser(
                 connection, newEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", existingFleetName
         ));
@@ -198,16 +193,14 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should create user with unique email and fleet")
     public void createNewFleetUserWithUniqueEmailAndFleet() throws SQLException, AccountException {
-        // Given - unique email and fleet name
         connection.setAutoCommit(false);
         String uniqueEmail = "coolemail@mail.com";
         String uniqueFleetName = "cool fleet 100";
 
-        // When - creating new fleet user
         User newUser = User.createNewFleetUser(connection, uniqueEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", uniqueFleetName);
 
-        // Then - should create user successfully
         assertNotNull(newUser);
         assertEquals(uniqueEmail, newUser.getEmail());
         assertEquals("first", newUser.getFullName().split(" ")[0]);
@@ -219,208 +212,180 @@ public class UserTest extends TestWithConnection {
     // ==================== GETTER TESTS ====================
 
     @Test
+    @DisplayName("Should get user ID")
     public void getIdWithValidUser() {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting user ID
         int userId = user.getId();
 
-        // Then - should return correct ID
         assertEquals(1, userId);
     }
 
     @Test
+    @DisplayName("Should get user email")
     public void getEmailWithValidUser() {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting user email
         String email = user.getEmail();
 
-        // Then - should return correct email
         assertEquals("test@email.com", email);
     }
 
     @Test
+    @DisplayName("Should get user full name")
     public void getFullNameWithValidUser() {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting full name
         String fullName = user.getFullName();
 
-        // Then - should return correct full name
         assertEquals("John Doe", fullName);
     }
 
     @Test
+    @DisplayName("Should get fleet ID")
     public void getFleetIdWithValidUser() {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting fleet ID
         int fleetId = user.getFleetId();
 
-        // Then - should return correct fleet ID
         assertEquals(1, fleetId);
     }
 
     @Test
+    @DisplayName("Should get fleet access type")
     public void getFleetAccessTypeWithValidUser() {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting fleet access type
         String accessType = user.getFleetAccessType();
 
-        // Then - should return correct access type
         assertEquals("VIEW", accessType);
     }
 
     @Test
+    @DisplayName("Should get waiting user count")
     public void getWaitingUserCountWithValidUser() throws SQLException {
-        // Given - valid user
         User user = user1Fleet2;
 
-        // When - getting waiting user count
         int waitingCount = user.getWaitingUserCount(connection);
 
-        // Then - should return correct count
         assertEquals(2, waitingCount);
     }
 
     @Test
+    @DisplayName("Should get unconfirmed tails count")
     public void getUnconfirmedTailsCountWithValidUser() throws SQLException {
-        // Given - valid user
         User user = user1Fleet1;
 
-        // When - getting unconfirmed tails count
         int unconfirmedCount = user.getUnconfirmedTailsCount(connection);
 
-        // Then - should return correct count
         assertEquals(0, unconfirmedCount);
     }
 
     // ==================== PERMISSION TESTS ====================
 
     @Test
+    @DisplayName("Should return false for admin status of regular user")
     public void isAdminWithRegularUser() {
-        // Given - regular user
         User user = user1Fleet1;
 
-        // When - checking admin status
         boolean isAdmin = user.isAdmin();
 
         assertFalse(isAdmin);
     }
 
     @Test
+    @DisplayName("Should return false for aggregate view status of regular user")
     public void hasAggregateViewWithRegularUser() {
-        // Given - regular user
         User user = user1Fleet1;
 
-        // When - checking aggregate view status
         boolean hasAggregateView = user.hasAggregateView();
 
         assertFalse(hasAggregateView);
     }
 
     @Test
+    @DisplayName("Should return false for fleet management of non-manager user")
     public void managesFleetWithNonManagerUser() {
-        // Given - non-manager user
         User user = user1Fleet1;
         int fleetId = 1;
 
-        // When - checking fleet management
         boolean managesFleet = user.managesFleet(fleetId);
 
         assertFalse(managesFleet);
     }
 
     @Test
+    @DisplayName("Should return true for fleet management of manager user")
     public void managesFleetWithManagerUser() {
-        // Given - manager user
         User user = user2Fleet1;
         int fleetId = 1;
 
-        // When - checking fleet management
         boolean managesFleet = user.managesFleet(fleetId);
 
-        // Then - should return true
         assertTrue(managesFleet);
     }
 
     @Test
+    @DisplayName("Should return false for upload access of non-upload user")
     public void hasUploadAccessWithNonUploadUser() {
-        // Given - non-upload user
         User user = user1Fleet1;
         int fleetId = 1;
 
-        // When - checking upload access
         boolean hasUploadAccess = user.hasUploadAccess(fleetId);
 
         assertFalse(hasUploadAccess);
     }
 
     @Test
+    @DisplayName("Should return true for upload access of upload user")
     public void hasUploadAccessWithUploadUser() {
-        // Given - upload user (manager)
         User user = user2Fleet1;
         int fleetId = 1;
 
-        // When - checking upload access
         boolean hasUploadAccess = user.hasUploadAccess(fleetId);
 
-        // Then - should return true
         assertTrue(hasUploadAccess);
     }
 
     @Test
+    @DisplayName("Should return true for view access of valid user")
     public void hasViewAccessWithValidUser() {
-        // Given - user with view access
         User user = user1Fleet1;
         int fleetId = 1;
 
-        // When - checking view access
         boolean hasViewAccess = user.hasViewAccess(fleetId);
 
-        // Then - should return true
         assertTrue(hasViewAccess);
     }
 
     @Test
+    @DisplayName("Should return true for view access of manager user")
     public void hasViewAccessWithManagerUser() {
-        // Given - manager user
         User user = user2Fleet1;
         int fleetId = 1;
 
-        // When - checking view access
         boolean hasViewAccess = user.hasViewAccess(fleetId);
 
-        // Then - should return true
         assertTrue(hasViewAccess);
     }
 
     @Test
+    @DisplayName("Should return false for view access of user from different fleet")
     public void hasViewAccessWithDifferentFleet() {
-        // Given - user from different fleet
         User user = user1Fleet2;
         int fleetId = 2;
 
-        // When - checking view access
         boolean hasViewAccess = user.hasViewAccess(fleetId);
 
         assertFalse(hasViewAccess);
     }
 
     @Test
+    @DisplayName("Should return false for view access of admin user from different fleet")
     public void hasViewAccessWithAdminUserFromDifferentFleet() {
-        // Given - admin user from different fleet
         User user = user2Fleet2;
         int fleetId = 2;
 
-        // When - checking view access
         boolean hasViewAccess = user.hasViewAccess(fleetId);
 
         assertFalse(hasViewAccess);
@@ -429,29 +394,26 @@ public class UserTest extends TestWithConnection {
     // ==================== USER AUTHENTICATION TESTS ====================
 
     @Test
+    @DisplayName("Should throw exception when getting user with valid email and password but multiple fleets")
     public void getUserWithValidEmailAndPassword() throws SQLException {
-        // Given - valid email and password (first update the password token to a valid format)
         connection.setAutoCommit(false);
         String email = "test2@email.com"; // All test users are associated with multiple fleets
         String password = "password123";
         
-        // Update the password token to a valid format
         User.updatePassword(connection, email, password);
 
-        // When/Then - getting user should throw AccountException because user is associated with multiple fleets
         assertThrows(AccountException.class, () -> User.get(connection, email, password));
 
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should return null for user with valid email and password but no fleet access")
     public void getUserWithValidEmailAndPasswordButNoFleetAccess() throws SQLException {
-        // Given - user with valid email and password but no fleet access
         connection.setAutoCommit(false);
         String email = "nofleet@email.com";
         String password = "password123";
         
-        // First, create a user with no fleet access
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setString(1, email);
@@ -469,19 +431,15 @@ public class UserTest extends TestWithConnection {
             stmt.executeUpdate();
         }
         
-        // Update password to valid format
         User.updatePassword(connection, email, password);
 
-        // When - getting user with valid email and password but no fleet access
         User result = null;
         try {
             result = User.get(connection, email, password);
         } catch (AccountException e) {
-            // This shouldn't happen for a user with no fleet access
             fail("AccountException should not be thrown for user with no fleet access: " + e.getMessage());
         }
 
-        // Then - should return null because user has no fleet access
         assertNull(result, "User with no fleet access should return null");
 
         connection.rollback();
@@ -647,36 +605,31 @@ public class UserTest extends TestWithConnection {
     // ==================== USER VALIDATION TESTS ====================
 
     @Test
+    @DisplayName("Should validate correct password")
     public void validateWithCorrectPassword() throws SQLException {
-        // Given - user with correct password (first update the password token to a valid format)
         connection.setAutoCommit(false);
         User user = user1Fleet1;
         String correctPassword = "password123";
         
-        // Update the password token to a valid format
         User.updatePassword(connection, user.getEmail(), correctPassword);
 
-        // When - validating password
         boolean isValid = user.validate(connection, correctPassword);
 
-        // Then - should return true
         assertTrue(isValid);
         
         connection.rollback();
     }
 
     @Test
+    @DisplayName("Should reject incorrect password")
     public void validateWithIncorrectPassword() throws SQLException {
-        // Given - user with incorrect password (first update the password token to a valid format)
         connection.setAutoCommit(false);
         User user = user1Fleet1;
         String correctPassword = "password123";
         String incorrectPassword = "wrongpassword";
         
-        // Update the password token to a valid format
         User.updatePassword(connection, user.getEmail(), correctPassword);
 
-        // When - validating password
         boolean isValid = user.validate(connection, incorrectPassword);
 
         assertFalse(isValid);
@@ -685,26 +638,22 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should validate passphrase with valid passphrase")
     public void validatePassphraseWithValidPassphrase() throws SQLException {
-        // Given - valid email and passphrase (this would need to be set up in test data)
         String email = "test@email.com";
         String passphrase = "validpassphrase";
 
-        // When - validating passphrase
         boolean isValid = User.validatePassphrase(connection, email, passphrase);
 
-        // Then - should return result based on test data
-        // Note: This test may need adjustment based on actual test data setup
         assertNotNull(Boolean.valueOf(isValid));
     }
 
     @Test
+    @DisplayName("Should reject invalid passphrase")
     public void validatePassphraseWithInvalidPassphrase() throws SQLException {
-        // Given - valid email but invalid passphrase
         String email = "test@email.com";
         String invalidPassphrase = "invalidpassphrase";
 
-        // When - validating passphrase
         boolean isValid = User.validatePassphrase(connection, email, invalidPassphrase);
 
         assertFalse(isValid);
@@ -713,8 +662,8 @@ public class UserTest extends TestWithConnection {
     // ==================== USER CREATION TESTS ====================
 
     @Test
+    @DisplayName("Should create user for existing fleet with valid data")
     public void createExistingFleetUserWithValidData() throws SQLException, AccountException {
-        // Given - valid user data and existing fleet
         connection.setAutoCommit(false);
         String email = "newuser@email.com";
         String password = "password123";
@@ -728,11 +677,9 @@ public class UserTest extends TestWithConnection {
         String zipCode = "94102";
         String existingFleetName = "Test Fleet with ID 1";
 
-        // When - creating user for existing fleet
         User newUser = User.createExistingFleetUser(connection, email, password, firstName, lastName,
                 country, state, city, address, phoneNumber, zipCode, existingFleetName);
 
-        // Then - should create user successfully
         assertNotNull(newUser);
         assertEquals(email, newUser.getEmail());
         assertEquals("New User", newUser.getFullName());
@@ -741,8 +688,8 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should throw exception when creating user with duplicate email")
     public void createExistingFleetUserWithDuplicateEmail() throws SQLException {
-        // Given - duplicate email and existing fleet
         connection.setAutoCommit(false);
         String duplicateEmail = user1Fleet1.getEmail();
         String password = "password123";
@@ -756,7 +703,6 @@ public class UserTest extends TestWithConnection {
         String zipCode = "94102";
         String existingFleetName = "Test Fleet with ID 1";
 
-        // When/Then - creating user should throw AccountException
         assertThrows(AccountException.class, () -> User.createExistingFleetUser(connection, duplicateEmail, password, firstName, lastName,
                 country, state, city, address, phoneNumber, zipCode, existingFleetName));
 
@@ -764,8 +710,8 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should throw exception when creating user with non-existent fleet")
     public void createExistingFleetUserWithNonExistentFleet() throws SQLException {
-        // Given - valid user data but non-existent fleet
         connection.setAutoCommit(false);
         String email = "newuser@email.com";
         String password = "password123";
@@ -779,7 +725,6 @@ public class UserTest extends TestWithConnection {
         String zipCode = "94102";
         String nonExistentFleetName = "Non Existent Fleet";
 
-        // When/Then - creating user should throw AccountException
         assertThrows(AccountException.class, () -> User.createExistingFleetUser(connection, email, password, firstName, lastName,
                 country, state, city, address, phoneNumber, zipCode, nonExistentFleetName));
 
@@ -789,8 +734,8 @@ public class UserTest extends TestWithConnection {
     // ==================== USER PROFILE UPDATE TESTS ====================
 
     @Test
+    @DisplayName("Should update profile with valid data")
     public void updateProfileWithValidData() throws SQLException {
-        // Given - user and new profile data
         connection.setAutoCommit(false);
         User user = user1Fleet1;
         String newFirstName = "Updated";
@@ -802,10 +747,8 @@ public class UserTest extends TestWithConnection {
         String newPhoneNumber = "555-5678";
         String newZipCode = "M5H 2N2";
 
-        // When - updating profile
         user.updateProfile(connection, newFirstName, newLastName, newCountry, newState, newCity, newAddress, newPhoneNumber, newZipCode);
 
-        // Then - profile should be updated
         assertEquals(newFirstName, user.getFullName().split(" ")[0]);
         assertEquals(newLastName, user.getFullName().split(" ")[1]);
 
@@ -2541,12 +2484,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different cities")
     public void testUserEqualsWithDifferentCity() throws SQLException, AccountException {
-        // Given - users with different cities but same other fields
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different city
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 993); // Different ID
@@ -2568,7 +2510,6 @@ public class UserTest extends TestWithConnection {
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 993, 1); // Different city
 
-            // When - comparing users with different cities
             boolean result = user1.equals(user2);
 
             assertFalse(result);
@@ -2578,12 +2519,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different addresses")
     public void testUserEqualsWithDifferentAddress() throws SQLException, AccountException {
-        // Given - users with different addresses but same other fields
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different address
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 992); // Different ID
@@ -2605,7 +2545,6 @@ public class UserTest extends TestWithConnection {
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 992, 1); // Different address
 
-            // When - comparing users with different addresses
             boolean result = user1.equals(user2);
 
             assertFalse(result);
@@ -2615,12 +2554,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different phone numbers")
     public void testUserEqualsWithDifferentPhoneNumber() throws SQLException, AccountException {
-        // Given - users with different phone numbers but same other fields
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different phone number
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 991); // Different ID
@@ -2642,7 +2580,6 @@ public class UserTest extends TestWithConnection {
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 991, 1); // Different phone number
 
-            // When - comparing users with different phone numbers
             boolean result = user1.equals(user2);
 
             assertFalse(result);
@@ -2652,12 +2589,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different zip codes")
     public void testUserEqualsWithDifferentZipCode() throws SQLException, AccountException {
-        // Given - users with different zip codes but same other fields
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different zip code
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 990); // Different ID
@@ -2679,7 +2615,6 @@ public class UserTest extends TestWithConnection {
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 990, 1); // Different zip code
 
-            // When - comparing users with different zip codes
             boolean result = user1.equals(user2);
 
             assertFalse(result);
@@ -2689,12 +2624,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different admin status")
     public void testUserEqualsWithDifferentAdminStatus() throws SQLException, AccountException {
-        // Given - users with different admin status but same other fields
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different admin status
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 989); // Different ID
@@ -2716,7 +2650,6 @@ public class UserTest extends TestWithConnection {
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 989, 1); // Different admin status
 
-            // When - comparing users with different admin status
             boolean result = user1.equals(user2);
 
             assertFalse(result);
@@ -2726,12 +2659,11 @@ public class UserTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should return false when comparing users with different aggregate view")
     public void testUserEqualsWithDifferentAggregateView() throws SQLException, AccountException {
-        // Given - users with different aggregate view but same other fields
         connection.setAutoCommit(false);
         
         try {
-            // Create a user with different aggregate view
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 988); // Different ID
@@ -2753,7 +2685,6 @@ public class UserTest extends TestWithConnection {
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 988, 1); // Different aggregate view
 
-            // When - comparing users with different aggregate view
             boolean result = user1.equals(user2);
 
             assertFalse(result);
