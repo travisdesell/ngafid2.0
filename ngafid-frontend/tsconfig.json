@@ -1,23 +1,26 @@
 {
     "compilerOptions": {
+        "esModuleInterop": true,
         "target": "ES2024",
         "module": "ESNext",
         "jsx": "react-jsx",
-
         "strict": true,
-        "moduleResolution": "node",
+        "moduleResolution": "Bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "skipLibCheck": true,
-
         "allowJs": true,
         "checkJs": false,
-
         "noEmit": true,
-
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/app/*"],
+            "@": ["src/app"]
+        }
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "src/app/src/**/*"
     ]
 }
