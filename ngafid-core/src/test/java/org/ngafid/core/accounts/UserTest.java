@@ -1,13 +1,15 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.ngafid.core.TestWithConnection;
-
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.ngafid.core.TestWithConnection;
 
 public class UserTest extends TestWithConnection {
     private static final Logger LOG = Logger.getLogger(UserTest.class.getName());
@@ -30,14 +32,14 @@ public class UserTest extends TestWithConnection {
     @Test
     public void get() throws SQLException, AccountException {
         assertEquals(User.get(connection, 1, 1), new User(connection, 1, "test@email.com", "John", "Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", false, false, 1));
+                "StateName", "10001", "", false, false, 1, -1));
         assertEquals(User.get(connection, 1, 2), new User(connection, 1, "test@email.com", "John", "Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", false, false, 2));
+                "StateName", "10001", "", false, false, 2, -1));
 
         assertEquals(User.get(connection, 2, 1), new User(connection, 2, "test1@email.com", "John Admin", "Aggregate Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", true, true, 1));
+                "StateName", "10001", "", true, true, 1, 1));
         assertEquals(User.get(connection, 2, 2), new User(connection, 2, "test1@email.com", "John Admin", "Aggregate Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", true, true, 2));
+                "StateName", "10001", "", true, true, 2, 1));
     }
 
     @Test

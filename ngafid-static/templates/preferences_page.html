@@ -22,6 +22,7 @@
             {{{imports_js}}}
             {{{user_prefs_json}}}
             {{{user_name}}}
+            {{{user_fleet_selected}}}
             {{{is_admin}}}
             {{{airsync}}}
     </script>
@@ -41,6 +42,15 @@
         </div>
     </div>
 </div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class='modal' tabIndex='-1' role='dialog'>
+    <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+        <div id='confirm-modal-content'>
+        </div>
+    </div>
+</div>
+
 
 <!-- Load our javascript. -->
 <script src="/js/user_preferences-bundle.js"></script>

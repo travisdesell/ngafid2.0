@@ -7,6 +7,10 @@ import { createRoot } from 'react-dom/client';
 const confirmModalRef = createRef();
 
 
+const submitMethodDefault = () => {
+    console.warn("No submit method defined for confirm modal!");
+};
+
 class ConfirmModal extends React.Component {
 
     constructor(props) {
@@ -16,7 +20,7 @@ class ConfirmModal extends React.Component {
         this.state = {
             title : "",
             message : "",
-            submitMethod : null
+            submitMethod : submitMethodDefault
         };
 
     }
@@ -47,8 +51,7 @@ class ConfirmModal extends React.Component {
         console.log("Confirm Modal submit clicked!");
         
         //Submit method exists, call it
-        if (this.state.submitMethod != null)
-            this.state.submitMethod();
+        this.state.submitMethod();
 
     }
 
@@ -117,7 +120,7 @@ const root = createRoot(container);
 root.render(<ConfirmModal ref={confirmModalRef}/>);
 
 
-export function showConfirmModal(title, message, submitMethod=null) {
+export function showConfirmModal(title, message, submitMethod=submitMethodDefault) {
 
     console.log(`Showing Confirm Modal with title: '${title}' and message: '${message}'`);
 

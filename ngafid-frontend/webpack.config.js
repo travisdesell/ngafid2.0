@@ -122,7 +122,7 @@ module.exports = {
         update_password: "./src/update_password.js",
         update_profile: "./src/update_profile.js",
         uploads: "./src/uploads.js",
-        user_preferences: "./src/preferences_page.js",
+        user_preferences: "./src/preferences_page.tsx",
         welcome: "./src/welcome.js",
     },
 
