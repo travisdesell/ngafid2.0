@@ -6,7 +6,7 @@
         <script src="/js/theme_preload-bundle.js"></script>
 
 
-        <title>Summary - NGAFID</title>
+        <title>Two-Factor Authentication - NGAFID</title>
 
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
             integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -26,7 +26,7 @@
     </head>
 
     <body>
-        <div id="welcome-page"></div>
+        <div id="two-factor-settings-content"></div>
 
         <div id="loading" style="display: none;">
             <div id="loading-image" class="fa fa-spinner" alt="Loading..."></div>
@@ -40,6 +40,14 @@
             </div>
         </div>
 
+        <!-- Help Modal -->
+        <div id="help-modal" class='modal' tabIndex='-1' role='dialog'>
+            <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+                <div id='help-modal-content'>
+                </div>
+            </div>
+        </div>
+
         <!-- Confirm Modal -->
         <div id="confirm-modal" class='modal' tabIndex='-1' role='dialog'>
             <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
@@ -49,7 +57,7 @@
         </div>
 
         <!-- Load our javascript. -->
-        <script src="/js/welcome-bundle.js"></script>
+        <script src="/js/two_factor_settings-bundle.js"></script>
 
     </body>
 
