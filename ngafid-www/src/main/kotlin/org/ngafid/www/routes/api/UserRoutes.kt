@@ -81,7 +81,7 @@ object UserRoutes : RouteProvider() {
 
             //Check that the user has access to this fleet
             var hasAccess = false
-            val allFleets:ArrayList<FleetAccess> = FleetAccess.get(connection, user.getId())
+            val allFleets:ArrayList<FleetAccess> = FleetAccess.getAllFleetAccessEntries(connection, user.getId())
             for (fleetAccess in allFleets) {
                 if (fleetAccess.fleetId == fleetIdSelected) {
                     hasAccess = true
@@ -131,7 +131,7 @@ object UserRoutes : RouteProvider() {
 
         //Get all the fleets this user has access to
         Database.getConnection().use { connection ->
-            val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.get(connection, user.getId())
+            val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.getAllFleetAccessEntries(connection, user.getId())
             ctx.status(200)
             ctx.json(allFleets)
         }

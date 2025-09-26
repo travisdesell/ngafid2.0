@@ -114,8 +114,6 @@ public class FleetAccess implements Serializable {
 
     /**
      * Gets all entries of a user's fleet access from the database given a user id.
-     * Currently a user should only have access to one fleet however this may change
-     * in the future.
      *
      * @param connection The database connection.
      * @param userId     The id of the user.
@@ -124,7 +122,7 @@ public class FleetAccess implements Serializable {
      * @throws SQLException If there was a query/database problem.
      */
 
-    public static ArrayList<FleetAccess> get(Connection connection, int userId) throws SQLException {
+    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId) throws SQLException {
         try (PreparedStatement query = connection
                 .prepareStatement("SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = " + userId);
              ResultSet resultSet = query.executeQuery()) {
