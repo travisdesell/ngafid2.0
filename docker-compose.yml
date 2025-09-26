@@ -16,6 +16,7 @@ x-ngafid-service-common: &ngafid-service-common
     - ./data/archive:/mnt/archive
     - ./ngafid-static:/mnt/static
     - ./data/terrain:/mnt/terrain
+    - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
 
 services:
   base:
@@ -23,6 +24,7 @@ services:
       context: .
       # No build args needed - everything configured via properties files
     image: ngafid-base
+    profiles: ["build-only"]
 
   # This must run and complete before everything else to create the Kafka topics
   ngafid-kafka-topics:
@@ -88,7 +90,7 @@ services:
   mysql:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: ngafid

@@ -12,6 +12,9 @@ COPY resources/runways.csv /etc/runways.csv
 RUN mkdir -p /opt/ngafid-core
 COPY ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/ngafid-core/ngafid-core.jar
 
+# Copy Kafka client config
+COPY resources/connect-standalone-docker.properties /etc/connect-standalone-docker.properties
+
 # Set log configuration
 ENV LOG_CONFIG=/etc/log.properties
 
