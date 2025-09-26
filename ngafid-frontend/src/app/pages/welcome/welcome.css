@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+.home-card-header-text {
+    @apply text-2xl;
+    @apply font-bold;
+}
+
+.home-card-content-text {
+    @apply text-xl;
+    @apply font-normal;
+}
+
+.home-card-section-header-text {
+    @apply text-xl;
+    @apply font-semibold;
+    @apply text-cyan-500;
+
+    @apply mb-2;
+
+    @apply cursor-pointer;
+}
+
+.home-card-section-content-text {
+    @apply text-xl;
+    @apply font-normal;
+}
+
+.home-card-footer-text {
+    @apply text-xl;
+    @apply font-normal;
+}
