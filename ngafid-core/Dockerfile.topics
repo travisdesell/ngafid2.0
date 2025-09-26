@@ -1,4 +1,5 @@
 FROM ngafid-base
-RUN mkdir /opt/ngafid-core
+#Note: This directory is already created in the Dockerfile at the project root
+RUN mkdir -p /opt/ngafid-core
 COPY ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/ngafid-core/ngafid-core.jar
 CMD ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar", "org.ngafid.core.kafka.Topic"]
