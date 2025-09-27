@@ -50,12 +50,12 @@ services:
         condition: service_started
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
-  ngafid-email-consumer:
-    build:
-      context: .
-      dockerfile: ngafid-core/Dockerfile.email
-    restart: always
-    <<: *ngafid-service-common
+  # ngafid-email-consumer:
+  #   build:
+  #     context: .
+  #     dockerfile: ngafid-core/Dockerfile.email
+  #   restart: always
+  #   <<: *ngafid-service-common
 
   # AirSync sync daemon
   ngafid-airsync-importer:
@@ -102,7 +102,7 @@ services:
 
 
   kafka:
-    image: apache/kafka-native
+    image: apache/kafka
     ports:
       - "9092:9092"
     environment:
