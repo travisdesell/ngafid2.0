@@ -11,6 +11,7 @@ import org.ngafid.processor.Pipeline;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -120,7 +121,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param pipeline
      * @return
      */
-    public static FlightFileProcessor factory(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws Exception {
+    public static FlightFileProcessor factory(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException, FatalFlightFileException, SQLException {
         byte[] bytes = stream.readAllBytes();
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 

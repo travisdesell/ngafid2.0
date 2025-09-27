@@ -47,7 +47,7 @@ public class Config {
 
     public static String getEnvironmentVariable(String key, String defaultValue) {
         String value = System.getenv(key);
-        return value == null ? defaultValue : value;
+        return value == null || value.trim().isEmpty() ? defaultValue : value;
     }
 
     public static String getEnvironmentVariable(String key) {

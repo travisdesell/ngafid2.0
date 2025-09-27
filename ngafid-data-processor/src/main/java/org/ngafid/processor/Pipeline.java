@@ -4,12 +4,10 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.ngafid.core.Config;
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
 import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.flights.TurnToFinal;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.core.uploads.UploadException;
 import org.ngafid.processor.format.*;
@@ -24,6 +22,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -134,36 +133,25 @@ public class Pipeline implements AutoCloseable {
 
         LOG.info("Creating pipeline to process upload id " + upload.id + " / " + upload.filename);
 
-        var processHandle = pool.submit(() -> this.getValidFilesStream()
-                .parallel()
-                .forEach((ZipArchiveEntry ze) -> {
-                    try (Connection connection = Database.getConnection()) {
-                        List<FlightBuilder> fbuilders = this
-                                .parse(this.create(ze))
-                                .parallel()
-                                .filter(Objects::nonNull)
-                                .map(fbs -> this.build(connection, fbs))
-                                .filter(Objects::nonNull)
-                                .map(this::finalize)
-                                .toList();
+        var zipEntries = getValidFilesStream().toList();
 
-                        if (fbuilders.isEmpty())
-                            return;
+        var handles = new ArrayList<ForkJoinTask<Void>>();
 
-                        List<Flight> flights = fbuilders.stream().map(FlightBuilder::getFlight).toList();
-                        Flight.batchUpdateDatabase(connection, flights);
-                        for (FlightBuilder builder : fbuilders) {
-                            Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
-                            TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
-                            builder.getFlight().insertComputedEvents(connection, builder.getEventDefinitions());
-                        }
-                    } catch (SQLException | IOException e) {
-                        LOG.info("Encountered SQLException trying to get database connection...");
-                        this.fail(ze.getName(), e);
-                    }
-                }));
+        for (ZipArchiveEntry entry : zipEntries) {
+            try {
+                FlightFileProcessor fileProcessor = create(entry);
+                if (fileProcessor != null) {
+                    handles.add(pool.submit(fileProcessor));
+                }
+            } catch (IOException | FatalFlightFileException | SQLException e) {
+                fail(entry.getName(), e);
+            }
+        }
+
         LOG.info("Executing...");
-        processHandle.join();
+        for (ForkJoinTask<?> handle : handles) {
+            handle.join();
+        }
         LOG.info("Joined.");
     }
 
@@ -181,14 +169,19 @@ public class Pipeline implements AutoCloseable {
                 .filter(z -> !z.isDirectory());
     }
 
+    // private Stream<FlightFileProcessor> getFlightFileProcessorStream() {
+    //
+    // }
+
     /**
      * Creates a FlightFileProcessor for the given entry if possible. The type of FlightFileProcessor is depdendent on
      * the file extension, and is dispatched using `this.factories`.
      *
      * @param entry The zip entry to create a FlightFileProcessor for.
      * @return A FlightFileProcessor if the file extension is supported, otherwise `null`.
+     * @throws Exception TODO this should be a specific set of exceptions.
      */
-    private FlightFileProcessor create(ZipArchiveEntry entry) {
+    private FlightFileProcessor create(ZipArchiveEntry entry) throws IOException, SQLException, FatalFlightFileException {
         String filename = entry.getName();
         LOG.info("Creating flight builder for file: '" + filename + "'");
 
@@ -199,9 +192,6 @@ public class Pipeline implements AutoCloseable {
         if (f != null) {
             try (InputStream is = zipFile.getInputStream(entry)) {
                 return f.create(connection, is, filename, this);
-            } catch (Exception e) {
-                e.printStackTrace();
-                fail(filename, new UploadException(e.getMessage(), e, filename));
             }
         } else {
             fail(filename,
@@ -265,7 +255,7 @@ public class Pipeline implements AutoCloseable {
         Flight flight = builder.getFlight();
         LOG.info("Finalizing flight file '" + flight.getFilename() + "'");
 
-        if (flight.getStatus().equals("WARNING")) {
+        if (flight.getStatus() == Flight.FlightStatus.WARNING) {
             warningFlightsCount.incrementAndGet();
         } else {
             validFlightsCount.incrementAndGet();

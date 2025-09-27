@@ -69,8 +69,9 @@ public class DATFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
 
     public DATFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
-            throws FileEnd, IOException, NotDatFile, SQLException {
-        super(connection, convert(pipeline, stream, filename), filename, pipeline);
+            throws IOException, SQLException {
+        // super(connection, convert(pipeline, stream, filename), filename, pipeline);
+        super(connection, stream, filename, pipeline);
     }
 
     /**
@@ -688,6 +689,8 @@ public class DATFileProcessor extends FlightFileProcessor {
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
+            var stream = convert(pipeline, this.stream, filename); // , filename, pipeline);
+
             Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
             Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
             Map<String, String> attributeMap = getAttributeMap(stream); // inputStreams.remove(inputStreams.size() -
@@ -739,7 +742,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             return Stream.of(
                     new FlightBuilder[]{new DATFlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap)}
             );
-        } catch (IOException e) {
+        } catch (IOException | SQLException | NotDatFile | FileEnd e) {
             throw new FlightProcessingException(e);
         }
     }
