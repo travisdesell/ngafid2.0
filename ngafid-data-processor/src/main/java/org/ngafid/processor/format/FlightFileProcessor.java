@@ -1,20 +1,28 @@
 package org.ngafid.processor.format;
 
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.flights.TurnToFinal;
 import org.ngafid.processor.Pipeline;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
  * A flight file processor handles the initial parsing of data and metadata from a flight file.
  */
-public abstract class FlightFileProcessor {
+public abstract class FlightFileProcessor implements Callable<Void> {
 
     private static final Logger LOG = Logger.getLogger(FlightFileProcessor.class.getName());
 
@@ -23,7 +31,7 @@ public abstract class FlightFileProcessor {
      */
     public interface Factory {
         FlightFileProcessor create(Connection connection, InputStream is, String filename, Pipeline pipeline)
-                throws Exception;
+                throws IOException, FatalFlightFileException, SQLException;
     }
 
     public final Connection connection;
@@ -53,6 +61,33 @@ public abstract class FlightFileProcessor {
     }
 
     public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
+
+    @Override
+    public Void call() {
+        try (Connection connection = Database.getConnection()) {
+            var builders = pipeline
+                    .parse(this)
+                    .parallel()
+                    .filter(Objects::nonNull)
+                    .map(fbs -> pipeline.build(connection, fbs))
+                    .toList();
+
+            if (builders.isEmpty())
+                return null;
+
+            List<Flight> flights = builders.stream().map(FlightBuilder::getFlight).toList();
+            Flight.batchUpdateDatabase(connection, flights);
+            for (FlightBuilder builder : builders) {
+                Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
+                TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
+                builder.getFlight().insertComputedEvents(connection, builder.getEventDefinitions());
+            }
+
+        } catch (SQLException | IOException e) {
+            pipeline.fail(filename, e);
+        }
+        return null;
+    }
 
     public Stream<Flight> flights = null;
 }
