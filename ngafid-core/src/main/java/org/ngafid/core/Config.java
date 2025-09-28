@@ -8,6 +8,7 @@ public class Config {
     public static final boolean NGAFID_USE_MARIA_DB;
     public static final boolean NGAFID_EMAIL_ENABLED;
     public static final boolean DISABLE_PERSISTENT_SESSIONS;
+    public static final boolean MEMORY_EFFICIENT_UPLOAD_PROCESSOR;
 
     public static final String NGAFID_DB_INFO;
     public static final String NGAFID_UPLOAD_DIR;
@@ -23,13 +24,14 @@ public class Config {
     public static final String LOG_PROPERTIES_FILE;
 
     static {
-        PARALLELISM = Integer.parseInt(getEnvironmentVariable("NGAFID_PARALLELISM", Runtime.getRuntime().availableProcessors() + ""));
+        PARALLELISM = 8; // Integer.parseInt(getEnvironmentVariable("NGAFID_PARALLELISM", Runtime.getRuntime().availableProcessors() + ""));
         NGAFID_PORT = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT", "8181"));
-        MAX_TERRAIN_CACHE_SIZE = Integer.parseInt(getEnvironmentVariable("MAX_TERRAIN_CACHE_SIZE", "384"));
+        MAX_TERRAIN_CACHE_SIZE = Integer.parseInt(getEnvironmentVariable("MAX_TERRAIN_CACHE_SIZE", Integer.toString(384)));
 
         NGAFID_USE_MARIA_DB = Boolean.parseBoolean(getEnvironmentVariable("NGAFID_USE_MARIA_DB", "false"));
         NGAFID_EMAIL_ENABLED = Boolean.parseBoolean(getEnvironmentVariable("NGAFID_EMAIL_ENABLED", "false"));
         DISABLE_PERSISTENT_SESSIONS = Boolean.parseBoolean(getEnvironmentVariable("DISABLE_PERSISTANT_SESSIONS", "false"));
+        MEMORY_EFFICIENT_UPLOAD_PROCESSOR = Boolean.parseBoolean(getEnvironmentVariable("MEMORY_EFFICIENT_UPLOAD_PROCESSOR", "true"));
 
         AIRPORTS_FILE = getEnvironmentVariable("AIRPORTS_FILE");
         RUNWAYS_FILE = getEnvironmentVariable("RUNWAYS_FILE");

@@ -17,12 +17,14 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.ClosedChannelException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -128,6 +130,16 @@ public class Pipeline implements AutoCloseable {
      * (4) Insert the created flights into the database.
      */
     public void execute() {
+        if (Config.MEMORY_EFFICIENT_UPLOAD_PROCESSOR)
+            executeMemoryEfficient();
+        else
+            executeFast();
+    }
+
+    /**
+     * Throws all tasks into a threadpool; this should minimize core downtime but will eat more memory.
+     */
+    private void executeFast() {
         if (Pipeline.pool == null)
             initialize();
 
@@ -135,24 +147,99 @@ public class Pipeline implements AutoCloseable {
 
         var zipEntries = getValidFilesStream().toList();
 
-        var handles = new ArrayList<ForkJoinTask<Void>>();
-
         for (ZipArchiveEntry entry : zipEntries) {
             try {
                 FlightFileProcessor fileProcessor = create(entry);
                 if (fileProcessor != null) {
-                    handles.add(pool.submit(fileProcessor));
+                    pool.submit(fileProcessor);
                 }
-            } catch (IOException | FatalFlightFileException | SQLException e) {
+            } catch (SQLException | IOException | FatalFlightFileException e) {
                 fail(entry.getName(), e);
             }
         }
 
-        LOG.info("Executing...");
-        for (ForkJoinTask<?> handle : handles) {
-            handle.join();
+        // FlightFileProcessor forks some tasks off without explicitly waiting for them to do async IO.
+        // We need to wait until these tasks have completed.
+        while (!pool.awaitQuiescence(10, TimeUnit.SECONDS)) {
+            LOG.info("Waiting for pool quiescence...");
         }
-        LOG.info("Joined.");
+
+        LOG.info("Done...");
+    }
+
+    /**
+     * Only executes up to PARALLELISM tasks at a time, ensuring we only read up to that many files from the zip into
+     * memory at any one time.
+     */
+    private void executeMemoryEfficient() {
+        var taskQueue = new ArrayBlockingQueue<Object>(Config.PARALLELISM);
+        var zipEntries = getValidFilesStream().toList();
+
+        new Thread(() -> {
+            for (var entry : zipEntries) {
+                try {
+                    FlightFileProcessor fileProcessor = create(entry);
+                    if (fileProcessor != null) {
+                        while (true) {
+                            try {
+                                taskQueue.put(fileProcessor);
+                                break;
+                            } catch (InterruptedException e) {
+                                // Ignore...
+                            }
+                        }
+                    }
+                } catch (SQLException | FatalFlightFileException e) {
+                    fail(entry.getName(), e);
+                } catch (IOException e) {
+                    // An IOException at this point in time probably means something is wrong with the zip file, it may
+                    // be broken. Just give up.
+                    e.printStackTrace();
+                    fail(entry.getName(), e);
+                    break;
+                }
+            }
+            for (int i = 0; i < Config.PARALLELISM; i++) {
+                while (true) {
+                    try {
+                        taskQueue.put(new Object());
+                        break;
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                }
+            }
+        }).start();
+
+        var handles = new ArrayList<Thread>();
+        for (int i = 0; i < Config.PARALLELISM; i++) {
+            var worker = new Thread(() -> {
+                while (true) {
+                    try {
+                        var task = taskQueue.take();
+                        if (task instanceof FlightFileProcessor proc) {
+                            proc.call();
+                        } else {
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            worker.start();
+            handles.add(i, worker);
+        }
+
+        for (var handle : handles) {
+            while (true) {
+                try {
+                    handle.join();
+                    break;
+                } catch (InterruptedException e) {
+                }
+            }
+        }
     }
 
     /**
@@ -183,7 +270,7 @@ public class Pipeline implements AutoCloseable {
      */
     private FlightFileProcessor create(ZipArchiveEntry entry) throws IOException, SQLException, FatalFlightFileException {
         String filename = entry.getName();
-        LOG.info("Creating flight builder for file: '" + filename + "'");
+        LOG.fine("Creating flight builder for file: '" + filename + "'");
 
         int index = filename.lastIndexOf('.');
         String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
@@ -232,7 +319,6 @@ public class Pipeline implements AutoCloseable {
             fb.meta.airframe = new Airframes.Airframe(connection, fb.meta.airframe.getName(), fb.meta.airframe.getType());
             return fb.build(connection);
         } catch (FlightProcessingException | SQLException e) {
-            e.printStackTrace();
             LOG.info("Encountered an irrecoverable issue processing a flight");
             fail(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
             return null;
@@ -271,8 +357,10 @@ public class Pipeline implements AutoCloseable {
      * Add an upload exception to the flightError map for the given filename.
      */
     public void fail(String filename, Exception e) {
-        LOG.info("Encountered an irrecoverable issue processing flight file '" + filename + "'");
-        e.printStackTrace();
+        if (!(e instanceof ClosedChannelException)) {
+            LOG.info("Encountered an irrecoverable issue processing flight file '" + filename + "'");
+            e.printStackTrace();
+        }
         this.flightErrors.put(filename, new UploadException(e.getMessage(), e, filename));
     }
 
