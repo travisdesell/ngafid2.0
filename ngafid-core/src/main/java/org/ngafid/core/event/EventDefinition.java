@@ -3,6 +3,7 @@ package org.ngafid.core.event;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.ngafid.core.Database;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.util.filters.Filter;
@@ -12,7 +13,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public class EventDefinition {
@@ -26,8 +30,20 @@ public class EventDefinition {
     /*
      * Caches event definitions by name. Events are rarely added anyways...
      */
-    private static final Map<String, List<EventDefinition>> NAME_TO_EVENT_DEFINITIONS = new HashMap<>();
-    private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
+    private static final Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = new ConcurrentHashMap<>();
+
+    static {
+        String query = "SELECT id, name FROM event_definitions";
+        try (Connection connection = Database.getConnection(); PreparedStatement ps = connection.prepareStatement(query); ResultSet resultSet = ps.executeQuery()) {
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public enum SeverityType {
         MIN,
@@ -174,43 +190,7 @@ public class EventDefinition {
         return getEventDefinitionFromDB(connection, query);
     }
 
-    public static List<EventDefinition> getEventDefs(Connection connection, String eventName) throws SQLException {
-        if (NAME_TO_EVENT_DEFINITIONS.containsKey(eventName)) return NAME_TO_EVENT_DEFINITIONS.get(eventName);
-
-        List<EventDefinition> definitions = new ArrayList<>();
-
-        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE name = ?";
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, eventName);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    EventDefinition ed = new EventDefinition(resultSet);
-                    definitions.add(ed);
-                }
-            }
-        }
-
-        NAME_TO_EVENT_DEFINITIONS.put(eventName, definitions);
-
-        return definitions;
-    }
-
     public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
-        if (EVENT_DEFINITION_ID_TO_NAME == null) {
-            String query = "SELECT id, name FROM event_definitions";
-            try (PreparedStatement ps = connection.prepareStatement(query); ResultSet resultSet = ps.executeQuery()) {
-
-                EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
-
-                while (resultSet.next()) {
-                    int id = resultSet.getInt("id");
-                    String name = resultSet.getString("name");
-                    EVENT_DEFINITION_ID_TO_NAME.put(id, name);
-                }
-            }
-        }
-
         return EVENT_DEFINITION_ID_TO_NAME;
     }
 

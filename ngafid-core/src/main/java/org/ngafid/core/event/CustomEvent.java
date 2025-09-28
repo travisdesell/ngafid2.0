@@ -22,6 +22,7 @@ public class CustomEvent extends Event {
     private static EventDefinition LOW_END_FUEL_CESSNA_172 = null;
     private static EventDefinition LOW_END_FUEL_PA_44 = null;
 
+    // These maps absolutely should not be written to after static initialization.
     public static final Map<Integer, EventDefinition> LOW_FUEL_EVENT_DEFINITIONS = new HashMap<>();
     public static final Map<Integer, Double> LOW_FUEL_EVENT_THRESHOLDS = new HashMap<>();
 

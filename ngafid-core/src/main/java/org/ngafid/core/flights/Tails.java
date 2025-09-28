@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public final class Tails {
@@ -20,9 +21,9 @@ public final class Tails {
     private static class FleetInstance {
         private final int fleetId;
 
-        private final Map<String, String> idMap = new HashMap<>(); // tail to systemId
-        private final Map<String, String> tailMap = new HashMap<>(); // systemId to tail
-        private final Map<String, Boolean> confirmedMap = new HashMap<>(); // systemId to tailConfirmed
+        private final Map<String, String> idMap = new ConcurrentHashMap<>(); // tail to systemId
+        private final Map<String, String> tailMap = new ConcurrentHashMap<>(); // systemId to tail
+        private final Map<String, Boolean> confirmedMap = new ConcurrentHashMap<>(); // systemId to tailConfirmed
 
         FleetInstance(int fleetId) {
             this.fleetId = fleetId;

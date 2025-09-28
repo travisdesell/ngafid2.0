@@ -33,6 +33,7 @@ public class ComputeEvent extends ComputeStep {
 
     /**
      * Maps fleet id to event definitions that are particular to that fleet.
+     * Should not be written to after static initialization.
      */
     private static final Map<Integer, List<EventDefinition>> FLEET_EVENT_DEFS = new HashMap<>();
 

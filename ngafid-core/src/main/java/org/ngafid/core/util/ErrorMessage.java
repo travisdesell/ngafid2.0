@@ -4,12 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ErrorMessage {
-    private static final Map<String, Integer> ID_MAP = new HashMap<>();
-    private static final Map<Integer, String> MESSAGE_MAP = new HashMap<>();
+    private static final Map<String, Integer> ID_MAP = new ConcurrentHashMap<>();
+    private static final Map<Integer, String> MESSAGE_MAP = new ConcurrentHashMap<>();
 
     private ErrorMessage() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated.");

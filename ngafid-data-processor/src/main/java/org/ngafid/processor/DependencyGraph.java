@@ -37,7 +37,6 @@ public class DependencyGraph {
     private List<DependencyNode> sortedNodes;
     private HashSet<DependencyNode> visited;
     private HashSet<DependencyNode> marked;
-    private List<DependencyNode> toVisit;
 
     /**
      * Create nodes for each step and create a mapping from output column name
@@ -79,9 +78,8 @@ public class DependencyGraph {
      * column(s).
      *
      * @param step The process step to add to the graph.
-     * @return The node that was created.
      */
-    private DependencyNode registerStep(ComputeStep step) throws FatalFlightFileException {
+    private void registerStep(ComputeStep step) throws FatalFlightFileException {
         DependencyNode node = new DependencyNode(step);
         nodes.add(node);
 
@@ -90,7 +88,6 @@ public class DependencyGraph {
             if ((other = columnToSource.put(outputColumn, node)) != null) nodeConflictError(step, other.step);
         }
 
-        return node;
     }
 
     /**
@@ -133,7 +130,7 @@ public class DependencyGraph {
      * @return
      */
     private List<DependencyNode> topologicalSort() {
-        toVisit = new ArrayList<>(nodes);
+        List<DependencyNode> toVisit = new ArrayList<>(nodes);
         sortedNodes = new ArrayList<>();
         visited = new HashSet<>();
         marked = new HashSet<>();
@@ -177,7 +174,12 @@ public class DependencyGraph {
     }
 
     public void computeSequential() throws FlightProcessingException {
-        topologicalSort().forEach(DependencyNode::compute);
+        topologicalSort().forEach(x -> {
+            long startnano = System.nanoTime();
+            x.compute();
+            long endnano = System.nanoTime();
+            LOG.fine("Took " + ((endnano - startnano) / 1_000_000_000.0) + " s to compute " + x.step);
+        }); //DependencyNode::compute);
         handleExceptions();
     }
 
@@ -224,7 +226,7 @@ public class DependencyGraph {
 
             for (var parent : node.requiredBy) {
                 if (!parent.step.isRequired()) {
-                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent.step + "' has a " +
+                    LOG.severe("ERROR in your DependencyGraph! The optional step '" + parent.step + "' has a " +
                             "required dependent step '" + node.step + "'.");
                     System.exit(1);
                 }
@@ -244,7 +246,7 @@ public class DependencyGraph {
 
             while ((dst = q.poll()) != null) {
                 if (dst == src) {
-                    System.err.println("ERROR in your DependencyGraph! Cycle was detected from step '" + src + "' to " +
+                    LOG.severe("ERROR in your DependencyGraph! Cycle was detected from step '" + src + "' to " +
                             "step '" + dst + "'.");
                     System.exit(1);
                 }
@@ -335,7 +337,7 @@ public class DependencyGraph {
                             "reason:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
                 } else {
-                    LOG.info("Optional step " + step.getClass().getName() +
+                    LOG.fine("Optional step " + step.getClass().getName() +
                             " has been disabled because:\n\t" + reason);
                     if (e != null)
                         exceptions.add(new MalformedFlightFileException(reason));
@@ -359,7 +361,6 @@ public class DependencyGraph {
             }
 
             if (enabled.get()) {
-
                 try {
                     if (step.applicable()) {
                         step.compute();

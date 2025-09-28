@@ -97,12 +97,29 @@ public enum TerrainCache {
         return (int) Math.max(0, msl - altitudeFt);
     }
 
+    // We use this as a key into our cache, which only cares about tile-level equality. Thus for eq and hashcode we
+    // ignore the full double lat/lon coord.
     private record TileCoordinate(double lat, double lon, int latIndex, int lonIndex) {
         static TileCoordinate fromLatLon(double lat, double lon) {
             int latIndex = -((int) Math.ceil(lat) - 91);
             int lonIndex = (int) Math.floor(lon) + 180;
 
             return new TileCoordinate(lat, lon, latIndex, lonIndex);
+        }
+
+        @Override
+        public boolean equals(Object otherObj) {
+            if (otherObj instanceof TileCoordinate other) {
+                return latIndex == other.latIndex && lonIndex == other.lonIndex;
+            }
+
+            return false;
+        }
+
+        // This should be a perfectly unique hash on the indices.
+        @Override
+        public int hashCode() {
+            return latIndex << 16 | lonIndex;
         }
 
         SRTMTile getTile() throws TerrainUnavailableException {
