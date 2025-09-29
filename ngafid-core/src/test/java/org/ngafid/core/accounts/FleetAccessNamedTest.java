@@ -68,6 +68,9 @@ public class FleetAccessNamedTest {
                     "DELETE FROM fleet WHERE id IN (999, 998, 997)")) {
                 stmt.executeUpdate();
             }
+            // Close the connection to prevent connection pool exhaustion
+            connection.close();
+            connection = null;
         }
     }
 
@@ -84,7 +87,7 @@ public class FleetAccessNamedTest {
     }
 
     @Test
-    @DisplayName("Should test updateFleetName method with real database operations")
+    @DisplayName("Should test updateFleetName method with ")
     public void testUpdateFleetNameWithRealDatabaseOperations() throws SQLException, AccountException {
         // Get a FleetAccessNamed object from the database using existing test data
         ArrayList<FleetAccess> allAccess = FleetAccessNamed.getAllFleetAccessEntries(connection, 999);
@@ -119,7 +122,7 @@ public class FleetAccessNamedTest {
     }
 
     @Test
-    @DisplayName("Should test updateFleetName with real database")
+    @DisplayName("Should test updateFleetName ")
     public void testUpdateFleetNameWithRealDatabase() throws SQLException, AccountException {
         // Get a FleetAccessNamed object from the database using existing test data
         ArrayList<FleetAccess> allAccess = FleetAccessNamed.getAllFleetAccessEntries(connection, 999);
@@ -245,7 +248,7 @@ public class FleetAccessNamedTest {
     }
     
     @Test
-    @DisplayName("Should test fleet access with real database operations and edge cases")
+    @DisplayName("Should test fleet access edge cases")
     public void testFleetAccessWithRealDatabaseOperationsAndEdgeCases() throws SQLException, AccountException {
         // Test with a user who has access to multiple fleets
         ArrayList<FleetAccess> allAccess = FleetAccessNamed.getAllFleetAccessEntries(connection, 999);

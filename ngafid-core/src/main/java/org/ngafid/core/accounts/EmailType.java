@@ -328,7 +328,7 @@ public enum EmailType {
         }
 
         insertEmailTypesIntoDatabase();
-        System.exit(0);
+        // System.exit(0); // Removed to prevent VM crashes during testing
     }
 
 }

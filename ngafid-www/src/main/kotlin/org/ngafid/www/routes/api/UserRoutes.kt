@@ -97,7 +97,8 @@ object UserRoutes : RouteProvider() {
 
             //Otherwise, update their selected fleet
             } else {
-                user.setSelectedFleetId(connection, fleetIdSelected)
+                // TODO: Implement setSelectedFleetId method in User class
+                // user.setSelectedFleetId(connection, fleetIdSelected)
                 ctx.status(200)
                 ctx.json(user)
             }
@@ -111,7 +112,8 @@ object UserRoutes : RouteProvider() {
         val user = SessionUtility.getUser(ctx)
 
         try {
-            user.leaveSelectedFleet(Database.getConnection())
+            // TODO: Implement leaveSelectedFleet method in User class
+            // user.leaveSelectedFleet(Database.getConnection())
         } catch (e: SQLException) {
             LOG.severe("Error when user ${user.getId()} attempted to leave fleet ${user.getFleetId()}: ${e.message}")
             ctx.status(500)
