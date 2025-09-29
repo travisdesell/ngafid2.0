@@ -767,7 +767,7 @@ public final class User implements Serializable {
 
             //User cannot be the last Manager of the current fleet
             final String guaranteeManagerSQL = """
-                SELECT COUNT(*) FROM fleet_access
+                SELECT user_id FROM fleet_access
                 WHERE fleet_id = ? AND type = 'MANAGER' AND user_id <> ?
                 FOR UPDATE
             """;
@@ -779,13 +779,10 @@ public final class User implements Serializable {
 
                 try (ResultSet rs = ps.executeQuery()) {
 
-                    //No result, disallow leaving
-                    if (!rs.next()) {
-                        LOG.severe("Failed to verify manager count; disallowing leave.");
-                        throw new SQLException("Unable to leave current fleet: manager verification failed.");
+                    int managerCount = 0;
+                    while (rs.next()) {
+                        managerCount++;
                     }
-
-                    int managerCount = rs.getInt(1);
 
                     //No other managers, disallow leaving
                     if (managerCount == 0) {
@@ -1290,6 +1287,9 @@ public final class User implements Serializable {
 
         return this.id == u.id && this.email.equals(u.email) && this.firstName.equals(u.firstName) && this.lastName.equals(u.lastName) && this.country.equals(u.country) && this.state.equals(u.state)
                 && this.city.equals(u.city) && this.address.equals(u.address) & this.phoneNumber.equals(u.phoneNumber) && this.zipCode.equals(u.zipCode) && this.admin == u.admin && this.aggregateView == u.aggregateView
-                && this.fleetAccess.equals(u.fleetAccess) && this.fleet.equals(u.fleet);
+                && Objects.equals(this.fleetAccess, u.fleetAccess) && Objects.equals(this.fleet, u.fleet);
     }
 }
+
+
+   

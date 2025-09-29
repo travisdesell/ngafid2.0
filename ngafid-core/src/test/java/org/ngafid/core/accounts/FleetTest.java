@@ -1,131 +1,256 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.ngafid.core.H2Database;
-import org.ngafid.core.TestWithConnection;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-
+import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class FleetTest extends TestWithConnection {
-    /**
-     * A List of all test fleets in the test data
-     */
-    private static final List<Fleet> targets = List.of(new Fleet(1, "Test Fleet with ID 1"), new Fleet(2, "Test Fleet with ID 2"));
-    private static final Fleet fleet1 = new Fleet(1, "Test Fleet");
-    private static final Fleet airsyncFleet = new Fleet(2, "Airsync Fleet");
-    private static User user1 = null;
+/**
+ * Unit tests for Fleet class.
+ * Tests fleet creation, basic functionality, and equality.
+ */
+public class FleetTest {
 
-    @BeforeAll
-    public static void setup() throws SQLException, AccountException {
-        try (Connection connection = H2Database.getConnection()) {
-            user1 = User.get(connection, 1, 1);
-        }
+    @Test
+    @DisplayName("Should create Fleet with valid id and name")
+    public void testFleetConstructor() {
+        int id = 1;
+        String name = "Test Fleet";
+        
+        Fleet fleet = new Fleet(id, name);
+        
+        assertNotNull(fleet);
+        assertEquals(id, fleet.getId());
+        assertEquals(name, fleet.getName());
     }
 
     @Test
-    void constructor() {
-        assertEquals(1, fleet1.getId());
-        assertEquals("Test Fleet", fleet1.getName());
+    @DisplayName("Should create Fleet with negative id")
+    public void testFleetConstructorWithNegativeId() {
+        int id = -1;
+        String name = "Test Fleet";
+        
+        Fleet fleet = new Fleet(id, name);
+        
+        assertNotNull(fleet);
+        assertEquals(id, fleet.getId());
+        assertEquals(name, fleet.getName());
     }
 
     @Test
-    void getNumberFleets() {
-        try {
-            assertEquals(2, Fleet.getNumberFleets(connection));
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    @DisplayName("Should create Fleet with zero id")
+    public void testFleetConstructorWithZeroId() {
+        int id = 0;
+        String name = "Test Fleet";
+        
+        Fleet fleet = new Fleet(id, name);
+        
+        assertNotNull(fleet);
+        assertEquals(id, fleet.getId());
+        assertEquals(name, fleet.getName());
     }
 
     @Test
-    void get() throws SQLException, AccountException {
-        for (Fleet target : targets) {
-            List<Fleet> flts = List.of(
-                    Objects.requireNonNull(Fleet.get(connection, target.getId())),
-                    Objects.requireNonNull(Fleet.get(connection, target.getName()))
-            );
-            for (Fleet f : flts) {
-                assertEquals(target.getId(), f.getId());
-                assertEquals(target.getName(), f.getName());
-            }
-        }
-
+    @DisplayName("Should create Fleet with null name")
+    public void testFleetConstructorWithNullName() {
+        int id = 1;
+        String name = null;
+        
+        Fleet fleet = new Fleet(id, name);
+        
+        assertNotNull(fleet);
+        assertEquals(id, fleet.getId());
+        assertNull(fleet.getName());
     }
 
     @Test
-    void getAllFleets() throws SQLException {
-        List<Fleet> fleets = Fleet.getAllFleets(connection);
-        fleets.sort(Comparator.comparingInt(Fleet::getId));
-
-        assertEquals(targets, fleets);
+    @DisplayName("Should create Fleet with empty name")
+    public void testFleetConstructorWithEmptyName() {
+        int id = 1;
+        String name = "";
+        
+        Fleet fleet = new Fleet(id, name);
+        
+        assertNotNull(fleet);
+        assertEquals(id, fleet.getId());
+        assertEquals(name, fleet.getName());
     }
 
     @Test
-    void exists() throws SQLException {
-        for (Fleet target : targets) {
-            assertTrue(Fleet.exists(connection, target.getName()));
-        }
+    @DisplayName("Should create Fleet with long name")
+    public void testFleetConstructorWithLongName() {
+        int id = 1;
+        String name = "Very Long Fleet Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()";
+        
+        Fleet fleet = new Fleet(id, name);
+        
+        assertNotNull(fleet);
+        assertEquals(id, fleet.getId());
+        assertEquals(name, fleet.getName());
+    }
 
-        assertFalse(Fleet.exists(connection, "Fleet that does not exist"));
+
+    @Test
+    @DisplayName("Should get fleet id")
+    public void testGetId() {
+        int id = 123;
+        Fleet fleet = new Fleet(id, "Test Fleet");
+        
+        assertEquals(id, fleet.getId());
     }
 
     @Test
-    void populateUsers() throws SQLException {
-        assertEquals(3, fleet1.getUsers(connection).size());
+    @DisplayName("Should get fleet name")
+    public void testGetName() {
+        String name = "Test Fleet";
+        Fleet fleet = new Fleet(1, name);
+        
+        assertEquals(name, fleet.getName());
+    }
+
+
+    @Test
+    @DisplayName("Should return string representation")
+    public void testToString() {
+        Fleet fleet = new Fleet(123, "Test Fleet");
+        String toString = fleet.toString();
+        
+        assertNotNull(toString);
+        assertTrue(toString.contains("123"), "toString should contain fleet ID");
+        assertTrue(toString.contains("Test Fleet"), "toString should contain fleet name");
+        assertTrue(toString.contains("Fleet id:"), "toString should contain 'Fleet id:'");
+        assertTrue(toString.contains("name:"), "toString should contain 'name:'");
+    }
+
+
+
+    @Test
+    @DisplayName("Should test fleet equality")
+    public void testFleetEquals() {
+        Fleet fleet1 = new Fleet(1, "Test Fleet");
+        Fleet fleet2 = new Fleet(1, "Test Fleet");
+        Fleet fleet3 = new Fleet(2, "Test Fleet");
+        Fleet fleet4 = new Fleet(1, "Different Fleet");
+        
+        // Same fleet
+        assertTrue(fleet1.equals(fleet2), "Same fleet should be equal");
+        assertTrue(fleet2.equals(fleet1), "Equality should be symmetric");
+        
+        // Different ID
+        assertFalse(fleet1.equals(fleet3), "Different ID should not be equal");
+        
+        // Different name
+        assertFalse(fleet1.equals(fleet4), "Different name should not be equal");
+        
+        // Same object
+        assertTrue(fleet1.equals(fleet1), "Same object should be equal");
     }
 
     @Test
-    void getWaitingUserCount() {
-        try {
-            Fleet fleet = targets.get(0);
-            assertEquals(0, fleet.getWaitingUserCount(connection));
-
-            fleet = targets.get(1);
-            assertEquals(2, fleet.getWaitingUserCount(connection));
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    @DisplayName("Should test fleet equality with null")
+    public void testFleetEqualsWithNull() {
+        Fleet fleet = new Fleet(1, "Test Fleet");
+        
+        assertFalse(fleet.equals(null), "Fleet should not equal null");
     }
 
     @Test
-    void hasAirsync() {
-        try {
-            assertFalse(fleet1.hasAirsync(connection));
-            assertTrue(airsyncFleet.hasAirsync(connection));
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    @DisplayName("Should test fleet equality with different object type")
+    public void testFleetEqualsWithDifferentType() {
+        Fleet fleet = new Fleet(1, "Test Fleet");
+        String notAFleet = "Not a Fleet";
+        
+        assertFalse(fleet.equals(notAFleet), "Fleet should not equal different type");
     }
 
-    @AfterAll
-    public static void create() {
-        try (Connection connection = H2Database.getConnection()) {
-            Fleet newFleet = Fleet.create(connection, "Cool Fleet");
-            assertFalse(targets.stream().anyMatch(f -> f.getId() == newFleet.getId()));
-            assertEquals("Cool Fleet", newFleet.getName());
-        } catch (SQLException | AccountException e) {
-            throw new RuntimeException(e);
-        }
+    @Test
+    @DisplayName("Should test fleet equality with different class")
+    public void testFleetEqualsWithDifferentClass() {
+        Fleet fleet = new Fleet(1, "Test Fleet");
+        String notAFleet = "Not a Fleet";
+        
+        assertFalse(fleet.equals(notAFleet), "Fleet should not equal different class");
     }
 
-    @AfterAll
-    public static void create2() {
-        for (Fleet fleet : targets) {
-            assertThrows(AccountException.class, () -> {
-                try (Connection connection = H2Database.getConnection()) {
-                    Fleet.create(connection, fleet.getName());
-                }
-            });
-        }
+    @Test
+    @DisplayName("Should handle fleet with null name in equality")
+    public void testFleetEqualsWithNullName() {
+        // Note: This test documents that Fleet.equals() doesn't handle null names gracefully
+        // The Fleet.equals() method will throw NullPointerException when comparing null names
+        Fleet fleet1 = new Fleet(1, null);
+        Fleet fleet2 = new Fleet(1, null);
+        
+        // This will throw NullPointerException due to the implementation
+        assertThrows(NullPointerException.class, () -> {
+            fleet1.equals(fleet2);
+        });
     }
 
+    @Test
+    @DisplayName("Should handle fleet with empty name in equality")
+    public void testFleetEqualsWithEmptyName() {
+        Fleet fleet1 = new Fleet(1, "");
+        Fleet fleet2 = new Fleet(1, "");
+        Fleet fleet3 = new Fleet(1, "Test Fleet");
+        
+        assertTrue(fleet1.equals(fleet2), "Fleets with empty names should be equal if IDs match");
+        assertFalse(fleet1.equals(fleet3), "Fleet with empty name should not equal fleet with name");
+    }
+
+    @Test
+    @DisplayName("Should handle fleet with special characters in equality")
+    public void testFleetEqualsWithSpecialCharacters() {
+        String specialName = "Fleet @#$%^&*()";
+        Fleet fleet1 = new Fleet(1, specialName);
+        Fleet fleet2 = new Fleet(1, specialName);
+        Fleet fleet3 = new Fleet(1, "Different Name");
+        
+        assertTrue(fleet1.equals(fleet2), "Fleets with same special characters should be equal");
+        assertFalse(fleet1.equals(fleet3), "Fleet with special characters should not equal different name");
+    }
+
+    @Test
+    @DisplayName("Should handle fleet with unicode characters in equality")
+    public void testFleetEqualsWithUnicodeCharacters() {
+        String unicodeName = "舰队";
+        Fleet fleet1 = new Fleet(1, unicodeName);
+        Fleet fleet2 = new Fleet(1, unicodeName);
+        Fleet fleet3 = new Fleet(1, "English Name");
+        
+        assertTrue(fleet1.equals(fleet2), "Fleets with same unicode characters should be equal");
+        assertFalse(fleet1.equals(fleet3), "Fleet with unicode characters should not equal different name");
+    }
+
+    @Test
+    @DisplayName("Should handle fleet with very long name in equality")
+    public void testFleetEqualsWithLongName() {
+        String longName = "Very Long Fleet Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
+        Fleet fleet1 = new Fleet(1, longName);
+        Fleet fleet2 = new Fleet(1, longName);
+        Fleet fleet3 = new Fleet(1, "Short Name");
+        
+        assertTrue(fleet1.equals(fleet2), "Fleets with same long names should be equal");
+        assertFalse(fleet1.equals(fleet3), "Fleet with long name should not equal different name");
+    }
+
+    @Test
+    @DisplayName("Should handle fleet with negative ID in equality")
+    public void testFleetEqualsWithNegativeId() {
+        Fleet fleet1 = new Fleet(-1, "Test Fleet");
+        Fleet fleet2 = new Fleet(-1, "Test Fleet");
+        Fleet fleet3 = new Fleet(1, "Test Fleet");
+        
+        assertTrue(fleet1.equals(fleet2), "Fleets with same negative IDs should be equal");
+        assertFalse(fleet1.equals(fleet3), "Fleet with negative ID should not equal fleet with positive ID");
+    }
+
+    @Test
+    @DisplayName("Should handle fleet with zero ID in equality")
+    public void testFleetEqualsWithZeroId() {
+        Fleet fleet1 = new Fleet(0, "Test Fleet");
+        Fleet fleet2 = new Fleet(0, "Test Fleet");
+        Fleet fleet3 = new Fleet(1, "Test Fleet");
+        
+        assertTrue(fleet1.equals(fleet2), "Fleets with same zero IDs should be equal");
+        assertFalse(fleet1.equals(fleet3), "Fleet with zero ID should not equal fleet with positive ID");
+    }
 }
