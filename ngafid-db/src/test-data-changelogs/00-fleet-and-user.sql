@@ -8,11 +8,11 @@ VALUES (1, 'Test Fleet with ID 1'),
 --changeset josh:make-dummy-users labels:accounts,users
 INSERT INTO user
 VALUES (1, 'test@email.com', 'aaaaaaaaaaaaaaaaaaaa', 'John', 'Doe', '123 House Road', 'CityName', 'CountryName',
-        'StateName', '10001', '', '', CURRENT_DATE, 0, 0, CURRENT_DATE, FALSE, NULL, NULL, FALSE),
+        'StateName', '10001', '', '', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, NULL, FALSE),
        (2, 'test1@email.com', 'aaaaaaaaaaaaaaaaaaaa', 'John Admin', 'Aggregate Doe', '123 House Road', 'CityName',
-        'CountryName', 'StateName', '10001', '', '', CURRENT_DATE, 1, 1, CURRENT_DATE, FALSE, NULL, NULL, FALSE),
+        'CountryName', 'StateName', '10001', '', '', CURRENT_DATE, 1, 1, CURRENT_DATE, -1, FALSE, NULL, NULL, FALSE),
        (3, 'test2@email.com', 'aaaaaaaaaaaaaaaaaaaa', 'John Denied', 'Denied Doe', '123 House Road', 'CityName',
-        'CountryName', 'StateName', '10001', '', '', CURRENT_DATE, 0, 0, CURRENT_DATE, FALSE, NULL, NULL, FALSE);
+        'CountryName', 'StateName', '10001', '', '', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, NULL, FALSE);
 
 
 --changeset josh:make-dummy-fleet-access labels:accounts,fleet
