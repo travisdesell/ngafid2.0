@@ -130,7 +130,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
                                     //Not first, but all preceding airframe event counts are zero, so this is effectively first
                                     const isFirstForRow =
-                                        afKeys.slice(0, i-1).every(prevKey => Number(chartData[i][prevKey] || 0) === 0);
+                                        afKeys.slice(0, i).every(prevKey => Number(chartData[i][prevKey] || 0) === 0);
                                     if (isFirstForRow)
                                         isFirst = true;
 
