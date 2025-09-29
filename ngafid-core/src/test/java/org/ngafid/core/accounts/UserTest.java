@@ -1,6 +1,7 @@
 package org.ngafid.core.accounts;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.ngafid.core.TestWithConnection;
@@ -35,6 +36,22 @@ public class UserTest extends TestWithConnection {
         user2Fleet2 = User.get(connection, 2, 2);
         user3fleet1 = User.get(connection, 3, 1); // User 3 with DENIED access to fleet 1
         user1Fleet2Waiting = User.get(connection, 1, 2); // User 1 with WAITING access to fleet 2
+    }
+
+    @AfterEach
+    public void cleanupTestData() throws SQLException {
+        // Clean up any fleet access records created during tests
+        // but preserve the original test data by restoring it
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id IN (1, 2, 3)")) {
+            stmt.executeUpdate();
+        }
+        
+        // Restore the original test data
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
+            stmt.executeUpdate();
+        }
     }
 
     // ==================== GET USER BY ID TESTS ====================
@@ -1865,6 +1882,11 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should get fleet access getters")
     public void testFleetAccessGetters() throws SQLException, AccountException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess fleetAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         
         assertEquals(1, fleetAccess.getUserId());
@@ -1875,6 +1897,11 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should check fleet access type checks")
     public void testFleetAccessTypeChecks() throws SQLException, AccountException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess managerAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         assertTrue(managerAccess.isManager());
         assertFalse(managerAccess.isUpload());
@@ -1882,18 +1909,38 @@ public class UserTest extends TestWithConnection {
         assertFalse(managerAccess.isWaiting());
         assertFalse(managerAccess.isDenied());
 
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 2")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess uploadAccess = FleetAccess.create(connection, 2, 2, FleetAccess.UPLOAD);
         assertTrue(uploadAccess.isUpload());
         assertFalse(uploadAccess.isManager());
 
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 3 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess viewAccess = FleetAccess.create(connection, 3, 1, FleetAccess.VIEW);
         assertTrue(viewAccess.isView());
         assertFalse(viewAccess.isManager());
 
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 2")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess waitingAccess = FleetAccess.create(connection, 1, 2, FleetAccess.WAITING);
         assertTrue(waitingAccess.isWaiting());
         assertFalse(waitingAccess.isManager());
 
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess deniedAccess = FleetAccess.create(connection, 2, 1, FleetAccess.DENIED);
         assertTrue(deniedAccess.isDenied());
         assertFalse(deniedAccess.isManager());
@@ -1902,6 +1949,11 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should get fleet access by user ID")
     public void testFleetAccessGetByUserId() throws SQLException, AccountException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         FleetAccess.create(connection, 1, 2, FleetAccess.VIEW);
         
@@ -1926,11 +1978,16 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should get fleet access by user ID and fleet ID")
     public void testFleetAccessGetByUserIdAndFleetId() throws SQLException, AccountException {
-        FleetAccess.create(connection, 2, 1, FleetAccess.UPLOAD);
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
         
-        FleetAccess access = FleetAccess.get(connection, 2, 1);
+        FleetAccess.create(connection, 1, 1, FleetAccess.UPLOAD);
+        
+        FleetAccess access = FleetAccess.get(connection, 1, 1);
         assertNotNull(access);
-        assertEquals(2, access.getUserId());
+        assertEquals(1, access.getUserId());
         assertEquals(1, access.getFleetId());
         assertEquals(FleetAccess.UPLOAD, access.getAccessType());
     }
@@ -1944,27 +2001,39 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void testFleetAccessCreate() throws SQLException, AccountException {
-        // Create a new fleet access entry using existing user and fleet IDs
-        FleetAccess newAccess = FleetAccess.create(connection, 3, 2, FleetAccess.VIEW);
+        // Create a new fleet access entry using a user/fleet combination that doesn't exist
+        // User 1 has VIEW access to fleet 1, but we can create a MANAGER access (upgrade)
+        // First, delete the existing VIEW access
+        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
+        FleetAccess newAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         assertNotNull(newAccess);
-        assertEquals(3, newAccess.getUserId());
-        assertEquals(2, newAccess.getFleetId());
-        assertEquals(FleetAccess.VIEW, newAccess.getAccessType());
+        assertEquals(1, newAccess.getUserId());
+        assertEquals(1, newAccess.getFleetId());
+        assertEquals(FleetAccess.MANAGER, newAccess.getAccessType());
         
         // Verify it was created in the database
-        FleetAccess retrievedAccess = FleetAccess.get(connection, 3, 2);
+        FleetAccess retrievedAccess = FleetAccess.get(connection, 1, 1);
         assertNotNull(retrievedAccess);
-        assertEquals(FleetAccess.VIEW, retrievedAccess.getAccessType());
+        assertEquals(FleetAccess.MANAGER, retrievedAccess.getAccessType());
     }
 
     @Test
     public void testFleetAccessCreateDuplicate() throws SQLException, AccountException {
-        // Create first access using existing user and fleet IDs
-        FleetAccess.create(connection, 1, 2, FleetAccess.MANAGER);
+        // First delete the existing VIEW access for user 1 and fleet 1
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
+        // Create first access
+        FleetAccess.create(connection, 1, 1, FleetAccess.UPLOAD);
         
         // Try to create duplicate access
         assertThrows(AccountException.class, () -> {
-            FleetAccess.create(connection, 1, 2, FleetAccess.VIEW);
+            FleetAccess.create(connection, 1, 1, FleetAccess.VIEW);
         });
     }
 
@@ -2080,8 +2149,18 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void testFleetAccessEquals() throws SQLException, AccountException {
-        FleetAccess access1 = FleetAccess.create(connection, 1, 2, FleetAccess.MANAGER);
-        FleetAccess access2 = FleetAccess.get(connection, 1, 2); // Same as access1
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
+        FleetAccess access1 = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
+        FleetAccess access2 = FleetAccess.get(connection, 1, 1); // Same as access1
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 1")) {
+            stmt.executeUpdate();
+        }
+        
         FleetAccess access3 = FleetAccess.create(connection, 2, 1, FleetAccess.MANAGER);
         
         // Test equality

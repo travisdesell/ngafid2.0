@@ -1021,6 +1021,6 @@ public final class User implements Serializable {
 
         return this.id == u.id && this.email.equals(u.email) && this.firstName.equals(u.firstName) && this.lastName.equals(u.lastName) && this.country.equals(u.country) && this.state.equals(u.state)
                 && this.city.equals(u.city) && this.address.equals(u.address) & this.phoneNumber.equals(u.phoneNumber) && this.zipCode.equals(u.zipCode) && this.admin == u.admin && this.aggregateView == u.aggregateView
-                && this.fleetAccess.equals(u.fleetAccess) && this.fleet.equals(u.fleet);
+                && Objects.equals(this.fleetAccess, u.fleetAccess) && Objects.equals(this.fleet, u.fleet);
     }
 }
