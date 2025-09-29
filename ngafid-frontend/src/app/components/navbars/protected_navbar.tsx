@@ -30,9 +30,10 @@ export default function ProtectedNavbar() {
             method: "POST",
             credentials: "include"
         }).then((response) => {
-            if (!response.ok) {
+
+            if (!response.ok)
                 setModal(ErrorModal, {title: "Error", message: "An error occurred while logging out. Please try again."} );
-            }
+            
         }).catch((error) => {
             setModal(ErrorModal, {title: "Error", message: error.toString()} );
         }).finally(() => {
@@ -90,17 +91,17 @@ export default function ProtectedNavbar() {
                         <DropdownMenuContent>
 
                             {/* Event Analysis */}
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/trends">
                                     Trends
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/severities">
                                     Severities
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/heat_map">
                                     Heat Map
                                 </Link>
@@ -108,12 +109,12 @@ export default function ProtectedNavbar() {
 
                             {/* Event Info */}
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/event_statistics">
                                     Statistics
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/event_definitions">
                                     Definitions
                                 </Link>
@@ -132,7 +133,7 @@ export default function ProtectedNavbar() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/trends">
                                     Turn to Final
                                 </Link>
@@ -182,12 +183,12 @@ export default function ProtectedNavbar() {
                             <DropdownMenuSeparator/>
 
                             {/* Fleet Management */}
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/manage_fleet">
                                     Manage Fleet
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/system_ids">
                                     Manage Tail Numbers
                                 </Link>
@@ -195,12 +196,12 @@ export default function ProtectedNavbar() {
 
                             {/* Account Management */}
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/preferences">
                                     My Preferences
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/update_profile">
                                     Update Profile
                                 </Link>
@@ -208,7 +209,7 @@ export default function ProtectedNavbar() {
 
                             {/* Other */}
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/bug_report">
                                     Report a Bug
                                 </Link>
@@ -216,7 +217,7 @@ export default function ProtectedNavbar() {
 
                             {/* Log Out */}
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem asChild>
                                 <button onClick={attemptLogOut} className="button-generic w-full text-left">
                                     Log Out
                                 </button>
