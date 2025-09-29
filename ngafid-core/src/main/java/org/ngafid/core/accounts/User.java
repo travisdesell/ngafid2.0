@@ -767,7 +767,7 @@ public final class User implements Serializable {
 
             //User cannot be the last Manager of the current fleet
             final String guaranteeManagerSQL = """
-                SELECT COUNT(*) FROM fleet_access
+                SELECT user_id FROM fleet_access
                 WHERE fleet_id = ? AND type = 'MANAGER' AND user_id <> ?
                 FOR UPDATE
             """;
@@ -779,13 +779,10 @@ public final class User implements Serializable {
 
                 try (ResultSet rs = ps.executeQuery()) {
 
-                    //No result, disallow leaving
-                    if (!rs.next()) {
-                        LOG.severe("Failed to verify manager count; disallowing leave.");
-                        throw new SQLException("Unable to leave current fleet: manager verification failed.");
+                    int managerCount = 0;
+                    while (rs.next()) {
+                        managerCount++;
                     }
-
-                    int managerCount = rs.getInt(1);
 
                     //No other managers, disallow leaving
                     if (managerCount == 0) {
