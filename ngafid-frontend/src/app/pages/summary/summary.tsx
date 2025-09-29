@@ -353,6 +353,10 @@ export default function SummaryPage() {
         <span className="text-(--muted-foreground) text-base">No data available for the selected time range and airframe type(s).</span>
     )
 
+    const totalFlights = flightHoursByAirframe.reduce((sum, entry) => sum + entry.num_flights, 0);
+    const totalHours = flightHoursByAirframe.reduce((sum, entry) => sum + entry.total_flight_hours, 0);
+    const hasFlightHoursData = (flightHoursByAirframe.length > 0);
+
     const render = () => (
         <div className="overflow-x-hidden flex flex-col h-[100vh]">
 
@@ -443,19 +447,33 @@ export default function SummaryPage() {
                                     </tr>
 
                                     {
-                                        flightHoursByAirframe.map((data, index) => (
-                                            <tr key={index}>
-                                                <td className="truncate whitespace-nowrap overflow-hidden">
-                                                    {data.airframe}
-                                                </td>
-                                                <td className="truncate whitespace-nowrap overflow-hidden text-right">
-                                                    {data.num_flights}
-                                                </td>
-                                                <td className="truncate whitespace-nowrap overflow-hidden text-right">
-                                                    {data.total_flight_hours.toFixed(2)}
-                                                </td>
+                                        hasFlightHoursData
+                                        &&
+                                        <>
+                                            {/* Data Total Row */}
+                                            <tr className="font-bold">
+                                                <td>Total</td>
+                                                <td className="text-right">{totalFlights}</td>
+                                                <td className="text-right">{totalHours.toFixed(2)}</td>
                                             </tr>
-                                        ))
+
+                                            {/* Data Rows */}
+                                            {
+                                                flightHoursByAirframe.map((data, index) => (
+                                                    <tr key={index}>
+                                                        <td className="truncate whitespace-nowrap overflow-hidden">
+                                                            {data.airframe}
+                                                        </td>
+                                                        <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                            {data.num_flights}
+                                                        </td>
+                                                        <td className="truncate whitespace-nowrap overflow-hidden text-right">
+                                                            {data.total_flight_hours.toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            }
+                                        </>
                                     }
 
                                 </tbody>
@@ -463,7 +481,7 @@ export default function SummaryPage() {
                             </table>
 
                             {
-                                (flightHoursByAirframe.length === 0)
+                                (!hasFlightHoursData)
                                 &&
                                 renderNoDataAvailableMessage()
                             }

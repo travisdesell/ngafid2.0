@@ -82,7 +82,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
         <Card className="card-glossy">
             <CardHeader>
                 <CardTitle className="flex justify-between">
-                    Percentage of Flights With Event
+                    Percentage of Flights With Event (WIP)
                     {renderDateRangeMonthly()}
                 </CardTitle>
                 <CardDescription>
