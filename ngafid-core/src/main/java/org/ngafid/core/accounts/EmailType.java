@@ -328,7 +328,31 @@ public enum EmailType {
         }
 
         insertEmailTypesIntoDatabase();
-        // System.exit(0); // Removed to prevent VM crashes during testing
+        
+        // Only exit if not running in a test environment
+        if (!isRunningInTestEnvironment()) {
+            System.exit(0);
+        }
+    }
+    
+    /**
+     * Detects if the code is running in a test environment
+     * @return true if running in tests, false otherwise
+     */
+    private static boolean isRunningInTestEnvironment() {
+        // Check for common test frameworks
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTrace) {
+            String className = element.getClassName();
+            if (className.contains("junit") || 
+                className.contains("test") || 
+                className.contains("Test") ||
+                className.contains("surefire") ||
+                className.contains("maven")) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
