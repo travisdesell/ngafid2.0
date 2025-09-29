@@ -31,47 +31,7 @@ function pickEntry(base: string) {
     throw new Error(`Entry not found: src/${base}.{tsx,ts,jsx,js}`);
 }
 
-const entryNames = [
-    'aggregate_trends',
-    'aggregate',
-    'airsync_imports',
-    'airsync_uploads',
-    'bug_report_page',
-    'create_account',
-    'create_event',
-    'event_definition',
-    'event_definitions_display',
-    'event_statistics',
-    'fleet_trends',
-    'flight_display',
-    'flight',
-    'flights',
-    'forgot_password',
-    'heat_map',
-    'home_navbar',
-    'imports',
-    'manage_events',
-    'manage_fleet',
-    'ngafid_cesium',
-    'preferences_page',
-    'reset_password',
-    'severities',
-    'signed_in_navbar',
-    'status_page',
-    'summary',
-    'system_ids',
-    'theme_preload',
-    'time_zones',
-    'ttf',
-    'update_event',
-    'update_password',
-    'update_profile',
-    'uploads',
-    //   'two_factor_prompt',   //[EX]
-    //   'two_factor_settings', //[EX]
-];
 
-const entries = Object.fromEntries(entryNames.map(n => [n, pickEntry(n)]));
 
 const DEV_HOST = process.env.VITE_DEV_HOST || '192.168.1.8';    //[EX]
 const DEV_PORT = Number(process.env.VITE_DEV_PORT || 5173);
@@ -114,7 +74,6 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
             sourcemap: true,
             rollupOptions: {
                 input: {
-                    ...entries,
                     app: resolve(__dirname, 'index.html'),
                 },
                 output: {
@@ -161,6 +120,11 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
                 '@': path.resolve(__dirname, 'src/app'),
             },
             extensions: ['.ts', '.tsx', '.js', '.jsx'],
+            dedupe: ['react', 'react-dom'],
+        },
+
+        optimizeDeps: {
+            include: ['react', 'react-dom'],
         },
 
         //Optional dev server (good for testing stuff over LAN)
