@@ -62,8 +62,9 @@ const routeElementsProtected = routesProtected.map((route) => (
 ));
 
 
-export const ROUTE_DEFAULT_LOGGED_OUT = "/app";
-export const ROUTE_DEFAULT_LOGGED_IN = "/protected/summary";
+export const ROUTE_BASE = "";
+export const ROUTE_DEFAULT_LOGGED_OUT = `${ROUTE_BASE}/`;
+export const ROUTE_DEFAULT_LOGGED_IN = `${ROUTE_BASE}/protected/summary`;
 
 
 console.log("Main.tsx loaded...");
@@ -74,9 +75,9 @@ export function openRoute(url: string, isProtected: boolean = false) {
     let targetURLFull: string;
 
     if (isProtected)
-        targetURLFull = `/app/protected/${url}`;
+        targetURLFull = `${ROUTE_BASE}/protected/${url}`;
     else
-        targetURLFull = `/app${url}`;
+        targetURLFull = `${ROUTE_BASE}/${url}`;
 
     console.log(`Navigating to ${targetURLFull} (Protected: ${isProtected})`);
 
@@ -139,7 +140,7 @@ if (!window.reactRoot) {
 }
 
 window.reactRoot.render(
-    <BrowserRouter basename="/app">
+    <BrowserRouter basename={ROUTE_BASE}>
         <AppProviders>
             <AppShell />
         </AppProviders>
