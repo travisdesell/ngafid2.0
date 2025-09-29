@@ -248,8 +248,7 @@ public class AccountJavalinRoutes {
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
-            // TODO: Implement getSelectedFleetId method in User class
-            // scopes.put("user_fleet_selected", "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
+            scopes.put("user_fleet_selected", "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
             scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
             scopes.put("user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
