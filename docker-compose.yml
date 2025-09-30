@@ -76,28 +76,28 @@ services:
     <<: *ngafid-service-common
 
   # Webserver
-  # ngafid-www:
-  #   build:
-  #     context: .
-  #     dockerfile: ngafid-www/Dockerfile
-  #   ports:
-  #     - "8181:8181"
-  #   <<: *ngafid-service-common
+  ngafid-www:
+    build:
+      context: .
+      dockerfile: ngafid-www/Dockerfile
+    ports:
+      - "8181:8181"
+    <<: *ngafid-service-common
 
   # # Event Consumer: reads from event topic and computes the events
-  # ngafid-event-consumer:
-  #   build:
-  #     context: .
-  #     dockerfile: ngafid-data-processor/Dockerfile.event-consumer
-  #   <<: *ngafid-service-common
+  ngafid-event-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile.event-consumer
+    <<: *ngafid-service-common
 
   # # Event Observer: scans database for events that have not been computed, and computes them.
   # # This can also be used to re-compute events as potential duplicates are deleted.
-  # ngafid-event-observer:
-  #   build:
-  #     context: .
-  #     dockerfile: ngafid-data-processor/Dockerfile.event-observer
-  #   <<: *ngafid-service-common
+  ngafid-event-observer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile.event-observer
+    <<: *ngafid-service-common
 
 
   kafka:
