@@ -16,7 +16,6 @@ x-ngafid-service-common: &ngafid-service-common
     - $HOST_ARCHIVE_DIR:$CONTAINER_ARCHIVE_DIR
     - $HOST_STATIC_DIR:$CONTAINER_STATIC_DIR
     - $HOST_TERRAIN_DIR:$CONTAINER_TERRAIN_DIR
-    - $HOST_KAFKA_CONFIG:$CONTAINER_KAFKA_CONFIG
 
 services:
   base:
