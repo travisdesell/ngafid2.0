@@ -6,21 +6,27 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
 
 ### Basic Usage
 
-1. Install Dependencies
+1. Ensure that you're inside the NGAFID Frontend directory:
+```
+    cd ./ngafid-frontend
+```
+
+2. Install Dependencies
 ~~~
     npm install
 ~~~
 
-2. Run the Vite development server
+3. Run the Vite development server
 ~~~
     npm run dev
 ~~~
 
 3. Connect to the device at the given IP address.
 
-<span style="opacity:0.50">🛈 If configured correctly, you can also connect to the Vite server from other devices on your network.</span>
+<span style="opacity:0.50">🛈 If configured correctly, you can also connect to the Vite server from other devices on your network. (Trying to host from inside WSL may require additional setup inside Windows: https://learn.microsoft.com/en-us/windows/wsl/networking) </span>
 
 ---
 
 ### Configuration
-1. ...
+
+*  Global CSS styles can be modified in ```ngafid-frontend/src/app/index.css```
