@@ -33,3 +33,12 @@ jobs:
       - name: Maven Test
         run: mvn test
 
+      - name: Generate JaCoCo Coverage Report
+        run: mvn jacoco:report
+
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: jacoco-report
+          path: |
+            **/target/site/jacoco
