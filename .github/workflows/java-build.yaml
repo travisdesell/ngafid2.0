@@ -24,11 +24,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
-      - name: Setup DAT2CSV
-        run: run/setup_dat_importing
-
       - name: Maven Compile
         run: mvn clean install -DskipTests
+
+      - name: Setup DAT2CSV
+        run: run/setup_dat_importing
 
       - name: Maven Test
         run: mvn test
