@@ -24,11 +24,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
+      - name: Install DAT2CSV JAR to local Maven repo
+        run: mvn install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dversion=1.0 -Dpackaging=jar
+
       - name: Maven Compile
         run: mvn clean install -DskipTests
-
-      - name: Setup DAT2CSV
-        run: run/setup_dat_importing
 
       - name: Maven Test
         run: mvn test
