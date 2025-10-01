@@ -10,12 +10,12 @@ import { AirframesProvider } from '@/airframes_provider';
 import NotFound from '@/pages/page_missing/page_missing';
 
 
-//Import CSS
+// Import CSS
 import '@/index.css';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Background from './components/background';
 
-//Verify that Tailwind was imported correctly
+// Verify that Tailwind was imported correctly
 const tailwindLoaded = !!document.querySelector('style[data-vite-dev-id*="src/app/index.css"]')
 console.log("Tailwind CSS loaded:", tailwindLoaded);
 
@@ -23,7 +23,7 @@ console.log("Tailwind CSS loaded:", tailwindLoaded);
 
 
 
-//Define application routes
+// Define application routes
 class RouteData {
 
     urlPath: string;
@@ -39,21 +39,21 @@ class RouteData {
     }
 }
 
-//Define all NON-PROTECTED routes here (URL first, then component path)
+// Define all NON-PROTECTED routes here (URL first, then component path)
 const routes: RouteData[] = [
     new RouteData("/", "./pages/welcome/welcome"),
     new RouteData("/status", "./pages/status/status"),
     new RouteData("/access_denied", "./pages/access_denied/access_denied"),
 ];
 
-//Define all PROTECTED routes here (URL first, then component path. Will automatically prepend /protected)
+// Define all PROTECTED routes here (URL first, then component path. Will automatically prepend /protected)
 const routesProtected: RouteData[] = [
     new RouteData("/summary", "./pages/summary/summary"),
     new RouteData("/waiting", "./pages/waiting/waiting"),
     new RouteData("/event_definitions", "./pages/event_definitions/event_definitions"),
 ];
 
-//Automatically create route elements from the routes defined above
+// Automatically create route elements from the routes defined above
 const routeElements = routes.map((route) => (
     <Route key={route.urlPath} path={route.urlPath} element={React.createElement(route.component)} />
 ));
@@ -86,7 +86,7 @@ export function openRoute(url: string, isProtected: boolean = false) {
 }
 
 
-//Provider composition
+// Provider composition
 type ProviderEntry<P = any> =
     [React.ComponentType<React.PropsWithChildren<P>>, P];
 
@@ -99,7 +99,7 @@ const providerTree: ProviderEntry[] = [
     [TimeHeaderProvider, {}],
 ];
 
-//Helper to nest providers in order
+// Helper to nest providers in order
 const AppProviders: React.FC<React.PropsWithChildren> = ({ children }) => {
 
     return providerTree.reduceRight<React.ReactNode>((acc, [Comp, props]) => {

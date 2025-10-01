@@ -231,7 +231,7 @@ export default function SummaryPage() {
         const base = "/api/flight/count";
         const endpoints = {
             total: `${base}`,
-            //  valid: `${base}/...`, //<-- Calculated implicitly as total - (warnings + errors)
+            /*  valid: `${base}/...`, */        //<-- Calculated implicitly as 'total - (warnings + errors)'
             warnings: `${base}/with-warning`,
             errors: `${base}/with-error`,
         } as const;
@@ -584,11 +584,7 @@ export default function SummaryPage() {
                 <div className="grid gap-2 grid-cols-2 grid-rows-1">
                     <ChartSummaryEventCounts data={eventCountsByAirframe} renderNoDataAvailableMessage={renderNoDataAvailableMessage} />
                     <ChartSummaryPercentageOfFlightsWithEvent data={eventCountsByAirframe} renderNoDataAvailableMessage={renderNoDataAvailableMessage} />
-                    {/* <ChartSummaryPercentageOfFlightsWithEvent data={eventCountsByAirframe} /> */}
-                    {/* <ChartSummaryEventCounts data={eventCountsByAirframe} /> */}
-                    {/* <ChartBarStacked /> */}
                 </div>
-                {/* <Card> <CardHeader> <CardTitle>Plots</CardTitle> <CardDescription> Placeholder for future plots and visualizations. </CardDescription> </CardHeader> <CardContent className="min-h-0 h-[400px] max-h-[400px]"> <p> Future implementation will include various plots and visualizations to represent fleet data. </p> </CardContent> </Card> */}
 
             </div>
 

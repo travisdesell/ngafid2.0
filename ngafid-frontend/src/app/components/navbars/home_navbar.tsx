@@ -3,7 +3,7 @@ import React from "react";
 
 import {Button} from "@/components/ui/button";
 
-import {DarkModeToggle} from "../../../dark_mode_toggle";
+import {DarkModeToggle} from "@/dark_mode_toggle";
 import { LogIn, UserPlus } from 'lucide-react';
 
 import { Link } from "react-router-dom";
