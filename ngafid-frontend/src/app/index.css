@@ -19,6 +19,22 @@
         @apply dark:backdrop-blur-3xl;
     }
 
+
+
+    /* Page Structure */
+    .page-container {
+        @apply flex flex-col;
+        @apply overflow-x-hidden;
+        @apply h-[100vh];
+    }
+
+    .page-content {
+        @apply flex flex-col flex-1;
+        @apply overflow-y-auto;
+        @apply min-h-0;
+        @apply p-4;
+    }
+
 }
 
 :root {
