@@ -149,14 +149,6 @@ export default function ProtectedNavbar() {
                         </Link>
                     </Button>
 
-                    {/* Imports */}
-                    <Button asChild variant="ghost">
-                        <Link to="/protected/imports">
-                            <CloudDownload/>
-                            Imports
-                        </Link>
-                    </Button>
-
                     {/* Uploads */}
                     <Button asChild variant="ghost">
                         <Link to="/protected/uploads">
