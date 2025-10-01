@@ -10,12 +10,16 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
     theme: Theme
-    setTheme: (theme: Theme) => void
+    setTheme: (theme: Theme) => void,
+    useHighContrastCharts: boolean,
+    setUseHighContrastCharts: (useHighContrast: boolean) => void,
 }
 
 const initialState: ThemeProviderState = {
     theme: "system",
     setTheme: () => null,
+    useHighContrastCharts: false,
+    setUseHighContrastCharts: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -26,9 +30,10 @@ export function ThemeProvider({
     storageKey = "vite-ui-theme",
     ...props
 }: ThemeProviderProps) {
-    const [theme, setTheme] = useState<Theme>(
-        () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-    )
+
+    const themeDefault = (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+    const [theme, setTheme] = useState<Theme>(themeDefault);
+    const [useHighContrastCharts, setUseHighContrastCharts] = useState<boolean>(false);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -56,6 +61,8 @@ export function ThemeProvider({
             localStorage.setItem(storageKey, theme)
             setTheme(theme)
         },
+        useHighContrastCharts,
+        setUseHighContrastCharts,
     }
 
     return (
