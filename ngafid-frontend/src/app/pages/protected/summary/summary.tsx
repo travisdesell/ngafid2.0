@@ -358,13 +358,13 @@ export default function SummaryPage() {
     const hasFlightHoursData = (flightHoursByAirframe.length > 0);
 
     const render = () => (
-        <div className="overflow-x-hidden flex flex-col h-[100vh]">
+        <div className="page-container">
 
             {/* Navbar */}
             <ProtectedNavbar />
 
             {/* Page Content */}
-            <div className="flex flex-col p-4 flex-1 min-h-0 overflow-y-auto gap-4">
+            <div className="page-content gap-4">
 
                 {/* Time Header */}
                 <TimeHeader
