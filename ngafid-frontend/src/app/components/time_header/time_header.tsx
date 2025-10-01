@@ -5,7 +5,7 @@ import React, { useEffect } from "react";
 import { useTimeHeader } from "./time_header_provider";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
-import Ping from "../ping";
+import Ping from "@/components/pings/ping";
 import TooltipIcon from "@/components/tooltip_icon";
 import { Calendar, CircleQuestionMark } from "lucide-react";
 
