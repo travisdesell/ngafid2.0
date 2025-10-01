@@ -8,8 +8,19 @@ import ErrorModal, { ModalDataError } from './components/modals/error_modal';
 import { useModal } from './components/modals/modal_provider';
 
 
-type AuthState = { loading: boolean; user: NGAFIDUser|null };
-const AuthContext = React.createContext<AuthState>({ loading: true, user: null })
+type IsLoggedInFn = () => boolean;
+type AuthState = {
+    loading: boolean;
+    user: NGAFIDUser|null,
+};
+
+type AuthContextValue = AuthState & { isLoggedIn: IsLoggedInFn };
+
+const AuthContext = React.createContext<AuthContextValue>({
+    loading: true,
+    user: null,
+    isLoggedIn: () => false,
+})
 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -18,8 +29,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const [state, setState] = React.useState<AuthState>({
         loading: true,
-        user: null
+        user: null,
     });
+    const isLoggedIn = () => (state.user !== null);
 
 
     React.useEffect(() => {
@@ -48,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("AuthProvider: Rendering, loading =", state.loading, ", user =", state.user);
 
         return (
-            <AuthContext.Provider value={state}>
+            <AuthContext.Provider value={{ ...state, isLoggedIn }}>
                 {children}
             </AuthContext.Provider>
         );
