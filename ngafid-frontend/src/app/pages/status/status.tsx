@@ -188,7 +188,7 @@ export default function Status() {
             <div className="page-content grid! grid-cols-2 gap-2 mx-auto">
 
                 {/* Kafka Services */}
-                <Card className="card-glossy w-[1024px] my-auto h-[512px]">
+                <Card className="card-glossy w-full max-w-[1024px] my-auto h-[512px]">
 
                     <CardHeader>
                         <CardTitle>Kafka Services</CardTitle>
@@ -200,8 +200,8 @@ export default function Status() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-[256px]">Service</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Message</TableHead>
+                                    <TableHead className="w-[256px]">Status</TableHead>
+                                    <TableHead>Message</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -213,7 +213,7 @@ export default function Status() {
                                                 <entry.status.icon className="inline mr-2" size={16} />
                                                 {entry.status.name}
                                             </TableCell>
-                                            <TableCell className="text-right">{entry.message}</TableCell>
+                                            <TableCell>{entry.message}</TableCell>
                                         </TableRow>
                                     ))
                                 }
@@ -223,7 +223,7 @@ export default function Status() {
                 </Card>
 
                 {/* Docker Services */}
-                <Card className="card-glossy w-[1024px] mx-auto my-auto h-[512px]">
+                <Card className="card-glossy w-full max-w-[1024px] mx-auto my-auto h-[512px]">
 
                     <CardHeader>
                         <CardTitle>Docker Services</CardTitle>
@@ -235,8 +235,8 @@ export default function Status() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-[256px]">Service</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Message</TableHead>
+                                    <TableHead className="w-[256px]">Status</TableHead>
+                                    <TableHead>Message</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -248,7 +248,7 @@ export default function Status() {
                                                 <entry.status.icon className="inline mr-2" size={16} />
                                                 {entry.status.name}
                                             </TableCell>
-                                            <TableCell className="text-right">{entry.message}</TableCell>
+                                            <TableCell>{entry.message}</TableCell>
                                         </TableRow>
                                     ))
                                 }
@@ -256,7 +256,7 @@ export default function Status() {
                         </Table>
                     </CardContent>
                 </Card>
-                
+
             </div>
         </div>
     );
