@@ -14,25 +14,31 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useTheme } from "@/components/theme-provider";
 
 const chartData = [
     { fleet: "selected_range", events: 42902, fill: "var(--color-selected_range)" },
     { fleet: "all_time", events: 2148524, fill: "var(--color-all_time)" },
 ];
 
-const chartConfig = {
-    selected_range: {
-        label: "Selected Range",
-        color: "var(--chart-1)",
-    },
-    all_time: {
-        label: "All Time",
-        color: "var(--chart-3)",
-    },
-} satisfies ChartConfig;
-
 
 export function ChartSummaryEventTotals() {
+
+    const { useHighContrastCharts } = useTheme();
+
+    const allTimeColor = useHighContrastCharts ? "var(--chart-hc-1)" : "var(--chart-1)";
+    const selectedRangeColor = useHighContrastCharts ? "var(--chart-hc-2)" : "var(--chart-2)";
+    const chartConfig = {
+        all_time: {
+            label: "All Time",
+            color: allTimeColor,
+        },
+        selected_range: {
+            label: "Selected Range",
+            color: selectedRangeColor,
+        },
+    } satisfies ChartConfig;
+
     return (
         <CardContent className="flex-1 p-0 w-full">
             <ChartContainer
