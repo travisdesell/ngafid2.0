@@ -17,13 +17,33 @@ import { useAuth } from './auth';
 
 export function DarkModeToggle() {
 
+    const didToggleThemeBefore = (localStorage.getItem("didToggleTheme") !== null);
+    const didOpenThemeContextMenuBefore = (localStorage.getItem("didOpenThemeContextMenu") !== null);
+
     const { isLoggedIn } = useAuth();
     const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts } = useTheme();
     const isDarkTheme = (theme === "dark");
 
     const [didToggle, setDidToggle] = React.useState(false);
     const [didOpenContextMenu, setDidOpenContextMenu] = React.useState(false);
+
+
+    /*
+        Side effects to store whether user has toggled theme
+        or opened context menu before.
+
+        Used to hide the ping animation prompts after first use.
+    */
+    React.useEffect(() => {
+        if (didToggle && !didToggleThemeBefore)
+            localStorage.setItem("didToggleTheme", "true");
+    }, [didToggle, didToggleThemeBefore]);
+    React.useEffect(() => {
+        if (didOpenContextMenu && !didOpenThemeContextMenuBefore)
+            localStorage.setItem("didOpenThemeContextMenu", "true");
+    }, [didOpenContextMenu, didOpenThemeContextMenuBefore]);
     
+
     const toggleThemeManual = () => {
         
         // Flag as having toggled the theme at least once
@@ -59,14 +79,14 @@ export function DarkModeToggle() {
                     <>
                         {/* Left Ping (Prompt to toggle theme) */}
                         {
-                            (!didToggle)
+                            (!didToggle && !didToggleThemeBefore)
                             &&
                             <PingHalfLeft/>
                         }
 
                         {/* Right Ping (Prompt to open theme context window) */}
                         {
-                            (!didOpenContextMenu)
+                            (!didOpenContextMenu && !didOpenThemeContextMenuBefore)
                             &&
                             <PingHalfRight/>
                         }
@@ -87,7 +107,7 @@ export function DarkModeToggle() {
                     onClick={toggleThemeManual}
                 >
                     Switch to {isDarkTheme ? "Light" : "Dark"} Theme
-                    <Checkbox checked={!isDarkTheme} className="ml-auto"/>
+                    {/* <Checkbox checked={isDarkTheme} className="ml-auto pointer-events-none"/> */}
                 </ContextMenuItem>
                 <Separator />
 
@@ -97,7 +117,7 @@ export function DarkModeToggle() {
                     onClick={() => setUseHighContrastCharts(!useHighContrastCharts)}
                 >
                     {useHighContrastCharts ? "Disable" : "Enable"} High Contrast Charts
-                    <Checkbox checked={useHighContrastCharts} className="ml-auto"/>
+                    <Checkbox checked={useHighContrastCharts} className="ml-auto pointer-events-none"/>
                 </ContextMenuItem>
                 {/* <Separator /> */}
 
