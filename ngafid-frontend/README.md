@@ -11,12 +11,12 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
     cd ./ngafid-frontend
 ```
 
-2. Install Dependencies
+2. Install Dependencies:
 ~~~
     npm install
 ~~~
 
-3. Run the Vite development server
+3. Run the Vite development server:
 ~~~
     npm run dev
 ~~~
@@ -30,3 +30,15 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
 ### Configuration
 
 *  Global CSS styles can be modified in ```ngafid-frontend/src/app/index.css```
+
+---
+
+### Modification
+
+1. Use **Providers** to pass globally-accessible values down the component tree.
+
+    1.0. For example, the ```ThemeProvider``` lets its ```theme``` state setter be accessed with ```{setTheme} = useTheme();```, as long as ```useTheme``` is imported inside the component(s) using it.
+
+    1.1. After creating a Provider, add it to the ```providerTree``` array inside ```main.tsx```.
+
+    1.2. The order that the Providers are defined in the array matters.
