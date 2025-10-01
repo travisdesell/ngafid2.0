@@ -1,4 +1,4 @@
-// ngafid-frontend/src/app/components/navbars/home_navbar.jsx
+// ngafid-frontend/src/app/components/navbars/welcome_navbar.jsx
 import React from "react";
 
 import {Button} from "@/components/ui/button";
@@ -13,7 +13,7 @@ import RegisterModal from '../modals/register_modal';
 import { useModal } from "../modals/modal_provider";
 
 
-export default function HomeNavbar() {
+export default function WelcomeNavbar() {
 
     const { setModal } = useModal();
 
@@ -49,19 +49,15 @@ export default function HomeNavbar() {
                 <div className="flex flex-row items-center justify-end gap-8">
 
                     {/* Login */}
-                    <Button asChild variant="ghost" onClick={attemptLogIn}>
-                        <Link to="/#login">
-                            <LogIn/>
-                            Login
-                        </Link>
+                    <Button variant="ghost" onClick={attemptLogIn}>
+                        <LogIn/>
+                        Login
                     </Button>
 
                     {/* Register */}
-                    <Button asChild variant="ghost" onClick={attemptRegister}>
-                        <Link to="/#register">
-                            <UserPlus/>
-                            Register
-                        </Link>
+                    <Button variant="ghost" onClick={attemptRegister}>
+                        <UserPlus/>
+                        Register
                     </Button>
 
                     {/* Dark Mode Toggle Button */}
