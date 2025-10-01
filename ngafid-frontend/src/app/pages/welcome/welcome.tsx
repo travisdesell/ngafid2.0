@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/welcome.tsx
 
 import React from 'react'
-import HomeNavbar from '@/components/navbars/home_navbar';
+import WelcomeNavbar from '@/components/navbars/welcome_navbar';
 import { Card, CardContent, CardHeader, CardDescription, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,7 +44,7 @@ export default function Welcome() {
         <div className="overflow-x-hidden flex flex-col h-[100vh]">
 
             {/* Navbar */}
-            <HomeNavbar />
+            <WelcomeNavbar />
 
             {/* Page Content */}
             <div className="flex flex-col p-4 flex-1 min-h-0 overflow-y-auto">

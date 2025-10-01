@@ -29,7 +29,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
     const { useHighContrastCharts } = useTheme();
 
-    //Normalize to array
+    // Normalize to array
     const rows: AirframeEventCounts[] = Array.isArray(data)
         ? data
         : data && (typeof data === "object")

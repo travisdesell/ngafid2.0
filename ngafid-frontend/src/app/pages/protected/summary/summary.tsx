@@ -13,14 +13,14 @@ import { Label } from "@/components/ui/label";
 import { fetchJson } from "@/fetchJson";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/airframes_provider";
 import { useTimeHeader } from "@/components/time_header/time_header_provider";
-import { ChartSummaryEventCounts } from "./charts/chart-summary-event-counts";
+import { ChartSummaryEventCounts } from "./_charts/chart-summary-event-counts";
 import { AirframeEventCounts } from "src/types";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
-import { ChartSummaryPercentageOfFlightsWithEvent } from "./charts/chart-summary-percentage-of-flights-with-event";
-import { ChartSummaryEventTotals } from "./charts/chart-summary-event-totals";
+import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
+import { ChartSummaryEventTotals } from "./_charts/chart-summary-event-totals";
 import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Legend, Pie, PieChart } from "recharts";
-import { ChartSummaryEventTotalsCopy } from "./charts/chart-summary-event-totals-copy";
+import { ChartSummaryEventTotalsCopy } from "./_charts/chart-summary-event-totals-copy";
 
 
 type FlightHoursByAirframe = {
