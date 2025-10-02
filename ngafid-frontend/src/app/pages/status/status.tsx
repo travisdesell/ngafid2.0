@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CircleQuestionMark, CircleCheck, TriangleAlert, CircleAlert, ArrowBigRightDash, LucideProps } from "lucide-react";
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
+import Ping, { PingColor } from "@/components/pings/ping";
 
 
 enum StatusName {
@@ -86,6 +87,19 @@ export default function Status() {
     const [dockerEntries, setDockerEntries] = React.useState<StatusEntry[]>(
         () => STATUS_NAMES_LIST_DOCKER.map((name) => makeEntry(name, (displayName) => displayName.replace(/^Ngafid/i, "")))
     );
+
+    const kafkaEntriesOKCount = kafkaEntries.filter((entry) => entry.status.name === StatusName.OK).length;
+    const allKafkaEntriesOK = (kafkaEntriesOKCount === kafkaEntries.length);
+    const allKafkaEntriesUnchecked = (kafkaEntries.every((entry) => entry.status.name === StatusName.UNCHECKED));
+    const kafkaEntriesStatusColor = allKafkaEntriesOK
+        ? PingColor.GREEN
+        : (allKafkaEntriesUnchecked ? PingColor.NEUTRAL : (kafkaEntriesOKCount > 0 ? PingColor.AMBER : PingColor.RED));
+
+    const dockerEntriesOKCount = dockerEntries.filter((entry) => entry.status.name === StatusName.OK).length;
+    const allDockerEntriesOK = (dockerEntriesOKCount === dockerEntries.length);
+    const dockerEntriesStatusColor = allDockerEntriesOK
+        ? PingColor.GREEN
+        : (dockerEntriesOKCount > 0 ? PingColor.AMBER : PingColor.RED);
 
 
     React.useEffect(() => {
@@ -185,10 +199,12 @@ export default function Status() {
         <div className="page-container">
             <ProtectedNavbar />
 
-            <div className="page-content grid! grid-cols-2 gap-2 mx-auto">
+            <div className="page-content grid! grid-rows-2 gap-2 mx-auto w-full max-w-[1280px]">
 
                 {/* Kafka Services */}
-                <Card className="card-glossy w-full max-w-[1024px] my-auto h-[512px]">
+                <Card className="card-glossy my-auto h-[512px] w-full">
+
+                    <Ping color={kafkaEntriesStatusColor} />
 
                     <CardHeader>
                         <CardTitle>Kafka Services</CardTitle>
@@ -223,7 +239,9 @@ export default function Status() {
                 </Card>
 
                 {/* Docker Services */}
-                <Card className="card-glossy w-full max-w-[1024px] mx-auto my-auto h-[512px]">
+                <Card className="card-glossy mx-auto my-auto h-[512px] w-full">
+
+                    <Ping color={dockerEntriesStatusColor} />
 
                     <CardHeader>
                         <CardTitle>Docker Services</CardTitle>
