@@ -41,6 +41,8 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const setModal = React.useCallback<SetModalFn>((component, data, onClose) => {
+
+        // No component is provided, close the modal
         if (!component) {
             close();
             return;
@@ -50,6 +52,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         setModalType(() => component);
         setModalOnClose(() => onClose);
         setModalData(data ?? {});
+
     }, [close]);
 
 
@@ -82,24 +85,29 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 }
 
 function ModalRoot() {
-    const { modalType: Component, modalData, setModal } = useModal();
-    const modalKey =
-        Component?.__modalKey ?? Component?.displayName ?? Component?.name ?? "modal";
 
-    // Render at <body> level so you don’t fight page layout/z-index
+    const {
+        modalType: Component,
+        modalData,
+        setModal
+    } = useModal();
+    const modalKey = Component?.__modalKey ?? Component?.displayName ?? Component?.name ?? "modal";
+
     return createPortal(
         <AnimatePresence mode="wait">
-            {Component && (
-                <motion.div
-                    key={modalKey}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 bg-black/75 w-screen h-screen"
-                >
-                    <Component data={modalData} setModal={setModal} />
-                </motion.div>
-            )}
+            {
+                Component && (
+                    <motion.div
+                        key={modalKey}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/75 w-screen h-screen"
+                    >
+                        <Component data={modalData} setModal={setModal} />
+                    </motion.div>
+                )
+            }
         </AnimatePresence>,
         document.body
     );
