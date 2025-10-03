@@ -15,9 +15,10 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
 import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
 import ErrorModal from "../modals/error_modal";
 import { useAuth } from "@/auth";
+import { motion } from "framer-motion";
 
 
-export default function ProtectedNavbar() {
+export default function ProtectedNavbar({ children }: { children?: React.ReactNode }) {
 
     const { setModal } = useModal();
     const { user } = useAuth();
@@ -51,12 +52,27 @@ export default function ProtectedNavbar() {
             >
 
                 {/* Left Elements */}
-                <div>
+                <div className="flex flex-row items-center justify-end gap-16">
                     
                     {/* Navbar Brand & Home Link */}
                     <Link className="font-semibold text-xl" to={ROUTE_DEFAULT_LOGGED_IN}>
                         NGAFID
                     </Link>
+
+                    {/* Child Elements */}
+                    <div className="flex flex-row items-center justify-end gap-2">
+                        {React.Children.map(children, (child, index) => (
+                            <motion.div
+                                className="gap-2"
+                                key={`navbar-child-${index}`}
+                                initial={{ opacity: 0.00 }}
+                                animate={{ opacity: 1.00 }}
+                                transition={{ duration: 0.50, delay: 0.05 * index }}
+                            >
+                                {child}
+                            </motion.div>
+                        ))}
+                    </div>
                     
                 </div>
 
