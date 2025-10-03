@@ -1,4 +1,4 @@
-// ngafid-frontend/src/app/components/modals/login_modal.tsx
+// ngafid-frontend/src/app/components/modals/error_modal.tsx
 import React, { use } from "react";
 import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
