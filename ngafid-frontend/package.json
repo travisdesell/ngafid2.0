@@ -4,9 +4,7 @@
     "description": "",
     "scripts": {
         "dev": "vite",
-        "watch": "vite build --watch",
         "build": "vite build",
-        "serve": "vite",
         "check": "eslint . --ext .js,.jsx,.mjs,.ts,.tsx"
     },
     "keywords": [],
