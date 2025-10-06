@@ -202,7 +202,7 @@ export default function Status() {
             <div className="page-content grid! grid-rows-2 gap-2 mx-auto w-full max-w-[1280px]">
 
                 {/* Kafka Services */}
-                <Card className="card-glossy my-auto h-[512px] w-full">
+                <Card className="relative card-glossy my-auto h-[512px] w-full">
 
                     <Ping color={kafkaEntriesStatusColor} />
 
@@ -239,7 +239,7 @@ export default function Status() {
                 </Card>
 
                 {/* Docker Services */}
-                <Card className="card-glossy mx-auto my-auto h-[512px] w-full">
+                <Card className="relative card-glossy mx-auto my-auto h-[512px] w-full">
 
                     <Ping color={dockerEntriesStatusColor} />
 
