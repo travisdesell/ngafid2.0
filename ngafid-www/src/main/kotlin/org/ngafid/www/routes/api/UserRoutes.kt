@@ -515,6 +515,10 @@ object UserRoutes : RouteProvider() {
         }
     }
 
+    /**
+     * Deletes an email unsubscribe token and sets all non-forced email preferences to 0 for the user ID
+     * associated with the token.
+     */
     fun deleteEmailUnsubscribe(ctx: Context) {
         SessionUtility.getUser(ctx)
 
