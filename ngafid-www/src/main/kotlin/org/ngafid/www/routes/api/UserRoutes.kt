@@ -7,17 +7,13 @@ import io.javalin.http.NotFoundResponse
 import io.javalin.http.pathParamAsClass
 import io.javalin.openapi.*
 import org.ngafid.core.Database
-import org.ngafid.core.accounts.EmailType
-import org.ngafid.core.accounts.Fleet
-import org.ngafid.core.accounts.FleetAccess
-import org.ngafid.core.accounts.FleetAccessNamed
-import org.ngafid.core.accounts.User
+import org.ngafid.core.accounts.*
 import org.ngafid.core.util.SendEmail
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
 import java.net.URLEncoder
-import java.util.*
 import java.sql.SQLException
+import java.util.*
 import java.util.logging.Logger
 
 object UserRoutes : RouteProvider() {
@@ -81,7 +77,7 @@ object UserRoutes : RouteProvider() {
 
             //Check that the user has access to this fleet
             var hasAccess = false
-            val allFleets:ArrayList<FleetAccess> = FleetAccess.getAllFleetAccessEntries(connection, user.getId())
+            val allFleets: ArrayList<FleetAccess> = FleetAccess.getAllFleetAccessEntries(connection, user.id)
             for (fleetAccess in allFleets) {
                 if (fleetAccess.fleetId == fleetIdSelected) {
                     hasAccess = true
@@ -95,13 +91,13 @@ object UserRoutes : RouteProvider() {
                 ctx.status(401)
                 ctx.result("User did not have access to select this fleet.")
 
-            //Otherwise, update their selected fleet
+                //Otherwise, update their selected fleet
             } else {
                 user.setSelectedFleetId(connection, fleetIdSelected)
                 ctx.status(200)
                 ctx.json(user)
             }
-            
+
         }
 
     }
@@ -113,7 +109,7 @@ object UserRoutes : RouteProvider() {
         try {
             user.leaveSelectedFleet(Database.getConnection())
         } catch (e: SQLException) {
-            LOG.severe("Error when user ${user.getId()} attempted to leave fleet ${user.getFleetId()}: ${e.message}")
+            LOG.severe("Error when user ${user.id} attempted to leave fleet ${user.fleetId}: ${e.message}")
             ctx.status(500)
             ctx.result("Error when attempting to leave fleet.")
             return
@@ -131,7 +127,7 @@ object UserRoutes : RouteProvider() {
 
         //Get all the fleets this user has access to
         Database.getConnection().use { connection ->
-            val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.getAllFleetAccessEntries(connection, user.getId())
+            val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.getAllFleetAccessEntries(connection, user.id)
             ctx.status(200)
             ctx.json(allFleets)
         }
@@ -190,11 +186,7 @@ object UserRoutes : RouteProvider() {
 
             val bccRecipients: List<String> = ArrayList<String>()
             SendEmail.sendEmail(
-                recipient,
-                bccRecipients,
-                "NGAFID Account Creation Invite",
-                body,
-                EmailType.ACCOUNT_CREATION_INVITE
+                recipient, bccRecipients, "NGAFID Account Creation Invite", body, EmailType.ACCOUNT_CREATION_INVITE
             )
 
             /*
@@ -227,14 +219,11 @@ object UserRoutes : RouteProvider() {
     }
 
     data class MultifleetInvite(
-        val email: String,
-        val fleetId: Int,
-        val invitedBy: String
+        val email: String, val fleetId: Int, val invitedBy: String
     )
+
     data class MultifleetInviteResponse(
-        val inviteEmail: String,
-        val fleetName: String,
-        val fleetId: Int = -1
+        val inviteEmail: String, val fleetName: String, val fleetId: Int = -1
     )
 
     @Throws(SQLException::class)
@@ -257,18 +246,16 @@ object UserRoutes : RouteProvider() {
 
                 val inviteEmail = resultSet.getString("invited_by")
                 val fleetId = resultSet.getInt("fleet_id")
-                
+
                 val fleet = Fleet.get(connection, fleetId)
-                val fleetName = fleet.getName();
+                val fleetName = fleet.name
 
                 invites.add(
                     MultifleetInviteResponse(
-                        inviteEmail = inviteEmail,
-                        fleetName = fleetName,
-                        fleetId = fleetId
+                        inviteEmail = inviteEmail, fleetName = fleetName, fleetId = fleetId
                     )
                 )
-                
+
             }
 
             ctx.json(invites)
@@ -285,7 +272,7 @@ object UserRoutes : RouteProvider() {
         val user = SessionUtility.getUser(ctx)
         val fleetName = ctx.formParam("fleetName")!!
         val fleet = Fleet.get(Database.getConnection(), fleetName)
-        val fleetId = fleet.getId()
+        val fleetId = fleet.id
 
         LOG.info("Attempting to remove Multifleet Invite with email: ${user.email} and fleetId: ${fleetId}")
 
@@ -315,7 +302,7 @@ object UserRoutes : RouteProvider() {
                     deleteStatement.executeUpdate()
                 }
                 // ctx.json(InvitationRemoved())
-                ctx.status(200);
+                ctx.status(200)
             } else {
                 ctx.status(404)
                 ctx.result("Invitation not found.")
@@ -323,20 +310,17 @@ object UserRoutes : RouteProvider() {
         }
     }
 
-    @Throws (SQLException::class)
+    @Throws(SQLException::class)
     fun acceptMultifleetInvite(ctx: Context) {
-        
+
         val user = SessionUtility.getUser(ctx)
         val fleetName = ctx.formParam("fleetName")!!
         val fleet = Fleet.get(Database.getConnection(), fleetName)
-        val fleetId = fleet.getId()
+        val fleetId = fleet.id
 
         //Create fleet access entry for this user (with VIEW access)
         FleetAccess.create(
-            Database.getConnection(),
-            user.id,
-            fleetId,
-            "VIEW"
+            Database.getConnection(), user.id, fleetId, "VIEW"
         )
 
         LOG.info("Accepted Multifleet access for user: ${user.email} on fleet: ${fleetName}")
@@ -484,15 +468,7 @@ object UserRoutes : RouteProvider() {
         val user = SessionUtility.getUser(ctx)
         Database.getConnection().use { connection ->
             user.updateProfile(
-                connection,
-                firstName,
-                lastName,
-                country,
-                state,
-                city,
-                address,
-                phoneNumber,
-                zipCode
+                connection, firstName, lastName, country, state, city, address, phoneNumber, zipCode
             )
             ctx.json(AccountJavalinRoutes.Profile(user))
         }
@@ -517,11 +493,9 @@ object UserRoutes : RouteProvider() {
         operationId = "getUser",
         tags = ["User"],
         pathParams = [OpenApiParam("uid", Int::class, "The user ID")],
-        responses = [
-            OpenApiResponse("200", [OpenApiContent(User::class)]),
-            OpenApiResponse("404", [OpenApiContent(ErrorResponse::class)]),
-            OpenApiResponse("401", [OpenApiContent(ErrorResponse::class)])
-        ],
+        responses = [OpenApiResponse("200", [OpenApiContent(User::class)]), OpenApiResponse(
+            "404", [OpenApiContent(ErrorResponse::class)]
+        ), OpenApiResponse("401", [OpenApiContent(ErrorResponse::class)])],
         path = "/api/user/{uid}",
         methods = [HttpMethod.GET]
     )
@@ -537,6 +511,36 @@ object UserRoutes : RouteProvider() {
                 throw NotFoundResponse("No user with id $targetUser")
             } else {
                 ctx.json(user)
+            }
+        }
+    }
+
+    fun deleteEmailUnsubscribe(ctx: Context) {
+        SessionUtility.getUser(ctx)
+
+        val id = ctx.pathParam("id").toInt()
+        val token = ctx.pathParam("token")
+
+        Database.getConnection().use { connection ->
+            // Blasts all tokens for user ID from the DB
+            connection.prepareStatement(
+                """
+                DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?
+                """
+            ).use {
+                it.setString(1, token)
+                it.setInt(2, id)
+
+                val rowsAffected = it.executeUpdate()
+                if (rowsAffected == 0) {
+                    throw NotFoundResponse("No unsubscribe token found for user $id with token $token")
+                }
+            }
+
+            // Sets all non-forced email prefs to 0 in db
+            connection.prepareStatement("""UPDATE email_preferences SET enabled = 0 WHERE user_id = ? AND email_type NOT LIKE '%FORCED%'""".trimIndent()).use {
+                it.setInt(1, id)
+                it.executeUpdate()
             }
         }
     }
