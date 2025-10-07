@@ -55,6 +55,14 @@ export interface AirframeNameID {
     id: number;
 }
 
+
+export interface EventDefinition {
+    [key: string]: string;
+}
+export interface EventDefinitions {
+    [key: string]: EventDefinition;
+}
+
 declare global {
     const waitingUserCount: number;
     const fleetManager: boolean;
