@@ -25,6 +25,8 @@ CREATE TABLE user (
 
 
 --changeset aidan:user labels:accounts,users
+--preconditions onFail:MARK_RAN onError:HALT
+--precondition-sql-check expectedResult:0 SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME)='USER' AND UPPER(COLUMN_NAME)='FLEET_SELECTED'
 ALTER TABLE user ADD COLUMN fleet_selected INT NOT NULL DEFAULT -1;
 
 
