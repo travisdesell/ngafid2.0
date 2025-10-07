@@ -65,6 +65,7 @@ object UserRoutes : RouteProvider() {
                     patch("fleet-access", UserRoutes::patchUserFleetAccess, Role.LOGGED_IN)
                 }
 
+                delete("email-unsubscribe/{id}/{token}", UserRoutes::deleteEmailUnsubscribe, Role.LOGGED_IN)
             }
         }
     }
@@ -522,7 +523,7 @@ object UserRoutes : RouteProvider() {
     fun deleteEmailUnsubscribe(ctx: Context) {
         SessionUtility.getUser(ctx)
 
-        val id = ctx.pathParam("id").toInt()
+        val id = ctx.formParam("id").toInt()
         val token = ctx.pathParam("token")
 
         Database.getConnection().use { connection ->

@@ -1,0 +1,3 @@
+- getEmailUnsubscribe -> deleteEmailUnsubscribe
+  Route no longer uses formParam and uses queryParam instead.
+  Need to make an HTTP delete request instead of GET request to /email_unsubscribe
