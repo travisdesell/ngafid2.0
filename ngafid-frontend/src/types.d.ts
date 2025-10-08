@@ -39,6 +39,17 @@ export interface Event {
 
 }
 
+export type MultifleetInvite = {
+    fleetName: string,
+    inviteEmail: string,
+}
+
+export type MultifleetSelectWithAccess = {
+    fleetName: string,
+    fleetId: number,
+    accessType: accessType,
+}
+
 export type AirframeEventCounts = {
     airframeName: string;
     names: Array<string>;   //<-- Event names

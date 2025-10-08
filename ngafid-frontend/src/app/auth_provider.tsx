@@ -1,5 +1,4 @@
 // ngafid-frontend/src/app/auth.tsx
-import { error } from 'console';
 import { LoaderCircle } from 'lucide-react';
 import React from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'

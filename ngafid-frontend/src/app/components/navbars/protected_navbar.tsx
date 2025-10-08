@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
 
 import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
 import ErrorModal from "../modals/error_modal";
-import { useAuth } from "@/auth";
+import { useAuth } from "@/auth_provider";
 import { motion } from "framer-motion";
 
 

@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/pages/access_denied/access_denied.tsx
-import { useAuth } from "@/auth";
+import { useAuth } from "@/auth_provider";
 import ErrorModal, { ModalDataError } from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import { useEffect } from "react";

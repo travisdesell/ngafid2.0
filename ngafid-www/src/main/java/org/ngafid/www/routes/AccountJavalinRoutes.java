@@ -219,6 +219,24 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    public static void getTwoFactorSettings(Context ctx) {
+        final String templateFile = "two_factor_settings.html";
+        Map<String, Object> scopes = new HashMap<>();
+
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
+
+        // Try to get user from session, but don't require it
+        final User user = ctx.sessionAttribute("user");
+        if (user != null) {
+            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        } else {
+            scopes.put("user_js", "var user = null;");
+        }
+
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
+    }
+
     public static void getUserPreferencesPage(Context ctx) {
         final String templateFile = "preferences_page.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -230,6 +248,7 @@ public class AccountJavalinRoutes {
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
+            scopes.put("user_fleet_selected", "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
             scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
             scopes.put("user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
@@ -305,6 +324,7 @@ public class AccountJavalinRoutes {
         app.get("/protected/update_password", AccountJavalinRoutes::getUpdatePassword);
         app.get("/protected/update_profile", AccountJavalinRoutes::getUpdateProfile);
         app.get("/protected/preferences", AccountJavalinRoutes::getUserPreferencesPage);
+        app.get("/two-factor-settings", AccountJavalinRoutes::getTwoFactorSettings);
         app.get("/email_unsubscribe", AccountJavalinRoutes::getEmailUnsubscribe);
         app.after("/email_unsubscribe", ctx -> ctx.redirect("/"));
     }

@@ -4,6 +4,7 @@ import React from "react";
 
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
+import TwoFactorPrompt from "./two_factor_prompt.js";
 
 import {TimeHeader} from "./time_header.js";
 
@@ -1573,6 +1574,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                             </div>
                         </div>
                     </div>
+
+                    {/* 2FA Setup Prompt */}
+                    <TwoFactorPrompt />
 
                 </div>
             </div>

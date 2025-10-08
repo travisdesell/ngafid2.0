@@ -239,6 +239,7 @@ export default class SignedInNavbar extends React.Component {
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
                 <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/summary">NGAFID</a>
                 {this.props.mapLayerDropdown}
+
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
@@ -465,6 +466,8 @@ export default class SignedInNavbar extends React.Component {
                                 <div className="dropdown-divider" hidden={manageHidden}/>
                                 <DropdownLink name={"Update Password"} hidden={false}
                                               href="/protected/update_password"/>
+                                <DropdownLink name={"2-Factor Auth"} hidden={false}
+                                              href="/two-factor-settings#!"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"/>
                                 <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>

@@ -218,8 +218,8 @@ const BLUE_POINT_STYLE = new Style({
 
 const MARKER_VISIBILITY_ZOOM_THRESHOLD = 15;
 
-// Azure Maps configuration
-let azureMapsKey = process.env.AZURE_MAPS_KEY;
+
+declare const azureMapsKey: string | undefined;
 
 // Airframes configuration - define airframes if not already defined
 declare const airframes: string[] | undefined;

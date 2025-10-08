@@ -18,9 +18,17 @@ CREATE TABLE user (
     admin BOOLEAN DEFAULT 0,
     aggregate_view BOOLEAN DEFAULT 0,
     last_login_time DATETIME,
+    fleet_selected INT NOT NULL DEFAULT -1,  --      <-- -1 means no fleet selected
 
     PRIMARY KEY(id)
 );
+
+
+--changeset aidan:user labels:accounts,users
+--preconditions onFail:MARK_RAN onError:HALT
+--precondition-sql-check expectedResult:0 SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME)='USER' AND UPPER(COLUMN_NAME)='FLEET_SELECTED'
+ALTER TABLE user ADD COLUMN fleet_selected INT NOT NULL DEFAULT -1;
+
 
 --changeset josh:user-unique-email labels:accounts,users
 ALTER TABLE user ADD CONSTRAINT unique_email UNIQUE (email);

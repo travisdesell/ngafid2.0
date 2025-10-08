@@ -15,6 +15,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.ngafid.core.Config;
 
 public class DockerServiceHeartbeat {
 
@@ -58,12 +59,17 @@ public class DockerServiceHeartbeat {
          * when called from the main method of a consumer.
          */
 
-        //Get service name
-        final String service = System.getenv().getOrDefault("SERVICE_NAME", SERVICE_NAME_UNKNOWN);
+        //Get service name - try to detect from context or use default
+        String service = Config.getProperty("ngafid.service.name");
+        
+        // If still unknown, try to detect from main class or stack trace
+        if (service.equals(SERVICE_NAME_UNKNOWN)) {
+            service = detectServiceName();
+        }
 
         //Got unknown service name, do not start heartbeat
         if (service.equals(SERVICE_NAME_UNKNOWN)) {
-            LOG.warning("No SERVICE_NAME environment variable set, not starting heartbeat");
+            LOG.warning("No service name configured, not starting heartbeat");
             return;
         }
 
@@ -75,10 +81,7 @@ public class DockerServiceHeartbeat {
 
         //Get properties for the heartbeat producer
         final Properties heartbeatProps = new Properties();
-        String bootstrap = System.getenv("KAFKA_BOOTSTRAP");
-        if (bootstrap == null || bootstrap.isEmpty()) {
-            throw new RuntimeException("KAFKA_BOOTSTRAP environment variable must be set!");
-        }
+        String bootstrap = Config.getProperty("ngafid.kafka.bootstrap.servers");
         heartbeatProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         heartbeatProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         heartbeatProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -88,11 +91,37 @@ public class DockerServiceHeartbeat {
 
         //Get instance ID and heartbeat interval
         final String instance = InetAddress.getLocalHost().getHostName();
-        final long heartbeatIntervalMS = Long.parseLong(System.getenv().getOrDefault("HEARTBEAT_INTERVAL_MS", "10_000"));
+        final long heartbeatIntervalMS = Long.parseLong(Config.getProperty("ngafid.heartbeat.interval.ms"));
 
         //Start the heartbeat
         DockerServiceHeartbeat.start(heartbeatProducer, service, instance, heartbeatIntervalMS);
         
+    }
+    
+    /**
+     * Detects the service name from the calling context
+     */
+    private static String detectServiceName() {
+        try {
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            for (StackTraceElement element : stackTrace) {
+                String className = element.getClassName();
+                if (className.contains("EmailConsumer")) {
+                    return "ngafid-email-consumer";
+                } else if (className.contains("UploadConsumer")) {
+                    return "ngafid-upload-consumer";
+                } else if (className.contains("EventConsumer")) {
+                    return "ngafid-event-consumer";
+                } else if (className.contains("EventObserver")) {
+                    return "ngafid-event-observer";
+                } else if (className.contains("WebServer")) {
+                    return "ngafid-www";
+                }
+            }
+        } catch (Exception e) {
+            // Ignore exceptions
+        }
+        return SERVICE_NAME_UNKNOWN;
     }
 
 }

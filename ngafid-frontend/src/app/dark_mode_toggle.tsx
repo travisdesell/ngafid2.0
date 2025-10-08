@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Checkbox } from './components/ui/checkbox';
 import { Separator } from './components/ui/separator';
-import { useAuth } from './auth';
+import { useAuth } from './auth_provider';
 
 
 export function DarkModeToggle() {

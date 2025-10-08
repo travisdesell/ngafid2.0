@@ -17,7 +17,7 @@
     </modules>
 
     <properties>
-        <kotlin.version>2.1.20</kotlin.version>
+        <kotlin.version>2.0.21</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <jvm.target>21</jvm.target>
@@ -153,53 +153,100 @@
     </dependencies>
 
     <build>
-        <plugins>
+        <pluginManagement>
+            <plugins>
+                <!-- Kotlin compiler configuration for all modules -->
+                <plugin>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-maven-plugin</artifactId>
+                    <version>${kotlin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <jvmTarget>${jvm.target}</jvmTarget>
+                        <args>
+                            <arg>-Xjvm-default=all</arg>
+                        </args>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>compile</id>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>test-compile</id>
+                            <goals>
+                                <goal>test-compile</goal>
+                            </goals>
+                            <configuration>
+                                <sourceDirs>
+                                    <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                    <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                                </sourceDirs>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
 
+                <!-- Java compiler configuration for all modules -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.1</version>
+                    <configuration>
+                        <source>21</source>
+                        <target>${jvm.target}</target>
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-Xmaxwarns</arg>
+                            <arg>50000</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <!-- JavaDoc configuration for all modules -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.6.3</version>
+                    <configuration>
+                        <source>21</source>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+
+                        <!-- Ensure both Java and Kotlin outputs are on the classpath -->
+                        <additionalOptions>
+                            <additionalOption>-Xdoclint:none</additionalOption>
+                            <additionalOption>--ignore-source-errors</additionalOption>
+                            <additionalOption>-classpath</additionalOption>
+                            <additionalOption>
+                                ${project.build.outputDirectory}
+                            </additionalOption>
+                        </additionalOptions>
+
+                        <!-- Add Kotlin sources to sourcepath for package discovery (Won't actually be parsed) -->
+                        <sourcepath>
+                            ${project.build.sourceDirectory}:${project.basedir}/src/main/kotlin
+                        </sourcepath>
+
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
             <!-- Kotlin compiler should be listed first! -->
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <extensions>true</extensions>
-
-                <configuration>
-                    <jvmTarget>${jvm.target}</jvmTarget>
-                </configuration>
-
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                                <sourceDir>${project.basedir}/src/test/java</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
                 <configuration>
-                    <source>21</source>
-                    <target>${jvm.target}</target>
-                    <compilerArgs>
-                        <arg>-Xlint:all</arg>
-                        <arg>-Xmaxwarns</arg>
-                        <arg>50000</arg>
-                    </compilerArgs>
                     <!--                        Exclude everything under org.ngafid.routes.spark-->
                     <excludes>
                         <exclude>org/ngafid/routes/spark/**</exclude>
@@ -229,6 +276,32 @@
                         <phase>test-compile</phase>
                         <goals>
                             <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+
+            <!-- JaCoCo Code Coverage Plugin -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>

@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from '@/components/theme-provider';
 import { ModalProvider } from '@/components/modals/modal_provider';
-import { AuthProvider, RequireAuth } from '@/auth';
+import { AuthProvider, RequireAuth } from '@/auth_provider';
 import { TimeHeaderProvider } from '@/components/time_header/time_header_provider';
 import { AirframesProvider } from '@/airframes_provider';
 import NotFound from '@/pages/page_missing/page_missing';

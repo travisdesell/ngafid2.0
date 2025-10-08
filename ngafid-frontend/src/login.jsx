@@ -13,21 +13,30 @@ import { homeNavbar } from './home_navbar';
 
 
 const loginModalRef = createRef();
+const loginModalstateDefault = {
+    valid: {
+        email: false,
+        emailEmpty: true,
+        passwordEmpty: true,
+        loginMessage: false
+    },
+    errorMessage: "",
+    requires2FA: false,
+    totpCode: "",
+    setup2FA: false,
+    storedEmail: "",
+    storedPassword: "",
+    isSubmitting: false,
+    setupStep: 'authenticator',
+};
 
 
 class LoginModal extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            valid: {
-                email: false,
-                emailEmpty: true,
-                passwordEmpty: true,
-                loginMessage: false
-            },
-            errorMessage: ""
-        };
+        this.state = { ...loginModalstateDefault };
+
     }
 
     handleKeyDown(e) {
@@ -44,6 +53,12 @@ class LoginModal extends React.Component {
     }
 
     submitLogin() {
+        // Prevent multiple simultaneous submissions
+        if (this.state.isSubmitting) {
+            console.log("Login already in progress, ignoring duplicate submission");
+            return;
+        }
+
         let valid = true;
         for (const property in this.state.valid) {
             console.log(property);
@@ -65,9 +80,27 @@ class LoginModal extends React.Component {
         $("#loading").show();
 
         const submissionData = {
-            email: $("#loginEmail").val(),
-            password: $("#loginPassword").val()
+            email: this.state.requires2FA ? this.state.storedEmail : $("#loginEmail").val(),
+            password: this.state.requires2FA ? this.state.storedPassword : $("#loginPassword").val()
         };
+
+        //2FA code is required...
+        if (this.state.requires2FA) {
+
+            const code = (this.state.totpCode || "").trim();
+
+            //...Using backup code
+            if (this.state.setupStep === 'backup')
+                submissionData.backupCode = code;
+
+            //...Using authenticator app
+            else
+                submissionData.totpCode = code;
+
+        }
+
+        const submissionDataLogSafe = { ...submissionData, password: '****' };
+        console.log("Submitting login data:", submissionDataLogSafe);
 
 
 
@@ -79,7 +112,7 @@ class LoginModal extends React.Component {
             async: true,
             success: (response) => {
 
-                $("#loginPassword").val("");
+                console.log("Login response:", response);
 
                 if (response.loggedOut) {
                     console.log("User was logged out...");
@@ -90,9 +123,33 @@ class LoginModal extends React.Component {
                         },
                         errorMessage: response.message
                     }));
-                    homeNavbar.logOut();
+                    $("#login-modal").modal('show');
                     return false;
                 }
+
+                if (response.message === "2FA_CODE_REQUIRED") {
+                    console.log("2FA code required");
+                    this.setState({ 
+                        requires2FA: true,
+                        storedEmail: $("#loginEmail").val(),
+                        storedPassword: $("#loginPassword").val()
+                    }, ()=> {
+                        $("#2fa-modal-content").show();
+                        $("#login-modal").modal('show');
+                    });
+                    $("#loading").hide();
+                    return;
+                }
+
+                if (response.message === "2FA_SETUP_REQUIRED") {
+                    console.log("2FA setup required");
+                    this.setState({ setup2FA: true });
+                    $("#loading").hide();
+                    return;
+                }
+
+                // Clear password field for successful login or errors (but not for 2FA flows)
+                $("#loginPassword").val("");
 
                 if (response.errorTitle) {
                     console.log("Displaying error modal!");
@@ -107,6 +164,19 @@ class LoginModal extends React.Component {
                 } else {
                     //redirect to the base page (which will redirect to either summary, waiting or the page before login)
                     window.location.replace("/");
+                    return;
+                } else {
+                    // Handle unexpected response
+                    console.log("Unexpected response:", response);
+                    this.setState(prevState => ({
+                        valid: {
+                            ...prevState.valid,
+                            errorMessage: true
+                        },
+                        errorMessage: "Unexpected response from server"
+                    }));
+                    $("#loading").hide();
+                    return;
                 }
 
             },
@@ -116,6 +186,8 @@ class LoginModal extends React.Component {
             },
             complete: () => {
                 $("#loading").hide();
+                // Reset submitting state
+                this.setState({ isSubmitting: false });
             }
         });
 
@@ -125,6 +197,13 @@ class LoginModal extends React.Component {
         const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
         const email = $("#loginEmail").val();
+        console.log("Validating Email: ", email);
+
+        if (!email) {
+            console.error("Email is null or undefined! Unable to validate.");
+            return;
+        }
+
         const newValid = {
             ...this.state.valid,
             email: re.test(String(email).toLowerCase()),
@@ -141,6 +220,12 @@ class LoginModal extends React.Component {
     validatePassword() {
 
         const password = $("#loginPassword").val();
+        console.log("Validating Password...");
+
+        if (!password) {
+            console.error("Password is null or undefined! Unable to validate.");
+            return;
+        }
 
         //reset the error message from the server as the user has modified the email/password
         const newValid = {
@@ -156,6 +241,13 @@ class LoginModal extends React.Component {
     }
 
     render() {
+        if (this.state.requires2FA) {
+            return this.render2FAInput();
+        }
+        
+        if (this.state.setup2FA) {
+            return this.render2FASetup();
+        }
 
         const formGroupStyle = {
             marginBottom: '8px'
@@ -267,8 +359,10 @@ class LoginModal extends React.Component {
 
                     </div>
 
+                    {/* Modal Footer */}
                     <div className='modal-footer'>
-                        <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+
+                        {/* Submit Button */}
                         <button
                             id='loginSubmitButton'
                             type='submit'
@@ -277,6 +371,7 @@ class LoginModal extends React.Component {
                         >
                             Submit
                         </button>
+
                     </div>
 
                 </div>

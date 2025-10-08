@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "../ui/accordion";
 import ErrorModal, { ModalDataError } from "./error_modal";
+import { openRoute } from "@/main";
 
 export default function RegisterModal({ setModal }: ModalProps) {
 
@@ -45,9 +46,19 @@ export default function RegisterModal({ setModal }: ModalProps) {
         //Fetch the fleet list from the API
         const fetchFleetList = async () => {
 
+            console.log("Register Modal - Fetching fleet list...");
+
             fetch("/api/fleet/names")
                 .then((response) => response.json())
-                .then((data) => setFleetList(data))
+                .then((data) => {
+
+                    if (data?.errorTitle) {
+                        setModal(ErrorModal, {title : data.errorTitle, message:`Unable to open Register Modal: ${data.errorMessage}`} as ModalDataError);
+                        return;
+                    }
+
+                    setFleetList(data);
+                })
                 .catch((error) => {
                     setModal(ErrorModal, {title : "Error fetching fleet list", message: error.toString()} as ModalDataError);
                 }
@@ -137,11 +148,11 @@ export default function RegisterModal({ setModal }: ModalProps) {
 
                 //Managing fleet, go to Summary page
                 if (isManagingNewFleet)
-                    window.location.replace("/app/summary");
+                    openRoute("summary", true);
 
                 //Otherwise, go to the Waiting page
                 else
-                    window.location.replace("/app/waiting");
+                    openRoute("waiting", true);
 
             })
             .catch((error) => {
@@ -175,6 +186,8 @@ export default function RegisterModal({ setModal }: ModalProps) {
 
     const render = () => {
 
+        console.log("Rendering Register Modal... (Fleet List: ", fleetList, ")");
+
         return (
             <motion.div
                 initial={{ scale: 0, opacity: 0 }}
@@ -203,7 +216,7 @@ export default function RegisterModal({ setModal }: ModalProps) {
                         <form>
                             <div className="flex flex-col gap-6">
                                 {
-                                    errorMessage
+                                    (errorMessage)
                                     &&
                                     <Alert variant="destructive">
                                         <AlertCircleIcon size={16} />
@@ -666,7 +679,7 @@ export default function RegisterModal({ setModal }: ModalProps) {
                                     </RadioGroup>
 
                                     {
-                                        isManagingNewFleet
+                                        (isManagingNewFleet)
                                         ?
                                         <div className="grid gap-2 w-[40%]">
                                             <Label htmlFor="fleetName">Fleet Name</Label>
@@ -680,23 +693,34 @@ export default function RegisterModal({ setModal }: ModalProps) {
                                         </div>
                                         :
                                         <div className="grid gap-2 w-[40%]">
-                                            <Label htmlFor="fleetTarget">Fleet Target</Label>
-                                            <Select onValueChange={(value) => setSelectedFleetName(value)} value={selectedFleetName}>
-                                                <SelectTrigger id="fleetTarget" className="w-full">
-                                                    <SelectValue className="text-muted-foreground" placeholder="Select a fleet (required)" />
-                                                </SelectTrigger>
-                                                <SelectContent className="max-h-[300px] overflow-y-auto">
-                                                    {
-                                                        (fleetList.length === 0)
-                                                        ?
-                                                        <SelectItem disabled value="">No fleets available</SelectItem>
-                                                        :
-                                                        fleetList.map((fleet, index) => (
-                                                            <SelectItem key={index} value={fleet}>{fleet}</SelectItem>
-                                                        ))
-                                                    }
-                                                </SelectContent>
-                                            </Select>
+                                            {
+                                                (fleetList.length > 0)
+                                                ?
+                                                <>
+                                                <Label htmlFor="fleetTarget">Fleet Target</Label>
+                                                    <Select onValueChange={(value) => setSelectedFleetName(value)} value={selectedFleetName} disabled={fleetList.length === 0}>
+                                                        <SelectTrigger id="fleetTarget" className="w-full">
+                                                            <SelectValue className="text-muted-foreground" placeholder="Select a fleet (required)" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="max-h-[300px] overflow-y-auto">
+                                                            {
+                                                                (fleetList.length === 0)
+                                                                ?
+                                                                <SelectItem disabled value="">No fleets available</SelectItem>
+                                                                :
+                                                                fleetList.map((fleet, index) => (
+                                                                    <SelectItem key={index} value={fleet}>{fleet}</SelectItem>
+                                                                ))
+                                                            }
+                                                        </SelectContent>
+                                                    </Select>
+                                                </>
+                                                :
+                                                <Alert variant="destructive" className="flex flex-row items-center justify-start">
+                                                    <AlertCircleIcon size={16} className="static! p-0!" />
+                                                    <AlertTitle className="m-0 p-0! pl-4!">No fleets available!</AlertTitle>
+                                                </Alert>
+                                            }
                                         </div>
                                     }
                                 </div>

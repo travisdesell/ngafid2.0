@@ -15,7 +15,7 @@ public class FleetAccess implements Serializable {
     public static final String WAITING = "WAITING";
     public static final String DENIED = "DENIED";
 
-    private static final Logger LOG = Logger.getLogger(FleetAccess.class.getName());
+    protected static final Logger LOG = Logger.getLogger(FleetAccess.class.getName());
 
     /**
      * user id in the database
@@ -25,7 +25,7 @@ public class FleetAccess implements Serializable {
     /**
      * fleet id in the database.
      */
-    private int fleetId = -1;
+    protected int fleetId = -1;
 
     /**
      * User's access type to the fleet. Can be "MANAGER", "UPLOAD", "VIEW",
@@ -95,7 +95,7 @@ public class FleetAccess implements Serializable {
     private FleetAccess() {
     }
 
-    private FleetAccess(int fleetId, int userId, String accessType) {
+    protected FleetAccess(int fleetId, int userId, String accessType) {
         this.fleetId = fleetId;
         this.userId = userId;
         this.accessType = accessType;
@@ -114,8 +114,6 @@ public class FleetAccess implements Serializable {
 
     /**
      * Gets all entries of a user's fleet access from the database given a user id.
-     * Currently a user should only have access to one fleet however this may change
-     * in the future.
      *
      * @param connection The database connection.
      * @param userId     The id of the user.
@@ -124,7 +122,7 @@ public class FleetAccess implements Serializable {
      * @throws SQLException If there was a query/database problem.
      */
 
-    public static ArrayList<FleetAccess> get(Connection connection, int userId) throws SQLException {
+    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId) throws SQLException {
         try (PreparedStatement query = connection
                 .prepareStatement("SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = " + userId);
              ResultSet resultSet = query.executeQuery()) {

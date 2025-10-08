@@ -10,20 +10,32 @@ import org.ngafid.core.Database
 import org.ngafid.core.accounts.EmailType
 import org.ngafid.core.accounts.Fleet
 import org.ngafid.core.accounts.FleetAccess
+import org.ngafid.core.accounts.FleetAccessNamed
 import org.ngafid.core.accounts.User
 import org.ngafid.core.util.SendEmail
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
 import java.net.URLEncoder
 import java.util.*
+import java.sql.SQLException
+import java.util.logging.Logger
 
 object UserRoutes : RouteProvider() {
+
+    val LOG: Logger = Logger.getLogger(AuthRoutes::class.java.name)
+
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/user") {
                 get(UserRoutes::getAll, Role.LOGGED_IN)
                 post("invite", UserRoutes::postSendUserInvite, Role.LOGGED_IN)
                 RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.numberUsers()) }
+
+                path("multifleet-invites") {
+                    get(UserRoutes::getMultifleetInvites, Role.LOGGED_IN)
+                    post("accept", UserRoutes::acceptMultifleetInvite, Role.LOGGED_IN)
+                    post("decline", UserRoutes::removeMultifleetInvite, Role.LOGGED_IN)
+                }
 
                 path("me") {
                     // Get currently logged in account
@@ -46,6 +58,9 @@ object UserRoutes : RouteProvider() {
                     put("email-prefs", UserRoutes::putEmailPreferencesMe, Role.LOGGED_IN)
                 }
 
+                get("fleet-access", UserRoutes::getUserFullFleetAccess, Role.LOGGED_IN)
+                put("select-fleet", UserRoutes::putUserFleetSelected, Role.LOGGED_IN)
+                put("leave-fleet", UserRoutes::putUserLeaveCurrentFleet, Role.LOGGED_IN)
 
                 path("{uid}") {
                     get(UserRoutes::getOne, Role.LOGGED_IN, Role.MANAGER_ONLY)
@@ -56,6 +71,71 @@ object UserRoutes : RouteProvider() {
 
             }
         }
+    }
+
+    fun putUserFleetSelected(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+        val fleetIdSelected = ctx.formParam("fleetIdSelected")!!.toInt()
+
+        Database.getConnection().use { connection ->
+
+            //Check that the user has access to this fleet
+            var hasAccess = false
+            val allFleets:ArrayList<FleetAccess> = FleetAccess.getAllFleetAccessEntries(connection, user.getId())
+            for (fleetAccess in allFleets) {
+                if (fleetAccess.fleetId == fleetIdSelected) {
+                    hasAccess = true
+                    break
+                }
+            }
+
+            //User has no access -> reject request
+            if (!hasAccess) {
+                AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to select this fleet.")
+                ctx.status(401)
+                ctx.result("User did not have access to select this fleet.")
+
+            //Otherwise, update their selected fleet
+            } else {
+                user.setSelectedFleetId(connection, fleetIdSelected)
+                ctx.status(200)
+                ctx.json(user)
+            }
+            
+        }
+
+    }
+
+    fun putUserLeaveCurrentFleet(ctx: Context) {
+
+        val user = SessionUtility.getUser(ctx)
+
+        try {
+            user.leaveSelectedFleet(Database.getConnection())
+        } catch (e: SQLException) {
+            LOG.severe("Error when user ${user.getId()} attempted to leave fleet ${user.getFleetId()}: ${e.message}")
+            ctx.status(500)
+            ctx.result("Error when attempting to leave fleet.")
+            return
+        }
+
+        ctx.status(200)
+        ctx.json(user)
+
+    }
+
+    @Throws(SQLException::class)
+    fun getUserFullFleetAccess(ctx: Context) {
+
+        val user = SessionUtility.getUser(ctx)
+
+        //Get all the fleets this user has access to
+        Database.getConnection().use { connection ->
+            val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.getAllFleetAccessEntries(connection, user.getId())
+            ctx.status(200)
+            ctx.json(allFleets)
+        }
+
     }
 
     fun patchUserFleetAccess(ctx: Context) {
@@ -82,6 +162,7 @@ object UserRoutes : RouteProvider() {
         }
     }
 
+    @Throws(SQLException::class)
     fun postSendUserInvite(ctx: Context) {
         class InvitationSent {
             val message: String = "Invitation Sent."
@@ -116,8 +197,155 @@ object UserRoutes : RouteProvider() {
                 EmailType.ACCOUNT_CREATION_INVITE
             )
 
+            /*
+                Write new invitation to the multifleet_invites table.
+
+                If an existing invitation already exists, the operation
+                is ignored.
+
+                (TODO: Double check if we should bother informing the sender
+                of existing invitations. Might only be a problem when the
+                sender email doesn't get updated if someone else sends another
+                invite, but this probably won't matter.)
+            */
+            Database.getConnection().use { connection ->
+                val statement = connection.prepareStatement(
+                    """
+                    INSERT IGNORE INTO multifleet_invites
+                        (email, fleet_id, invited_by)
+                        VALUES (?, ?, ?)
+                    """
+                )
+                statement.setString(1, inviteEmail)
+                statement.setInt(2, fleetId)
+                statement.setString(3, user.email)
+                statement.executeUpdate()
+            }
+
             ctx.json(InvitationSent())
         }
+    }
+
+    data class MultifleetInvite(
+        val email: String,
+        val fleetId: Int,
+        val invitedBy: String
+    )
+    data class MultifleetInviteResponse(
+        val inviteEmail: String,
+        val fleetName: String,
+        val fleetId: Int = -1
+    )
+
+    @Throws(SQLException::class)
+    fun getMultifleetInvites(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+
+        //Fetch all multifleet invites for this user
+        Database.getConnection().use { connection ->
+            val statement = connection.prepareStatement(
+                """
+                SELECT * FROM multifleet_invites
+                WHERE email = ?
+                """
+            )
+            statement.setString(1, user.email)
+            val resultSet = statement.executeQuery()
+
+            val invites = mutableListOf<MultifleetInviteResponse>()
+            while (resultSet.next()) {
+
+                val inviteEmail = resultSet.getString("invited_by")
+                val fleetId = resultSet.getInt("fleet_id")
+                
+                val fleet = Fleet.get(connection, fleetId)
+                val fleetName = fleet.getName();
+
+                invites.add(
+                    MultifleetInviteResponse(
+                        inviteEmail = inviteEmail,
+                        fleetName = fleetName,
+                        fleetId = fleetId
+                    )
+                )
+                
+            }
+
+            ctx.json(invites)
+        }
+    }
+
+    @Throws(SQLException::class)
+    fun removeMultifleetInvite(ctx: Context) {
+
+        /*
+            NOTE: Removes via the fleet's name, not its ID
+        */
+
+        val user = SessionUtility.getUser(ctx)
+        val fleetName = ctx.formParam("fleetName")!!
+        val fleet = Fleet.get(Database.getConnection(), fleetName)
+        val fleetId = fleet.getId()
+
+        LOG.info("Attempting to remove Multifleet Invite with email: ${user.email} and fleetId: ${fleetId}")
+
+        //Verify that this user is the one who was invited
+        Database.getConnection().use { connection ->
+            val statement = connection.prepareStatement(
+                """
+                SELECT * FROM multifleet_invites
+                WHERE email = ? AND fleet_id = ?
+                """
+            )
+            statement.setString(1, user.email)
+            statement.setInt(2, fleetId)
+            val resultSet = statement.executeQuery()
+
+            //User is the one who was invited, proceed with removal
+            if (resultSet.next()) {
+                Database.getConnection().use { conn ->
+                    val deleteStatement = conn.prepareStatement(
+                        """
+                        DELETE FROM multifleet_invites
+                        WHERE email = ? AND fleet_id = ?
+                        """
+                    )
+                    deleteStatement.setString(1, user.email)
+                    deleteStatement.setInt(2, fleetId)
+                    deleteStatement.executeUpdate()
+                }
+                // ctx.json(InvitationRemoved())
+                ctx.status(200);
+            } else {
+                ctx.status(404)
+                ctx.result("Invitation not found.")
+            }
+        }
+    }
+
+    @Throws (SQLException::class)
+    fun acceptMultifleetInvite(ctx: Context) {
+        
+        val user = SessionUtility.getUser(ctx)
+        val fleetName = ctx.formParam("fleetName")!!
+        val fleet = Fleet.get(Database.getConnection(), fleetName)
+        val fleetId = fleet.getId()
+
+        //Create fleet access entry for this user (with VIEW access)
+        FleetAccess.create(
+            Database.getConnection(),
+            user.id,
+            fleetId,
+            "VIEW"
+        )
+
+        LOG.info("Accepted Multifleet access for user: ${user.email} on fleet: ${fleetName}")
+
+        //Remove the invite now that it has been accepted
+        removeMultifleetInvite(ctx)
+
+        ctx.status(200)
+
     }
 
     fun getEmailPreferencesMe(ctx: Context) {

@@ -53,3 +53,13 @@ CREATE TABLE stored_filters (
     PRIMARY KEY(fleet_id,name),
     FOREIGN KEY(fleet_id) REFERENCES fleet(id)
 );
+
+--changeset aidan:multifleet-invites labels:accounts
+CREATE TABLE multifleet_invites (
+    email VARCHAR(128) NOT NULL,
+    fleet_id INT NOT NULL,
+    invited_by VARCHAR(128) NOT NULL,
+
+    PRIMARY KEY (email, fleet_id),
+    FOREIGN KEY (fleet_id) REFERENCES fleet(id)
+);

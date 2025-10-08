@@ -12,6 +12,10 @@ window.$ = $;
 const helpModalRef = React.createRef();
 
 
+const closeMethodDefault = () => {
+    console.log("Help modal closed.");
+};
+
 class HelpModal extends React.Component {
     constructor(props) {
         super(props);
@@ -22,7 +26,7 @@ class HelpModal extends React.Component {
         };
     }
 
-    show(title, message, closeMethod) {
+    show(title, message, closeMethod=closeMethodDefault) {
         this.setState({
             title: title,
             message: message,
@@ -54,8 +58,14 @@ class HelpModal extends React.Component {
                     {this.state.message}
                 </div>
 
+                {/* Modal Footer */}
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal' onClick={() => this.state.closeMethod()}>Close</button>
+
+                    {/* Acknowledge Button */}
+                    <button type='button' className='btn btn-success' data-bs-dismiss='modal' onClick={() => this.state?.closeMethod()}>
+                        <i className='fa fa-check mr-2'></i>
+                        Acknowledge
+                    </button>
                 </div>
             </div>
         );
