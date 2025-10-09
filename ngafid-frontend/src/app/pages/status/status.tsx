@@ -199,10 +199,10 @@ export default function Status() {
         <div className="page-container">
             <ProtectedNavbar />
 
-            <div className="page-content grid! grid-rows-2 gap-2 mx-auto w-full max-w-[1280px]">
+            <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-[1280px] min-h-screen py-8">
 
                 {/* Kafka Services */}
-                <Card className="relative card-glossy my-auto h-[512px] w-full">
+                <Card className="relative card-glossy h-[512px] w-full self-center my-auto">
 
                     <Ping color={kafkaEntriesStatusColor} />
 
@@ -211,7 +211,7 @@ export default function Status() {
                         <CardDescription>Displays the status of all back-end Kafka services.</CardDescription>
                     </CardHeader>
 
-                    <CardContent>
+                    <CardContent className="overflow-y-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -239,7 +239,7 @@ export default function Status() {
                 </Card>
 
                 {/* Docker Services */}
-                <Card className="relative card-glossy mx-auto my-auto h-[512px] w-full">
+                <Card className="relative card-glossy h-[512px] w-full self-center my-auto">
 
                     <Ping color={dockerEntriesStatusColor} />
 
@@ -248,7 +248,7 @@ export default function Status() {
                         <CardDescription>Displays the status of all back-end Docker services.</CardDescription>
                     </CardHeader>
 
-                    <CardContent>
+                    <CardContent className="overflow-y-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
