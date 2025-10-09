@@ -3,8 +3,8 @@ import { LoaderCircle } from 'lucide-react';
 import React from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { NGAFIDUser } from 'src/types';
-import ErrorModal, { ModalDataError } from './components/modals/error_modal';
-import { useModal } from './components/modals/modal_provider';
+import ErrorModal, { ModalDataError } from '../modals/error_modal';
+import { useModal } from '../modals/modal_provider';
 
 
 type IsLoggedInFn = () => boolean;

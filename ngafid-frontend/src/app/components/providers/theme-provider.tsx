@@ -53,7 +53,7 @@ export function ThemeProvider({
         console.log("CN: ",document.documentElement.className);
 
         console.log("Theme set to:", theme);
-    }, [theme])
+    }, [theme]);
 
     const value = {
         theme,
@@ -63,20 +63,20 @@ export function ThemeProvider({
         },
         useHighContrastCharts,
         setUseHighContrastCharts,
-    }
+    };
 
     return (
         <ThemeProviderContext.Provider {...props} value={value}>
             {children}
         </ThemeProviderContext.Provider>
-    )
+    );
 }
 
 export const useTheme = () => {
-    const context = useContext(ThemeProviderContext)
+    const context = useContext(ThemeProviderContext);
 
     if (context === undefined)
-        throw new Error("useTheme must be used within a ThemeProvider")
+        throw new Error("useTheme must be used within a ThemeProvider");
 
-    return context
+    return context;
 }

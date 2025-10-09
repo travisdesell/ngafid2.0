@@ -1,10 +1,10 @@
 // ngafid-frontend/src/app/components/time_header/time_header.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import DatePicker from "../date-picker";
+import DatePicker from "@/components/date-picker";
 import React, { useEffect } from "react";
 import { useTimeHeader } from "./time_header_provider";
-import { Button } from "../ui/button";
-import { Separator } from "../ui/separator";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import Ping from "@/components/pings/ping";
 import TooltipIcon from "@/components/tooltip_icon";
 import { Calendar, CircleQuestionMark } from "lucide-react";

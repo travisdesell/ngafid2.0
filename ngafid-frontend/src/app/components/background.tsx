@@ -3,7 +3,7 @@
 //Import Background Images
 import bgLight from '../../images/clouds.jpg';
 import bgDark from '../../images/clouds_dark_compressed.jpg';
-import { useTheme } from './theme-provider';
+import { useTheme } from './providers/theme-provider';
 
 export default function Background() {
 

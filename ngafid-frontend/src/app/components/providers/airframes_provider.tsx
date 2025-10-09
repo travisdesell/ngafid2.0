@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { AirframeNameID } from "src/types";
-import ErrorModal from "./components/modals/error_modal";
-import { useModal } from "./components/modals/modal_provider";
+import ErrorModal from "../modals/error_modal";
+import { useModal } from "../modals/modal_provider";
 import { useAuth } from "./auth_provider";
-import { AIRFRAME_NAMES_IGNORED } from "./lib/airframe_names_ignored";
+import { AIRFRAME_NAMES_IGNORED } from "../../lib/airframe_names_ignored";
 
 export const ALL_AIRFRAMES_ID = -1;
 export const ALL_AIRFRAMES_NAME = "All Airframes";

@@ -1,18 +1,18 @@
 import React, { Component } from 'react';
 
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/providers/theme-provider"
 import { Moon, Sun } from 'lucide-react';
-import PingHalfLeft from './components/pings/ping_half_left';
-import PingHalfRight from './components/pings/ping_half_right';
+import PingHalfLeft from './pings/ping_half_left';
+import PingHalfRight from './pings/ping_half_right';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { Checkbox } from './components/ui/checkbox';
-import { Separator } from './components/ui/separator';
-import { useAuth } from './auth_provider';
+import { Checkbox } from './ui/checkbox';
+import { Separator } from './ui/separator';
+import { useAuth } from './providers/auth_provider';
 
 
 export function DarkModeToggle() {

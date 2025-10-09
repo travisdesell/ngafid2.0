@@ -14,7 +14,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/providers/theme-provider";
 
 const chartData = [
     { fleet: "selected_range", events: 42902, fill: "var(--color-selected_range)" },

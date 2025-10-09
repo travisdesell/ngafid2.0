@@ -2,24 +2,22 @@
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import ProtectedNavbar from "@/components/navbars/protected_navbar";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState, useRef } from "react";
-import { Bell, Calendar, Check, CircleAlert, CloudDownload, Hourglass, Loader2Icon, RefreshCw, TriangleAlert, Upload } from "lucide-react";
-import TimeHeader from "@/components/time_header/time_header";
+import { useEffect, useState } from "react";
+import { Bell, Check, CircleAlert, CloudDownload, Hourglass, Loader2Icon, RefreshCw, TriangleAlert, Upload } from "lucide-react";
 import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { fetchJson } from "@/fetchJson";
-import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/airframes_provider";
-import { useTimeHeader } from "@/components/time_header/time_header_provider";
+import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
+import TimeHeader from "@/components/providers/time_header/time_header";
+import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
 import { ChartSummaryEventCounts } from "./_charts/chart-summary-event-counts";
 import { AirframeEventCounts } from "src/types";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
 import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
 import { ChartSummaryEventTotals } from "./_charts/chart-summary-event-totals";
-import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Legend, Pie, PieChart } from "recharts";
 import { ChartSummaryEventTotalsCopy } from "./_charts/chart-summary-event-totals-copy";
 
 
@@ -493,7 +491,7 @@ export default function SummaryPage() {
                     <div className="grid gap-2 grid-rows-2 grid-cols-1">
 
                         {/* Event Count Pie & Notifications */}
-                        <div className="grid gap-2 grid-rows-1 grid-cols-[minmax(0,_2fr)_minmax(0,_1fr)]">
+                        <div className="grid gap-2 grid-rows-1">
 
                             {/* Event Count Pie */}
                             <Card className="card-glossy">
@@ -521,31 +519,6 @@ export default function SummaryPage() {
 
                             </Card>
 
-                            {/* Notifications */}
-                            <Card className="card-glossy">
-                                <CardHeader>
-                                    <CardTitle>Notifications (WIP)</CardTitle>
-                                    <CardDescription>
-                                        View notifications and alerts.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {/* <p>
-                                        Here you can add various summary statistics, charts, and other relevant information about your fleet.
-                                    </p> */}
-                                    {/* <i>No notifications at this time...</i> */}
-
-                                    {/* [EX] Unconfirmed Tail Numbers */}
-                                    <Badge className={`flex flex-row items-center space-x-2 px-3 py-2 bg-(--notification) pointer-events-none w-full justify-between`} variant={"outline"}>
-                                        <div className="flex flex-row items-center space-x-2">
-                                            <Bell />
-                                            <span>Unconfirmed Tail Numbers:</span>
-                                        </div>
-                                        <span className="font-bold">{(99999).toLocaleString('en', { useGrouping: true })}</span>
-                                    </Badge>
-
-                                </CardContent>
-                            </Card>
                         </div>
 
                         {/* Uploads & Imports */}
