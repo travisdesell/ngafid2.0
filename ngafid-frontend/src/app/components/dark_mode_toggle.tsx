@@ -1,3 +1,4 @@
+// ngafid-frontend/src/app/components/dark_mode_toggle.tsx
 import React, { Component } from 'react';
 
 import { useTheme } from "@/components/providers/theme-provider"
