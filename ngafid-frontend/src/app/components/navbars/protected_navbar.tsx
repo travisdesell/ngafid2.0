@@ -3,8 +3,8 @@ import React from "react";
 
 import {Button} from "@/components/ui/button";
 
-import { DarkModeToggle } from "@/dark_mode_toggle";
-import { CalendarCog, ChevronDown, CloudDownload, Home, Info, LogIn, Plane, Search, Upload, User, UserPlus } from 'lucide-react';
+import { DarkModeToggle } from "@/components/dark_mode_toggle";
+import { CalendarCog, ChevronDown, Home, Info, Plane, Search, Upload, User } from 'lucide-react';
 
 import { Link } from "react-router-dom";
 
@@ -14,8 +14,9 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
 
 import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
 import ErrorModal from "../modals/error_modal";
-import { useAuth } from "@/auth_provider";
+import { useAuth } from "@/components/providers/auth_provider";
 import { motion } from "framer-motion";
+import Notifications from "../providers/notifications/notifications";
 
 
 export default function ProtectedNavbar({ children }: { children?: React.ReactNode }) {
@@ -234,10 +235,11 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         </DropdownMenuContent>
                     </DropdownMenu>
 
+                    {/* Notifications */}
+                    <Notifications />
+
                     {/* Dark Mode Toggle Button */}
-                    <div className="ml-2">
-                        <DarkModeToggle/>
-                    </div>
+                    <DarkModeToggle/>
                 </div>
 
             </nav>
