@@ -221,3 +221,7 @@
 }
 
 @custom-variant hover (&:hover);
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+.page-content { color-scheme: inherit; }
