@@ -42,6 +42,7 @@ import type {
     UploadListResponse, ImportsListResponse,
     APIError
 } from "./_types/types";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 
 
@@ -767,15 +768,52 @@ export default function UploadsPage() {
         Placeholder Paginator Component
     */
     const Pager = (page: number, pages: number, onPage: (n: number) => void) => (
-        <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" size="icon" disabled={page <= 0} onClick={() => onPage(page - 1)} title="Previous">
-                <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="text-xs text-muted-foreground">Page {page + 1} / {Math.max(1, pages)}</div>
-            <Button variant="outline" size="icon" disabled={pages === 0 || page >= pages - 1} onClick={() => onPage(page + 1)} title="Next">
-                <ChevronRight className="h-4 w-4" />
-            </Button>
-        </div>
+        // <div className="flex items-center justify-end gap-2">
+        //     <Button variant="outline" size="icon" disabled={page <= 0} onClick={() => onPage(page - 1)} title="Previous">
+        //         <ChevronLeft className="h-4 w-4" />
+        //     </Button>
+        //     <div className="text-xs text-muted-foreground">Page {page + 1} / {Math.max(1, pages)}</div>
+        //     <Button variant="outline" size="icon" disabled={pages === 0 || page >= pages - 1} onClick={() => onPage(page + 1)} title="Next">
+        //         <ChevronRight className="h-4 w-4" />
+        //     </Button>
+        // </div>
+
+        <Pagination>
+            <PaginationContent>
+
+                {/* Previous */}
+                <PaginationItem>
+                    <PaginationPrevious href="#" />
+                </PaginationItem>
+
+                {/* Current */}
+                {
+                    Array.from({ length: pages+1 }, (_, i) => i).map((p) => (
+                        <PaginationItem key={`page-${p}`}>
+                            <PaginationLink
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); onPage(p); }}
+                                aria-current={p === page ? "page" : undefined}
+                                isActive={p === page}
+                            >
+                                {p + 1}
+                            </PaginationLink>
+                        </PaginationItem>
+                    ))
+                }
+
+                {/* Ellipsis */}
+                <PaginationItem>
+                    <PaginationEllipsis />
+                </PaginationItem>
+
+                {/* Next */}
+                <PaginationItem>
+                    <PaginationNext href="#" />
+                </PaginationItem>
+
+            </PaginationContent>
+        </Pagination>
     );
 
     /*
