@@ -1,0 +1,244 @@
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { X, Mail, AlertCircleIcon } from "lucide-react";
+
+import { Card, CardHeader, CardDescription, CardTitle, CardAction, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useModal } from "./modal_provider";
+import type { ModalData, ModalProps } from "./types";
+import { NGAFIDUser } from "src/types";
+import { Input } from "../ui/input";
+import { Field, FieldLabel } from "../ui/field";
+import { Textarea } from "../ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import SuccessModal from "./success_modal";
+import ErrorModal from "./error_modal";
+
+export type BugReportModalData = ModalData & {
+    user: NGAFIDUser;
+};
+
+type Props = ModalProps<BugReportModalData>;
+
+const BUG_REPORT_ENDPOINT = "/api/bug";
+const BUG_REPORT_EMAIL_UNKNOWN = "(Unknown Email!)";
+
+export default function BugReportModal({ data }: Props) {
+
+    /*
+        NOTE:
+
+        Need to pass the 'user' data via props
+        since the Modal Provider lives above
+        the Auth Provider.
+    */
+
+    const { close, setModal } = useModal();
+
+    const userEmail = (data?.user?.email ?? undefined);
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [includeEmail, setIncludeEmail] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    async function handleSubmit() {
+
+        console.log("Bug Report Modal - Submitting bug report...");
+
+        setErrorMessage(null);
+
+        const trimmedTitle = title.trim();
+        const trimmedDescription = description.trim();
+
+        // Missing title or description, show error
+        if (!trimmedTitle || !trimmedDescription) {
+            setErrorMessage("Please ensure the title and description fields are filled out.");
+            return;
+        }
+
+        // Flag as submitting
+        setSubmitting(true);
+
+        try {
+
+            const payload = {
+                title: trimmedTitle,
+                body: trimmedDescription,
+                senderEmail: userEmail,
+                includeEmail,
+            };
+
+            const response = await fetch(BUG_REPORT_ENDPOINT, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload),
+            });
+
+            // Response not OK, display error modal
+            if (!response.ok) {
+
+                const responseErrorText = await response.text().catch(() => "");
+                setModal(
+                    ErrorModal, {
+                        title: "Error Submitting Bug Report",
+                        message: responseErrorText || `Server responded with ${response.status}`,
+                    }
+                );
+
+            }
+
+            // Log success
+            const sendEnd = new Date();
+            console.log(`Bug report submitted successfully! (${sendEnd.toLocaleString()})`);
+
+            // Display success modal
+            setModal(SuccessModal, {
+                title: "Bug Report Submitted",
+                message: "Your bug report has been submitted successfully. Thank you for your feedback!",
+            });
+
+        } catch (error: unknown) {
+
+            // Got unknown error submitting, update error message
+            const sendEnd = new Date();
+            console.warn(`Error submitting bug report. (${sendEnd.toLocaleString()})`);
+            setErrorMessage(error instanceof Error ? error.message : "Unknown error submitting bug report.");
+
+        } finally {
+
+            // Clear submitting flag
+            setSubmitting(false);
+
+        }
+
+    }
+
+    return (
+        <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="w-full h-full"
+        >
+            <Card className="w-full max-w-2xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <CardHeader className="grid gap-2">
+                    <div className="grid gap-2">
+                        <CardTitle>Submit a Bug Report</CardTitle>
+                        <CardDescription>Provide a brief title and a detailed description.</CardDescription>
+                    </div>
+
+                    <CardAction>
+                        <Button variant="link" onClick={close} aria-label="Close bug report modal">
+                            <X />
+                        </Button>
+                    </CardAction>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+
+                    {/* Title Field */}
+                    <Field  className="grid gap-2">
+                        <FieldLabel htmlFor="bug-title" className="text-sm font-medium">
+                            Bug Title (required)
+                        </FieldLabel>
+                        <Input
+                            id="bug-title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Short summary of the issue"
+                            className="w-full rounded-md border border-border bg-background p-2 outline-none focus:ring-1 focus:ring-ring"
+                            disabled={submitting}
+                        />
+                    </Field>
+
+                    {/* Description Field */}
+                    <Field className="grid gap-2">
+                        <FieldLabel htmlFor="bug-description" className="text-sm font-medium">Bug Description (required)</FieldLabel>
+                        <Textarea
+                            id="bug-description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Steps to reproduce, expected vs actual behavior, links to screenshots, etc."
+                            rows={6}
+                            className="w-full resize-y rounded-md border border-border bg-background p-2 outline-none focus:ring-1 focus:ring-ring"
+                            disabled={submitting}
+                        />
+                    </Field>
+
+                    {/* Include Email Checkbox */}
+                    <Field className="flex! flex-row!  w-full! items-center justify-between gap-4">
+                        <FieldLabel htmlFor="bug-include-email" className="flex items-center gap-3 select-none cursor-pointer">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border">
+                                <Mail className="h-4 w-4" />
+                            </span>
+                            <div className="leading-tight">
+                                <div className="font-semibold">Send BCC With Report?</div>
+                                <div className="text-sm opacity-80">
+                                    {
+                                        (includeEmail)
+                                        ? (userEmail ?? BUG_REPORT_EMAIL_UNKNOWN)
+                                        : "Email will not be included"
+                                    }
+                                </div>
+                            </div>
+                        </FieldLabel>
+
+                        <Input
+                            id="bug-include-email"
+                            type="checkbox"
+                            className="h-6 w-fit! aspect-square"
+                            checked={includeEmail}
+                            onChange={(e) => setIncludeEmail(e.target.checked)}
+                            disabled={submitting}
+                        />
+                    </Field>
+
+                    {/* Tips Section */}
+                    <div className="text-xs italic opacity-80">
+                        Tips: Provide a concise title and detailed steps. You can include logs or links. Submission should complete quickly; if servers are busy, it may take a moment.
+                    </div>
+
+                    {
+                        (errorMessage)
+                        &&
+                        <Alert variant="destructive">
+                            <AlertCircleIcon size={16} />
+                            <AlertTitle>Error submitting report.</AlertTitle>
+                            <AlertDescription>
+                                {errorMessage}
+                            </AlertDescription>
+                        </Alert>
+                    }
+                </CardContent>
+
+
+                <CardFooter className="flex justify-end gap-2">
+
+                    {/* Cancel Button */}
+                    <Button variant="outline" onClick={close} disabled={submitting}>
+                        Cancel
+                    </Button>
+
+                    {/* Submit Button */}
+                    <Button onClick={handleSubmit} disabled={submitting}>
+                        {
+                            (submitting)
+                            ?
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-b-transparent" />
+                                Submitting…
+                            </span>
+                            :
+                            "Submit Bug Report"
+                        }
+                    </Button>
+                </CardFooter>
+
+                
+            </Card>
+        </motion.div>
+    );
+}

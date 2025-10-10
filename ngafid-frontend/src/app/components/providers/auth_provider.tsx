@@ -1,4 +1,4 @@
-// ngafid-frontend/src/app/auth.tsx
+// ngafid-frontend/src/app/components/providers/auth_provider.tsx
 import { LoaderCircle } from 'lucide-react';
 import React from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'

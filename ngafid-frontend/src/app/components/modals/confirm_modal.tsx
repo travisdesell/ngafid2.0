@@ -20,6 +20,7 @@ export default function ConfirmModal({ data }: ModalProps) {
 
     const { close } = useModal();
     const { title, message, onConfirm, buttonVariant } = (data as ModalDataError);
+    const messageIsUnknownOperation = (message && message.length > 0);
 
     const CONFIRM_BUTTON_VARIANT_DEFAULT: ButtonVariant = "destructive";
 
@@ -54,7 +55,7 @@ export default function ConfirmModal({ data }: ModalProps) {
                 <CardContent>
                     <div>
                         {
-                            (message && message.length > 0)
+                            (messageIsUnknownOperation)
                                 ?
                                 <p>{message as string}</p>
                                 :
@@ -71,6 +72,7 @@ export default function ConfirmModal({ data }: ModalProps) {
                             onConfirm?.();
                             close();
                         }}
+                        disabled={!messageIsUnknownOperation}
                     >
                         Confirm
                     </Button>

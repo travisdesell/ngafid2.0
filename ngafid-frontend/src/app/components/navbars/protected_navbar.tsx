@@ -17,6 +17,7 @@ import ErrorModal from "../modals/error_modal";
 import { useAuth } from "@/components/providers/auth_provider";
 import { motion } from "framer-motion";
 import Notifications from "../providers/notifications/notifications";
+import BugReportModal from "../modals/bug_report_modal";
 
 
 export default function ProtectedNavbar({ children }: { children?: React.ReactNode }) {
@@ -187,7 +188,15 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
                             {/* User Name */}
                             <DropdownMenuLabel>
-                                {user?.email}
+                                {
+                                    (user?.email)
+                                    ?
+                                    user?.email
+                                    :
+                                    <i>
+                                    Unknown User
+                                    </i>
+                                }
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator/>
 
@@ -219,9 +228,13 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             {/* Other */}
                             <DropdownMenuSeparator/>
                             <DropdownMenuItem asChild>
-                                <Link to="/protected/bug_report">
+                                <Button
+                                    className="w-full items-center justify-start"
+                                    variant="ghost"
+                                    onClick={() => setModal(BugReportModal, {user: user!})}
+                                >
                                     Report a Bug
-                                </Link>
+                                </Button>
                             </DropdownMenuItem>
 
                             {/* Log Out */}

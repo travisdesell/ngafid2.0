@@ -148,11 +148,8 @@ export default function LoginModal({ setModal }: ModalProps) {
                     <form>
                         <div className="flex flex-col gap-6">
                             {
-                                errorMessage
+                                (errorMessage)
                                 &&
-                                // <div className="p-4 bg-red-100 text-red-700 border border-red-300 rounded">
-                                //     {errorMessage}
-                                // </div>
                                 <Alert variant="destructive">
                                     <AlertCircleIcon size={16} />
                                     <AlertTitle>Error logging in.</AlertTitle>
