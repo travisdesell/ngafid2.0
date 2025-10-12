@@ -52,8 +52,13 @@ public final class ProcessUpload {
         try (Connection connection = Database.getConnection()) {
             // We need to set the upload status to PROCESSING
             upload = Upload.getUploadById(connection, uploadId);
+
             if (upload == null)
                 throw new UploadDoesNotExistException(uploadId);
+
+            if (upload.kind == Upload.Kind.DERIVED) {
+                return true; // Nothing to do for a derived upload.
+            }
 
             // If this is the first time an upload is being processed, it still exists in pieces on the disk -- combine them here.
 

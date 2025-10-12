@@ -48,6 +48,10 @@ public enum UploadHelper {
         file.setRequired(false);
         options.addOption(file);
 
+        Option query = new Option("q", "query", true, "SQL query to be used to gather a set of uploads");
+        query.setRequired(false);
+        options.addOption(query);
+
         return options;
     }
 
@@ -86,7 +90,18 @@ public enum UploadHelper {
                     }
                 }
             }
-        }
+        } else if (cmd.hasOption("q")) {
+	    String query = cmd.getOptionValue("q");
+	    String table = cmd.hasOption("fleet") ? "fleet" : "uploads";
+
+	    try (Connection connection = Database.getConnection();
+		 PreparedStatement statement = connection.prepareStatement("SELECT id FROM " + table + " WHERE " + query);
+		 ResultSet resultSet = statement.executeQuery()) {
+	        while (resultSet.next()) {
+		    ids.add(resultSet.getInt(1));
+		}
+	    }
+	}
 
         if (cmd.hasOption("fleet")) {
             if (ids.isEmpty())
