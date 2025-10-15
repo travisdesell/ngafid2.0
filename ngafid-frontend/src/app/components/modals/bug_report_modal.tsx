@@ -142,13 +142,13 @@ export default function BugReportModal({ data }: Props) {
                     {/* Title Field */}
                     <Field  className="grid gap-2">
                         <FieldLabel htmlFor="bug-title" className="text-sm font-medium">
-                            Bug Title (required)
+                            Bug Title
                         </FieldLabel>
                         <Input
                             id="bug-title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Short summary of the issue"
+                            placeholder="Short summary of the issue (required)"
                             className="w-full rounded-md border border-border bg-background p-2 outline-none focus:ring-1 focus:ring-ring"
                             disabled={submitting}
                         />
@@ -156,12 +156,14 @@ export default function BugReportModal({ data }: Props) {
 
                     {/* Description Field */}
                     <Field className="grid gap-2">
-                        <FieldLabel htmlFor="bug-description" className="text-sm font-medium">Bug Description (required)</FieldLabel>
+                        <FieldLabel htmlFor="bug-description" className="text-sm font-medium">
+                            Bug Description
+                        </FieldLabel>
                         <Textarea
                             id="bug-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Steps to reproduce, expected vs actual behavior, links to screenshots, etc."
+                            placeholder="Steps to reproduce, expected vs actual behavior, links to screenshots, etc. (required)"
                             rows={6}
                             className="w-full resize-y rounded-md border border-border bg-background p-2 outline-none focus:ring-1 focus:ring-ring"
                             disabled={submitting}
