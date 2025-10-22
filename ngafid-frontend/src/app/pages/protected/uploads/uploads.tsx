@@ -656,7 +656,7 @@ export default function UploadsPage() {
                         {/* File Info */}
                         <div className="min-w-0">
                             <div className="font-medium truncate">{u.filename}</div>
-                            <div className="text-xs text-muted-foreground">{u.startTime ?? ""}</div>
+                            <div className="text-xs text-muted-foreground">Uploaded at: {u.startTime ?? ""}</div>
                         </div>
 
                         {/* Status Badge */}
