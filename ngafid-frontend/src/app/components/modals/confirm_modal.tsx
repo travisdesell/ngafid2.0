@@ -20,7 +20,7 @@ export default function ConfirmModal({ data }: ModalProps) {
 
     const { close } = useModal();
     const { title, message, onConfirm, buttonVariant } = (data as ModalDataError);
-    const messageIsUnknownOperation = (message && message.length > 0);
+    const messageIsKnownOperation = (message && message.length > 0);
 
     const CONFIRM_BUTTON_VARIANT_DEFAULT: ButtonVariant = "destructive";
 
@@ -55,11 +55,11 @@ export default function ConfirmModal({ data }: ModalProps) {
                 <CardContent>
                     <div>
                         {
-                            (messageIsUnknownOperation)
+                            (messageIsKnownOperation)
                                 ?
                                 <p>{message as string}</p>
                                 :
-                                <p>An unknown operation is in progress, and cannot be confirmed. Please try again later.</p>
+                                <p>Confirmation has been requested, but the operation is unknown. Please try again later.</p>
                         }
                     </div>
                 </CardContent>
@@ -72,7 +72,7 @@ export default function ConfirmModal({ data }: ModalProps) {
                             onConfirm?.();
                             close();
                         }}
-                        disabled={!messageIsUnknownOperation}
+                        disabled={!messageIsKnownOperation}
                     >
                         Confirm
                     </Button>
