@@ -3,6 +3,7 @@ import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import ProtectedNavbar from "@/components/navbars/protected_navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchJson } from "@/fetchJson";
 import { useEffect, useMemo, useState } from "react";
@@ -37,6 +38,45 @@ export default function EventDefinitionsPage() {
 
     const [descriptions, setDescriptions] = useState<EventDefinitions>({});
     const [loading, setLoading] = useState(true);
+    const [filterText, setFilterText] = useState("");
+    const descriptionsFiltered = useMemo(() => {
+
+        // No filter, return all descriptions
+        if (filterText.trim() === "")
+            return descriptions;
+
+        const filterTextLower = filterText.toLowerCase();
+        const out: EventDefinitions = {};
+
+        for (const eventName of Object.keys(descriptions)) {
+
+            const perAirframe = descriptions[eventName];
+            for (const airframe of Object.keys(perAirframe)) {
+
+                const desc = perAirframe[airframe];
+
+                // Event name, airframe, or description matches filter...
+                if (
+                    eventName.toLowerCase().includes(filterTextLower) ||
+                    airframe.toLowerCase().includes(filterTextLower) ||
+                    desc.toLowerCase().includes(filterTextLower)
+                ) {
+
+                    // No entry yet for this event, create it
+                    if (!out[eventName])
+                        out[eventName] = {};
+
+                    // Add the matching description
+                    out[eventName][airframe] = desc;
+                }
+
+            }
+
+        }
+
+        return out;
+
+    }, [descriptions, filterText]);
 
     useEffect(() => {
 
@@ -78,11 +118,11 @@ export default function EventDefinitionsPage() {
         const rowsSpecificOut: RowSpecific[] = [];
 
         // Deterministic event order
-        const eventNames = Object.keys(descriptions).sort((a, b) => a.localeCompare(b));
+        const eventNames = Object.keys(descriptionsFiltered).sort((a, b) => a.localeCompare(b));
 
         for (const eventName of eventNames) {
 
-            const perAirframe = descriptions[eventName] || {};
+            const perAirframe = descriptionsFiltered[eventName] || {};
 
             // Collect keys deterministically
             const airframes = Object.keys(perAirframe).sort((a, b) => a.localeCompare(b));
@@ -150,7 +190,7 @@ export default function EventDefinitionsPage() {
 
         return { rowsGeneric: rowsGenericOut, rowsSpecific: rowsSpecificOut };
 
-    }, [descriptions]);
+    }, [descriptionsFiltered]);
 
 
     const topPaddingForSpecificRow = (index: number): string => {
@@ -173,8 +213,8 @@ export default function EventDefinitionsPage() {
 
                 <ProtectedNavbar />
 
-                <div className="flex flex-col p-4 flex-1 min-h-0 overflow-y-auto">
-                    <Card className="w-[1280px] mx-auto card-glossy h-full overflow-y-auto">
+                <div className="w-[1280px] mx-auto flex flex-col p-4 flex-1 min-h-0 overflow-y-auto gap-2">
+                    <Card className="card-glossy h-full overflow-y-auto">
 
                         <CardHeader>
                             <CardTitle>Event Definitions</CardTitle>
@@ -275,6 +315,14 @@ export default function EventDefinitionsPage() {
                             }
                         </CardContent>
                     </Card>
+
+                    <Input
+                        className="bg-background w-full"
+                        placeholder="Search event definitions..."
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                    />
+
                 </div>
             </div>
         );
