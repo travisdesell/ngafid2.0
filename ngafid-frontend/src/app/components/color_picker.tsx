@@ -14,6 +14,7 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { Check } from 'lucide-react';
 
 interface ColorPickerProps {
     value: string;
@@ -57,14 +58,27 @@ const ColorPicker = forwardRef<
                 </PopoverTrigger>
                 <PopoverContent className='w-full flex flex-col items-center gap-4'>
                     <Colorful disableAlpha color={parsedValue} onChange={(c: ColorResult) => onChange(c.hex)} />
-                    <Input
-                        maxLength={7}
-                        onChange={(e) => {
-                            onChange(e?.currentTarget?.value);
-                        }}
-                        ref={ref}
-                        value={parsedValue}
-                    />
+
+                    <div className="flex flex-row gap-2 items-center">
+                        <Input
+                            maxLength={7}
+                            onChange={(e) => {
+                                onChange(e?.currentTarget?.value);
+                            }}
+                            ref={ref}
+                            value={parsedValue}
+                        />
+
+                        <Button
+                            className='aspect-square'
+                            variant='outline'
+                            onClick={() => {
+                                setOpen(false);
+                            }}
+                        >
+                            <Check />
+                        </Button>
+                    </div>
                 </PopoverContent>
             </Popover>
         );
