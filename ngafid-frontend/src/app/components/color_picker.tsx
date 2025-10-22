@@ -55,8 +55,8 @@ const ColorPicker = forwardRef<
                         <div />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className='w-full'>
-                    <Colorful color={parsedValue} onChange={(c: ColorResult) => onChange(c.hex)} />
+                <PopoverContent className='w-full flex flex-col items-center gap-4'>
+                    <Colorful disableAlpha color={parsedValue} onChange={(c: ColorResult) => onChange(c.hex)} />
                     <Input
                         maxLength={7}
                         onChange={(e) => {
