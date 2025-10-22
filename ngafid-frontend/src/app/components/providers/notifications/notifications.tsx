@@ -14,7 +14,7 @@ export default function Notifications() {
         const notifRenderMethod = (notification as any).render ? (notification as any).render() : null;
 
         return (
-            <Item>
+            <Item key={notification.id}>
                 <ItemMedia />
                     <ItemContent>
 
