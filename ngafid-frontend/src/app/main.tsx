@@ -8,6 +8,7 @@ import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider'
 import { TimeHeaderProvider } from './components/providers/time_header/time_header_provider';
 import { AirframesProvider } from '@/components/providers/airframes_provider';
 import { NotificationsProvider } from './components/providers/notifications/notifications_provider';
+import { FlightFiltersProvider } from '@/components/providers/flight_filters_provider';
 import NotFound from '@/pages/page_missing/page_missing';
 
 
@@ -227,6 +228,7 @@ const providerTree: ProviderEntry[] = [
     [AirframesProvider, {}],
     [TimeHeaderProvider, {}],
     [NotificationsProvider, {}],
+    [FlightFiltersProvider, {}],
 ];
 
 // Helper to nest providers in order
