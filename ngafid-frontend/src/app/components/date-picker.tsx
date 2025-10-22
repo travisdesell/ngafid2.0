@@ -25,9 +25,13 @@ export default function DatePicker({ labelText, date, setDate, isInvalid }: Date
 
     return (
         <div className="flex flex-col gap-2 justify-start items-start">
-            <Label className="px-1">
-                {labelText}
-            </Label>
+            {
+                (labelText?.length)
+                &&
+                <Label className="px-1">
+                    {labelText}
+                </Label>
+            }
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
