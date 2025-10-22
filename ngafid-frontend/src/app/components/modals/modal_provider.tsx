@@ -103,6 +103,7 @@ function ModalRoot() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 bg-black/75 w-screen h-screen"
+                        tabIndex={-1}
                     >
                         <Component data={modalData} setModal={setModal} />
                     </motion.div>
