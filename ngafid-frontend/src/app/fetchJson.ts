@@ -68,6 +68,12 @@ function withParams(url: string, params?: Params): string {
 
 async function coreFetchJson<T = any>(url: string, init: RequestInit = {}): Promise<T> {
 
+
+    // Warn if the URL doesn't start with a slash or "http"
+    if (!url.startsWith("/") && !url.startsWith("http"))
+        console.warn(`fetchJson - URL "${url}" does not start with "/" or "http". This may lead to unexpected behavior.`);
+
+
     const method = (init.method || "GET").toUpperCase();
 
     //Strip body for GET/HEAD requests
