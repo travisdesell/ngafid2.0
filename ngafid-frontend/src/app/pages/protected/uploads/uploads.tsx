@@ -107,6 +107,10 @@ function safeFilename(name: string) {
 
 
 
+
+const isObjectRecord = (v: unknown): v is Record<string, unknown> =>
+    (typeof v === "object" && v !== null);
+
 function isAPIError(x: unknown): x is APIError {
     return !!x && typeof x === "object" && "errorTitle" in (x as Record<string, unknown>);
 }
@@ -562,9 +566,19 @@ export default function UploadsPage() {
                     const deleteURL = `/api/upload/${u.id}`;
                     const deleteResponse = await fetchJson.delete<{} | APIError>(deleteURL);
 
-                    // Failed to delete, throw error
-                    if (typeof (deleteResponse === "object") && (deleteResponse !== null) && ("errorTitle" in deleteResponse))
-                        throw new Error(`${(deleteResponse as APIError).errorTitle}: ${(deleteResponse as APIError).errorMessage}`);
+                    // Client returned a number/boolean/undefined for 204 (No Content), treat as success
+                    if (!isObjectRecord(deleteResponse)) {
+                        await loadUploads();
+                        await loadImports();
+                        return;
+                    }
+
+                    // Got an object, check for APIError shape
+                    if ("errorTitle" in deleteResponse) {
+                        throw new Error(
+                            `${(deleteResponse as APIError).errorTitle}: ${(deleteResponse as APIError).errorMessage}`
+                        );
+                    }
 
                     // Re-sync both lists
                     await loadUploads();
@@ -639,6 +653,7 @@ export default function UploadsPage() {
     const UploadCard = (u:UploadInfo|UploadImportItem, isPending?:boolean) => {
 
         const uploadProgress = percent(u.progressSize ?? u.bytesUploaded ?? 0, u.totalSize ?? u.sizeBytes ?? 0);
+        const progressBarColor = (u.status === "HASHING" ? "bg-secondary-foreground" : "");
         const { label, variant } = statusBadgeVariant(u.status);
 
         const disableAll = (u.status === "HASHING" || u.status === "UPLOADING");
@@ -671,7 +686,7 @@ export default function UploadsPage() {
 
                         {/* Upload Progress Bar */}
                         <div className="flex flex-col justify-around gap-1 w-full">
-                            <Progress value={uploadProgress} className="h-2" />
+                            <Progress value={uploadProgress} className="h-2" indicatorClassName={progressBarColor} />
                             <div className="text-xs text-muted-foreground whitespace-nowrap">
                                 {bytesToKB((u.progressSize ?? u.bytesUploaded ?? 0))}/{bytesToKB(u.totalSize ?? u.sizeBytes ?? 0)} kB ({uploadProgress.toFixed(2)}%)
                             </div>
