@@ -3860,8 +3860,8 @@ public class FlightTest extends TestWithConnection {
         String extraCondition = "id >= 8003";
         ArrayList<Flight> flights = Flight.getFlights(connection, extraCondition, 2);
         
-        // Should return at most 100 flights due to hardcoded LIMIT 100 safety mechanism
-        assertTrue(flights.size() <= 100, "Should return at most 100 flights due to hardcoded LIMIT 100");
+        // Should return at most 2 flights due to the limit parameter
+        assertTrue(flights.size() <= 2, "Should return at most 2 flights due to limit parameter");
         
         // Verify the returned flights are ordered by ID
         assertTrue(flights.get(0).getId() <= flights.get(1).getId(), 

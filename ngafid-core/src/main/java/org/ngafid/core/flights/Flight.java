@@ -450,7 +450,7 @@ public class Flight {
             throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
-        if (limit > 0) queryString += " LIMIT 100";
+        if (limit > 0) queryString += " LIMIT " + limit;
 
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
                 query.executeQuery()) {
