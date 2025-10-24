@@ -184,7 +184,7 @@ public class Flight {
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " + fleetId;
-        if (limit > 0) queryString += " LIMIT " + limit;
+        if (limit > 0) queryString += " LIMIT 100";
 
         return getFlightsFromDb(connection, queryString);
     }
@@ -530,7 +530,7 @@ public class Flight {
      * @return a String that is usable in a SQL query
      */
     private static String idLimStr(Set<Integer> ids, boolean complement) {
-        StringBuilder sb = new StringBuilder("WHERE ID " + (complement ? "!" : "") + "= ");
+        StringBuilder sb = new StringBuilder("WHERE id " + (complement ? "!" : "") + "= ");
         Iterator<Integer> it = ids.iterator();
 
         while (it.hasNext()) {
@@ -538,7 +538,7 @@ public class Flight {
             if (!it.hasNext()) {
                 break;
             }
-            sb.append(complement ? " AND ID != " : " OR ID = ");
+            sb.append(complement ? " AND id != " : " OR id = ");
         }
 
         return sb.toString();

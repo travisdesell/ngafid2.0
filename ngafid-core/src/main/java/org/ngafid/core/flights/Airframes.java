@@ -254,7 +254,7 @@ public enum Airframes {
         if (fleetAirframes.contains(key))
             return;
         else {
-            String queryString = "REPLACE INTO fleet_airframes SET fleet_id = ?, airframe_id = ?";
+            String queryString = "INSERT INTO fleet_airframes (fleet_id, airframe_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE fleet_id = fleet_id";
             try (PreparedStatement query = connection.prepareStatement(queryString)) {
                 query.setInt(1, fleetId);
                 query.setInt(2, airframeId);
