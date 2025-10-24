@@ -4,7 +4,7 @@ This document outlines the step-by-step process to **deploy**, **update**, and *
 
 ---
 
-## 🔐 1. SSH into the Server
+## 1. SSH into the Server
 
 You must have SSH access to the NGAFID beta server.
 
@@ -19,7 +19,7 @@ sudo su - ngafid
 
 ---
 
-## 📁 2. Navigate to the NGAFID Repository
+## 2. Navigate to the NGAFID Repository
 
 Move to the main project directory:
 ```bash
@@ -38,7 +38,7 @@ git checkout <branch-name>
 
 ---
 
-## 🧱 3. Build the Frontend (React)
+## 3. Build the Frontend (React)
 
 Navigate to the frontend directory:
 ```bash
@@ -59,7 +59,7 @@ The server will automatically serve this build.
 
 ---
 
-## ⚙️ 4. Restart NGAFID Services
+## 4. Restart NGAFID Services
 
 After pulling the latest changes and building the frontend, restart the NGAFID services to apply updates.
 
@@ -96,7 +96,7 @@ Each service corresponds to a backend component:
 
 ---
 
-## 🗄️ 5. Accessing the Database
+## 5. Accessing the Database
 
 To connect to the MySQL database:
 
@@ -123,7 +123,7 @@ SELECT COUNT(*) FROM flights;
 
 ---
 
-## 🧩 Notes
+## Notes
 
 
 - You can verify that the deployment succeeded by visiting:
@@ -136,4 +136,47 @@ SELECT COUNT(*) FROM flights;
   ```
 
 ---
+
+
+## 6. Viewing Logs
+
+### ✅ From the user with sudo access
+
+You can view logs from outside the **ngafid** account using `journalctl`:
+
+```bash
+sudo journalctl _SYSTEMD_USER_UNIT=ngafid-web.service -f
+```
+
+Or view recent logs:
+
+```bash
+sudo journalctl _SYSTEMD_USER_UNIT=ngafid-web.service -n 200 --no-pager
+```
+
+This works because the NGAFID services run as the **ngafid** user and their logs are stored in the **system journal**, not in your user journal.
+
+---
+
+### From the **ngafid** user
+
+If you’re logged in as the **ngafid** user, logs are written directly to files under:
+
+```
+/home/ngafid/server_logs/
+```
+
+You can view live logs using:
+
+```bash
+tail -f /home/ngafid/server_logs/ngafid-web.log
+tail -f /home/ngafid/server_logs/ngafid-web.err
+```
+
+Or check logs for other services:
+
+```bash
+ls /home/ngafid/server_logs/
+tail -f /home/ngafid/server_logs/ngafid-email.log
+```
 
