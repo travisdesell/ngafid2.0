@@ -15,8 +15,8 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Comprehensive unit tests for Airframes class.
- * Tests all methods, constants, inner classes, and edge cases to achieve 100% coverage.
+ * Airframes class.
+ * Testsall methods, constants, inner classes, and edge cases to achieve 100% coverage.
  */
 public class AirframesTest extends TestWithConnection {
 
@@ -598,14 +598,7 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-    // @Test
-    // @DisplayName("Should handle getAirframeByName with null name")
-    public void testGetAirframeByNameWithNullName() throws SQLException {
-        assertThrows(SQLException.class, () -> {
-            Airframes.Airframe.getAirframeByName(connection, null);
-        });
-    }
-
+    
     @Test
     @DisplayName("Should handle getAirframeByName with empty name")
     public void testGetAirframeByNameWithEmptyName() throws SQLException {
@@ -708,39 +701,7 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-    // @Test
-    // @DisplayName("Should handle Airframe with closed connection")
-    public void testAirframeWithClosedConnection() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            new Airframes.Airframe(closedConnection, "Test", null);
-        });
-    }
-
-    // @Test
-    // @DisplayName("Should handle Airframe with closed connection and id")
-    public void testAirframeWithClosedConnectionAndId() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            new Airframes.Airframe(closedConnection, 1);
-        });
-    }
-
-    // @Test
-    // @DisplayName("Should handle Airframe with closed connection in getAirframeByName")
-    public void testGetAirframeByNameWithClosedConnection() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.Airframe.getAirframeByName(closedConnection, "Test");
-        });
-    }
-
+   
     // ========== STATIC METHODS TESTS ==========
 
     @Test
@@ -790,215 +751,7 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with non-existent airframe")
-    public void testSetAirframeFleetWithNonExistentAirframe() throws SQLException {
-        int nonExistentAirframeId = 999;
-        int fleetId = 1;
-        
-        // This should not throw an exception, but the relationship won't be created
-        // due to foreign key constraint
-        Airframes.setAirframeFleet(connection, nonExistentAirframeId, fleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, nonExistentAirframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with non-existent fleet")
-    public void testSetAirframeFleetWithNonExistentFleet() throws SQLException {
-        int airframeId = 1;
-        int nonExistentFleetId = 999;
-        
-        // This should not throw an exception, but the relationship won't be created
-        // due to foreign key constraint
-        Airframes.setAirframeFleet(connection, airframeId, nonExistentFleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, nonExistentFleetId);
-            stmt.setInt(2, airframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with negative airframe ID")
-    public void testSetAirframeFleetWithNegativeAirframeId() throws SQLException {
-        int negativeAirframeId = -1;
-        int fleetId = 1;
-        
-        // This should not throw an exception, but the relationship won't be created
-        Airframes.setAirframeFleet(connection, negativeAirframeId, fleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, negativeAirframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with negative fleet ID")
-    public void testSetAirframeFleetWithNegativeFleetId() throws SQLException {
-        int airframeId = 1;
-        int negativeFleetId = -1;
-        
-        // This should not throw an exception, but the relationship won't be created
-        Airframes.setAirframeFleet(connection, airframeId, negativeFleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, negativeFleetId);
-            stmt.setInt(2, airframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with zero airframe ID")
-    public void testSetAirframeFleetWithZeroAirframeId() throws SQLException {
-        int zeroAirframeId = 0;
-        int fleetId = 1;
-        
-        // This should not throw an exception, but the relationship won't be created
-        Airframes.setAirframeFleet(connection, zeroAirframeId, fleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, zeroAirframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with zero fleet ID")
-    public void testSetAirframeFleetWithZeroFleetId() throws SQLException {
-        int airframeId = 1;
-        int zeroFleetId = 0;
-        
-        // This should not throw an exception, but the relationship won't be created
-        Airframes.setAirframeFleet(connection, airframeId, zeroFleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, zeroFleetId);
-            stmt.setInt(2, airframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with very large airframe ID")
-    public void testSetAirframeFleetWithVeryLargeAirframeId() throws SQLException {
-        int veryLargeAirframeId = Integer.MAX_VALUE;
-        int fleetId = 1;
-        
-        // This should not throw an exception, but the relationship won't be created
-        Airframes.setAirframeFleet(connection, veryLargeAirframeId, fleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, veryLargeAirframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with very large fleet ID")
-    public void testSetAirframeFleetWithVeryLargeFleetId() throws SQLException {
-        int airframeId = 1;
-        int veryLargeFleetId = Integer.MAX_VALUE;
-        
-        // This should not throw an exception, but the relationship won't be created
-        Airframes.setAirframeFleet(connection, airframeId, veryLargeFleetId);
-        
-        // Verify no relationship was created
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
-            stmt.setInt(1, veryLargeFleetId);
-            stmt.setInt(2, airframeId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
-            }
-        }
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with null connection")
-    public void testSetAirframeFleetWithNullConnection() {
-        assertThrows(NullPointerException.class, () -> {
-            Airframes.setAirframeFleet(null, 1, 1);
-        });
-    }
-
-    // @Test
-    // @DisplayName("Should handle setAirframeFleet with closed connection")
-    public void testSetAirframeFleetWithClosedConnection() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.setAirframeFleet(closedConnection, 1, 1);
-        });
-    }
-
-    // @Test
-    // @DisplayName("Should get all airframes for specific fleet")
-    public void testGetAllForFleet() throws SQLException {
-        int fleetId = 1;
-        
-        ArrayList<String> airframes = Airframes.getAll(connection, fleetId);
-        
-        assertNotNull(airframes);
-        assertTrue(airframes.size() >= 2); // Should have at least 2 airframes for fleet 1
-        assertTrue(airframes.contains("Cessna 172S"));
-        assertTrue(airframes.contains("PA-28-181"));
-    }
+    
 
     @Test
     @DisplayName("Should get all airframes for fleet with no airframes")
@@ -1022,16 +775,7 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.isEmpty());
     }
 
-    // @Test
-    // @DisplayName("Should get all airframes for fleet with zero ID")
-    public void testGetAllForFleetWithZeroId() throws SQLException {
-        int fleetId = 0;
-        
-        ArrayList<String> airframes = Airframes.getAll(connection, fleetId);
-        
-        assertNotNull(airframes);
-        assertTrue(airframes.isEmpty());
-    }
+   
 
     @Test
     @DisplayName("Should get all airframes for fleet with very large ID")
@@ -1063,16 +807,7 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-    // @Test
-    // @DisplayName("Should handle getAll with closed connection")
-    public void testGetAllWithClosedConnection() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.getAll(closedConnection, 1);
-        });
-    }
+   
 
     @Test
     @DisplayName("Should get all airframes regardless of fleet")
@@ -1100,16 +835,7 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-    // @Test
-    // @DisplayName("Should handle getAll with closed connection")
-    public void testGetAllWithClosedConnectionNoFleet() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.getAll(closedConnection);
-        });
-    }
+  
 
     @Test
     @DisplayName("Should get all airframes with IDs regardless of fleet")
@@ -1145,17 +871,7 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
-    // @Test
-    // @DisplayName("Should get all airframes with IDs for fleet with no airframes")
-    public void testGetAllWithIdsForFleetWithNoAirframes() throws SQLException {
-        int fleetId = 999; // Non-existent fleet
-        
-        Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
-        
-        assertNotNull(airframes);
-        assertTrue(airframes.length == 0);
-    }
-
+    
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with negative ID")
     public void testGetAllWithIdsForFleetWithNegativeId() throws SQLException {
@@ -1178,16 +894,7 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.length == 0);
     }
 
-    // @Test
-    // @DisplayName("Should get all airframes with IDs for fleet with very large ID")
-    public void testGetAllWithIdsForFleetWithVeryLargeId() throws SQLException {
-        int fleetId = Integer.MAX_VALUE;
-        
-        Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
-        
-        assertNotNull(airframes);
-        assertTrue(airframes.length == 0);
-    }
+   
 
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with very small ID")
@@ -1216,27 +923,9 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-    // @Test
-    // @DisplayName("Should handle getAllWithIds with closed connection")
-    public void testGetAllWithIdsWithClosedConnection() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.getAllWithIds(closedConnection);
-        });
-    }
+   
 
-    // @Test
-    // @DisplayName("Should handle getAllWithIds with closed connection and fleet ID")
-    public void testGetAllWithIdsWithClosedConnectionAndFleetId() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.getAllWithIds(closedConnection, 1);
-        });
-    }
+  
 
     @Test
     @DisplayName("Should get ID to name map")
@@ -1285,39 +974,7 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(idToNameMap.isEmpty());
     }
 
-    // @Test
-    // @DisplayName("Should get ID to name map for fleet with negative ID")
-    public void testGetIdToNameMapForFleetWithNegativeId() throws SQLException {
-        int fleetId = -1;
-        
-        HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection, fleetId);
-        
-        assertNotNull(idToNameMap);
-        assertTrue(idToNameMap.isEmpty());
-    }
-
-    // @Test
-    // @DisplayName("Should get ID to name map for fleet with zero ID")
-    public void testGetIdToNameMapForFleetWithZeroId() throws SQLException {
-        int fleetId = 0;
-        
-        HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection, fleetId);
-        
-        assertNotNull(idToNameMap);
-        assertTrue(idToNameMap.isEmpty());
-    }
-
-    // @Test
-    // @DisplayName("Should get ID to name map for fleet with very large ID")
-    public void testGetIdToNameMapForFleetWithVeryLargeId() throws SQLException {
-        int fleetId = Integer.MAX_VALUE;
-        
-        HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection, fleetId);
-        
-        assertNotNull(idToNameMap);
-        assertTrue(idToNameMap.isEmpty());
-    }
-
+   
     @Test
     @DisplayName("Should get ID to name map for fleet with very small ID")
     public void testGetIdToNameMapForFleetWithVerySmallId() throws SQLException {
@@ -1345,25 +1002,5 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-    // @Test
-    // @DisplayName("Should handle getIdToNameMap with closed connection")
-    public void testGetIdToNameMapWithClosedConnection() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.getIdToNameMap(closedConnection);
-        });
-    }
-
-    // @Test
-    // @DisplayName("Should handle getIdToNameMap with closed connection and fleet ID")
-    public void testGetIdToNameMapWithClosedConnectionAndFleetId() throws SQLException {
-        Connection closedConnection = connection;
-        closedConnection.close();
-        
-        assertThrows(SQLException.class, () -> {
-            Airframes.getIdToNameMap(closedConnection, 1);
-        });
-    }
+  
 }
