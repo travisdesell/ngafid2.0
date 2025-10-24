@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/components/number_input.tsx
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { forwardRef, useCallback, useEffect, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { NumericFormat, NumericFormatProps } from 'react-number-format';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -40,6 +40,13 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         },
         ref
     ) => {
+
+
+        const inputRef = useRef<HTMLInputElement>(null);
+
+        // Expose the inner input to parents
+        useImperativeHandle(ref, () => inputRef.current!);
+
         const [value, setValue] = useState<number | undefined>(
             controlledValue ?? defaultValue
         );
@@ -57,27 +64,6 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                     : Math.max(prev - (stepper ?? 1), min)
             );
         }, [stepper, min]);
-
-        useEffect(() => {
-            const handleKeyDown = (e: KeyboardEvent) => {
-                if (
-                    document.activeElement ===
-                    (ref as React.RefObject<HTMLInputElement>).current
-                ) {
-                    if (e.key === 'ArrowUp') {
-                        handleIncrement();
-                    } else if (e.key === 'ArrowDown') {
-                        handleDecrement();
-                    }
-                }
-            };
-
-            window.addEventListener('keydown', handleKeyDown);
-
-            return () => {
-                window.removeEventListener('keydown', handleKeyDown);
-            };
-        }, [handleIncrement, handleDecrement, ref]);
 
         useEffect(() => {
             if (controlledValue !== undefined) {
@@ -111,6 +97,17 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             }
         };
 
+
+        const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                handleIncrement();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                handleDecrement();
+            }
+        };
+
         return (
             <div className="flex items-center bg-background">
                 <NumericFormat
@@ -122,6 +119,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                     allowNegative={min < 0}
                     valueIsNumericString
                     onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
                     max={max}
                     min={min}
                     suffix={suffix}
