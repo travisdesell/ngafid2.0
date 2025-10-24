@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/components/modals/login_modal.tsx
-import React from "react";
+import React, { useCallback } from "react";
 import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import ErrorModal, { ModalDataError } from './error_modal';
 import RegisterModal from './register_modal';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { openRoute } from '@/main';
+import ForgotPasswordModal from "@/components/modals/forgot_password_modal";
 
 
 export default function LoginModal({ setModal }: ModalProps) {
@@ -25,18 +26,14 @@ export default function LoginModal({ setModal }: ModalProps) {
     const [isLoading, setIsLoading] = React.useState(false);
 
 
-    const validateEmail = () => {
+    const emailIsValid = useCallback(() => {
         const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
-        const isValidEmail = re.test(String(email).toLowerCase());  
-    };
+        const isValidEmail = re.test(String(email).toLowerCase()); 
+        return isValidEmail;
+    }, [email]);
+    
 
-    const validatePassword = () => {
-        const PASSWORD_LENGTH_MIN = 8;
-        const isValidPassword = (password.length >= PASSWORD_LENGTH_MIN);
-
-
-    };
 
     const submitLogin = () => {
 
@@ -118,7 +115,7 @@ export default function LoginModal({ setModal }: ModalProps) {
     };
     
 
-    const submitDisabled = (email.trim().length === 0 || password.trim().length === 0);
+    const submitDisabled = (email.trim().length === 0 || password.trim().length === 0 || !emailIsValid() || isLoading);
 
     return (
         <motion.div
@@ -172,12 +169,13 @@ export default function LoginModal({ setModal }: ModalProps) {
                             <div className="grid gap-2">
                                 <div className="flex items-center">
                                     <Label htmlFor="password">Password</Label>
-                                    <a
-                                        href="#"
+                                    <Button
+                                        variant="link"
+                                        onClick={() => setModal(ForgotPasswordModal)}
                                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                     >
                                         Forgot your password?
-                                    </a>
+                                    </Button>
                                 </div>
                                 <Input
                                     id="password"
