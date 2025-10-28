@@ -14,6 +14,8 @@ type ThemeProviderState = {
     setTheme: (theme: Theme) => void,
     useHighContrastCharts: boolean,
     setUseHighContrastCharts: (useHighContrast: boolean) => void,
+    useBackgroundImage: boolean,
+    setUseBackgroundImage: (useBackgroundImage: boolean) => void,
 }
 
 const initialState: ThemeProviderState = {
@@ -21,6 +23,8 @@ const initialState: ThemeProviderState = {
     setTheme: () => null,
     useHighContrastCharts: false,
     setUseHighContrastCharts: () => null,
+    useBackgroundImage: true,
+    setUseBackgroundImage: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -35,6 +39,7 @@ export function ThemeProvider({
     const themeDefault = (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     const [theme, setTheme] = useState<Theme>(themeDefault);
     const [useHighContrastCharts, setUseHighContrastCharts] = useState<boolean>(false);
+    const [useBackgroundImage, setUseBackgroundImage] = useState<boolean>(true);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -64,6 +69,8 @@ export function ThemeProvider({
         },
         useHighContrastCharts,
         setUseHighContrastCharts,
+        useBackgroundImage,
+        setUseBackgroundImage,
     };
 
     return (

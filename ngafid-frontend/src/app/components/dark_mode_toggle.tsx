@@ -22,7 +22,7 @@ export function DarkModeToggle() {
     const didOpenThemeContextMenuBefore = (localStorage.getItem("didOpenThemeContextMenu") !== null);
 
     const { isLoggedIn } = useAuth();
-    const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts } = useTheme();
+    const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts, useBackgroundImage, setUseBackgroundImage } = useTheme();
     const isDarkTheme = (theme === "dark");
 
     const [didToggle, setDidToggle] = React.useState(false);
@@ -120,7 +120,17 @@ export function DarkModeToggle() {
                     {useHighContrastCharts ? "Disable" : "Enable"} High Contrast Charts
                     <Checkbox checked={useHighContrastCharts} className="ml-auto pointer-events-none"/>
                 </ContextMenuItem>
-                {/* <Separator /> */}
+                <Separator />
+
+                {/* Toggle Background Image */}
+                <ContextMenuItem
+                    className='p-3'
+                    onClick={() => setUseBackgroundImage(!useBackgroundImage)}
+                >
+                    {useBackgroundImage ? "Disable" : "Enable"} Background Image
+                    <Checkbox checked={useBackgroundImage} className="ml-auto pointer-events-none"/>
+                </ContextMenuItem>
+
 
             </ContextMenuContent>
         }

@@ -1,8 +1,8 @@
 // ngafid-frontend/src/app/components/background.tsx
 
 //Import Background Images
-import bgLight from '../../images/clouds.jpg';
-import bgDark from '../../images/clouds_dark_compressed.jpg';
+const bgLight = '/images/backgrounds/clouds.jpg';
+const bgDark  = '/images/backgrounds/clouds_dark_compressed.jpg';
 import { useTheme } from './providers/theme-provider';
 
 export default function Background() {
@@ -13,9 +13,14 @@ export default function Background() {
         rendering the background image based on that.
     */
 
-    const { theme } = useTheme();
+    const { theme, useBackgroundImage } = useTheme();
     const isDarkMode = (theme === 'dark');
 
+    // Not using background image, render nothing
+    if (!useBackgroundImage)
+        return null;
+
+    // Otherwise, render background images
     return (
         <>
             <img src={bgLight} alt="Background" className={`scale-[1.1] fixed top-0 left-0 w-full h-full object-cover object-center pointer-events-none select-none -z-10 blur-md ${isDarkMode ? 'hidden' : 'block'}`} />
