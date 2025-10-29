@@ -12,6 +12,7 @@ x-ngafid-service-common: &ngafid-service-common
   volumes:
     # Mount the properties file and data directories
     - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
+    - ./data:/mnt/data
     - ./data/uploads:/mnt/uploads
     - ./data/archive:/mnt/archive
     - ./ngafid-static:/mnt/static
