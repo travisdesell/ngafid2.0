@@ -1,5 +1,4 @@
 // ngafid-frontend/src/app/components/providers/log_provider.tsx
-import React, { createContext, useContext, useMemo } from "react";
 
 
 /*
@@ -115,9 +114,17 @@ const LogComponentTypes = {
         prefix: "🔧 Component",
         styling: "background-color: orange;"
     },
+    Utility: {
+        prefix: "⚙️ Utility",
+        styling: "background-color: #272733;"
+    },
     Chart: {
         prefix: "📊 Chart",
         styling: "background-color: #F86;"
+    },
+    Main: {
+        prefix: "🌳 Main",
+        styling: "background-color: black;"
     }
 } satisfies Record<string, LogComponent>;
 
