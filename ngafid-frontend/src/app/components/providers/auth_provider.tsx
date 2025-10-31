@@ -1,11 +1,14 @@
 // ngafid-frontend/src/app/components/providers/auth_provider.tsx
+import { getLogger } from '@/components/providers/logger';
 import { LoaderCircle } from 'lucide-react';
-import React from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import React from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { NGAFIDUser } from 'src/types';
 import ErrorModal, { ModalDataError } from '../modals/error_modal';
 import { useModal } from '../modals/modal_provider';
 
+// const log = getLogger({ color: "blue",  type: "Provider" });
+const log = getLogger("AuthProvider", "blue", "Provider");
 
 type IsLoggedInFn = () => boolean;
 type AuthState = {
@@ -19,7 +22,8 @@ const AuthContext = React.createContext<AuthContextValue>({
     loading: true,
     user: null,
     isLoggedIn: () => false,
-})
+});
+
 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -35,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     React.useEffect(() => {
 
-        console.log("AuthProvider: Checking authentication status...");
+        log("Checking authentication status...");
 
         fetch('/api/user/me', {
             credentials: 'include'
@@ -56,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const render = () => {
 
-        console.log("AuthProvider: Rendering, loading =", state.loading, ", user =", state.user);
+        log("Rendering, loading =", state.loading, ", user =", state.user);
 
         return (
             <AuthContext.Provider value={{ ...state, isLoggedIn }}>
@@ -87,12 +91,12 @@ export function RequireAuth() {
 
     //Not logged in, redirect to home page
     if (!user) {
-        console.warn("Auth: Not logged in, redirecting to /access_denied");
+        log.warn("Auth: Not logged in, redirecting to /access_denied");
         return <Navigate to="/access_denied" replace state={{ from: location }} />;
     }
 
     //Logged in, show the requested page
-    console.log("Auth: Logged in, showing protected page");
+    log("Logged in, showing protected page");
     return <Outlet />;
 
 }
