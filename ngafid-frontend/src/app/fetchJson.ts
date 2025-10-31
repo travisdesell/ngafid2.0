@@ -1,4 +1,9 @@
 // ngafid-frontend/src/app/fetchJson.ts
+
+import { getLogger } from "@/components/providers/logger";
+
+const log = getLogger("fetchJson", "white", "Utility");
+
 type Primitive = string | number | boolean | Date;
 type Params =
     | Record<string, Primitive | Primitive[] | null | undefined>
@@ -66,12 +71,17 @@ function withParams(url: string, params?: Params): string {
 }
 
 
+function isFormLike(x: unknown): x is FormData | URLSearchParams {
+    return (typeof FormData !== "undefined" && x instanceof FormData) || x instanceof URLSearchParams;
+}
+
+
 async function coreFetchJson<T = any>(url: string, init: RequestInit = {}): Promise<T> {
 
 
     // Warn if the URL doesn't start with a slash or "http"
     if (!url.startsWith("/") && !url.startsWith("http"))
-        console.warn(`fetchJson - URL "${url}" does not start with "/" or "http". This may lead to unexpected behavior.`);
+        log.warn(`fetchJson - URL "${url}" does not start with "/" or "http". This may lead to unexpected behavior.`);
 
 
     const method = (init.method || "GET").toUpperCase();
@@ -95,6 +105,14 @@ async function coreFetchJson<T = any>(url: string, init: RequestInit = {}): Prom
         const text = await res.text().catch(() => "");
         throw new Error(`${method} ${url} -> ${res.status} ${res.statusText}${text ? ` - ${text.slice(0, 180)}` : ""}`);
     }
+
+    const status = res.status;
+    
+    // No content, return null
+    const HTTP_NO_CONTENT = 204;
+    const HTTP_RESET_CONTENT = 205;
+    if (status === HTTP_NO_CONTENT || status === HTTP_RESET_CONTENT)
+        return null as unknown as T;
 
     const contentType = (res.headers.get("content-type") || "").toLowerCase();
 
@@ -120,21 +138,33 @@ export const fetchJson = {
     },
 
     post<T = any>(url: string, body?: unknown, init?: RequestInit) {
-        return coreFetchJson<T>(url, {
-            ...init,
-            method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json", ...(init?.headers || {}) },
-            body: body == null ? undefined : JSON.stringify(body),
-        });
+
+        const headers = isFormLike(body)
+            ? { Accept: "application/json", ...(init?.headers || {}) }
+            : { "Content-Type": "application/json", Accept: "application/json", ...(init?.headers || {}) };
+
+        const finalBody = (body == null)
+            ? undefined
+            : isFormLike(body)
+                ? body
+                : JSON.stringify(body);
+
+        return coreFetchJson<T>(url, { ...init, method: "POST", headers, body: finalBody });
     },
 
     put<T = any>(url: string, body?: unknown, init?: RequestInit) {
-        return coreFetchJson<T>(url, {
-            ...init,
-            method: "PUT",
-            headers: { "Content-Type": "application/json", Accept: "application/json", ...(init?.headers || {}) },
-            body: body == null ? undefined : JSON.stringify(body),
-        });
+
+        const headers = isFormLike(body)
+            ? { Accept: "application/json", ...(init?.headers || {}) }
+            : { "Content-Type": "application/json", Accept: "application/json", ...(init?.headers || {}) };
+
+        const finalBody = (body == null)
+            ? undefined
+            : isFormLike(body)
+                ? body
+                : JSON.stringify(body);
+
+        return coreFetchJson<T>(url, { ...init, method: "PUT", headers, body: finalBody });
     },
     
     delete<T = any>(url: string, init?: RequestInit) {
