@@ -1,18 +1,21 @@
-import React, { useState } from "react";
+import { AlertCircleIcon, Mail, X } from "lucide-react";
 import { motion } from "motion/react";
-import { X, Mail, AlertCircleIcon } from "lucide-react";
+import { useState } from "react";
 
-import { Card, CardHeader, CardDescription, CardTitle, CardAction, CardContent, CardFooter } from "@/components/ui/card";
+import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
-import { useModal } from "./modal_provider";
-import type { ModalData, ModalProps } from "./types";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NGAFIDUser } from "src/types";
-import { Input } from "../ui/input";
-import { Field, FieldLabel } from "../ui/field";
-import { Textarea } from "../ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import SuccessModal from "./success_modal";
+import { Field, FieldLabel } from "../ui/field";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 import ErrorModal from "./error_modal";
+import { useModal } from "./modal_provider";
+import SuccessModal from "./success_modal";
+import type { ModalData, ModalProps } from "./types";
+
+const log = getLogger("BugReportModal", "black", "Modal");
 
 export type BugReportModalData = ModalData & {
     user: NGAFIDUser;
@@ -44,7 +47,7 @@ export default function BugReportModal({ data }: Props) {
 
     async function handleSubmit() {
 
-        console.log("Bug Report Modal - Submitting bug report...");
+        log("Bug Report Modal - Submitting bug report...");
 
         setErrorMessage(null);
 
@@ -92,7 +95,7 @@ export default function BugReportModal({ data }: Props) {
 
             // Log success
             const sendEnd = new Date();
-            console.log(`Bug report submitted successfully! (${sendEnd.toLocaleString()})`);
+            log(`Bug report submitted successfully! (${sendEnd.toLocaleString()})`);
 
             // Display success modal
             setModal(SuccessModal, {
@@ -104,7 +107,7 @@ export default function BugReportModal({ data }: Props) {
 
             // Got unknown error submitting, update error message
             const sendEnd = new Date();
-            console.warn(`Error submitting bug report. (${sendEnd.toLocaleString()})`);
+            log.warn(`Error submitting bug report. (${sendEnd.toLocaleString()})`);
             setErrorMessage(error instanceof Error ? error.message : "Unknown error submitting bug report.");
 
         } finally {
