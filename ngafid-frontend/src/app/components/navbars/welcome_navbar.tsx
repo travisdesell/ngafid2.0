@@ -11,6 +11,10 @@ import { Link } from "react-router-dom";
 import LoginModal from '../modals/login_modal';
 import RegisterModal from '../modals/register_modal';
 import { useModal } from "../modals/modal_provider";
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("WelcomeNavbar", "teal", "Navbar");
 
 
 export default function WelcomeNavbar() {
@@ -18,11 +22,11 @@ export default function WelcomeNavbar() {
     const { setModal } = useModal();
 
     const attemptLogIn = () => {
-        console.log("Showing login modal...");
+        log("Showing login modal...");
         setModal(LoginModal);
     };
     const attemptRegister = () => {
-        console.log("Showing register modal...");
+        log("Showing register modal...");
         setModal(RegisterModal);
     }
 

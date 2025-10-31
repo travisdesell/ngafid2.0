@@ -1,5 +1,8 @@
 // ngafid-frontend/src/app/components/providers/theme-provider.tsx
+import { getLogger } from "@/components/providers/logger";
 import { createContext, useContext, useEffect, useState } from "react"
+
+const log = getLogger("ThemeProvider", "fuchsia", "Provider");
 
 type Theme = "dark" | "light" | "system"
 
@@ -56,9 +59,9 @@ export function ThemeProvider({
         }
 
         root.classList.add(theme);
-        console.log("CN: ",document.documentElement.className);
+        // log("CN: ",document.documentElement.className);
+        log("Theme set to:", theme);
 
-        console.log("Theme set to:", theme);
     }, [theme]);
 
     const value = {

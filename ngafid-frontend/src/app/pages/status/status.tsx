@@ -7,6 +7,10 @@ import { CircleQuestionMark, CircleCheck, TriangleAlert, CircleAlert, ArrowBigRi
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import Ping, { PingColor } from "@/components/pings/ping";
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("Status", "black", "Page");
 
 
 enum StatusName {
@@ -108,6 +112,8 @@ export default function Status() {
 
         const fetchStatuses = async (names: readonly string[]) => {
 
+            log(`Fetching statuses for: `, names);
+
             // Fetch all statuses in parallel from the incoming names list
             const results = await Promise.allSettled(
                 names.map(async (name) => {
@@ -131,6 +137,9 @@ export default function Status() {
                     const data = (await res.json()) as StatusResponse;
                     const statusName = data.status ?? STATUS_DEFAULT;
                     const message = data.message ?? STATUS_DEFAULT_MESSAGE;
+
+                    log(`Fetched status for ${name}:`, { statusName, message });
+
                     return { name, statusName, message };
 
                 })

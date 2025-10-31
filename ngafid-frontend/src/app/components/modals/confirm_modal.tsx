@@ -8,6 +8,11 @@ import '@/index.css';
 import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 import { useModal } from './modal_provider';
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("ConfirmModal", "black", "Modal");
+
 
 export type ModalDataError = ModalData & {
     title: string;
@@ -24,7 +29,7 @@ export default function ConfirmModal({ data }: ModalProps) {
 
     const CONFIRM_BUTTON_VARIANT_DEFAULT: ButtonVariant = "destructive";
 
-    console.log("Rendering ConfirmModal with title:", title, "and message:", message);
+    log(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
 
     return (
         <motion.div
@@ -69,6 +74,7 @@ export default function ConfirmModal({ data }: ModalProps) {
                     <Button
                         variant={buttonVariant ?? CONFIRM_BUTTON_VARIANT_DEFAULT}
                         onClick={() => {
+                            log("Confirm button clicked.");
                             onConfirm?.();
                             close();
                         }}

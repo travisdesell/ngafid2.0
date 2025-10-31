@@ -19,6 +19,10 @@ import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
 import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
 import { ChartSummaryEventTotals } from "./_charts/chart-summary-event-totals";
 import { ChartSummaryEventTotalsCopy } from "./_charts/chart-summary-event-totals-copy";
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("Summary", "black", "Page");
 
 
 type FlightHoursByAirframe = {
@@ -92,14 +96,14 @@ export default function SummaryPage() {
 
     //...
     useEffect(() => {
-        console.log("[EX] Summary - Time range or airframe changed, re-fetching all summary data...");
+        log("Time range or airframe changed, re-fetching all summary data...");
         fetchAllSummaryData();
     }, [reapplyTrigger]);
 
 
     const fetchFlightHoursByAirframe = async () => {
 
-        console.log("Summary - Fetching fleet flight hours by airframe...");
+        log("Fetching fleet flight hours by airframe...");
 
         const params = new URLSearchParams({
             startDate: endpointStartDate,
@@ -118,69 +122,69 @@ export default function SummaryPage() {
         //Filter out ignored airframe names
         data = (data ?? []).filter(d => !AIRFRAME_NAMES_IGNORED.includes(d.airframe));
 
-        console.log("Summary - Fetched flight hours by airframe:", data);
+        log("Fetched flight hours by airframe:", data);
         setFlightHoursByAirframe(data);
 
     };
 
-    const fetchNotificationStatistics = () => {
+    // const fetchNotificationStatistics = () => {
 
-        console.log("Summary - Fetching notification statistics...");
+    //     log("Fetching notification statistics...");
 
-        const NOTIFICATION_TYPES = [
-            'waitingUserCount',
-            'unconfirmedTailsCount'
-        ];
+    //     const NOTIFICATION_TYPES = [
+    //         'waitingUserCount',
+    //         'unconfirmedTailsCount'
+    //     ];
 
-        for (const type of NOTIFICATION_TYPES) {
+    //     for (const type of NOTIFICATION_TYPES) {
 
-            fetch(
-                `/api/notifications/statistics?type=${type}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            )
-                .then(response => response.json())
-                .then(data => {
+    //         fetch(
+    //             `/api/notifications/statistics?type=${type}`,
+    //             {
+    //                 method: 'GET',
+    //                 headers: {
+    //                     'Content-Type': 'application/json'
+    //                 }
+    //             }
+    //         )
+    //             .then(response => response.json())
+    //             .then(data => {
 
-                    console.log(`Fetched notification statistics for type ${type}:`, data);
+    //                 console.log(`Fetched notification statistics for type ${type}:`, data);
 
-                    const newNotification = {
-                        count: data.count,
-                        message: data.message,
-                        badgeType: data.badgeType,
-                        name: data.name
-                    };
+    //                 const newNotification = {
+    //                     count: data.count,
+    //                     message: data.message,
+    //                     badgeType: data.badgeType,
+    //                     name: data.name
+    //                 };
 
-                    console.log("New notification data:", newNotification);
+    //                 console.log("New notification data:", newNotification);
 
-                    setNotifications(prev => {
-                        if (prev) {
-                            return {
-                                notifications: [...prev.notifications, newNotification]
-                            };
-                        } else {
-                            return {
-                                notifications: [newNotification]
-                            };
-                        }
-                    });
+    //                 setNotifications(prev => {
+    //                     if (prev) {
+    //                         return {
+    //                             notifications: [...prev.notifications, newNotification]
+    //                         };
+    //                     } else {
+    //                         return {
+    //                             notifications: [newNotification]
+    //                         };
+    //                     }
+    //                 });
 
-                })
-                .catch(error => {
-                    setModal(ErrorModal, { title: "Error fetching notifications", message: error.toString() });
-                });
+    //             })
+    //             .catch(error => {
+    //                 setModal(ErrorModal, { title: "Error fetching notifications", message: error.toString() });
+    //             });
 
-        }
+    //     }
 
-    };
+    // };
 
     const fetchUploadStatistics = async () => {
 
-        console.log("Summary - Fetching upload statistics...");
+        log("Fetching upload statistics...");
 
         const base = '/api/upload/count';
         const endpoints = {
@@ -213,7 +217,7 @@ export default function SummaryPage() {
                 errors: errors ?? 0,
             };
 
-            console.log("Summary - Fetched upload statistics:", next);
+            log("Fetched upload statistics:", next);
             setUploadStatistics(next);
 
         } catch (error) {
@@ -224,7 +228,7 @@ export default function SummaryPage() {
 
     const fetchFlightImportStatistics = async () => {
 
-        console.log("Summary - Fetching flight import statistics...");
+        log("Fetching flight import statistics...");
 
         const base = "/api/flight/count";
         const endpoints = {
@@ -259,7 +263,7 @@ export default function SummaryPage() {
                 errors: errors ?? 0,
             };
 
-            console.log("Summary - Fetched flight import statistics:", next);
+            log("Fetched flight import statistics:", next);
             setFlightImportStatistics(next);
 
         } catch (error) {
@@ -270,7 +274,7 @@ export default function SummaryPage() {
 
     const fetchEventCountsByAirframe = async () => {
 
-        console.log("Summary - Fetching event counts by airframe...");
+        log("Fetching event counts by airframe...");
 
         const fetchingAllAirframesData = (airframeIDSelected === ALL_AIRFRAMES_ID);
 
@@ -298,7 +302,7 @@ export default function SummaryPage() {
         if (!fetchingAllAirframesData)
             eventCountsArray = eventCountsArray.filter(d => d.airframeName === airframeNameSelected);
 
-        console.log("Summary - Fetched event counts by airframe:", eventCountsArray);
+        log("Fetched event counts by airframe:", eventCountsArray);
         setEventCountsByAirframe(eventCountsArray);
 
     }

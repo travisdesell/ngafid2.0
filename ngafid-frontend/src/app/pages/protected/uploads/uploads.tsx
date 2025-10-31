@@ -43,7 +43,11 @@ import type {
     APIError
 } from "./_types/types";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import SuccessModal from "@/components/modals/success_modal";
+import { getLogger } from "@/components/providers/logger";
 
+
+const log = getLogger("Uploads", "black", "Page");
 
 
 // UI Helpers
@@ -218,7 +222,7 @@ async function md5BestEffort(
             const fallback = async () => {
 
                 // Worker blocked or errored, compute on main thread instead
-                console.warn("MD5 worker failed, falling back to main thread hashing.");
+                log.warn("MD5 worker failed, falling back to main thread hashing.");
 
                 const hash = await md5OnMainThread(file, onProgress);
                 finish(hash);
@@ -254,7 +258,7 @@ async function md5BestEffort(
     } catch {
 
         // Failed to construct the worker, compute on main thread instead
-        console.warn("Failed to create MD5 worker, falling back to main thread hashing.");
+        log.warn("Failed to create MD5 worker, falling back to main thread hashing.");
 
         return await md5OnMainThread(file, onProgress);
 
@@ -336,7 +340,10 @@ export default function UploadsPage() {
             when the 'error' state changes.
         */
 
-        console.log("Error changed:", error);
+        if (error)
+            log.error("Error changed:", error);
+        else
+            log.log("Error cleared");
 
         if (error)
             setModal(ErrorModal, { title: "Error", message: error });
@@ -552,9 +559,9 @@ export default function UploadsPage() {
         setModal(ConfirmModal, {
             title: "Delete Upload",
             message: `Are you sure you want to delete the upload '${u.filename}'? This will remove all associated flights and data.`,
-            onConfirm: async () => {
+            onConfirm: async ()=>{
 
-                console.log("Confirmed deletion of upload:", u);
+                log("Confirmed deletion of upload:", u);
 
                 // Optimistic removal from UI (will be reloaded from server after)
                 setUploads((list) => list.filter((x) => x.id !== u.id));
@@ -568,6 +575,14 @@ export default function UploadsPage() {
 
                     // Client returned a number/boolean/undefined for 204 (No Content), treat as success
                     if (!isObjectRecord(deleteResponse)) {
+
+                        log("Uploads - Delete response is not an object, assuming success:", deleteResponse);
+
+                        setModal(SuccessModal, {
+                            title: "Upload Deleted",
+                            message: `The upload '${u.filename}' has been successfully deleted.`
+                        });
+
                         await loadUploads();
                         await loadImports();
                         return;
@@ -583,6 +598,11 @@ export default function UploadsPage() {
                     // Re-sync both lists
                     await loadUploads();
                     await loadImports();
+
+                    setModal(SuccessModal, {
+                        title: "Upload Deleted",
+                        message: `The upload '${u.filename}' has been successfully deleted.`
+                    });
 
                 } catch (e: any) {
 
@@ -834,6 +854,10 @@ export default function UploadsPage() {
     /*
         Combine the Uploads and Imports so they
         can be shown together on one card.
+
+        NOTE: This is getting retriggered every
+        frame when a new upload is added; might
+        look into a more efficient way later.
     */
     const mergedUploadsImports = React.useMemo(() => {
 
@@ -863,7 +887,9 @@ export default function UploadsPage() {
         }
 
 
-        console.log("Combined uploads & imports:", combined);
+        /*
+            log("Combined uploads & imports:", combined);
+        */
 
         return combined;
 

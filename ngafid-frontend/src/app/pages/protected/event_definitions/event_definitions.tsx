@@ -2,12 +2,16 @@
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import ProtectedNavbar from "@/components/navbars/protected_navbar";
+import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchJson } from "@/fetchJson";
 import { useEffect, useMemo, useState } from "react";
 import { EventDefinitions } from "src/types";
+
+
+const log = getLogger("EventDefinitions", "black", "Page");
 
 
 type RowGeneric = {
@@ -80,6 +84,8 @@ export default function EventDefinitionsPage() {
 
     useEffect(() => {
 
+        log("Fetching event definition descriptions...");
+
         fetchJson
             .get("/api/event/definition/description")
             .then((data: any) => {
@@ -95,6 +101,8 @@ export default function EventDefinitionsPage() {
 
                 setDescriptions(data as EventDefinitions);
 
+                log.table("Fetched event definitions:", data);
+
             })
             .catch((error: any) => {
 
@@ -107,6 +115,8 @@ export default function EventDefinitionsPage() {
             .finally(() => {
                 setLoading(false);
             });
+
+        log("Finished fetching event definition descriptions.");
 
     }, [setModal]);
 

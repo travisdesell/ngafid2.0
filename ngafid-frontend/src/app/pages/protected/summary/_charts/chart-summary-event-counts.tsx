@@ -19,6 +19,11 @@ import { AirframeEventCounts } from "src/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { JSX } from "react"
 import { useTheme } from "@/components/providers/theme-provider"
+import { getLogger } from "@/components/providers/logger"
+
+
+const log = getLogger("ChartSummaryEventCounts", "black", "Chart");
+
 
 type ChartSummaryEventCountsProps = {
     data: AirframeEventCounts[] | Record<string, AirframeEventCounts>;
@@ -38,7 +43,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
 
     const { renderDateRangeMonthly } = useTimeHeader();
-    console.log("Chart Summary Events Counts - rows:", rows);
+    log.table("Rows:", rows);
 
 
     //Union of event names (preserve first row's order, then append any extras)
@@ -76,6 +81,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
         });
         return point;
     });
+    log.table("Chart Data:", chartData);
 
 
     //Sort events by total descending
@@ -105,6 +111,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
     });
 
 
+    log("Rendering...");
     return (
         <Card className="card-glossy">
             <CardHeader>

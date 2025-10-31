@@ -8,6 +8,11 @@ import '@/index.css';
 import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 import { useModal } from './modal_provider';
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("SuccessModal", "black", "Modal");
+
 
 export type ModalDataSuccess = ModalData & {
     title: string;
@@ -20,7 +25,7 @@ export default function SuccessModal({ data }: ModalProps) {
     const { title, message } = (data as ModalDataSuccess) ?? {};
     const isUnknownOperation = (!message || message.length === 0);
 
-    console.log("Rendering SuccessModal with title:", title, "and message:", message);
+    log(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
 
     return (
         <motion.div

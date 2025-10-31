@@ -13,7 +13,10 @@ import { CircleQuestionMark, InfoIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import RegisterModal from '@/components/modals/register_modal';
 import { useModal } from '@/components/modals/modal_provider';
+import { getLogger } from '@/components/providers/logger';
 
+
+const log = getLogger("Welcome", "black", "Page");
 
 export default function Welcome() {
 
@@ -21,7 +24,7 @@ export default function Welcome() {
     const { setModal } = useModal();
 
 
-    console.log("Rendering Welcome Component!");
+    log("Rendering!");
 
 
     const tooltipAcronym = (acronym: string, fullText: string) => {

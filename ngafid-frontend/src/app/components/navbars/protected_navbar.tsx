@@ -18,7 +18,9 @@ import { useAuth } from "@/components/providers/auth_provider";
 import { motion } from "framer-motion";
 import Notifications from "../providers/notifications/notifications";
 import BugReportModal from "../modals/bug_report_modal";
+import { getLogger } from "@/components/providers/logger";
 
+const log = getLogger("ProtectedNavbar", "teal", "Navbar");
 
 export default function ProtectedNavbar({ children }: { children?: React.ReactNode }) {
 
@@ -27,7 +29,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
     const attemptLogOut = () => {
 
-        console.log("Logging out...");
+        log("Logging out...");
 
         fetch("/api/auth/logout", {
             method: "POST",
@@ -46,6 +48,8 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
     }
 
     const render = () => {
+
+        log(`Rendering with user = `, user);
 
         return (
             <nav

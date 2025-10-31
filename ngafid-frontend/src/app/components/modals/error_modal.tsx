@@ -8,6 +8,11 @@ import '@/index.css';
 import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 import { useModal } from './modal_provider';
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("ConfirmModal", "black", "Modal");
+
 
 export type ModalDataError = ModalData & {
     title: string;
@@ -19,7 +24,7 @@ export default function ErrorModal({ data }: ModalProps) {
     const { close } = useModal();
     const { title, message } = (data as ModalDataError) ?? {};
 
-    console.log("Rendering ErrorModal with title:", title, "and message:", message);
+    log.error(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
 
     return (
         <motion.div

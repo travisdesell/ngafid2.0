@@ -4,6 +4,9 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { ModalComponent, ModalData, SetModalFn } from "./types";
 import { useLocation } from "react-router-dom";
+import { getLogger } from "@/components/providers/logger";
+
+const log = getLogger("ModalProvider", "green", "Provider");
 
 type ModalContextValue = {
     modalType?: ModalComponent;
@@ -33,6 +36,8 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 
     const close = React.useCallback(() => {
 
+        log("Closing modal...");
+
         onCloseRef.current?.();
 
         setModalType(undefined);
@@ -42,8 +47,11 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 
     const setModal = React.useCallback<SetModalFn>((component, data, onClose) => {
 
+        log("Setting modal...");
+
         // No component is provided, close the modal
         if (!component) {
+            log("No component provided, closing modal.");
             close();
             return;
         }

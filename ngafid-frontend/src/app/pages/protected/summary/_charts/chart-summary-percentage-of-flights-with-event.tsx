@@ -19,6 +19,11 @@ import { AirframeEventCounts } from "src/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { JSX } from "react"
 import { useTheme } from "@/components/providers/theme-provider"
+import { getLogger } from "@/components/providers/logger"
+
+
+const log = getLogger("ChartSummaryPercentageOfFlightsWithEvent", "black", "Chart");
+
 
 type ChartSummaryEventCountsProps = {
     data: AirframeEventCounts[] | Record<string, AirframeEventCounts>;
@@ -38,7 +43,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
 
 
     const { renderDateRangeMonthly } = useTimeHeader();
-    console.log("Chart Summary Percentage of Flights With Event - rows:", rows);
+    log.table("Rows:", rows);
 
 
     //Union of event names (preserve first row's order, then append any extras)
@@ -76,7 +81,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
         });
         return point;
     });
-
+    log.table("Chart Data:", chartData);
 
     //Sort events by total descending
     chartData.sort((a, b) => {
@@ -105,6 +110,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
     });
 
 
+    log("Rendering...");
     return (
         <Card className="card-glossy">
             <CardHeader>
