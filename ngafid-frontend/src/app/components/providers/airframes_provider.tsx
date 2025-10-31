@@ -4,6 +4,9 @@ import ErrorModal from "../modals/error_modal";
 import { useModal } from "../modals/modal_provider";
 import { useAuth } from "./auth_provider";
 import { AIRFRAME_NAMES_IGNORED } from "../../lib/airframe_names_ignored";
+import { getLogger } from "@/components/providers/logger";
+
+const log = getLogger("AirframesProvider", "black", "Provider");
 
 export const ALL_AIRFRAMES_ID = -1;
 export const ALL_AIRFRAMES_NAME = "All Airframes";
@@ -42,7 +45,7 @@ export function AirframesProvider({ children }: { children: React.ReactNode }) {
         if (!user)
             return;
 
-        console.log("Airframes Provider - User logged in, fetching data...");
+        log("User logged in, fetching data...");
 
         //Fetch airframe name/ID pairs
         fetchAirframeNameIDPairs();
@@ -51,7 +54,7 @@ export function AirframesProvider({ children }: { children: React.ReactNode }) {
 
     const fetchAirframeNameIDPairs = async () => {
 
-        console.log("Airframes Provider - Fetching airframe name/ID pairs...");
+        log("Fetching airframe name/ID pairs...");
 
         fetch("/api/aircraft/airframes")
             .then((response) => {
@@ -60,7 +63,7 @@ export function AirframesProvider({ children }: { children: React.ReactNode }) {
                 return response.json();
             })
             .then((data: AirframeNameID[]) => {
-                console.log("Airframes Provider - Fetched airframe name/ID pairs:", data);
+                log(`Fetched airframe name/ID pairs: ${JSON.stringify(data)}`);
 
                 //Exclude ignored names from AIRFRAME_NAMES_IGNORED
                 data = data.filter(af => !AIRFRAME_NAMES_IGNORED.includes(af.name));
