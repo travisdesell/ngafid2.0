@@ -13,6 +13,7 @@ export type FilterCondition = {
     type: FilterConditionType;
     name: string;
     options?: any[];
+    value?: string;
 }
 
 export type FilterRule = {
