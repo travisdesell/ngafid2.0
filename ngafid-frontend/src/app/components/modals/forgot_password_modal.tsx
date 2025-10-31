@@ -1,20 +1,22 @@
 // ngafid-frontend/src/app/components/modals/forgot_password_modal.tsx
-import React, { useCallback } from "react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from "motion/react";
+import React, { useCallback } from "react";
 
+import SuccessModal from "@/components/modals/success_modal";
+import { getLogger } from "@/components/providers/logger";
+import { fetchJson } from "@/fetchJson";
 import '@/index.css';
 import { AlertCircleIcon, Loader2Icon, X } from 'lucide-react';
-import type { ModalProps } from "./types";
-import ErrorModal, { ModalDataError } from './error_modal';
-import RegisterModal from './register_modal';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { openRoute } from '@/main';
-import { fetchJson } from "@/fetchJson";
-import SuccessModal from "@/components/modals/success_modal";
+import ErrorModal from './error_modal';
+import type { ModalProps } from "./types";
+
+
+const log = getLogger("ForgotPasswordModal", "black", "Modal");
 
 
 export default function ForgotPasswordModal({ setModal }: ModalProps) {
@@ -36,7 +38,7 @@ export default function ForgotPasswordModal({ setModal }: ModalProps) {
 
     const submitPasswordReset = () => {
 
-        console.log("Forgot Password Modal - Attempting to submit password reset...");
+        log("Forgot Password Modal - Attempting to submit password reset...");
 
         const submissionData = {
             email: email,
