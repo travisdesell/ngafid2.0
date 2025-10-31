@@ -1,19 +1,22 @@
 // ngafid-frontend/src/app/components/modals/register_modal.tsx
-import { X, Loader2Icon, AlertCircleIcon } from "lucide-react";
-import { motion } from "motion/react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
+import { getLogger } from "@/components/providers/logger";
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from '@/components/ui/label';
-import React, { use, useEffect } from "react";
-import type { ModalProps } from "./types";
-import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "../ui/accordion";
-import ErrorModal, { ModalDataError } from "./error_modal";
 import { openRoute } from "@/main";
+import { AlertCircleIcon, Loader2Icon, X } from "lucide-react";
+import { motion } from "motion/react";
+import React, { useEffect } from "react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import ErrorModal, { ModalDataError } from "./error_modal";
+import type { ModalProps } from "./types";
+
+const log = getLogger("RegisterModal", "black", "Modal");
 
 export default function RegisterModal({ setModal }: ModalProps) {
 
@@ -46,7 +49,7 @@ export default function RegisterModal({ setModal }: ModalProps) {
         //Fetch the fleet list from the API
         const fetchFleetList = async () => {
 
-            console.log("Register Modal - Fetching fleet list...");
+            log("Register Modal - Fetching fleet list...");
 
             fetch("/api/fleet/names")
                 .then((response) => response.json())
@@ -72,7 +75,7 @@ export default function RegisterModal({ setModal }: ModalProps) {
 
     const submitRegister = () => {
 
-        console.log("Attempting to submit registration....");
+        log("Attempting to submit registration....");
 
         //Flag as loading
         setIsLoading(true);
@@ -156,13 +159,14 @@ export default function RegisterModal({ setModal }: ModalProps) {
 
             })
             .catch((error) => {
-                console.error("Error during registration fetch:", error);
+                log.error("Error during registration fetch:", error);
                 setModal(ErrorModal, {title : "Error during registration", message: error.toString()} as ModalDataError);
             });
             
         } catch (error) {
-            console.error(error);
+            
             if (error instanceof Error) {
+                log.error(error.message);
                 setErrorMessage(error.message);
             } else {
                 setErrorMessage("An unknown error occurred.");
@@ -186,7 +190,7 @@ export default function RegisterModal({ setModal }: ModalProps) {
 
     const render = () => {
 
-        console.log("Rendering Register Modal... (Fleet List: ", fleetList, ")");
+        log("Rendering Register Modal... (Fleet List: ", fleetList, ")");
 
         return (
             <motion.div
