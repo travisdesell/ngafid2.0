@@ -1,20 +1,21 @@
 // ngafid-frontend/src/app/components/modals/login_modal.tsx
-import React, { useCallback } from "react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from "motion/react";
+import React, { useCallback } from "react";
 
-import '@/index.css';
-import { AlertCircleIcon, Loader2Icon, X } from 'lucide-react';
-import type { ModalProps } from "./types";
-import ErrorModal, { ModalDataError } from './error_modal';
-import RegisterModal from './register_modal';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { openRoute } from '@/main';
 import ForgotPasswordModal from "@/components/modals/forgot_password_modal";
+import { getLogger } from "@/components/providers/logger";
+import '@/index.css';
+import { openRoute } from '@/main';
+import { AlertCircleIcon, Loader2Icon, X } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import ErrorModal, { ModalDataError } from './error_modal';
+import type { ModalProps } from "./types";
 
+const log = getLogger("LoginModal", "black", "Modal");
 
 export default function LoginModal({ setModal }: ModalProps) {
 
@@ -37,7 +38,7 @@ export default function LoginModal({ setModal }: ModalProps) {
 
     const submitLogin = () => {
 
-        console.log("Attempting to submit login....");
+        log("Attempting to submit login....");
 
         //Flag as loading
         setIsLoading(true);
@@ -45,7 +46,7 @@ export default function LoginModal({ setModal }: ModalProps) {
         //Email is empty, exit
         const emailEmpty = (email.trim().length === 0);
         if (emailEmpty) {
-            console.error("Preventing login submission - Email is required.");
+            log.error("Preventing login submission - Email is required.");
             setIsLoading(false);
             setErrorMessage("Preventing login submission - Email is required.");
             return false;
@@ -54,7 +55,7 @@ export default function LoginModal({ setModal }: ModalProps) {
         //Password is empty, exit
         const passwordEmpty = (password.trim().length === 0);
         if (passwordEmpty) {
-            console.error("Preventing login submission - Email is required.");
+            log.error("Preventing login submission - Password is required.");
             setIsLoading(false);
             setErrorMessage("Preventing login submission - Password is required.");
             return false;
@@ -92,7 +93,7 @@ export default function LoginModal({ setModal }: ModalProps) {
             }
 
             //Successful login
-            console.log("Login successful!");
+            log("Login successful!");
 
             //Waiting or denied, go to Waiting page
             if (data.waiting || data.denied)
