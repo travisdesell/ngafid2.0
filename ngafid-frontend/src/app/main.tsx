@@ -1,27 +1,29 @@
 // ngafid-frontend/src/app/main.tsx
-import React, { JSX } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ModalProvider } from '@/components/modals/modal_provider';
-import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider';
-import { TimeHeaderProvider } from './components/providers/time_header/time_header_provider';
 import { AirframesProvider } from '@/components/providers/airframes_provider';
-import { NotificationsProvider } from './components/providers/notifications/notifications_provider';
+import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider';
 import { FlightFiltersProvider } from '@/components/providers/flight_filters_provider';
+import { ThemeProvider } from '@/components/providers/theme-provider';
 import NotFound from '@/pages/page_missing/page_missing';
+import React, { JSX } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { NotificationsProvider } from './components/providers/notifications/notifications_provider';
+import { TimeHeaderProvider } from './components/providers/time_header/time_header_provider';
 
 
 // Import CSS
+import { getLogger } from '@/components/providers/logger';
 import '@/index.css';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Background from './components/background';
 
 
+const log = getLogger("Main", "white", "Main");
 
 // Verify that Tailwind was imported correctly
 const tailwindLoaded = !!document.querySelector('style[data-vite-dev-id*="src/app/index.css"]')
-console.log("Tailwind CSS loaded:", tailwindLoaded);
+log("Tailwind CSS loaded:", tailwindLoaded);
 
 
 
@@ -207,7 +209,7 @@ export function openRoute(url: string, isProtected: boolean = false) {
     else
         targetURLFull = `${ROUTE_BASE}/${url}`;
 
-    console.log(`Navigating to ${targetURLFull} (Protected: ${isProtected})`);
+    log(`Navigating to ${targetURLFull} (Protected: ${isProtected})`);
 
     window.location.replace(targetURLFull);
 
@@ -280,7 +282,7 @@ if (!window.reactRoot) {
 
 }
 
-console.log("Finished initializing main.tsx, rendering React tree...");
+log("Finished initializing main.tsx, rendering React tree...");
 
 window.reactRoot.render(
     <BrowserRouter basename={ROUTE_BASE}>
@@ -290,4 +292,4 @@ window.reactRoot.render(
     </BrowserRouter>
 );
 
-console.log("React tree rendered!");
+log("React tree rendered!");
