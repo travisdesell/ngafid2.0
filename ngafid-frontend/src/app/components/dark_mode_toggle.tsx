@@ -102,32 +102,34 @@ export function DarkModeToggle() {
             &&
             <ContextMenuContent className='p-0! min-w-[260px]'>
 
+
                 {/* Toggle Theme */}
                 <ContextMenuItem
                     className='p-3'
                     onClick={toggleThemeManual}
                 >
                     Switch to {isDarkTheme ? "Light" : "Dark"} Theme
-                    {/* <Checkbox checked={isDarkTheme} className="ml-auto pointer-events-none"/> */}
                 </ContextMenuItem>
                 <Separator />
+
 
                 {/* Toggle High Contrast Charts */}
                 <ContextMenuItem
                     className='p-3'
                     onClick={() => setUseHighContrastCharts(!useHighContrastCharts)}
                 >
-                    {useHighContrastCharts ? "Disable" : "Enable"} High Contrast Charts
+                    Use High Contrast Charts
                     <Checkbox checked={useHighContrastCharts} className="ml-auto pointer-events-none"/>
                 </ContextMenuItem>
                 <Separator />
+
 
                 {/* Toggle Background Image */}
                 <ContextMenuItem
                     className='p-3'
                     onClick={() => setUseBackgroundImage(!useBackgroundImage)}
                 >
-                    {useBackgroundImage ? "Disable" : "Enable"} Background Image
+                    Use Background Image
                     <Checkbox checked={useBackgroundImage} className="ml-auto pointer-events-none"/>
                 </ContextMenuItem>
 
