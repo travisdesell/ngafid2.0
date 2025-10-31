@@ -2,14 +2,14 @@ package org.ngafid.core.util.filters;
 
 //CHECKSTYLE:OFF
 
-import org.ngafid.core.accounts.User;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.ngafid.core.accounts.User;
 
 /**
  * This class contains data pertaining to a {@link User}'s stored {@link Filter} that they wish to apply in future
@@ -61,32 +61,6 @@ public final class StoredFilter {
     }
 
     /**
-     * Stores a filter and returns its instance as a {@link StoredFilter}
-     *
-     * @param connection is the SQL database connection
-     * @param fleetId    is the id of the fleet that the filter belongs to
-     * @param filterJSON is the filter in JSON form
-     * @param name       is the common name given by the user
-     * @param color      is the color of this filter in hex
-     * @return a {@link StoredFilter} instance containing the data upon successful insertion into the db
-     * @throws SQLException in the event there is an issue with the SQL query.
-     */
-    public static StoredFilter storeFilter(Connection connection, int fleetId, String filterJSON, String name,
-                                           String color) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("INSERT INTO stored_filters (filter_json, name, " +
-                "fleet_id, color) VALUES (?,?,?,?)")) {
-            query.setString(1, filterJSON);
-            query.setString(2, name);
-            query.setInt(3, fleetId);
-            query.setString(4, color);
-
-            query.executeUpdate();
-        }
-
-        return new StoredFilter(name, filterJSON, color);
-    }
-
-    /**
      * This method removes a stored filter for a {@link User} from the database using its primary key (fleetId, name)
      *
      * @param connection is the SQL database connection
@@ -130,29 +104,30 @@ public final class StoredFilter {
     }
 
     /**
-     * This method modifies a filter that already exists in the Database.
-     *
-     * @param connection  is the SQL database connection
-     * @param fleetId     is the Fleet ID
-     * @param filterJSON  is the new filter JSON
-     * @param currentName is the name of the filter that already exists
-     * @param newName     is the new name to be given to the {@link StoredFilter}
-     * @param color       is the color of this filter in hex
-     * @throws SQLException in the event there is an issue with the SQL query.
+     * This method inserts or updates a StoredFilter in the database.
+     * 
+     * @param connection is the SQL database connection
+     * @param fleetId    is the Fleet ID
+     * @param filterJSON is the filter in JSON form
+     * @param name       is the common name given by the user
+     * @param color      is the color of this filter in hex
+     * @return a {@link StoredFilter} instance containing the data upon successful insertion or update into the db
+     * @throws SQLException in the event there is an issue with the SQL query
      */
-    public static void modifyFilter(Connection connection, int fleetId, String filterJSON, String currentName,
-                                    String newName, String color) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("UPDATE stored_filters SET fleet_id = ?, name = ?," +
-                " filter_json = ?, color = ? WHERE name = ? AND fleet_id = ?")) {
-            query.setInt(1, fleetId);
-            query.setString(2, newName);
-            query.setString(3, filterJSON);
-            query.setString(4, color);
-            query.setString(5, currentName);
-            query.setInt(6, fleetId);
-
-            query.executeUpdate();
+    public static StoredFilter upsertFilter(Connection connection, int fleetId, String filterJSON, String name, String color)
+            throws SQLException {
+        try (PreparedStatement q = connection.prepareStatement(
+            "INSERT INTO stored_filters (filter_json, name, fleet_id, color) VALUES (?,?,?,?) " +
+            "ON DUPLICATE KEY UPDATE filter_json = VALUES(filter_json), color = VALUES(color)")) {
+            q.setString(1, filterJSON);
+            q.setString(2, name);
+            q.setInt(3, fleetId);
+            q.setString(4, color);
+            q.executeUpdate();
         }
+
+        return new StoredFilter(name, filterJSON, color);
+        
     }
 
     /**

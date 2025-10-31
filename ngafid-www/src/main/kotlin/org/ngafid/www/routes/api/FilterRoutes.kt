@@ -15,12 +15,11 @@ object FilterRoutes : RouteProvider() {
         app.router.apiBuilder {
             path("/api/filter") {
                 get(FilterRoutes::getStoredFilters, Role.LOGGED_IN)
-                post(FilterRoutes::postStoreFilter, Role.LOGGED_IN)
+                put(FilterRoutes::putUpsertFilter, Role.LOGGED_IN)
 
                 // fid is the filter name
                 path("{fid}") {
                     delete(FilterRoutes::deleteFilter, Role.LOGGED_IN)
-                    put(FilterRoutes::putFilter, Role.LOGGED_IN)
                 }
             }
         }
@@ -35,40 +34,24 @@ object FilterRoutes : RouteProvider() {
         }
 
     /**
-     * Creates a new filter with the given name
+     * Inserts or updates a filter
      */
-    fun postStoreFilter(ctx: Context) {
-        try {
-            Database.getConnection().use { connection ->
-                val user = SessionUtility.getUser(ctx)
-                val name = ctx.formParam("name")
-                val filterJSON = ctx.formParam("filterJSON")
-                val color = ctx.formParam("color")
-                val fleetId = user.fleetId
-
-                StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color)
-                ctx.json("SUCCESS")
-            }
-        } catch (se: SQLIntegrityConstraintViolationException) {
-            ctx.json("DUPLICATE_PK")
-        }
-    }
-
-    /**
-     * Overwrites existing filter by name
-     */
-    fun putFilter(ctx: Context) {
-        val currentName = ctx.pathParam("fid")
-        val newName = ctx.formParam("newName")!!
-        val filterJSON = ctx.formParam("filterJSON")!!
-        val color = ctx.formParam("color")!!
-        val user = SessionUtility.getUser(ctx)
-        val fleetId = user.fleetId
+    fun putUpsertFilter(ctx: Context) {
 
         Database.getConnection().use { connection ->
-            StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color)
-            ctx.json("SUCCESS")
+            val user = SessionUtility.getUser(ctx)
+            val name = ctx.formParam("name") ?: throw IllegalArgumentException("FilterRoutes - Tried to upsert filter with no name")
+
+            // Got empty name, throw error
+            if (name.isBlank())
+                throw IllegalArgumentException("FilterRoutes - Tried to upsert filter with empty name")
+
+            val filterJSON = ctx.formParam("filterJSON") ?: "{}"
+            val color = ctx.formParam("color") ?: "#000000"
+            StoredFilter.upsertFilter(connection, user.fleetId, filterJSON, name, color)
+            ctx.status(204);
         }
+
     }
 
     /**
