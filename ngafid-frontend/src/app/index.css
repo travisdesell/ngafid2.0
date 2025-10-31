@@ -37,6 +37,16 @@
 
 }
 
+/* Hide default arrows for number input elements */
+input[type="number"] {
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none;
+}
 
 :root {
   --background: oklch(1.0000 0 0);
