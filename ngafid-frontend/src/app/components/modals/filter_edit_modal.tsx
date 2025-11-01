@@ -11,18 +11,23 @@ import { useModal } from './modal_provider';
 import { ColorPicker } from "@/components/color_picker";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { FlightFilter } from "@/components/providers/flight_filters_provider";
+import { getLogger } from "@/components/providers/logger";
+
+
+const log = getLogger("FilterEditModal", "black", "Modal");
+
 
 export type ModalDataFilterEdit = ModalData & {
     colorIn: string;
     nameIn: string;
+    saveFilter: (filter: FlightFilter) => Promise<void>;
 };
 
 export default function FilterEditModal({ data }: ModalProps) {
 
     const { close } = useModal();
-    const { colorIn, nameIn } = (data as ModalDataFilterEdit);
-    console.log("Rendering FilterEditModal with incoming color:", colorIn, "and name:", nameIn);
-
+    const { colorIn, nameIn, saveFilter } = (data as ModalDataFilterEdit);
 
     const randomHexColor = () => {
         const letters = '0123456789ABCDEF';
@@ -30,6 +35,9 @@ export default function FilterEditModal({ data }: ModalProps) {
         for (let i = 0; i < 6; i++) {
             color += letters[Math.floor(Math.random() * 16)];
         }
+
+        log("Generated random color:", color);
+
         return color;
     }
 
@@ -37,7 +45,7 @@ export default function FilterEditModal({ data }: ModalProps) {
     const [nameInputValue, setNameInputValue] = useState<string>(nameIn || "");
 
     const allowFilterSave = () => {
-        return nameInputValue.trim().length > 0;
+        return (nameInputValue.trim().length > 0);
     }
 
     const renderFilterEditRow = () => {
@@ -54,6 +62,7 @@ export default function FilterEditModal({ data }: ModalProps) {
 
     }
 
+    log("Rendering with incoming color:", colorIn, "and name:", nameIn);
     return (
         <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -98,7 +107,11 @@ export default function FilterEditModal({ data }: ModalProps) {
                         <Button
                             variant={"default"}
                             onClick={() => {
-                                // onConfirm?.();
+                                saveFilter({
+                                    name: nameInputValue.trim(),
+                                    color: colorPickerValue,
+                                    criteria: JSON.stringify({}),
+                                });
                                 close();
                             }}
                             disabled={!allowFilterSave()}
