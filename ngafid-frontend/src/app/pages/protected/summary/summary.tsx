@@ -2,24 +2,24 @@
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import ProtectedNavbar from "@/components/navbars/protected_navbar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
-import { Bell, Check, CircleAlert, CloudDownload, Hourglass, Loader2Icon, RefreshCw, TriangleAlert, Upload } from "lucide-react";
-import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { fetchJson } from "@/fetchJson";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
+import { getLogger } from "@/components/providers/logger";
 import TimeHeader from "@/components/providers/time_header/time_header";
 import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
-import { ChartSummaryEventCounts } from "./_charts/chart-summary-event-counts";
-import { AirframeEventCounts } from "src/types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { fetchJson } from "@/fetchJson";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
-import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
+import { Check, CircleAlert, CloudDownload, Hourglass, Loader2Icon, TriangleAlert, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AirframeEventCounts } from "src/types";
+import { ChartSummaryEventCounts } from "./_charts/chart-summary-event-counts";
 import { ChartSummaryEventTotals } from "./_charts/chart-summary-event-totals";
 import { ChartSummaryEventTotalsCopy } from "./_charts/chart-summary-event-totals-copy";
-import { getLogger } from "@/components/providers/logger";
+import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
 
 
 const log = getLogger("Summary", "black", "Page");
@@ -370,7 +370,7 @@ export default function SummaryPage() {
 
                 {/* Time Header */}
                 <TimeHeader
-                    onApply={() => { console.log("Summary - Applying time range...") }}
+                    onApply={() => { log("Applying time range...") }}
                     dependencies={[airframeIDSelected]}
                 >
 
@@ -383,7 +383,7 @@ export default function SummaryPage() {
                             value={airframeIDSelected.toString()}
                             onValueChange={(value) => {
                                 const id = parseInt(value);
-                                console.log("Summary - Selected airframe ID:", id);
+                                log("Selected airframe ID:", id);
                                 setAirframeIDSelected(id);
                                 setAirframeNameSelected(airframes.find(pair => pair.id === id)?.name || ALL_AIRFRAMES_NAME);
                             }}
