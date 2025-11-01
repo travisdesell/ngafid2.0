@@ -1,0 +1,363 @@
+// ngafid-frontend/src/app/pages/protected/flights/_filters/flights_filter_rules.tsx
+import { getLogger } from "@/components/providers/logger";
+import { FilterRule } from "@/pages/protected/flights/_filters/types";
+
+const log = getLogger("FlightsFilterRules", "black", "Component");
+
+const airframes: any = []; // [EX]
+const systemIds: any = []; // [EX]
+const tailNumbers: any = []; // [EX]
+const timeZones: any = ["UTC", "Local"]; // [EX]
+const doubleTimeSeriesNames: any = []; // [EX]
+const visitedAirports: any = []; // [EX]
+const visitedRunways: any = []; // [EX]
+const eventNames: any = []; // [EX]
+const tagNames: any = []; // [EX]
+
+export const RULES = [
+
+    /*
+    {
+        name: "Has Any Event(s)",
+        conditions: [
+            {
+                type: "select",
+                name: "airframes",
+                options: airframes,
+            }
+        ]
+    },
+    */
+
+    {
+        name: "Airframe",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["is", "is not"],
+            },
+            {
+                type: "select",
+                name: "airframes",
+                options: airframes,
+            },
+        ],
+    },
+
+    {
+        name: "Tail Number",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["is", "is not"],
+            },
+            {
+                type: "select",
+                name: "tail numbers",
+                options: tailNumbers,
+            },
+        ],
+    },
+
+    {
+        name: "System ID",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["is", "is not"],
+            },
+            {
+                type: "select",
+                name: "system id",
+                options: systemIds,
+            },
+        ],
+    },
+
+    {
+        name: "Duration",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "number",
+                name: "hours",
+            },
+            {
+                type: "number",
+                name: "minutes",
+            },
+            {
+                type: "number",
+                name: "seconds",
+            },
+        ],
+    },
+
+    {
+        name: "Start Date and Time",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "datetime-local",
+                name: "date and time",
+            },
+            {
+                type: "select",
+                name: "timezone",
+                options: timeZones,
+            },
+        ],
+    },
+
+    {
+        name: "End Date and Time",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "datetime-local",
+                name: "date and time",
+            },
+            {
+                type: "select",
+                name: "timezone",
+                options: timeZones,
+            },
+        ],
+    },
+
+    {
+        name: "Flight ID",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "number",
+                name: "number",
+            },
+        ],
+    },
+
+    {
+        name: "Start Date",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "date",
+                name: "date",
+            },
+        ],
+    },
+
+    {
+        name: "End Date",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "date",
+                name: "date",
+            },
+        ],
+    },
+
+    {
+        name: "Start Time",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "time",
+                name: "time",
+            },
+            {
+                type: "select",
+                name: "timezone",
+                options: timeZones,
+            },
+        ],
+    },
+
+    {
+        name: "End Time",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "time",
+                name: "time",
+            },
+            {
+                type: "select",
+                name: "timezone",
+                options: timeZones,
+            },
+        ],
+    },
+
+    {
+        name: "Parameter",
+        conditions: [
+            {
+                type: "select",
+                name: "statistic",
+                options: ["min", "avg", "max"],
+            },
+            {
+                type: "select",
+                name: "doubleSeries",
+                options: doubleTimeSeriesNames,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "number",
+                name: "number",
+            },
+        ],
+    },
+
+    {
+        name: "Airport",
+        conditions: [
+            {
+                type: "select",
+                name: "airports",
+                options: visitedAirports,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["visited", "not visited"],
+            },
+        ],
+    },
+
+    {
+        name: "Runway",
+        conditions: [
+            {
+                type: "select",
+                name: "runways",
+                options: visitedRunways,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["visited", "not visited"],
+            },
+        ],
+    },
+
+    {
+        name: "Event Count",
+        conditions: [
+            {
+                type: "select",
+                name: "eventNames",
+                options: eventNames,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "number",
+                name: "number",
+            },
+        ],
+    },
+
+    {
+        name: "Event Severity",
+        conditions: [
+            {
+                type: "select",
+                name: "eventNames",
+                options: eventNames,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "number",
+                name: "number",
+            },
+        ],
+    },
+
+    {
+        name: "Event Duration",
+        conditions: [
+            {
+                type: "select",
+                name: "eventNames",
+                options: eventNames,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", "=", ">", ">="],
+            },
+            {
+                type: "number",
+                name: "number",
+            },
+        ],
+    },
+
+    {
+        name: "Tag",
+        conditions: [
+            {
+                type: "select",
+                name: "flight_tags",
+                options: tagNames,
+            },
+            {
+                type: "select",
+                name: "condition",
+                options: ["Is Associated", "Is Not Associated"],
+            },
+        ],
+    },
+] as FilterRule[];
+
+
+log.table("Defined flight filter rules:", RULES);
