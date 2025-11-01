@@ -3,15 +3,41 @@
 
 import { useModal } from "@/components/modals/modal_provider";
 import ProtectedNavbar from "@/components/navbars/protected_navbar";
+import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChartArea, Earth, MoveHorizontal, Search, Map, MoveVertical, Slash } from "lucide-react";
-import { AnimatePresence, LayoutGroup, motion, MotionConfig } from "motion/react";
-import { useState } from "react";
+import { Filter } from "@/pages/protected/flights/_filters/types";
+import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
+import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
+import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import type { ImperativePanelHandle } from "react-resizable-panels";
+import FlightsPanelSearch from "./_panels/flights_panel_search";
 
-export default function UploadsPage() {
+
+const log = getLogger("Flights", "black", "Page");
+
+
+type FlightsState = {
+    allowSearchSubmit: boolean;
+    filter: Filter;
+};
+type FlightsContextValue = FlightsState & {
+    setFilter: (updater: (prev: Filter) => Filter) => void;
+};
+
+const newID = () => ((typeof crypto !== "undefined") && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+    
+
+const FlightsContext = createContext<FlightsContextValue|null>(null);
+
+
+export default function FlightsPage() {
 
     const { setModal } = useModal();
 
@@ -29,12 +55,67 @@ export default function UploadsPage() {
     const [cesiumPanelVisible, setCesiumPanelVisible] = useState(false);
     const [mapPanelVisible, setMapPanelVisible] = useState(false);
 
-    // const searchSectionGridClasses = (searchPanelVisible) ? 'grid-cols-1 grid-rows-2' : 'grid-cols-1 grid-rows-1';
-    // const searchSectionGridClasses = (searchPanelVisible) ? 'flex-col' : 'flex-row';
-
     const anyAnalysisPanelVisible = (chartPanelVisible || cesiumPanelVisible || mapPanelVisible);
     const analysisPanelCount = (chartPanelVisible ? 1 : 0) + (cesiumPanelVisible ? 1 : 0) + (mapPanelVisible ? 1 : 0);
     const analysisSectionGridClasses = (isColumnalLayout) ? `grid-cols-1 grid-rows-${analysisPanelCount}` : `grid-rows-1 grid-cols-${analysisPanelCount}`;
+
+    const searchPanelRef = useRef<ImperativePanelHandle | null>(null);
+    const analysisPanelRef = useRef<ImperativePanelHandle | null>(null);
+
+
+    // Flights State
+    const [allowSearchSubmit, setAllowSearchSubmit] = useState(false);
+    const [state, setState] = useState<FlightsState>({
+        allowSearchSubmit: allowSearchSubmit,
+        filter: {
+            id: newID(),
+            operator: "AND",
+            rules: [],
+            groups: []
+        },
+    });
+
+    const setFilter: FlightsContextValue["setFilter"] = (updater) => {
+        setState((prev) => ({ ...prev, filter: updater(prev.filter) }));
+    };
+
+    const value: FlightsContextValue = {
+        allowSearchSubmit: state.allowSearchSubmit,
+        filter: state.filter,
+        setFilter,
+    };
+
+
+    useEffect(() => {
+        
+        const searchPanelAPI = searchPanelRef.current;
+
+        // Panel instance doesn't exist, exit
+        if (!searchPanelAPI)
+            return;
+
+        const isCollapsed = searchPanelAPI.isCollapsed?.() ?? false;
+
+        // Panel should be visible but is collapsed, expand it
+        if (searchPanelVisible && isCollapsed)
+            searchPanelAPI.expand();
+
+        // Panel should not be visible but is expanded, collapse it
+        if (!searchPanelVisible && !isCollapsed)
+            searchPanelAPI.collapse();
+
+    }, [searchPanelVisible]);
+
+
+    useEffect(() => {
+
+        if (anyAnalysisPanelVisible)
+            analysisPanelRef.current?.expand();
+        else
+            analysisPanelRef.current?.collapse();
+    
+    }, [anyAnalysisPanelVisible]);
+
 
     const renderSectionToggleButton = (Icon: React.ElementType, isActive: boolean, toggleMethod: (isActive: boolean) => void, buttonClass = "") => (
 
@@ -50,184 +131,197 @@ export default function UploadsPage() {
     );
 
     const render = () => (
-        <div className="page-container">
-            <AnimatePresence mode="wait">
-                <ProtectedNavbar>
+        <FlightsContext.Provider value={value}>
+            <div className="page-container">
+                <AnimatePresence mode="sync">
 
-                    {/* Layout Toggle */}
-                    <Button variant="outline" size="icon" onClick={() => setIsColumnalLayout(!isColumnalLayout)}>
-                        {
-                            (isColumnalLayout)
-                                ? <MoveHorizontal />
-                                : <MoveVertical />
-                        }
-                    </Button>
+                    <motion.div key="flights-page-navbar" layout>
+                        <ProtectedNavbar>
 
-                    {/* Search Area Toggle */}
-                    {renderSectionToggleButton(Search, searchPanelVisible, setSearchPanelVisible)}
+                            {/* Search Area Toggle */}
+                            {renderSectionToggleButton(Search, searchPanelVisible, setSearchPanelVisible)}
 
-                    {/* Chart Toggle */}
-                    {renderSectionToggleButton(ChartArea, chartPanelVisible, setChartPanelVisible)}
+                            {/* Chart Toggle */}
+                            {renderSectionToggleButton(ChartArea, chartPanelVisible, setChartPanelVisible)}
 
-                    {/* Cesium Toggle */}
-                    {renderSectionToggleButton(Earth, cesiumPanelVisible, setCesiumPanelVisible)}
+                            {/* Cesium Toggle */}
+                            {renderSectionToggleButton(Earth, cesiumPanelVisible, setCesiumPanelVisible)}
 
-                    {/* Map Toggle & Select */}
-                    <div className="flex">
+                            {/* Map Toggle & Select */}
+                            <div className="flex">
 
-                        {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible, "rounded-r-none")}
+                                {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible, "rounded-r-none")}
 
-                        <Select>
-                            <SelectTrigger className="w-[180px] rounded-l-none">
-                                <SelectValue placeholder="Select Map Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                <SelectItem value="cesium">Cesium</SelectItem>
-                                <SelectItem value="leaflet">Leaflet</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                                <Select>
+                                    <SelectTrigger className="w-[180px] rounded-l-none">
+                                        <SelectValue placeholder="Select Map Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">None</SelectItem>
+                                        <SelectItem value="cesium">Cesium</SelectItem>
+                                        <SelectItem value="leaflet">Leaflet</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                </ProtectedNavbar>
+                        </ProtectedNavbar>
+                    </motion.div>
 
-                <div className="page-content gap-4">
+                    <motion.div key="flights-page-content" layout className="page-content gap-4">
 
-                    <ResizablePanelGroup direction={isColumnalLayout ? "horizontal" : "vertical"} className="gap-2">
+                        <ResizablePanelGroup direction={isColumnalLayout ? "horizontal" : "vertical"} className="gap-2">
 
-                        {/* Search Section */}
-                        <ResizablePanel>
+                            {/* Search Section */}
+                            <ResizablePanel
+                                defaultSize={60}
+                                minSize={20}
+                            >
 
-                            <ResizablePanelGroup direction="vertical" className="gap-2 h-full w-full">
+                                <ResizablePanelGroup direction="vertical" className="gap-2 h-full w-full">
 
-                                <AnimatePresence initial={false} mode="popLayout">
-                                    {
-                                        (searchPanelVisible)
-                                        &&
-                                        <ResizablePanel key="search">
+                                    <LayoutGroup id="search-and-results-panels">
+
+                                        {/* Search Panel */}
+                                        {
+                                            <ResizablePanel
+                                                ref={searchPanelRef}
+                                                collapsible
+                                                key="search"
+                                                onCollapse={() => setSearchPanelVisible(false)}
+                                                onExpand={() => setSearchPanelVisible(true)}
+                                            >
+                                                <motion.div
+                                                    layout
+                                                    initial={panelInitial}
+                                                    animate={panelAnimate}
+                                                    exit={panelExit}
+                                                    transition={spring}
+                                                    className="w-full h-full min-h-0"
+                                                >
+                                                    <FlightsPanelSearch />
+                                                </motion.div>
+                                            </ResizablePanel>
+                                        }
+
+                                        <ResizableHandle withHandle />
+                                    
+                                        {/* Results Panel */}
+                                        <ResizablePanel>
                                             <motion.div
                                                 layout
                                                 initial={panelInitial}
                                                 animate={panelAnimate}
                                                 exit={panelExit}
                                                 transition={spring}
-                                                className="w-full h-full "
+                                                className="w-full h-full"
                                             >
-                                                <Card className="w-full h-full">
-                                                    <CardHeader>
-                                                        <CardTitle>Search Panel</CardTitle>
-                                                        <CardDescription>Search for flights to view</CardDescription>
-                                                    </CardHeader>
-                                                </Card>
+                                                <FlightsPanelResults />
                                             </motion.div>
+                                        
                                         </ResizablePanel>
-                                    }
-                                </AnimatePresence>
 
-                                <ResizablePanel>
-                                    <motion.div
-                                        layout
-                                        initial={panelInitial}
-                                        animate={panelAnimate}
-                                        exit={panelExit}
-                                        transition={spring}
-                                        className="w-full h-full"
-                                    >
-                                        <Card className="w-full h-full">
-                                            <CardHeader>
-                                                <CardTitle>Results Panel</CardTitle>
-                                                <CardDescription>Search for flights to view</CardDescription>
-                                            </CardHeader>
-                                        </Card>
-                                    </motion.div>
-                                </ResizablePanel>
-                            </ResizablePanelGroup>
-                        </ResizablePanel>
+                                    </LayoutGroup>
 
+                                </ResizablePanelGroup>
+                            </ResizablePanel>
 
-                        {
-                            (anyAnalysisPanelVisible)
-                            &&
+                            {/* Analysis Section */}
                             <>
-                                <ResizableHandle withHandle />
+                                <ResizableHandle withHandle className={`${anyAnalysisPanelVisible ? "visible" : "hidden"}`} />
 
-                                <ResizablePanel>
+                                <ResizablePanel
+                                    ref={analysisPanelRef}
+                                    collapsible
+                                    defaultSize={40}
+                                    className={`${anyAnalysisPanelVisible ? "visible" : "hidden"}`}
+                                >
                                     <motion.div
                                         layout
                                         layoutRoot
                                         initial={false}
-                                        animate={{}}
-                                        transition={{ layout: spring, staggerChildren: 0.05 }}
                                         className={`grid ${analysisSectionGridClasses} gap-4 h-full`}
                                     >
                                         <LayoutGroup id="analysis-panels">
-                                            <AnimatePresence initial={false} mode="popLayout">
 
-                                                {
-                                                    (chartPanelVisible)
-                                                    &&
-                                                    <motion.div
-                                                        key="chart"
-                                                        layout
-                                                        initial={panelInitial}
-                                                        animate={panelAnimate}
-                                                        exit={panelExit}
-                                                        transition={spring}
-                                                    >
-                                                        <Card className="p-4 border rounded-lg w-full h-full">
-                                                            Chart Panel
-                                                        </Card>
-                                                    </motion.div>
-                                                }
+                                            {/* Chart Panel */}
+                                            {
+                                                (chartPanelVisible)
+                                                &&
+                                                <motion.div
+                                                    key="chart"
+                                                    layout
+                                                    initial={panelInitial}
+                                                    animate={panelAnimate}
+                                                    exit={panelExit}
+                                                    transition={spring}
+                                                >
+                                                    <Card className="p-4 border rounded-lg w-full h-full card-glossy">
+                                                        Chart Panel
+                                                    </Card>
+                                                </motion.div>
+                                            }
 
-                                                {
-                                                    (cesiumPanelVisible)
-                                                    &&
-                                                    <motion.div
-                                                        key="cesium"
-                                                        layout
-                                                        initial={panelInitial}
-                                                        animate={panelAnimate}
-                                                        exit={panelExit}
-                                                        transition={spring}
-                                                    >
-                                                        <Card className="p-4 border rounded-lg w-full h-full">
-                                                            Cesium Panel
-                                                        </Card>
-                                                    </motion.div>
-                                                }
+                                            {/* Cesium Panel */}
+                                            {
+                                                (cesiumPanelVisible)
+                                                &&
+                                                <motion.div
+                                                    key="cesium"
+                                                    layout
+                                                    initial={panelInitial}
+                                                    animate={panelAnimate}
+                                                    exit={panelExit}
+                                                    transition={spring}
+                                                >
+                                                    <Card className="p-4 border rounded-lg w-full h-full card-glossy">
+                                                        Cesium Panel
+                                                    </Card>
+                                                </motion.div>
+                                            }
 
-                                                {
-                                                    (mapPanelVisible)
-                                                    &&
-                                                    <motion.div
-                                                        key="map"
-                                                        layout
-                                                        initial={panelInitial}
-                                                        animate={panelAnimate}
-                                                        exit={panelExit}
-                                                        transition={spring}
-                                                    >
-                                                        <Card className="p-4 border rounded-lg w-full h-full">
-                                                            Map Panel
-                                                        </Card>
-                                                    </motion.div>
-                                                }
-                                            </AnimatePresence>
+                                            {/* Map Panel */}
+                                            {
+                                                (mapPanelVisible)
+                                                &&
+                                                <motion.div
+                                                    key="map"
+                                                    layout
+                                                    initial={panelInitial}
+                                                    animate={panelAnimate}
+                                                    exit={panelExit}
+                                                    transition={spring}
+                                                >
+                                                    <FlightsPanelMap />
+                                                </motion.div>
+                                            }
+
                                         </LayoutGroup>
                                     </motion.div>
                                 </ResizablePanel>
                             </>
-                        }
 
 
-                    </ResizablePanelGroup>
+                        </ResizablePanelGroup>
 
-                </div>
-            </AnimatePresence>
-        </div>
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+        </FlightsContext.Provider>
     );
 
+
+    log("Rendering Flights Page");
     return render();
 
+}
+
+
+export function useFlights() {
+
+    const context = useContext(FlightsContext);
+    if (!context)
+        throw new Error("useFlights must be used within a FlightsContext.Provider");
+
+    return context;
+    
 }
