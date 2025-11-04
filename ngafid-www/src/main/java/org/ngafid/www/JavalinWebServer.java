@@ -21,6 +21,11 @@ import org.ngafid.www.routes.*;
 import org.ngafid.www.routes.api.*;
 import org.ngafid.www.routes.Role;
 
+// Import new API route providers
+import org.ngafid.www.routes.api.StartApiRoutes;
+import org.ngafid.www.routes.api.StatisticsApiRoutes;
+import org.ngafid.www.routes.api.StatusApiRoutes;
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -89,6 +94,11 @@ public class JavalinWebServer extends WebServer {
             TagRoutes.INSTANCE.bind(config);
             UploadRoutes.INSTANCE.bind(config);
             UserRoutes.INSTANCE.bind(config);
+
+            // New API routes for CRUD endpoints
+            StartApiRoutes.INSTANCE.bind(config);
+            StatisticsApiRoutes.INSTANCE.bind(config);
+            StatusApiRoutes.INSTANCE.bind(config);
 
         });
 
