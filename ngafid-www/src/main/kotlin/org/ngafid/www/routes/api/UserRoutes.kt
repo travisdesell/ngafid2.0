@@ -523,7 +523,7 @@ object UserRoutes : RouteProvider() {
     fun deleteEmailUnsubscribe(ctx: Context) {
         SessionUtility.getUser(ctx)
 
-        val id = ctx.formParam("id").toInt()
+        val id = ctx.formParam("id")!!.toInt()
         val token = ctx.pathParam("token")
 
         Database.getConnection().use { connection ->
