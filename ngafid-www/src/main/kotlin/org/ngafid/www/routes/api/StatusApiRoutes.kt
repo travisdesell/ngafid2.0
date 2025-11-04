@@ -13,20 +13,15 @@ import org.ngafid.www.routes.StatusJavalinRoutes
 object StatusApiRoutes : RouteProvider() {
 
     data class ServiceStatusInfo(
-        val status: String,
-        val message: String,
-        val instances: Map<String, String>? = null
+        val status: String, val message: String, val instances: Map<String, String>? = null
     )
 
     data class DockerServiceStatus(
-        val status: String,
-        val message: String,
-        val instances: Map<String, String>
+        val status: String, val message: String, val instances: Map<String, String>
     )
 
     data class ServiceInfo(
-        val name: String,
-        val units: List<String>
+        val name: String, val units: List<String>
     )
 
     override fun bind(app: JavalinConfig) {
@@ -43,17 +38,18 @@ object StatusApiRoutes : RouteProvider() {
      * List of Docker service names
      */
     private val DOCKER_SERVICES = listOf(
-        "ngafid-upload-consumer",
-        "ngafid-email-consumer",
-        "ngafid-event-consumer",
-        "ngafid-event-observer"
+        "ngafid-upload-consumer", "ngafid-email-consumer", "ngafid-event-consumer", "ngafid-event-observer"
     )
 
     /**
      * Maps an API route name to systemd units
      */
     private val SYSTEMD_SERVICES = mapOf(
-        "flight-processing" to listOf("ngafid-upload-consumer@0", "ngafid-upload-consumer@1", "ngafid-upload-consumer@2"),
+        "flight-processing" to listOf(
+            "ngafid-upload-consumer@0",
+            "ngafid-upload-consumer@1",
+            "ngafid-upload-consumer@2"
+        ),
         "kafka" to listOf("kafka.service"),
         "chart-service" to listOf("ngafid-chart-service.service"),
         "event-processing" to listOf("ngafid-event-consumer.service"),
@@ -82,15 +78,12 @@ object StatusApiRoutes : RouteProvider() {
                 val instances = monitor.instanceStatuses(serviceName)
 
                 ServiceStatusInfo(
-                    status = status.name,
-                    message = when (status) {
+                    status = status.name, message = when (status) {
                         StatusJavalinRoutes.ServiceStatus.OK -> "All instances of $serviceName are healthy"
                         StatusJavalinRoutes.ServiceStatus.WARNING -> "One or more instances of $serviceName are late"
                         StatusJavalinRoutes.ServiceStatus.ERROR -> "All instances of $serviceName have timed out"
                         StatusJavalinRoutes.ServiceStatus.UNCHECKED -> "Unchecked: $serviceName"
-                    },
-                    instances = instances.mapValues { it.value.name }
-                )
+                    }, instances = instances.mapValues { it.value.name })
             }
         } else {
             null
@@ -101,9 +94,7 @@ object StatusApiRoutes : RouteProvider() {
                 // We won't actually check systemd status here in this simplified version
                 // The existing /api/status/{service-name} endpoint handles that
                 ServiceStatusInfo(
-                    status = "UNCHECKED",
-                    message = "Use /api/status/$serviceName for detailed status",
-                    instances = null
+                    status = "UNCHECKED", message = "Use /api/status/$serviceName for detailed status", instances = null
                 )
             }
         } else {
@@ -126,9 +117,7 @@ object StatusApiRoutes : RouteProvider() {
      */
     fun getDockerServicesStatus(ctx: Context) {
         data class DockerServicesStatusResponse(
-            val usingDocker: Boolean,
-            val services: Map<String, DockerServiceStatus>?,
-            val timestamp: Long
+            val usingDocker: Boolean, val services: Map<String, DockerServiceStatus>?, val timestamp: Long
         )
 
         val usingDocker = DockerServiceHeartbeat.USING_DOCKER
@@ -136,9 +125,7 @@ object StatusApiRoutes : RouteProvider() {
         if (!usingDocker) {
             ctx.json(
                 DockerServicesStatusResponse(
-                    usingDocker = false,
-                    services = null,
-                    timestamp = System.currentTimeMillis()
+                    usingDocker = false, services = null, timestamp = System.currentTimeMillis()
                 )
             )
             return
@@ -150,22 +137,17 @@ object StatusApiRoutes : RouteProvider() {
             val instances = monitor.instanceStatuses(serviceName)
 
             DockerServiceStatus(
-                status = status.name,
-                message = when (status) {
+                status = status.name, message = when (status) {
                     StatusJavalinRoutes.ServiceStatus.OK -> "All instances of $serviceName are healthy"
                     StatusJavalinRoutes.ServiceStatus.WARNING -> "One or more instances of $serviceName are late"
                     StatusJavalinRoutes.ServiceStatus.ERROR -> "All instances of $serviceName have timed out"
                     StatusJavalinRoutes.ServiceStatus.UNCHECKED -> "Unchecked: $serviceName"
-                },
-                instances = instances.mapValues { it.value.name }
-            )
+                }, instances = instances.mapValues { it.value.name })
         }
 
         ctx.json(
             DockerServicesStatusResponse(
-                usingDocker = true,
-                services = services,
-                timestamp = System.currentTimeMillis()
+                usingDocker = true, services = services, timestamp = System.currentTimeMillis()
             )
         )
     }
@@ -176,9 +158,7 @@ object StatusApiRoutes : RouteProvider() {
      */
     fun getSystemdServicesStatus(ctx: Context) {
         data class SystemdServicesStatusResponse(
-            val usingDocker: Boolean,
-            val services: List<ServiceInfo>,
-            val message: String
+            val usingDocker: Boolean, val services: List<ServiceInfo>, val message: String
         )
 
         val usingDocker = DockerServiceHeartbeat.USING_DOCKER

@@ -21,14 +21,11 @@ object StartApiRoutes : RouteProvider() {
     private val LOG = Logger.getLogger(StartApiRoutes::class.java.name)
 
     data class Message(
-        val type: String,
-        val message: String
+        val type: String, val message: String
     )
 
     data class UserInfo(
-        val email: String,
-        val fullName: String,
-        val fleetId: Int
+        val email: String, val fullName: String, val fleetId: Int
     )
 
     override fun bind(app: JavalinConfig) {
@@ -85,9 +82,7 @@ object StartApiRoutes : RouteProvider() {
      */
     fun getStart(ctx: Context) {
         data class StartResponse(
-            val isLoggedIn: Boolean,
-            val messages: List<Message>? = null,
-            val user: UserInfo? = null
+            val isLoggedIn: Boolean, val messages: List<Message>? = null, val user: UserInfo? = null
         )
 
         val user: User? = ctx.sessionAttribute("user")
@@ -96,22 +91,23 @@ object StartApiRoutes : RouteProvider() {
         // Check for special query params that indicate messages
         when (ctx.queryParam("msg")) {
             "logout_success" -> messages.add(Message("success", "You have been successfully logged out."))
-            "access_denied" -> messages.add(Message("danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."))
+            "access_denied" -> messages.add(
+                Message(
+                    "danger",
+                    "You attempted to load a page you did not have access to or attempted to access a page while not logged in."
+                )
+            )
         }
 
         val userInfo = user?.let {
             UserInfo(
-                email = it.email,
-                fullName = it.fullName,
-                fleetId = it.fleetId
+                email = it.email, fullName = it.fullName, fleetId = it.fleetId
             )
         }
 
         ctx.json(
             StartResponse(
-                isLoggedIn = user != null,
-                messages = messages.ifEmpty { null },
-                user = userInfo
+                isLoggedIn = user != null, messages = messages.ifEmpty { null }, user = userInfo
             )
         )
     }
@@ -210,17 +206,18 @@ object StartApiRoutes : RouteProvider() {
                 val messages = mutableListOf<Message>()
                 ctx.queryParam("msg")?.let { msg ->
                     when (msg) {
-                        "not_found" -> messages.add(Message("danger", "The page you attempted to access does not exist."))
+                        "not_found" -> messages.add(
+                            Message(
+                                "danger",
+                                "The page you attempted to access does not exist."
+                            )
+                        )
                     }
                 }
 
                 ctx.json(
                     WelcomeResponse(
-                        navbar = navbarData,
-                        airframes = airframes,
-                        messages = messages.ifEmpty { null }
-                    )
-                )
+                    navbar = navbarData, airframes = airframes, messages = messages.ifEmpty { null }))
             }
         } catch (e: Exception) {
             LOG.severe("Error getting welcome data: ${e.message}")
@@ -234,14 +231,12 @@ object StartApiRoutes : RouteProvider() {
      */
     fun getWaiting(ctx: Context) {
         data class WaitingResponse(
-            val status: String,
-            val message: String
+            val status: String, val message: String
         )
 
         ctx.json(
             WaitingResponse(
-                status = "waiting",
-                message = "Your account is awaiting approval from your fleet manager."
+                status = "waiting", message = "Your account is awaiting approval from your fleet manager."
             )
         )
     }
@@ -338,9 +333,7 @@ object StartApiRoutes : RouteProvider() {
                     val eventNames = org.ngafid.core.event.EventDefinition.getUniqueNames(connection)
                     val tagNames = org.ngafid.core.flights.Flight.getAllTagNames(connection)
                     result["aggregateMeta"] = mapOf(
-                        "airframes" to aggAirframes,
-                        "eventNames" to eventNames,
-                        "tagNames" to tagNames
+                        "airframes" to aggAirframes, "eventNames" to eventNames, "tagNames" to tagNames
                     )
                 }
 
@@ -348,8 +341,7 @@ object StartApiRoutes : RouteProvider() {
                     val eventDefinitions = org.ngafid.core.event.EventDefinition.getAll(connection)
                     val airframeMap = Airframes.getIdToNameMap(connection, user.fleetId)
                     result["eventStatsMeta"] = mapOf(
-                        "eventDefinitions" to eventDefinitions,
-                        "airframeMap" to airframeMap
+                        "eventDefinitions" to eventDefinitions, "airframeMap" to airframeMap
                     )
                 }
             }
@@ -363,23 +355,27 @@ object StartApiRoutes : RouteProvider() {
     }
 
     // Helpers to exec StatFetcher blocks
-    private inline fun <reified T> withFleetStats(ctx: Context, crossinline block: (StatisticsJavalinRoutes.StatFetcher) -> T) {
+    private inline fun <reified T> withFleetStats(
+        ctx: Context,
+        crossinline block: (StatisticsJavalinRoutes.StatFetcher) -> T
+    ) {
         Database.getConnection().use { conn ->
             val fetcher = StatisticsJavalinRoutes.StatFetcher(conn, ctx, false)
             val value = block(fetcher)
-            @Suppress("UNCHECKED_CAST")
-            ctx.json(value as Any)
+            @Suppress("UNCHECKED_CAST") ctx.json(value as Any)
         }
     }
 
-    private inline fun <reified T> withAggStats(ctx: Context, crossinline block: (StatisticsJavalinRoutes.StatFetcher) -> T) {
+    private inline fun <reified T> withAggStats(
+        ctx: Context,
+        crossinline block: (StatisticsJavalinRoutes.StatFetcher) -> T
+    ) {
         val user = SessionUtility.getUser(ctx)
         if (!user.hasAggregateView()) throw UnauthorizedResponse("Aggregate access is required.")
         Database.getConnection().use { conn ->
             val fetcher = StatisticsJavalinRoutes.StatFetcher(conn, ctx, true)
             val value = block(fetcher)
-            @Suppress("UNCHECKED_CAST")
-            ctx.json(value as Any)
+            @Suppress("UNCHECKED_CAST") ctx.json(value as Any)
         }
     }
 

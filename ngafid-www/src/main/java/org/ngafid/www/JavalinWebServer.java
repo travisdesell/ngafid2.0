@@ -15,16 +15,9 @@ import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
-
 import org.ngafid.core.accounts.User;
 import org.ngafid.www.routes.*;
 import org.ngafid.www.routes.api.*;
-import org.ngafid.www.routes.Role;
-
-// Import new API route providers
-import org.ngafid.www.routes.api.StartApiRoutes;
-import org.ngafid.www.routes.api.StatisticsApiRoutes;
-import org.ngafid.www.routes.api.StatusApiRoutes;
 
 import java.io.File;
 import java.sql.Connection;
@@ -34,36 +27,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.eclipse.jetty.server.session.DatabaseAdaptor;
-import org.eclipse.jetty.server.session.DefaultSessionCache;
-import org.eclipse.jetty.server.session.FileSessionDataStore;
-import org.eclipse.jetty.server.session.JDBCSessionDataStore;
-import org.eclipse.jetty.server.session.JDBCSessionDataStoreFactory;
-import org.eclipse.jetty.server.session.SessionCache;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.www.routes.AccountJavalinRoutes;
-import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes;
-import org.ngafid.www.routes.AirsyncJavalinRoutes;
-import org.ngafid.www.routes.AnalysisJavalinRoutes;
-import org.ngafid.www.routes.BugReportJavalinRoutes;
-import org.ngafid.www.routes.CesiumDataJavalinRoutes;
-import org.ngafid.www.routes.DataJavalinRoutes;
-import org.ngafid.www.routes.DoubleSeriesJavalinRoutes;
-import org.ngafid.www.routes.EventJavalinRoutes;
-import org.ngafid.www.routes.FlightsJavalinRoutes;
-import org.ngafid.www.routes.ImportUploadJavalinRoutes;
-
-import org.ngafid.www.routes.StartPageJavalinRoutes;
-import org.ngafid.www.routes.StatisticsJavalinRoutes;
-import org.ngafid.www.routes.StatusJavalinRoutes;
-
-import io.javalin.Javalin;
-import io.javalin.http.staticfiles.Location;
-import io.javalin.json.JavalinGson;
-
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
     private Javalin app;
@@ -71,6 +34,47 @@ public class JavalinWebServer extends WebServer {
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
         LOG.info("Using static files location: " + staticFilesLocation);
+    }
+
+    private static SessionHandler createSessionHandler() {
+        SessionHandler sessionHandler = new SessionHandler();
+        SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
+//        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
+        sessionHandler.setSessionCache(sessionCache);
+        sessionHandler.setHttpOnly(true);
+        return sessionHandler;
+    }
+
+    private static FileSessionDataStore createFileSessionDataStore() {
+        FileSessionDataStore fileSessionDataStore = new FileSessionDataStore();
+        File baseDir = new File(System.getProperty("java.io.tmpdir"));
+        File storeDir = new File(baseDir, "javalin-session-store");
+        storeDir.mkdir();
+        fileSessionDataStore.setStoreDir(storeDir);
+        return fileSessionDataStore;
+    }
+
+    private static JDBCSessionDataStoreFactory createJDBCDataStore() {
+        DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
+
+        try (Connection connection = Database.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            databaseAdaptor.setDriverInfo(metaData.getDriverName(), metaData.getURL());
+            databaseAdaptor.setDatasource(Database.getDataSource());
+
+            JDBCSessionDataStore.SessionTableSchema schema = new JDBCSessionDataStore.SessionTableSchema();
+            schema.setTableName("jetty_sessions");
+
+            JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
+            jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
+            jdbcSessionDataStoreFactory.setSessionTableSchema(schema);
+
+            return jdbcSessionDataStoreFactory;
+        } catch (SQLException e) {
+            LOG.severe("Failed to get database connection for persistent logins.");
+        }
+        return null;
     }
 
     public void start() {
@@ -95,7 +99,6 @@ public class JavalinWebServer extends WebServer {
             UploadRoutes.INSTANCE.bind(config);
             UserRoutes.INSTANCE.bind(config);
 
-            // New API routes for CRUD endpoints
             StartApiRoutes.INSTANCE.bind(config);
             StatisticsApiRoutes.INSTANCE.bind(config);
             StatusApiRoutes.INSTANCE.bind(config);
@@ -107,18 +110,7 @@ public class JavalinWebServer extends WebServer {
     private void configureSwagger(JavalinConfig config) {
         final String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
         config.registerPlugin(new OpenApiPlugin(openApiConfig -> {
-            openApiConfig
-                    .withDocumentationPath("/openapi.json")
-                    .withDefinitionConfiguration((version, openApiDefinition) ->
-                            openApiDefinition
-                                    .withServer(openApiServer ->
-                                            openApiServer
-                                                    .description("Server description goes here")
-                                                    .url("http://localhost:{port}/{basePath}")
-                                                    .variable("port", "Server's port", "8111", "8112", "7070")
-                                                    .variable("/swagger", "Base path of the server", "", "", "v1")
-                                    )
-                    );
+            openApiConfig.withDocumentationPath("/openapi.json").withDefinitionConfiguration((version, openApiDefinition) -> openApiDefinition.withServer(openApiServer -> openApiServer.description("Server description goes here").url("http://localhost:{port}/{basePath}").variable("port", "Server's port", "8111", "8112", "7070").variable("/swagger", "Base path of the server", "", "", "v1")));
         }));
 
         config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
@@ -213,8 +205,7 @@ public class JavalinWebServer extends WebServer {
                 String accessType = user.getFleetAccessType();
 
                 if (roles.contains(Role.MANAGER_ONLY)) {
-                    if (!accessType.equals(FleetAccess.MANAGER))
-                        throw new UnauthorizedResponse("Manager access is required.");
+                    if (!accessType.equals(FleetAccess.MANAGER)) throw new UnauthorizedResponse("Manager access is required.");
                 }
 
                 if (roles.contains(Role.UPLOADER_ONLY)) {
@@ -223,8 +214,7 @@ public class JavalinWebServer extends WebServer {
                 }
 
                 if (roles.contains(Role.ADMIN_ONLY)) {
-                    if (!user.isAdmin())
-                        throw new UnauthorizedResponse("Admin access is required.");
+                    if (!user.isAdmin()) throw new UnauthorizedResponse("Admin access is required.");
                 }
             }
         });
@@ -280,49 +270,6 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configurePersistentSessions() {
-        app.unsafeConfig().jetty.modifyServletContextHandler(
-                handler -> handler.setSessionHandler(createSessionHandler())
-        );
-    }
-
-    private static SessionHandler createSessionHandler() {
-        SessionHandler sessionHandler = new SessionHandler();
-        SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
-//        sessionCache.setSessionDataStore(createFileSessionDataStore());
-        sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
-        sessionHandler.setSessionCache(sessionCache);
-        sessionHandler.setHttpOnly(true);
-        return sessionHandler;
-    }
-
-    private static FileSessionDataStore createFileSessionDataStore() {
-        FileSessionDataStore fileSessionDataStore = new FileSessionDataStore();
-        File baseDir = new File(System.getProperty("java.io.tmpdir"));
-        File storeDir = new File(baseDir, "javalin-session-store");
-        storeDir.mkdir();
-        fileSessionDataStore.setStoreDir(storeDir);
-        return fileSessionDataStore;
-    }
-
-    private static JDBCSessionDataStoreFactory createJDBCDataStore() {
-        DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
-
-        try (Connection connection = Database.getConnection()) {
-            DatabaseMetaData metaData = connection.getMetaData();
-            databaseAdaptor.setDriverInfo(metaData.getDriverName(), metaData.getURL());
-            databaseAdaptor.setDatasource(Database.getDataSource());
-
-            JDBCSessionDataStore.SessionTableSchema schema = new JDBCSessionDataStore.SessionTableSchema();
-            schema.setTableName("jetty_sessions");
-
-            JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
-            jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
-            jdbcSessionDataStoreFactory.setSessionTableSchema(schema);
-
-            return jdbcSessionDataStoreFactory;
-        } catch (SQLException e) {
-            LOG.severe("Failed to get database connection for persistent logins.");
-        }
-        return null;
+        app.unsafeConfig().jetty.modifyServletContextHandler(handler -> handler.setSessionHandler(createSessionHandler()));
     }
 }
