@@ -30,9 +30,13 @@ object TagRoutes : RouteProvider() {
         }
     }
 
-    fun getTags(ctx: Context): Unit =
-        Database.getConnection()
-            .use { connection -> Flight.getAllTags(connection, SessionUtility.getUser(ctx).fleetId) }
+    fun getTags(ctx: Context) {
+        Database.getConnection().use { connection ->
+            val fleetId = SessionUtility.getUser(ctx).fleetId
+            val tags = Flight.getAllTags(connection, fleetId)
+            ctx.json(tags)
+        }
+    }
 
     fun postCreateTag(ctx: Context) {
         val user = SessionUtility.getUser(ctx)

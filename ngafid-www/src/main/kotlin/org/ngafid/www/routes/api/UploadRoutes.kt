@@ -58,7 +58,7 @@ object UploadRoutes : RouteProvider() {
             val currentPage = ctx.queryParam("currentPage")!!.toInt()
             val pageSize = ctx.queryParam("pageSize")!!.toInt()
             val totalUploads = Upload.getNumUploads(connection, user.fleetId, null)
-            val numberPages = totalUploads / pageSize
+            val numberPages = (totalUploads + pageSize - 1) / pageSize
 
             val uploads =
                 Upload.getUploads(connection, user.fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize)
@@ -77,7 +77,7 @@ object UploadRoutes : RouteProvider() {
             val pageSize = ctx.queryParam("pageSize")!!.toInt()
 
             val totalImports = Upload.getNumUploads(connection, user.fleetId, null)
-            val numberPages = totalImports / pageSize
+            val numberPages = (totalImports + pageSize - 1) / pageSize
             val imports = Upload.getUploads(
                 connection,
                 user.fleetId,
