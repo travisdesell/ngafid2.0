@@ -450,7 +450,7 @@ public class Flight {
             throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
-        if (limit > 0) queryString += " LIMIT 100";
+        if (limit > 0) queryString += " LIMIT " + limit;
 
         try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
                 query.executeQuery()) {
@@ -530,7 +530,7 @@ public class Flight {
      * @return a String that is usable in a SQL query
      */
     private static String idLimStr(Set<Integer> ids, boolean complement) {
-        StringBuilder sb = new StringBuilder("WHERE ID " + (complement ? "!" : "") + "= ");
+        StringBuilder sb = new StringBuilder("WHERE id " + (complement ? "!" : "") + "= ");
         Iterator<Integer> it = ids.iterator();
 
         while (it.hasNext()) {
@@ -538,7 +538,7 @@ public class Flight {
             if (!it.hasNext()) {
                 break;
             }
-            sb.append(complement ? " AND ID != " : " OR ID = ");
+            sb.append(complement ? " AND id != " : " OR id = ");
         }
 
         return sb.toString();
@@ -941,7 +941,7 @@ public class Flight {
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             for (Flight flight : flightList) {
-                
+
                 flight.airframe = new Airframes.Airframe(connection, flight.airframe.getName(), flight.airframe.getType());
                 Airframes.setAirframeFleet(connection, flight.airframe.getId(), flight.fleetId);
                 Tails.setSuggestedTail(connection, flight.fleetId, flight.systemId, flight.suggestedTailNumber);
@@ -958,7 +958,7 @@ public class Flight {
                     //Otherwise, throw an exception
                     else
                         throw new SQLException("Failed to retrieve generated id for flight " + flight.systemId);
-                    
+
                 }
 
             }
@@ -1014,7 +1014,7 @@ public class Flight {
                         flight.id,
                         i
                     );
-            
+
             }
 
             itineraryPreparedStatement.executeBatch();
@@ -1031,7 +1031,7 @@ public class Flight {
                     new FlightWarning(e.getMessage()).addBatch(connection, warningPreparedStatement, flight.id);
 
             warningPreparedStatement.executeBatch();
-            
+
         }
 
         for (Flight flight : flightList)
