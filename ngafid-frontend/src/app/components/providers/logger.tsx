@@ -112,7 +112,7 @@ const LogComponentTypes = {
     },
     Component: {
         prefix: "🔧 Component",
-        styling: "background-color: orange;"
+        styling: "background-color: #ffd991;"
     },
     Utility: {
         prefix: "⚙️ Utility",
