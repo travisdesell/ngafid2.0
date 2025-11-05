@@ -1,20 +1,24 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search.tsx
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FlightsPanelSearchGroup } from "./flights_panel_search_group";
-import { ClipboardCopy, Ellipsis, Save, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import FilterEditModal from "@/components/modals/filter_edit_modal";
+import FilterListModal from "@/components/modals/filter_list_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import SuccessModal from "@/components/modals/success_modal";
-import { useFlights } from "@/pages/protected/flights/flights";
-import { Separator } from "@/components/ui/separator";
-import { motion } from "motion/react";
-import FilterEditModal from "@/components/modals/filter_edit_modal";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
-import FilterListModal from "@/components/modals/filter_list_modal";
+import { getLogger } from "@/components/providers/logger";
+import { AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useFlights } from "@/pages/protected/flights/flights";
+import { Bolt, ClipboardCopy, Ellipsis, Info, Save, Search } from "lucide-react";
+import { motion } from "motion/react";
+import { FlightsPanelSearchGroup } from "./flights_panel_search_group";
+
+const log = getLogger("FlightsPanelSearch", "black", "Component");
 
 export default function FlightsPanelSearch() {
 
-    const { allowSearchSubmit, filter } = useFlights();
+    const { allowSearchSubmit, filter, filterIsEmpty } = useFlights();
     const { saveFilter, deleteFilterByName, filters } = useFlightFilters();
     const { setModal } = useModal();
 
@@ -46,6 +50,27 @@ export default function FlightsPanelSearch() {
 
     }
 
+    const renderEmptyFilterMessage = () => {
+
+        log("Filter is currently empty, showing empty filter message.");
+
+        return <div className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Info className=""/>
+
+            <div className="flex flex-col">
+                <AlertTitle>Filter Empty!</AlertTitle>
+                <AlertDescription>
+                    {/* Flights matching the current search criteria will appear here. */}
+                    Your current filter does not contain any rules or groups.
+                    <br />
+                    {/* Try adjusting your search filters to find more flights. */}
+                    <div className="flex">Try adding a rule with the <div className="flex items-center font-bold gap-1 mx-2"><Bolt size={16} />New Rule</div> button above.</div>
+                </AlertDescription>
+            </div>
+        </div>
+
+    }
+
     const render = () => {
 
         return (
@@ -54,8 +79,11 @@ export default function FlightsPanelSearch() {
                 {/* Search Filter */}
                 <motion.div
                     layoutScroll
-                    className="flex-1 min-h-0 w-full overflow-y-auto bg-muted "
+                    className="flex-1 min-h-0 w-full overflow-y-auto bg-muted relative"
                 >
+
+                    {/* Empty Filter Message */}
+                    {filterIsEmpty(filter) && renderEmptyFilterMessage()}
 
                     {/* Top-Level Search Group */}
                     <FlightsPanelSearchGroup depth={0} group={filter} indexPath={[]} />
