@@ -60,10 +60,8 @@ export default function FlightsPanelSearch() {
             <div className="flex flex-col">
                 <AlertTitle>Filter Empty!</AlertTitle>
                 <AlertDescription>
-                    {/* Flights matching the current search criteria will appear here. */}
                     Your current filter does not contain any rules or groups.
                     <br />
-                    {/* Try adjusting your search filters to find more flights. */}
                     <div className="flex">Try adding a rule with the <div className="flex items-center font-bold gap-1 mx-2"><Bolt size={16} />New Rule</div> button above.</div>
                 </AlertDescription>
             </div>
@@ -83,7 +81,11 @@ export default function FlightsPanelSearch() {
                 >
 
                     {/* Empty Filter Message */}
-                    {filterIsEmpty(filter) && renderEmptyFilterMessage()}
+                    {
+                        (filterIsEmpty(filter))
+                        &&
+                        renderEmptyFilterMessage()
+                    }
 
                     {/* Top-Level Search Group */}
                     <FlightsPanelSearchGroup depth={0} group={filter} indexPath={[]} />
