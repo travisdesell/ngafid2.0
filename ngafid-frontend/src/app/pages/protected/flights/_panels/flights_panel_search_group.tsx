@@ -21,7 +21,7 @@ type Props = {
 }
 export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
-    const { filter, setFilter } = useFlights();
+    const { filter, setFilter, newID } = useFlights();
     const { setModal } = useModal();
 
 
@@ -43,7 +43,11 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
                 cursor = cursor.groups[idx];
             }
 
-            const newEmptyRule = { id: crypto.randomUUID(), name: "New Rule", conditions: [] };
+            const newEmptyRule = {
+                id: newID(),
+                name: "New Rule",
+                conditions: []
+            };
 
             cursor.rules = cursor.rules ?? [];
             cursor.rules.push(newEmptyRule);
@@ -72,7 +76,12 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
                 cursor = cursor.groups[idx];
             }
 
-            const newEmptyGroup: FilterGroup = { id: crypto.randomUUID(), operator: "AND", rules: [], groups: [] };
+            const newEmptyGroup: FilterGroup = {
+                id: newID(),
+                operator: "AND",
+                rules: [],
+                groups: []
+            };
 
             cursor.groups = cursor.groups ?? [];
             cursor.groups.push(newEmptyGroup);

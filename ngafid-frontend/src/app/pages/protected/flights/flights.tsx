@@ -27,12 +27,10 @@ type FlightsState = {
 };
 type FlightsContextValue = FlightsState & {
     setFilter: (updater: (prev: Filter) => Filter) => void;
+    filterIsEmpty: (filter: Filter) => boolean;
+    newID: () => string;
 };
 
-const newID = () => ((typeof crypto !== "undefined") && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
-    
 
 const FlightsContext = createContext<FlightsContextValue|null>(null);
 
@@ -62,6 +60,19 @@ export default function FlightsPage() {
     const searchPanelRef = useRef<ImperativePanelHandle | null>(null);
     const analysisPanelRef = useRef<ImperativePanelHandle | null>(null);
 
+    const filterIsEmpty = (filter: Filter): boolean => {
+        if (filter.rules && filter.rules.length > 0)
+            return false;
+        if (filter.groups && filter.groups.length > 0)
+            return false;
+        return true;
+    }
+
+    const newID = () => ((typeof crypto !== "undefined") && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+        
+
 
     // Flights State
     const [allowSearchSubmit, setAllowSearchSubmit] = useState(false);
@@ -72,7 +83,7 @@ export default function FlightsPage() {
             operator: "AND",
             rules: [],
             groups: []
-        },
+        }
     });
 
     const setFilter: FlightsContextValue["setFilter"] = (updater) => {
@@ -83,6 +94,8 @@ export default function FlightsPage() {
         allowSearchSubmit: state.allowSearchSubmit,
         filter: state.filter,
         setFilter,
+        filterIsEmpty: filterIsEmpty,
+        newID,
     };
 
 
