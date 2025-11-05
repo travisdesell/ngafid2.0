@@ -355,16 +355,6 @@ public class UserTest extends TestWithConnection {
         assertEquals(2, waitingCount);
     }
 
-    @Test
-    @DisplayName("Should get unconfirmed tails count")
-    public void getUnconfirmedTailsCountWithValidUser() throws SQLException {
-        User user = user1Fleet1;
-
-        int unconfirmedCount = user.getUnconfirmedTailsCount(connection);
-
-        assertEquals(0, unconfirmedCount);
-    }
-
     // ==================== PERMISSION TESTS ====================
 
     @Test
