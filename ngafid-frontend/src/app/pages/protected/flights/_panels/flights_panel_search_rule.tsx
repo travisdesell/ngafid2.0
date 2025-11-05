@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RULES } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { FilterCondition, FilterRule } from "@/pages/protected/flights/_filters/types";
-import { useFlights } from "@/pages/protected/flights/flights";
+import { FILTER_RULE_NAME_NEW, useFlights } from "@/pages/protected/flights/flights";
 import { Trash } from "lucide-react";
 
 const log = getLogger("FlightsPanelSearchRule", "blue", "Component");
@@ -224,7 +224,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
 
         }
 
-        const isNewRule = (rule.name === 'New Rule');
+        const isNewRule = (rule.name === FILTER_RULE_NAME_NEW);
 
         return <ButtonGroup>
 

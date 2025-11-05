@@ -1,13 +1,14 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search_group.tsx
 import ConfirmModal from "@/components/modals/confirm_modal";
 import { useModal } from "@/components/modals/modal_provider";
+import Ping from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { FilterGroup } from "@/pages/protected/flights/_filters/types";
 import FlightsPanelSearchRule from "@/pages/protected/flights/_panels/flights_panel_search_rule";
 import { Bolt, Folder, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useFlights } from "../flights";
+import { FILTER_RULE_NAME_NEW, useFlights } from "../flights";
 
 
 const log = getLogger("FlightsPanelSearchGroup", "green", "Component");
@@ -20,7 +21,7 @@ type Props = {
 }
 export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
-    const { filter, setFilter, newID } = useFlights();
+    const { filter, setFilter, newID, filterIsEmpty } = useFlights();
     const { setModal } = useModal();
 
 
@@ -44,7 +45,7 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
             const newEmptyRule = {
                 id: newID(),
-                name: "New Rule",
+                name: FILTER_RULE_NAME_NEW,
                 conditions: []
             };
 
@@ -141,7 +142,13 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
     const renderNewRuleButton = (isRoot: boolean) => {
 
-        return <Button onClick={createNewRule}>
+        const displayPing = (isRoot && filterIsEmpty(filter));
+
+        return <Button
+            onClick={createNewRule}
+            className="relative"
+        >
+            {(displayPing) && <Ping />}
             <Bolt />{isRoot && <span>New Rule</span>}
         </Button>
 

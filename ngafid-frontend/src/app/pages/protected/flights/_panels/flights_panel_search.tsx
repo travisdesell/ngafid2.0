@@ -27,7 +27,10 @@ export default function FlightsPanelSearch() {
         return <div className="flex flex-row gap-2 w-full p-2">
 
             {/* Copy Filter URL */}
-            <Button onClick={() => setModal(SuccessModal, { title: "Filter URL Copied", message: "The URL linking to this filter has been copied to your clipboard." })}>
+            <Button
+                onClick={() => setModal(SuccessModal, { title: "Filter URL Copied", message: "The URL linking to this filter has been copied to your clipboard." })}
+                disabled={!allowSearchSubmit}
+            >
                 <ClipboardCopy /> Copy Filter URL
             </Button>
 
@@ -37,7 +40,10 @@ export default function FlightsPanelSearch() {
             </Button>
 
             {/* Save Current Filter */}
-            <Button onClick={() => setModal(FilterEditModal, {saveFilter})}>
+            <Button
+                onClick={() => setModal(FilterEditModal, {saveFilter})}
+                disabled={!allowSearchSubmit}
+            >
                 <Save /> Save Current Filter
             </Button>
 

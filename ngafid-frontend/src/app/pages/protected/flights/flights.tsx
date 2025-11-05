@@ -21,6 +21,8 @@ import FlightsPanelSearch from "./_panels/flights_panel_search";
 const log = getLogger("Flights", "black", "Page");
 
 
+export const FILTER_RULE_NAME_NEW = "New Rule";
+
 type FlightsState = {
     allowSearchSubmit: boolean;
     filter: Filter;
@@ -28,6 +30,7 @@ type FlightsState = {
 type FlightsContextValue = FlightsState & {
     setFilter: (updater: (prev: Filter) => Filter) => void;
     filterIsEmpty: (filter: Filter) => boolean;
+    filterIsValid: (filter: Filter) => boolean;
     newID: () => string;
 };
 
@@ -61,11 +64,74 @@ export default function FlightsPage() {
     const analysisPanelRef = useRef<ImperativePanelHandle | null>(null);
 
     const filterIsEmpty = (filter: Filter): boolean => {
+
+        // Has rules -> Not Empty
         if (filter.rules && filter.rules.length > 0)
             return false;
+
+        // Has Groups -> Not Empty
         if (filter.groups && filter.groups.length > 0)
             return false;
+
+        // No rules or groups -> Empty
         return true;
+
+    }
+
+    const filterIsValid = (filter: Filter): boolean => {
+
+        /*
+            Valid filter conditions:
+
+            - All groups have at least 1 rule
+            - All rules have every field filled out
+
+            Note: Groups don't necessarily have to have rules,
+            since they can have sub-groups which contain rules.
+        */
+
+        // No rules or groups -> Invalid
+        const hasNoRules = (!filter.rules || filter.rules.length === 0);
+        const hasNoGroups = (!filter.groups || filter.groups.length === 0);
+        if (hasNoRules && hasNoGroups) {
+            log.warn(`Filter is invalid: Found group with no rules or sub-groups.`);
+            return false;
+        }
+
+        // Check rules...
+        for (const rule of filter.rules ?? []) {
+
+            // ... Rule is a new/placeholder rule -> Invalid
+            if (rule.name === FILTER_RULE_NAME_NEW) {
+                log.warn(`Filter is invalid: Found rule ${rule.id} with placeholder name.`);
+                return false;
+            }
+
+            // ...Check conditions of each rule...
+            for (const condition of rule.conditions) {
+
+                // ...Condition has no value -> Invalid
+                if ((condition.value === undefined) || (condition.value === null) || (condition.value === "")) {
+                    log.warn(`Filter is invalid: Rule ${rule.id} has condition ${condition.name} with no value.`);
+                    return false;
+                }
+
+            }
+
+        }
+
+        // Check sub-groups...
+        for (const group of filter.groups ?? []) {
+
+            // ...Recursively validate sub-group
+            if (!filterIsValid(group))
+                return false;
+
+        }
+
+        // All checks passed -> Valid
+        return true;
+
     }
 
     const newID = () => ((typeof crypto !== "undefined") && crypto.randomUUID)
@@ -87,7 +153,16 @@ export default function FlightsPage() {
     });
 
     const setFilter: FlightsContextValue["setFilter"] = (updater) => {
-        setState((prev) => ({ ...prev, filter: updater(prev.filter) }));
+
+        const updatedFilter = updater(state.filter);
+        log("Setting new filter:", updatedFilter);
+
+        setState((prev) => ({
+            ...prev,
+            filter: updatedFilter,
+            allowSearchSubmit: filterIsValid(updatedFilter),
+        }));
+
     };
 
     const value: FlightsContextValue = {
@@ -95,6 +170,7 @@ export default function FlightsPage() {
         filter: state.filter,
         setFilter,
         filterIsEmpty: filterIsEmpty,
+        filterIsValid: filterIsValid,
         newID,
     };
 
