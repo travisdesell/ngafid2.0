@@ -224,7 +224,12 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
 
         }
 
+        const isNewRule = (rule.name === 'New Rule');
+
         return <ButtonGroup>
+
+            {/* Delete Button */}
+            {renderDeleteRuleButton(indexPath)}
 
             {/* Rule Name */}
             <Select onValueChange={updateRuleName} defaultValue={rule.name} value={rule.name}>
@@ -232,7 +237,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
                 <Button asChild variant="outline">
                     <SelectTrigger className="min-w-[256px]">
                         <SelectValue placeholder="Select Rule" />
-                        {rule.name==='New Rule' ? 'Select Rule' : ''}
+                        {isNewRule ? 'Select Rule' : ''}
                     </SelectTrigger>
                 </Button>
 
@@ -254,9 +259,6 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
                     renderConditionInput(condition, idx)
                 ))
             }
-
-            {/* Delete Button */}
-            {renderDeleteRuleButton(indexPath)}
 
         </ButtonGroup>
 
