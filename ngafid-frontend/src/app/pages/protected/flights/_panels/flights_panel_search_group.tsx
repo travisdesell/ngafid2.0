@@ -3,7 +3,6 @@ import ConfirmModal from "@/components/modals/confirm_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { FilterGroup } from "@/pages/protected/flights/_filters/types";
 import FlightsPanelSearchRule from "@/pages/protected/flights/_panels/flights_panel_search_rule";
 import { Bolt, Folder, Trash } from "lucide-react";
@@ -98,10 +97,45 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
     /* -- Rendering -- */
     const renderRuleType = () => {
 
-        return <ButtonGroup>
-            <Button variant={"outline"}>AND</Button>
-            <Button variant={"outline"}>OR</Button>
-        </ButtonGroup>
+        const toggleOperator = () => {
+
+            log("Toggling operator for group at depth", depth, group);
+
+            setFilter((prev) => {
+
+                // Deep clone (for immutability)
+                const next = structuredClone(prev) as FilterGroup;
+
+                // Walk down to the current group using the given path
+                let cursor: FilterGroup = next;
+                for (const idx of indexPath) {
+                    cursor.groups = cursor.groups ?? [];
+                    cursor = cursor.groups[idx];
+                }
+
+                // Toggle operator
+                cursor.operator = (cursor.operator === "AND") ? "OR" : "AND";
+
+                return next;
+
+            });
+
+            log("Operator toggled. Updated filter (will reflect after render):", filter);
+
+        }
+
+        return <Button
+            variant={"outline"}
+            onClick={toggleOperator}
+            className="min-w-16"
+        >
+            {group.operator}
+        </Button>
+
+        // return <ButtonGroup>
+        //     <Button variant={"outline"}>AND</Button>
+        //     <Button variant={"outline"}>OR</Button>
+        // </ButtonGroup>
 
     }
 
@@ -231,7 +265,7 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
         const subGroupContainerClasses = `
             gap-2 flex flex-col
-            ${hasAnyRules || hasAnySubGroups ? "p-2 border-t-1 border-gray-400" : ""}
+            ${hasAnyRules || hasAnySubGroups ? "p-2 " : ""}
         `
 
         return (
