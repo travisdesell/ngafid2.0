@@ -135,21 +135,28 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
 
         const key = `${rule.id}-condition-${idx}`;
 
+        const valueCurrentOrDefault = condition.value ?? (condition.options?.length ? condition.options[0] : undefined);
+        const hasOptions = !!condition.options?.length;
+        const updateConditionValue = (value: string | number | undefined) => {
+
+            updateCurrentRule((prev) => {
+                const next = structuredClone(prev);
+                next.conditions[idx].value = (value as any);
+                return next;
+            });
+
+        };
+
         switch (condition.type) {
-            case 'select': {
 
-                const valueCurrentOrDefault = condition.value ?? (condition.options?.length ? condition.options[0] : undefined);
-                const hasOptions = !!condition.options?.length;
-
-                const onChange = (value: string) => {
-                    updateCurrentRule((prev) => {
-                        const next = structuredClone(prev);
-                        next.conditions[idx].value = value;
-                        return next;
-                    });
-                };
-
-                return <Select key={key} value={valueCurrentOrDefault} onValueChange={onChange} disabled={!hasOptions}>
+            /* Dropdown Select */
+            case 'select':
+                return <Select
+                    key={key}
+                    value={valueCurrentOrDefault}
+                    onValueChange={updateConditionValue}
+                    disabled={!hasOptions}
+                >
 
                     <Button asChild variant="outline">
                         <SelectTrigger className="w-full">
@@ -169,20 +176,70 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
                         </SelectGroup>
                     </SelectContent>
                 </Select>;
-            }
+
+            /* Generic Text Input */
             case 'input':
-                return <Input key={key} placeholder={condition.name} className="min-w-[128px]" />;
+                return <Input
+                    key={key}
+                    value={(valueCurrentOrDefault as string) ?? ''}
+                    onChange={(e) => updateConditionValue(e.target.value)}
+                    placeholder={condition.name}
+                    className="min-w-[128px]"
+                />;
+
+            /* Time Input */
             case 'time':
-                return <TimeInput key={key} />;
+                return <TimeInput
+                    key={key}
+                    value={(valueCurrentOrDefault as string) ?? ''}
+                    onChange={(e) => updateConditionValue(e.target.value)}
+                />;
+
+            /* Date Input */
             case 'date':
-            case 'datetime-local':
+            case 'datetime-local': {
+
+                const dateValue = valueCurrentOrDefault ? new Date(valueCurrentOrDefault) : new Date();
+                const setDateValue = (date: Date) => {
+                    updateCurrentRule((prev) => {
+                        const next = structuredClone(prev);
+                        next.conditions[idx].value = date.toISOString();
+                        return next;
+                    });
+                }
+
                 return <Button key={key} asChild variant="outline" className="rounded-none! bg-fuchsia-500">
-                        <DatePicker date={new Date()} setDate={(date) => {}} />
+                        <DatePicker date={dateValue} setDate={setDateValue} />
                     </Button>;
-            case 'number':
-                return <NumberInput className="min-w-[128px] rounded-none!" key={key} /*type={condition.type}*/ placeholder={condition.name} />;
+            }
+
+            /* Number Input */
+            case 'number': {
+
+                const valueNumeric = (typeof valueCurrentOrDefault === 'number')
+                    ? valueCurrentOrDefault
+                    : (valueCurrentOrDefault != null && valueCurrentOrDefault !== '')
+                        ? Number(valueCurrentOrDefault)
+                        : undefined;
+
+                return <NumberInput
+                    className="min-w-[128px] rounded-none!"
+                    key={key}
+                    value={valueNumeric}
+                    onValueChange={(n) => updateConditionValue(n)}
+                    placeholder={condition.name}
+                />;
+
+            }
+
+            /* Unknown Condition Type */
             default:
-                return <Input key={key} placeholder={condition.name} className="min-w-[128px] bg-fuchsia-500 after:content-['⚠']! pointer-events-none" />;
+                return <Input
+                    key={key}
+                    placeholder={condition.name}
+                    className="min-w-[128px] bg-fuchsia-500 after:content-['⚠']! pointer-events-none"
+                />;
+
         };
 
     }
