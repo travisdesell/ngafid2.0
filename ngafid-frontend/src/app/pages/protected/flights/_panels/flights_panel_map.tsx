@@ -92,7 +92,6 @@ function createBaseMapLayers(azureKey: string | undefined) {
 
 export default function FlightsPanelMap(props: FlightsPanelMapProps) {
 
-
     const {
         initialStyle = 'RoadOnDemand',
         initialCenterLonLat = [-97.0329, 47.9253],
@@ -285,6 +284,7 @@ export default function FlightsPanelMap(props: FlightsPanelMapProps) {
                             {renderMapUnavailable()}
                         </div>
                     }
+                    
                 </motion.div>
             </Card>
         );

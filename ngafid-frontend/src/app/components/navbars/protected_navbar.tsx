@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
+import { useTheme } from "@/components/providers/theme-provider";
 import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
 import { motion } from "framer-motion";
 import BugReportModal from "../modals/bug_report_modal";
@@ -26,6 +27,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
     const { setModal } = useModal();
     const { user } = useAuth();
+    const { useNavbarPageNames } = useTheme();
 
     const attemptLogOut = () => {
 
@@ -50,6 +52,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
     const render = () => {
 
         log(`Rendering with user = `, user);
+
+        const pageNameLinkClass = (useNavbarPageNames ? "block" : "hidden!");
+        const renderPageNameLink = (pageName:string) => <span className={pageNameLinkClass}>{pageName}</span>;
 
         return (
             <nav
@@ -89,7 +94,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <Button asChild variant="ghost">
                         <Link to="/protected/summary">
                             <Home/>
-                            Summary
+                            {renderPageNameLink("Summary")}
                         </Link>
                     </Button>
 
@@ -97,7 +102,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <Button asChild variant="ghost">
                         <Link to="/status">
                             <Info/>
-                            Status
+                            {renderPageNameLink("Status")}
                         </Link>
                     </Button>
 
@@ -106,7 +111,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost">
                                 <CalendarCog/>
-                                Events
+                                {renderPageNameLink("Events")}
                                 <ChevronDown/>
                             </Button>
                         </DropdownMenuTrigger>
@@ -150,7 +155,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost">
                                 <Search/>
-                                Analysis
+                                {renderPageNameLink("Analysis")}
                                 <ChevronDown/>
                             </Button>
                         </DropdownMenuTrigger>
@@ -167,7 +172,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <Button asChild variant="ghost">
                         <Link to="/protected/flights">
                             <Plane/>
-                            Flights
+                            {renderPageNameLink("Flights")}
                         </Link>
                     </Button>
 
@@ -175,7 +180,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <Button asChild variant="ghost">
                         <Link to="/protected/uploads">
                             <Upload/>
-                            Uploads
+                            {renderPageNameLink("Uploads")}
                         </Link>
                     </Button>
 
@@ -184,7 +189,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost">
                                 <User/>
-                                Account
+                                {renderPageNameLink("Account")}
                                 <ChevronDown/>
                             </Button>
                         </DropdownMenuTrigger>

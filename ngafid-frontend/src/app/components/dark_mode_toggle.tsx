@@ -1,19 +1,19 @@
 // ngafid-frontend/src/app/components/dark_mode_toggle.tsx
-import React, { Component } from 'react';
+import React from 'react';
 
-import { useTheme } from "@/components/providers/theme-provider"
+import { useTheme } from "@/components/providers/theme-provider";
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Moon, Sun } from 'lucide-react';
 import PingHalfLeft from './pings/ping_half_left';
 import PingHalfRight from './pings/ping_half_right';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu"
+import { useAuth } from './providers/auth_provider';
 import { Checkbox } from './ui/checkbox';
 import { Separator } from './ui/separator';
-import { useAuth } from './providers/auth_provider';
 
 
 export function DarkModeToggle() {
@@ -22,7 +22,12 @@ export function DarkModeToggle() {
     const didOpenThemeContextMenuBefore = (localStorage.getItem("didOpenThemeContextMenu") !== null);
 
     const { isLoggedIn } = useAuth();
-    const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts, useBackgroundImage, setUseBackgroundImage } = useTheme();
+    const {
+        theme, setTheme,
+        useHighContrastCharts, setUseHighContrastCharts,
+        useBackgroundImage, setUseBackgroundImage,
+        useNavbarPageNames, setUseNavbarPageNames,
+    } = useTheme();
     const isDarkTheme = (theme === "dark");
 
     const [didToggle, setDidToggle] = React.useState(false);
@@ -131,6 +136,17 @@ export function DarkModeToggle() {
                 >
                     Use Background Image
                     <Checkbox checked={useBackgroundImage} className="ml-auto pointer-events-none"/>
+                </ContextMenuItem>
+                <Separator />
+                
+
+                {/* Toggle Navbar Page Names */}
+                <ContextMenuItem
+                    className='p-3'
+                    onClick={() => setUseNavbarPageNames(!useNavbarPageNames)}
+                >
+                    Show Navbar Page Names
+                    <Checkbox checked={useNavbarPageNames} className="ml-auto pointer-events-none"/>
                 </ContextMenuItem>
 
 
