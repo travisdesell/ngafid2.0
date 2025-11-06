@@ -51,51 +51,100 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             controlledValue ?? defaultValue
         );
 
-        const handleIncrement = useCallback(() => {
-            setValue((prev) =>
-                prev === undefined ? stepper ?? 1 : Math.min(prev + (stepper ?? 1), max)
-            );
-        }, [stepper, max]);
 
-        const handleDecrement = useCallback(() => {
-            setValue((prev) =>
-                prev === undefined
-                    ? -(stepper ?? 1)
-                    : Math.max(prev - (stepper ?? 1), min)
-            );
-        }, [stepper, min]);
 
         useEffect(() => {
-            if (controlledValue !== undefined) {
-                setValue(controlledValue);
-            }
+
+            if (controlledValue !== undefined)
+                setValue(prev => (prev === controlledValue ? prev : controlledValue));
+
         }, [controlledValue]);
 
-        const handleChange = (values: {
-            value: string;
-            floatValue: number | undefined;
-        }) => {
-            const newValue =
-                values.floatValue === undefined ? undefined : values.floatValue;
-            setValue(newValue);
-            if (onValueChange) {
-                onValueChange(newValue);
-            }
-        };
+
+
+        const fromUserRef = useRef(false);
+        useEffect(() => {
+
+            // No change from user, exit
+            if (!fromUserRef.current)
+                return;
+
+            fromUserRef.current = false;
+            onValueChange?.(value);
+
+        }, [value, onValueChange]);
+
+        const setFromUser = useCallback((next: number | undefined | ((p: number | undefined) => number | undefined)) => {
+
+            fromUserRef.current = true;
+            setValue(prev => (
+                (typeof next === 'function')
+                    ? (next as any)(prev)
+                    : next
+            ));
+
+        }, []);
+
+
+        const handleIncrement = useCallback(() => {
+
+            const step = (stepper ?? 1);
+            setFromUser(prev =>
+                (prev === undefined)
+                    ? step
+                    : Math.min(prev + step, max)
+            );
+
+        }, [stepper, max, setFromUser]);
+
+        const handleDecrement = useCallback(() => {
+
+            const step = (stepper ?? 1);
+            setFromUser(prev =>
+                (prev === undefined)
+                    ? -step
+                    : Math.max(prev - step, min)
+            );
+
+        }, [stepper, min, setFromUser]);
+
+
+        const handleChange = (values: { value: string; floatValue: number | undefined }) => {
+
+            const newValue = (values.floatValue === undefined)
+                ? undefined
+                : values.floatValue;
+
+            setFromUser(newValue)
+
+        }
 
         const handleBlur = () => {
-            if (value !== undefined) {
-                if (value < min) {
-                    setValue(min);
-                    (ref as React.RefObject<HTMLInputElement>).current!.value =
-                        String(min);
-                } else if (value > max) {
-                    setValue(max);
-                    (ref as React.RefObject<HTMLInputElement>).current!.value =
-                        String(max);
-                }
+
+            // Value is undefined, exit
+            if (value === undefined)
+                return
+
+            // Get clamped value
+            let clamped = value;
+            if (value < min)
+                clamped = min;
+            else if (value > max)
+                clamped = max;
+
+            // Clamped value differs from current value...
+            if (clamped !== value) {
+
+                // ...Set and notify
+                setFromUser(clamped)
+
+                // ...Update input display
+                if (inputRef.current)
+                    inputRef.current.value = String(clamped)
+
             }
-        };
+
+        }
 
 
         const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
@@ -117,7 +166,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                     decimalScale={decimalScale}
                     fixedDecimalScale={fixedDecimalScale}
                     allowNegative={min < 0}
-                    valueIsNumericString
+                    valueIsNumericString={false}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
                     max={max}
@@ -127,7 +176,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                     customInput={Input}
                     placeholder={placeholder}
                     className="[appearance:textfield] [&::-webkit-outer-spin-button]:webkit-appearance-none [&::-webkit-inner-spin-button]:appearance-none rounded-r-none relative"
-                    getInputRef={ref}
+                    getInputRef={(el: HTMLInputElement) => { inputRef.current = el as HTMLInputElement }}
                     {...props}
                 />
 
