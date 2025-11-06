@@ -1,24 +1,24 @@
 // ngafid-frontend/src/app/components/navbars/protected_navbar.jsx
 import React from "react";
 
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 import { DarkModeToggle } from "@/components/dark_mode_toggle";
-import { CalendarCog, ChevronDown, Home, Info, Plane, Search, Upload, User } from 'lucide-react';
+import { Book, CalendarCog, ChevronDown, Home, Info, Plane, Search, Upload, User } from 'lucide-react';
 
 import { Link } from "react-router-dom";
 
 import { useModal } from "../modals/modal_provider";
-import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuSeparator} from "../ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 
-import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
-import ErrorModal from "../modals/error_modal";
 import { useAuth } from "@/components/providers/auth_provider";
-import { motion } from "framer-motion";
-import Notifications from "../providers/notifications/notifications";
-import BugReportModal from "../modals/bug_report_modal";
 import { getLogger } from "@/components/providers/logger";
+import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
+import { motion } from "framer-motion";
+import BugReportModal from "../modals/bug_report_modal";
+import ErrorModal from "../modals/error_modal";
+import Notifications from "../providers/notifications/notifications";
 
 const log = getLogger("ProtectedNavbar", "teal", "Navbar");
 
@@ -251,6 +251,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    {/* Manual (⚠ PLACEHOLDER ⚠) */}
+                    <Book className="opacity-25"/>
 
                     {/* Notifications */}
                     <Notifications />
