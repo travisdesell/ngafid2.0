@@ -4,26 +4,31 @@ import { Label } from '@/components/ui/label'
 import React from 'react'
 
 type TimeInputProps = React.InputHTMLAttributes<HTMLInputElement> & { label?: string }
-const TimeInput = (props: TimeInputProps) => {
-    return (
-        <div className='w-full max-w-xs space-y-2'>
 
+const TimeInput = ({ label, id, ...inputProps }: TimeInputProps) => {
+
+    const fallbackId = React.useId();
+    const inputId = (id ?? `time-picker-${fallbackId}`);
+
+    return (
+        <div className="w-full max-w-xs space-y-2">
             {
-                (props.label)
+                (label)
                 &&
-                <Label htmlFor='time-picker' className='px-1'>
-                    {props.label}
+                <Label htmlFor={inputId} className="px-1">
+                    {label}
                 </Label>
             }
             <Input
-                type='time'
-                id='time-picker'
-                step='1'
-                defaultValue='12:00:00'
-                className='cursor-text bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
+                type="time"
+                id={inputId}
+                step="1"
+                className="cursor-text bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                {...inputProps}
             />
         </div>
-    )
+    );
+
 }
 
 export default TimeInput
