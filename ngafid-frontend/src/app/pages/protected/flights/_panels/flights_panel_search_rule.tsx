@@ -199,7 +199,6 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
             case 'date':
             case 'datetime-local': {
 
-                const dateValue = valueCurrentOrDefault ? new Date(valueCurrentOrDefault) : new Date();
                 const setDateValue = (date: Date) => {
                     updateCurrentRule((prev) => {
                         const next = structuredClone(prev);
@@ -208,9 +207,18 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
                     });
                 }
 
+                let dateValue = valueCurrentOrDefault;
+                if (!dateValue) {
+                    dateValue = new Date().toISOString();
+                    setDateValue(new Date(dateValue));
+                } else {
+                    dateValue = new Date(dateValue);
+                }
+
                 return <Button key={key} asChild variant="outline" className="rounded-none! bg-fuchsia-500">
                         <DatePicker date={dateValue} setDate={setDateValue} />
                     </Button>;
+
             }
 
             /* Number Input */
