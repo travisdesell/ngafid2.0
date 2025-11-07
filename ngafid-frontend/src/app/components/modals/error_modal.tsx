@@ -24,12 +24,13 @@ export default function ErrorModal({ data }: ModalProps) {
     const { close } = useModal();
     const { title, message, code } = (data as ModalDataError) ?? {};
 
-    log.warn("Code: ", code);
-
+    // No 'code' provided, log without it
     if (!code)
         log.error(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
+
+    // 'code' provided, include it in log
     else 
-        log.error(`Rendering with title: '%c${title}%c', message: '%c${message}%c' and code: '%c${code}%c'`, "color: aqua;", "", "color: aqua;", "color: blue;", "");
+        log.error(`Rendering with title: '%c${title}%c', message: '%c${message}%c' and code: '%c${code}%c'`, "color: aqua;", "", "color: aqua;", "", "color: aquamarine;", "");
 
     return (
         <motion.div
