@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "motion/react";
 
+import BugReportModal from '@/components/modals/bug_report_modal';
+import { useAuth } from '@/components/providers/auth_provider';
 import { getLogger } from "@/components/providers/logger";
 import '@/index.css';
 import { X } from 'lucide-react';
@@ -21,8 +23,9 @@ export type ModalDataError = ModalData & {
 
 export default function ErrorModal({ data }: ModalProps) {
 
-    const { close } = useModal();
+    const { close, setModal } = useModal();
     const { title, message, code } = (data as ModalDataError) ?? {};
+    const { user } = useAuth();
 
     // No 'code' provided, log without it
     if (!code)
@@ -31,6 +34,18 @@ export default function ErrorModal({ data }: ModalProps) {
     // 'code' provided, include it in log
     else 
         log.error(`Rendering with title: '%c${title}%c', message: '%c${message}%c' and code: '%c${code}%c'`, "color: aqua;", "", "color: aqua;", "", "color: aquamarine;", "");
+
+
+    const openBugReportFromError = () => {
+
+        let reportDescription = message;
+        if (code)
+            reportDescription += `\n\n${code}`;
+
+        log("Opening Bug Report Modal...");
+
+        setModal(BugReportModal, { user: user!, titleIn: title, descriptionIn: reportDescription });
+    }
 
     return (
         <motion.div
@@ -70,16 +85,27 @@ export default function ErrorModal({ data }: ModalProps) {
                     </div>
                 </CardContent>
 
-                {/* Code Section */}
-                {
-                    (code && code.length > 0)
-                    &&
-                    <CardFooter>
+                <CardFooter className="flex flex-col gap-4">
+
+                    {/* Code Section */}
+                    {
+                        (code && code.length > 0)
+                        &&
                         <pre className="bg-background border-1 p-4 rounded-md overflow-x-auto select-all w-full">
                             <code>{code as string}</code>
                         </pre>
-                    </CardFooter>
-                }
+                    }
+
+                    {/* Open Bug Report Modal */}
+                    <Button
+                        variant="link"
+                        onClick={openBugReportFromError}
+                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    >
+                        Report this issue
+                    </Button>
+
+                </CardFooter>    
 
             </Card>
         </motion.div>

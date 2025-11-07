@@ -19,6 +19,8 @@ const log = getLogger("BugReportModal", "black", "Modal");
 
 export type BugReportModalData = ModalData & {
     user: NGAFIDUser;
+    titleIn?: string;
+    descriptionIn?: string;
 };
 
 type Props = ModalProps<BugReportModalData>;
@@ -38,12 +40,18 @@ export default function BugReportModal({ data }: Props) {
 
     const { close, setModal } = useModal();
 
+    const { titleIn, descriptionIn } = data ?? {};
+
     const userEmail = (data?.user?.email ?? undefined);
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
+    const [title, setTitle] = useState(titleIn ?? "");
+    const [description, setDescription] = useState(descriptionIn ?? "");
     const [includeEmail, setIncludeEmail] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+
+    log(`Rendering with title: '%c${title}%c' and description: '%c${description}%c'`, "color: aqua;", "", "color: aqua;", "");
+
 
     async function handleSubmit() {
 
