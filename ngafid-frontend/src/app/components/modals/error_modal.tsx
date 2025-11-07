@@ -19,12 +19,13 @@ export type ModalDataError = ModalData & {
     title: string;
     message: string;
     code?: string;
+    allowReport?: boolean;
 };
 
 export default function ErrorModal({ data }: ModalProps) {
 
     const { close, setModal } = useModal();
-    const { title, message, code } = (data as ModalDataError) ?? {};
+    const { title, message, code, allowReport=true } = (data as ModalDataError) ?? {};
     const { user } = useAuth();
 
     // No 'code' provided, log without it
@@ -97,13 +98,17 @@ export default function ErrorModal({ data }: ModalProps) {
                     }
 
                     {/* Open Bug Report Modal */}
-                    <Button
-                        variant="link"
-                        onClick={openBugReportFromError}
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                    >
-                        Report this issue
-                    </Button>
+                    {
+                        (allowReport)
+                        &&
+                        <Button
+                            variant="link"
+                            onClick={openBugReportFromError}
+                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                        >
+                            Report this issue
+                        </Button>
+                    }
 
                 </CardFooter>    
 

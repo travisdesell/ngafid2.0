@@ -11,7 +11,7 @@ export default function PageMissing() {
 
         setModal(
             ErrorModal,
-            {title : "Page Not Found", message: "The page you are looking for does not exist. Close this to return to the previous page."} as ModalDataError,
+            {allowReport:false, title : "Page Not Found", message: "The page you are looking for does not exist. Close this to return to the previous page."} as ModalDataError,
             () => { window.history.back(); }
         );
 
