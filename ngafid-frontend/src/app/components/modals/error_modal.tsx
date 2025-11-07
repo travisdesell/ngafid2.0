@@ -1,30 +1,35 @@
 // ngafid-frontend/src/app/components/modals/error_modal.tsx
-import React, { use } from "react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "motion/react";
 
+import { getLogger } from "@/components/providers/logger";
 import '@/index.css';
 import { X } from 'lucide-react';
-import type { ModalData, ModalProps } from "./types";
 import { useModal } from './modal_provider';
-import { getLogger } from "@/components/providers/logger";
+import type { ModalData, ModalProps } from "./types";
 
 
-const log = getLogger("ConfirmModal", "black", "Modal");
+const log = getLogger("ErrorModal", "black", "Modal");
 
 
 export type ModalDataError = ModalData & {
     title: string;
     message: string;
+    code?: string;
 };
 
 export default function ErrorModal({ data }: ModalProps) {
 
     const { close } = useModal();
-    const { title, message } = (data as ModalDataError) ?? {};
+    const { title, message, code } = (data as ModalDataError) ?? {};
 
-    log.error(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
+    log.warn("Code: ", code);
+
+    if (!code)
+        log.error(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
+    else 
+        log.error(`Rendering with title: '%c${title}%c', message: '%c${message}%c' and code: '%c${code}%c'`, "color: aqua;", "", "color: aqua;", "color: blue;", "");
 
     return (
         <motion.div
@@ -63,6 +68,18 @@ export default function ErrorModal({ data }: ModalProps) {
                         }
                     </div>
                 </CardContent>
+
+                {/* Code Section */}
+                {
+                    (code && code.length > 0)
+                    &&
+                    <CardFooter>
+                        <pre className="bg-background border-1 p-4 rounded-md overflow-x-auto select-all w-full">
+                            <code>{code as string}</code>
+                        </pre>
+                    </CardFooter>
+                }
+
             </Card>
         </motion.div>
     );
