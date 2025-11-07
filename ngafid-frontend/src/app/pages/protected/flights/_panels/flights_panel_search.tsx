@@ -57,7 +57,7 @@ export default function FlightsPanelSearch() {
 
         // Clipboard unavailable
         if (!navigator.clipboard) {
-            setModal(ErrorModal, { title: "Clipboard Unavailable", message: "Your browser does not support clipboard operations." });
+            setModal(ErrorModal, { title: "Clipboard Unavailable", message: "Your browser does not support clipboard operations. You can try manually copying the URL below:", code: fullURL });
             return;
         }
 
@@ -67,7 +67,7 @@ export default function FlightsPanelSearch() {
                 () => setModal(SuccessModal, { title: "Filter URL Copied", message: "The URL linking to this filter has been copied to your clipboard." })
             )
             .catch(
-                () => setModal(ErrorModal, { title: "Error Copying Filter URL", message: "An error occurred while trying to copy the filter URL to your clipboard." })
+                () => setModal(ErrorModal, { title: "Error Copying Filter URL", message: "An error occurred while trying to copy the filter URL to your clipboard.", code: "kek!" })
             );
 
     }
