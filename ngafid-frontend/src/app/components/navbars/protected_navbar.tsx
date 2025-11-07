@@ -60,7 +60,8 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
         log(`Rendering with user = `, user);
 
-        const pageNameLinkClass = (useNavbarPageNames ? "block" : "hidden!");
+        const buttonLinkClass = "hover:[&_*]:underline";
+        const pageNameLinkClass = (useNavbarPageNames ? "block group-hover:underline" : "hidden!");
         const renderPageNameLink = (pageName:string) => <span className={pageNameLinkClass}>{pageName}</span>;
 
         return (
@@ -108,7 +109,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                 <div className="flex flex-row items-center justify-end gap-8">
 
                     {/* Summary */}
-                    <Button asChild variant="ghost">
+                    <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/protected/summary">
                             <Home/>
                             {renderPageNameLink("Summary")}
@@ -116,7 +117,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     </Button>
 
                     {/* Status */}
-                    <Button asChild variant="ghost">
+                    <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/status">
                             <Info/>
                             {renderPageNameLink("Status")}
@@ -126,7 +127,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     {/* Events */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost">
+                            <Button variant="ghost" className={buttonLinkClass}>
                                 <CalendarCog/>
                                 {renderPageNameLink("Events")}
                                 <ChevronDown/>
@@ -170,7 +171,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     {/* Analysis */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost">
+                            <Button variant="ghost" className={buttonLinkClass}>
                                 <Search/>
                                 {renderPageNameLink("Analysis")}
                                 <ChevronDown/>
@@ -186,7 +187,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     </DropdownMenu>
 
                     {/* Flights */}
-                    <Button asChild variant="ghost">
+                    <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/protected/flights">
                             <Plane/>
                             {renderPageNameLink("Flights")}
@@ -194,7 +195,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     </Button>
 
                     {/* Uploads */}
-                    <Button asChild variant="ghost">
+                    <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/protected/uploads">
                             <Upload/>
                             {renderPageNameLink("Uploads")}
@@ -204,7 +205,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     {/* Account */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost">
+                            <Button variant="ghost" className={buttonLinkClass}>
                                 <User/>
                                 {renderPageNameLink("Account")}
                                 <ChevronDown/>
