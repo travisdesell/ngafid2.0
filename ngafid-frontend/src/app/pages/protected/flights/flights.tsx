@@ -33,6 +33,7 @@ type FlightsState = {
 };
 type FlightsContextValue = FlightsState & {
     setFilter: (updater: (prev: Filter) => Filter) => void;
+    setFilterFromJSON: (json: string) => void;
     filterIsEmpty: (filter: Filter) => boolean;
     filterIsValid: (filter: Filter) => boolean;
     newID: () => string;
@@ -243,10 +244,18 @@ export default function FlightsPage() {
 
     };
 
+    const setFilterFromJSON: FlightsContextValue["setFilterFromJSON"] = (json) => {
+
+        const parsed = JSON.parse(json);
+        setFilter(() => parsed);
+        
+    }
+
     const value: FlightsContextValue = {
         allowSearchSubmit: state.allowSearchSubmit,
         filter: state.filter,
         setFilter,
+        setFilterFromJSON,
         filterIsEmpty: filterIsEmpty,
         filterIsValid: filterIsValid,
         newID,

@@ -10,7 +10,9 @@ import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { fetchJson } from "@/fetchJson";
 import { toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
+import { FilterGroup } from "@/pages/protected/flights/_filters/types";
 import { useFlights } from "@/pages/protected/flights/flights";
 import { Bolt, ClipboardCopy, Ellipsis, Info, Save, Search } from "lucide-react";
 import { motion } from "motion/react";
@@ -21,8 +23,8 @@ const log = getLogger("FlightsPanelSearch", "black", "Component");
 
 export default function FlightsPanelSearch() {
 
-    const { allowSearchSubmit, filter, filterIsEmpty } = useFlights();
-    const { saveFilter, deleteFilterByName, filters } = useFlightFilters();
+    const { allowSearchSubmit, filter, setFilterFromJSON, filterIsEmpty } = useFlights();
+    const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
 
 
@@ -72,6 +74,31 @@ export default function FlightsPanelSearch() {
 
     }
 
+    const fetchFlightsWithFilter = async (filter: FilterGroup) => {
+
+        log("Fetching flights with filter: ", filter);
+
+        /*
+            Makes a GET request to fetch flights
+            matching the given filter.
+
+            /api/flight
+        */  
+
+        const params = new URLSearchParams({
+            filterQuery: JSON.stringify(filter),
+            currentPage: "0",
+            pageSize: "100",
+            sortingColumn: "Start Date and Time",
+            sortingOrder: "Descending",
+        });
+        const response = await fetchJson.get("/api/flight", { params });
+
+        log.table("Fetched flights response: ", response);
+
+        return response;
+
+    }
 
     const renderSearchSubmitRow = () => {
 
@@ -86,7 +113,7 @@ export default function FlightsPanelSearch() {
             </Button>
 
             {/* Load a Saved Filter */}
-            <Button onClick={() => setModal(FilterListModal, {filters, saveFilter, deleteFilterByName})}>
+            <Button onClick={() => setModal(FilterListModal, {filters, saveFilter, deleteFilterByName, setFilterFromJSON})}>
                 <Ellipsis /> Load a Saved Filter
             </Button>
 
@@ -99,7 +126,19 @@ export default function FlightsPanelSearch() {
             </Button>
 
             {/* Submit Search */}
-            <Button className="ml-auto" disabled={!allowSearchSubmit}>
+            <Button
+                onClick={async () => {
+                    try {
+                        const response = await fetchFlightsWithFilter(filter);
+                        log.table("Fetched flights: ", response.flights);
+                    } catch (e) {
+                        log.error("Error fetching flights: ", e);
+                        setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: (e as Error).message });
+                    }
+                }}
+                className="ml-auto"
+                disabled={!allowSearchSubmit}
+            >
                 <Search /> Search Flights
             </Button>
 

@@ -4,6 +4,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { motion } from "motion/react";
 
 import ConfirmModal from "@/components/modals/confirm_modal";
+import ErrorModal from '@/components/modals/error_modal';
 import FilterEditModal from "@/components/modals/filter_edit_modal";
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -19,16 +20,36 @@ const log = getLogger("FilterListModal", "black", "Modal");
 
 export type ModalDataFilterList = ModalData & {
     filters: FlightFilter[];
-    saveFilter: (filter: FlightFilter) => Promise<void>;
+    saveFilter(filter: FlightFilter): Promise<void>;
     deleteFilterByName(filterName: string): Promise<void>;
+    setFilterFromJSON: (json: string) => void;
 }
 
 export default function FilterListModal({ data }: ModalProps<ModalDataFilterList>) {
 
     const { close, setModal } = useModal();
-    const { filters, saveFilter, deleteFilterByName } = (data as ModalDataFilterList);
+    const { filters, saveFilter, deleteFilterByName, setFilterFromJSON } = (data as ModalDataFilterList);
+
 
     const renderFilterViewRow = (filter: FlightFilter, index: number) => {
+
+        const applyFilter = () => {
+
+            log("Applying filter: ", filter);
+
+            try {
+
+                setFilterFromJSON(filter.criteria);
+                close();
+                
+            } catch (error) {
+
+                const errorCode = `${error}\n\n${JSON.stringify(filter)}`
+                setModal(ErrorModal, { title: "Invalid Filter", message: `The selected filter is invalid and cannot be applied.`, code: errorCode });
+
+            }
+
+        }
 
         return <div key={index} className="flex flex-row items-center p-2 border-b last:border-b-0 gap-1 hover:bg-background">
 
@@ -64,7 +85,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             </Button>
 
             {/* Filter Select Button */}
-            <Button variant="ghost" className="aspect-square">
+            <Button variant="ghost" className="aspect-square" onClick={applyFilter}>
                 <Check size={16} />
             </Button>
 
