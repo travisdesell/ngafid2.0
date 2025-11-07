@@ -1,20 +1,17 @@
 // ngafid-frontend/src/app/components/modals/filter_edit_modal.tsx
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "motion/react";
 
-import '@/index.css';
-import { AlertCircleIcon, Pencil, X, Check, Trash } from 'lucide-react';
-import type { ModalData, ModalProps } from "./types";
-import { useModal } from './modal_provider';
-import { ColorPicker } from "@/components/color_picker";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { FlightFilter } from "@/components/providers/flight_filters_provider";
-import FilterEditModal from "@/components/modals/filter_edit_modal";
 import ConfirmModal from "@/components/modals/confirm_modal";
+import FilterEditModal from "@/components/modals/filter_edit_modal";
+import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import '@/index.css';
+import { AlertCircleIcon, Check, ClipboardCopy, Pencil, Trash, X } from 'lucide-react';
+import { useModal } from './modal_provider';
+import type { ModalData, ModalProps } from "./types";
 
 
 const log = getLogger("FilterListModal", "black", "Modal");
@@ -33,13 +30,13 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
 
     const renderFilterViewRow = (filter: FlightFilter, index: number) => {
 
-        return <div key={index} className="flex flex-row items-center p-2 border-b last:border-b-0 gap-4 hover:bg-background">
+        return <div key={index} className="flex flex-row items-center p-2 border-b last:border-b-0 gap-1 hover:bg-background">
 
             {/* Filter Color Box */}
-            <div className="w-6 h-6 rounded" style={{ backgroundColor: filter.color }}></div>
+            <div className="w-6 h-6 aspect-square rounded mr-3" style={{ backgroundColor: filter.color }}></div>
 
             {/* Filter Name */}
-            <div className="font-medium">{filter.name}</div>
+            <div className="font-medium truncate select-all">{filter.name}</div>
 
             {/* Filter Delete Button */}
             <Button
@@ -54,6 +51,11 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
                 })}
             >
                 <Trash size={16} />
+            </Button>
+
+            {/* Copy Filter URL Button */}
+            <Button variant="ghost" className="aspect-square">
+                <ClipboardCopy size={16} />
             </Button>
 
             {/* Filter Edit Button */}
@@ -108,9 +110,13 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
                     </Alert>
 
                     {/* Filters List Empty */}
-                    {filters.length === 0 && <div className="text-center text-muted-foreground">
-                        No saved filters found.
-                    </div>}
+                    {
+                        (filters.length === 0)
+                        &&
+                        <div className="text-center text-muted-foreground">
+                            No saved filters found.
+                        </div>
+                    }
 
                     {/* Filter List */}
                     <div className="max-h-128 overflow-y-auto border rounded">
