@@ -13,6 +13,7 @@ import { TimeHeaderProvider } from './components/providers/time_header/time_head
 
 
 // Import CSS
+import AutoLayout from '@/components/layouts/auto_layout';
 import ProtectedLayout from '@/components/layouts/protected_layout';
 import { getLogger } from '@/components/providers/logger';
 import '@/index.css';
@@ -47,7 +48,7 @@ class RouteData {
             this.componentPath = moduleOrPath;
             this.component = React.lazy(() => import(/* @vite-ignore */ moduleOrPath));
 
-            // Otherwise, it's a direct module import
+        // Otherwise, it's a direct module import
         } else {
             this.componentPath = undefined;
             this.component = React.lazy(moduleOrPath as any);
@@ -70,6 +71,7 @@ class RouteData {
 */
 const routes: RouteData[] = [];
 const routesProtected: RouteData[] = [];
+const routesAuto: RouteData[] = [];
 
 function segmentizeParams(params: string) {
 
@@ -138,7 +140,12 @@ function collapseFolderNamedFile(relNoExt: string) {
 
 }
 
-function fileToRoute(filePath: string) {
+type RouteInfo = {
+    url: string;
+    isProtected: boolean;
+    isAuto: boolean;
+};
+function fileToRoute(filePath: string): RouteInfo {
 
     /*
         Convert a file path to a route URL and determine
@@ -152,6 +159,10 @@ function fileToRoute(filePath: string) {
     if (isProtected)
         rel = rel.slice("protected/".length);
 
+    const isAuto = rel.startsWith("auto/");
+    if (isAuto)
+        rel = rel.slice("auto/".length);
+
     rel = rel.replace(/\.(t|j)sx$/, "");       //<-- Strip extension
     rel = collapseFolderNamedFile(rel);
 
@@ -163,7 +174,7 @@ function fileToRoute(filePath: string) {
     if (url === "/")
         url = "/";
 
-    return { url, isProtected };
+    return { url, isProtected, isAuto };
 
 }
 
@@ -176,11 +187,17 @@ for (const [file, loader] of Object.entries(pageModules)) {
     if (!isPageCandidate(file))
         continue;
 
-    const { url, isProtected } = fileToRoute(file);
+    const { url, isProtected, isAuto } = fileToRoute(file);
 
     // Create route data, add to appropriate list
     const routeData = new RouteData(url, loader as any);
-    (isProtected ? routesProtected : routes).push(routeData);
+    let routeListTarget = (isAuto)
+        ? routesAuto
+        : (isProtected)
+            ? routesProtected
+            : routes;
+
+    routeListTarget.push(routeData);
 
 }
 
@@ -188,6 +205,14 @@ for (const [file, loader] of Object.entries(pageModules)) {
 const depth = (p: string) => (p === "/" ? 0 : p.split("/").length);
 routes.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
 routesProtected.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
+routesAuto.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
+
+log.table("Discovered Routes:", [...routes, ...routesProtected, ...routesAuto].map(r => ({
+    url: r.urlPath,
+    protected: routesProtected.includes(r),
+    auto: routesAuto.includes(r),
+    componentPath: r.componentPath || "Direct Import",
+})));
 
 // Automatically create route elements from the routes defined above
 const routeElements = routes.map((route) => (
@@ -195,6 +220,9 @@ const routeElements = routes.map((route) => (
 ));
 const routeElementsProtected = routesProtected.map((route) => (
     <Route key={route.urlPath} path={`/protected${route.urlPath}`} element={React.createElement(route.component)} />
+));
+const routeElementsAuto = routesAuto.map((route) => (
+    <Route key={route.urlPath} path={`/auto${route.urlPath}`} element={React.createElement(route.component)} />
 ));
 
 export const ROUTE_BASE = "";
@@ -253,14 +281,17 @@ const AppShell = () => (
             <React.Suspense fallback={null}>
                 <Routes>
 
-                    {/* Public */}
+                    {/* Public Routes */}
                     {routeElements}
                     <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-                    {/* Welcome with its own navbar via layout */}
-                 
+                    {/* Auto Routes (Valid regardless of authentication) */}
+                    <Route element={<AutoLayout />}>
+                        {routeElementsAuto}
+                        <Route path="/auto" element={<Navigate to="/welcome" replace />} />
+                    </Route>
 
-                    {/* Protected */}
+                    {/* Protected Routes */}
                     <Route element={<RequireAuth />}>
                         <Route element={<ProtectedLayout />}>
                             {routeElementsProtected}

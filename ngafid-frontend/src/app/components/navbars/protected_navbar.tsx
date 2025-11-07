@@ -118,7 +118,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
                     {/* Status */}
                     <Button asChild variant="ghost" className={buttonLinkClass}>
-                        <Link to="/status">
+                        <Link to="/auto/status">
                             <Info/>
                             {renderPageNameLink("Status")}
                         </Link>
