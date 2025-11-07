@@ -1,9 +1,8 @@
 // src/app/components/layouts/auto_navbar_layout.tsx
-import ProtectedNavbar from "@/components/navbars/protected_navbar";
-import WelcomeNavbar from "@/components/navbars/welcome_navbar";
+import ProtectedLayout from "@/components/layouts/protected_layout";
+import WelcomeLayout from "@/components/layouts/welcome_layout";
 import { useAuth } from "@/components/providers/auth_provider";
 import { LoaderCircle } from "lucide-react";
-import { Outlet } from "react-router-dom";
 
 /*
     Conditionally selects the
@@ -27,10 +26,9 @@ export default function AutoLayout() {
         <>
             {
                 (isLoggedIn())
-                ? <ProtectedNavbar />
-                : <WelcomeNavbar />
+                ? <ProtectedLayout />
+                : <WelcomeLayout />
             }
-            <Outlet />
         </>
     );
     
