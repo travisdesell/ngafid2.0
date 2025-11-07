@@ -1,18 +1,22 @@
 // ngafid-frontend/src/app/pages/protected/flights/flights.tsx
 'use client';
 
+import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
+import SuccessModal from "@/components/modals/success_modal";
 import ProtectedNavbar from "@/components/navbars/protected_navbar";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { base64urlToU8, fromWire } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { Filter } from "@/pages/protected/flights/_filters/types";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
 import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import pako from "pako";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import FlightsPanelSearch from "./_panels/flights_panel_search";
@@ -35,17 +39,18 @@ type FlightsContextValue = FlightsState & {
 };
 
 
-const FlightsContext = createContext<FlightsContextValue|null>(null);
+const FlightsContext = createContext<FlightsContextValue | null>(null);
 
 
 export default function FlightsPage() {
 
     const { setModal } = useModal();
 
+    // Animation Config
     const spring = { type: "spring" as const, stiffness: 420, damping: 34, mass: 0.6 };
     const panelInitial = { opacity: 0.00, scale: 0.00 };
     const panelAnimate = { opacity: 1.00, scale: 1.00 };
-    const panelExit    = { opacity: 0.00, scale: 0.00 };
+    const panelExit = { opacity: 0.00, scale: 0.00 };
 
     // Layout State
     const [isColumnalLayout, setIsColumnalLayout] = useState(true);
@@ -137,19 +142,92 @@ export default function FlightsPage() {
     const newID = () => ((typeof crypto !== "undefined") && crypto.randomUUID)
         ? crypto.randomUUID()
         : Math.random().toString(36).slice(2);
-        
+
+
+
+    
+    // Parse filter from URL / Set initial empty filter
+    function parseFilterFromURL(): { filter?: Filter; outcome: "ok" | "error" | "none" } {
+
+        try {
+            const params = new URLSearchParams(window.location.search);
+
+            const filterURLParam = params.get("f");
+
+            // No filter param -> Nothing to do
+            if (!filterURLParam)
+                return { outcome: "none" };
+
+            const u8 = base64urlToU8(filterURLParam);
+            const inflated = pako.inflate(u8);
+            const json = new TextDecoder().decode(inflated);
+            const wire = JSON.parse(json);
+            const parsed = fromWire(wire, newID);
+
+            // Failed to parse filter -> Error
+            if (!parsed)
+                return { outcome: "error" };
+
+            // Parsed successfully, return it
+            return { filter: parsed, outcome: "ok" };
+
+        } catch {
+            return { outcome: "error" };
+        }
+
+    }
+
+    const makeEmpty = (): Filter => ({
+        id: newID(),
+        operator: "AND",
+        rules: [],
+        groups: [],
+    });
+
+    const didInitRef = useRef(false);
+    useEffect(() => {
+
+        // Guard StrictMode double-invoke
+        if (didInitRef.current)
+            return;
+
+        didInitRef.current = true;
+
+        const { filter: parsed, outcome } = parseFilterFromURL();
+
+        // Got parsed filter from URL, set it
+        if (parsed) {
+            setState(prev => ({
+                ...prev,
+                filter: parsed,
+                allowSearchSubmit: filterIsValid(parsed),
+            }));
+        }
+
+        // Parsed successfully, show success modal
+        if (outcome === "ok") {
+            setModal(SuccessModal, {
+                title: "Filter Loaded from URL",
+                message: "Successfully loaded filter from URL parameter.",
+            });
+
+        // Otherwise, show error modal
+        } else if (outcome === "error") {
+            setModal(ErrorModal, {
+                title: "Error Loading Filter from URL",
+                message: "There was an error loading the filter from the URL. An empty filter has been loaded instead.",
+            });
+        }
+
+    }, []);
+
 
 
     // Flights State
     const [allowSearchSubmit, setAllowSearchSubmit] = useState(false);
     const [state, setState] = useState<FlightsState>({
         allowSearchSubmit: allowSearchSubmit,
-        filter: {
-            id: newID(),
-            operator: "AND",
-            rules: [],
-            groups: []
-        }
+        filter: makeEmpty(),
     });
 
     const setFilter: FlightsContextValue["setFilter"] = (updater) => {
@@ -176,7 +254,7 @@ export default function FlightsPage() {
 
 
     useEffect(() => {
-        
+
         const searchPanelAPI = searchPanelRef.current;
 
         // Panel instance doesn't exist, exit
@@ -202,7 +280,7 @@ export default function FlightsPage() {
             analysisPanelRef.current?.expand();
         else
             analysisPanelRef.current?.collapse();
-    
+
     }, [anyAnalysisPanelVisible]);
 
 
@@ -293,7 +371,7 @@ export default function FlightsPage() {
                                         }
 
                                         <ResizableHandle withHandle />
-                                    
+
                                         {/* Results Panel */}
                                         <ResizablePanel>
                                             <motion.div
@@ -306,7 +384,7 @@ export default function FlightsPage() {
                                             >
                                                 <FlightsPanelResults />
                                             </motion.div>
-                                        
+
                                         </ResizablePanel>
 
                                     </LayoutGroup>
@@ -412,5 +490,5 @@ export function useFlights() {
         throw new Error("useFlights must be used within a FlightsContext.Provider");
 
     return context;
-    
+
 }
