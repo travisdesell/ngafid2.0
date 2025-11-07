@@ -13,6 +13,7 @@ import { TimeHeaderProvider } from './components/providers/time_header/time_head
 
 
 // Import CSS
+import ProtectedLayout from '@/components/layouts/protected_layout';
 import { getLogger } from '@/components/providers/logger';
 import '@/index.css';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
@@ -248,18 +249,23 @@ const AppProviders: React.FC<React.PropsWithChildren> = ({ children }) => {
 const AppShell = () => (
     <>
         <Background />
-        <main>
+        <main className="min-h-0 overflow-hidden">
             <React.Suspense fallback={null}>
                 <Routes>
 
-                    {/* Unprotected Routes (Default to Welcome page) */}
+                    {/* Public */}
                     {routeElements}
                     <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-                    {/* Protected Routes (Default to Summary page) */}
+                    {/* Welcome with its own navbar via layout */}
+                 
+
+                    {/* Protected */}
                     <Route element={<RequireAuth />}>
-                        {routeElementsProtected}
-                        <Route path="/protected" element={<Navigate to="/protected/summary" replace />} />
+                        <Route element={<ProtectedLayout />}>
+                            {routeElementsProtected}
+                            <Route path="/protected" element={<Navigate to="/protected/summary" replace />} />
+                        </Route>
                     </Route>
 
                     {/* 404 */}

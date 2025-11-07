@@ -1,50 +1,46 @@
 // ngafid-frontend/src/app/pages/protected/uploads/uploads.tsx
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import SparkMD5 from "spark-md5";
-import ProtectedNavbar from "@/components/navbars/protected_navbar";
+import ConfirmModal from "@/components/modals/confirm_modal";
+import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { fetchJson } from "@/fetchJson";
+import { CHUNK_SIZE } from "@/workers/md5.worker";
+import Md5Worker from "@/workers/md5.worker.ts?worker";
 import {
-    Download,
-    ChevronLeft,
-    ChevronRight,
     AlertTriangle,
-    CheckCircle2,
     Check,
+    CircleAlert,
     CloudDownload,
-    Upload as UploadIcon,
-    XCircle,
+    Download,
     Info,
     List,
-    Trash,
     Loader,
-    CircleAlert,
+    Trash,
+    Upload as UploadIcon
 } from "lucide-react";
-import ErrorModal from "@/components/modals/error_modal";
 import { motion } from "motion/react";
-import ConfirmModal from "@/components/modals/confirm_modal";
-import { fetchJson } from "@/fetchJson";
-import Md5Worker from "@/workers/md5.worker.ts?worker";
-import { CHUNK_SIZE } from "@/workers/md5.worker";
+import React, { useCallback, useEffect, useState } from "react";
+import SparkMD5 from "spark-md5";
 
-import type {
-    UploadStatus, UploadInfo,
-    ImportsPageItem,
-    UploadImportItem,
-    UploadErrorsPayload,
-    UploadListResponse, ImportsListResponse,
-    APIError
-} from "./_types/types";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import SuccessModal from "@/components/modals/success_modal";
 import { getLogger } from "@/components/providers/logger";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import type {
+    APIError,
+    ImportsListResponse,
+    ImportsPageItem,
+    UploadErrorsPayload,
+    UploadImportItem,
+    UploadInfo,
+    UploadListResponse,
+    UploadStatus
+} from "./_types/types";
 
 
 const log = getLogger("Uploads", "black", "Page");
@@ -899,7 +895,6 @@ export default function UploadsPage() {
 
     const render = () => (
         <div className="page-container">
-            <ProtectedNavbar />
 
             <div className="page-content space-y-4 w-full max-w-[1280px] h-full mx-auto">
 

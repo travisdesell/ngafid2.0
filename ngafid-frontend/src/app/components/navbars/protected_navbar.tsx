@@ -12,6 +12,7 @@ import { useModal } from "../modals/modal_provider";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 
+import { useNavbarSlot } from "@/components/navbars/navbar_slot";
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -28,6 +29,12 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
     const { setModal } = useModal();
     const { user } = useAuth();
     const { useNavbarPageNames } = useTheme();
+    const { extras } = useNavbarSlot();
+
+    const extraItems = React.useMemo(
+        () => React.Children.toArray(extras).filter(Boolean),
+        [extras]
+    );
 
     const attemptLogOut = () => {
 
@@ -59,7 +66,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
         return (
             <nav
                 id='navbar'
-                className="navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-(--sidebar)"
+                className="shrink-0 navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-(--sidebar)"
             >
 
                 {/* Left Elements */}
@@ -72,17 +79,27 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
                     {/* Child Elements */}
                     <div className="flex flex-row items-center justify-end gap-2">
-                        {React.Children.map(children, (child, index) => (
-                            <motion.div
-                                className="gap-2"
-                                key={`navbar-child-${index}`}
-                                initial={{ opacity: 0.00 }}
-                                animate={{ opacity: 1.00 }}
-                                transition={{ duration: 0.50, delay: 0.05 * index }}
-                            >
-                                {child}
-                            </motion.div>
-                        ))}
+                        {
+                            extraItems.map((child, index) => {
+
+                                const key = (React.isValidElement(child) && child.key != null)
+                                    ? child.key
+                                    : `navbar-child-${index}`;
+
+                                return (
+                                    <motion.div
+                                        className="gap-2"
+                                        key={key}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.5, delay: 0.05 * index }}
+                                    >
+                                        {child}
+                                    </motion.div>
+                                );
+                                
+                            })
+                        }
                     </div>
                     
                 </div>

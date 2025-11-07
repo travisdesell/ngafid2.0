@@ -1,13 +1,12 @@
 // ngafid-frontend/src/app/pages/status/status.tsx
-import React from "react";
-import ProtectedNavbar from "@/components/navbars/protected_navbar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CircleQuestionMark, CircleCheck, TriangleAlert, CircleAlert, ArrowBigRightDash, LucideProps } from "lucide-react";
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import Ping, { PingColor } from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowBigRightDash, CircleAlert, CircleCheck, CircleQuestionMark, LucideProps, TriangleAlert } from "lucide-react";
+import React from "react";
 
 
 const log = getLogger("Status", "black", "Page");
@@ -206,7 +205,6 @@ export default function Status() {
 
     return (
         <div className="page-container">
-            <ProtectedNavbar />
 
             <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-[1280px] min-h-screen py-8">
 

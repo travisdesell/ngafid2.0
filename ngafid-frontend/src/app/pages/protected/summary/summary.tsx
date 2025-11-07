@@ -1,7 +1,6 @@
 // ngafid-frontend/src/app/pages/summary/summary.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
-import ProtectedNavbar from "@/components/navbars/protected_navbar";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
 import TimeHeader from "@/components/providers/time_header/time_header";
@@ -361,9 +360,6 @@ export default function SummaryPage() {
 
     const render = () => (
         <div className="page-container">
-
-            {/* Navbar */}
-            <ProtectedNavbar />
 
             {/* Page Content */}
             <div className="page-content gap-4">

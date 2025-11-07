@@ -1,7 +1,6 @@
 // ngafid-frontend/src/app/pages/event_definitions/event_definitions.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
-import ProtectedNavbar from "@/components/navbars/protected_navbar";
 import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -219,19 +218,16 @@ export default function EventDefinitionsPage() {
     const render = () => {
 
         return (
-            <div className="overflow-x-hidden flex flex-col h-[100vh]">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="max-w-[1280px] w-full mx-auto flex flex-col p-4 flex-1 min-h-0 gap-2">
+                    <Card className="card-glossy flex-1 min-h-0 overflow-hidden flex flex-col">
 
-                <ProtectedNavbar />
-
-                <div className="w-[1280px] mx-auto flex flex-col p-4 flex-1 min-h-0 overflow-y-auto gap-2">
-                    <Card className="card-glossy h-full overflow-y-auto">
-
-                        <CardHeader>
+                        <CardHeader className="shrink-0">
                             <CardTitle>Event Definitions</CardTitle>
                             <CardDescription>View the event definitions for each aircraft type.</CardDescription>
                         </CardHeader>
 
-                        <CardContent>
+                        <CardContent className="flex-1 min-h-0 overflow-y-auto">
                             {
                                 (loading)
                                 ?
@@ -327,7 +323,7 @@ export default function EventDefinitionsPage() {
                     </Card>
 
                     <Input
-                        className="bg-background w-full"
+                        className="bg-background w-full shrink-0"
                         placeholder="Search event definitions..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}

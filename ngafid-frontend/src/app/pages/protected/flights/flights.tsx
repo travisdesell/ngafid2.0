@@ -4,7 +4,7 @@
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import SuccessModal from "@/components/modals/success_modal";
-import ProtectedNavbar from "@/components/navbars/protected_navbar";
+import { NavbarExtras } from "@/components/navbars/navbar_slot";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -297,42 +297,44 @@ export default function FlightsPage() {
 
     );
 
+    const navbarExtras = (
+        <>
+            {/* Search Area Toggle */}
+            {renderSectionToggleButton(Search, searchPanelVisible, setSearchPanelVisible)}
+
+            {/* Chart Toggle */}
+            {renderSectionToggleButton(ChartArea, chartPanelVisible, setChartPanelVisible)}
+
+            {/* Cesium Toggle */}
+            {renderSectionToggleButton(Earth, cesiumPanelVisible, setCesiumPanelVisible)}
+
+            {/* Map Toggle & Select */}
+            <div className="flex">
+
+                {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible, "rounded-r-none")}
+
+                <Select>
+                    <SelectTrigger className="w-[180px] rounded-l-none">
+                        <SelectValue placeholder="Select Map Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="cesium">Cesium</SelectItem>
+                        <SelectItem value="leaflet">Leaflet</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </>
+    );
+
     const render = () => (
         <FlightsContext.Provider value={value}>
             <div className="page-container">
                 <AnimatePresence mode="sync">
 
-                    <motion.div key="flights-page-navbar" layout>
-                        <ProtectedNavbar>
-
-                            {/* Search Area Toggle */}
-                            {renderSectionToggleButton(Search, searchPanelVisible, setSearchPanelVisible)}
-
-                            {/* Chart Toggle */}
-                            {renderSectionToggleButton(ChartArea, chartPanelVisible, setChartPanelVisible)}
-
-                            {/* Cesium Toggle */}
-                            {renderSectionToggleButton(Earth, cesiumPanelVisible, setCesiumPanelVisible)}
-
-                            {/* Map Toggle & Select */}
-                            <div className="flex">
-
-                                {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible, "rounded-r-none")}
-
-                                <Select>
-                                    <SelectTrigger className="w-[180px] rounded-l-none">
-                                        <SelectValue placeholder="Select Map Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        <SelectItem value="cesium">Cesium</SelectItem>
-                                        <SelectItem value="leaflet">Leaflet</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                        </ProtectedNavbar>
-                    </motion.div>
+                    <NavbarExtras>
+                        {navbarExtras}
+                    </NavbarExtras>
 
                     <motion.div key="flights-page-content" layout className="page-content gap-4">
 
