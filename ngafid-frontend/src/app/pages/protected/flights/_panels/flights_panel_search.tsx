@@ -89,7 +89,7 @@ export default function FlightsPanelSearch() {
             filterQuery: JSON.stringify(filter),
             currentPage: "0",
             pageSize: "100",
-            sortingColumn: "Start Date and Time",
+            sortingColumn: "start_time",
             sortingOrder: "Descending",
         });
         const response = await fetchJson.get("/api/flight", { params });
@@ -119,7 +119,7 @@ export default function FlightsPanelSearch() {
 
             {/* Save Current Filter */}
             <Button
-                onClick={() => setModal(FilterEditModal, {saveFilter})}
+                onClick={() => setModal(FilterEditModal, {filter, saveFilter})}
                 disabled={!allowSearchSubmit}
             >
                 <Save /> Save Current Filter
