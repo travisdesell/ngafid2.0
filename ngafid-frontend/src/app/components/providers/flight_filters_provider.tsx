@@ -14,7 +14,7 @@ const log = getLogger("FlightFiltersProvider", "purple", "Provider");
 export type FlightFilter = {
     name: string,
     color: string,
-    criteria: string, //<-- JSON string representing filter criteria
+    filter: string, //<-- JSON string representing filter criteria
 };
 
 type FlightFiltersState = {
@@ -97,7 +97,7 @@ export function FlightFiltersProvider({ children }: { children: React.ReactNode 
 
         const params = new URLSearchParams();
         params.set("name", filter.name.trim());
-        params.set("filterJSON", filter.criteria ?? "{}");
+        params.set("filterJSON", filter.filter ?? "{}");
         params.set("color", filter.color ?? "#000000");
 
         await fetchJson.put("/api/filter", params)
