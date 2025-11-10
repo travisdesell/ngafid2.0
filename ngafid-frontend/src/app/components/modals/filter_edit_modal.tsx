@@ -1,18 +1,20 @@
 // ngafid-frontend/src/app/components/modals/filter_edit_modal.tsx
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "motion/react";
+import { useState } from "react";
 
-import '@/index.css';
-import { AlertCircleIcon, X } from 'lucide-react';
-import type { ModalData, ModalProps } from "./types";
-import { useModal } from './modal_provider';
 import { ColorPicker } from "@/components/color_picker";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ErrorModal from '@/components/modals/error_modal';
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import '@/index.css';
+import { FilterGroup } from '@/pages/protected/flights/_filters/types';
+import { AlertCircleIcon, X } from 'lucide-react';
+import { useModal } from './modal_provider';
+import type { ModalData, ModalProps } from "./types";
 
 
 const log = getLogger("FilterEditModal", "black", "Modal");
@@ -21,13 +23,14 @@ const log = getLogger("FilterEditModal", "black", "Modal");
 export type ModalDataFilterEdit = ModalData & {
     colorIn: string;
     nameIn: string;
+    filter: FilterGroup;
     saveFilter: (filter: FlightFilter) => Promise<void>;
 };
 
 export default function FilterEditModal({ data }: ModalProps) {
 
-    const { close } = useModal();
-    const { colorIn, nameIn, saveFilter } = (data as ModalDataFilterEdit);
+    const { setModal, close } = useModal();
+    const { colorIn, nameIn, saveFilter, filter } = (data as ModalDataFilterEdit);
 
     const randomHexColor = () => {
         const letters = '0123456789ABCDEF';
@@ -59,6 +62,36 @@ export default function FilterEditModal({ data }: ModalProps) {
             <Input className="ml-4" placeholder="Filter Name" value={nameInputValue} onChange={(e) => setNameInputValue(e.target.value)} />
 
         </div>
+
+    }
+
+    const attemptSaveFilter = () => {
+
+        if (!allowFilterSave()) {
+            log.warn("Filter name is empty. Cannot save filter.");
+            return;
+        }
+
+        log.table("Attempting to save filter:", {
+            name: nameInputValue,
+            color: colorPickerValue,
+            filter: filter,
+        });
+
+        saveFilter({
+            name: nameInputValue.trim(),
+            color: colorPickerValue,
+            filter: JSON.stringify(filter),
+        }).then(() => {
+
+            log("Filter saved successfully.");
+            close();
+
+        }).catch((error) => {
+
+            setModal(ErrorModal, { title: "Error Saving Filter", message: "An error occurred while saving the filter.", code: (error as Error).message });
+            
+        });
 
     }
 
@@ -106,14 +139,7 @@ export default function FilterEditModal({ data }: ModalProps) {
                         <Button variant="outline" onClick={close}>Cancel</Button>
                         <Button
                             variant={"default"}
-                            onClick={() => {
-                                saveFilter({
-                                    name: nameInputValue.trim(),
-                                    color: colorPickerValue,
-                                    criteria: JSON.stringify({}),
-                                });
-                                close();
-                            }}
+                            onClick={attemptSaveFilter}
                             disabled={!allowFilterSave()}
                         >
                             Save
