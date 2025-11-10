@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/flights/flights.tsx
 'use client';
 
+import ConfirmModal from "@/components/modals/confirm_modal";
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import SuccessModal from "@/components/modals/success_modal";
@@ -10,8 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { fetchJson } from "@/fetchJson";
 import { base64urlToU8, fromWire } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
-import { Filter } from "@/pages/protected/flights/_filters/types";
+import { SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import { Filter, FilterGroup } from "@/pages/protected/flights/_filters/types";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
 import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
@@ -25,18 +28,45 @@ import FlightsPanelSearch from "./_panels/flights_panel_search";
 const log = getLogger("Flights", "black", "Page");
 
 
+export type SortingDirection = "Ascending" | "Descending";
+export const isValidSortingDirection = (value: string): value is SortingDirection => {
+    return (value === "Ascending" || value === "Descending");
+}
+
+export const FLIGHTS_PER_PAGE_OPTIONS = [
+    10,
+    25,
+    50,
+    100,
+]
+
+
 export const FILTER_RULE_NAME_NEW = "New Rule";
 
 type FlightsState = {
-    allowSearchSubmit: boolean;
     filter: Filter;
+
+    filterSearched: Filter | null;
+    sortingColumn?: string | null;
+    sortingDirection?: SortingDirection;    
+    pageSize?: number;
+    currentPage?: number;
 };
 type FlightsContextValue = FlightsState & {
     setFilter: (updater: (prev: Filter) => Filter) => void;
     setFilterFromJSON: (json: string) => void;
     filterIsEmpty: (filter: Filter) => boolean;
     filterIsValid: (filter: Filter) => boolean;
+    revertFilter: () => void;
+
     newID: () => string;
+
+    setSortingColumn: (column: string | null) => void;
+    setSortingDirection: (direction: SortingDirection) => void;
+    setPageSize: (size: number) => void;
+    setCurrentPage: (page: number) => void;
+
+    fetchFlightsWithFilter: (filter: FilterGroup, isTriggeredManually: boolean) => Promise<any>;
 };
 
 
@@ -54,7 +84,6 @@ export default function FlightsPage() {
     const panelExit = { opacity: 0.00, scale: 0.00 };
 
     // Layout State
-    const [isColumnalLayout, setIsColumnalLayout] = useState(true);
     const [searchPanelVisible, setSearchPanelVisible] = useState(true);
 
     // Analysis Panels
@@ -62,9 +91,16 @@ export default function FlightsPage() {
     const [cesiumPanelVisible, setCesiumPanelVisible] = useState(false);
     const [mapPanelVisible, setMapPanelVisible] = useState(false);
 
+    // Search Options State
+    const [filterSearched, setFilterSearched] = useState<Filter | null>(null);
+    const [sortingColumn, setSortingColumn] = useState<string | null>(SORTABLE_COLUMNS["Flight ID"]);
+    const [sortingDirection, setSortingDirection] = useState<SortingDirection>("Ascending");
+    const [pageSize, setPageSize] = useState<number>(FLIGHTS_PER_PAGE_OPTIONS[0]);
+    const [currentPage, setCurrentPage] = useState<number>(0);
+
     const anyAnalysisPanelVisible = (chartPanelVisible || cesiumPanelVisible || mapPanelVisible);
     const analysisPanelCount = (chartPanelVisible ? 1 : 0) + (cesiumPanelVisible ? 1 : 0) + (mapPanelVisible ? 1 : 0);
-    const analysisSectionGridClasses = (isColumnalLayout) ? `grid-cols-1 grid-rows-${analysisPanelCount}` : `grid-rows-1 grid-cols-${analysisPanelCount}`;
+    const analysisSectionGridClasses = `grid-cols-1 grid-rows-${analysisPanelCount}`;
 
     const searchPanelRef = useRef<ImperativePanelHandle | null>(null);
     const analysisPanelRef = useRef<ImperativePanelHandle | null>(null);
@@ -201,7 +237,6 @@ export default function FlightsPage() {
             setState(prev => ({
                 ...prev,
                 filter: parsed,
-                allowSearchSubmit: filterIsValid(parsed),
             }));
         }
 
@@ -224,11 +259,134 @@ export default function FlightsPage() {
 
 
 
+    // Flights Search
+    const fetchFlightsWithFilter = async (filter: FilterGroup, isTriggeredManually: boolean) => {
+
+        log(`Attempting to fetch flights with filter: (Triggered Manually: ${isTriggeredManually})`, filter);
+
+        /*
+            Makes a GET request to fetch flights
+            matching the given filter.
+
+            /api/flight
+        */
+
+        // Invalid or empty filter -> Exit
+        if (!filter || filterIsEmpty(filter) || !filterIsValid(filter)) {
+
+            if (isTriggeredManually) {
+
+                log.error("Cannot fetch flights: Filter is undefined, empty, or invalid.", filter);
+                setModal(ErrorModal, { title: "Invalid Filter", message: "Cannot fetch flights: The current filter is undefined, empty, or invalid." });
+
+            } else {
+
+                log.warn("Not fetching flights: Filter is undefined, empty, or invalid.", filter);
+
+            }
+
+            return;
+
+        }
+
+        /*
+            Triggered a manual submission,
+            update the searched filter state.
+
+            (This would be redundant for the
+            automatic submissions, since that
+            just uses the cached searched filter
+            anyways.)
+        */
+        if (isTriggeredManually)
+            setFilterSearched(filter);
+
+        try {
+
+            // Invalid current page -> Error
+            if (currentPage === undefined || currentPage < 0)
+                throw new Error(`Current page is not defined or invalid: ${currentPage}`);
+
+            // Invalid page size -> Error
+            if (!pageSize || !FLIGHTS_PER_PAGE_OPTIONS.includes(pageSize))
+                throw new Error(`Page size is not defined or invalid: ${pageSize}`);
+
+            // Invalid sorting direction
+            if (!sortingDirection || !isValidSortingDirection(sortingDirection))
+                throw new Error(`Sorting direction is not defined or invalid: ${sortingDirection}`);
+
+            // Invalid sorting column
+            if (!sortingColumn || !SORTABLE_COLUMN_VALUES.includes(sortingColumn))
+                throw new Error(`Sorting column is not defined or invalid: ${sortingColumn}`);
+
+            const params = new URLSearchParams({
+                filterQuery: JSON.stringify(filter),
+                currentPage: currentPage.toString(),
+                pageSize: pageSize.toString(),
+                sortingColumn: sortingColumn,
+                sortingOrder: sortingDirection,
+            });
+            const response = await fetchJson.get("/api/flight", { params });
+
+            // Got no flights -> Show modal
+            if (!response || !response.flights || response.flights.length === 0) {
+                log.warn("No flights found with current filter.");
+                setModal(SuccessModal, { title: "No Flights Found", message: "No flights were found matching the current filter." });
+                return response;
+            }
+
+
+            log.table("Fetched flights response: ", response);
+            log.table(`Fetched flights (${response.flights.length}):`, response.flights);
+
+            return response;
+
+        } catch (error) {
+
+            setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: (error as Error).message });
+
+        }
+
+    }
+
+
+    // Revert filter to last searched
+    const revertFilter = () => {
+
+        if (!filterSearched) {
+            log.warn("No previously searched filter to revert to.");
+            setModal(ErrorModal, { allowReport: false, title: "No Previous Filter", message: "There is no previously searched filter to revert to." });
+            return;
+        }
+
+        const confirmRevert = () => {
+
+            log("Reverting filter to last searched filter:", filterSearched);
+            setState((prev) => ({
+                ...prev,
+                filter: filterSearched!,
+            }));
+
+        }
+
+        setModal(ConfirmModal, {
+            title: "Revert Filter",
+            message: "Are you sure you want to revert to the last searched filter?",
+            buttonVariant: "default",
+            onConfirm: confirmRevert,
+        });
+
+    }
+
+
     // Flights State
-    const [allowSearchSubmit, setAllowSearchSubmit] = useState(false);
     const [state, setState] = useState<FlightsState>({
-        allowSearchSubmit: allowSearchSubmit,
         filter: makeEmpty(),
+
+        filterSearched: null,
+        sortingColumn: sortingColumn,
+        sortingDirection: sortingDirection,
+        pageSize: pageSize,
     });
 
     const setFilter: FlightsContextValue["setFilter"] = (updater) => {
@@ -239,28 +397,69 @@ export default function FlightsPage() {
         setState((prev) => ({
             ...prev,
             filter: updatedFilter,
-            allowSearchSubmit: filterIsValid(updatedFilter),
         }));
 
     };
 
     const setFilterFromJSON: FlightsContextValue["setFilterFromJSON"] = (json) => {
 
+        log("Attempting to parse filter from JSON:", json);
+
         const parsed = JSON.parse(json);
+        log("Setting filter from parsed JSON:", parsed);
+
         setFilter(() => parsed);
         
     }
 
     const value: FlightsContextValue = {
-        allowSearchSubmit: state.allowSearchSubmit,
         filter: state.filter,
+
+        filterSearched: filterSearched,
+        sortingColumn,
+        sortingDirection,
+        pageSize,
+        currentPage,
+
         setFilter,
         setFilterFromJSON,
         filterIsEmpty: filterIsEmpty,
         filterIsValid: filterIsValid,
+        revertFilter,
+
         newID,
+
+        setSortingColumn,
+        setSortingDirection,
+        setPageSize,
+        setCurrentPage,
+
+        fetchFlightsWithFilter,
+
     };
 
+    useEffect(() => {
+
+        /*
+            Trigger a re-fetch whenever the
+            the sorting options or current
+            page change.
+
+            Ensure that this does not get
+            triggered on initial render.
+        */
+
+        if (didInitRef.current === false)
+            return;
+
+        if (!filterSearched) {
+            log.warn("Not automatically fetching flights: No previously searched filter.");
+            return;
+        }
+
+        fetchFlightsWithFilter(filterSearched, false)
+
+    }, [sortingColumn, sortingDirection, pageSize, currentPage]);
 
     useEffect(() => {
 
@@ -347,7 +546,7 @@ export default function FlightsPage() {
 
                     <motion.div key="flights-page-content" layout className="page-content gap-4">
 
-                        <ResizablePanelGroup direction={isColumnalLayout ? "horizontal" : "vertical"} className="gap-2">
+                        <ResizablePanelGroup direction={"horizontal"} className="gap-2">
 
                             {/* Search Section */}
                             <ResizablePanel

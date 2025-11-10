@@ -7,9 +7,10 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { SORTABLE_COLUMN_NAMES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import { FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection, useFlights } from "@/pages/protected/flights/flights";
 import { ArrowDownWideNarrow, ArrowUpDown, Info, ListOrdered } from "lucide-react";
 import { motion } from "motion/react";
-
 
 const log = getLogger("FlightsPanelResults", "black", "Component");
 
@@ -17,6 +18,49 @@ const log = getLogger("FlightsPanelResults", "black", "Component");
 export default function FlightsPanelResults() {
 
     const { setModal } = useModal();
+    const { sortingColumn, setSortingColumn, sortingDirection, setSortingDirection, pageSize, setPageSize } = useFlights();
+
+    const updateSortingColumn = (value: string) => {
+
+        const isValidSortingColumn = (value: string): boolean => {
+            return SORTABLE_COLUMN_VALUES.includes(value);
+        }
+
+        if (!isValidSortingColumn(value)) {
+            log.error("Invalid sorting column value:", value);
+            return;
+        }
+
+        setSortingColumn(value);
+        log("Updated sorting column to:", value);
+
+    }
+
+    const updateSortingDirection = (value: string) => {
+
+        if (!isValidSortingDirection(value)) {
+            log.error("Invalid sorting direction value:", value);
+            return;
+        }
+
+        setSortingDirection(value);
+        log("Updated sorting direction to:", value);
+
+    }
+
+    const updatePageSize = (value: string) => {
+        
+        const newSize = parseInt(value);
+
+        if (isNaN(newSize)) {
+            log.error("Invalid page size value:", value);
+            return;
+        }
+
+        setPageSize(newSize);
+        log("Updated flights per page to:", newSize);
+
+    }
 
     const renderEmptyResultsMessage = () => {
 
@@ -39,8 +83,6 @@ export default function FlightsPanelResults() {
 
     const renderPaginationRow = () => {
 
-        const flightsPerPageOptions = [10, 15, 25, 50, 100];
-
         return <div className="flex flex-row gap-2 w-full p-2">
 
             {/* Pagination Controls */}
@@ -62,7 +104,7 @@ export default function FlightsPanelResults() {
             </Pagination>
 
             {/* Sorting Select Dropdown */}
-            <Select>
+            <Select onValueChange={(value) => updateSortingColumn(value)} value={sortingColumn || ""}>
                 <Button variant="outline" asChild>
                     <SelectTrigger className="min-w-[180px] w-fit">
                         <ArrowDownWideNarrow />
@@ -70,15 +112,18 @@ export default function FlightsPanelResults() {
                     </SelectTrigger>
                 </Button>
                 <SelectContent>
-                    <SelectItem value="newest">Newest</SelectItem>
-                    <SelectItem value="oldest">Oldest</SelectItem>
-                    <SelectItem value="a-z">A - Z</SelectItem>
-                    <SelectItem value="z-a">Z - A</SelectItem>
+                    {
+                        SORTABLE_COLUMN_NAMES.map((columnName) => (
+                            <SelectItem key={columnName} value={SORTABLE_COLUMNS[columnName]}>
+                                {columnName}
+                            </SelectItem>
+                        ))
+                    }
                 </SelectContent>
             </Select>
 
             {/* Sorting Order (Ascending/Descending) Select Dropdown */}
-            <Select>
+            <Select onValueChange={(value) => updateSortingDirection(value)} value={sortingDirection}>
                 <Button variant="outline" asChild>
                     <SelectTrigger className="min-w-[180px] w-fit">
                         <ArrowUpDown />
@@ -86,13 +131,13 @@ export default function FlightsPanelResults() {
                     </SelectTrigger>
                 </Button>
                 <SelectContent>
-                    <SelectItem value="ascending">Ascending</SelectItem>
-                    <SelectItem value="descending">Descending</SelectItem>
+                    <SelectItem value="Ascending">Ascending</SelectItem>
+                    <SelectItem value="Descending">Descending</SelectItem>
                 </SelectContent>
             </Select>
 
             {/* Flights Per Page Select Dropdown */}
-            <Select>
+            <Select onValueChange={(value) => updatePageSize(value)} value={pageSize?.toString()}>
                 <Button variant="outline" asChild>
                     <SelectTrigger className="min-w-[180px] w-fit">
                         <ListOrdered />
@@ -100,11 +145,13 @@ export default function FlightsPanelResults() {
                     </SelectTrigger>
                 </Button>
                 <SelectContent>
-                    {flightsPerPageOptions.map((option) => (
-                        <SelectItem key={option} value={option.toString()}>
-                            {option} per page
-                        </SelectItem>
-                    ))}
+                    {
+                        FLIGHTS_PER_PAGE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option.toString()}>
+                                {option} per page
+                            </SelectItem>
+                        ))
+                    }
                 </SelectContent>
             </Select>
 

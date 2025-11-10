@@ -10,11 +10,9 @@ import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { fetchJson } from "@/fetchJson";
 import { toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
-import { FilterGroup } from "@/pages/protected/flights/_filters/types";
 import { useFlights } from "@/pages/protected/flights/flights";
-import { Bolt, ClipboardCopy, Ellipsis, Info, Save, Search } from "lucide-react";
+import { Bolt, ClipboardCopy, Ellipsis, Info, RotateCcw, Save, Search } from "lucide-react";
 import { motion } from "motion/react";
 import pako from "pako";
 import { FlightsPanelSearchGroup } from "./flights_panel_search_group";
@@ -23,7 +21,8 @@ const log = getLogger("FlightsPanelSearch", "black", "Component");
 
 export default function FlightsPanelSearch() {
 
-    const { allowSearchSubmit, filter, setFilterFromJSON, filterIsEmpty } = useFlights();
+    const { filter, filterSearched, setFilterFromJSON, filterIsEmpty, filterIsValid, fetchFlightsWithFilter, revertFilter } = useFlights();
+    const { currentPage, sortingColumn, sortingDirection, pageSize } = useFlights();
     const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
 
@@ -74,42 +73,33 @@ export default function FlightsPanelSearch() {
 
     }
 
-    const fetchFlightsWithFilter = async (filter: FilterGroup) => {
-
-        log("Fetching flights with filter: ", filter);
-
-        /*
-            Makes a GET request to fetch flights
-            matching the given filter.
-
-            /api/flight
-        */  
-
-        const params = new URLSearchParams({
-            filterQuery: JSON.stringify(filter),
-            currentPage: "0",
-            pageSize: "100",
-            sortingColumn: "start_time",
-            sortingOrder: "Descending",
-        });
-        const response = await fetchJson.get("/api/flight", { params });
-
-        log.table("Fetched flights response: ", response);
-
-        return response;
-
-    }
-
     const renderSearchSubmitRow = () => {
+
+        const displayRevert = (filterSearched && !filterIsEmpty(filterSearched));
+        const allowRevert = (displayRevert && (JSON.stringify(filter) !== JSON.stringify(filterSearched)));
+
+        const allowFilterURLCopyAndSave = filterIsValid(filter);
+
+        const allowSearchSubmit = (displayRevert)
+            ? allowRevert
+            : filterIsValid(filter);
 
         return <div className="flex flex-row gap-2 w-full p-2">
 
             {/* Copy Filter URL */}
             <Button
                 onClick={copyFilterURL}
-                disabled={!allowSearchSubmit}
+                disabled={!allowFilterURLCopyAndSave}
             >
                 <ClipboardCopy /> Copy Filter URL
+            </Button>
+
+            {/* Save Current Filter */}
+            <Button
+                onClick={() => setModal(FilterEditModal, {filter, saveFilter})}
+                disabled={!allowFilterURLCopyAndSave}
+            >
+                <Save /> Save Current Filter
             </Button>
 
             {/* Load a Saved Filter */}
@@ -117,30 +107,29 @@ export default function FlightsPanelSearch() {
                 <Ellipsis /> Load a Saved Filter
             </Button>
 
-            {/* Save Current Filter */}
-            <Button
-                onClick={() => setModal(FilterEditModal, {filter, saveFilter})}
-                disabled={!allowSearchSubmit}
-            >
-                <Save /> Save Current Filter
-            </Button>
+            <div className="ml-auto flex flex-row gap-2">
 
-            {/* Submit Search */}
-            <Button
-                onClick={async () => {
-                    try {
-                        const response = await fetchFlightsWithFilter(filter);
-                        log.table("Fetched flights: ", response.flights);
-                    } catch (e) {
-                        log.error("Error fetching flights: ", e);
-                        setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: (e as Error).message });
-                    }
-                }}
-                className="ml-auto"
-                disabled={!allowSearchSubmit}
-            >
-                <Search /> Search Flights
-            </Button>
+                {/* Revert Filter */}
+                {
+                    (displayRevert)
+                    &&
+                    <Button
+                        onClick={revertFilter}
+                        disabled={!allowRevert}
+                    >
+                        <RotateCcw /> Revert Filter
+                    </Button>
+            }
+
+                {/* Submit Search */}
+                <Button
+                    onClick={() => fetchFlightsWithFilter(filter, true)}
+                    disabled={!allowSearchSubmit}
+                >
+                    <Search /> Search Flights
+                </Button>
+
+            </div>
 
         </div>
 

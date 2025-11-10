@@ -29,6 +29,7 @@ export const SORTABLE_COLUMNS = {
 } as Record<string, string>;
 
 export const SORTABLE_COLUMN_NAMES = Object.keys(SORTABLE_COLUMNS);
+export const SORTABLE_COLUMN_VALUES = Object.values(SORTABLE_COLUMNS);
 
 export const RULES = [
 
