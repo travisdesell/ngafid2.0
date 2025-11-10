@@ -39,9 +39,9 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
 
             try {
 
-                setFilterFromJSON(filter.criteria);
+                setFilterFromJSON(filter.filter);
                 close();
-                
+
             } catch (error) {
 
                 const errorCode = `${error}\n\n${JSON.stringify(filter)}`
