@@ -4,6 +4,7 @@ import FilterEditModal from "@/components/modals/filter_edit_modal";
 import FilterListModal from "@/components/modals/filter_list_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import SuccessModal from "@/components/modals/success_modal";
+import Ping from "@/components/pings/ping";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -81,7 +82,7 @@ export default function FlightsPanelSearch() {
         const allowFilterURLCopyAndSave = filterIsValid(filter);
 
         const allowSearchSubmit = (displayRevert)
-            ? allowRevert
+            ? (allowRevert && filterIsValid(filter))
             : filterIsValid(filter);
 
         return <div className="flex flex-row gap-2 w-full p-2">
@@ -123,9 +124,15 @@ export default function FlightsPanelSearch() {
 
                 {/* Submit Search */}
                 <Button
+                    className="relative"
                     onClick={() => fetchFlightsWithFilter(filter, true)}
                     disabled={!allowSearchSubmit}
                 >
+                    {
+                        (allowSearchSubmit)
+                        &&
+                        <Ping />
+                    }
                     <Search /> Search Flights
                 </Button>
 
