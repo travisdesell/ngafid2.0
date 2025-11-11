@@ -21,7 +21,7 @@ object FlightRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/flight") {
-                get(FlightsJavalinRoutes::postFlights, Role.LOGGED_IN)
+                get(FlightsJavalinRoutes::getFlights, Role.LOGGED_IN)
                 get("double-series", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames, Role.LOGGED_IN)
                 get("turn-to-final", AnalysisJavalinRoutes::postTurnToFinal, Role.LOGGED_IN)
                 get("flight_hours_by_airframe", FlightRoutes::getFlightHoursByAirframe, Role.LOGGED_IN)
