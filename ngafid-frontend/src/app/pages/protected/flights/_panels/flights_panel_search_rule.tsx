@@ -230,12 +230,17 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
                         ? Number(valueCurrentOrDefault)
                         : undefined;
 
+                const min = (typeof condition.min === 'number') ? condition.min : undefined;
+                const max = (typeof condition.max === 'number') ? condition.max : undefined;
+
                 return <NumberInput
                     className="min-w-[128px] rounded-none!"
                     key={key}
                     value={valueNumeric}
                     onValueChange={(n) => updateConditionValue(n)}
                     placeholder={condition.name}
+                    min={min}
+                    max={max}
                 />;
 
             }
