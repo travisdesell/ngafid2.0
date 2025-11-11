@@ -1,19 +1,17 @@
 // ngafid-frontend/src/app/welcome.tsx
 
-import React from 'react'
 import WelcomeNavbar from '@/components/navbars/welcome_navbar';
-import { Card, CardContent, CardHeader, CardDescription, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 
-import './welcome.css';
 import { CircleQuestionMark, InfoIcon } from 'lucide-react';
+import './welcome.css';
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import RegisterModal from '@/components/modals/register_modal';
 import { useModal } from '@/components/modals/modal_provider';
+import RegisterModal from '@/components/modals/register_modal';
 import { getLogger } from '@/components/providers/logger';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 const log = getLogger("Welcome", "black", "Page");
@@ -34,9 +32,8 @@ export default function Welcome() {
                     <span className="decoration-dotted underline cursor-help">{acronym}</span>
                 </TooltipTrigger>
 
-                <TooltipContent className="text-popover-foreground">
+                <TooltipContent>
                     <p>{fullText}</p>
-                    <TooltipPrimitive.Arrow className="fill-primary pb-[1px] transition-all" />
                 </TooltipContent>
             </Tooltip>
         );
