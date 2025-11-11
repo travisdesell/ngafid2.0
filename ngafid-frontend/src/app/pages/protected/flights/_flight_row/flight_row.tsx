@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, ChartArea, Clock, Download, Globe2, Map, MapPinned, Plane, Tag } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Calendar, ChartArea, Clock, Dot, Download, Globe2, Map, MapPinned, Plane, Tag } from "lucide-react";
 import { AirframeNameID } from "src/types";
 
 export interface ItineraryEntry {
@@ -39,8 +40,8 @@ export interface Flight {
     fleetId: number;
     uploaderId: number;
     uploadId: number;
-    airframe: AirframeNameIDType;
     tailNumber: string;
+    airframe: AirframeNameIDType;
     status: string; // ⚠️ TODO: Define valid status names
     numberRows: number;
     doubleTimeSeries: object;  // ⚠️ TODO: Define valid double time series types
@@ -86,20 +87,51 @@ export default function FlightRow({ flight }: { flight: Flight }) {
         return <div className="grid grid-cols-2 text-nowrap min-w-64 gap-2">
 
             {/* Flight ID */}
-            {/* {renderDetailItem(flight.id, "No Flight ID")} */}
-            <Button variant="link" className="p-0 m-0 w-fit h-fit">
-                <Plane size={16} className="inline" />
-                {renderDetailItem(flight.id, "No Flight ID")}
-            </Button>
-
-            {/* Aircraft Tail Number */}
-            {renderDetailItem(flight.tailNumber, "No Tail Number")}
-
-            {/* Aircraft Type */}
-            {renderDetailItem(flight.airframe.name, "No Aircraft Type")}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="link" className="p-0 m-0 w-fit h-fit font-bold">
+                        <Plane size={16} className="inline" />
+                        {renderDetailItem(flight.id, "No Flight ID")}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Flight ID
+                </TooltipContent>
+            </Tooltip>
 
             {/* System ID */}
-            {renderDetailItem(flight.systemId, "No System ID")}
+            <Tooltip>
+                <TooltipTrigger>
+                    <Dot size={16} className="inline" />
+                    {renderDetailItem(flight.systemId, "No System ID")}
+                </TooltipTrigger>
+                <TooltipContent>
+                    System ID
+                </TooltipContent>
+            </Tooltip>
+
+            {/* Aircraft Type */}
+            <Tooltip>
+                <TooltipTrigger>
+                    <Dot size={16} className="inline" />
+                    {renderDetailItem(flight.airframe.name, "No Aircraft Type")}
+                </TooltipTrigger>
+                <TooltipContent>
+                    Aircraft Type
+                </TooltipContent>
+            </Tooltip>
+
+            {/* Aircraft Tail Number */}
+            {/* {renderDetailItem(flight.tailNumber, "No Tail Number")} */}
+            <Tooltip>
+                <TooltipTrigger>
+                    <Dot size={16} className="inline" />
+                    {renderDetailItem(flight.tailNumber, "No Tail Number")}
+                </TooltipTrigger>
+                <TooltipContent>
+                    Aircraft Tail Number
+                </TooltipContent>
+            </Tooltip>
 
         </div>
 
@@ -172,11 +204,25 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                 <Calendar size={16}/>
 
                 {/* Start Date/Time */}
-                {renderDateTime(flight.startDateTime, "No Start Date/Time")}
+                <Tooltip>
+                    <TooltipTrigger>
+                        {renderDateTime(flight.startDateTime, "No Start Date/Time")}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        Start Date/Time
+                    </TooltipContent>
+                </Tooltip>
                 <div className="opacity-25 select-none">—</div>
 
                 {/* End Date/Time */}
-                {renderDateTime(flight.endDateTime, "No End Date/Time")}
+                <Tooltip>
+                    <TooltipTrigger>
+                        {renderDateTime(flight.endDateTime, "No End Date/Time")}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        End Date/Time
+                    </TooltipContent>
+                </Tooltip>
                 
             </div>
 
@@ -185,7 +231,14 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
                 <Clock size={16}/>
 
-                {renderDetailItem(flightDuration(flight), "No Duration")}
+                <Tooltip>
+                    <TooltipTrigger>
+                        {renderDetailItem(flightDuration(flight), "No Duration")}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        Duration
+                    </TooltipContent>
+                </Tooltip>
             </div>
 
         </div>
