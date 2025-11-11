@@ -113,7 +113,7 @@ export default function FlightsPanelResults() {
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                 >
-                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-4 h-full">
+                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-4 h-full text-nowrap">
                         {(totalFlights).toLocaleString()} Flight{totalFlights !== 1 ? "s" : ""} Found
                     </Badge>
                 </motion.div>
