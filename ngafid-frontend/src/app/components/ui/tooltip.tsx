@@ -32,7 +32,7 @@ function Tooltip({
 function TooltipTrigger({
     ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} className="mx-0 p-0 w-fit select-auto cursor-auto" />
 }
 
 function TooltipContent({
