@@ -16,9 +16,12 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
     npm install
 ~~~
 
-3. Run the Vite development server:
+3. Run the Vite development server (2 options):
 ~~~
     npm run dev
+~~~
+~~~
+    npx vite --port=<TARGET PORT HERE>
 ~~~
 
 3. Connect to the device at the given IP address.
@@ -54,3 +57,9 @@ Page Routes will be automatically generated inside ```main.tsx``` without having
 2. Protected pages (requiring the user to be logged in) live inside the ```/protected``` sub-directory (pages outside of this subdirectory can be considered public, and won't require a login to access).
 3. To add a new page, create a new folder with the page's name, and add a new .tsx file with the page's name to that folder.
 4. Folders with a leading underscore (e.g., ```.../pages/summary/_charts/...```) will be excluded from the Route generation. (See ```isPageCandidate``` in ```main.tsx``` for additional rules.)
+
+---
+
+### Navbars
+
+* ...
