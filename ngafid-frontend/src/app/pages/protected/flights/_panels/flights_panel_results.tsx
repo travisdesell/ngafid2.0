@@ -2,12 +2,14 @@
 import { useModal } from "@/components/modals/modal_provider";
 import { getLogger } from "@/components/providers/logger";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SORTABLE_COLUMN_NAMES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import FlightRow from "@/pages/protected/flights/_flight_row/flight_row";
 import { FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection, useFlights } from "@/pages/protected/flights/flights";
 import { ArrowDownWideNarrow, ArrowUpDown, Info, ListOrdered } from "lucide-react";
 import { motion } from "motion/react";
@@ -18,7 +20,7 @@ const log = getLogger("FlightsPanelResults", "black", "Component");
 export default function FlightsPanelResults() {
 
     const { setModal } = useModal();
-    const { sortingColumn, setSortingColumn, sortingDirection, setSortingDirection, pageSize, setPageSize } = useFlights();
+    const { flights, totalFlights, sortingColumn, setSortingColumn, sortingDirection, setSortingDirection, pageSize, setPageSize } = useFlights();
 
     const updateSortingColumn = (value: string) => {
 
@@ -103,6 +105,20 @@ export default function FlightsPanelResults() {
                 </PaginationContent>
             </Pagination>
 
+            {/* Flight Count Badge */}
+            {
+                (totalFlights > 0)
+                &&
+                <motion.div
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                >
+                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-4 h-full">
+                        {(totalFlights).toLocaleString()} Flight{totalFlights !== 1 ? "s" : ""} Found
+                    </Badge>
+                </motion.div>
+            }
+
             {/* Sorting Select Dropdown */}
             <Select onValueChange={(value) => updateSortingColumn(value)} value={sortingColumn || ""}>
                 <Button variant="outline" asChild>
@@ -163,6 +179,20 @@ export default function FlightsPanelResults() {
 
         log("Rendering Flights Panel Results");
 
+        const displayFlightsEmpty = (flights.length === 0);
+        const getFlightRowAnimationDelay = (index: number): number => {
+
+            const MAX_DELAY = 0.50;
+            const DELAY_INCREMENT = 0.03;
+
+            let delay = index * DELAY_INCREMENT;
+            if (delay > MAX_DELAY)
+                delay = MAX_DELAY;
+
+            return delay;
+
+        }
+
         return (
             <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip">
 
@@ -174,7 +204,7 @@ export default function FlightsPanelResults() {
 
                     {/* Empty Results Message */}
                     {
-                        (true)
+                        (displayFlightsEmpty)
                         &&
                         <div className="min-h-full flex items-center justify-center p-6">
                             {renderEmptyResultsMessage()}
@@ -182,7 +212,19 @@ export default function FlightsPanelResults() {
                     }
 
                     {/* Top-Level Search Group */}
-                    {/* <FlightsPanelSearchGroup depth={0} group={filter} indexPath={[]} /> */}
+                    <div id="flights-results-list" className="flex flex-col w-full">
+                    {
+                        flights.map((flight, index) => (
+                            <motion.div key={flight.id}
+                                initial={{ opacity: 0, }}
+                                animate={{ opacity: 1, }}
+                                transition={{ duration: 0.20, delay: getFlightRowAnimationDelay(index) }}
+                            >
+                                <FlightRow flight={flight} key={flight.id} />
+                            </motion.div>
+                        ))
+                    }
+                    </div>
 
                 </motion.div>
 
