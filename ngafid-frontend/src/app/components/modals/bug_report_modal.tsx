@@ -1,3 +1,4 @@
+// ngafid-frontend/src/app/components/modals/bug_report_modal.tsx
 import { AlertCircleIcon, Mail, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
