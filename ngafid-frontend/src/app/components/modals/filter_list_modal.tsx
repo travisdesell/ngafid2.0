@@ -9,6 +9,7 @@ import FilterEditModal from "@/components/modals/filter_edit_modal";
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import '@/index.css';
 import { AlertCircleIcon, Check, ClipboardCopy, Pencil, Trash, X } from 'lucide-react';
 import { useModal } from './modal_provider';
@@ -60,34 +61,62 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             <div className="font-medium truncate select-all">{filter.name}</div>
 
             {/* Filter Delete Button */}
-            <Button
-                variant="ghostDestructive"
-                className="aspect-square ml-auto"
-                onClick={() => setModal(ConfirmModal, {
-                    title: "Delete Filter",
-                    message: `Are you sure you want to delete the filter "${filter.name}"? This action cannot be undone.`,
-                    onConfirm: async () => {
-                        await deleteFilterByName(filter.name);
-                    }
-                })}
-            >
-                <Trash size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghostDestructive"
+                        className="aspect-square ml-auto"
+                        onClick={() => setModal(ConfirmModal, {
+                            title: "Delete Filter",
+                            message: `Are you sure you want to delete the filter "${filter.name}"? This action cannot be undone.`,
+                            onConfirm: async () => {
+                                await deleteFilterByName(filter.name);
+                            }
+                        })}
+                    >
+                        <Trash size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Delete Filter
+                </TooltipContent>
+            </Tooltip>
 
             {/* Copy Filter URL Button */}
-            <Button variant="ghost" className="aspect-square">
-                <ClipboardCopy size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="aspect-square">
+                        <ClipboardCopy size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Copy Filter URL
+                </TooltipContent>
+            </Tooltip>
 
             {/* Filter Edit Button */}
-            <Button variant="ghost" className="aspect-square" onClick={() => setModal(FilterEditModal, {saveFilter, colorIn: filter.color, nameIn: filter.name})}>
-                <Pencil size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="aspect-square" onClick={() => setModal(FilterEditModal, {saveFilter, colorIn: filter.color, nameIn: filter.name})}>
+                        <Pencil size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Edit Filter
+                </TooltipContent>
+            </Tooltip>
 
-            {/* Filter Select Button */}
-            <Button variant="ghost" className="aspect-square" onClick={applyFilter}>
-                <Check size={16} />
-            </Button>
+            {/* Filter Apply Button */}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="aspect-square" onClick={applyFilter}>
+                        <Check size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Apply Filter
+                </TooltipContent>
+            </Tooltip>
 
 
         </div>
