@@ -305,36 +305,78 @@ export default function FlightRow({ flight }: { flight: Flight }) {
         return <div className="grid row-span-3 grid-cols-3 min-w-32 gap-2" data-fit>
 
             {/* Chart Button */}
-            <Button variant="ghost" className="w-8 h-8">
-               <ChartArea size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <ChartArea size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Chart
+                </TooltipContent>
+            </Tooltip>
 
             {/* Cesium Button */}
-            <Button variant="ghost" className="w-8 h-8">
-               <Globe2 size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <Globe2 size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Cesium
+                </TooltipContent>
+            </Tooltip>
 
             {/* Map Button */}
-            <Button variant="ghost" className="w-8 h-8">
-               <Map size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <Map size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Map
+                </TooltipContent>
+            </Tooltip>
 
 
 
             {/* Tags Button */}
-            <Button variant="ghost" className="w-8 h-8">
-               <Tag size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <Tag size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Tags
+                </TooltipContent>
+            </Tooltip>
 
             {/* Events Button */}
-            <Button variant="ghost" className="w-8 h-8">
-               <MapPinned size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <MapPinned size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Events
+                </TooltipContent>
+            </Tooltip>
 
             {/* Download Button */}
-            <Button variant="ghost" className="w-8 h-8">
-               <Download size={16} />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <Download size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Download
+                </TooltipContent>
+            </Tooltip>
 
         </div>
 
