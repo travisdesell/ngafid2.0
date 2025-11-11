@@ -15,6 +15,7 @@ import { fetchJson } from "@/fetchJson";
 import { base64urlToU8, fromWire } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { Filter, FilterGroup } from "@/pages/protected/flights/_filters/types";
+import { Flight } from "@/pages/protected/flights/_flight_row/flight_row";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
 import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
@@ -43,7 +44,17 @@ export const FLIGHTS_PER_PAGE_OPTIONS = [
 
 export const FILTER_RULE_NAME_NEW = "New Rule";
 
+type FlightsResponse = {
+    flights: Flight[];
+    totalFlights: number;
+    numberPages: number;
+}
+
 type FlightsState = {
+    flights: Flight[];
+    totalFlights: number;
+    numberPages: number;
+
     filter: Filter;
 
     filterSearched: Filter | null;
@@ -82,6 +93,11 @@ export default function FlightsPage() {
     const panelInitial = { opacity: 0.00, scale: 0.00 };
     const panelAnimate = { opacity: 1.00, scale: 1.00 };
     const panelExit = { opacity: 0.00, scale: 0.00 };
+
+    // Flights
+    const [flights, setFlights] = useState<Flight[]>([]);
+    const [totalFlights, setTotalFlights] = useState<number>(0);
+    const [numberPages, setNumberPages] = useState<number>(0);
 
     // Layout State
     const [searchPanelVisible, setSearchPanelVisible] = useState(true);
@@ -326,20 +342,21 @@ export default function FlightsPage() {
                 sortingColumn: sortingColumn,
                 sortingOrder: sortingDirection,
             });
-            const response = await fetchJson.get("/api/flight", { params });
+            const response = await fetchJson.get<FlightsResponse>("/api/flight", { params });
 
             // Got no flights -> Show modal
-            if (!response || !response.flights || response.flights.length === 0) {
+            if (!response || response.totalFlights === 0 || !response.flights || response.flights.length === 0) {
                 log.warn("No flights found with current filter.");
                 setModal(SuccessModal, { title: "No Flights Found", message: "No flights were found matching the current filter." });
                 return response;
             }
 
-
-            log.table("Fetched flights response: ", response);
+            log("Fetched flights response: ", response);
             log.table(`Fetched flights (${response.flights.length}):`, response.flights);
 
-            return response;
+            // Update flights state
+            setFlights(response.flights);
+            setTotalFlights(response.totalFlights);
 
         } catch (error) {
 
@@ -381,6 +398,10 @@ export default function FlightsPage() {
 
     // Flights State
     const [state, setState] = useState<FlightsState>({
+        flights: flights,
+        totalFlights: totalFlights,
+        numberPages: numberPages,
+
         filter: makeEmpty(),
 
         filterSearched: null,
@@ -413,6 +434,10 @@ export default function FlightsPage() {
     }
 
     const value: FlightsContextValue = {
+        flights: flights,
+        totalFlights: totalFlights,
+        numberPages: numberPages,
+
         filter: state.filter,
 
         filterSearched: filterSearched,
