@@ -14,6 +14,8 @@ export type FilterCondition = {
     name: string;
     options?: any[];
     value?: string;
+    min?: number;
+    max?: number;
 }
 
 export type FilterRule = {

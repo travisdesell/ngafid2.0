@@ -105,14 +105,19 @@ export const RULES = [
             {
                 type: "number",
                 name: "hours",
+                min: 0,
             },
             {
                 type: "number",
                 name: "minutes",
+                min: 0,
+                max: 59
             },
             {
                 type: "number",
                 name: "seconds",
+                min: 0,
+                max: 59
             },
         ],
     },
