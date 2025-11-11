@@ -1,10 +1,10 @@
 // ngafid-frontend/src/app/components/modals/modal_provider.tsx
+import { getLogger } from "@/components/providers/logger";
+import { AnimatePresence, motion } from "motion/react";
 import React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "motion/react";
-import { ModalComponent, ModalData, SetModalFn } from "./types";
 import { useLocation } from "react-router-dom";
-import { getLogger } from "@/components/providers/logger";
+import { ModalComponent, ModalData, SetModalFn } from "./types";
 
 const log = getLogger("ModalProvider", "green", "Provider");
 
@@ -62,6 +62,22 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         setModalData(data ?? {});
 
     }, [close]);
+
+    /*
+        Close the modal on Escape key press
+    */
+    React.useEffect(() => {
+
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape" && modalType)
+                close();
+
+        }
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+
+    }, [modalType, close]);
 
 
     /*
