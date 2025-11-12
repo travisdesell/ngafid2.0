@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calendar, ChartArea, Clock, Dot, Download, Globe2, Map, MapPinned, Plane, Tag } from "lucide-react";
+import { Calendar, ChartArea, Clock, Dot, Download, Globe2, Map, MapPinned, Plane, PlaneTakeoff, Tag } from "lucide-react";
 import { AirframeNameID } from "src/types";
 
 export interface ItineraryEntry {
@@ -89,7 +89,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {/* Flight ID */}
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="link" className="p-0 m-0 w-fit h-fit font-bold">
+                    <Button variant="link" className="p-0 m-0 w-fit h-full font-boldmy-auto">
                         <Plane size={16} className="inline" />
                         {renderDetailItem(flight.id, "No Flight ID")}
                     </Button>
@@ -122,7 +122,6 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Aircraft Tail Number */}
-            {/* {renderDetailItem(flight.tailNumber, "No Tail Number")} */}
             <Tooltip>
                 <TooltipTrigger>
                     <Dot size={16} className="inline" />
@@ -254,22 +253,32 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             - Arrival Airport
         */
 
-        const departureAirport = flight.itinerary.find(entry => entry.type === "departure")?.airport || "Unknown";
-        const arrivalAirport = flight.itinerary.find(entry => entry.type === "arrival")?.airport || "Unknown";
+        // const departureAirport = flight.itinerary.find(entry => entry.type === "departure")?.airport || "Unknown";
+        // const arrivalAirport = flight.itinerary.find(entry => entry.type === "arrival")?.airport || "Unknown";
 
-        return <div className="grid grid-rows-2 gap-2">
+        const TEST_AIRPORTS = ["GFK", "2C8", "DVL"];
 
-            {/* Departure Airport */}
-            <div>
-                <span className="font-semibold">Departure:</span> {departureAirport}
-            </div>
+        return <Tooltip>
+                <TooltipTrigger>
+                    <div className="flex flex-row items-center gap-2 flex-wrap">
 
-            {/* Arrival Airport */}
-            <div>
-                <span className="font-semibold">Arrival:</span> {arrivalAirport}
-            </div>
+                    <PlaneTakeoff size={16} />
 
-        </div>
+                    {
+                        TEST_AIRPORTS.map((airport, index) => (
+
+                            <div key={index} className="flex gap-2 items-center">
+                                {airport}
+                            </div>
+                        ))
+                    }
+
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+                Airports
+            </TooltipContent>
+        </Tooltip>
 
     }
 
