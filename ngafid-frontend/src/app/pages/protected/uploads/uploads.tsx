@@ -265,6 +265,10 @@ async function md5BestEffort(
 
 export default function UploadsPage() {
 
+    useEffect(() => {
+        document.title = `NGAFID — Uploads`;
+    });
+
     const { setModal } = useModal();
 
     // Active uploads

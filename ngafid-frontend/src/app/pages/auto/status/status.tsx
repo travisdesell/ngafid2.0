@@ -6,7 +6,7 @@ import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowBigRightDash, CircleAlert, CircleCheck, CircleQuestionMark, LucideProps, TriangleAlert } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
 
 
 const log = getLogger("Status", "black", "Page");
@@ -80,6 +80,10 @@ const makeEntry = (rawName: string, displayNameTransform?: (displayName: string)
 
 
 export default function Status() {
+
+    useEffect(() => {
+        document.title = `NGAFID — Status`;
+    });
 
     const { setModal } = useModal();
 

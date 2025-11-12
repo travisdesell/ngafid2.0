@@ -37,6 +37,10 @@ const unknownIndex = (airframeName: string) => {
 
 export default function EventDefinitionsPage() {
 
+    useEffect(() => {
+        document.title = `NGAFID — Definitions`;
+    });
+
     const { setModal } = useModal();
 
     const [descriptions, setDescriptions] = useState<EventDefinitions>({});
