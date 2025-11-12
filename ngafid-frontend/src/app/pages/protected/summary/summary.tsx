@@ -31,15 +31,6 @@ type FlightHoursByAirframe = {
     total_flight_hours: number;
 };
 
-type NotificationsData = {
-    notifications: Array<{
-        count: number;
-        message: string;
-        badgeType: string;
-        name: string | undefined;
-    }>;
-}
-
 type UploadStatistics = {
     total: number;
     ok: number;
@@ -58,12 +49,15 @@ const UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED = -1;
 
 export default function SummaryPage() {
 
+    useEffect(() => {
+        document.title = `NGAFID — Summary`;
+    });
+
     const { setModal } = useModal();
     const { airframes, airframeIDSelected, setAirframeIDSelected, airframeNameSelected, setAirframeNameSelected} = useAirframes();
     const { endpointStartDate, endpointEndDate, reapplyTrigger, renderDateRangeMonthly } = useTimeHeader();
 
     const [flightHoursByAirframe, setFlightHoursByAirframe] = useState<FlightHoursByAirframe[]>([]);
-    const [notifications, setNotifications] = useState<NotificationsData | null>(null);
     const [uploadStatistics, setUploadStatistics] = useState<UploadStatistics | null>(null);
     const [flightImportStatistics, setFlightImportStatistics] = useState<FlightImportStatistics | null>(null);
     const [eventCountsByAirframe, setEventCountsByAirframe] = useState<AirframeEventCounts[]>([]);
@@ -72,9 +66,6 @@ export default function SummaryPage() {
 
         //Fetch airframe flight hours / flight count
         fetchFlightHoursByAirframe();
-
-        //Fetch notification statistics
-        // fetchNotificationStatistics();
 
         //Fetch upload statistics
         fetchUploadStatistics();
@@ -125,61 +116,6 @@ export default function SummaryPage() {
         setFlightHoursByAirframe(data);
 
     };
-
-    // const fetchNotificationStatistics = () => {
-
-    //     log("Fetching notification statistics...");
-
-    //     const NOTIFICATION_TYPES = [
-    //         'waitingUserCount',
-    //         'unconfirmedTailsCount'
-    //     ];
-
-    //     for (const type of NOTIFICATION_TYPES) {
-
-    //         fetch(
-    //             `/api/notifications/statistics?type=${type}`,
-    //             {
-    //                 method: 'GET',
-    //                 headers: {
-    //                     'Content-Type': 'application/json'
-    //                 }
-    //             }
-    //         )
-    //             .then(response => response.json())
-    //             .then(data => {
-
-    //                 console.log(`Fetched notification statistics for type ${type}:`, data);
-
-    //                 const newNotification = {
-    //                     count: data.count,
-    //                     message: data.message,
-    //                     badgeType: data.badgeType,
-    //                     name: data.name
-    //                 };
-
-    //                 console.log("New notification data:", newNotification);
-
-    //                 setNotifications(prev => {
-    //                     if (prev) {
-    //                         return {
-    //                             notifications: [...prev.notifications, newNotification]
-    //                         };
-    //                     } else {
-    //                         return {
-    //                             notifications: [newNotification]
-    //                         };
-    //                     }
-    //                 });
-
-    //             })
-    //             .catch(error => {
-    //                 setModal(ErrorModal, { title: "Error fetching notifications", message: error.toString() });
-    //             });
-
-    //     }
-
-    // };
 
     const fetchUploadStatistics = async () => {
 
@@ -490,7 +426,36 @@ export default function SummaryPage() {
                     {/* Right Rows */}
                     <div className="grid gap-2 grid-rows-2 grid-cols-1">
 
-                        {/* Event Count Pie & Notifications */}
+                        {/* Uploads & Imports */}
+                        <Card className="card-glossy">
+                            <CardHeader>
+                                <CardTitle>Uploads</CardTitle>
+                                <CardDescription>
+                                    Total number of file uploads and imported flights.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-2">
+
+                                {/* Uploads Row */}
+                                <div className="grid gap-2 grid-cols-4 grid-rows-1">
+                                    {renderSummaryBadge(<Upload size={16} />, "Uploads", uploadsTotal, 'bg-(--muted)')}
+                                    {renderSummaryBadge(<Check size={16} />, "Uploads OK", uploadsOk, 'bg-(--normal)')}
+                                    {renderSummaryBadge(<Hourglass size={16} />, "Uploads Pending", uploadsPending, 'bg-(--warning)')}
+                                    {renderSummaryBadge(<CircleAlert size={16} />, "Uploads with Errors", uploadsErrors, 'bg-(--error)')}
+                                </div>
+
+                                {/* Uploads Row */}
+                                <div className="grid gap-2 grid-cols-4 grid-rows-1">
+                                    {renderSummaryBadge(<CloudDownload size={16} />, "Flights Imported", flightsTotal, 'bg-(--muted)')}
+                                    {renderSummaryBadge(<Check size={16} />, "Flights Valid", flightsValid, 'bg-(--normal)')}
+                                    {renderSummaryBadge(<TriangleAlert size={16} />, "Flights with Warnings", flightsWarnings, 'bg-(--warning)')}
+                                    {renderSummaryBadge(<CircleAlert size={16} />, "Flights with Errors", flightsErrors, 'bg-(--error)')}
+                                </div>
+
+                            </CardContent>
+                        </Card>
+
+                        {/* Event Count Pie */}
                         <div className="grid gap-2 grid-rows-1">
 
                             {/* Event Count Pie */}
@@ -520,35 +485,6 @@ export default function SummaryPage() {
                             </Card>
 
                         </div>
-
-                        {/* Uploads & Imports */}
-                        <Card className="card-glossy">
-                            <CardHeader>
-                                <CardTitle>Uploads</CardTitle>
-                                <CardDescription>
-                                    Total number of file uploads and imported flights.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid gap-2">
-
-                                {/* Uploads Row */}
-                                <div className="grid gap-2 grid-cols-4 grid-rows-1">
-                                    {renderSummaryBadge(<Upload size={16} />, "Uploads", uploadsTotal, 'bg-(--muted)')}
-                                    {renderSummaryBadge(<Check size={16} />, "Uploads OK", uploadsOk, 'bg-(--normal)')}
-                                    {renderSummaryBadge(<Hourglass size={16} />, "Uploads Pending", uploadsPending, 'bg-(--warning)')}
-                                    {renderSummaryBadge(<CircleAlert size={16} />, "Uploads with Errors", uploadsErrors, 'bg-(--error)')}
-                                </div>
-
-                                {/* Uploads Row */}
-                                <div className="grid gap-2 grid-cols-4 grid-rows-1">
-                                    {renderSummaryBadge(<CloudDownload size={16} />, "Flights Imported", flightsTotal, 'bg-(--muted)')}
-                                    {renderSummaryBadge(<Check size={16} />, "Flights Valid", flightsValid, 'bg-(--normal)')}
-                                    {renderSummaryBadge(<TriangleAlert size={16} />, "Flights with Warnings", flightsWarnings, 'bg-(--warning)')}
-                                    {renderSummaryBadge(<CircleAlert size={16} />, "Flights with Errors", flightsErrors, 'bg-(--error)')}
-                                </div>
-
-                            </CardContent>
-                        </Card>
 
                     </div>
                 </div>
