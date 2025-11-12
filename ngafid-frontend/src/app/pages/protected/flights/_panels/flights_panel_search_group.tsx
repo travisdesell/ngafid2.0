@@ -271,19 +271,19 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
             }`;
 
         const subGroupContainerClasses = `
+            overflow-visible
             gap-2 flex flex-col
             ${hasAnyRules || hasAnySubGroups ? "p-2 " : ""}
         `
 
         return (
             <motion.div
-                layout
-                layoutRoot
+                layout="position"
                 className={groupClasses}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0  }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0 }}
             >
 
                 {/* Group Header */}
@@ -303,11 +303,11 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
                 {/* Group Rules & Subgroups */}
                 <motion.div
-                    layout
+                    layout="position"
                     className={subGroupContainerClasses}
                 >
                     {/* Rules */}
-                    <AnimatePresence mode="popLayout">
+                    <AnimatePresence initial={false} mode="sync">
                         {group.rules?.map((rule, index) => (
                             <motion.div
                                 key={rule.id}
@@ -326,7 +326,7 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
                     </AnimatePresence>
 
                     {/* Sub-Groups */}
-                    <AnimatePresence mode="popLayout">
+                    <AnimatePresence initial={false} mode="sync">
                         {(group.groups ?? []).map((sg, index) => (
                             <motion.div
                                 key={sg.id}

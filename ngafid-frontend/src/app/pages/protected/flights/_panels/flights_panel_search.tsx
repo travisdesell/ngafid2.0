@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { useFlights } from "@/pages/protected/flights/flights";
 import { Bolt, ClipboardCopy, Ellipsis, Info, RotateCcw, Save, Search } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import pako from "pako";
 import { FlightsPanelSearchGroup } from "./flights_panel_search_group";
 
@@ -23,7 +23,6 @@ const log = getLogger("FlightsPanelSearch", "black", "Component");
 export default function FlightsPanelSearch() {
 
     const { filter, filterSearched, setFilterFromJSON, filterIsEmpty, filterIsValid, fetchFlightsWithFilter, revertFilter } = useFlights();
-    const { currentPage, sortingColumn, sortingDirection, pageSize } = useFlights();
     const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
 
@@ -114,18 +113,23 @@ export default function FlightsPanelSearch() {
                 {
                     (displayRevert)
                     &&
-                    <Button
-                        onClick={revertFilter}
-                        disabled={!allowRevert}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1, transition: { duration: 0.25 } }}
                     >
-                        <RotateCcw /> Revert Filter
-                    </Button>
+                        <Button
+                            onClick={revertFilter}
+                            disabled={!allowRevert}
+                        >
+                            <RotateCcw /> Revert Filter
+                        </Button>
+                    </motion.div>
             }
 
                 {/* Submit Search */}
                 <Button
                     className="relative"
-                    onClick={() => fetchFlightsWithFilter(filter, true)}
+                    onClick={() => { void fetchFlightsWithFilter(filter, true) }}
                     disabled={!allowSearchSubmit}
                 >
                     {
@@ -146,7 +150,13 @@ export default function FlightsPanelSearch() {
 
         log("Filter is currently empty, showing empty filter message.");
 
-        return <div className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+        return <motion.div
+            key="empty-filter-message"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        >
             <Info className=""/>
 
             <div className="flex flex-col">
@@ -157,7 +167,7 @@ export default function FlightsPanelSearch() {
                     <div className="flex">Try adding a rule with the <div className="flex items-center font-bold gap-1 mx-2"><Bolt size={16} />New Rule</div> button above.</div>
                 </AlertDescription>
             </div>
-        </div>
+        </motion.div>
 
     }
 
@@ -173,11 +183,13 @@ export default function FlightsPanelSearch() {
                 >
 
                     {/* Empty Filter Message */}
+                    <AnimatePresence mode="wait" initial={false}>
                     {
                         (filterIsEmpty(filter))
                         &&
                         renderEmptyFilterMessage()
                     }
+                    </AnimatePresence>
 
                     {/* Top-Level Search Group */}
                     <FlightsPanelSearchGroup depth={0} group={filter} indexPath={[]} />
