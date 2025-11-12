@@ -20,7 +20,14 @@ const log = getLogger("FlightsPanelResults", "black", "Component");
 export default function FlightsPanelResults() {
 
     const { setModal } = useModal();
-    const { flights, totalFlights, sortingColumn, setSortingColumn, sortingDirection, setSortingDirection, pageSize, setPageSize } = useFlights();
+    const {
+        flights,
+        totalFlights,
+        currentPage, setCurrentPage,
+        sortingColumn, setSortingColumn,
+        sortingDirection, setSortingDirection,
+        pageSize, setPageSize
+    } = useFlights();
 
     const updateSortingColumn = (value: string) => {
 
@@ -68,7 +75,12 @@ export default function FlightsPanelResults() {
 
         log("No flight results to display, showing empty results message.");
 
-        return <div className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center">
+        return <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center"
+        >
             <Info className=""/>
 
             <div className="flex flex-col">
@@ -79,29 +91,74 @@ export default function FlightsPanelResults() {
                     Try adjusting your search filters to find more flights.
                 </AlertDescription>
             </div>
-        </div>
+        </motion.div>
 
     }
 
     const renderPaginationRow = () => {
+
+        const pagePreviousAvailable:boolean = (currentPage > 0);
+        const pageNextAvailable:boolean = (() => {
+
+            const maxPage = Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])) - 1;
+            return (currentPage < maxPage);
+
+        })();
+
+        const pageButtonEnabled = `cursor-pointer`;
+        const pageButtonDisabled = `opacity-50 pointer-events-none`;
+
+        const pagePrevious = () => {
+
+            if (!pagePreviousAvailable) {
+                log("Already on first page, cannot navigate to previous page.");
+                return;
+            }
+
+            setCurrentPage(currentPage - 1);
+            log("Navigating to previous page:", currentPage - 1);
+        }
+
+        const pageNext = () => {
+
+            const maxPage = Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])) - 1;
+            if (!pageNextAvailable) {
+                log("Already on last page, cannot navigate to next page.");
+                return;
+            }
+
+            setCurrentPage(currentPage + 1);
+            log("Navigating to next page:", currentPage + 1);
+        }
 
         return <div className="flex flex-row gap-2 w-full p-2">
 
             {/* Pagination Controls */}
             <Pagination className="w-fit m-0 mr-auto">
                 <PaginationContent>
+
+                    {/* Previous Page Button */}
                     <PaginationItem>
-                        <PaginationPrevious href="#" />
+                        <PaginationPrevious onClick={pagePrevious} className={pagePreviousAvailable ? pageButtonEnabled : pageButtonDisabled} />
                     </PaginationItem>
+
+                    {/* Current Page */}
                     <PaginationItem>
-                        <PaginationLink href="#">1</PaginationLink>
+                        <PaginationLink >
+                            {currentPage+1}
+                        </PaginationLink>
                     </PaginationItem>
+
+                    {/* ... */}
                     <PaginationItem>
                         <PaginationEllipsis />
                     </PaginationItem>
+
+                    {/* Next Page Button */}
                     <PaginationItem>
-                        <PaginationNext href="#" />
+                        <PaginationNext onClick={pageNext} className={pageNextAvailable ? pageButtonEnabled : pageButtonDisabled} />
                     </PaginationItem>
+
                 </PaginationContent>
             </Pagination>
 

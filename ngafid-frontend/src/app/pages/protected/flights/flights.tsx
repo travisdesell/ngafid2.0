@@ -61,7 +61,7 @@ type FlightsState = {
     sortingColumn?: string | null;
     sortingDirection?: SortingDirection;    
     pageSize?: number;
-    currentPage?: number;
+    currentPage: number;
 };
 type FlightsContextValue = FlightsState & {
     setFilter: (updater: (prev: Filter) => Filter) => void;
@@ -351,8 +351,8 @@ export default function FlightsPage() {
                 return response;
             }
 
-            log("Fetched flights response: ", response);
-            log.table(`Fetched flights (${response.flights.length}):`, response.flights);
+            // log("Fetched flights response: ", response);
+            // log.table(`Fetched flights (${response.flights.length}):`, response.flights);
 
             // Update flights state
             setFlights(response.flights);
@@ -408,6 +408,7 @@ export default function FlightsPage() {
         sortingColumn: sortingColumn,
         sortingDirection: sortingDirection,
         pageSize: pageSize,
+        currentPage
     });
 
     const setFilter: FlightsContextValue["setFilter"] = (updater) => {
@@ -466,6 +467,18 @@ export default function FlightsPage() {
     useEffect(() => {
 
         /*
+            Reset the current page to 0
+            when the sorting options or
+            total number of pages change.
+        */
+
+        setCurrentPage(0);
+
+    }, [sortingColumn, sortingDirection, pageSize, numberPages]);
+
+    useEffect(() => {
+
+        /*
             Trigger a re-fetch whenever the
             the sorting options or current
             page change.
@@ -474,15 +487,21 @@ export default function FlightsPage() {
             triggered on initial render.
         */
 
-        if (didInitRef.current === false)
-            return;
+        const asyncFetch = async () => {
 
-        if (!filterSearched) {
-            log.warn("Not automatically fetching flights: No previously searched filter.");
-            return;
-        }
+            if (didInitRef.current === false)
+                return;
 
-        fetchFlightsWithFilter(filterSearched, false)
+            if (!filterSearched) {
+                log.warn("Not automatically fetching flights: No previously searched filter.");
+                return;
+            }
+
+            await fetchFlightsWithFilter(filterSearched, false);
+
+        };
+
+        asyncFetch();
 
     }, [sortingColumn, sortingDirection, pageSize, currentPage]);
 
