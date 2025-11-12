@@ -21,7 +21,7 @@ import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel
 import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import pako from "pako";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useTransition } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import FlightsPanelSearch from "./_panels/flights_panel_search";
 
@@ -57,6 +57,9 @@ type FlightsState = {
 
     filter: Filter;
 
+    isFilterSearchLoading: boolean;
+    isFilterSearchLoadingManual: boolean;
+
     filterSearched: Filter | null;
     sortingColumn?: string | null;
     sortingDirection?: SortingDirection;    
@@ -86,6 +89,10 @@ const FlightsContext = createContext<FlightsContextValue | null>(null);
 
 export default function FlightsPage() {
 
+    useEffect(() => {
+        document.title = `NGAFID — Flights`;
+    });
+
     const { setModal } = useModal();
 
     // Animation Config
@@ -99,6 +106,12 @@ export default function FlightsPage() {
     const [totalFlights, setTotalFlights] = useState<number>(0);
     const [numberPages, setNumberPages] = useState<number>(0);
 
+    // Filter Search Helpers (Debounce, AbortController, loading flag...)
+    const inflightCtrlRef = useRef<AbortController | null>(null);
+    const reqIdRef = useRef(0);
+    const [isFilterSearchLoading, startTransition] = useTransition();
+    const [isFilterSearchLoadingManual, setIsFilterSearchLoadingManual] = useState(false);
+    
     // Layout State
     const [searchPanelVisible, setSearchPanelVisible] = useState(true);
 
@@ -317,6 +330,18 @@ export default function FlightsPage() {
         if (isTriggeredManually)
             setFilterSearched(filter);
 
+        setIsFilterSearchLoadingManual(true);
+
+
+        // Abort any previous request
+        inflightCtrlRef.current?.abort();
+        const abortController = new AbortController();
+        inflightCtrlRef.current = abortController;
+
+        // Mark the current request ID
+        const reqId = (reqIdRef.current + 1);
+        reqIdRef.current = reqId;
+
         try {
 
             // Invalid current page -> Error
@@ -342,7 +367,13 @@ export default function FlightsPage() {
                 sortingColumn: sortingColumn,
                 sortingOrder: sortingDirection,
             });
-            const response = await fetchJson.get<FlightsResponse>("/api/flight", { params });
+            const response = await fetchJson.get<FlightsResponse>("/api/flight", { params, signal: abortController.signal });
+
+            // Got a newer request -> Discard this response
+            if (reqIdRef.current !== reqId) {
+                log.warn("Discarding flights response: A newer request has been made.");
+                return;
+            }
 
             // Got no flights -> Show modal
             if (!response || response.totalFlights === 0 || !response.flights || response.flights.length === 0) {
@@ -351,16 +382,25 @@ export default function FlightsPage() {
                 return response;
             }
 
-            // log("Fetched flights response: ", response);
-            // log.table(`Fetched flights (${response.flights.length}):`, response.flights);
+            log("Fetched flights response: ", response);
+            log.table(`Fetched flights (${response.flights.length}):`, response.flights);
 
             // Update flights state
-            setFlights(response.flights);
-            setTotalFlights(response.totalFlights);
+            startTransition(() => {
+                setFlights(response.flights);
+                setTotalFlights(response.totalFlights);
+                setNumberPages(response.numberPages ?? 0);
+            });
+
+            return response;
 
         } catch (error) {
 
             setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: (error as Error).message });
+
+        } finally {
+
+            setIsFilterSearchLoadingManual(false);
 
         }
 
@@ -404,6 +444,9 @@ export default function FlightsPage() {
 
         filter: makeEmpty(),
 
+        isFilterSearchLoading: isFilterSearchLoading,
+        isFilterSearchLoadingManual: isFilterSearchLoadingManual,
+
         filterSearched: null,
         sortingColumn: sortingColumn,
         sortingDirection: sortingDirection,
@@ -440,6 +483,9 @@ export default function FlightsPage() {
         numberPages: numberPages,
 
         filter: state.filter,
+
+        isFilterSearchLoading: isFilterSearchLoading,
+        isFilterSearchLoadingManual: isFilterSearchLoadingManual,
 
         filterSearched: filterSearched,
         sortingColumn,
@@ -487,23 +533,20 @@ export default function FlightsPage() {
             triggered on initial render.
         */
 
-        const asyncFetch = async () => {
+        if (didInitRef.current === false)
+            return;
 
-            if (didInitRef.current === false)
-                return;
+        if (!filterSearched) {
+            log.warn("Not automatically fetching flights: No previously searched filter.");
+            return;
+        }
 
-            if (!filterSearched) {
-                log.warn("Not automatically fetching flights: No previously searched filter.");
-                return;
-            }
+        // fetchFlightsWithFilter(filterSearched, false);
+        const id = setTimeout(() => fetchFlightsWithFilter(filterSearched, false), 150);
+        return () => clearTimeout(id);
 
-            await fetchFlightsWithFilter(filterSearched, false);
+    }, [sortingColumn, sortingDirection, pageSize, currentPage, filterSearched]);
 
-        };
-
-        asyncFetch();
-
-    }, [sortingColumn, sortingDirection, pageSize, currentPage]);
 
     useEffect(() => {
 
