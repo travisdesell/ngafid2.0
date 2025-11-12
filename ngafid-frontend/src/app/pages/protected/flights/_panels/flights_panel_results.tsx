@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { SORTABLE_COLUMN_NAMES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import FlightRow from "@/pages/protected/flights/_flight_row/flight_row";
 import { FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection, useFlights } from "@/pages/protected/flights/flights";
-import { ArrowDownWideNarrow, ArrowUpDown, Info, ListOrdered } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpDown, Info, ListOrdered, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
 const log = getLogger("FlightsPanelResults", "black", "Component");
@@ -23,6 +23,8 @@ export default function FlightsPanelResults() {
     const {
         flights,
         totalFlights,
+        isFilterSearchLoading,
+        isFilterSearchLoadingManual,
         currentPage, setCurrentPage,
         sortingColumn, setSortingColumn,
         sortingDirection, setSortingDirection,
@@ -79,7 +81,7 @@ export default function FlightsPanelResults() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center"
+            className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center *:text-nowrap"
         >
             <Info className=""/>
 
@@ -131,7 +133,7 @@ export default function FlightsPanelResults() {
             log("Navigating to next page:", currentPage + 1);
         }
 
-        return <div className="flex flex-row gap-2 w-full p-2">
+        return <div className="flex flex-row gap-2 w-full p-2 @container">
 
             {/* Pagination Controls */}
             <Pagination className="w-fit m-0 mr-auto">
@@ -170,8 +172,8 @@ export default function FlightsPanelResults() {
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                 >
-                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-4 h-full text-nowrap">
-                        {(totalFlights).toLocaleString()} Flight{totalFlights !== 1 ? "s" : ""} Found
+                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-2 h-full text-nowrap @5xl:after:content-['_Found'] whitespace-pre">
+                        {(totalFlights).toLocaleString()} Flight{totalFlights !== 1 ? "s" : ""}
                     </Badge>
                 </motion.div>
             }
@@ -179,9 +181,11 @@ export default function FlightsPanelResults() {
             {/* Sorting Select Dropdown */}
             <Select onValueChange={(value) => updateSortingColumn(value)} value={sortingColumn || ""}>
                 <Button variant="outline" asChild>
-                    <SelectTrigger className="min-w-[180px] w-fit">
+                    <SelectTrigger className="min-w-[40px] w-fit">
                         <ArrowDownWideNarrow />
-                        <SelectValue placeholder="Sort by" />
+                        <div className="@max-4xl:hidden!">
+                            <SelectValue placeholder="Sort by" />
+                        </div>
                     </SelectTrigger>
                 </Button>
                 <SelectContent>
@@ -198,9 +202,11 @@ export default function FlightsPanelResults() {
             {/* Sorting Order (Ascending/Descending) Select Dropdown */}
             <Select onValueChange={(value) => updateSortingDirection(value)} value={sortingDirection}>
                 <Button variant="outline" asChild>
-                    <SelectTrigger className="min-w-[180px] w-fit">
+                    <SelectTrigger className="min-w-[40px] w-fit">
                         <ArrowUpDown />
-                        <SelectValue placeholder="Order" />
+                        <div className="@max-4xl:hidden!">
+                            <SelectValue placeholder="Order" />
+                        </div>
                     </SelectTrigger>
                 </Button>
                 <SelectContent>
@@ -212,9 +218,11 @@ export default function FlightsPanelResults() {
             {/* Flights Per Page Select Dropdown */}
             <Select onValueChange={(value) => updatePageSize(value)} value={pageSize?.toString()}>
                 <Button variant="outline" asChild>
-                    <SelectTrigger className="min-w-[180px] w-fit">
+                    <SelectTrigger className="min-w-[40px] w-fit">
                         <ListOrdered />
-                        <SelectValue placeholder="Flights per page" />
+                        <div className="@max-4xl:hidden!">
+                            <SelectValue placeholder="Flights per page" />
+                        </div>
                     </SelectTrigger>
                 </Button>
                 <SelectContent>
@@ -251,13 +259,27 @@ export default function FlightsPanelResults() {
         }
 
         return (
-            <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip">
+            <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip relative">
 
                 {/* Results List */}
                 <motion.div
                     layoutScroll
-                    className="flex-1 min-h-0 h-full w-full overflow-y-auto bg-muted "
+                    className="flex-1 min-h-0 h-full w-full overflow-y-auto"
                 >
+
+                    {/* Loading Spinner */}
+                    {
+                        (isFilterSearchLoadingManual||isFilterSearchLoading)
+                        &&
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute w-full h-full bg-muted/80 z-100 overflow-clip"
+                        >
+                            <Loader2 className="animate-spin ml-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" size={64} />
+                        </motion.div>
+                    }
 
                     {/* Empty Results Message */}
                     {
@@ -286,7 +308,7 @@ export default function FlightsPanelResults() {
                 </motion.div>
 
                 {/* Pagination Row */}
-                <CardFooter className="flex flex-col w-full p-0">
+                <CardFooter className="flex flex-col w-full p-0 bg-muted">
                     <Separator />
                     {renderPaginationRow()}
                 </CardFooter>

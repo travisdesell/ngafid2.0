@@ -155,7 +155,7 @@ export default function FlightsPanelSearch() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="w-fit mx-auto space-x-8 drop-shadow-md flex items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 *:text-nowrap"
         >
             <Info className=""/>
 
@@ -179,7 +179,7 @@ export default function FlightsPanelSearch() {
                 {/* Search Filter */}
                 <motion.div
                     layoutScroll
-                    className="flex-1 min-h-0 w-full overflow-y-auto bg-muted relative"
+                    className="flex-1 min-h-0 w-full overflow-y-auto relative"
                 >
 
                     {/* Empty Filter Message */}
@@ -197,7 +197,7 @@ export default function FlightsPanelSearch() {
                 </motion.div>
 
                 {/* Search Submit Row */}
-                <CardFooter className="flex flex-col w-full p-0">
+                <CardFooter className="flex flex-col w-full p-0 bg-muted">
                     <Separator />
                     {renderSearchSubmitRow()}
                 </CardFooter>
