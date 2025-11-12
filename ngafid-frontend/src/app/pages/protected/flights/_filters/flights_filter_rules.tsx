@@ -16,16 +16,16 @@ const tagNames: any = []; // [EX]
 
 export const SORTABLE_COLUMNS = {
     "Flight ID" : "id",
-    "Flight Length (Number of Valid Data Points)" : "number_rows",
+    "Flight Length" : "number_rows",
     "Start Date and Time" : "start_time",
     "End Date and Time" : "end_time",
-    "Number of Airports Visited" : "airports_visited",
-    "Number of Tags Associated" : "flight_tags",
-    "Total Event Count" : "events",
     "System ID" : "system_id",
     "Tail Number" : "tail_number",
     "Airframe" : "airframe_id",
-    "Number of Takeoffs/Landings" : "itinerary",
+    "№ Airports Visited" : "airports_visited",
+    "№ Tags Associated" : "flight_tags",
+    "№ Events" : "events",
+    "№ Takeoffs/Landings" : "itinerary",
 } as Record<string, string>;
 
 export const SORTABLE_COLUMN_NAMES = Object.keys(SORTABLE_COLUMNS);
