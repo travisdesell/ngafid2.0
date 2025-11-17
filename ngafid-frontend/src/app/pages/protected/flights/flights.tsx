@@ -326,15 +326,22 @@ export default function FlightsPage() {
 
         /*
             Triggered a manual submission,
-            update the searched filter state.
+            update the searched filter state
+            and reset the current page to 0.
 
             (This would be redundant for the
             automatic submissions, since that
             just uses the cached searched filter
             anyways.)
         */
-        if (isTriggeredManually)
+        let currentPageTarget = currentPage;
+        if (isTriggeredManually) {
+
             setFilterSearched(filter);
+
+            setCurrentPage(0);
+            currentPageTarget = 0;
+        }
 
         setIsFilterSearchLoadingManual(true);
 
@@ -351,8 +358,8 @@ export default function FlightsPage() {
         try {
 
             // Invalid current page -> Error
-            if (currentPage === undefined || currentPage < 0)
-                throw new Error(`Current page is not defined or invalid: ${currentPage}`);
+            if (currentPageTarget === undefined || currentPageTarget < 0)
+                throw new Error(`Current page is not defined or invalid: ${currentPageTarget}`);
 
             // Invalid page size -> Error
             if (!pageSize || !FLIGHTS_PER_PAGE_OPTIONS.includes(pageSize))
@@ -368,7 +375,7 @@ export default function FlightsPage() {
 
             const params = new URLSearchParams({
                 filterQuery: JSON.stringify(filter),
-                currentPage: currentPage.toString(),
+                currentPage: currentPageTarget.toString(),
                 pageSize: pageSize.toString(),
                 sortingColumn: sortingColumn,
                 sortingOrder: sortingDirection,
