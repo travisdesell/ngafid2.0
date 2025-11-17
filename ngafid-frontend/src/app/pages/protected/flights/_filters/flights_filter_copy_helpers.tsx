@@ -16,6 +16,7 @@
 
 
 import { RULES } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import { FilterGroup, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
 import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/flights";
 
 // Build rule-name <-> tiny-id maps once
@@ -50,9 +51,9 @@ export function base64urlToU8(b64url: string): Uint8Array {
 // Convert filter to compact wire format
 type OperatorShort = "A" | "O";
 type WireRule = { n: string; c: any[] };
-type WireGroup = { op: OperatorShort; r?: WireRule[]; g?: WireGroup[] };
+type WireGroup = { op: OperatorShort; r?: WireRule[]; g?: WireGroup[]; s?: 1};
 
-export function toWire(group: any): WireGroup | null {
+export function toWire(group: FilterGroup): WireGroup | null {
 
     const operator: OperatorShort = (group.operator === "AND")
         ? "A"
@@ -88,6 +89,10 @@ export function toWire(group: any): WireGroup | null {
         g: (groups.length) ? groups : undefined
     };
 
+    // Flag special Flight ID group
+    if (group.id === SPECIAL_FILTER_GROUP_ID)
+        out.s = 1;
+
     return out;
 
 }
@@ -99,6 +104,10 @@ export function fromWire(w: WireGroup, newID: () => string): any {
         ? "AND"
         : "OR";
 
+    const id = (w.s)
+        ? SPECIAL_FILTER_GROUP_ID
+        : newID();
+
     const rules = (w.r ?? []).map((wr) => {
         const def = RULE_ID_TO_DEF[wr.n];
         const name = def?.name ?? wr.n; //<-- Fall back to raw
@@ -109,6 +118,6 @@ export function fromWire(w: WireGroup, newID: () => string): any {
     });
 
     const groups = (w.g ?? []).map((wg) => fromWire(wg, newID));
-    return { id: newID(), operator, rules, groups };
+    return { id, operator, rules, groups };
 
 }
