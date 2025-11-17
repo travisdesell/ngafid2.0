@@ -7,6 +7,7 @@ import SuccessModal from "@/components/modals/success_modal";
 import Ping from "@/components/pings/ping";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
+import { useSystemIds } from "@/components/providers/system_ids_provider/system_ids_provider";
 import { useTags } from "@/components/providers/tags/tags_provider";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -29,17 +30,21 @@ export default function FlightsPanelSearch() {
     const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
     const { fleetTags } = useTags();
+    const { systemIds } = useSystemIds();
 
 
     const ruleDefinitions = useMemo(() => {
         
+        const systemIDNames = systemIds.map(id => id.toString())
+            .sort((a, b) => a.localeCompare(b));
+
         const tagNames = fleetTags
             .map(t => t.name)
             .sort((a, b) => a.localeCompare(b));
 
         const ruleOptions: RuleOptions = {
             airframes: [],              // TODO
-            systemIds: [],              // TODO
+            systemIds: systemIDNames,
             tailNumbers: [],            // TODO
             timeZones: ["UTC", "Local"],
             doubleTimeSeriesNames: [],  // TODO
@@ -111,27 +116,32 @@ export default function FlightsPanelSearch() {
             ? (allowRevert && filterIsValid(filter))
             : filterIsValid(filter);
 
-        return <div className="flex flex-row gap-2 w-full p-2">
+        return <div className="flex flex-row gap-2 w-full p-2 @container">
 
             {/* Copy Filter URL */}
             <Button
                 onClick={copyFilterURL}
                 disabled={!allowFilterURLCopyAndSave}
+                className="@4xl:after:content-['Copy_Filter_URL']"
             >
-                <ClipboardCopy /> Copy Filter URL
+                <ClipboardCopy />
             </Button>
 
             {/* Save Current Filter */}
             <Button
                 onClick={() => setModal(FilterEditModal, {filter, saveFilter})}
                 disabled={!allowFilterURLCopyAndSave}
+                className="@2xl:after:content-['Save_Current_Filter']"
             >
-                <Save /> Save Current Filter
+                <Save />
             </Button>
 
             {/* Load a Saved Filter */}
-            <Button onClick={() => setModal(FilterListModal, {filters, saveFilter, deleteFilterByName, setFilterFromJSON})}>
-                <Ellipsis /> Load a Saved Filter
+            <Button
+                onClick={() => setModal(FilterListModal, {filters, saveFilter, deleteFilterByName, setFilterFromJSON})}
+                className="@2xl:after:content-['Load_Saved_Filter']"
+            >
+                <Ellipsis />
             </Button>
 
             <div className="ml-auto flex flex-row gap-2">
@@ -147,15 +157,16 @@ export default function FlightsPanelSearch() {
                         <Button
                             onClick={revertFilter}
                             disabled={!allowRevert}
+                            className="@4xl:after:content-['Revert_Filter']"
                         >
-                            <RotateCcw /> Revert Filter
+                            <RotateCcw />
                         </Button>
                     </motion.div>
             }
 
                 {/* Submit Search */}
                 <Button
-                    className="relative"
+                    className="relative @2xl:after:content-['Search_Flights']"
                     onClick={() => { void fetchFlightsWithFilter(filter, true) }}
                     disabled={!allowSearchSubmit}
                 >
@@ -164,7 +175,7 @@ export default function FlightsPanelSearch() {
                         &&
                         <Ping />
                     }
-                    <Search /> Search Flights
+                    <Search />
                 </Button>
 
             </div>
