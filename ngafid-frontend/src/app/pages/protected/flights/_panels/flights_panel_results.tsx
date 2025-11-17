@@ -275,7 +275,7 @@ export default function FlightsPanelResults() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute w-full h-full bg-muted/80 z-100 overflow-clip"
+                            className="absolute w-full h-full bg-muted/80 z-1 overflow-clip"
                         >
                             <Loader2 className="animate-spin ml-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" size={64} />
                         </motion.div>
