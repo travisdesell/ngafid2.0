@@ -7,14 +7,15 @@ import { useModal } from "@/components/modals/modal_provider";
 import SuccessModal from "@/components/modals/success_modal";
 import { NavbarExtras } from "@/components/navbars/navbar_slot";
 import { getLogger } from "@/components/providers/logger";
+import { type TagData } from "@/components/providers/tags/tags_provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchJson } from "@/fetchJson";
 import { base64urlToU8, fromWire } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
-import { SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
-import { Filter, FilterGroup } from "@/pages/protected/flights/_filters/types";
+import { RULES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import { Filter, FilterCondition, FilterGroup, FilterRule, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
 import { Flight } from "@/pages/protected/flights/_flight_row/flight_row";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
@@ -73,6 +74,9 @@ type FlightsContextValue = FlightsState & {
     filterIsValid: (filter: Filter) => boolean;
     revertFilter: () => void;
 
+    addFlightIDToFilter: (flightID: string) => void;
+    flightIDInSpecialGroup: (flightID: string) => boolean;
+
     newID: () => string;
 
     setSortingColumn: (column: string | null) => void;
@@ -81,6 +85,8 @@ type FlightsContextValue = FlightsState & {
     setCurrentPage: (page: number) => void;
 
     fetchFlightsWithFilter: (filter: FilterGroup, isTriggeredManually: boolean) => Promise<any>;
+
+    updateFlightTags: (flightId: number, tags: TagData[] | null) => void;
 };
 
 
@@ -435,6 +441,120 @@ export default function FlightsPage() {
 
     }
 
+    // Add Flight ID to special filter group
+    const addFlightIDToFilter = (flightID: string) => {
+
+        /*
+            Creates a new rule that checks if the
+            flight ID is equal to the given flight
+            ID.
+
+            A special filter group is used for the
+            rules added via this function.
+
+            If the special filter group doesn't exist,
+            it is created.
+        */
+
+        setFilter((prev) => {
+
+            // Deep clone for immutability
+            const updatedFilter: Filter = structuredClone(prev);
+
+            // Use the existing "Flight ID" rule definition as a template
+            const flightIdTemplate = RULES.find((r) => r.name === "Flight ID");
+
+            // Target ID already in filter -> Exit
+            if (flightIdTemplate) {
+
+                const existingRule = updatedFilter.groups?.find((g) => g.id === SPECIAL_FILTER_GROUP_ID)?.rules?.find((r) => r.name === "Flight ID" && r.conditions.some((c) => c.name === "number" && c.value === flightID));
+                if (existingRule) {
+                    log.warn(`Flight ID ${flightID} is already in the filter, skipping.`);
+                    return prev;
+                }
+
+            }
+
+
+            const fromTemplate = (template: FilterRule): FilterCondition[] =>
+                template.conditions.map((c) => {
+
+                    const cloned = structuredClone(c) as FilterCondition;
+
+                    // Default the comparison operator to "="
+                    if (cloned.name === "condition" && cloned.type === "select")
+                        cloned.value = "=";
+
+                    // Set the Flight ID value
+                    if (cloned.name === "number" && cloned.type === "number")
+                        cloned.value = flightID;
+
+                    return cloned;
+                });
+
+            const freshConditions = (): FilterCondition[] => ([
+                {
+                    type: "select",
+                    name: "condition",
+                    options: ["="],
+                    value: "=",
+                } as FilterCondition,
+                {
+                    type: "number",
+                    name: "number",
+                    value: flightID,
+                } as FilterCondition,
+            ]);
+
+            const conditions: FilterCondition[] = flightIdTemplate
+                ? fromTemplate(flightIdTemplate)
+                : freshConditions();
+
+            const newRule: FilterRule = {
+                id: newID(),
+                name: "Flight ID",
+                conditions,
+            };
+
+            // Ensure groups array exists
+            const groups = updatedFilter.groups ?? [];
+
+            // Check if the special filter group exists
+            let specialGroup = groups.find((g) => g.id === "special-flight-id-group");
+
+            // Special group doesn't exist, create it with the new rule
+            if (!specialGroup) {
+
+                specialGroup = {
+                    id: "special-flight-id-group",
+                    operator: "OR",
+                    rules: [newRule],
+                    groups: [],
+                };
+
+                updatedFilter.groups = [...groups, specialGroup];
+
+            // Otherwise, add the new rule to the existing group
+            } else {
+                specialGroup.rules = [...(specialGroup.rules ?? []), newRule];
+            }
+
+            return updatedFilter;
+
+        });
+
+    };
+
+    const flightIDInSpecialGroup = (flightID: string): boolean => {
+
+        const specialGroup = state.filter.groups?.find((g) => g.id === SPECIAL_FILTER_GROUP_ID);
+        if (!specialGroup || !specialGroup.rules)
+            return false;
+
+        return specialGroup.rules.some((r) => r.name === "Flight ID" && r.conditions.some((c) => c.name === "number" && c.value === flightID));
+
+    }
+
 
     // Flights State
     const [state, setState] = useState<FlightsState>({
@@ -477,6 +597,18 @@ export default function FlightsPage() {
         
     }
 
+    const updateFlightTags: FlightsContextValue["updateFlightTags"] = (flightId, tags) => {
+
+        log(`Updating tags for flight ${flightId}:`, tags);
+
+        setFlights((prev) =>
+            prev.map((flight) =>
+                flight.id === flightId ? { ...flight, tags } : flight,
+            ),
+        );
+
+    };
+
     const value: FlightsContextValue = {
         flights: flights,
         totalFlights: totalFlights,
@@ -498,6 +630,9 @@ export default function FlightsPage() {
         filterIsEmpty: filterIsEmpty,
         filterIsValid: filterIsValid,
         revertFilter,
+        
+        addFlightIDToFilter,
+        flightIDInSpecialGroup,
 
         newID,
 
@@ -508,6 +643,7 @@ export default function FlightsPage() {
 
         fetchFlightsWithFilter,
 
+        updateFlightTags,
     };
 
     useEffect(() => {
