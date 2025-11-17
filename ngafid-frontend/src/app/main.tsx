@@ -16,6 +16,7 @@ import { TimeHeaderProvider } from './components/providers/time_header/time_head
 import AutoLayout from '@/components/layouts/auto_layout';
 import ProtectedLayout from '@/components/layouts/protected_layout';
 import { getLogger } from '@/components/providers/logger';
+import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import '@/index.css';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Background from './components/background';
@@ -254,6 +255,7 @@ type ProviderEntry<P = any> =
 const providerTree: ProviderEntry[] = [
     [ThemeProvider, { defaultTheme: "dark", storageKey: "theme" }],
     [TooltipProvider, {}],
+    [TagsProvider, {}],
     [ModalProvider, {}],
     [AuthProvider, {}],
     [AirframesProvider, {}],
