@@ -4,7 +4,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { motion } from "motion/react";
 import { useState } from "react";
 
-import { ColorPicker } from "@/components/color_picker";
+import { ColorPicker, randomHexColor } from "@/components/color_picker";
 import ErrorModal from '@/components/modals/error_modal';
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -32,17 +32,6 @@ export default function FilterEditModal({ data }: ModalProps) {
     const { setModal, close } = useModal();
     const { colorIn, nameIn, saveFilter, filter } = (data as ModalDataFilterEdit);
 
-    const randomHexColor = () => {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-
-        log("Generated random color:", color);
-
-        return color;
-    }
 
     const [colorPickerValue, setColorPickerValue] = useState<string>(colorIn || randomHexColor());
     const [nameInputValue, setNameInputValue] = useState<string>(nameIn || "");
