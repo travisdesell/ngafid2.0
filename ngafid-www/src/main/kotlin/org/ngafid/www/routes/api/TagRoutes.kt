@@ -14,25 +14,35 @@ import org.ngafid.www.routes.Role
 import org.ngafid.www.routes.RouteProvider
 import org.ngafid.www.routes.SessionUtility
 import java.sql.SQLException
+import java.sql.SQLIntegrityConstraintViolationException
 import java.util.*
+import java.util.logging.Logger
+import kotlin.error
 
 object TagRoutes : RouteProvider() {
+    
+    private val LOG: Logger = Logger.getLogger(TagRoutes::class.java.name)
+
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/tag") {
                 get(TagRoutes::getTags, Role.LOGGED_IN)
                 post(TagRoutes::postCreateTag, Role.LOGGED_IN)
                 path("{tid}") {
-                    patch(TagRoutes::postEditTag, Role.LOGGED_IN)
+                    patch(TagRoutes::patchEditTag, Role.LOGGED_IN)
                     delete(TagRoutes::deleteTag, Role.LOGGED_IN)
                 }
             }
         }
     }
 
-    fun getTags(ctx: Context): Unit =
-        Database.getConnection()
-            .use { connection -> Flight.getAllTags(connection, SessionUtility.getUser(ctx).fleetId) }
+    fun getTags(ctx: Context) {
+        Database.getConnection().use { connection ->
+            val user = SessionUtility.getUser(ctx)
+            val tags = Flight.getAllTags(connection, user.fleetId)
+            ctx.json(tags).status(200)
+        }
+    }
 
     fun postCreateTag(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -51,7 +61,8 @@ object TagRoutes : RouteProvider() {
         }
     }
 
-    fun postEditTag(ctx: Context) {
+    fun patchEditTag(ctx: Context) {
+
         val name = Objects.requireNonNull(ctx.formParam("name"))
         val description = Objects.requireNonNull(ctx.formParam("description"))
         val color = Objects.requireNonNull(ctx.formParam("color"))
@@ -59,20 +70,42 @@ object TagRoutes : RouteProvider() {
         val user = Objects.requireNonNull(ctx.sessionAttribute<User>("user"))
 
         try {
+            
             Database.getConnection().use { connection ->
-                val flightTag = FlightTag(tagId, user!!.fleetId, name, description, color)
                 val currentTag = Flight.getTag(connection, tagId)
+                    ?: throw NotFoundResponse("Tag not found")
 
-                if (flightTag == currentTag) {
-                    ctx.json("NOCHANGE")
+                // Name is changing, enforce uniqueness within the fleet
+                if (currentTag.name != name && Flight.tagExists(connection, user!!.fleetId, name)) {
+                    ctx.json("ALREADY_EXISTS")
+                    return
                 }
-                ctx.json(Objects.requireNonNull(Flight.editTag(connection, flightTag)))
+
+                val flightTag = FlightTag(tagId, user!!.fleetId, name, description, color)
+
+                // Nothing changed, return the current tag
+                if (flightTag == currentTag) {
+                    ctx.json(currentTag)
+                    return
+                }
+
+                val updatedTag = Objects.requireNonNull(Flight.editTag(connection, flightTag))
+                ctx.json(updatedTag)
+
             }
+
         } catch (e: SQLException) {
-            System.err.println("Error in SQL ")
-            ctx.json(ErrorResponse(e)).status(500)
+            if (e is SQLIntegrityConstraintViolationException) {
+                LOG.warning("Tag with name '$name' already exists for fleet ${user!!.fleetId}")
+                ctx.json("ALREADY_EXISTS")
+            } else {
+                LOG.severe("TagRoutes - patchEditTag - Error in SQL: ${e.message}")
+                ctx.status(500).json(ErrorResponse(e))
+            }
         }
+
     }
+
 
     class RemoveTagResponse(@JsonProperty val tag: FlightTag?)
 
