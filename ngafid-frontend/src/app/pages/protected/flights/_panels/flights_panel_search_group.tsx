@@ -3,10 +3,11 @@ import ConfirmModal from "@/components/modals/confirm_modal";
 import { useModal } from "@/components/modals/modal_provider";
 import Ping from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FilterGroup } from "@/pages/protected/flights/_filters/types";
+import { FilterGroup, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
 import FlightsPanelSearchRule from "@/pages/protected/flights/_panels/flights_panel_search_rule";
-import { Bolt, Folder, Trash } from "lucide-react";
+import { Bolt, Folder, FolderSearch, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { FILTER_RULE_NAME_NEW, useFlights } from "../flights";
 
@@ -18,13 +19,14 @@ type Props = {
     depth: number;
     group: FilterGroup;
     indexPath: number[];
+    ruleDefinitions: FilterRuleDefinition[];
 }
-export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
+export function FlightsPanelSearchGroup({ depth, group, indexPath, ruleDefinitions }: Props) {
 
     const { filter, setFilter, newID, filterIsEmpty } = useFlights();
     const { setModal } = useModal();
 
-
+    const isSpecialFilter = (group.id === SPECIAL_FILTER_GROUP_ID);
 
     /* -- Logic -- */
     const createNewRule = () => {
@@ -96,7 +98,16 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
 
     /* -- Rendering -- */
-    const renderRuleType = () => {
+    const renderGroupOperator = () => {
+
+        const renderSpecialFilterBadge = () => {
+
+            return <Badge variant="outline" className="h-7 flex gap-2 items-center bg-accent rounded-xl">
+                <FolderSearch size={16} className="inline" />
+                <span className="text-xs">Flight IDs Group</span>
+            </Badge>
+
+        }
 
         const toggleOperator = () => {
 
@@ -125,18 +136,17 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
 
         }
 
-        return <Button
-            variant={"outline"}
-            onClick={toggleOperator}
-            className="min-w-16"
-        >
-            {group.operator}
-        </Button>
-
-        // return <ButtonGroup>
-        //     <Button variant={"outline"}>AND</Button>
-        //     <Button variant={"outline"}>OR</Button>
-        // </ButtonGroup>
+        return <div className="flex items-center gap-4">
+            <Button
+                variant={"outline"}
+                onClick={toggleOperator}
+                className="min-w-16"
+                disabled={isSpecialFilter}
+            >
+                {group.operator}
+            </Button>
+            {(isSpecialFilter) && renderSpecialFilterBadge()}
+        </div>
 
     }
 
@@ -289,8 +299,8 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
                 {/* Group Header */}
                 <div className="flex flex-row justify-between items-center w-full p-2">
 
-                    {/* Rule Type */}
-                    {renderRuleType()}
+                    {/* Group Operator */}
+                    {renderGroupOperator()}
 
                     {/* Group Button Row */}
                     <div className="flex flex-row gap-2">
@@ -320,6 +330,7 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
                                 <FlightsPanelSearchRule
                                     rule={rule}
                                     indexPath={[...indexPath, index]}
+                                    ruleDefinitions={ruleDefinitions}
                                 />
                             </motion.div>
                         ))}
@@ -340,6 +351,7 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath }: Props) {
                                     depth={depth + 1}
                                     group={sg}
                                     indexPath={[...indexPath, index]}
+                                    ruleDefinitions={ruleDefinitions}
                                 />
                             </motion.div>
                         ))}

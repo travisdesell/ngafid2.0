@@ -26,4 +26,6 @@ export type FilterRule = {
     conditions: FilterCondition[];
 };
 
+export type FilterRuleDefinition = Omit<FilterRule, 'id'>;
+
 export interface Filter extends FilterGroup {};

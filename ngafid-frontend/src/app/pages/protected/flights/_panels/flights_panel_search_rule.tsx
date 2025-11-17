@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RULES } from "@/pages/protected/flights/_filters/flights_filter_rules";
-import { FilterCondition, FilterRule } from "@/pages/protected/flights/_filters/types";
+import { FilterCondition, FilterRule, FilterRuleDefinition } from "@/pages/protected/flights/_filters/types";
 import { FILTER_RULE_NAME_NEW, useFlights } from "@/pages/protected/flights/flights";
 import { Trash } from "lucide-react";
 
@@ -18,8 +17,9 @@ const log = getLogger("FlightsPanelSearchRule", "blue", "Component");
 type Props = {
     rule: FilterRule;
     indexPath: number[];
+    ruleDefinitions: FilterRuleDefinition[];
 }
-export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
+export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinitions }: Props) {
 
     const { filter, setFilter } = useFlights();
 
@@ -265,7 +265,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
             if (value === rule.name)
                 return;
 
-            const matching = RULES.find(r => r.name === value);
+            const matching = ruleDefinitions .find(r => r.name === value);
 
             updateCurrentRule((prev) => {
 
@@ -315,7 +315,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath }: Props) {
                     <SelectGroup>
                         <SelectLabel>Rules</SelectLabel>
                         {
-                            RULES.map((ruleFromList) => (
+                            ruleDefinitions.map((ruleFromList) => (
                                 <SelectItem key={ruleFromList.name} value={ruleFromList.name}>{ruleFromList.name}</SelectItem>
                             ))
                         }

@@ -7,15 +7,18 @@ import SuccessModal from "@/components/modals/success_modal";
 import Ping from "@/components/pings/ping";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
+import { useTags } from "@/components/providers/tags/tags_provider";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
+import { createRules, RuleOptions } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { useFlights } from "@/pages/protected/flights/flights";
 import { Bolt, ClipboardCopy, Ellipsis, Info, RotateCcw, Save, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import pako from "pako";
+import { useMemo } from "react";
 import { FlightsPanelSearchGroup } from "./flights_panel_search_group";
 
 const log = getLogger("FlightsPanelSearch", "black", "Component");
@@ -25,6 +28,30 @@ export default function FlightsPanelSearch() {
     const { filter, filterSearched, setFilterFromJSON, filterIsEmpty, filterIsValid, fetchFlightsWithFilter, revertFilter } = useFlights();
     const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
+    const { fleetTags } = useTags();
+
+
+    const ruleDefinitions = useMemo(() => {
+        
+        const tagNames = fleetTags
+            .map(t => t.name)
+            .sort((a, b) => a.localeCompare(b));
+
+        const ruleOptions: RuleOptions = {
+            airframes: [],              // TODO
+            systemIds: [],              // TODO
+            tailNumbers: [],            // TODO
+            timeZones: ["UTC", "Local"],
+            doubleTimeSeriesNames: [],  // TODO
+            visitedAirports: [],        // TODO
+            visitedRunways: [],         // TODO
+            eventNames: [],             // TODO
+            tagNames,
+        };
+
+        return createRules(ruleOptions);
+
+    }, [fleetTags]);
 
 
     const copyFilterURL = () => {
@@ -192,7 +219,12 @@ export default function FlightsPanelSearch() {
                     </AnimatePresence>
 
                     {/* Top-Level Search Group */}
-                    <FlightsPanelSearchGroup depth={0} group={filter} indexPath={[]} />
+                    <FlightsPanelSearchGroup
+                        depth={0}
+                        group={filter}
+                        indexPath={[]}
+                        ruleDefinitions={ruleDefinitions}
+                    />
 
                 </motion.div>
 

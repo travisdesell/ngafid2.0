@@ -14,8 +14,8 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchJson } from "@/fetchJson";
 import { base64urlToU8, fromWire } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
-import { RULES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
-import { Filter, FilterCondition, FilterGroup, FilterRule, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
+import { BASE_RULE_DEFINITIONS, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import { Filter, FilterCondition, FilterGroup, FilterRule, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
 import { Flight } from "@/pages/protected/flights/_flight_row/flight_row";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
@@ -462,23 +462,27 @@ export default function FlightsPage() {
             const updatedFilter: Filter = structuredClone(prev);
 
             // Use the existing "Flight ID" rule definition as a template
-            const flightIdTemplate = RULES.find((r) => r.name === "Flight ID");
+            const flightIdTemplateDef = BASE_RULE_DEFINITIONS.find((r) => r.name === "Flight ID");
 
             // Target ID already in filter -> Exit
-            if (flightIdTemplate) {
+            if (flightIdTemplateDef) {
 
-                const existingRule = updatedFilter.groups?.find((g) => g.id === SPECIAL_FILTER_GROUP_ID)?.rules?.find((r) => r.name === "Flight ID" && r.conditions.some((c) => c.name === "number" && c.value === flightID));
+                const existingRule = updatedFilter.groups
+                    ?.find((g) => g.id === SPECIAL_FILTER_GROUP_ID)
+                    ?.rules?.find(
+                        (r) =>
+                            r.name === "Flight ID" &&
+                            r.conditions.some((c) => c.name === "number" && c.value === flightID),
+                    );
+
                 if (existingRule) {
                     log.warn(`Flight ID ${flightID} is already in the filter, skipping.`);
                     return prev;
                 }
-
             }
 
-
-            const fromTemplate = (template: FilterRule): FilterCondition[] =>
+            const fromTemplate = (template: FilterRuleDefinition): FilterCondition[] =>
                 template.conditions.map((c) => {
-
                     const cloned = structuredClone(c) as FilterCondition;
 
                     // Default the comparison operator to "="
@@ -506,8 +510,8 @@ export default function FlightsPage() {
                 } as FilterCondition,
             ]);
 
-            const conditions: FilterCondition[] = flightIdTemplate
-                ? fromTemplate(flightIdTemplate)
+            const conditions: FilterCondition[] = flightIdTemplateDef
+                ? fromTemplate(flightIdTemplateDef)
                 : freshConditions();
 
             const newRule: FilterRule = {

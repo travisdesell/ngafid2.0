@@ -14,14 +14,13 @@
     component.
 */
 
-
-import { RULES } from "@/pages/protected/flights/_filters/flights_filter_rules";
+import { BASE_RULE_DEFINITIONS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { FilterGroup, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
 import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/flights";
 
 // Build rule-name <-> tiny-id maps once
-const RULE_NAME_TO_ID = Object.fromEntries(RULES.map((r, i) => [r.name, i.toString(36)]));
-const RULE_ID_TO_DEF = Object.fromEntries(RULES.map((r, i) => [i.toString(36), r]));
+const RULE_NAME_TO_ID = Object.fromEntries(BASE_RULE_DEFINITIONS.map((r, i) => [r.name, i.toString(36)]));
+const RULE_ID_TO_DEF = Object.fromEntries(BASE_RULE_DEFINITIONS.map((r, i) => [i.toString(36), r]));
 
 // Base64url helpers for Uint8Array
 export function u8ToBase64url(u8: Uint8Array): string {
@@ -112,7 +111,7 @@ export function fromWire(w: WireGroup, newID: () => string): any {
         const def = RULE_ID_TO_DEF[wr.n];
         const name = def?.name ?? wr.n; //<-- Fall back to raw
 
-        // Rebuild conditions from RULES shape
+        // Rebuild conditions from ruleDefinitions shape
         const conditions = (def?.conditions ?? []).map((c, i) => ({ ...c, value: wr.c?.[i] }));
         return { id: newID(), name, conditions };
     });
