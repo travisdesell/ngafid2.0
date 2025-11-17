@@ -1,4 +1,6 @@
 // ngafid-frontend/src/app/components/modals/modal_provider.tsx
+import { ErrorBoundary } from "@/components/error_boundary";
+import ErrorModal from "@/components/modals/error_modal";
 import { getLogger } from "@/components/providers/logger";
 import { AnimatePresence, motion } from "motion/react";
 import React from "react";
@@ -63,6 +65,26 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 
     }, [close]);
 
+
+    /*
+        ErrorBoundary handler that opens ErrorModal
+    */
+    const handleBoundaryError = React.useCallback((error: Error, info: React.ErrorInfo) => {
+
+        log.error("Caught error in ErrorBoundary:", error, info);
+
+        const code =
+            (error.stack ?? "") +
+            (info.componentStack ? `\n\nReact component stack:\n${info.componentStack}` : "");
+
+        setModal(ErrorModal, {
+            title: "An unexpected error occurred",
+            message: error.message || "An unexpected error occurred. Please try again.",
+            code,
+        });
+
+    }, [setModal]);
+
     /*
         Close the modal on Escape key press
     */
@@ -71,7 +93,6 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         function onKeyDown(e: KeyboardEvent) {
             if (e.key === "Escape" && modalType)
                 close();
-
         }
 
         window.addEventListener("keydown", onKeyDown);
@@ -102,7 +123,9 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <ModalContext.Provider value={value}>
-            {children}
+            <ErrorBoundary onError={handleBoundaryError}>
+                {children}
+            </ErrorBoundary>
             <ModalRoot />
         </ModalContext.Provider>
     );
