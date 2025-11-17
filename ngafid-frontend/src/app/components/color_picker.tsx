@@ -2,19 +2,31 @@
 // Via: https://github.com/nightspite/shadcn-color-picker/blob/master/src/components/ui/color-picker.tsx
 'use client';
 
-import { forwardRef, useMemo, useState } from 'react';
-import Colorful from '@uiw/react-color-colorful';
-import type { ColorResult } from '@uiw/color-convert';
-import { cn } from '@/lib/utils';
 import type { ButtonProps } from '@/components/ui/button';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import type { ColorResult } from '@uiw/color-convert';
+import Colorful from '@uiw/react-color-colorful';
 import { Check } from 'lucide-react';
+import { forwardRef, useMemo, useState } from 'react';
+
+
+export const randomHexColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+
+    return color;
+}
+
 
 interface ColorPickerProps {
     value: string;
