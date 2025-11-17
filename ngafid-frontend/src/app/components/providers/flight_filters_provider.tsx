@@ -84,7 +84,7 @@ export function FlightFiltersProvider({ children }: { children: React.ReactNode 
         if (!filtersData)
             log("No filters data received!", {level: "warn"});
         else
-            log(`Fetched flight filters: ${JSON.stringify(filtersData)}`);
+            log.table(`Fetched flight filters: `, filtersData);
 
         setFilters(filtersData as FlightFilter[] || []);
 
