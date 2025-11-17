@@ -1,8 +1,10 @@
 // ngafid-frontend/src/app/pages/protected/flights/_filters/types.ts
 export type FilterGroupOperators = "AND" | "OR";
 
+export const SPECIAL_FILTER_GROUP_ID = "special-flight-id-group";
+export type FilterID = string | typeof SPECIAL_FILTER_GROUP_ID;
 export type FilterGroup = {
-    id: string;
+    id: FilterID;
     rules?: FilterRule[];
     groups?: FilterGroup[];
     operator: FilterGroupOperators;
@@ -24,4 +26,4 @@ export type FilterRule = {
     conditions: FilterCondition[];
 };
 
-export type Filter = FilterGroup;
+export interface Filter extends FilterGroup {};
