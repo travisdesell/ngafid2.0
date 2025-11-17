@@ -159,19 +159,18 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
                         </AlertDescription>
                     </Alert>
 
-                    {/* Filters List Empty */}
+                    {/* Filters List */}
                     {
                         (filters.length === 0)
-                        &&
+                        ?
                         <div className="text-center text-muted-foreground">
                             No saved filters found.
                         </div>
+                        :
+                        <div className="max-h-128 overflow-y-auto border rounded">
+                            {filters.map((filter, index) => renderFilterViewRow(filter, index))}
+                        </div>
                     }
-
-                    {/* Filter List */}
-                    <div className="max-h-128 overflow-y-auto border rounded">
-                        {filters.map((filter, index) => renderFilterViewRow(filter, index))}
-                    </div>
 
                 </CardContent>
             </Card>
