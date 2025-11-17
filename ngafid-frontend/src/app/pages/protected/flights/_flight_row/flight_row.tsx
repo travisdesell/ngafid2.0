@@ -1,8 +1,14 @@
+// ngafid-frontend/src/app/pages/protected/flights/_flight_row/flight_row.tsx
+import { useModal } from "@/components/modals/modal_provider";
+import TagsListModal from "@/components/modals/tags_list_modal";
+import { type TagData } from "@/components/providers/tags/tags_provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import FlightRowFlightIDButton from "@/pages/protected/flights/_flight_row/flight_row_flight_id_button";
 import FlightRowTagBadge from "@/pages/protected/flights/_flight_row/flight_row_tag_badge";
-import { Calendar, ChartArea, Clock, Dot, Download, Globe2, Map, MapPinned, Minus, Plane, PlaneTakeoff, Tag, Tags } from "lucide-react";
+import { useFlights } from "@/pages/protected/flights/flights";
+import { Calendar, ChartArea, Clock, Dot, Download, Globe2, Map, MapPinned, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
 import { AirframeNameID } from "src/types";
 
 export interface ItineraryEntry {
@@ -30,6 +36,7 @@ export type AirframeNameIDType = { // ⚠️ TODO: Figure out what to do with th
     }
 } & AirframeNameID;
 
+
 export interface Flight {
     filename: string;
     systemId: string;
@@ -48,6 +55,7 @@ export interface Flight {
     doubleTimeSeries: object;  // ⚠️ TODO: Define valid double time series types
     stringTimeSeries: object;  // ⚠️ TODO: Define valid string time series types
     events: any[];  // ⚠️ TODO: Define valid event types
+    tags: TagData[] | null;
 }
 
 function FlightRowSection({children, className}: {children: React.ReactNode, className?: string}) {
@@ -71,7 +79,8 @@ function FlightRowSection({children, className}: {children: React.ReactNode, cla
 
 export default function FlightRow({ flight }: { flight: Flight }) {
 
-
+    const { setModal } = useModal();
+    const { updateFlightTags, fetchFlightsWithFilter, filter, filterSearched } = useFlights();
 
     const renderFlightMainDetails = () => {
 
@@ -89,20 +98,20 @@ export default function FlightRow({ flight }: { flight: Flight }) {
         return <div className="grid grid-cols-2 text-nowrap gap-2 gap-x-6 items-start">
 
             {/* Flight ID */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="link" className="p-0 m-0 w-fit h-6 font-bold">
-                        <Plane size={16} className="inline" />
-                        {renderDetailItem(flight.id, "N/A")}
-                    </Button>
+                    <FlightRowFlightIDButton flightID={flight.id} renderDetailItem={renderDetailItem} />
                 </TooltipTrigger>
                 <TooltipContent>
-                    Flight ID
+                    <div>Flight ID</div>
+                    <div className="opacity-50 flex items-center">
+                        <MousePointerClick size={16} className="mr-1"/>Add to Flight IDs filter group
+                    </div>
                 </TooltipContent>
             </Tooltip>
 
             {/* System ID */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger>
                     <Dot size={16} className="inline" />
                     {renderDetailItem(flight.systemId, "N/A")}
@@ -113,7 +122,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Aircraft Type */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger>
                     <Dot size={16} className="inline" />
                     {renderDetailItem(flight.airframe.name, "N/A")}
@@ -124,7 +133,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Aircraft Tail Number */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger>
                     <Dot size={16} className="inline" />
                     {renderDetailItem(flight.tailNumber, "N/A")}
@@ -204,7 +213,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             <div className="flex gap-2 items-center flex-wrap">
 
                 {/* Start Date/Time */}
-                <Tooltip>
+                <Tooltip disableHoverableContent>
                     <TooltipTrigger>
                         <div className="flex gap-2 items-center">
                             <Calendar size={16}/>
@@ -217,7 +226,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                 </Tooltip>
 
                 {/* End Date/Time */}
-                <Tooltip>
+                <Tooltip disableHoverableContent>
                     <TooltipTrigger>
                         <div className="flex gap-2 items-center">
                             {/* <div className="opacity-25 select-none">—</div> */}
@@ -237,7 +246,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
                 <Clock size={16}/>
 
-                <Tooltip>
+                <Tooltip disableHoverableContent>
                     <TooltipTrigger>
                         {renderDetailItem(flightDuration(flight), "No Duration")}
                     </TooltipTrigger>
@@ -260,15 +269,10 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             - Arrival Airport
         */
 
-        // const departureAirport = flight.itinerary.find(entry => entry.type === "departure")?.airport || "Unknown";
-        // const arrivalAirport = flight.itinerary.find(entry => entry.type === "arrival")?.airport || "Unknown";
-
-        // const TEST_AIRPORTS = ["GFK", "2C8", "DVL"];
-
         const noAirports = (flight.itinerary.length === 0);
 
         return (
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger className={`w-full flex flex-row flex-wrap items-center mb-auto gap-2 ${noAirports ? 'opacity-50' : ''}`}>
 
                         <PlaneTakeoff size={16} />
@@ -301,23 +305,11 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             with this flight.
         */
 
-        type TestTag = {
-            name: string;
-            color: string;
-        };
-        const EXAMPLE_TAGS: TestTag[] = [
-            { name: "Test Tag 1", color: "red" },
-            { name: "Test Tag 2", color: "blue" },
-            { name: "Test Tag 3", color: "green" },
-            { name: "REALLY LONG TAG NAME HERE", color: "yellow" },
-            { name: "Smol", color: "black" }
-        ];
+        const flightTags = (flight.tags || []);
+        const tagsSorted = flightTags.sort((a, b) => a.name.length - b.name.length);
 
-        const tagsSorted = EXAMPLE_TAGS.sort((a, b) => a.name.length - b.name.length);
+        const noTags = (flightTags.length === 0);
 
-        const noTags = (EXAMPLE_TAGS.length === 0);
-
-        // Placeholder
         return <div className={`flex flex-row flex-wrap gap-2 items-center w-full mb-auto ${noTags ? 'opacity-50' : ''}`}>
 
             {
@@ -328,7 +320,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                     <span>No Tags</span>
                 </>
                 :
-                EXAMPLE_TAGS.map((tag, index) => (
+                tagsSorted.map((tag, index) => (
                     <FlightRowTagBadge key={index} tag={tag} />
                 ))
             }
@@ -338,10 +330,10 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
     const renderButtonsRow = () => {
 
-        return <div className="grid row-span-3 grid-cols-3 min-w-32 gap-4 my-auto" data-fit>
+        return <div className="grid row-span-3 grid-cols-3 min-w-32 gap-1 gap-x-2 my-auto" data-fit>
 
             {/* Chart Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="w-8 h-8">
                         <ChartArea size={16} />
@@ -353,7 +345,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Cesium Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="w-8 h-8">
                         <Globe2 size={16} />
@@ -365,7 +357,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Map Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="w-8 h-8">
                         <Map size={16} />
@@ -379,9 +371,20 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
 
             {/* Tags Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
+                    <Button
+                        variant="ghost"
+                        className="w-8 h-8"
+                        onClick={() => setModal(TagsListModal, {
+                            flightTags: flight.tags || [],
+                            flightId: flight.id,
+                            onTagsUpdate: (updatedTags: TagData[]) => {
+                                updateFlightTags(flight.id, updatedTags);
+                                fetchFlightsWithFilter(filterSearched??filter, true);
+                            }
+                        })}
+                    >
                         <Tags size={16} />
                     </Button>
                 </TooltipTrigger>
@@ -391,7 +394,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Events Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="w-8 h-8">
                         <MapPinned size={16} />
@@ -403,7 +406,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             </Tooltip>
 
             {/* Download Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="w-8 h-8">
                         <Download size={16} />
