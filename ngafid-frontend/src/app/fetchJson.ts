@@ -171,4 +171,19 @@ export const fetchJson = {
         return coreFetchJson<T>(url, { ...init, method: "DELETE" });
     },
 
+    patch<T = any>(url: string, body?: unknown, init?: RequestInit) {
+
+        const headers = isFormLike(body)
+            ? { Accept: "application/json", ...(init?.headers || {}) }
+            : { "Content-Type": "application/json", Accept: "application/json", ...(init?.headers || {}) };
+
+        const finalBody = (body == null)
+            ? undefined
+            : isFormLike(body)
+                ? body
+                : JSON.stringify(body);
+
+        return coreFetchJson<T>(url, { ...init, method: "PATCH", headers, body: finalBody });
+    },
+
 };
