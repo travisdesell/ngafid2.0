@@ -4,6 +4,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { motion } from "motion/react";
 
 import { ColorPicker, randomHexColor } from '@/components/color_picker';
+import ConfirmModal from '@/components/modals/confirm_modal';
 import ErrorModal from '@/components/modals/error_modal';
 import { getLogger } from "@/components/providers/logger";
 import { TagData, useTags } from "@/components/providers/tags/tags_provider";
@@ -31,7 +32,7 @@ export type ModalDataTagsList = ModalData & {
 export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
 
     const { close, setModal } = useModal();
-    const { fleetTags, associateTagWithFlight, unassociateTagWithFlight, editTag, updateFleetTag, addFleetTag } = useTags();
+    const { fleetTags, associateTagWithFlight, unassociateTagWithFlight, editTag, updateFleetTag, addFleetTag, deleteFleetTag } = useTags();
     const { flightId, flightTags, onTagsUpdate } = (data as ModalDataTagsList);
 
     const [currentFlightTags, setCurrentFlightTags] = useState<TagData[]>(flightTags ?? []);
@@ -158,6 +159,46 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
 
             };
 
+            const deleteThisTag = async () => {
+
+                const onConfirmDelete = async () => {
+
+                    log("Deleting tag: ", tag);
+
+                    try {
+
+                        await deleteFleetTag(tag.hashId.toString());
+                        log("Deleted tag: ", tag);
+
+                        // Remove the tag from the current flight tags list
+                        setCurrentFlightTags((prev) => prev.filter((t) => t.hashId !== tag.hashId));
+                        onTagsUpdate(currentFlightTags.filter((t) => t.hashId !== tag.hashId));
+
+                        // Remove the tag from the fleet tags list
+                        updateFleetTag(tag);
+
+                    } catch (error) {
+
+                        log.error("Error deleting tag: ", error);
+                        setModal(ErrorModal, {
+                            title: "Error Deleting Tag",
+                            message: "An error occurred while deleting the tag. Please try again.",
+                        });
+
+                    }
+
+                }
+
+                log("Confirming deletion of tag: ", tag);
+
+                setModal(ConfirmModal, {
+                    title: "Confirm Tag Deletion",
+                    message: `Are you sure you want to delete the tag "${tag.name}"? The tag will be removed from all flights. This action cannot be undone.`,
+                    onConfirm: onConfirmDelete,
+                });
+
+            }
+
             return <div key={index} className="flex flex-col p-2 pl-4 border-b last:border-b-0 gap-1 hover:bg-background">
 
                 <div className="flex flex-row items-center w-full gap-1">
@@ -174,7 +215,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                             <Button
                                 variant="ghostDestructive"
                                 className="aspect-square ml-auto"
-                                onClick={() => {/*...*/}}
+                                onClick={() => deleteThisTag()}
                             >
                                 <Trash size={16} />
                             </Button>

@@ -116,7 +116,24 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
     }
 
     const deleteFleetTag = (tagId: string) => {
-        setFleetTags((prev) => prev.filter(tag => tag.hashId.toString() !== tagId));
+
+        /*
+            DELETE: /api/tag/{tid}
+        */
+
+        fetch(`/api/tag/${tagId}`, {
+            method: "DELETE",
+        }).then((response) => {
+
+            if (!response.ok)
+                throw new Error(`Failed to delete tag: ${response.statusText}`);
+            
+            startTransition(() => {
+                setFleetTags((prev) => prev.filter(tag => tag.hashId.toString() !== tagId));
+            });
+
+        })
+
     }
 
     const associateTagWithFlight = async (_tagId: string, _flightId: number): Promise<void> => {
