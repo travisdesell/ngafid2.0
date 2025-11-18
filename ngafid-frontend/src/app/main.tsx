@@ -20,6 +20,7 @@ import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import '@/index.css';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Background from './components/background';
+import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
 
 
 const log = getLogger("Main", "white", "Main");
@@ -259,6 +260,7 @@ const providerTree: ProviderEntry[] = [
     [ModalProvider, {}],
     [AuthProvider, {}],
     [AirframesProvider, {}],
+    [SystemIdsProvider, {}],
     [TimeHeaderProvider, {}],
     [NotificationsProvider, {}],
     [FlightFiltersProvider, {}],
