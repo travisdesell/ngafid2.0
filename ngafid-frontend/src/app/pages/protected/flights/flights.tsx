@@ -13,10 +13,11 @@ import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchJson } from "@/fetchJson";
-import { base64urlToU8, fromWire } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
+import { base64urlToU8, fromWire, toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { BASE_RULE_DEFINITIONS, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { Filter, FilterCondition, FilterGroup, FilterRule, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
 import { Flight } from "@/pages/protected/flights/_flight_row/flight_row";
+import { FlightsPanelChart } from "@/pages/protected/flights/_panels/flights_panel_chart";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
 import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
@@ -73,6 +74,8 @@ type FlightsContextValue = FlightsState & {
     filterIsEmpty: (filter: Filter) => boolean;
     filterIsValid: (filter: Filter) => boolean;
     revertFilter: () => void;
+
+    copyFilterURL: (filterTarget: Filter) => void;
 
     addFlightIDToFilter: (flightID: string) => void;
     flightIDInSpecialGroup: (flightID: string) => boolean;
@@ -419,7 +422,6 @@ export default function FlightsPage() {
 
     }
 
-
     // Revert filter to last searched
     const revertFilter = () => {
 
@@ -445,6 +447,53 @@ export default function FlightsPage() {
             buttonVariant: "default",
             onConfirm: confirmRevert,
         });
+
+    }
+
+    // Filter URL Copying
+    const copyFilterURL = (filterTarget:Filter) => {
+
+        /*
+            Generates a URL encoding for the
+            current filter from a JSON string.
+
+            The URL is then copied to the user's
+            clipboard.
+
+            TODO: Compress the URL so it doesn't
+            exceed the maximum URL length after
+            just a few rules...
+        */
+
+        const wire = toWire(filterTarget);
+        if (!wire) {
+            setModal(ErrorModal, { title: "Filter Empty", message: "Add at least one complete rule." });
+            return;
+        }
+
+        // JSON -> deflate -> base64url
+        const json = JSON.stringify(wire);
+        const deflated = pako.deflate(json);
+        const payload = u8ToBase64url(deflated);
+
+        const fullURL = `${location.origin}${location.pathname}?f=${payload}`;
+
+        log.info("Generated Filter URL: ", fullURL);
+
+        // Clipboard unavailable
+        if (!navigator.clipboard) {
+            setModal(ErrorModal, { title: "Clipboard Unavailable", message: "Your browser does not support clipboard operations. You can try manually copying the URL below:", code: fullURL });
+            return;
+        }
+
+        // Attempt to the URL to the clipboard
+        navigator.clipboard.writeText(fullURL)
+            .then(
+                () => setModal(SuccessModal, { title: "Filter URL Copied", message: "The URL linking to this filter has been copied to your clipboard." })
+            )
+            .catch(
+                () => setModal(ErrorModal, { title: "Error Copying Filter URL", message: "An error occurred while trying to copy the filter URL to your clipboard.", code: "kek!" })
+            );
 
     }
 
@@ -641,6 +690,8 @@ export default function FlightsPage() {
         filterIsEmpty: filterIsEmpty,
         filterIsValid: filterIsValid,
         revertFilter,
+
+        copyFilterURL,
         
         addFlightIDToFilter,
         flightIDInSpecialGroup,
@@ -866,9 +917,10 @@ export default function FlightsPage() {
                                                     exit={panelExit}
                                                     transition={spring}
                                                 >
-                                                    <Card className="p-4 border rounded-lg w-full h-full card-glossy">
+                                                    {/* <Card className="p-4 border rounded-lg w-full h-full card-glossy">
                                                         Chart Panel
-                                                    </Card>
+                                                    </Card> */}
+                                                    <FlightsPanelChart />
                                                 </motion.div>
                                             }
 

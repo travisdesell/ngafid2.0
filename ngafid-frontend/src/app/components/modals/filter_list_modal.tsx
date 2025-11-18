@@ -11,6 +11,7 @@ import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import '@/index.css';
+import { Filter } from '@/pages/protected/flights/_filters/types';
 import { AlertCircleIcon, Check, ClipboardCopy, Pencil, Trash, X } from 'lucide-react';
 import { useModal } from './modal_provider';
 import type { ModalData, ModalProps } from "./types";
@@ -24,12 +25,13 @@ export type ModalDataFilterList = ModalData & {
     saveFilter(filter: FlightFilter): Promise<void>;
     deleteFilterByName(filterName: string): Promise<void>;
     setFilterFromJSON: (json: string) => void;
+    copyFilterURL: (filterTarget: Filter) => void;
 }
 
 export default function FilterListModal({ data }: ModalProps<ModalDataFilterList>) {
 
     const { close, setModal } = useModal();
-    const { filters, saveFilter, deleteFilterByName, setFilterFromJSON } = (data as ModalDataFilterList);
+    const { filters, saveFilter, deleteFilterByName, setFilterFromJSON, copyFilterURL } = (data as ModalDataFilterList);
 
 
     const renderFilterViewRow = (filter: FlightFilter, index: number) => {
@@ -85,7 +87,11 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             {/* Copy Filter URL Button */}
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="aspect-square">
+                    <Button
+                        variant="ghost"
+                        className="aspect-square"
+                        onClick={() => copyFilterURL(JSON.parse(filter.filter))}
+                    >
                         <ClipboardCopy size={16} />
                     </Button>
                 </TooltipTrigger>

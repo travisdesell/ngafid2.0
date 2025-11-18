@@ -1,9 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search.tsx
-import ErrorModal from "@/components/modals/error_modal";
 import FilterEditModal from "@/components/modals/filter_edit_modal";
 import FilterListModal from "@/components/modals/filter_list_modal";
 import { useModal } from "@/components/modals/modal_provider";
-import SuccessModal from "@/components/modals/success_modal";
 import Ping from "@/components/pings/ping";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -13,12 +11,10 @@ import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { createRules, RuleOptions } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { useFlights } from "@/pages/protected/flights/flights";
 import { Bolt, ClipboardCopy, Ellipsis, Info, RotateCcw, Save, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import pako from "pako";
 import { useMemo } from "react";
 import { FlightsPanelSearchGroup } from "./flights_panel_search_group";
 
@@ -26,7 +22,7 @@ const log = getLogger("FlightsPanelSearch", "black", "Component");
 
 export default function FlightsPanelSearch() {
 
-    const { filter, filterSearched, setFilterFromJSON, filterIsEmpty, filterIsValid, fetchFlightsWithFilter, revertFilter } = useFlights();
+    const { filter, filterSearched, setFilterFromJSON, filterIsEmpty, filterIsValid, fetchFlightsWithFilter, revertFilter, copyFilterURL } = useFlights();
     const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
     const { fleetTags } = useTags();
@@ -58,53 +54,6 @@ export default function FlightsPanelSearch() {
 
     }, [fleetTags]);
 
-
-    const copyFilterURL = () => {
-
-        /*
-            Generates a URL encoding for the
-            current filter from a JSON string.
-
-            The URL is then copied to the user's
-            clipboard.
-
-            TODO: Compress the URL so it doesn't
-            exceed the maximum URL length after
-            just a few rules...
-        */
-
-        const wire = toWire(filter);
-        if (!wire) {
-            setModal(ErrorModal, { title: "Filter Empty", message: "Add at least one complete rule." });
-            return;
-        }
-
-        // JSON -> deflate -> base64url
-        const json = JSON.stringify(wire);
-        const deflated = pako.deflate(json);
-        const payload = u8ToBase64url(deflated);
-
-        const fullURL = `${location.origin}${location.pathname}?f=${payload}`;
-
-        log.info("Generated Filter URL: ", fullURL);
-
-        // Clipboard unavailable
-        if (!navigator.clipboard) {
-            setModal(ErrorModal, { title: "Clipboard Unavailable", message: "Your browser does not support clipboard operations. You can try manually copying the URL below:", code: fullURL });
-            return;
-        }
-
-        // Attempt to the URL to the clipboard
-        navigator.clipboard.writeText(fullURL)
-            .then(
-                () => setModal(SuccessModal, { title: "Filter URL Copied", message: "The URL linking to this filter has been copied to your clipboard." })
-            )
-            .catch(
-                () => setModal(ErrorModal, { title: "Error Copying Filter URL", message: "An error occurred while trying to copy the filter URL to your clipboard.", code: "kek!" })
-            );
-
-    }
-
     const renderSearchSubmitRow = () => {
 
         const displayRevert = (filterSearched && !filterIsEmpty(filterSearched));
@@ -120,7 +69,7 @@ export default function FlightsPanelSearch() {
 
             {/* Copy Filter URL */}
             <Button
-                onClick={copyFilterURL}
+                onClick={() => copyFilterURL(filter)}
                 disabled={!allowFilterURLCopyAndSave}
                 className="@4xl:after:content-['Copy_Filter_URL']"
             >
@@ -138,7 +87,7 @@ export default function FlightsPanelSearch() {
 
             {/* Load a Saved Filter */}
             <Button
-                onClick={() => setModal(FilterListModal, {filters, saveFilter, deleteFilterByName, setFilterFromJSON})}
+                onClick={() => setModal(FilterListModal, {filters, saveFilter, deleteFilterByName, setFilterFromJSON, copyFilterURL})}
                 className="@2xl:after:content-['Load_Saved_Filter']"
             >
                 <Ellipsis />
