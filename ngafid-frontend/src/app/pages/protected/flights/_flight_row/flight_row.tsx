@@ -347,7 +347,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {/* Cesium Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
+                    <Button variant="ghost" className="w-8 h-8" disabled>
                         <Globe2 size={16} />
                     </Button>
                 </TooltipTrigger>
@@ -359,7 +359,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {/* Map Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
+                    <Button variant="ghost" className="w-8 h-8" disabled>
                         <Map size={16} />
                     </Button>
                 </TooltipTrigger>
@@ -396,7 +396,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {/* Events Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
+                    <Button variant="ghost" className="w-8 h-8" disabled>
                         <MapPinned size={16} />
                     </Button>
                 </TooltipTrigger>
@@ -408,7 +408,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {/* Download Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
+                    <Button variant="ghost" className="w-8 h-8" disabled>
                         <Download size={16} />
                     </Button>
                 </TooltipTrigger>
