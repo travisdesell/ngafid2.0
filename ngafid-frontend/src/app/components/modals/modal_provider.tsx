@@ -126,12 +126,13 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
             <ErrorBoundary onError={handleBoundaryError}>
                 {children}
             </ErrorBoundary>
-            <ModalRoot />
+            {/* <ModalRoot /> */}
         </ModalContext.Provider>
     );
 }
 
-function ModalRoot() {
+
+export function ModalOutlet() {
 
     const {
         modalType: Component,

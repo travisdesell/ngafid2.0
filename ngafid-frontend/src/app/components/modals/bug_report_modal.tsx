@@ -19,7 +19,7 @@ import type { ModalData, ModalProps } from "./types";
 const log = getLogger("BugReportModal", "black", "Modal");
 
 export type BugReportModalData = ModalData & {
-    user: NGAFIDUser;
+    user?: NGAFIDUser;
     titleIn?: string;
     descriptionIn?: string;
 };

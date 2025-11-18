@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/main.tsx
-import { ModalProvider } from '@/components/modals/modal_provider';
+import { ModalOutlet, ModalProvider } from '@/components/modals/modal_provider';
 import { AirframesProvider } from '@/components/providers/airframes_provider';
 import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider';
 import { FlightFiltersProvider } from '@/components/providers/flight_filters_provider';
@@ -16,11 +16,11 @@ import { TimeHeaderProvider } from './components/providers/time_header/time_head
 import AutoLayout from '@/components/layouts/auto_layout';
 import ProtectedLayout from '@/components/layouts/protected_layout';
 import { getLogger } from '@/components/providers/logger';
+import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
 import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import '@/index.css';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Background from './components/background';
-import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
 
 
 const log = getLogger("Main", "white", "Main");
@@ -329,6 +329,7 @@ window.reactRoot.render(
     <BrowserRouter basename={ROUTE_BASE}>
         <AppProviders>
             <AppShell />
+            <ModalOutlet />
         </AppProviders>
     </BrowserRouter>
 );

@@ -45,7 +45,7 @@ export default function ErrorModal({ data }: ModalProps) {
 
         log("Opening Bug Report Modal...");
 
-        setModal(BugReportModal, { user: user!, titleIn: title, descriptionIn: reportDescription });
+        setModal(BugReportModal, { user: user ?? undefined, titleIn: title, descriptionIn: reportDescription });
     }
 
     return (
