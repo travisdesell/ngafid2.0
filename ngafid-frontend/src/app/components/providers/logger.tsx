@@ -98,6 +98,10 @@ const LogComponentTypes = {
         prefix: "🔽 Provider",
         styling: "background-color: lightblue;"
     },
+    Context: {
+        prefix: "🔗 Context",
+        styling: "background-color: #6AF;"
+    },
     Modal: {
         prefix: "🔲 Modal",
         styling: "background-color: #F8F;"
@@ -125,7 +129,7 @@ const LogComponentTypes = {
     Main: {
         prefix: "🌳 Main",
         styling: "background-color: black;"
-    }
+    },
 } satisfies Record<string, LogComponent>;
 
 export type LogComponentKey = keyof typeof LogComponentTypes;
