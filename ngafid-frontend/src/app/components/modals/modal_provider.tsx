@@ -10,22 +10,7 @@ import { ModalComponent, ModalData, SetModalFn } from "./types";
 
 const log = getLogger("ModalProvider", "green", "Provider");
 
-type ModalContextValue = {
-    modalType?: ModalComponent;
-    modalData?: ModalData;
-    setModal: SetModalFn;
-    close: () => void;
-    onClose?: (data?: any) => void;
-};
-
-const ModalContext = React.createContext<ModalContextValue | null>(null);
-
-export function useModal() {
-    const ctx = React.useContext(ModalContext);
-    if (!ctx)
-        throw new Error("useModal must be used within <ModalProvider>");
-    return ctx;
-}
+import { ModalContext, useModal } from "@/components/modals/modal_context";
 
 export function ModalProvider({ children }: { children: React.ReactNode }) {
 
