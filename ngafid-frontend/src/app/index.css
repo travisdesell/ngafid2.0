@@ -78,6 +78,13 @@ input[type=number]::-webkit-outer-spin-button {
   --chart-hc-3: var(--color-lime-400);
   --chart-hc-4: var(--color-red-400);
   --chart-hc-5: var(--color-violet-400);
+  --chart-hc-6: var(--color-emerald-400);
+  --chart-hc-7: var(--color-cyan-400);
+  --chart-hc-8: var(--color-amber-400);
+  --chart-hc-9: var(--color-pink-400);
+  --chart-hc-10: var(--color-fuchsia-400);
+  --chart-hc-11: var(--color-sky-400);
+  --chart-hc-12: var(--color-teal-400);
   --sidebar: oklch(0.9846 0.0017 247.8389);
   --sidebar-foreground: oklch(0.3211 0 0);
   --sidebar-primary: oklch(0.6231 0.1880 259.8145);
@@ -139,6 +146,13 @@ input[type=number]::-webkit-outer-spin-button {
   --chart-hc-3: var(--color-lime-500);
   --chart-hc-4: var(--color-red-500);
   --chart-hc-5: var(--color-violet-500);
+  --chart-hc-6: var(--color-emerald-500);
+  --chart-hc-7: var(--color-cyan-500);
+  --chart-hc-8: var(--color-amber-500);
+  --chart-hc-9: var(--color-pink-500);
+  --chart-hc-10: var(--color-fuchsia-500);
+  --chart-hc-11: var(--color-sky-500);
+  --chart-hc-12: var(--color-teal-500);
   --sidebar: oklch(0.2046 0 0);
   --sidebar-foreground: oklch(0.9219 0 0);
   --sidebar-primary: oklch(0.6231 0.1880 259.8145);
