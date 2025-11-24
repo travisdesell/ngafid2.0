@@ -1,4 +1,4 @@
-// ngafid-frontend/src/app/components/providers/log_provider.tsx
+// ngafid-frontend/src/app/components/providers/logger.tsx
 
 
 /*
@@ -17,6 +17,9 @@
         log.warn("This is a warning message");
         log.error("This is an error message");
         log.table("This is a table message", data);
+
+        etc.
+
 */
 
 
@@ -39,12 +42,15 @@ const emit = (level: LogLevel, prefix: string, badge: string) =>
         // Generate label string
         const label = `%c${prefix}%c ${message}`;
 
+        // Resolve CSS vars in badge
+        const badgeResolved = resolveCSSVarsInString(badge);
+
         // Handle table logging separately
         if (level === "table") {
 
             const [data, columns] = args as [any, TableColumns | undefined];
 
-            console.groupCollapsed(label, badge, "");
+            console.groupCollapsed(label, badgeResolved, "");
 
             // Has specified columns
             if (columns && columns.length)
@@ -58,8 +64,21 @@ const emit = (level: LogLevel, prefix: string, badge: string) =>
             return;
         }
 
-        const consoleLevel = level === "warning" ? "warn" : level;
-        (console as any)[consoleLevel](label, badge, "", ...args);
+        // Map "warning" to "warn"
+        const consoleLevel = (level === "warning")
+            ? "warn"
+            : level;
+
+        // Resolve CSS vars in any string args (covers %c style strings passed in)
+        const resolvedArgs = args.map(arg =>
+
+            (typeof arg === "string" && arg.includes("var("))
+                ? resolveCSSVarsInString(arg)
+                : arg
+
+        );
+
+        (console as any)[consoleLevel](label, badgeResolved, "", ...resolvedArgs);
 
     };
 
@@ -169,3 +188,47 @@ export function getLogger(name: string, color?: string, type?: LogComponentKey):
     return factory({ name, color, type });
 
 }
+
+
+
+// CSS styling support
+const resolveCSSVar = (name: string, seen: Set<string> = new Set()): string => {
+
+    // SSR / non-DOM, just return the var() expression
+    if (typeof window === "undefined" || typeof document === "undefined")
+        return `var(${name})`;
+
+    // Got a circular reference, bail
+    if (seen.has(name))
+        return `var(${name})`;
+    
+    // Flag this variable as seen
+    seen.add(name);
+
+    const root = document.documentElement;
+    const raw = getComputedStyle(root).getPropertyValue(name).trim();
+
+    // Custom property itself is another var(...) reference, resolve it recursively
+    const match = raw.match(/^var\((--[^)]+)\)$/);
+    if (match)
+        return resolveCSSVar(match[1], seen);
+
+    // Got something non-empty, assume it's the final color (oklch, rgb, hex, etc.)
+    if (raw)
+        return raw;
+
+    // Fallback: unresolved
+    return `var(${name})`;
+
+};
+
+const resolveCSSVarsInString = (value: string): string => {
+
+    if (!value.includes("var("))
+        return value;
+
+    return value.replace(/var\((--[^)]+)\)/g, (_full, name: string) => {
+        return resolveCSSVar(name.trim());
+    });
+
+};
