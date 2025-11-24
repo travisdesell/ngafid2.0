@@ -3,27 +3,30 @@
 
 import ConfirmModal from "@/components/modals/confirm_modal";
 import ErrorModal from "@/components/modals/error_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import SuccessModal from "@/components/modals/success_modal";
 import { NavbarExtras } from "@/components/navbars/navbar_slot";
 import { getLogger } from "@/components/providers/logger";
-import { type TagData } from "@/components/providers/tags/tags_provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchJson } from "@/fetchJson";
+import { useEffectPrev } from "@/lib/useEffectPrev";
 import { base64urlToU8, fromWire, toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { BASE_RULE_DEFINITIONS, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { Filter, FilterCondition, FilterGroup, FilterRule, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
-import { Flight } from "@/pages/protected/flights/_flight_row/flight_row";
+import { EnsureSeriesFn, FlightsContext, FlightsContextValue, FlightsResponse, FlightsState } from "@/pages/protected/flights/_flights_context";
 import { FlightsPanelChart } from "@/pages/protected/flights/_panels/flights_panel_chart";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
 import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
+import { fetchSeries } from "@/pages/protected/flights/chart_data";
+import { FILTER_RULE_NAME_NEW, FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection, SortingDirection, type Flight } from "@/pages/protected/flights/types";
+import { SeriesKey, TraceSeries } from "@/pages/protected/flights/types_charts";
 import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import pako from "pako";
-import { createContext, useContext, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import FlightsPanelSearch from "./_panels/flights_panel_search";
 
@@ -31,70 +34,30 @@ import FlightsPanelSearch from "./_panels/flights_panel_search";
 const log = getLogger("Flights", "black", "Page");
 
 
-export type SortingDirection = "Ascending" | "Descending";
-export const isValidSortingDirection = (value: string): value is SortingDirection => {
-    return (value === "Ascending" || value === "Descending");
-}
+/* Chart & Time-Series Functions */
+const makeSeriesKey = (flightId: number, name: string): SeriesKey =>
+    `${flightId}:${name}` as SeriesKey;
 
-export const FLIGHTS_PER_PAGE_OPTIONS = [
-    10,
-    25,
-    50,
-    100,
-]
+const getSeriesFromState = (state: FlightsState, flightId: number, name: string): TraceSeries | undefined =>
+    state.chartData.seriesByFlight[flightId]?.[name];
 
+const setSeriesInState = (state: FlightsState, series: TraceSeries): FlightsState => {
 
-export const FILTER_RULE_NAME_NEW = "New Rule";
+    const byFlight = { ...state.chartData.seriesByFlight };
+    const forFlight = { ...(byFlight[series.flightId] ?? {}) };
 
-type FlightsResponse = {
-    flights: Flight[];
-    totalFlights: number;
-    numberPages: number;
-}
+    forFlight[series.name] = series;
+    byFlight[series.flightId] = forFlight;
 
-type FlightsState = {
-    flights: Flight[];
-    totalFlights: number;
-    numberPages: number;
+    return {
+        ...state,
+        chartData: {
+            ...state.chartData,
+            seriesByFlight: byFlight,
+        },
+    };
 
-    filter: Filter;
-
-    isFilterSearchLoading: boolean;
-    isFilterSearchLoadingManual: boolean;
-
-    filterSearched: Filter | null;
-    sortingColumn?: string | null;
-    sortingDirection?: SortingDirection;    
-    pageSize?: number;
-    currentPage: number;
 };
-type FlightsContextValue = FlightsState & {
-    setFilter: (updater: (prev: Filter) => Filter) => void;
-    setFilterFromJSON: (json: string) => void;
-    filterIsEmpty: (filter: Filter) => boolean;
-    filterIsValid: (filter: Filter) => boolean;
-    revertFilter: () => void;
-
-    copyFilterURL: (filterTarget: Filter) => void;
-
-    addFlightIDToFilter: (flightID: string) => void;
-    flightIDInSpecialGroup: (flightID: string) => boolean;
-
-    newID: () => string;
-
-    setSortingColumn: (column: string | null) => void;
-    setSortingDirection: (direction: SortingDirection) => void;
-    setPageSize: (size: number) => void;
-    setCurrentPage: (page: number) => void;
-
-    fetchFlightsWithFilter: (filter: FilterGroup, isTriggeredManually: boolean) => Promise<any>;
-
-    updateFlightTags: (flightId: number, tags: TagData[] | null) => void;
-};
-
-
-const FlightsContext = createContext<FlightsContextValue | null>(null);
-
 
 export default function FlightsPage() {
 
@@ -120,6 +83,9 @@ export default function FlightsPage() {
     const reqIdRef = useRef(0);
     const [isFilterSearchLoading, startTransition] = useTransition();
     const [isFilterSearchLoadingManual, setIsFilterSearchLoadingManual] = useState(false);
+    
+    // Chart Data State
+    const [chartFlights, setChartFlightsRaw] = useState<Flight[]>([]);
     
     // Layout State
     const [searchPanelVisible, setSearchPanelVisible] = useState(true);
@@ -350,7 +316,9 @@ export default function FlightsPage() {
 
 
         // Abort any previous request
-        inflightCtrlRef.current?.abort();
+        inflightCtrlRef.current?.abort("New filter search initiated, aborting previous request.");
+
+        // Create a new AbortController for this request
         const abortController = new AbortController();
         inflightCtrlRef.current = abortController;
 
@@ -410,9 +378,37 @@ export default function FlightsPage() {
 
             return response;
 
-        } catch (error) {
+        } catch (error: any) {
+            
+            // Ignore errors from stale requests
+            if (reqIdRef.current !== reqId) {
+                log.warn("Ignoring error from stale request:", error);
+                return;
+            }
 
-            setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: (error as Error).message });
+            // Ignore abort / cancel errors
+            const name = (error?.name ?? "");
+            const code = (error?.code ?? "");
+            const message = (error?.message ?? "");
+
+            const isAbort = (
+                name === "AbortError"
+                || code === "ERR_CANCELED"
+                || code === 20
+                || message?.toLowerCase?.().includes("abort")
+                || error?.isCanceled === true
+            );
+            if (isAbort) {
+                log.info("Flights request aborted by a newer request, ignoring.");
+                return;
+            }
+
+            // Handle other errors
+            const errorCode = (error instanceof Error)
+                ? error.message
+                : "An unknown error occurred.";
+                
+            setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: errorCode });
 
         } finally {
 
@@ -616,6 +612,122 @@ export default function FlightsPage() {
     }
 
 
+    const ensureSeries: EnsureSeriesFn = async (flightId, paramName) => {
+
+        const key = makeSeriesKey(flightId, paramName);
+
+        // Already loaded, return
+        const cached = getSeriesFromState(state, flightId, paramName);
+        if (cached)
+            return cached;
+
+        // Avoid duplicate fetches
+        if (state.chartData.loadingSeries.has(key)) {
+            // Optionally you can keep a map of promises, or just
+            // return after some polling; for now, just fetch again if needed.
+
+            // TODO
+        }
+
+        setState((prev) => ({
+            ...prev,
+            chartData: {
+                ...prev.chartData,
+                loadingSeries: new Set(prev.chartData.loadingSeries).add(key),
+            },
+        }));
+
+        const series = await fetchSeries(flightId, paramName);
+
+        setState((prev) => {
+            const next = setSeriesInState(prev, series);
+            const loading = new Set(next.chartData.loadingSeries);
+            loading.delete(key);
+
+            return {
+                ...next,
+                chartData: {
+                    ...next.chartData,
+                    loadingSeries: loading,
+                },
+            };
+        });
+
+        return series;
+        
+    };
+
+
+    // Open chart panel when a flight is selected
+    useEffectPrev(chartFlights, (prevChartFlights) => {
+
+        // Chart is already open, exit
+        if (chartPanelVisible)
+            return;
+
+        // Flight was added, open the chart panel
+        if (prevChartFlights && chartFlights.length > prevChartFlights.length) {
+            log("Flight added to chart, opening chart panel.");
+            setChartPanelVisible(true);
+        }
+
+    });
+
+    const toggleUniversalParam = (name: string) => {
+
+        setState((prev) => {
+
+            const universal = new Set(prev.chartSelection.universalParams);
+
+            // Universal param already selected, deselect it
+            if (universal.has(name))
+                universal.delete(name);
+
+            // Otherwise, select it
+            else
+                universal.add(name);
+
+            return {
+                ...prev,
+                chartSelection: {
+                    ...prev.chartSelection,
+                    universalParams: universal,
+                },
+            };
+
+        });
+
+    };
+
+    const togglePerFlightParam = (flightId: number, name: string) => {
+
+        setState((prev) => {
+
+            const perFlight = { ...prev.chartSelection.perFlightParams };
+            const forFlight = (new Set(perFlight[flightId] ?? new Set<string>()));
+
+            // Param already selected for this flight, deselect it
+            if (forFlight.has(name))
+                forFlight.delete(name);
+
+            // Otherwise, select it
+            else
+                forFlight.add(name);
+
+            perFlight[flightId] = forFlight;
+
+            return {
+                ...prev,
+                chartSelection: {
+                    ...prev.chartSelection,
+                    perFlightParams: perFlight,
+                },
+            };
+
+        });
+
+    };
+
     // Flights State
     const [state, setState] = useState<FlightsState>({
         flights: flights,
@@ -631,7 +743,21 @@ export default function FlightsPage() {
         sortingColumn: sortingColumn,
         sortingDirection: sortingDirection,
         pageSize: pageSize,
-        currentPage
+        currentPage,
+
+        // Chart Data
+        chartFlights: chartFlights,
+
+        chartSelection: {
+            universalParams: new Set<string>(),
+            perFlightParams: {},
+        }, 
+        chartData: {
+            seriesByFlight: {},
+            loadingSeries: new Set<SeriesKey>(),
+        },
+
+        
     });
 
     const setFilter: FlightsContextValue["setFilter"] = (updater) => {
@@ -639,7 +765,7 @@ export default function FlightsPage() {
         const updatedFilter = updater(state.filter);
         log("Setting new filter:", updatedFilter);
 
-        setState((prev) => ({
+        setState((prev: any) => ({
             ...prev,
             filter: updatedFilter,
         }));
@@ -669,6 +795,46 @@ export default function FlightsPage() {
 
     };
 
+    const setChartFlights: FlightsContextValue["setChartFlights"] = (updater) => {
+
+        setChartFlightsRaw((prev) => {
+
+            const next = (typeof updater === "function")
+                ? (updater as (prevFlights: Flight[]) => Flight[])(prev)
+                : updater;
+
+            setState((prevState) => {
+
+                const remainingIDs = new Set(next.map((f) => f.id));
+
+                const newPerFlightParams: Record<number, Set<string>> = {};
+                for (const [flighIDstr, params] of Object.entries(prevState.chartSelection.perFlightParams)) {
+
+                    const flightID = Number(flighIDstr);
+
+                    // Flight is still in the chart, keep its params
+                    if (remainingIDs.has(flightID))
+                        newPerFlightParams[flightID] = params;
+                    
+                }
+
+                return {
+                    ...prevState,
+                    chartFlights: next,
+                    chartSelection: {
+                        ...prevState.chartSelection,
+                        perFlightParams: newPerFlightParams,
+                    },
+                };
+
+            });
+
+        return next;
+
+        });
+
+    }
+
     const value: FlightsContextValue = {
         flights: flights,
         totalFlights: totalFlights,
@@ -684,6 +850,10 @@ export default function FlightsPage() {
         sortingDirection,
         pageSize,
         currentPage,
+
+        chartFlights: chartFlights,
+        chartSelection: state.chartSelection,
+        chartData: state.chartData,
 
         setFilter,
         setFilterFromJSON,
@@ -706,6 +876,11 @@ export default function FlightsPage() {
         fetchFlightsWithFilter,
 
         updateFlightTags,
+
+        setChartFlights,
+        ensureSeries,
+        toggleUniversalParam,
+        togglePerFlightParam,
     };
 
     useEffect(() => {
@@ -975,16 +1150,5 @@ export default function FlightsPage() {
 
     log("Rendering Flights Page");
     return render();
-
-}
-
-
-export function useFlights() {
-
-    const context = useContext(FlightsContext);
-    if (!context)
-        throw new Error("useFlights must be used within a FlightsContext.Provider");
-
-    return context;
 
 }
