@@ -19,6 +19,7 @@ import { getLogger } from '@/components/providers/logger';
 import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
 import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import '@/index.css';
+import { ROUTE_BASE } from '@/lib/route_utils';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Background from './components/background';
 
@@ -181,7 +182,11 @@ function fileToRoute(filePath: string): RouteInfo {
 }
 
 /* @ts-ignore */
-const pageModules = import.meta.glob("./pages/**/*.tsx");   //<-- Lazy import all page modules
+const pageModules = import.meta.glob([
+    "./pages/**/*.tsx",
+    "!./pages/**/_*/**",
+    "!./pages/**/_*.tsx",
+]);
 
 for (const [file, loader] of Object.entries(pageModules)) {
 
@@ -227,24 +232,6 @@ const routeElementsAuto = routesAuto.map((route) => (
     <Route key={route.urlPath} path={`/auto${route.urlPath}`} element={React.createElement(route.component)} />
 ));
 
-export const ROUTE_BASE = "";
-export const ROUTE_DEFAULT_LOGGED_OUT = `${ROUTE_BASE}/`;
-export const ROUTE_DEFAULT_LOGGED_IN = `${ROUTE_BASE}/protected/summary`;
-
-export function openRoute(url: string, isProtected: boolean = false) {
-
-    let targetURLFull: string;
-
-    if (isProtected)
-        targetURLFull = `${ROUTE_BASE}/protected/${url}`;
-    else
-        targetURLFull = `${ROUTE_BASE}/${url}`;
-
-    log(`Navigating to ${targetURLFull} (Protected: ${isProtected})`);
-
-    window.location.replace(targetURLFull);
-
-}
 
 
 
