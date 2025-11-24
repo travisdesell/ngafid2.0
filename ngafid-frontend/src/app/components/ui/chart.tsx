@@ -15,25 +15,25 @@ export const BAR_RADIUS_VERTICAL_LAST = [0, 0, 4, 4] as const as BarRadius;
 export const BAR_RADIUS_VERTICAL_SOLO = [4, 4, 4, 4] as const as BarRadius;
 
 
-import * as React from "react"
-import * as RechartsPrimitive from "recharts"
+import * as React from "react";
+import * as RechartsPrimitive from "recharts";
 
 // Tooltip types come from DefaultTooltipContent
 import type {
+    Props as DefaultTooltipContentProps,
     NameType,
-    ValueType,
     Payload as TooltipItemPayload,
-    Props as DefaultTooltipContentProps, // keep if you still reference it elsewhere
-} from "recharts/types/component/DefaultTooltipContent"
+    ValueType,
+} from "recharts/types/component/DefaultTooltipContent";
 
 // The IMPORTANT one: base tooltip props that include `active`
-import type { TooltipProps } from "recharts/types/component/Tooltip"
+import type { TooltipProps } from "recharts/types/component/Tooltip";
 
 // Legend item payload type comes from DefaultLegendContent
-import type { Props as LegendProps } from "recharts/types/component/Legend"
-import type { Payload as LegendPayload } from "recharts/types/component/DefaultLegendContent"
+import type { Payload as LegendPayload } from "recharts/types/component/DefaultLegendContent";
+import type { Props as LegendProps } from "recharts/types/component/Legend";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
@@ -200,6 +200,9 @@ function ChartTooltipContent({
         const [item] = payload
         const key = `${labelKey || item?.dataKey || item?.name || "value"}`
         const itemConfig = getPayloadConfigFromPayload(config, item, key)
+
+        const rawLabel = label;
+
         const value = (() => {
             const v =
                 !labelKey && typeof label === "string"
@@ -212,7 +215,8 @@ function ChartTooltipContent({
         if (labelFormatter) {
             return (
                 <div className={cn("font-medium", labelClassName)}>
-                    {labelFormatter(value, payload)}
+                    {/* {labelFormatter(value, payload)} */}
+                    {labelFormatter(rawLabel, payload)}     {/* <-- Pass the raw label to the formatter to display the date */}
                 </div>
             )
         }
@@ -410,10 +414,8 @@ function getPayloadConfigFromPayload(
 }
 
 export {
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    ChartLegend,
+    ChartContainer, ChartLegend,
     ChartLegendContent,
-    ChartStyle,
-}
+    ChartStyle, ChartTooltip,
+    ChartTooltipContent
+};
