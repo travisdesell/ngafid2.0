@@ -1,4 +1,7 @@
-// ngafid-frontend/src/app/components/modals/filter_edit_modal.tsx
+// ngafid-frontend/src/app/components/modals/filter_list_modal/filter_list_modal.tsx
+
+"use client";
+
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "motion/react";
@@ -6,6 +9,7 @@ import { motion } from "motion/react";
 import ConfirmModal from "@/components/modals/confirm_modal";
 import ErrorModal from '@/components/modals/error_modal';
 import FilterEditModal from "@/components/modals/filter_edit_modal";
+import { useModal } from "@/components/modals/modal_context";
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,8 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import '@/index.css';
 import { Filter } from '@/pages/protected/flights/_filters/types';
 import { AlertCircleIcon, Check, ClipboardCopy, Pencil, Trash, X } from 'lucide-react';
-import { useModal } from './modal_provider';
-import type { ModalData, ModalProps } from "./types";
+import type { ModalData, ModalProps } from "../types";
 
 
 const log = getLogger("FilterListModal", "black", "Modal");
