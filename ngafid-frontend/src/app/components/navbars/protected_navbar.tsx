@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 
+import { useModal } from "@/components/modals/modal_context";
 import { useNavbarSlot } from "@/components/navbars/navbar_slot";
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -20,7 +21,6 @@ import { motion } from "framer-motion";
 import BugReportModal from "../modals/bug_report_modal";
 import ErrorModal from "../modals/error_modal";
 import Notifications from "../providers/notifications/notifications";
-import { useModal } from "@/components/modals/modal_context";
 
 const log = getLogger("ProtectedNavbar", "teal", "Navbar");
 
@@ -61,13 +61,13 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
         log(`Rendering with user = `, user);
 
         const buttonLinkClass = "hover:[&_*]:underline";
-        const pageNameLinkClass = (useNavbarPageNames ? "block group-hover:underline" : "hidden!");
+        const pageNameLinkClass = (useNavbarPageNames ? "block group-hover:underline @max-[100rem]/navbar:hidden!" : "hidden!");
         const renderPageNameLink = (pageName:string) => <span className={pageNameLinkClass}>{pageName}</span>;
 
         return (
             <nav
                 id='navbar'
-                className="shrink-0 navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-(--sidebar)"
+                className="shrink-0 navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-(--sidebar) @container/navbar"
             >
 
                 {/* Left Elements */}
