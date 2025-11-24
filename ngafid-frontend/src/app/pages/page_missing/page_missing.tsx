@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/pages/page_missing/page_missing.tsx
 import ErrorModal, { ModalDataError } from "@/components/modals/error_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import { useEffect } from "react";
 
 export default function PageMissing() {

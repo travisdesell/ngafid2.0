@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/flights/_flight_row/flight_row.tsx
 
 import { Button } from "@/components/ui/button";
-import { useFlights } from "@/pages/protected/flights/flights";
+import { useFlights } from "@/pages/protected/flights/_flights_context";
 import { Check, FolderSearch, Plane } from "lucide-react";
 import React, { forwardRef } from "react";
 import type { JSX } from "react/jsx-runtime";

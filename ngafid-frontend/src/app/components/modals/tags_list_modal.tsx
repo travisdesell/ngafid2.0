@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { ColorPicker, randomHexColor } from '@/components/color_picker';
 import ConfirmModal from '@/components/modals/confirm_modal';
 import ErrorModal from '@/components/modals/error_modal';
+import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { TagData, useTags } from "@/components/providers/tags/tags_provider";
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,6 @@ import { fetchJson } from '@/fetchJson';
 import '@/index.css';
 import { Link, Pencil, Plus, Tag, Trash, Unlink, X } from 'lucide-react';
 import { JSX, useEffect, useState } from 'react';
-import { useModal } from './modal_provider';
 import type { ModalData, ModalProps } from "./types";
 
 

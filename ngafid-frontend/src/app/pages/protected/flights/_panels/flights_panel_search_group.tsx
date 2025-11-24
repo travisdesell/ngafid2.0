@@ -1,15 +1,16 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search_group.tsx
 import ConfirmModal from "@/components/modals/confirm_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import Ping from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FilterGroup, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
+import { useFlights } from "@/pages/protected/flights/_flights_context";
 import FlightsPanelSearchRule from "@/pages/protected/flights/_panels/flights_panel_search_rule";
+import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/types";
 import { Bolt, Folder, FolderSearch, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { FILTER_RULE_NAME_NEW, useFlights } from "../flights";
 
 
 const log = getLogger("FlightsPanelSearchGroup", "green", "Component");

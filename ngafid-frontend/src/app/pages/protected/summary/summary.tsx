@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/pages/summary/summary.tsx
 import ErrorModal from "@/components/modals/error_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
 import TimeHeader from "@/components/providers/time_header/time_header";

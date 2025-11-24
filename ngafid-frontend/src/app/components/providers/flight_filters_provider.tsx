@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/components/providers/flight_filters_provider.tsx
 import ErrorModal from "@/components/modals/error_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import SuccessModal from "@/components/modals/success_modal";
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";

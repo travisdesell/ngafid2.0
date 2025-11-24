@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search.tsx
 import FilterEditModal from "@/components/modals/filter_edit_modal";
-import FilterListModal from "@/components/modals/filter_list_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import FilterListModal from "@/components/modals/filter_list_modal/filter_list_modal";
+import { useModal } from "@/components/modals/modal_context";
 import Ping from "@/components/pings/ping";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { createRules, RuleOptions } from "@/pages/protected/flights/_filters/flights_filter_rules";
-import { useFlights } from "@/pages/protected/flights/flights";
+import { useFlights } from "@/pages/protected/flights/_flights_context";
 import { Bolt, ClipboardCopy, Ellipsis, Info, RotateCcw, Save, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";

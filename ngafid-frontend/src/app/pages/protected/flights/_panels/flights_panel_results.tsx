@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search.tsx
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { SORTABLE_COLUMN_NAMES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import FlightRow from "@/pages/protected/flights/_flight_row/flight_row";
-import { FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection, useFlights } from "@/pages/protected/flights/flights";
+import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection } from "@/pages/protected/flights/types";
 import { ArrowDownWideNarrow, ArrowUpDown, Info, ListOrdered, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -172,7 +173,7 @@ export default function FlightsPanelResults() {
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                 >
-                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-2 h-full text-nowrap @5xl:after:content-['_Found'] whitespace-pre">
+                    <Badge variant="outline" className="text-center bg-background rounded-full px-4 mr-2 h-full text-nowrap @5xl:after:content-['_Found'] whitespace-pre select-none">
                         {(totalFlights).toLocaleString()} Flight{totalFlights !== 1 ? "s" : ""}
                     </Badge>
                 </motion.div>

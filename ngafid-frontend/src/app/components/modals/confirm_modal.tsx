@@ -1,14 +1,13 @@
 // ngafid-frontend/src/app/components/modals/confirm_modal.tsx
-import React, { use } from "react";
-import { Card, CardContent, CardHeader, CardDescription, CardFooter, CardTitle, CardAction } from "@/components/ui/card"
 import { Button, ButtonVariant } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "motion/react";
 
+import { useModal } from "@/components/modals/modal_context";
+import { getLogger } from "@/components/providers/logger";
 import '@/index.css';
 import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
-import { useModal } from './modal_provider';
-import { getLogger } from "@/components/providers/logger";
 
 
 const log = getLogger("ConfirmModal", "black", "Modal");

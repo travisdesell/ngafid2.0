@@ -8,7 +8,6 @@ import { Book, CalendarCog, ChevronDown, Home, Info, Plane, Search, Upload, User
 
 import { Link } from "react-router-dom";
 
-import { useModal } from "../modals/modal_provider";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 
@@ -16,11 +15,12 @@ import { useNavbarSlot } from "@/components/navbars/navbar_slot";
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
-import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/main";
+import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/lib/route_utils";
 import { motion } from "framer-motion";
 import BugReportModal from "../modals/bug_report_modal";
 import ErrorModal from "../modals/error_modal";
 import Notifications from "../providers/notifications/notifications";
+import { useModal } from "@/components/modals/modal_context";
 
 const log = getLogger("ProtectedNavbar", "teal", "Navbar");
 

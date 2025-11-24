@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/pages/status/status.tsx
 import ErrorModal from "@/components/modals/error_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import Ping, { PingColor } from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

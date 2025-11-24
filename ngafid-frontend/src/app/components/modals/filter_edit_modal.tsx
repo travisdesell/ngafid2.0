@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { ColorPicker, randomHexColor } from "@/components/color_picker";
 import ErrorModal from '@/components/modals/error_modal';
+import { useModal } from "@/components/modals/modal_context";
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import '@/index.css';
 import { FilterGroup } from '@/pages/protected/flights/_filters/types';
 import { AlertCircleIcon, X } from 'lucide-react';
-import { useModal } from './modal_provider';
 import type { ModalData, ModalProps } from "./types";
 
 

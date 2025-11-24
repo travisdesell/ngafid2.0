@@ -3,6 +3,7 @@ import { AlertCircleIcon, Mail, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 
+import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,6 @@ import { Field, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import ErrorModal from "./error_modal";
-import { useModal } from "./modal_provider";
 import SuccessModal from "./success_modal";
 import type { ModalData, ModalProps } from "./types";
 

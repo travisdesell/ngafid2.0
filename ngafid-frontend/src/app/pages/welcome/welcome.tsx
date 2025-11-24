@@ -8,11 +8,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { CircleQuestionMark, InfoIcon } from 'lucide-react';
 import './welcome.css';
 
-import { useModal } from '@/components/modals/modal_provider';
 import RegisterModal from '@/components/modals/register_modal';
 import { getLogger } from '@/components/providers/logger';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useEffect } from 'react';
+import { useModal } from '@/components/modals/modal_context';
 
 
 const log = getLogger("Welcome", "black", "Page");

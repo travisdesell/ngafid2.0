@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/components/misc_providers/notifications_provider.tsx
 import ErrorModal from "@/components/modals/error_modal";
-import { useModal } from "@/components/modals/modal_provider";
+import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { createContext, useContext, useState } from "react";
 import { makeNotifQuantity } from "./notifications_data/notification_quantity";

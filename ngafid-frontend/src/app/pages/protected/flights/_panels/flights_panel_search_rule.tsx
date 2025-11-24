@@ -9,7 +9,8 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FilterCondition, FilterRule, FilterRuleDefinition } from "@/pages/protected/flights/_filters/types";
-import { FILTER_RULE_NAME_NEW, useFlights } from "@/pages/protected/flights/flights";
+import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/types";
 import { Trash } from "lucide-react";
 
 const log = getLogger("FlightsPanelSearchRule", "blue", "Component");

@@ -1,17 +1,16 @@
 // ngafid-frontend/src/app/components/navbars/welcome_navbar.jsx
-import React from "react";
 
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
-import {DarkModeToggle} from "@/components/dark_mode_toggle";
+import { DarkModeToggle } from "@/components/dark_mode_toggle";
 import { LogIn, UserPlus } from 'lucide-react';
 
 import { Link } from "react-router-dom";
 
+import { getLogger } from "@/components/providers/logger";
 import LoginModal from '../modals/login_modal';
 import RegisterModal from '../modals/register_modal';
-import { useModal } from "../modals/modal_provider";
-import { getLogger } from "@/components/providers/logger";
+import { useModal } from "@/components/modals/modal_context";
 
 
 const log = getLogger("WelcomeNavbar", "teal", "Navbar");

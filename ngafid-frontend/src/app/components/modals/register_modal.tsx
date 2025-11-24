@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { openRoute } from "@/main";
 import { AlertCircleIcon, Loader2Icon, X } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useEffect } from "react";
@@ -15,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import ErrorModal, { ModalDataError } from "./error_modal";
 import type { ModalProps } from "./types";
+import { openRoute } from "@/lib/route_utils";
 
 const log = getLogger("RegisterModal", "black", "Modal");
 

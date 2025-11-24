@@ -1,11 +1,11 @@
 // ngafid-frontend/src/app/components/providers/auth_provider.tsx
+import ErrorModal, { ModalDataError } from '@/components/modals/error_modal';
+import { useModal } from '@/components/modals/modal_context';
 import { getLogger } from '@/components/providers/logger';
 import { LoaderCircle } from 'lucide-react';
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { NGAFIDUser } from 'src/types';
-import ErrorModal, { ModalDataError } from '../modals/error_modal';
-import { useModal } from '../modals/modal_provider';
 
 // const log = getLogger({ color: "blue",  type: "Provider" });
 const log = getLogger("AuthProvider", "blue", "Provider");

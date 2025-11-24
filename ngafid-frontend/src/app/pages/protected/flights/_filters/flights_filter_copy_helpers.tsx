@@ -16,7 +16,7 @@
 
 import { BASE_RULE_DEFINITIONS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { FilterGroup, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
-import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/flights";
+import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/types";
 
 // Build rule-name <-> tiny-id maps once
 const RULE_NAME_TO_ID = Object.fromEntries(BASE_RULE_DEFINITIONS.map((r, i) => [r.name, i.toString(36)]));

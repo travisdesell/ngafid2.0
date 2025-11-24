@@ -8,8 +8,8 @@ import { useAuth } from '@/components/providers/auth_provider';
 import { getLogger } from "@/components/providers/logger";
 import '@/index.css';
 import { X } from 'lucide-react';
-import { useModal } from './modal_provider';
 import type { ModalData, ModalProps } from "./types";
+import { useModal } from '@/components/modals/modal_context';
 
 
 const log = getLogger("ErrorModal", "black", "Modal");
@@ -22,7 +22,7 @@ export type ModalDataError = ModalData & {
     allowReport?: boolean;
 };
 
-export default function ErrorModal({ data }: ModalProps) {
+export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
 
     const { close, setModal } = useModal();
     const { title, message, code, allowReport=true } = (data as ModalDataError) ?? {};
