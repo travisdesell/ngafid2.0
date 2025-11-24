@@ -188,7 +188,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                         onClick={handleIncrement}
                         disabled={value === max}
                     >
-                        <ChevronUp size={"xs"} className="absolute scale-75" />
+                        <ChevronUp className="absolute scale-75" />
                     </Button>
                     <Button
                         aria-label="Decrease value"
