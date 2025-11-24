@@ -11,9 +11,12 @@ export default function FlightRowTagBadge({ tag }: { tag: TagData }) {
     return (
         <Tooltip>
             <TooltipTrigger>
-                <Badge className="rounded-full flex items-center gap-2 truncate" variant="secondary">
-                    <Tag fill={tag.color} size={12}/>
-                    <span className="truncate">{tag.name}</span>
+                <Badge
+                    className="rounded-full flex items-center gap-2 truncate max-w-[40cqw] min-w-8"
+                    variant="secondary"
+                >
+                    <Tag fill={tag.color} size={12} className="min-w-3 aspect-square"/>
+                    <span className="truncate @2xl:hidden! @max-[12rem]/tags:hidden!">{tag.name}</span>
                 </Badge>
             </TooltipTrigger>
             <TooltipContent>

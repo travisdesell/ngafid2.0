@@ -1,62 +1,24 @@
 // ngafid-frontend/src/app/pages/protected/flights/_flight_row/flight_row.tsx
-import { useModal } from "@/components/modals/modal_provider";
+
+import ErrorModal from "@/components/modals/error_modal";
+import { useModal } from "@/components/modals/modal_context";
 import TagsListModal from "@/components/modals/tags_list_modal";
-import { type TagData } from "@/components/providers/tags/tags_provider";
+import { getLogger } from "@/components/providers/logger";
+import { TagData } from "@/components/providers/tags/tags_provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import FlightRowFlightIDButton from "@/pages/protected/flights/_flight_row/flight_row_flight_id_button";
 import FlightRowTagBadge from "@/pages/protected/flights/_flight_row/flight_row_tag_badge";
-import { useFlights } from "@/pages/protected/flights/flights";
-import { Calendar, ChartArea, Clock, Dot, Download, Globe2, Map, MapPinned, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
-import { AirframeNameID } from "src/types";
-
-export interface ItineraryEntry {
-    airport: string;
-    endOfApproach: number;
-    endOfTakeoff: number;
-    finalIndex: number;
-    minAirportDistance: number;
-    minAltitude: number;
-    minAltitudeIndex: number;
-    minRunwayDistance: number;
-    order: number;
-    runway: string;
-    runwayCounts: unknown; // ⚠️ TODO: Define type
-    startOfApproach: number;
-    startOfTakeoff: number;
-    takeoffCounter: number;
-    type: string;   // ⚠️ TODO: Define valid type names
-}
-
-export type AirframeNameIDType = { // ⚠️ TODO: Figure out what to do with this
-    type: {
-        id: number;
-        name: string;
-    }
-} & AirframeNameID;
+import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { addFlightToChart } from "@/pages/protected/flights/chart_data";
+import { type Flight } from "@/pages/protected/flights/types";
+import { Calendar, ChartArea, Check, Clock, Dot, Download, Globe2, Map, MapPinned, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
 
 
-export interface Flight {
-    filename: string;
-    systemId: string;
-    md5Hash: string;
-    startDateTime: string;
-    endDateTime: string;
-    itinerary: ItineraryEntry[];
-    id: number;
-    fleetId: number;
-    uploaderId: number;
-    uploadId: number;
-    tailNumber: string;
-    airframe: AirframeNameIDType;
-    status: string; // ⚠️ TODO: Define valid status names
-    numberRows: number;
-    doubleTimeSeries: object;  // ⚠️ TODO: Define valid double time series types
-    stringTimeSeries: object;  // ⚠️ TODO: Define valid string time series types
-    events: any[];  // ⚠️ TODO: Define valid event types
-    tags: TagData[] | null;
-}
+
+const log = getLogger("FlightRow", "darkgray", "Component");
+
 
 function FlightRowSection({children, className}: {children: React.ReactNode, className?: string}) {
 
@@ -80,7 +42,7 @@ function FlightRowSection({children, className}: {children: React.ReactNode, cla
 export default function FlightRow({ flight }: { flight: Flight }) {
 
     const { setModal } = useModal();
-    const { updateFlightTags, fetchFlightsWithFilter, filter, filterSearched } = useFlights();
+    const { updateFlightTags, fetchFlightsWithFilter, filter, filterSearched, chartFlights, setChartFlights } = useFlights();
 
     const renderFlightMainDetails = () => {
 
@@ -273,7 +235,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
         return (
             <Tooltip disableHoverableContent>
-                <TooltipTrigger className={`w-full flex flex-row flex-wrap items-center mb-auto gap-2 ${noAirports ? 'opacity-50' : ''}`}>
+                <TooltipTrigger className={`w-full flex flex-row flex-wrap items-center mb-auto gap-2 overflow-x-clip ${noAirports ? 'opacity-50' : ''}`}>
 
                         <PlaneTakeoff size={16} />
                         {
@@ -283,7 +245,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                             :
                             flight.itinerary.map((itineraryItem, index) => (
 
-                                <div key={index} className="not-last:after:content-['\,'] text-xs">
+                                <div key={index} className="not-last:after:content-['\,'] text-xs font-light">
                                     <b>{itineraryItem.airport}</b>
                                 </div>
                             ))
@@ -291,7 +253,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
                 </TooltipTrigger>
                 <TooltipContent>
-                    Airports
+                    Airports Itinerary
                 </TooltipContent>
             </Tooltip>
         );
@@ -330,13 +292,47 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
     const renderButtonsRow = () => {
 
+        const flightInChartFlights = chartFlights.some((f: { id: number; }) => f.id === flight.id);
+
+        const toggleFlightInChartFlights = () => {
+
+            log(`Toggling flight with ID ${flight.id} in chart flights.`);
+
+            // Flight already selected, remove it
+            if (flightInChartFlights) {
+
+                setChartFlights(chartFlights.filter((f) => f.id !== flight.id));
+                log(`Removed flight with ID ${flight.id} from chart flights.`);
+
+                return;
+
+            }
+
+            // Otherwise, add it using the shared helper
+            addFlightToChart(flight, setChartFlights).catch((error) => {
+
+                setModal(ErrorModal, {
+                    title: "Error Fetching Trace Names",
+                    message: `An error occurred while fetching trace names for flight with ID ${flight.id}. Please try again later.`,
+                    code: error?.toString?.() ?? String(error),
+                });
+
+            });
+
+        };
+
         return <div className="grid row-span-3 grid-cols-3 min-w-32 gap-1 gap-x-2 my-auto" data-fit>
 
             {/* Chart Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
-                        <ChartArea size={16} />
+                    <Button variant="ghost" className="w-8 h-8 relative" onClick={toggleFlightInChartFlights}>
+                        <ChartArea size={16} className={`absolute ${flightInChartFlights ? 'opacity-25' : ''}`} />
+                        {
+                            (flightInChartFlights)
+                            &&
+                            <Check size={32} className="absolute" />
+                        }
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -435,16 +431,16 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {renderFlightMainDetails()}
         </FlightRowSection>
 
-        <FlightRowSection className="@container min-w-48">
+        <FlightRowSection className="@container min-w-46">
             {renderFlightTimeDetails()}
         </FlightRowSection>
 
-        <FlightRowSection className="@container min-w-14 max-w-48">
+        <FlightRowSection className="@container min-w-15 max-w-48 overflow-y-auto">
             {renderAirportsDetails()}
         </FlightRowSection>
 
         {/* <FlightRowSection className="max-w-64"> */}
-        <FlightRowSection className="@container max-w-96 overflow-y-auto">
+        <FlightRowSection className="@container/tags min-w-27 max-w-96 overflow-y-auto">
             {renderTagsRows()}
         </FlightRowSection>
 
