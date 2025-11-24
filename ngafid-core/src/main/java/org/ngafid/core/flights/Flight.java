@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.ngafid.core.flights.Parameters.COMP_CONV;
@@ -390,6 +391,8 @@ public class Flight {
             query.setInt(1, fleetId);
             setQueryParameters(parameters, query);
 
+            LOG.log(Level.INFO, "Executing query: {0}", query.toString());
+
             try (ResultSet resultSet = query.executeQuery()) {
                 ArrayList<Flight> flights = new ArrayList<>();
                 while (resultSet.next()) {
@@ -713,12 +716,19 @@ public class Flight {
      * @throws SQLException if there is an error with the database query
      */
     public static boolean tagExists(Connection connection, int fleetId, String name) throws SQLException {
-        String queryString =
-                "SELECT EXISTS (SELECT * FROM flight_tags WHERE name = '" + name + "' AND fleet_id = " + fleetId + ")";
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
-            return resultSet.next() && resultSet.getBoolean(1);
+
+        String queryString = "SELECT EXISTS (SELECT * FROM flight_tags WHERE name = ? AND fleet_id = ?)";
+        try (PreparedStatement query = connection.prepareStatement(queryString)) {
+
+            query.setString(1, name);
+            query.setInt(2, fleetId);
+
+            try (ResultSet resultSet = query.executeQuery()) {
+                return resultSet.next() && resultSet.getBoolean(1);
+            }
+
         }
+
     }
 
     /**
@@ -799,43 +809,32 @@ public class Flight {
      * @pre @param flightTag is not equal to the tag currently in the db
      */
     public static FlightTag editTag(Connection connection, FlightTag flightTag) throws SQLException {
+
         FlightTag current = getTag(connection, flightTag.hashCode());
         String newName = flightTag.getName();
         String newDescription = flightTag.getDescription();
         String newColor = flightTag.getColor();
 
         if (!current.equals(flightTag)) {
-            StringBuilder queryString = new StringBuilder("UPDATE flight_tags SET");
-            boolean first = true;
-            if (!current.getName().equals(newName)) {
-                queryString.append(" name = '");
-                queryString.append(newName);
-                queryString.append("' ");
-                first = false;
-            }
-            if (!current.getDescription().equals(newDescription)) {
-                queryString.append((first ? " " : ", "));
-                queryString.append("description = '");
-                queryString.append(newDescription);
-                queryString.append("' ");
-                first = false;
-            }
-            if (!current.getColor().equals(newColor)) {
-                queryString.append((first ? " " : ", "));
-                queryString.append("color = '");
-                queryString.append(newColor);
-                queryString.append("' ");
-            }
 
-            queryString.append("WHERE id = ").append(flightTag.hashCode());
+            String queryString = "UPDATE flight_tags SET name = ?, description = ?, color = ? WHERE id = ?";
 
-            try (PreparedStatement query = connection.prepareStatement(queryString.toString())) {
+            try (PreparedStatement query = connection.prepareStatement(queryString)) {
+                query.setString(1, newName);
+                query.setString(2, newDescription);
+                query.setString(3, newColor);
+                query.setInt(4, flightTag.hashCode());
+
                 query.executeUpdate();
             }
 
+            LOG.log(Level.INFO, "Edited tag with id {0} in the database", flightTag.hashCode());
             return getTag(connection, flightTag.hashCode());
         }
-        return null; // this should never happen, it violates the precondition!
+
+        LOG.severe("Attempted to edit a tag that is the same as the current tag in the database");
+        return null;
+
     }
 
     /**
