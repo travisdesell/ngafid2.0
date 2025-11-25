@@ -336,7 +336,10 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    Chart
+                    <div>Chart</div>
+                    <div className="opacity-50 flex items-center">
+                        <MousePointerClick size={16} className="mr-1"/>Add to Selected chart flights
+                    </div>
                 </TooltipContent>
             </Tooltip>
 
