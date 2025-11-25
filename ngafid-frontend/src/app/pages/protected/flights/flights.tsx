@@ -10,7 +10,6 @@ import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchJson } from "@/fetchJson";
 import { useEffectPrev } from "@/lib/useEffectPrev";
 import { base64urlToU8, fromWire, toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
@@ -979,9 +978,9 @@ export default function FlightsPage() {
             {/* Map Toggle & Select */}
             <div className="flex">
 
-                {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible, "rounded-r-none")}
+                {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible)}
 
-                <Select>
+                {/* <Select>
                     <SelectTrigger className="w-[180px] rounded-l-none">
                         <SelectValue placeholder="Select Map Type" />
                     </SelectTrigger>
@@ -990,7 +989,7 @@ export default function FlightsPage() {
                         <SelectItem value="cesium">Cesium</SelectItem>
                         <SelectItem value="leaflet">Leaflet</SelectItem>
                     </SelectContent>
-                </Select>
+                </Select> */}
             </div>
         </>
     );
