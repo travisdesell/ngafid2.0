@@ -32,44 +32,70 @@ type ActiveSeries = {
     series: TraceSeries;
 };
 
-// Flight chart color config
-const BASE_FLIGHT_COLORS = [
-    "var(--chart-hc-1)",
-    "var(--chart-hc-2)",
-    "var(--chart-hc-3)",
-    "var(--chart-hc-4)",
-    "var(--chart-hc-5)",
-    "var(--chart-hc-6)",
-    "var(--chart-hc-7)",
-    "var(--chart-hc-8)",
-    "var(--chart-hc-9)",
-] as const;
 
-const BRIGHTNESS_LEVELS_PER_FLIGHT = 8;
-
-// Hard cap on number of points per series sent to Recharts.
 const MAX_POINTS_PER_SERIES = 1000;
 
-const makeSeriesKeyForChart = (flightId: number, paramName: string): string =>
-    `f${flightId}_${paramName.replace(/[^a-zA-Z0-9]+/g, "_")}`;
+const buildNonHighContrastColor = (flightSlotIndex: number, paramIndex: number): string => {
 
-const buildNonHighContrastColor = (flightIndex: number, paramIndex: number): string => {
+    /*
+        Uses a set of predefined color palettes
+        for up to 4 flights with 5 distinct
+        colors per flights.
 
-    const base = BASE_FLIGHT_COLORS[flightIndex % BASE_FLIGHT_COLORS.length];
-    const level = paramIndex % BRIGHTNESS_LEVELS_PER_FLIGHT;
+        Defaults to pink if out of range.
+    */
 
-    // 0 -> brightest, higher -> darker
-    const WEIGHT_BASE = 100;
-    const WEIGHT_MIN = 0;
-    const WEIGHT_STEP = (WEIGHT_BASE - WEIGHT_MIN) / (BRIGHTNESS_LEVELS_PER_FLIGHT - 1);
-    const weight = WEIGHT_BASE - level * WEIGHT_STEP;
+    const COLORS = [
 
-    // Mix toward background to vary lightness while keeping hue
-    const colorOut = `color-mix(in oklch, ${base} ${weight}%, var(--background))`;
+        // First Flight
+        [
+            "rgba(120, 60, 255)",
+            "rgba(0, 60, 230)",
+            "rgba(30, 120, 215)",
+            "rgba(60, 180, 200)",
+            "rgba(0, 255, 255)",
+        ],
+
+        // Second Flight
+        [
+            "rgba(255, 196, 0)",
+            "rgba(255, 196, 128)",
+            "rgba(230, 128, 0)",
+            "rgba(215, 64, 0)",
+            "rgba(180, 64, 32)",
+        ],
+
+        // Third Flight
+        [
+            "rgba(0, 255, 0)",
+            "rgba(150, 255, 50)",
+            "rgba(200, 255, 150)",
+            "rgba(0, 128, 0)",
+            "rgba(0, 64, 0)",
+        ],
+
+        // Fourth Flight
+        [
+            "rgba(196, 0, 0)",
+            "rgba(255, 0, 0)",
+            "rgba(255, 0, 128)",
+            "rgba(255, 128, 128)",
+            "rgba(255, 128, 255)",
+        ]
+
+    ];
+
+    const COLORS_PER_FLIGHT = COLORS[0].length;
+    const COLOR_DEFAULT = "rgba(255, 0, 255)";
+
+    const colorOut = (COLORS[flightSlotIndex] && COLORS[flightSlotIndex][paramIndex % COLORS_PER_FLIGHT]) || COLOR_DEFAULT;
 
     return colorOut;
 
 };
+
+
+
 
 const buildHighContrastColor = (seriesIndex: number): string => {
 
@@ -82,6 +108,11 @@ const buildHighContrastColor = (seriesIndex: number): string => {
     return colorOut;
 
 };
+
+
+const makeSeriesKeyForChart = (flightId: number, paramName: string): string =>
+    `f${flightId}_${paramName.replace(/[^a-zA-Z0-9]+/g, "_")}`;
+
 
 type ChartModel = {
     loading: boolean;
@@ -110,7 +141,7 @@ const decimateSeries = (series: TraceSeries) => {
     const timestamps = series.timestamps ?? [];
     const values = series.values ?? [];
     const timestampsCount = timestamps.length;
-    
+
     // No timestamps, return empty array
     if (timestampsCount === 0)
         return [] as { t: number; v: number }[];
@@ -124,7 +155,7 @@ const decimateSeries = (series: TraceSeries) => {
         }
 
         return out;
-        
+
     }
 
     const step = Math.ceil(timestampsCount / MAX_POINTS_PER_SERIES);
@@ -158,7 +189,7 @@ const decimateSeries = (series: TraceSeries) => {
 export function FlightsPanelChart() {
 
     const { chartFlights, setChartFlights, chartSelection, chartData, ensureSeries, toggleUniversalParam, togglePerFlightParam } = useFlights();
-    const { useHighContrastCharts } = useTheme();
+    const { useHighContrastCharts, theme } = useTheme();
     const { setModal } = useModal();
 
     const [gotChartFlightAdded, setGotChartFlightAdded] = useState(false);
@@ -249,13 +280,28 @@ export function FlightsPanelChart() {
 
         const config: ChartConfig = {};
 
+
+        // Build a stable 0..N-1 index for *active* flights
+        const flightIdsInOrder = Array.from(
+            new Set(activeSeries.map((entry) => entry.flight.id))
+        );
+        const flightSlotCount = flightIdsInOrder.length || 1;
+
+        const flightSlotIndexById = new Map<number, number>();
+        flightIdsInOrder.forEach((id, idx) => {
+            flightSlotIndexById.set(id, idx);
+        });
+
+
         activeSeries.forEach((entry, seriesIndex) => {
 
-            const { seriesKey, flight, flightIndex, paramName, paramIndex } = entry;
+            const { seriesKey, flight, paramName, paramIndex } = entry;
+
+            const flightSlotIndex = flightSlotIndexById.get(flight.id) ?? 0;
 
             const color = (useHighContrastCharts)
                 ? buildHighContrastColor(seriesIndex)
-                : buildNonHighContrastColor(flightIndex, paramIndex);
+                : buildNonHighContrastColor(flightSlotIndex, paramIndex);
 
             config[seriesKey] = {
                 label: `${flight.id} — ${paramName}`,
@@ -286,7 +332,7 @@ export function FlightsPanelChart() {
                 return;
 
             paramNames.forEach((paramName, paramIndex) => {
-                
+
                 const series = chartData.seriesByFlight[flight.id]?.[paramName];
                 if (!series)
                     return;
@@ -336,8 +382,8 @@ export function FlightsPanelChart() {
                 for (const p of points)
                     timeSet.add(p.t);
 
-            // Otherwise...
-            } else { 
+                // Otherwise...
+            } else {
 
                 const startMS = flightStartMsById.get(flight.id);
 
@@ -605,7 +651,7 @@ export function FlightsPanelChart() {
 
             const pad = (n: number) => n.toString().padStart(2, "0");
 
-            const timeLabel = showSeconds
+            const timeLabel = (showSeconds)
                 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
                 : `${pad(hours)}:${pad(minutes)}`;
 
@@ -866,6 +912,8 @@ export function FlightsPanelChart() {
         type: "line" as const,
     }));
 
+    let legendItemFlightIDPrevious = 0;
+
     return (
         <Card className="border rounded-lg w-full h-full card-glossy relative">
 
@@ -878,15 +926,27 @@ export function FlightsPanelChart() {
                         style={{ top: 52, right: 8 }}
                     >
                         {
-                            legendItems.map((item) => (
-                                <div key={item.id} className="flex items-center gap-2 text-xs">
-                                    <span
-                                        className="inline-block w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: item.color }}
-                                    />
-                                    <span>{item.value}</span>
-                                </div>
-                            ))
+                            legendItems.map((item) => {
+
+                                const labelFlightID = Number((item as any).value.split(" — ")[0]);
+                                const showFlightSeparator = (labelFlightID !== legendItemFlightIDPrevious) && (legendItemFlightIDPrevious !== 0);
+                                legendItemFlightIDPrevious = labelFlightID;
+
+                                return <div className="flex flex-col" key={item.id}>
+                                    {
+                                        (showFlightSeparator)
+                                        &&
+                                        <div className="border-t border-border my-1" />
+                                    }
+                                    <div key={item.id} className="flex items-center gap-2 text-xs">
+                                        <span
+                                            className="inline-block w-3 h-3 rounded-full"
+                                            style={{ backgroundColor: item.color }}
+                                        />
+                                        <span>{item.value}</span>
+                                    </div>
+                                </div>;
+                            })
                         }
                     </div>
                 )
@@ -895,69 +955,69 @@ export function FlightsPanelChart() {
             <AnimatePresence mode="wait" initial={false}>
                 {
                     (noFlights) ? (
-                    renderNoDataMessage()
-                ) : (!hasAnySelectedParams) ? (
-                    renderNoParamsMessage()
-                ) : (chartModel.loading || !chartModel.hasData) ? (
-                    renderLoadingMessage()
-                ) : (
-                    <>
-                        {/* Chart */}
-                        <ResponsiveContainer width="100%" height="100%" className="h-full flex p-4">
-                            <ChartContainer
-                                config={chartModel.config}
-                                className="w-full h-full my-auto"
-                            >
-                                <LineChart
-                                    accessibilityLayer
-                                    data={chartModel.data}
-                                    margin={{
-                                        left: 12,
-                                        right: 12,
-                                    }}
+                        renderNoDataMessage()
+                    ) : (!hasAnySelectedParams) ? (
+                        renderNoParamsMessage()
+                    ) : (chartModel.loading || !chartModel.hasData) ? (
+                        renderLoadingMessage()
+                    ) : (
+                        <>
+                            {/* Chart */}
+                            <ResponsiveContainer width="100%" height="100%" className="h-full flex p-4">
+                                <ChartContainer
+                                    config={chartModel.config}
+                                    className="w-full h-full my-auto"
                                 >
-                                    <CartesianGrid vertical={false} />
-                                    <YAxis
-                                        type="number"
-                                        domain={["auto", "auto"]}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <XAxis
-                                        dataKey="time"
-                                        type="number"
-                                        scale="time"
-                                        domain={["dataMin", "dataMax"]}
-                                        ticks={chartModel.ticks}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        tick={TimeAxisTick}
-                                    />
-                                    <ChartTooltip
-                                        cursor={false}
-                                        content={<ChartTooltipContent labelFormatter={timeLabelFormatter} />}
-                                    />
-                                    {
-                                        chartModel.seriesKeys.map((key) => (
-                                            <Line
-                                                key={key}
-                                                dataKey={key}
-                                                type="linear"
-                                                stroke={`var(--color-${key})`}
-                                                strokeWidth={2}
-                                                dot={false}
-                                                isAnimationActive={false}
-                                            />
-                                        ))
-                                    }
-                                </LineChart>
-                            </ChartContainer>
-                        </ResponsiveContainer>
-                    </>
-                )}
+                                    <LineChart
+                                        accessibilityLayer
+                                        data={chartModel.data}
+                                        margin={{
+                                            left: 12,
+                                            right: 12,
+                                        }}
+                                    >
+                                        <CartesianGrid vertical={false} />
+                                        <YAxis
+                                            type="number"
+                                            domain={["auto", "auto"]}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickMargin={8}
+                                            tick={{ fontSize: 10 }}
+                                        />
+                                        <XAxis
+                                            dataKey="time"
+                                            type="number"
+                                            scale="time"
+                                            domain={["dataMin", "dataMax"]}
+                                            ticks={chartModel.ticks}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickMargin={8}
+                                            tick={TimeAxisTick}
+                                        />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={<ChartTooltipContent labelFormatter={timeLabelFormatter} />}
+                                        />
+                                        {
+                                            chartModel.seriesKeys.map((key) => (
+                                                <Line
+                                                    key={key}
+                                                    dataKey={key}
+                                                    type="linear"
+                                                    stroke={`var(--color-${key})`}
+                                                    strokeWidth={2}
+                                                    dot={false}
+                                                    isAnimationActive={false}
+                                                />
+                                            ))
+                                        }
+                                    </LineChart>
+                                </ChartContainer>
+                            </ResponsiveContainer>
+                        </>
+                    )}
             </AnimatePresence>
 
             {
