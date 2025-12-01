@@ -5,6 +5,7 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { MousePointerClick } from "lucide-react"
 
 function TooltipProvider({
     delayDuration = 0,
@@ -37,10 +38,12 @@ function TooltipTrigger({
 
 function TooltipContent({
     className,
+    leftAction=undefined,
+    rightAction=undefined,
     sideOffset = 0,
     children,
     ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: React.ComponentProps<typeof TooltipPrimitive.Content> & { leftAction?: string; rightAction?: string }) {
     return (
         <TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
@@ -49,14 +52,37 @@ function TooltipContent({
                 className={cn(
                     `
                         bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance
-                        max-w-128
+                        max-w-lg
+                        pointer-events-none
+                        flex flex-col gap-1
                     `,
                     className
                 )}
                 {...props}
             >
                 {children}
-                <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+
+                {/* Left Action */}
+                {
+                    (leftAction)
+                    &&
+                    <div className="opacity-50 flex items-center gap-1">
+                        <MousePointerClick size={16}/>
+                        <span>{leftAction}</span>
+                    </div>
+                }
+
+                {/* Right Action */}
+                {
+                    (rightAction)
+                    &&
+                    <div className="opacity-50 flex items-center gap-1">
+                        <MousePointerClick size={16} className="scale-x-[-1]"/>
+                        <span>{rightAction}</span>
+                    </div>
+                }
+
+                <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px]" />
             </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
     )
