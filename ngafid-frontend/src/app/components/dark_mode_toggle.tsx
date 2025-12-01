@@ -8,6 +8,7 @@ import {
     ContextMenuItem,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Moon, Sun } from 'lucide-react';
 import PingHalfLeft from './pings/ping_half_left';
 import PingHalfRight from './pings/ping_half_right';
@@ -48,10 +49,10 @@ export function DarkModeToggle() {
         if (didOpenContextMenu && !didOpenThemeContextMenuBefore)
             localStorage.setItem("didOpenThemeContextMenu", "true");
     }, [didOpenContextMenu, didOpenThemeContextMenuBefore]);
-    
+
 
     const toggleThemeManual = () => {
-        
+
         // Flag as having toggled the theme at least once
         setDidToggle(true);
 
@@ -61,98 +62,113 @@ export function DarkModeToggle() {
     }
 
     return (
-
         <ContextMenu
-            onOpenChange={()=>setDidOpenContextMenu(true)}
+            onOpenChange={(open) => {
+                if (open)
+                    setDidOpenContextMenu(true);
+            }}
         >
             <ContextMenuTrigger>
-                <button
-                    className="cursor-pointer flex relative"
-                    onClick={toggleThemeManual}
-                >
-                {/* Theme Toggle Icon */}
-                {
-                    (isDarkTheme)
-                    ?
-                    <Sun/>
-                    :
-                    <Moon/>
-                }
+                <Tooltip>
+                    <TooltipTrigger asChild>
 
-                {
-                    (isLoggedIn())
-                    &&
-                    <>
-                        {/* Left Ping (Prompt to toggle theme) */}
-                        {
-                            (!didToggle && !didToggleThemeBefore)
-                            &&
-                            <PingHalfLeft/>
-                        }
+                        <button
+                            className="cursor-pointer flex relative"
+                            onClick={toggleThemeManual}
+                        >
 
-                        {/* Right Ping (Prompt to open theme context window) */}
-                        {
-                            (!didOpenContextMenu && !didOpenThemeContextMenuBefore)
-                            &&
-                            <PingHalfRight/>
-                        }
-                    </>
-                }
+                            {/* Theme Toggle Icon */}
+                            {
+                                (isDarkTheme)
+                                    ? <Sun />
+                                    : <Moon />
+                            }
 
-                </button>
+                            {
+                                isLoggedIn()
+                                &&
+                                <>
+                                    {/* Left Ping (Prompt to toggle theme) */}
+                                    {
+                                        (!didToggle && !didToggleThemeBefore)
+                                        &&
+                                        <PingHalfLeft />
+                                    }
+
+                                    {/* Right Ping (Prompt to open theme context window) */}
+                                    {
+                                        (!didOpenContextMenu && !didOpenThemeContextMenuBefore)
+                                        &&
+                                        <PingHalfRight />
+                                    }
+                                </>
+                            }
+                        </button>
+
+                    </TooltipTrigger>
+
+                    <TooltipContent
+                        leftAction="Toggle Dark/Light Theme"
+                        rightAction="Open Theme Options"
+                    >
+                        Global Theme Options
+                    </TooltipContent>
+                </Tooltip>
             </ContextMenuTrigger>
 
-        {
-            (isLoggedIn())
-            &&
-            <ContextMenuContent className='p-0! min-w-[260px]'>
+            {
+                isLoggedIn()
+                &&
+                <ContextMenuContent className="p-0! min-w-[260px]">
+                    
+                    {/* Toggle Theme */}
+                    <ContextMenuItem className="p-3" onClick={toggleThemeManual}>
+                        Switch to {isDarkTheme ? "Light" : "Dark"} Theme
+                    </ContextMenuItem>
+                    <Separator />
 
+                    {/* Toggle High Contrast Charts */}
+                    <ContextMenuItem
+                        className="p-3"
+                        onClick={() => setUseHighContrastCharts(!useHighContrastCharts)}
+                    >
+                        Use High Contrast Charts
+                        <Checkbox
+                            checked={useHighContrastCharts}
+                            className="ml-auto pointer-events-none"
+                        />
+                    </ContextMenuItem>
+                    <Separator />
 
-                {/* Toggle Theme */}
-                <ContextMenuItem
-                    className='p-3'
-                    onClick={toggleThemeManual}
-                >
-                    Switch to {isDarkTheme ? "Light" : "Dark"} Theme
-                </ContextMenuItem>
-                <Separator />
+                    {/* Toggle Background Image */}
+                    <ContextMenuItem
+                        className="p-3"
+                        onClick={() => setUseBackgroundImage(!useBackgroundImage)}
+                    >
+                        Use Background Image
+                        <Checkbox
+                            checked={useBackgroundImage}
+                            className="ml-auto pointer-events-none"
+                        />
+                    </ContextMenuItem>
+                    <Separator />
 
+                    {/* Toggle Navbar Page Names */}
+                    <ContextMenuItem
+                        className="p-3"
+                        onClick={() => setUseNavbarPageNames(!useNavbarPageNames)}
+                    >
+                        Show Navbar Page Names
+                        <Checkbox
+                            checked={useNavbarPageNames}
+                            className="ml-auto pointer-events-none"
+                        />
+                    </ContextMenuItem>
 
-                {/* Toggle High Contrast Charts */}
-                <ContextMenuItem
-                    className='p-3'
-                    onClick={() => setUseHighContrastCharts(!useHighContrastCharts)}
-                >
-                    Use High Contrast Charts
-                    <Checkbox checked={useHighContrastCharts} className="ml-auto pointer-events-none"/>
-                </ContextMenuItem>
-                <Separator />
+                </ContextMenuContent>
+            }
 
-
-                {/* Toggle Background Image */}
-                <ContextMenuItem
-                    className='p-3'
-                    onClick={() => setUseBackgroundImage(!useBackgroundImage)}
-                >
-                    Use Background Image
-                    <Checkbox checked={useBackgroundImage} className="ml-auto pointer-events-none"/>
-                </ContextMenuItem>
-                <Separator />
-                
-
-                {/* Toggle Navbar Page Names */}
-                <ContextMenuItem
-                    className='p-3'
-                    onClick={() => setUseNavbarPageNames(!useNavbarPageNames)}
-                >
-                    Show Navbar Page Names
-                    <Checkbox checked={useNavbarPageNames} className="ml-auto pointer-events-none"/>
-                </ContextMenuItem>
-
-
-            </ContextMenuContent>
-        }
-    </ContextMenu>
+        </ContextMenu>
     );
-    
+
 }
