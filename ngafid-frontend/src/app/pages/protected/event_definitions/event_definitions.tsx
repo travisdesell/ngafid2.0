@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchJson } from "@/fetchJson";
-import { useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { EventDefinitions } from "src/types";
 
 
@@ -32,6 +32,59 @@ const isUnknownAirframe = (airframeName: string) => /^Unknown Airframe \((\d+)\)
 const unknownIndex = (airframeName: string) => {
     const airframeIsUnknown = airframeName.match(/^Unknown Airframe \((\d+)\)$/);
     return airframeIsUnknown ? parseInt(airframeIsUnknown[1], 10) : Number.POSITIVE_INFINITY;
+};
+
+
+
+const Highlight = ({ text, query }: { text: string; query: string }) => {
+
+    const trimmed = query.trim();
+
+    // No query -> Raw text
+    if (!trimmed)
+        return <>{text}</>;
+
+    const lowerText = text.toLowerCase();
+    const lowerQuery = trimmed.toLowerCase();
+
+    const parts: ReactNode[] = [];
+    let start = 0;
+
+    // Find all occurrences of query in text (case-insensitive)
+    while (true) {
+
+        const index = lowerText.indexOf(lowerQuery, start);
+
+        // No match found, add remaining text and break
+        if (index === -1) {
+
+            if (start < text.length)
+                parts.push(text.slice(start));
+
+            break;
+
+        }
+
+        // Text precedes the matched part, add it without highlight
+        if (index > start)
+            parts.push(text.slice(start, index));
+
+        // Highlight the matched part
+        const match = text.slice(index, index + trimmed.length);
+        parts.push(
+            <mark key={parts.length}>
+                {match}
+            </mark>
+        );
+
+        // Move start index past the matched part
+        start = (index + trimmed.length);
+
+    }
+
+    // Output all parts
+    return <>{parts}</>;
+
 };
 
 
@@ -256,12 +309,12 @@ export default function EventDefinitionsPage() {
 
                                                         {/* Event Name */}
                                                         <TableCell className="font-medium">
-                                                            {row.eventName}
+                                                            <Highlight text={row.eventName} query={filterText} />
                                                         </TableCell>
 
                                                         {/* Event Description */}
                                                         <TableCell className="font-normal">
-                                                            {row.description}
+                                                            <Highlight text={row.description} query={filterText} />
                                                         </TableCell>
 
                                                     </TableRow>
@@ -295,7 +348,7 @@ export default function EventDefinitionsPage() {
 
                                                             {/* Event Name */}
                                                             <TableCell style={{ paddingTop }} className="font-bold">
-                                                                {row.eventName}
+                                                                <Highlight text={row.eventName} query={filterText} />
                                                             </TableCell>
 
                                                             {/* Airframe Name */}
@@ -303,15 +356,19 @@ export default function EventDefinitionsPage() {
                                                                 {
                                                                     (currentAirframeUnknown)
                                                                     ?
-                                                                    <i className="opacity-50">{row.airframe}</i>
+                                                                    <i className="opacity-50">
+                                                                        <Highlight text={row.airframe} query={filterText} />
+                                                                    </i>
                                                                     :
-                                                                    <span className="font-bold">{row.airframe}</span>
+                                                                    <span className="font-bold">
+                                                                        <Highlight text={row.airframe} query={filterText} />
+                                                                    </span>
                                                                 }
                                                             </TableCell>
 
                                                             {/* Event Description */}
                                                             <TableCell style={{ paddingTop }} className="font-normal">
-                                                                {row.description}
+                                                                <Highlight text={row.description} query={filterText} />
                                                             </TableCell>
 
                                                         </TableRow>
