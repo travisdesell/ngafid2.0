@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchJson } from "@/fetchJson";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { EventDefinitions } from "src/types";
 
 
@@ -90,6 +90,8 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
 
 export default function EventDefinitionsPage() {
 
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
+
     useEffect(() => {
         document.title = `NGAFID — Definitions`;
     });
@@ -137,6 +139,49 @@ export default function EventDefinitionsPage() {
         return out;
 
     }, [descriptions, filterText]);
+
+
+    useEffect(() => {
+
+        /*
+            Focus search input on Ctrl+F / Cmd+F
+        */
+
+        const onKeyDown = (e: KeyboardEvent) => {
+
+            // Got Ctrl/Cmd + F
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+
+                const target = (e.target as HTMLElement | null);
+
+                // Already typing in an input / textarea / contenteditable, exit
+                if ((target) &&
+                    (
+                        target.tagName === "INPUT"
+                        || target.tagName === "TEXTAREA"
+                        || target.isContentEditable
+                    ))
+                    return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Search input not mounted yet, exit
+                if (!searchInputRef.current)
+                    return;
+
+                searchInputRef.current.focus();
+                searchInputRef.current.select();
+
+            }
+
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+
+    }, []);
+
 
     useEffect(() => {
 
@@ -384,8 +429,9 @@ export default function EventDefinitionsPage() {
                     </Card>
 
                     <Input
+                        ref={searchInputRef}
                         className="bg-background w-full shrink-0"
-                        placeholder="Search event definitions..."
+                        placeholder="Search event definitions... (Ctrl+F / Cmd+F)"
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                     />
