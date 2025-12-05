@@ -1,3 +1,4 @@
+// ngafid-frontend/src/app/lib/useEffectPrev.ts
 import { useEffect, useRef } from "react";
 
 /*
@@ -10,6 +11,12 @@ export function useEffectPrev<T>(value: T, effect: (prev: T | undefined) => void
 
     const hasMounted = useRef(false);
     const prevRef = useRef<T | undefined>(undefined);
+    const effectRef = useRef(effect);
+
+    // Update effect ref on each render
+    useEffect(() => {
+        effectRef.current = effect;
+    }, [effect]);
 
     useEffect(() => {
 
@@ -17,8 +24,7 @@ export function useEffectPrev<T>(value: T, effect: (prev: T | undefined) => void
             ? prevRef.current
             : undefined;
 
-        effect(prev);
-
+        effectRef.current(prev);
         hasMounted.current = true;
         prevRef.current = value;
 
