@@ -14,7 +14,6 @@ import type { FlightFilter } from "@/components/providers/flight_filters_provide
 import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import '@/index.css';
 import { Filter } from '@/pages/protected/flights/_filters/types';
 import { AlertCircleIcon, Check, ClipboardCopy, Pencil, Trash, X } from 'lucide-react';
 import type { ModalData, ModalProps } from "../types";

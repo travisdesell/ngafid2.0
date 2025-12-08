@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { fetchJson } from '@/fetchJson';
-import '@/index.css';
 import { Link, Pencil, Plus, Tag, Trash, Unlink, X } from 'lucide-react';
 import { JSX, useEffect, useState } from 'react';
 import type { ModalData, ModalProps } from "./types";

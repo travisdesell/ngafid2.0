@@ -9,7 +9,6 @@ import React, { useCallback } from "react";
 import SuccessModal from "@/components/modals/success_modal";
 import { getLogger } from "@/components/providers/logger";
 import { fetchJson } from "@/fetchJson";
-import '@/index.css';
 import { AlertCircleIcon, Loader2Icon, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import ErrorModal from './error_modal';

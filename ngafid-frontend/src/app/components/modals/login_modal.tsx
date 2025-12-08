@@ -8,7 +8,6 @@ import React, { useCallback } from "react";
 
 import ForgotPasswordModal from "@/components/modals/forgot_password_modal";
 import { getLogger } from "@/components/providers/logger";
-import '@/index.css';
 import { openRoute } from '@/lib/route_utils';
 import { AlertCircleIcon, Loader2Icon, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';

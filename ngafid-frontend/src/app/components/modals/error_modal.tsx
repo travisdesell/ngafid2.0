@@ -4,12 +4,11 @@ import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader,
 import { motion } from "motion/react";
 
 import BugReportModal from '@/components/modals/bug_report_modal';
+import { useModal } from '@/components/modals/modal_context';
 import { useAuth } from '@/components/providers/auth_provider';
 import { getLogger } from "@/components/providers/logger";
-import '@/index.css';
 import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
-import { useModal } from '@/components/modals/modal_context';
 
 
 const log = getLogger("ErrorModal", "black", "Modal");

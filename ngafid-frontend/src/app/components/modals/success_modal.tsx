@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 
 import { useModal } from '@/components/modals/modal_context';
 import { getLogger } from "@/components/providers/logger";
-import '@/index.css';
 import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 

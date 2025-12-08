@@ -11,7 +11,6 @@ import type { FlightFilter } from "@/components/providers/flight_filters_provide
 import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import '@/index.css';
 import { FilterGroup } from '@/pages/protected/flights/_filters/types';
 import { AlertCircleIcon, X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
