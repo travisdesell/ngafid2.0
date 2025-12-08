@@ -204,9 +204,9 @@ export default function BugReportModal({ data }: Props) {
                             id="bug-include-email"
                             type="checkbox"
                             className="h-6 w-fit! aspect-square"
-                            checked={includeEmail}
+                            checked={includeEmail && Boolean(userEmail)}
                             onChange={(e) => setIncludeEmail(e.target.checked)}
-                            disabled={submitting}
+                            disabled={submitting || !userEmail}
                         />
                     </Field>
 
