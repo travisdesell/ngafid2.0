@@ -1,5 +1,8 @@
 // ngafoid-frontend/src/app/components/providers/system_ids_provider/system_ids_provider.tsx
 
+import ErrorModal from "@/components/modals/error_modal";
+import { useModal } from "@/components/modals/modal_context";
+import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { fetchJson } from "@/fetchJson";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -27,22 +30,33 @@ export const SystemIdsProviderContext = createContext<SystemIdsProviderState>(in
 
 export function SystemIdsProvider({ children }: { children: React.ReactNode }) {
 
+    const { isLoggedIn } = useAuth();
+    const { setModal } = useModal();
     const [systemIds, setSystemIds] = useState<string[]>([]);
 
     // Fetch system IDs from API on mount
     useEffect(() => {
 
         const fetchSystemIds = async () => {
+
             try {
+
                 const response = await fetchJson.get<SystemIDResponseItem[]>("/api/aircraft/system-id");
                 log("Fetched system IDs:", response);
                 setSystemIds(response.map(item => item.systemId));
+
             } catch (error) {
-                log("Error fetching system IDs:", error);
+
+                const e = (error as Error);
+                setModal(ErrorModal, { title: "Failed to fetch System IDs", message: "", code: e.toString() });
+
             }
+
         };
 
-        fetchSystemIds();
+        // Logged in, fetch system IDs
+        if (isLoggedIn())
+            fetchSystemIds();
 
     }, []);
 
