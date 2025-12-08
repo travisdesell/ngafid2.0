@@ -1,5 +1,6 @@
 // ngafid-frontend/src/app/components/providers/tags/tags_provider.tsx
 
+import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { fetchJson } from "@/fetchJson";
 import { createContext, useContext, useEffect, useState, useTransition } from "react";
@@ -51,6 +52,7 @@ export const TagsProviderContext = createContext<TagsProviderState>(initialState
 
 export function TagsProvider({ children }: { children: React.ReactNode }) {
 
+    const { isLoggedIn } = useAuth();
     const [fleetTags, setFleetTags] = useState<TagData[]>([]);
     const [isFetchingTags, startTransition] = useTransition();
 
@@ -101,8 +103,10 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
             setFleetTags(response);
 
         }
-
-        fetchFleetTags();
+        
+        // Logged in, fetch fleet tags
+        if (isLoggedIn())
+            fetchFleetTags();
 
     }, []);
 
@@ -233,6 +237,11 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useTags = () => {
+
+    const { isLoggedIn } = useAuth();
+    if (!isLoggedIn())
+        throw new Error("useTags must be used when logged in");
+
     const context = useContext(TagsProviderContext);
     if (!context)
         throw new Error("useTags must be used within a TagsProvider");
