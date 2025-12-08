@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchJson } from "@/fetchJson";
+import { Loader2 } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { EventDefinitions } from "src/types";
 
@@ -72,7 +73,7 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
         // Highlight the matched part
         const match = text.slice(index, index + trimmed.length);
         parts.push(
-            <mark key={parts.length}>
+            <mark key={parts.length} className="dark:bg-yellow-500">
                 {match}
             </mark>
         );
@@ -321,7 +322,7 @@ export default function EventDefinitionsPage() {
 
         return (
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="max-w-[1280px] w-full mx-auto flex flex-col p-4 flex-1 min-h-0 gap-2">
+                <div className="max-w-7xl w-full mx-auto flex flex-col p-4 flex-1 min-h-0 gap-2">
                     <Card className="card-glossy flex-1 min-h-0 overflow-hidden flex flex-col">
 
                         <CardHeader className="shrink-0">
@@ -333,7 +334,7 @@ export default function EventDefinitionsPage() {
                             {
                                 (loading)
                                 ?
-                                <p>Loading event definitions...</p>
+                                <Loader2 size={128} className="animate-spin mr-2 text-gray-500 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                                 :
                                 <>
                                     {/* Generic Entries */}
