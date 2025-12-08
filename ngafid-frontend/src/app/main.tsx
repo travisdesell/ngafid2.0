@@ -243,9 +243,9 @@ type ProviderEntry<P = any> =
 const providerTree: ProviderEntry[] = [
     [ThemeProvider, { defaultTheme: "dark", storageKey: "theme" }],
     [TooltipProvider, {}],
-    [TagsProvider, {}],
     [ModalProvider, {}],
     [AuthProvider, {}],
+    [TagsProvider, {}],
     [AirframesProvider, {}],
     [SystemIdsProvider, {}],
     [TimeHeaderProvider, {}],
