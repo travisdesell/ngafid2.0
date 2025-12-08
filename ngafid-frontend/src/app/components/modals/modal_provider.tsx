@@ -3,56 +3,48 @@ import { ErrorBoundary } from "@/components/error_boundary";
 import ErrorModal from "@/components/modals/error_modal";
 import { getLogger } from "@/components/providers/logger";
 import { AnimatePresence, motion } from "motion/react";
-import React from "react";
+import React, { useCallback, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
-import { ModalComponent, ModalData, SetModalFn } from "./types";
+import { getModalSnapshot, subscribeModal } from "./modal_store";
+import { SetModalFn } from "./types";
 
 const log = getLogger("ModalProvider", "green", "Provider");
 
 import { ModalContext, useModal } from "@/components/modals/modal_context";
+import { closeModal, openModal } from "./modal_store";
 
 export function ModalProvider({ children }: { children: React.ReactNode }) {
 
-    const [modalType, setModalType] = React.useState<ModalComponent | undefined>();
-    const [modalData, setModalData] = React.useState<ModalData | undefined>();
-    const [modalOnClose, setModalOnClose] = React.useState<((data?: any) => void) | undefined>(undefined);
+    const location = useLocation();
 
-    const onCloseRef = React.useRef<((data?: any) => void) | undefined>(undefined);
-    React.useEffect(() => { onCloseRef.current = modalOnClose }, [modalOnClose]);
 
-    const close = React.useCallback(() => {
+    const close = useCallback(() => {
 
         log("Closing modal...");
+        closeModal();
 
-        onCloseRef.current?.();
-
-        setModalType(undefined);
-        setModalData(undefined);
-        setModalOnClose(undefined);
     }, []);
 
-    const setModal = React.useCallback<SetModalFn>((component, data, onClose) => {
+
+    const setModal = useCallback<SetModalFn>((component, data, onClose) => {
 
         log("Setting modal...");
 
-        // No component is provided, close the modal
+        // No component -> close
         if (!component) {
-            log("No component provided, closing modal.");
             close();
             return;
         }
-        
-        /* @ts-ignore */
-        setModalType(() => component);
-        setModalOnClose(() => onClose);
-        setModalData(data ?? {});
+
+        openModal(component, data, onClose);
 
     }, [close]);
 
 
     /*
         ErrorBoundary handler that opens ErrorModal
+        using the global modal store.
     */
     const handleBoundaryError = React.useCallback((error: Error, info: React.ErrorInfo) => {
 
@@ -70,79 +62,87 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 
     }, [setModal]);
 
+
     /*
-        Close the modal on Escape key press
+        Close modal on Escape key.
     */
-    React.useEffect(() => {
+    useEffect(() => {
 
         function onKeyDown(e: KeyboardEvent) {
-            if (e.key === "Escape" && modalType)
-                close();
+
+            if (e.key === "Escape")
+                closeModal();
+
         }
 
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
 
-    }, [modalType, close]);
+    }, []);
 
 
     /*
-        Automatically close the modal on route/URL change
-        so modals don't persist between pages.
-
-        Shouldn't trigger when it's just the hash that
-        changes.
+        Close modal on route/URL change.
     */
-    const location = useLocation();
-    React.useEffect(() => {
-
-        if (modalType)
-            close();
+    useEffect(() => {
+        
+        closeModal();
 
     }, [location.pathname, location.search]);
 
-    const value = React.useMemo(
-        () => ({ modalType, modalData, setModal, close, onClose: modalOnClose }),
-        [modalType, modalData, setModal, close, modalOnClose]
-    );
+
+    const value = React.useMemo(() => ({
+        modalType: undefined,
+        modalData: undefined,
+        onClose: undefined,
+        setModal,
+        close,
+    }), [setModal, close]);
 
     return (
         <ModalContext.Provider value={value}>
             <ErrorBoundary onError={handleBoundaryError}>
                 {children}
             </ErrorBoundary>
-            {/* <ModalRoot /> */}
         </ModalContext.Provider>
     );
+
 }
+
 
 
 export function ModalOutlet() {
 
-    const {
-        modalType: Component,
-        modalData,
-        setModal
-    } = useModal();
-    const modalKey = Component?.__modalKey ?? Component?.displayName ?? Component?.name ?? "modal";
+    const { setModal } = useModal();
+    const { modalType: Component, modalData } = useSyncExternalStore(
+        subscribeModal,
+        getModalSnapshot,
+        getModalSnapshot,
+    );
+
+    const modalKey = (Component?.__modalKey)
+        ?? (Component?.displayName)
+        ?? (Component?.name)
+        ?? "modal";
 
     return createPortal(
         <AnimatePresence mode="wait">
             {
-                Component && (
-                    <motion.div
-                        key={modalKey}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-black/75 w-screen h-screen"
-                        tabIndex={-1}
-                    >
-                        <Component data={modalData} setModal={setModal} />
-                    </motion.div>
-                )
+                (Component)
+                &&
+                <motion.div
+                    key={modalKey}
+                    initial={{ opacity: 0.25 }}
+                    animate={{ opacity: 1.00 }}
+                    exit={{ opacity: 0.00 }}
+                    className="fixed inset-0 z-50 bg-black/75 w-screen h-screen"
+                    tabIndex={-1}
+                >
+                    <Component data={modalData} setModal={setModal} />
+                </motion.div>
             }
         </AnimatePresence>,
         document.body
     );
+
 }
