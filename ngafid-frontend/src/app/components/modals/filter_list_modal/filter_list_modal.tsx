@@ -66,7 +66,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             <div className="font-medium truncate select-all">{filter.name}</div>
 
             {/* Filter Delete Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button
                         variant="ghostDestructive"
@@ -88,7 +88,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             </Tooltip>
 
             {/* Copy Filter URL Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button
                         variant="ghost"
@@ -104,7 +104,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             </Tooltip>
 
             {/* Filter Edit Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="aspect-square" onClick={() => setModal(FilterEditModal, {saveFilter, colorIn: filter.color, nameIn: filter.name})}>
                         <Pencil size={16} />
@@ -116,7 +116,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             </Tooltip>
 
             {/* Filter Apply Button */}
-            <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="aspect-square" onClick={applyFilter}>
                         <Check size={16} />
