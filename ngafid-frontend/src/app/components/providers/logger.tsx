@@ -39,6 +39,10 @@ export type Logger = ((message: string, ...args: any[]) => void) & {
 const emit = (level: LogLevel, prefix: string, badge: string) =>
     (message: string, ...args: any[]) => {
 
+        // Logger globally disabled, exit
+        if (!window.useLogger)
+            return;
+
         // Generate label string
         const label = `%c${prefix}%c ${message}`;
 
@@ -232,3 +236,39 @@ const resolveCSSVarsInString = (value: string): string => {
     });
 
 };
+
+
+
+
+/*
+    Functions to enable/disable the
+    logger globally.
+
+    e.g., to disable all logging,
+    use 'DL()' in the browser console.
+*/
+declare global {
+    interface Window {
+        useLogger: boolean;
+        EL: () => string;
+        DL: () => string;
+        TL: () => void;
+    }
+}
+
+window.useLogger = true;
+window.EL = () => {
+    window.useLogger = true;
+    return "Logger Enabled ✅";
+}
+window.DL = () => {
+    window.useLogger = false;
+    return "Logger Disabled ❌";
+}
+window.TL = () => {
+
+    if (window.useLogger) 
+        window.DL();
+    else 
+        window.EL();
+}
