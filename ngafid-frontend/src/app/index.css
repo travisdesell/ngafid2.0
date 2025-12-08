@@ -35,6 +35,41 @@
         @apply p-4;
     }
 
+
+    /* Scrollbar Styling */
+    .scrollbar-hover {
+
+        /*
+            Hide the scrollbar by default.
+        */
+
+        scrollbar-width: none;        /* <-- Firefox */
+        -ms-overflow-style: none;     /* <-- IE/Edge */
+
+    }
+
+    .scrollbar-hover::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
+
+    .group:hover .scrollbar-hover {
+
+        /*
+            When a parent '.group' is hovered,
+            show the scrollbar.
+        */
+
+        scrollbar-width: thin;        /* <-- Firefox */
+    }
+
+    .group:hover .scrollbar-hover::-webkit-scrollbar {
+
+        width: 8px;
+        height: 8px;
+        
+    }
+
 }
 
 /* Hide default arrows for number input elements */
