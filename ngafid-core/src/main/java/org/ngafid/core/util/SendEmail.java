@@ -354,24 +354,16 @@ public enum SendEmail {
 
     public static void main(String[] args) {
 
-        /*
-         *
-         * // Recipient's email ID needs to be mentioned.
-         *
-         * ArrayList<String> recipients = new ArrayList<String>();
-         * recipients.add("apl1341@rit.edu");
-         * recipients.add("aidan@labellahome.org");
-         *
-         * ArrayList<String> bccRecipients = new ArrayList<String>();
-         *
-         * // New email system does not support having no Email Type specified,
-         * // so this won't work unless a test Email Type is added.
-         *
-         * // sendEmail(recipients, bccRecipients, "test NGAFID email",
-         * "testing testing 123", EmailType.TEST_EMAIL_TYPE);
-         *
-         */
+         // Recipient's email ID needs to be mentioned.
+         ArrayList<String> recipients = new ArrayList<String>();
+         recipients.add("travis.desell@gmail.com");
 
+         ArrayList<String> bccRecipients = new ArrayList<String>();
+
+         // New email system does not support having no Email Type specified,
+         // so this won't work unless a test Email Type is added.
+
+         sendEmail(recipients, bccRecipients, "test NGAFID email", "testing testing 123", EmailType.UPLOAD_PROCESS_START);
     }
 
     private static class SMTPAuthenticator extends javax.mail.Authenticator {

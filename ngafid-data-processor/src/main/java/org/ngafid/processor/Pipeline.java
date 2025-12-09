@@ -237,6 +237,7 @@ public class Pipeline implements AutoCloseable {
                     handle.join();
                     break;
                 } catch (InterruptedException e) {
+		    e.printStackTrace();
                 }
             }
         }

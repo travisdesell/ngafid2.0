@@ -48,20 +48,21 @@ services:
       kafka:
         condition: service_started
 
-  # # Reads emails from email kafka topic and sends them using the supplied credentials
-  # # ngafid-email-consumer:
-  # #   build:
-  # #     context: .
-  # #     dockerfile: ngafid-core/Dockerfile.email
-  # #   restart: always
-  # #   <<: *ngafid-service-common
+  # Reads emails from email kafka topic and sends them using the supplied credentials
+  ngafid-email-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-core/Dockerfile.email
+    restart: unless-stopped
+    <<: *ngafid-service-common
 
-  # # AirSync sync daemon
+  # Our airsync API implementation is fully out of date, this shouldn't be used until it is fixed / rewritten.
+  # AirSync sync daemon
   # ngafid-airsync-importer:
   #   build:
   #     context: .
   #     dockerfile: ngafid-airsync/Dockerfile
-  #   restart: always
+  #   restart: unless-stopped
   #   <<: *ngafid-service-common
 
   # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
@@ -71,8 +72,8 @@ services:
       dockerfile: ngafid-data-processor/Dockerfile
     deploy:
       mode: replicated
-      replicas: 1
-    restart: always
+      replicas: 3
+    restart: unless-stopped
     <<: *ngafid-service-common
 
   # Webserver
@@ -82,6 +83,7 @@ services:
       dockerfile: ngafid-www/Dockerfile
     ports:
       - "8181:8181"
+    restart: unless-stopped
     <<: *ngafid-service-common
 
   # # Event Consumer: reads from event topic and computes the events
@@ -89,6 +91,7 @@ services:
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-consumer
+    restart: unless-stopped
     <<: *ngafid-service-common
 
   # # Event Observer: scans database for events that have not been computed, and computes them.
@@ -97,6 +100,7 @@ services:
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-observer
+    restart: unless-stopped
     <<: *ngafid-service-common
 
 
@@ -104,6 +108,7 @@ services:
     image: apache/kafka
     ports:
       - "9092:9092"
+    restart: unless-stopped
     environment:
       # Configure listeners for both docker and host communication
       KAFKA_LISTENERS: CONTROLLER://localhost:9091,HOST://0.0.0.0:9092,DOCKER://0.0.0.0:9093
@@ -121,3 +126,8 @@ services:
 
       # Required for a single node cluster
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # For persistence
+      KAFKA_LOG_DIRS: $CONTAINER_LOG_DIRS
+    volumes:
+      - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
