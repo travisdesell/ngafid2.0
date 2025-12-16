@@ -124,6 +124,8 @@ export default function Status() {
                     const BASE_URL = `/api/status/`;
                     const targetURL = `${BASE_URL}${encodeURIComponent(name)}`;
 
+                    log("Fetching status for ", name, "from", targetURL);
+
                     const res = await fetch(targetURL, {
                         method: "GET",
                         headers: { Accept: "application/json" },
