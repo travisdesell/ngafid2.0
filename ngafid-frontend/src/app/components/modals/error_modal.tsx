@@ -17,7 +17,7 @@ const log = getLogger("ErrorModal", "black", "Modal");
 export type ModalDataError = ModalData & {
     title: string;
     message: string;
-    code?: string;
+    code?: string|object;
     allowReport?: boolean;
 };
 
@@ -27,20 +27,33 @@ export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
     const { title, message, code, allowReport=true } = (data as ModalDataError) ?? {};
     const { user } = useAuth();
 
+    let codeString: string|undefined;
+    
+    // 'Code' is an object, convert to string
+    if (code && typeof code !== "string") {
+
+        try {
+            codeString = JSON.stringify(code, null, 2);
+        } catch (e) {
+            codeString = String(code);
+        }
+
+    }
+
     // No 'code' provided, log without it
     if (!code)
         log.error(`Rendering with title: '%c${title}%c' and message: '%c${message}%c'`, "color: aqua;", "", "color: aqua;", "");
 
     // 'code' provided, include it in log
     else 
-        log.error(`Rendering with title: '%c${title}%c', message: '%c${message}%c' and code: '%c${code}%c'`, "color: aqua;", "", "color: aqua;", "", "color: aquamarine;", "");
+        log.error(`Rendering with title: '%c${title}%c', message: '%c${message}%c' and code: '%c${codeString}%c'`, "color: aqua;", "", "color: aqua;", "", "color: aquamarine;", "");
 
 
     const openBugReportFromError = () => {
 
         let reportDescription = message;
-        if (code)
-            reportDescription += `\n\n${code}`;
+        if (codeString)
+            reportDescription += `\n\n${codeString}`;
 
         log("Opening Bug Report Modal...");
 
@@ -89,10 +102,10 @@ export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
 
                     {/* Code Section */}
                     {
-                        (code && code.length > 0)
+                        (codeString && codeString.length > 0)
                         &&
-                        <pre className="bg-background border-1 p-4 rounded-md overflow-x-auto select-all w-full">
-                            <code>{code as string}</code>
+                        <pre className="bg-background border p-4 rounded-md overflow-x-auto select-all w-full">
+                            <code>{codeString}</code>
                         </pre>
                     }
 
