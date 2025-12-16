@@ -10,10 +10,12 @@ import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import FlightRowFlightIDButton from "@/pages/protected/flights/_flight_row/flight_row_flight_id_button";
 import FlightRowTagBadge from "@/pages/protected/flights/_flight_row/flight_row_tag_badge";
-import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { useFlightsChart } from "@/pages/protected/flights/_flights_context_chart";
+import { useFlightsSearchFilter } from "@/pages/protected/flights/_flights_context_search_filter";
 import { addFlightToChart } from "@/pages/protected/flights/chart_data";
 import { type Flight } from "@/pages/protected/flights/types";
-import { Calendar, ChartArea, Check, Clock, Dot, Download, Globe2, Map, MapPinned, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
+import { Calendar, Check, Clock, Dot, Download, List, Loader2, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
+import { memo, useEffect, useState } from "react";
 
 
 
@@ -38,11 +40,34 @@ function FlightRowSection({children, className}: {children: React.ReactNode, cla
 
 }
 
-
-export default function FlightRow({ flight }: { flight: Flight }) {
+function FlightRowInner({ flight }: { flight: Flight }) {
 
     const { setModal } = useModal();
-    const { updateFlightTags, fetchFlightsWithFilter, filter, filterSearched, chartFlights, setChartFlights } = useFlights();
+    const { updateFlightTags } = useFlightsSearchFilter();
+    const { chartFlights, setChartFlights, selectedIds } = useFlightsChart();
+    const [optimisticSelected, setOptimisticSelected] = useState<null | boolean>(null);
+    const [isSelecting, setIsSelecting] = useState(false);
+
+    // Actual selection flag from the shared chart state
+    const flightIsSelected = selectedIds.has(flight.id);
+
+    // Display selection state based on optimistic and actual selection
+    const isSelectedVisual = (optimisticSelected ?? flightIsSelected);
+
+    useEffect(() => {
+
+        // No override, do nothing
+        if (optimisticSelected === null)
+            return;
+
+        // Shared selection matches the override, clear flag
+        if (flightIsSelected === optimisticSelected) {
+            setOptimisticSelected(null);
+            setIsSelecting(false);
+        }
+        
+    }, [flightIsSelected, optimisticSelected]);
+
 
     const renderFlightMainDetails = () => {
 
@@ -294,12 +319,20 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
         const flightInChartFlights = chartFlights.some((f: { id: number; }) => f.id === flight.id);
 
-        const toggleFlightInChartFlights = () => {
+        const toggleFlightInChartFlights = async () => {
+
+            // Already selecting, exit
+            if (isSelecting)
+                return;
+
+            const currentlySelected = (isSelectedVisual);
 
             log(`Toggling flight with ID ${flight.id} in chart flights.`);
 
             // Flight already selected, remove it
-            if (flightInChartFlights) {
+            if (currentlySelected) {
+
+                setOptimisticSelected(false);
 
                 setChartFlights(chartFlights.filter((f) => f.id !== flight.id));
                 log(`Removed flight with ID ${flight.id} from chart flights.`);
@@ -308,8 +341,19 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
             }
 
-            // Otherwise, add it using the shared helper
-            addFlightToChart(flight, setChartFlights).catch((error) => {
+            // Otherwise, add optimistically, then attempt to fetch the trace names
+            setOptimisticSelected(true);
+            setIsSelecting(true);
+
+            try {
+
+                await addFlightToChart(flight, setChartFlights);
+
+            } catch (error: any) {
+
+                // Roll back optimistic selection on failure
+                setOptimisticSelected(false);
+                setIsSelecting(false);
 
                 setModal(ErrorModal, {
                     title: "Error Fetching Trace Names",
@@ -317,57 +361,54 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                     code: error?.toString?.() ?? String(error),
                 });
 
-            });
+            }
 
         };
 
-        return <div className="grid row-span-3 grid-cols-3 min-w-32 gap-1 gap-x-2 my-auto" data-fit>
+        const showSelected = isSelectedVisual;
+        const isDisabled = isSelecting;
 
-            {/* Chart Button */}
+        return <div className="grid row-span-1 grid-cols-1 min-w-32 gap-1 my-auto" data-fit>
+
+            {/* Select Toggle Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8 relative" onClick={toggleFlightInChartFlights}>
-                        <ChartArea size={16} className={`absolute ${flightInChartFlights ? 'opacity-25' : ''}`} />
-                        {
-                            (flightInChartFlights)
-                            &&
-                            <Check size={32} className="absolute" />
-                        }
+                    <Button
+                        variant="ghost"
+                        className="w-8 h-8 relative"
+                        onClick={toggleFlightInChartFlights}
+                        disabled={isDisabled}
+                    >
+
+                        <Loader2
+                            size={16}
+                            className={`absolute animate-spin ${isSelecting ? "opacity-100" : "opacity-0"}`}
+                        />
+                        <List
+                            size={16}
+                            className={`absolute ${isSelecting ? 'opacity-0' : showSelected ? "opacity-25" : ""}`}
+                        />
+                        <Check
+                            size={32}
+                            className={`absolute ${isSelecting ? 'opacity-0' : showSelected ? "opacity-100" : "opacity-0"}`}
+                        />
+
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <div>Chart</div>
+                    <div>Select</div>
                     <div className="opacity-50 flex items-center">
-                        <MousePointerClick size={16} className="mr-1"/>Add to Selected chart flights
+                        <MousePointerClick size={16} className="mr-1"/>
+                        {
+                            (flightInChartFlights)
+                            ?
+                            "Remove from selected flights"
+                            :
+                            "Add to selected flights"
+                        }
                     </div>
                 </TooltipContent>
             </Tooltip>
-
-            {/* Cesium Button */}
-            <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8" disabled>
-                        <Globe2 size={16} />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    Cesium
-                </TooltipContent>
-            </Tooltip>
-
-            {/* Map Button */}
-            <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8" disabled>
-                        <Map size={16} />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    Map
-                </TooltipContent>
-            </Tooltip>
-
-
 
             {/* Tags Button */}
             <Tooltip disableHoverableContent>
@@ -380,8 +421,7 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                             flightId: flight.id,
                             onTagsUpdate: (updatedTags: TagData[]) => {
                                 updateFlightTags(flight.id, updatedTags);
-                                fetchFlightsWithFilter(filterSearched??filter, true);
-                            }
+                            },
                         })}
                     >
                         <Tags size={16} />
@@ -389,18 +429,6 @@ export default function FlightRow({ flight }: { flight: Flight }) {
                 </TooltipTrigger>
                 <TooltipContent>
                     Tags
-                </TooltipContent>
-            </Tooltip>
-
-            {/* Events Button */}
-            <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8" disabled>
-                        <MapPinned size={16} />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    Events
                 </TooltipContent>
             </Tooltip>
 
@@ -420,12 +448,11 @@ export default function FlightRow({ flight }: { flight: Flight }) {
 
     }
 
-    // return <Card className="w-full flex bg-background">
     return <div className="
-        w-full flex min-h-20
+        w-full flex
         *:rounded-none
 
-        max-h-36
+        h-36
 
         text-xs
         *:@lg:*:text-sm
@@ -438,19 +465,22 @@ export default function FlightRow({ flight }: { flight: Flight }) {
             {renderFlightTimeDetails()}
         </FlightRowSection>
 
-        <FlightRowSection className="@container min-w-15 max-w-48 overflow-y-auto">
-            {renderAirportsDetails()}
+        <FlightRowSection className="@container group min-w-18 max-w-48">
+            <div className="max-h-36 overflow-y-auto scrollbar-hover">
+                {renderAirportsDetails()}
+            </div>
         </FlightRowSection>
 
-        {/* <FlightRowSection className="max-w-64"> */}
         <FlightRowSection className="@container/tags min-w-27 max-w-96 overflow-y-auto">
             {renderTagsRows()}
         </FlightRowSection>
 
-        <FlightRowSection className="p-3 min-w-38 w-38">
+        <FlightRowSection className="min-w-16 w-16 pl-4 pr-0">
             {renderButtonsRow()}
         </FlightRowSection>
 
     </div>
 
 }
+
+export default memo(FlightRowInner);
