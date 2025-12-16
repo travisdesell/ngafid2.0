@@ -1,0 +1,32 @@
+<!-- ngafid-frontend/index.html -->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NGAFID</title>
+
+    <script>
+
+        // Set the base URL for assets
+        window.CESIUM_BASE_URL = "/cesium";
+
+        // Immediately apply the user's preferred theme (light or dark)
+        const addDarkClass = (localStorage.theme === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches));
+        document.documentElement.classList.toggle("dark", addDarkClass);
+
+    </script>
+    <script src="/cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
+
+  <script type="module" crossorigin src="/js/app-bundle.js"></script>
+  <link rel="stylesheet" crossorigin href="/css/app.css">
+</head>
+
+<body>
+    <div id="root"></div>
+    <!-- Vite will inject the built JS/CSS for /src/app/main.tsx automatically -->
+</body>
+
+</html>
