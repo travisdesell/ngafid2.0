@@ -214,9 +214,9 @@ export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSel
                         {/* Flight Parameters Dropdown Button */}
                         <Tooltip disableHoverableContent>
                             <DropdownMenu>
-                                <TooltipTrigger className="ml-auto">
-                                    <DropdownMenuTrigger className="w-9 aspect-square ml-auto p-0 *:mx-auto cursor-pointer border-none after:content-['']">
-                                        <Button variant="ghost" className="w-full">
+                                <TooltipTrigger className="ml-auto" asChild>
+                                    <DropdownMenuTrigger className="ml-auto p-0 cursor-pointer" asChild>
+                                        <Button variant="ghost" className="w-9 flex items-center justify-center">
                                             <ChevronDown />
                                         </Button>
                                     </DropdownMenuTrigger>

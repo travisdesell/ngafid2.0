@@ -39,7 +39,7 @@ export function ChartsListModalBadge({ label, isUniversal, onClick }: Props) {
                         onClick={onClick}
                     >
                     <span className="group-hover:opacity-50 ">{label}</span>
-                    <hr className="absolute left-2 bottom-1/2 border-(--foreground) border-1 mt-0.5 w-[calc(100%-1rem)] hidden! group-hover:block!" />
+                    <hr className="absolute left-2 bottom-1/2 border-foreground border mt-0.5 w-[calc(100%-1rem)] hidden! group-hover:block!" />
                 </Badge>
             </motion.div>
 
