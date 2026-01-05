@@ -269,32 +269,30 @@ const AppShell = () => (
     <>
         <Background />
         <main className="min-h-0 overflow-hidden">
-            <React.Suspense fallback={null}>
-                <Routes>
+            <Routes>
 
-                    {/* Public Routes */}
-                    {routeElements}
-                    <Route path="/" element={<Navigate to="/welcome" replace />} />
+                {/* Public Routes */}
+                {routeElements}
+                <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-                    {/* Auto Routes (Valid regardless of authentication) */}
-                    <Route element={<AutoLayout />}>
-                        {routeElementsAuto}
-                        <Route path="/auto" element={<Navigate to="/welcome" replace />} />
+                {/* Auto Routes (Valid regardless of authentication) */}
+                <Route element={<AutoLayout />}>
+                    {routeElementsAuto}
+                    <Route path="/auto" element={<Navigate to="/welcome" replace />} />
+                </Route>
+
+                {/* Protected Routes */}
+                <Route element={<RequireAuth />}>
+                    <Route element={<ProtectedLayout />}>
+                        {routeElementsProtected}
+                        <Route path="/protected" element={<Navigate to="/protected/summary" replace />} />
                     </Route>
+                </Route>
 
-                    {/* Protected Routes */}
-                    <Route element={<RequireAuth />}>
-                        <Route element={<ProtectedLayout />}>
-                            {routeElementsProtected}
-                            <Route path="/protected" element={<Navigate to="/protected/summary" replace />} />
-                        </Route>
-                    </Route>
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
 
-                    {/* 404 */}
-                    <Route path="*" element={<NotFound />} />
-
-                </Routes>
-            </React.Suspense>
+            </Routes>
         </main>
     </>
 );
