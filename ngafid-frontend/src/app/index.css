@@ -17,6 +17,7 @@
     .card-glossy {
         @apply dark:bg-(--card)/75;
         @apply dark:backdrop-blur-3xl;
+        @apply relative;
     }
 
 
@@ -284,3 +285,9 @@ input[type=number]::-webkit-outer-spin-button {
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 .page-content { color-scheme: inherit; }
+
+
+/* Tooltip Classes */
+[data-radix-popper-content-wrapper] {
+    pointer-events: none;   /* <-- Prevent user interacting with Tooltip with cursor at all */
+}
