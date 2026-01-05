@@ -1,183 +1,167 @@
 // ngafid-frontend/src/app/components/number_input.tsx
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { NumericFormat, NumericFormatProps } from 'react-number-format';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { ChevronDown, ChevronUp } from "lucide-react";
+import React, {
+    forwardRef,
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 export interface NumberInputProps
-    extends Omit<NumericFormatProps, 'value' | 'onValueChange'> {
+    extends Omit<React.InputHTMLAttributes<HTMLInputElement>,
+        "value" | "defaultValue" | "onChange" | "type"> {
     stepper?: number;
-    thousandSeparator?: string;
-    placeholder?: string;
-    defaultValue?: number;
     min?: number;
     max?: number;
-    value?: number; // Controlled value
-    suffix?: string;
-    prefix?: string;
+    value?: number;
+    defaultValue?: number;
     onValueChange?: (value: number | undefined) => void;
-    fixedDecimalScale?: boolean;
-    decimalScale?: number;
 }
 
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     (
         {
-            stepper,
-            thousandSeparator,
-            placeholder,
-            defaultValue,
+            stepper = 1,
             min = -Infinity,
             max = Infinity,
-            onValueChange,
-            fixedDecimalScale = false,
-            decimalScale = 0,
-            suffix,
-            prefix,
             value: controlledValue,
-            ...props
+            defaultValue,
+            onValueChange,
+            className,
+            ...inputProps
         },
         ref
     ) => {
 
+        const isControlled = (controlledValue !== undefined);
 
-        const inputRef = useRef<HTMLInputElement>(null);
+        const [inner, setInner] = useState<string>(() => {
 
-        // Expose the inner input to parents
-        useImperativeHandle(ref, () => inputRef.current!);
-
-        const [value, setValue] = useState<number | undefined>(
-            controlledValue ?? defaultValue
-        );
-
-
-
-        useEffect(() => {
-
+            // Controlled value is set, use it
             if (controlledValue !== undefined)
-                setValue(prev => (prev === controlledValue ? prev : controlledValue));
+                return String(controlledValue);
 
-        }, [controlledValue]);
+            // Otherwise, attempt to use default value
+            if (defaultValue !== undefined)
+                return String(defaultValue);
 
+            return "";
 
+        });
 
-        const fromUserRef = useRef(false);
         useEffect(() => {
 
-            // No change from user, exit
-            if (!fromUserRef.current)
+            // Not controlled, do nothing
+            if (!isControlled)
                 return;
 
-            fromUserRef.current = false;
-            onValueChange?.(value);
+            const next = (controlledValue === undefined)
+                ? ""
+                : String(controlledValue);
 
-        }, [value, onValueChange]);
+            setInner(prev => (prev === next ? prev : next));
 
-        const setFromUser = useCallback((next: number | undefined | ((p: number | undefined) => number | undefined)) => {
+        }, [isControlled, controlledValue]);
 
-            fromUserRef.current = true;
-            setValue(prev => (
-                (typeof next === 'function')
-                    ? (next as any)(prev)
-                    : next
-            ));
+        const parse = (s: string): number | undefined => {
 
-        }, []);
+            const trimmed = s.trim();
 
+            // Got empty string -> undefined
+            if (!trimmed)
+                return undefined;
 
-        const handleIncrement = useCallback(() => {
+            const n = Number(trimmed);
 
-            const step = (stepper ?? 1);
-            setFromUser(prev =>
-                (prev === undefined)
-                    ? step
-                    : Math.min(prev + step, max)
-            );
+            // Not a number -> undefined
+            if (Number.isNaN(n))
+                return undefined;
 
-        }, [stepper, max, setFromUser]);
+            return n;
 
-        const handleDecrement = useCallback(() => {
+        };
 
-            const step = (stepper ?? 1);
-            setFromUser(prev =>
-                (prev === undefined)
-                    ? -step
-                    : Math.max(prev - step, min)
-            );
+        const clamp = (n: number): number => {
+            let r = n;
+            if (r < min)
+                r = min;
+            if (r > max)
+                r = max;
+            return r;
+        };
 
-        }, [stepper, min, setFromUser]);
+        const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+            const s = e.target.value;
+            setInner(s);
 
+            const n = parse(s);
+            onValueChange?.(n);
+        };
 
-        const handleChange = (values: { value: string; floatValue: number | undefined }) => {
+        const handleBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
 
-            const newValue = (values.floatValue === undefined)
-                ? undefined
-                : values.floatValue;
+            const s = e.target.value;
+            let n = parse(s);
 
-            setFromUser(newValue)
-
-        }
-
-        const handleBlur = () => {
-
-            // Value is undefined, exit
-            if (value === undefined)
-                return
-
-            // Get clamped value
-            let clamped = value;
-            if (value < min)
-                clamped = min;
-            else if (value > max)
-                clamped = max;
-
-            // Clamped value differs from current value...
-            if (clamped !== value) {
-
-                // ...Set and notify
-                setFromUser(clamped)
-
-                // ...Update input display
-                if (inputRef.current)
-                    inputRef.current.value = String(clamped)
-
+            // Empty or invalid, reset to empty
+            if (n === undefined) {
+                setInner("");
+                onValueChange?.(undefined);
+                return;
             }
 
-        }
+            n = clamp(n);
+            const s2 = String(n);
+            setInner(s2);
+            onValueChange?.(n);
 
+        };
+
+        const bump = useCallback((direction: 1 | -1) => {
+
+            const current = parse(inner) ?? 0;
+            const n = clamp(current + direction * (stepper ?? 1));
+            const s = String(n);
+
+            setInner(s);
+            onValueChange?.(n);
+
+        }, [inner, stepper, min, max, onValueChange]);
 
         const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-            if (e.key === 'ArrowUp') {
+
+            const KEY_INCREMENT = "ArrowUp";
+            const KEY_DECREMENT = "ArrowDown";
+
+            if (e.key === KEY_INCREMENT) {
                 e.preventDefault();
-                handleIncrement();
-            } else if (e.key === 'ArrowDown') {
+                bump(1);
+            } else if (e.key === KEY_DECREMENT) {
                 e.preventDefault();
-                handleDecrement();
+                bump(-1);
             }
+
         };
+
+        const numeric = parse(inner);
+        const atMin = (numeric !== undefined && numeric <= min);
+        const atMax = (numeric !== undefined && numeric >= max);
 
         return (
             <div className="flex items-center bg-background">
-                <NumericFormat
-                    value={value}
-                    onValueChange={handleChange}
-                    thousandSeparator={thousandSeparator}
-                    decimalScale={decimalScale}
-                    fixedDecimalScale={fixedDecimalScale}
-                    allowNegative={min < 0}
-                    valueIsNumericString={false}
+                <Input
+                    {...inputProps}
+                    ref={ref}
+                    type="number"
+                    value={inner}
+                    onChange={handleChange}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
-                    max={max}
-                    min={min}
-                    suffix={suffix}
-                    prefix={prefix}
-                    customInput={Input}
-                    placeholder={placeholder}
-                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:webkit-appearance-none [&::-webkit-inner-spin-button]:appearance-none rounded-r-none relative"
-                    getInputRef={(el: HTMLInputElement) => { inputRef.current = el as HTMLInputElement }}
-                    {...props}
+                    min={Number.isFinite(min) ? min : undefined}
+                    max={Number.isFinite(max) ? max : undefined}
+                    className={`[appearance:textfield] [&::-webkit-outer-spin-button]:webkit-appearance-none [&::-webkit-inner-spin-button]:appearance-none rounded-r-none relative ${className ?? ""}`}
                 />
 
                 <div className="flex flex-col">
@@ -185,8 +169,8 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                         aria-label="Increase value"
                         className="px-2 h-fit rounded-none! rounded-l-none rounded-br-none border-input border-l-0  border-t-[1.25px] focus-visible:relative"
                         variant="outline"
-                        onClick={handleIncrement}
-                        disabled={value === max}
+                        onClick={() => bump(1)}
+                        disabled={atMax}
                     >
                         <ChevronUp className="absolute scale-75" />
                     </Button>
@@ -194,8 +178,8 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
                         aria-label="Decrease value"
                         className="px-2 h-fit rounded-none! rounded-l-none rounded-tr-none border-input border-l-0 border-b-[1.25px] focus-visible:relative"
                         variant="outline"
-                        onClick={handleDecrement}
-                        disabled={value === min}
+                        onClick={() => bump(-1)}
+                        disabled={atMin}
                     >
                         <ChevronDown className="absolute scale-75" />
                     </Button>
