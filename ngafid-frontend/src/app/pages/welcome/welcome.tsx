@@ -1,6 +1,5 @@
 // ngafid-frontend/src/app/welcome.tsx
 
-import WelcomeNavbar from '@/components/navbars/welcome_navbar';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -8,11 +7,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { CircleQuestionMark, InfoIcon } from 'lucide-react';
 import './welcome.css';
 
+import { useModal } from '@/components/modals/modal_context';
 import RegisterModal from '@/components/modals/register_modal';
 import { getLogger } from '@/components/providers/logger';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useEffect } from 'react';
-import { useModal } from '@/components/modals/modal_context';
 
 
 const log = getLogger("Welcome", "black", "Page");
@@ -46,16 +45,13 @@ export default function Welcome() {
 
 
     return (
-        <div className="overflow-x-hidden flex flex-col h-[100vh]">
-
-            {/* Navbar */}
-            <WelcomeNavbar />
+        <div className="overflow-x-hidden flex flex-col h-screen">
 
             {/* Page Content */}
             <div className="flex flex-col p-4 flex-1 min-h-0 overflow-y-auto">
 
                 {/* Main Content */}
-                <Card className="self-center my-auto w-full max-w-[min(80%,1920px)] h-[960px] max-h-[calc(100vh-8rem)] flex flex-col min-h-0 card-glossy">
+                <Card className="self-center my-auto w-full max-w-[min(80%,1920px)] h-240 max-h-[calc(100vh-8rem)] flex flex-col min-h-0 card-glossy">
                     
                     <CardHeader className='shrink-0 text-3xl home-card-header-text h-fit'>
                         Welcome to the National General Aviation Flight Information Database (NGAFID)
@@ -69,7 +65,7 @@ export default function Welcome() {
                         <div className="flex flex-1 flex-col gap-6">
 
                             {/* Section Header */}
-                            <div className='text-2xl opacity-65 font-light flex items-center gap-2 border-b-1 border-gray w-fit pb-1'>
+                            <div className='text-2xl opacity-65 font-light flex items-center gap-2 border-b border-gray w-fit pb-1'>
                                 <InfoIcon/>
                                 About
                             </div>
@@ -95,7 +91,7 @@ export default function Welcome() {
                         <Accordion className='flex flex-1 flex-col gap-6' type="multiple">
 
                             {/* Section Header */}
-                            <div className='text-2xl opacity-65 font-light flex items-center gap-2 border-b-1 border-gray w-fit pb-1'>
+                            <div className='text-2xl opacity-65 font-light flex items-center gap-2 border-b border-gray w-fit pb-1'>
                                 <CircleQuestionMark/>
                                 FAQ
                             </div>
@@ -104,7 +100,7 @@ export default function Welcome() {
                             <AccordionItem value="item-1" className='border-0'>
                                 <AccordionTrigger className="home-card-section-header-text">
                                     What is digital Flight Data Monitoring?
-                                    <hr className='border-b-1 border-gray-500/25 flex flex-1 mx-4'/>
+                                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <ul className='list-disc list-inside ml-8'>
@@ -119,7 +115,7 @@ export default function Welcome() {
                             <AccordionItem value="item-2" className='border-0'>
                                 <AccordionTrigger className="home-card-section-header-text">
                                     How will this project benefit the aviation community?
-                                    <hr className='border-b-1 border-gray-500/25 flex flex-1 mx-4'/>
+                                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <ul className='list-disc list-inside ml-8 home-card-section-content-text'>
@@ -152,7 +148,7 @@ export default function Welcome() {
                             <AccordionItem value="item-3" className='border-0'>
                                 <AccordionTrigger className="home-card-section-header-text">
                                     How will this project benefit the aviation community?
-                                    <hr className='border-b-1 border-gray-500/25 flex flex-1 mx-4'/>
+                                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <ul className='list-disc list-inside ml-8 home-card-section-content-text'>
@@ -173,7 +169,7 @@ export default function Welcome() {
                             <AccordionItem value="item-4" className='border-0'>
                                 <AccordionTrigger className="home-card-section-header-text">
                                     How can I participate?
-                                    <hr className='border-b-1 border-gray-500/25 flex flex-1 mx-4'/>
+                                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <ul className='list-disc list-inside ml-8'>

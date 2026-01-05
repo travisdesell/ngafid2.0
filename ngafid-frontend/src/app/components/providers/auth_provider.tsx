@@ -55,6 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setModal(ErrorModal, {title : "Error during login submission", message: error.toString()} as ModalDataError);
         });
 
+        log("Finished checking authentication status: loading =", state.loading, ", user =", state.user);
+
     }, []);
 
 

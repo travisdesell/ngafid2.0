@@ -13,8 +13,8 @@ import { TimeHeaderProvider } from './components/providers/time_header/time_head
 
 
 // Import CSS
-import AutoLayout from '@/components/layouts/auto_layout';
 import ProtectedLayout from '@/components/layouts/protected_layout';
+import WelcomeLayout from '@/components/layouts/welcome_layout';
 import { getLogger } from '@/components/providers/logger';
 import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
 import { TagsProvider } from '@/components/providers/tags/tags_provider';
@@ -70,11 +70,15 @@ class RouteData {
 
     Files in the /protected subdirectory will be protected routes.
 
+    Files in the /auto subdirectory will generate both public and
+    protected routes automatically.
+
     Other files will be public routes.
 */
 const routes: RouteData[] = [];
 const routesProtected: RouteData[] = [];
-const routesAuto: RouteData[] = [];
+const routesAutoPublic: RouteData[] = [];
+const routesAutoProtected: RouteData[] = [];
 
 function segmentizeParams(params: string) {
 
@@ -198,13 +202,23 @@ for (const [file, loader] of Object.entries(pageModules)) {
 
     // Create route data, add to appropriate list
     const routeData = new RouteData(url, loader as any);
-    let routeListTarget = (isAuto)
-        ? routesAuto
-        : (isProtected)
-            ? routesProtected
-            : routes;
 
-    routeListTarget.push(routeData);
+    // Auto route, add to both public and protected
+    if (isAuto) {
+
+        routesAutoPublic.push(routeData);
+        routesAutoProtected.push(routeData);
+
+    }
+
+
+    // Protected route, add to protected list
+    if (isProtected)
+        routesProtected.push(routeData);
+
+    // Otherwise, add to public routes
+    else
+        routes.push(routeData);
 
 }
 
@@ -212,12 +226,18 @@ for (const [file, loader] of Object.entries(pageModules)) {
 const depth = (p: string) => (p === "/" ? 0 : p.split("/").length);
 routes.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
 routesProtected.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
-routesAuto.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
+routesAutoPublic.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
+routesAutoProtected.sort((a, b) => depth(a.urlPath) - depth(b.urlPath));
 
-log.table("Discovered Routes:", [...routes, ...routesProtected, ...routesAuto].map(r => ({
+// Merge auto routes into main lists
+routes.push(...routesAutoPublic);
+routesProtected.push(...routesAutoProtected);
+
+// Log discovered routes
+log.table("Discovered Routes:", [...routes, ...routesProtected].map(r => ({
     url: r.urlPath,
     protected: routesProtected.includes(r),
-    auto: routesAuto.includes(r),
+    auto: routesAutoPublic.includes(r) || routesAutoProtected.includes(r),
     componentPath: r.componentPath || "Direct Import",
 })));
 
@@ -227,9 +247,6 @@ const routeElements = routes.map((route) => (
 ));
 const routeElementsProtected = routesProtected.map((route) => (
     <Route key={route.urlPath} path={`/protected${route.urlPath}`} element={React.createElement(route.component)} />
-));
-const routeElementsAuto = routesAuto.map((route) => (
-    <Route key={route.urlPath} path={`/auto${route.urlPath}`} element={React.createElement(route.component)} />
 ));
 
 
@@ -271,18 +288,16 @@ const AppShell = () => (
         <main className="min-h-0 overflow-hidden">
             <Routes>
 
-                {/* Public Routes */}
-                {routeElements}
+                {/* Root Redirect */}
                 <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-                {/* Auto Routes (Valid regardless of authentication) */}
-                <Route element={<AutoLayout />}>
-                    {routeElementsAuto}
-                    <Route path="/auto" element={<Navigate to="/welcome" replace />} />
+                {/* Public Routes */}
+                <Route element={<WelcomeLayout />}>
+                    {routeElements}
                 </Route>
 
                 {/* Protected Routes */}
-                <Route element={<RequireAuth />}>
+                <Route element={<RequireAuth />}> {/* <-- Require login/authentication to access */}
                     <Route element={<ProtectedLayout />}>
                         {routeElementsProtected}
                         <Route path="/protected" element={<Navigate to="/protected/summary" replace />} />
