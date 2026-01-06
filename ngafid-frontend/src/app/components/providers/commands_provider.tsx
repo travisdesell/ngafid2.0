@@ -2,18 +2,19 @@
 
 import { CommandData } from "@/components/modals/command_modal/command_modal_content";
 import { getLogger } from "@/components/providers/logger";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 const log = getLogger("CommandsProvider", "blue", "Provider");
 
 type CommandsState = {
     pageCommands: CommandData[];
-    setCommands?: (commands: CommandData[]) => void;
+    queueCommands: (commands: CommandData[]) => void;
 }
 
 export const CommandsContext = createContext<CommandsState>({
     pageCommands: [],
+    queueCommands: () => {},
 });
 
 export function CommandsProvider({ children }: { children: React.ReactNode }) {
@@ -30,8 +31,24 @@ export function CommandsProvider({ children }: { children: React.ReactNode }) {
 
     }, [location.pathname]);
 
+    const queueCommands = useCallback((newCommands: CommandData[]) => {
+
+        log(`Queueing ${newCommands.length} commands... (Will be added next tick)`);
+
+        // Wait until the next tick to add the commands
+        setTimeout(() => {
+            setCommands((prevCommands) => [...prevCommands, ...newCommands]);
+        }, 0);
+
+    }, []);
+
+    const value = useMemo(() => ({
+        pageCommands: commands,
+        queueCommands,
+    }), [commands, queueCommands]);
+
     return (
-        <CommandsContext.Provider value={{ pageCommands: commands, setCommands }}>
+        <CommandsContext.Provider value={value}>
             {children}
         </CommandsContext.Provider>
     );
