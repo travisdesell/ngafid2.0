@@ -12,6 +12,7 @@ export type ModalContextValue = {
     setModal: SetModalFn;
     close: () => void;
     onClose?: (data?: any) => void;
+    renderModalHeader: (title:string, description:string, allowClose?:boolean) => React.ReactNode;
 };
 
 export const ModalContext = React.createContext<ModalContextValue | null>(null);
@@ -19,13 +20,17 @@ export const ModalContext = React.createContext<ModalContextValue | null>(null);
 const devFallbackModalContext: ModalContextValue = {
     modalType: undefined,
     modalData: undefined,
-    setModal: (...args: any[]) => {
-        log.warn("setModal called without <ModalProvider> (dev fallback). Args:", args);
+    setModal: (component, data, onClose) => {
+        log.warn("setModal called without <ModalProvider> (dev fallback).");
     },
     close: () => {
         log.warn("close called without <ModalProvider> (dev fallback).");
     },
     onClose: undefined,
+    renderModalHeader: (title:string, description:string, allowClose:boolean=true) => {
+        log.warn("renderModalHeader called without <ModalProvider> (dev fallback).");
+        return <></>;
+    },
 };
 
 export function useModal(): ModalContextValue {

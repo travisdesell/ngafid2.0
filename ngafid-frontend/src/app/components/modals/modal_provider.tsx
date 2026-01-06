@@ -3,21 +3,23 @@ import { ErrorBoundary } from "@/components/error_boundary";
 import ErrorModal from "@/components/modals/error_modal";
 import { getLogger } from "@/components/providers/logger";
 import { AnimatePresence, motion } from "motion/react";
-import React, { useCallback, useEffect, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
-import { getModalSnapshot, subscribeModal } from "./modal_store";
+import { closeModal, getModalSnapshot, modalIsOpen, openModal, subscribeModal } from "./modal_store";
 import { SetModalFn } from "./types";
 
 const log = getLogger("ModalProvider", "green", "Provider");
 
 import { ModalContext, useModal } from "@/components/modals/modal_context";
-import { closeModal, openModal } from "./modal_store";
+import { Button } from "@/components/ui/button";
+import { CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { X } from "lucide-react";
 
 export function ModalProvider({ children }: { children: React.ReactNode }) {
 
     const location = useLocation();
-
 
     const close = useCallback(() => {
 
@@ -37,10 +39,48 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        openModal(component, data, onClose);
+        // Modal is already open, open with 0ms delay
+        if (modalIsOpen())
+            setTimeout(() => openModal(component, data, onClose), 0);
+
+        // Otherwise, open immediately
+        else
+            openModal(component, data, onClose);
 
     }, [close]);
 
+
+    const renderModalHeader = useCallback((title:string, description:string, allowClose:boolean=true) => {
+
+        return (
+            <CardHeader className="grid gap-2">
+
+                <div className="grid gap-2">
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </div>
+
+                {
+                    (allowClose)
+                    &&
+                    <CardAction>
+                        <Tooltip>
+                            <TooltipTrigger asChild className="w-12 h-9">
+                                <Button variant="link" onClick={close}>
+                                    <X/>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent keyboardAction="Esc">
+                                Close
+                            </TooltipContent>
+                        </Tooltip>
+                    </CardAction>
+                }
+
+            </CardHeader>
+        );
+        
+    }, [close]);
 
     /*
         ErrorBoundary handler that opens ErrorModal
@@ -84,12 +124,11 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
     /*
         Close modal on route/URL change.
     */
-    useEffect(() => {
-        
+    useLayoutEffect(() => {
+
         closeModal();
-
+        
     }, [location.pathname, location.search]);
-
 
     const value = React.useMemo(() => ({
         modalType: undefined,
@@ -97,7 +136,8 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         onClose: undefined,
         setModal,
         close,
-    }), [setModal, close]);
+        renderModalHeader,
+    }), [setModal, close, renderModalHeader]);
 
     return (
         <ModalContext.Provider value={value}>

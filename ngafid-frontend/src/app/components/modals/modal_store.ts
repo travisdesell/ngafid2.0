@@ -56,6 +56,12 @@ export function openModal<D extends ModalData = ModalData>(component: ModalCompo
     
 }
 
+export function modalIsOpen() {
+
+    return !!state.modalType;
+
+}
+
 export function closeModal(data?: any) {
 
     const current = state;
