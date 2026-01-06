@@ -318,6 +318,7 @@ html.dark { color-scheme: dark; }
     @apply border-b;
     @apply h-2;
     @apply mb-3;
+    @apply mr-2;
 }
 
 [cmdk-empty] {
