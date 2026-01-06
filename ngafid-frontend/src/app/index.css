@@ -291,3 +291,65 @@ html.dark { color-scheme: dark; }
 [data-radix-popper-content-wrapper] {
     pointer-events: none;   /* <-- Prevent user interacting with Tooltip with cursor at all */
 }
+
+
+/* CMDK Classes */
+[cmdk-input] {
+    @apply mb-8;
+}
+
+[cmdk-list] {
+    @apply overflow-y-auto;
+    @apply h-full;
+}
+
+[cmdk-group-heading] {
+    @apply font-bold;
+    @apply text-lg;
+}
+[cmdk-group] {
+    @apply gap-2;
+    @apply mr-2;
+    @apply not-last:mb-2;
+}
+
+[cmdk-separator] {
+    @apply border-border;
+    @apply border-b;
+    @apply h-2;
+    @apply mb-3;
+}
+
+[cmdk-empty] {
+    @apply flex flex-row gap-2;
+}
+
+[cmdk-item] {
+    @apply cursor-pointer;
+    @apply bg-foreground;
+    @apply text-background;
+    @apply dark:bg-background;
+    @apply dark:text-foreground;
+    @apply p-2;
+    @apply rounded-sm;
+    @apply my-1;
+
+    @apply opacity-80;
+    @apply transition-opacity;
+    @apply duration-150;
+    @apply ease-out;
+
+    @apply select-none;
+    @apply border;
+    @apply border-[rgba(0,0,0,0)];
+
+    kbd {
+        @apply text-foreground;
+    }
+
+    &[data-selected='true'] {
+        @apply opacity-100;
+        @apply border;
+        @apply border-foreground;
+    }
+}
