@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/summary/summary.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import PanelAlert from "@/components/panel_alert";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
 import TimeHeader from "@/components/providers/time_header/time_header";
@@ -287,7 +288,7 @@ export default function SummaryPage() {
     };
 
     const renderNoDataAvailableMessage = () => (
-        <span className="text-(--muted-foreground) text-base">No data available for the selected time range and airframe type(s).</span>
+        <PanelAlert title="No Data Available!" description={["No data available for the selected time range and airframe type(s).", "Try adjusting the time range or airframe selection."]} />
     )
 
     const totalFlights = flightHoursByAirframe.reduce((sum, entry) => sum + entry.num_flights, 0);
