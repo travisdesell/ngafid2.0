@@ -1,9 +1,9 @@
-import { Bell, BellOff } from "lucide-react";
-import { useNotifications } from "./notifications_provider";
-import { NGAFIDNotification } from "./notifications_data/types";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemHeader, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia } from "@/components/ui/item";
+import { Bell, BellOff } from "lucide-react";
+import { NGAFIDNotification } from "./notifications_data/types";
+import { useNotifications } from "./notifications_provider";
 
 export default function Notifications() {
 
@@ -48,7 +48,7 @@ export default function Notifications() {
                     <Bell />
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="from-muted to-background min-h-[400px] max-h-[400px] min-w-[275px] mr-4 bg-gradient-to-b from-30% overflow-y-auto">
+            <DropdownMenuContent className="from-muted to-background min-h-[400px] max-h-[400px] min-w-[275px] mr-4 bg-linear-to-b from-30% overflow-y-auto">
                 {
                     (notifications.length === 0)
                     ?
