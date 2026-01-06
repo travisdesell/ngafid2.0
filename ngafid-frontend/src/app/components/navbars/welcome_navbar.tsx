@@ -7,10 +7,10 @@ import { LogIn, UserPlus } from 'lucide-react';
 
 import { Link } from "react-router-dom";
 
+import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import LoginModal from '../modals/login_modal';
 import RegisterModal from '../modals/register_modal';
-import { useModal } from "@/components/modals/modal_context";
 
 
 const log = getLogger("WelcomeNavbar", "teal", "Navbar");
@@ -34,7 +34,7 @@ export default function WelcomeNavbar() {
         return (
             <nav
                 id='navbar'
-                className="navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-(--sidebar)"
+                className="navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-sidebar"
                 style={{zIndex: "999", opacity: "1.0"}}
             >
 
