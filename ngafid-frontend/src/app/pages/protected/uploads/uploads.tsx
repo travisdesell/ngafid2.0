@@ -6,8 +6,7 @@ import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { fetchJson } from "@/fetchJson";
 import { CHUNK_SIZE } from "@/workers/md5.worker";
@@ -18,11 +17,9 @@ import {
     CircleAlert,
     CloudDownload,
     Download,
-    Info,
     List,
     Loader,
-    Trash,
-    Upload as UploadIcon
+    Trash
 } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useCallback, useEffect, useState } from "react";
@@ -31,6 +28,8 @@ import SparkMD5 from "spark-md5";
 import SuccessModal from "@/components/modals/success_modal";
 import { getLogger } from "@/components/providers/logger";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Separator } from "@/components/ui/separator";
+import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropdzone";
 import type {
     APIError,
     ImportsListResponse,
@@ -682,8 +681,8 @@ export default function UploadsPage() {
         const totalFlights = hasImportData ? (u.validFlights + u.errorFlights) : 0;
 
         return (
-            <Card className="card-glossy w-full h-full bg-(--background)!">
-                <CardContent className="py-4 px-6 space-y-4">
+            <Card className="card-glossy w-full bg-background! h-48">
+                <CardContent className="px-6 space-y-4 mt-3">
 
                     {/* Top Row */}
                     <div className="flex items-center justify-between gap-3">
@@ -813,7 +812,7 @@ export default function UploadsPage() {
         //     </Button>
         // </div>
 
-        <Pagination>
+        <Pagination className="mx-0 w-full justify-start p-4">
             <PaginationContent>
 
                 {/* Previous */}
@@ -900,9 +899,12 @@ export default function UploadsPage() {
     const render = () => (
         <div className="page-container">
 
-            <div className="page-content space-y-4 w-full max-w-[1280px] h-full mx-auto">
+            <div className="page-content space-y-4 w-full max-w-7xl h-full mx-auto">
 
-                <Card className="card-glossy h-full">
+                <UploadsDropzone onPickFiles={onPickFiles} />
+
+                {/* <Card className="card-glossy grow"> */}
+                <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip relative">
                     <CardHeader className="flex flex-row items-center justify-between">
 
                         <div className="flex flex-col space-y-1.5">
@@ -911,7 +913,7 @@ export default function UploadsPage() {
                         </div>
 
                         {/* File Picker */}
-                        <div className="flex flex-wrap items-center w-fit">
+                        {/* <div className="flex flex-wrap items-center w-fit">
 
                             <Input className="w-[200px] hidden!" type="file" multiple onChange={(e) => onPickFiles(e.target.files)} disabled={busy} />
                             <Button onClick={() => (document.querySelector<HTMLInputElement>('input[type="file"]')?.click())} disabled={busy}>
@@ -924,12 +926,12 @@ export default function UploadsPage() {
                                 </span>
                             )}
 
-                        </div>
+                        </div> */}
 
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto">
 
-                        <div className="space-y-3 pt-3 grid grid-cols-2 grid-rows-1 gap-2">
+                        {/* <div className="space-y-3 grid-cols-2 grid-rows-1 gap-2 bg-red-500/50"> */}
 
                             {mergedUploadsImports.map((u: UploadInfo | UploadImportItem, i) =>
 
@@ -942,11 +944,17 @@ export default function UploadsPage() {
                                     {UploadCard(u, u.id === -1)}
                                 </motion.div>
                             )}
-
-                            {Pager(uploadsPage, uploadsPages, setUploadsPage)}
-                        </div>
+                            
+                        {/* </div> */}
 
                     </CardContent>
+
+                    
+                    <CardFooter className="flex flex-col w-full p-0 bg-muted">
+                        <Separator />
+                        {Pager(uploadsPage, uploadsPages, setUploadsPage)}
+                    </CardFooter>
+
                 </Card>
             </div>
         </div>

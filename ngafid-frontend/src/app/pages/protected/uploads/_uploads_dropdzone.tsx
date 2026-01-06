@@ -117,7 +117,7 @@ export default function UploadsDropzone({ onPickFiles }: Props) {
                         :
                         (isDragActive)
                         ? "Release to upload..."
-                        : "Drag and drop files here, or click to select files"
+                        : "Drag and drop files here, or click to select files."
                     }
                 </CardDescription>
             </CardHeader>
