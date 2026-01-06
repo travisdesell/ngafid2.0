@@ -44,24 +44,26 @@ export function ThemeProvider({
     const [useNavbarPageNames, setUseNavbarPageNames] = useState<boolean>(true);
 
     useEffect(() => {
+
         const root = window.document.documentElement;
+
+        const systemTheme = (window.matchMedia("(prefers-color-scheme: dark)").matches)
+            ? "dark"
+            : "light";
+
+        const resolved = (theme === "system")
+            ? systemTheme
+            : theme;
+
         root.classList.remove("light", "dark");
+        root.classList.add(resolved);
 
-        if (theme === "system") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-                .matches
-                ? "dark"
-                : "light"
+        root.style.colorScheme = resolved;
 
-            root.classList.add(systemTheme);
-            return;
-        }
-
-        root.classList.add(theme);
-        // log("CN: ",document.documentElement.className);
-        log("Theme set to:", theme);
-
+        log("Theme set to:", resolved);
+        
     }, [theme]);
+
 
     const value = {
         theme,
