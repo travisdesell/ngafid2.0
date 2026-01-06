@@ -2,26 +2,29 @@
 import ErrorModal, { ModalDataError } from '@/components/modals/error_modal';
 import { useModal } from '@/components/modals/modal_context';
 import { getLogger } from '@/components/providers/logger';
+import { ROUTE_DEFAULT_LOGGED_OUT } from '@/lib/route_utils';
 import { LoaderCircle } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { NGAFIDUser } from 'src/types';
 
 // const log = getLogger({ color: "blue",  type: "Provider" });
 const log = getLogger("AuthProvider", "blue", "Provider");
 
-type IsLoggedInFn = () => boolean;
+type IsLoggedInFn = () => boolean
+type AttemptLogOutFn = () => void;
 type AuthState = {
     loading: boolean;
     user: NGAFIDUser|null,
 };
 
-type AuthContextValue = AuthState & { isLoggedIn: IsLoggedInFn };
+type AuthContextValue = AuthState & { isLoggedIn: IsLoggedInFn, attemptLogOut: AttemptLogOutFn };
 
 const AuthContext = React.createContext<AuthContextValue>({
     loading: true,
     user: null,
     isLoggedIn: () => false,
+    attemptLogOut: () => {},
 });
 
 
@@ -35,9 +38,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: null,
     });
     const isLoggedIn = () => (state.user !== null);
+    const attemptLogOut = () => {
+
+        log("Logging out...");
+
+        fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        }).then((response) => {
+
+            if (!response.ok)
+                setModal(ErrorModal, { title: "Error", message: "An error occurred while logging out. Please try again." });
+
+        }).catch((error) => {
+            setModal(ErrorModal, { title: "Error", message: error.toString() });
+        }).finally(() => {
+            window.location.assign(ROUTE_DEFAULT_LOGGED_OUT);
+        });
+
+    }
 
 
-    React.useEffect(() => {
+    useEffect(() => {
 
         log("Checking authentication status...");
 
@@ -65,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         log("Rendering, loading =", state.loading, ", user =", state.user);
 
         return (
-            <AuthContext.Provider value={{ ...state, isLoggedIn }}>
+            <AuthContext.Provider value={{ ...state, isLoggedIn, attemptLogOut }}>
                 {children}
             </AuthContext.Provider>
         );

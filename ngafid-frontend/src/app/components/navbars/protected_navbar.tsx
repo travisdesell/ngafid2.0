@@ -4,22 +4,22 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 
 import { DarkModeToggle } from "@/components/dark_mode_toggle";
-import { Book, CalendarCog, ChevronDown, Home, Info, Plane, Search, Upload, User } from 'lucide-react';
+import { CalendarCog, ChevronDown, Home, Info, Plane, Search, Upload, User } from 'lucide-react';
 
 import { Link } from "react-router-dom";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 
+import CommandMenu from "@/components/command_menu";
 import { useModal } from "@/components/modals/modal_context";
 import { useNavbarSlot } from "@/components/navbars/navbar_slot";
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
-import { ROUTE_DEFAULT_LOGGED_IN, ROUTE_DEFAULT_LOGGED_OUT } from "@/lib/route_utils";
+import { ROUTE_DEFAULT_LOGGED_IN } from "@/lib/route_utils";
 import { motion } from "framer-motion";
 import BugReportModal from "../modals/bug_report_modal";
-import ErrorModal from "../modals/error_modal";
 import Notifications from "../providers/notifications/notifications";
 
 const log = getLogger("ProtectedNavbar", "teal", "Navbar");
@@ -27,7 +27,7 @@ const log = getLogger("ProtectedNavbar", "teal", "Navbar");
 export default function ProtectedNavbar({ children }: { children?: React.ReactNode }) {
 
     const { setModal } = useModal();
-    const { user } = useAuth();
+    const { user, attemptLogOut } = useAuth();
     const { useNavbarPageNames } = useTheme();
     const { extras } = useNavbarSlot();
 
@@ -36,33 +36,13 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
         [extras]
     );
 
-    const attemptLogOut = () => {
-
-        log("Logging out...");
-
-        fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "include"
-        }).then((response) => {
-
-            if (!response.ok)
-                setModal(ErrorModal, {title: "Error", message: "An error occurred while logging out. Please try again."} );
-            
-        }).catch((error) => {
-            setModal(ErrorModal, {title: "Error", message: error.toString()} );
-        }).finally(() => {
-            window.location.assign(ROUTE_DEFAULT_LOGGED_OUT);
-        });
-
-    }
-
     const render = () => {
 
         log(`Rendering with user = `, user);
 
         const buttonLinkClass = "hover:[&_*]:underline";
         const pageNameLinkClass = (useNavbarPageNames ? "block group-hover:underline @max-[100rem]/navbar:hidden!" : "hidden!");
-        const renderPageNameLink = (pageName:string) => <span className={pageNameLinkClass}>{pageName}</span>;
+        const renderPageNameLink = (pageName: string) => <span className={pageNameLinkClass}>{pageName}</span>;
 
         return (
             <nav
@@ -72,7 +52,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
                 {/* Left Elements */}
                 <div className="flex flex-row items-center justify-end gap-16">
-                    
+
                     {/* Navbar Brand & Home Link */}
                     <Link className="font-semibold text-xl" to={ROUTE_DEFAULT_LOGGED_IN}>
                         NGAFID
@@ -98,11 +78,11 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                                         {child}
                                     </motion.div>
                                 );
-                                
+
                             })
                         }
                     </div>
-                    
+
                 </div>
 
                 {/* Right Elements */}
@@ -111,15 +91,15 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     {/* Summary */}
                     <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/protected/summary">
-                            <Home/>
+                            <Home />
                             {renderPageNameLink("Summary")}
                         </Link>
                     </Button>
 
                     {/* Status */}
                     <Button asChild variant="ghost" className={buttonLinkClass}>
-                        <Link to="/auto/status">
-                            <Info/>
+                        <Link to="/protected/status">
+                            <Info />
                             {renderPageNameLink("Status")}
                         </Link>
                     </Button>
@@ -128,9 +108,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className={buttonLinkClass}>
-                                <CalendarCog/>
+                                <CalendarCog />
                                 {renderPageNameLink("Events")}
-                                <ChevronDown/>
+                                <ChevronDown />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -153,7 +133,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             </DropdownMenuItem>
 
                             {/* Event Info */}
-                            <DropdownMenuSeparator/>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <Link to="/protected/event_statistics">
                                     Statistics
@@ -172,9 +152,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className={buttonLinkClass}>
-                                <Search/>
+                                <Search />
                                 {renderPageNameLink("Analysis")}
-                                <ChevronDown/>
+                                <ChevronDown />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -189,7 +169,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     {/* Flights */}
                     <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/protected/flights">
-                            <Plane/>
+                            <Plane />
                             {renderPageNameLink("Flights")}
                         </Link>
                     </Button>
@@ -197,7 +177,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     {/* Uploads */}
                     <Button asChild variant="ghost" className={buttonLinkClass}>
                         <Link to="/protected/uploads">
-                            <Upload/>
+                            <Upload />
                             {renderPageNameLink("Uploads")}
                         </Link>
                     </Button>
@@ -206,9 +186,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className={buttonLinkClass}>
-                                <User/>
+                                <User />
                                 {renderPageNameLink("Account")}
-                                <ChevronDown/>
+                                <ChevronDown />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -217,15 +197,15 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             <DropdownMenuLabel>
                                 {
                                     (user?.email)
-                                    ?
-                                    user?.email
-                                    :
-                                    <i>
-                                    Unknown User
-                                    </i>
+                                        ?
+                                        user?.email
+                                        :
+                                        <i>
+                                            Unknown User
+                                        </i>
                                 }
                             </DropdownMenuLabel>
-                            <DropdownMenuSeparator/>
+                            <DropdownMenuSeparator />
 
                             {/* Fleet Management */}
                             <DropdownMenuItem asChild>
@@ -240,7 +220,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             </DropdownMenuItem>
 
                             {/* Account Management */}
-                            <DropdownMenuSeparator/>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <Link to="/protected/preferences">
                                     My Preferences
@@ -253,19 +233,19 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             </DropdownMenuItem>
 
                             {/* Other */}
-                            <DropdownMenuSeparator/>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <Button
                                     className="w-full items-center justify-start"
                                     variant="ghost"
-                                    onClick={() => setModal(BugReportModal, {user: user!})}
+                                    onClick={() => setModal(BugReportModal, { user: user! })}
                                 >
                                     Report a Bug
                                 </Button>
                             </DropdownMenuItem>
 
                             {/* Log Out */}
-                            <DropdownMenuSeparator/>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <button onClick={attemptLogOut} className="button-generic w-full text-left">
                                     Log Out
@@ -275,14 +255,14 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {/* Manual (⚠ PLACEHOLDER ⚠) */}
-                    <Book className="opacity-25"/>
+                    {/* Command Menu */}
+                    <CommandMenu />
 
                     {/* Notifications */}
                     <Notifications />
 
                     {/* Dark Mode Toggle Button */}
-                    <DarkModeToggle/>
+                    <DarkModeToggle />
                 </div>
 
             </nav>
