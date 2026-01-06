@@ -1,5 +1,7 @@
 // ngafid-frontend/src/app/components/providers/tags/tags_provider.tsx
 
+import ErrorModal from "@/components/modals/error_modal";
+import { useModal } from "@/components/modals/modal_context";
 import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { fetchJson } from "@/fetchJson";
@@ -53,62 +55,60 @@ export const TagsProviderContext = createContext<TagsProviderState>(initialState
 export function TagsProvider({ children }: { children: React.ReactNode }) {
 
     const { isLoggedIn } = useAuth();
+    const { setModal } = useModal();
     const [fleetTags, setFleetTags] = useState<TagData[]>([]);
     const [isFetchingTags, startTransition] = useTransition();
+    const [hasFetched, setHasFetched] = useState(false);
 
-    // Fetch tags from API on mount
     useEffect(() => {
-        
-        const fetchFleetTags = async () => {
 
+        // Not logged in yet or already fetched, exit
+        if (!isLoggedIn() || hasFetched)
+            return;
+
+        let cancelled = false;
+
+        const fetchFleetTags = async () => {
+            
             log("Fetching fleet tags...");
 
-            const response = await fetch("/api/tag")
-            .then(async (response) => {
+            try {
 
+                const response = await fetch("/api/tag");
                 log("Received response for fleet tags:", response);
 
-                const data = await response.text().then((text) => {
-                    try {
-                        return JSON.parse(text) as TagData[];
-                    } catch (error) {
-                        log("Error parsing fleet tags response:", error);
-                        throw new Error("Failed to parse fleet tags response");
-                    }
-                });
-
+                const text = await response.text();
+                const data = JSON.parse(text) as TagData[];
                 log("Parsed fleet tags data:", data);
 
-                // Response OK, update state
-                if (response.ok) {
-
-                    startTransition(() => {
-                        setFleetTags(data);
-                    });
-
-                    return data;
-
-                }
-
                 // Response not OK, throw error
-                throw new Error("Failed to fetch fleet tags");
+                if (!response.ok)
+                    throw new Error("Failed to fetch fleet tags");
 
-            })
-            // .catch((error: { toString: () => any; }) => { // setModal(ErrorModal, { title: "Error fetching fleet tags", message: error.toString() }); return []; });
+                // Operation cancelled, exit
+                if (cancelled)
+                    return;
 
-            // startTransition(() => {
-            //     setFleetTags(response);
-            // });
+                // Update state with fetched tags
+                startTransition(() => { setFleetTags(data); });
+                setHasFetched(true);
 
-            setFleetTags(response);
+            } catch (error) {
+                
+                const e = (error as Error);
+                setModal(ErrorModal, { title: "Failed to fetch fleet tags", message: "", code: e.toString() });
 
-        }
-        
-        // Logged in, fetch fleet tags
-        if (isLoggedIn())
-            fetchFleetTags();
+            }
 
-    }, []);
+        };
+
+        fetchFleetTags();
+
+        return () => {
+            cancelled = true;
+        };
+
+    }, [isLoggedIn, hasFetched]);
 
 
     const addFleetTag = (tag: TagData) => {
@@ -237,10 +237,6 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useTags = () => {
-
-    const { isLoggedIn } = useAuth();
-    if (!isLoggedIn())
-        throw new Error("useTags must be used when logged in");
 
     const context = useContext(TagsProviderContext);
     if (!context)
