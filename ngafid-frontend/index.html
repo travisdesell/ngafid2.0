@@ -9,10 +9,17 @@
 
     <script>
 
+        // Set the base URL for assets
+        window.CESIUM_BASE_URL = "%BASE_URL%cesium";
+
+        // Immediately apply the user's preferred theme (light or dark)
         const addDarkClass = (localStorage.theme === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches));
         document.documentElement.classList.toggle("dark", addDarkClass);
 
     </script>
+    <script src="%BASE_URL%cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="%BASE_URL%cesium/Widgets/widgets.css" />
+
 </head>
 
 <body>
