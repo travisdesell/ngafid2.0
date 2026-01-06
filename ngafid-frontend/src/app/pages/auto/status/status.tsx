@@ -5,7 +5,8 @@ import Ping, { PingColor } from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowBigRightDash, CircleAlert, CircleCheck, CircleQuestionMark, LucideProps, TriangleAlert } from "lucide-react";
+import { ArrowBigRightDash, CircleAlert, CircleCheck, CircleQuestionMark, Loader2, LucideProps, TriangleAlert } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 
 
@@ -42,6 +43,7 @@ type StatusEntry = {
     nameDisplay: string;
     status: Status;
     message: string;
+    messageDisplay: string;
 };
 
 type StatusResponse = {
@@ -52,7 +54,8 @@ type StatusResponse = {
 const STATUS_DEFAULT = StatusName.UNKNOWN;
 const STATUS_DEFAULT_MESSAGE = "No message available...";
 
-const STATUS_NAMES_LIST_KAFKA = ["flight-processing", "event-processing", "kafka", "chart-service", "database"] as const;
+const STATUS_NAMES_LIST_KAFKA = ["flight-processing", "event-processing", "kafka", "chart-service"] as const;
+const STATUS_NAMES_LIST_DATABASE = ["database"] as const;
 const STATUS_NAMES_LIST_DOCKER = ["ngafid-email-consumer", "ngafid-event-consumer", "ngafid-event-observer", "ngafid-upload-consumer"] as const;
 
 
@@ -76,6 +79,7 @@ const makeEntry = (rawName: string, displayNameTransform?: (displayName: string)
     nameDisplay: displayNameTransform ? displayNameTransform(formatName(rawName)) : formatName(rawName),
     status: { name: STATUS_DEFAULT, icon: CircleQuestionMark },
     message: STATUS_DEFAULT_MESSAGE,
+    messageDisplay: "",
 });
 
 
@@ -91,6 +95,9 @@ export default function Status() {
     const [kafkaEntries, setKafkaEntries] = React.useState<StatusEntry[]>(
         () => STATUS_NAMES_LIST_KAFKA.map((name) => makeEntry(name))
     );
+    const [databaseEntries, setDatabaseEntries] = React.useState<StatusEntry[]>(
+        () => STATUS_NAMES_LIST_DATABASE.map((name) => makeEntry(name))
+    );
     const [dockerEntries, setDockerEntries] = React.useState<StatusEntry[]>(
         () => STATUS_NAMES_LIST_DOCKER.map((name) => makeEntry(name, (displayName) => displayName.replace(/^Ngafid/i, "")))
     );
@@ -98,13 +105,20 @@ export default function Status() {
     const kafkaEntriesOKCount = kafkaEntries.filter((entry) => entry.status.name === StatusName.OK).length;
     const allKafkaEntriesOK = (kafkaEntriesOKCount === kafkaEntries.length);
     const allKafkaEntriesUnchecked = (kafkaEntries.every((entry) => entry.status.name === StatusName.UNCHECKED));
-    const kafkaEntriesStatusColor = allKafkaEntriesOK
+    const kafkaEntriesStatusColor = (allKafkaEntriesOK)
         ? PingColor.GREEN
         : (allKafkaEntriesUnchecked ? PingColor.NEUTRAL : (kafkaEntriesOKCount > 0 ? PingColor.AMBER : PingColor.RED));
 
+    const databaseEntriesOKCount = databaseEntries.filter((entry) => entry.status.name === StatusName.OK).length;
+    const allDatabaseEntriesOK = (databaseEntriesOKCount === databaseEntries.length);
+    const allDatabaseEntriesUnchecked = (databaseEntries.every((entry) => entry.status.name === StatusName.UNCHECKED));
+    const databaseEntriesStatusColor = (allDatabaseEntriesOK)
+        ? PingColor.GREEN
+        : (allDatabaseEntriesUnchecked ? PingColor.NEUTRAL : (databaseEntriesOKCount > 0 ? PingColor.AMBER : PingColor.RED));
+
     const dockerEntriesOKCount = dockerEntries.filter((entry) => entry.status.name === StatusName.OK).length;
     const allDockerEntriesOK = (dockerEntriesOKCount === dockerEntries.length);
-    const dockerEntriesStatusColor = allDockerEntriesOK
+    const dockerEntriesStatusColor = (allDockerEntriesOK)
         ? PingColor.GREEN
         : (dockerEntriesOKCount > 0 ? PingColor.AMBER : PingColor.RED);
 
@@ -154,6 +168,7 @@ export default function Status() {
             const updated: StatusEntry[] = results.map((r, i) => {
 
                 const name = names[i];
+                let entryOut: StatusEntry;
                 if (r.status === "fulfilled") {
 
                     const Icon = iconFor(r.value.statusName);
@@ -161,11 +176,13 @@ export default function Status() {
                         name.startsWith("ngafid-")
                             ? formatName(name).replace(/^Ngafid/i, "")
                             : formatName(name);
-                    return {
+
+                    entryOut = {
                         name,
                         nameDisplay: display,
                         status: { name: r.value.statusName, icon: Icon },
                         message: r.value.message,
+                        messageDisplay: "",
                     };
 
                 } else {
@@ -174,14 +191,41 @@ export default function Status() {
                         name.startsWith("ngafid-")
                             ? formatName(name).replace(/^Ngafid/i, "")
                             : formatName(name);
-                    return {
+                    
+                    entryOut = {
                         name,
                         nameDisplay: display,
                         status: { name: StatusName.ERROR, icon: CircleAlert },
                         message: "Request failed",
+                        messageDisplay: "",
                     };
 
                 }
+
+                const ANIMATION_DELAY_BASE = 400;
+                const animationDelay = (ANIMATION_DELAY_BASE + i * 100); //<-- Stagger animations
+                const animateMessage = (entry: StatusEntry, delay: number=0) => {
+
+                    const MESSAGE_ANIMATION_RATE_MS = 10;
+
+                    if (entry.messageDisplay.length === entry.message.length)
+                        return;
+
+                    setTimeout(animateMessage, MESSAGE_ANIMATION_RATE_MS+delay, entry);
+
+                    entry.messageDisplay = entry.message.slice(0, entry.messageDisplay.length + 1);
+                    setDockerEntries((prev) =>
+                        prev.map((e) => (e.name === entry.name ? entry : e))
+                    );
+                    setKafkaEntries((prev) =>
+                        prev.map((e) => (e.name === entry.name ? entry : e))
+                    );
+
+                }
+                // animateMessage(entryOut, animationDelay);
+                setTimeout(animateMessage, animationDelay, entryOut);
+
+                return entryOut;
 
             });
 
@@ -192,12 +236,14 @@ export default function Status() {
         // Fetch both Kafka and Docker statuses in parallel
         (async () => {
             try {
-                const [kafka, docker] = await Promise.all([
+                const [kafka, database, docker] = await Promise.all([
                     fetchStatuses(STATUS_NAMES_LIST_KAFKA),
+                    fetchStatuses(STATUS_NAMES_LIST_DATABASE),
                     fetchStatuses(STATUS_NAMES_LIST_DOCKER),
                 ]);
                 if (!abort.signal.aborted) {
                     setKafkaEntries(kafka);
+                    setDatabaseEntries(database);
                     setDockerEntries(docker);
                 }
             } catch (error) {
@@ -212,10 +258,10 @@ export default function Status() {
     return (
         <div className="page-container">
 
-            <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-[1280px] min-h-screen py-8">
+            <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-7xl min-h-screen py-8">
 
                 {/* Kafka Services */}
-                <Card className="relative card-glossy h-[512px] w-full self-center my-auto">
+                <Card className="relative card-glossy h-80 w-full self-center my-auto">
 
                     <Ping color={kafkaEntriesStatusColor} />
 
@@ -251,8 +297,45 @@ export default function Status() {
                     </CardContent>
                 </Card>
 
+                {/* Database Services */}
+                <Card className="relative card-glossy h-64 w-full self-center my-auto">
+
+                    <Ping color={databaseEntriesStatusColor} />
+
+                    <CardHeader>
+                        <CardTitle>Database Services</CardTitle>
+                        <CardDescription>Displays the status of all back-end database services.</CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[256px]">Service</TableHead>
+                                    <TableHead className="w-[256px]">Status</TableHead>
+                                    <TableHead>Message</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {
+                                    databaseEntries.map((entry) => (
+                                        <TableRow key={entry.name}>
+                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
+                                            <TableCell className="flex items-center">
+                                                <entry.status.icon className="inline mr-2" size={16} />
+                                                {entry.status.name}
+                                            </TableCell>
+                                            <TableCell>{entry.message}</TableCell>
+                                        </TableRow>
+                                    ))
+                                }
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
                 {/* Docker Services */}
-                <Card className="relative card-glossy h-[512px] w-full self-center my-auto">
+                <Card className="relative card-glossy h-80 w-full self-center my-auto">
 
                     <Ping color={dockerEntriesStatusColor} />
 
@@ -276,10 +359,30 @@ export default function Status() {
                                         <TableRow key={entry.name}>
                                             <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
                                             <TableCell className="flex items-center">
-                                                <entry.status.icon className="inline mr-2" size={16} />
-                                                {entry.status.name}
+                                                <AnimatePresence>
+                                                    <motion.div
+                                                        className="absolute translate-y-1/2"
+                                                        key={entry.status.name}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.3 }}
+                                                    >
+                                                        <entry.status.icon className="inline mr-2" size={16} />
+                                                        {entry.status.name}
+                                                    </motion.div>
+                                                </AnimatePresence>
                                             </TableCell>
-                                            <TableCell>{entry.message}</TableCell>
+                                            <TableCell className="relative">
+                                                {entry.messageDisplay}
+                                                <Loader2
+                                                    className="animate-spin duration-200 transition-opacity absolute left-0 top-0 translate-x-1/2 translate-y-1/2"
+                                                    size={16}
+                                                    style={{
+                                                        opacity: (entry.messageDisplay.length) ? 0.00 : 1.00
+                                                    }}
+                                                />
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 }
