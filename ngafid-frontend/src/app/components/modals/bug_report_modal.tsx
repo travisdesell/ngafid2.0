@@ -1,12 +1,12 @@
 // ngafid-frontend/src/app/components/modals/bug_report_modal.tsx
-import { AlertCircleIcon, Mail, X } from "lucide-react";
+import { AlertCircleIcon, Mail } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 
 import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { NGAFIDUser } from "src/types";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Field, FieldLabel } from "../ui/field";
@@ -39,7 +39,7 @@ export default function BugReportModal({ data }: Props) {
         the Auth Provider.
     */
 
-    const { close, setModal } = useModal();
+    const { close, setModal, renderModalHeader } = useModal();
 
     const { titleIn, descriptionIn } = data ?? {};
 
@@ -128,6 +128,8 @@ export default function BugReportModal({ data }: Props) {
 
     }
 
+    const allowSubmit = (!submitting) && Boolean(title.trim() && description.trim());
+
     return (
         <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -136,18 +138,8 @@ export default function BugReportModal({ data }: Props) {
             className="w-full h-full"
         >
             <Card className="w-full max-w-2xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <CardHeader className="grid gap-2">
-                    <div className="grid gap-2">
-                        <CardTitle>Submit a Bug Report</CardTitle>
-                        <CardDescription>Provide a brief title and a detailed description.</CardDescription>
-                    </div>
 
-                    <CardAction>
-                        <Button variant="link" onClick={close} aria-label="Close bug report modal">
-                            <X />
-                        </Button>
-                    </CardAction>
-                </CardHeader>
+                {renderModalHeader("Submit a Bug Report", "Provide a brief title and a detailed description.")}
 
                 <CardContent className="space-y-4">
 
@@ -237,7 +229,7 @@ export default function BugReportModal({ data }: Props) {
                     </Button>
 
                     {/* Submit Button */}
-                    <Button onClick={handleSubmit} disabled={submitting}>
+                    <Button onClick={handleSubmit} disabled={!allowSubmit}>
                         {
                             (submitting)
                             ?
