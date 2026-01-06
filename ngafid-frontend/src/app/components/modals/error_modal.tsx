@@ -1,13 +1,12 @@
 // ngafid-frontend/src/app/components/modals/error_modal.tsx
 import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { motion } from "motion/react";
 
 import BugReportModal from '@/components/modals/bug_report_modal';
 import { useModal } from '@/components/modals/modal_context';
 import { useAuth } from '@/components/providers/auth_provider';
 import { getLogger } from "@/components/providers/logger";
-import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 
 
@@ -23,7 +22,7 @@ export type ModalDataError = ModalData & {
 
 export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
 
-    const { close, setModal } = useModal();
+    const { close, setModal, renderModalHeader } = useModal();
     const { title, message, code, allowReport=true } = (data as ModalDataError) ?? {};
     const { user } = useAuth();
 
@@ -68,24 +67,8 @@ export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
             className="w-full h-full"
         >
             <Card className="w-full max-w-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <CardHeader className="grid gap-2">
 
-                    <div className="grid gap-2">
-                        <CardTitle>Error</CardTitle>
-                        <CardDescription>
-                            <div>
-                                {title as string}
-                            </div>
-                        </CardDescription>
-                    </div>
-
-                    <CardAction>
-                        <Button variant="link" onClick={close}>
-                            <X/>
-                        </Button>
-                    </CardAction>
-
-                </CardHeader>
+                {renderModalHeader(`Error`, title)}
                 <CardContent>
                     <div>
                         {
