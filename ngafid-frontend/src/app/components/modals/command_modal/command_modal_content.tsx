@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Command } from "cmdk";
 import { Bug, ChartArea, Flame, Grid2X2Plus, Home, Image, Info, ListOrdered, LogOut, LucideIcon, Menu, Moon, Plane, Rows3, Search, Upload, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const log = getLogger("CommandModalContent", "black", "Modal");
 
@@ -34,6 +35,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
     const { setModal } = useModal();
     const { user, attemptLogOut } = useAuth();
     const [previousCommandData, setPreviousCommandData] = useState<null|CommandData>(null);
+    const navigate = useNavigate();
 
     // Focus the input on mount
     useEffect(() => {
@@ -118,7 +120,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                     <CommandModalContentItem
                         submitCommand={submitCommand}
                         name="Go to Summary Page"
-                        command={()=>window.location.href="/protected/summary"}
+                        command={()=>navigate("/protected/summary")}
                         Icon={Home}
                         hotkey="Ctrl+S"
                     />
@@ -127,7 +129,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                     <CommandModalContentItem
                         submitCommand={submitCommand}
                         name="Go to Status Page"
-                        command={()=>window.location.href="/protected/status"}
+                        command={()=>navigate("/protected/status")}
                         Icon={Info}
                         hotkey="Ctrl+A"
                     />
@@ -137,7 +139,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Trends Page"
-                        command={()=>window.location.href="/protected/trends"}
+                        command={()=>navigate("/protected/trends")}
                         Icon={ChartArea}
                         hotkey="Ctrl+E"
                     />
@@ -147,7 +149,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Severities Page"
-                        command={()=>window.location.href="/protected/severities"}
+                        command={()=>navigate("/protected/severities")}
                         Icon={ChartArea}
                         hotkey="Ctrl+I"
                     />
@@ -157,7 +159,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Heat Map Page"
-                        command={()=>window.location.href="/protected/heat_map"}
+                        command={()=>navigate("/protected/heat_map")}
                         Icon={Flame}
                         hotkey="Ctrl+H"
                     />
@@ -167,7 +169,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Statistics Page"
-                        command={()=>window.location.href="/protected/event_statistics"}
+                        command={()=>navigate("/protected/event_statistics")}
                         Icon={Grid2X2Plus}
                         hotkey="Ctrl+C"
                     />
@@ -176,7 +178,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                     <CommandModalContentItem
                         submitCommand={submitCommand}
                         name="Go to Events — Definitions Page"
-                        command={()=>window.location.href="/protected/event_definitions"}
+                        command={()=>navigate("/protected/event_definitions")}
                         Icon={Rows3}
                         hotkey="Ctrl+D"
                     />
@@ -186,7 +188,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Analysis — Turn to Final Page"
-                        command={()=>window.location.href="/protected/turn_to_final"}
+                        command={()=>navigate("/protected/turn_to_final")}
                         Icon={Search}
                         hotkey="Ctrl+O"
                     />
@@ -195,7 +197,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                     <CommandModalContentItem
                         submitCommand={submitCommand}
                         name="Go to Flights Page"
-                        command={()=>window.location.href="/protected/flights"}
+                        command={()=>navigate("/protected/flights")}
                         Icon={Plane}
                         hotkey="Ctrl+F"
                     />
@@ -204,7 +206,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                     <CommandModalContentItem
                         submitCommand={submitCommand}
                         name="Go to Uploads Page"
-                        command={()=>window.location.href="/protected/uploads"}
+                        command={()=>navigate("/protected/uploads")}
                         Icon={Upload}
                         hotkey="Ctrl+U"
                     />
@@ -214,7 +216,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Account - Manage Fleet Page"
-                        command={()=>window.location.href="/protected/manage_fleet"}
+                        command={()=>navigate("/protected/manage_fleet")}
                         Icon={Users}
                         hotkey="Ctrl+M"
                     />
@@ -224,7 +226,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Account - Manage Tail Numbers Page"
-                        command={()=>window.location.href="/protected/manage_tail_numbers"}
+                        command={()=>navigate("/protected/manage_tail_numbers")}
                         Icon={ListOrdered}
                         hotkey="Ctrl+G"
                     />
@@ -234,7 +236,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         disabled
                         submitCommand={submitCommand}
                         name="Go to Account - My Preferences Page"
-                        command={()=>window.location.href="/protected/my_preferences"}
+                        command={()=>navigate("/protected/my_preferences")}
                         Icon={User}
                         hotkey="Ctrl+P"
                     />
