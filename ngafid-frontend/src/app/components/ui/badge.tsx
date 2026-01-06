@@ -1,7 +1,7 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 import { buttonVariants } from "./button";
 
 const badgeVariants = cva(
@@ -24,16 +24,43 @@ const badgeVariants = cva(
   }
 )
 
-export type BadgeVariant = VariantProps<typeof badgeVariants>['variant'];
+export type BadgeVariant = VariantProps<typeof badgeVariants>["variant"]
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+type ClickableBadgeProps = React.ComponentPropsWithoutRef<"button"> &
+  VariantProps<typeof badgeVariants>
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  )
+type NonClickableBadgeProps = React.ComponentPropsWithoutRef<"div"> &
+  VariantProps<typeof badgeVariants> & {
+    onClick?: never
+  }
+
+export type BadgeProps = ClickableBadgeProps | NonClickableBadgeProps
+
+function isClickableBadgeProps(props: BadgeProps): props is ClickableBadgeProps {
+  return "onClick" in props && typeof props.onClick === "function"
 }
 
-export { Badge, badgeVariants }
+function Badge(props: BadgeProps) {
+  // Has onClick: Return button
+  if (isClickableBadgeProps(props)) {
+    const { className, variant, ...buttonProps } = props
+    return (
+      <button
+        type="button"
+        className={cn(
+          badgeVariants({ variant }),
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          className
+        )}
+        {...buttonProps}
+      />
+    )
+  }
+
+  // Normal: Return div
+  const { className, variant, ...divProps } = props
+  return <div className={cn(badgeVariants({ variant }), className)} {...divProps} />
+}
+
+export { Badge, badgeVariants };
+
