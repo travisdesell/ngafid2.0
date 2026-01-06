@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ModalOutlet, ModalProvider } from '@/components/modals/modal_provider';
 import { AirframesProvider } from '@/components/providers/airframes_provider';
 import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider';
+import { CommandsProvider } from '@/components/providers/commands_provider';
 import { FlightFiltersProvider } from '@/components/providers/flight_filters_provider';
 import { PlatformProvider } from '@/components/providers/platform_provider';
 import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
@@ -264,6 +265,7 @@ const providerTree: ProviderEntry[] = [
     [TooltipProvider, {}],
     [ModalProvider, {}],
     [AuthProvider, {}],
+    [CommandsProvider, {}],
     [TagsProvider, {}],
     [AirframesProvider, {}],
     [SystemIdsProvider, {}],

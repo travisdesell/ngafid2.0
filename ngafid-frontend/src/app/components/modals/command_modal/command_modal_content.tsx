@@ -4,6 +4,7 @@ import BugReportModal from "@/components/modals/bug_report_modal";
 import CommandModalContentItem from "@/components/modals/command_modal/command_modal_content_item";
 import { useModal } from "@/components/modals/modal_context";
 import { useAuth } from "@/components/providers/auth_provider";
+import { useCommands } from "@/components/providers/commands_provider";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Input } from "@/components/ui/input";
@@ -18,19 +19,21 @@ type CommandModalContentProps = {
     inputRef: React.RefObject<HTMLInputElement> | undefined;
 };
 
-type ModalCommandContentItemData ={
+export type CommandData = {
     name: string;
     command: () => void;
     Icon: LucideIcon;
     hotkey: string;
     toggleState?: boolean;
 }
+
 export default function CommandModalContent({ submitCommand, inputRef }: CommandModalContentProps) {
 
+    const { pageCommands } = useCommands();
     const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts, useBackgroundImage, setUseBackgroundImage, useNavbarPageNames, setUseNavbarPageNames } = useTheme();
     const { setModal } = useModal();
     const { user, attemptLogOut } = useAuth();
-    const [previousCommandData, setPreviousCommandData] = useState<null|ModalCommandContentItemData>(null);
+    const [previousCommandData, setPreviousCommandData] = useState<null|CommandData>(null);
 
     // Focus the input on mount
     useEffect(() => {
@@ -86,10 +89,28 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                 {renderPreviousActionGroup()}
 
                 {/* Special Per-Page Actions */}
-                <Command.Group heading="Page Actions">
-                    <span className="opacity-50">No actions available for this page...</span>
-                </Command.Group>
-                <Command.Separator />
+                {
+                    (pageCommands.length > 0)
+                    &&
+                    <>
+                        <Command.Group heading="Page Actions">
+                        {
+                            pageCommands.map((commandData, index) => (
+                                <CommandModalContentItem
+                                    key={index}
+                                    submitCommand={submitCommand}
+                                    name={commandData.name}
+                                    command={commandData.command}
+                                    Icon={commandData.Icon}
+                                    hotkey={commandData.hotkey}
+                                    toggleState={commandData.toggleState}
+                                />
+                            ))
+                        }
+                        </Command.Group>
+                        <Command.Separator />
+                    </>
+                }
 
                 <Command.Group heading="Pages">
 

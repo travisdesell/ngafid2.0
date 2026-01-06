@@ -20,7 +20,9 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
     const [userOS, setOS] = useState<string>("Unknown");
 
     // Determine the command key string based on OS
-    const commandKeyStr = (userOS === "Mac OS") ? "⌘" : "⌘";
+    const commandKeyStr = (userOS === "Mac OS")
+        ? "⌘"
+        : "Ctrl";
 
     function getOS():string {
 
