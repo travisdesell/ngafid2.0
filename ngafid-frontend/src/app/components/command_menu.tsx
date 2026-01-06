@@ -1,5 +1,6 @@
 import CommandModal from "@/components/modals/command_modal/command_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { usePlatform } from "@/components/providers/platform_provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LucideCommand } from "lucide-react";
 import React, { useEffect } from "react";
@@ -7,6 +8,7 @@ import React, { useEffect } from "react";
 function CommandMenu() {
 
     const { setModal } = useModal();
+    const { commandKeyStr } = usePlatform();
     const [open, setOpen] = React.useState(false);
     const inputRef = React.useRef(null);
 
@@ -68,6 +70,7 @@ function CommandMenu() {
 
     }, [open, setOpen]);
 
+    const hotkey = `${commandKeyStr} + K`;
     return (
         <Tooltip disableHoverableContent>
             <TooltipTrigger asChild>
@@ -75,7 +78,7 @@ function CommandMenu() {
                     <LucideCommand />
                 </button>
             </TooltipTrigger>
-            <TooltipContent leftAction="Open" keyboardAction="Ctrl+K / ⌘K" >
+            <TooltipContent leftAction="Open" keyboardAction={hotkey} >
                 Action Menu
             </TooltipContent>
         </Tooltip>

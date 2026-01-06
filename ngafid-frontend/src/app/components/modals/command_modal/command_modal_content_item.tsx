@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/components/modals/command_modal/command_modal_content_item.tsx
 
 import { getLogger } from "@/components/providers/logger";
+import { usePlatform } from "@/components/providers/platform_provider";
 import { Command } from "cmdk";
 import { LucideIcon, Slash } from "lucide-react";
 import { useEffect } from "react";
@@ -19,6 +20,7 @@ type CommandModalContentItemProps = {
 
 export default function CommandModalContentItem(props: CommandModalContentItemProps) {
 
+    const { commandKeyStr } = usePlatform();
     const { submitCommand, name, Icon, hotkey, disabled=false } = props;
     
     const doSubmit = () => {
@@ -82,10 +84,13 @@ export default function CommandModalContentItem(props: CommandModalContentItemPr
                 return;
 
             // Match modifiers (required must be true, non-required must be false)
-            if (e.ctrlKey !== spec.ctrl) return;
+            if (spec.ctrl) {
+                const ctrlOrMeta = (e.ctrlKey !== e.metaKey); // <-- Treat ctrl/meta as interchangeable
+                if (!ctrlOrMeta)
+                    return;
+            }
             if (e.altKey !== spec.alt) return;
             if (e.shiftKey !== spec.shift) return;
-            if (e.metaKey !== spec.meta) return;
 
             e.preventDefault();
             doSubmit();
@@ -106,6 +111,24 @@ export default function CommandModalContentItem(props: CommandModalContentItemPr
 
     }
 
+    const renderHotkeyName = (keyIn: string) => {
+
+        switch (keyIn.toLowerCase()) {
+            case "ctrl": return commandKeyStr;
+            case "alt": return "Alt";
+            case "shift": return "Shift";
+            case "meta": return "Meta";
+            case "arrowup": return "↑";
+            case "arrowdown": return "↓";
+            case "arrowleft": return "←";
+            case "arrowright": return "→";
+            case "escape": return "Esc";
+            case " ": return "Space";
+            default: return keyIn.toUpperCase();
+        }
+
+    };
+
     return (
         <Command.Item onSelect={doSubmit} className={`flex gap-1 items-center ${disabled ? "opacity-25! cursor-not-allowed! border-black/0!" : ""}`}>
             
@@ -123,11 +146,14 @@ export default function CommandModalContentItem(props: CommandModalContentItemPr
 
             <span>{displayName}</span>
             {
-                (hotkey && hotkeySplit.length > 0) &&
+                (hotkey && hotkeySplit.length > 0)
+                &&
                 <span className="ml-auto flex gap-1 mr-2">
                     {
                         hotkeySplit.map((part, index) => (
-                            <kbd className="bg-muted px-1 rounded" key={index}>{part}</kbd>
+                            <kbd className="bg-muted px-1 rounded" key={index}>
+                                {renderHotkeyName(part)}
+                            </kbd>
                         ))
                     }
                 </span>

@@ -1,26 +1,27 @@
 // ngafid-frontend/src/app/main.tsx
+import React, { JSX } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+
+// Import Providers
 import { ModalOutlet, ModalProvider } from '@/components/modals/modal_provider';
 import { AirframesProvider } from '@/components/providers/airframes_provider';
 import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider';
 import { FlightFiltersProvider } from '@/components/providers/flight_filters_provider';
+import { PlatformProvider } from '@/components/providers/platform_provider';
+import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
+import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import NotFound from '@/pages/page_missing/page_missing';
-import React, { JSX } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { NotificationsProvider } from './components/providers/notifications/notifications_provider';
 import { TimeHeaderProvider } from './components/providers/time_header/time_header_provider';
 
-
-// Import CSS
 import ProtectedLayout from '@/components/layouts/protected_layout';
 import WelcomeLayout from '@/components/layouts/welcome_layout';
 import { getLogger } from '@/components/providers/logger';
-import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
-import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import '@/index.css';
 import { ROUTE_BASE } from '@/lib/route_utils';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
+import NotFound from '@/pages/page_missing/page_missing';
 import Background from './components/background';
 
 
@@ -259,6 +260,7 @@ type ProviderEntry<P = any> =
 
 const providerTree: ProviderEntry[] = [
     [ThemeProvider, { defaultTheme: "dark", storageKey: "theme" }],
+    [PlatformProvider, {}],
     [TooltipProvider, {}],
     [ModalProvider, {}],
     [AuthProvider, {}],
