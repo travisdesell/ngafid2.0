@@ -1,11 +1,10 @@
 // ngafid-frontend/src/app/components/modals/confirm_modal.tsx
 import { Button, ButtonVariant } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { motion } from "motion/react";
 
 import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
-import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 
 
@@ -21,7 +20,7 @@ export type ModalDataError = ModalData & {
 
 export default function ConfirmModal({ data }: ModalProps) {
 
-    const { close } = useModal();
+    const { close, renderModalHeader } = useModal();
     const { title, message, onConfirm, buttonVariant } = (data as ModalDataError);
     const messageIsKnownOperation = (message && message.length > 0);
 
@@ -37,24 +36,8 @@ export default function ConfirmModal({ data }: ModalProps) {
             className="w-full h-full"
         >
             <Card className="w-full max-w-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <CardHeader className="grid gap-2">
-
-                    <div className="grid gap-2">
-                        <CardTitle>Confirm</CardTitle>
-                        <CardDescription>
-                            <div>
-                                {title as string}
-                            </div>
-                        </CardDescription>
-                    </div>
-
-                    <CardAction>
-                        <Button variant="link" onClick={close}>
-                            <X />
-                        </Button>
-                    </CardAction>
-
-                </CardHeader>
+                
+                {renderModalHeader("Confirm", title, true)}
                 <CardContent>
                     <div>
                         {
