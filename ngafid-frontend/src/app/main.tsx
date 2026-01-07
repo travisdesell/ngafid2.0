@@ -13,7 +13,7 @@ import { PlatformProvider } from '@/components/providers/platform_provider';
 import { SystemIdsProvider } from '@/components/providers/system_ids_provider/system_ids_provider';
 import { TagsProvider } from '@/components/providers/tags/tags_provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { NotificationsProvider } from './components/providers/notifications/notifications_provider';
 import { TimeHeaderProvider } from './components/providers/time_header/time_header_provider';
 

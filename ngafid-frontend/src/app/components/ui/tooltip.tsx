@@ -62,13 +62,11 @@ function Tooltip({ onOpenChange, open: openProp, defaultOpen, ...props }: Toolti
     )
 
     return (
-        <TooltipProvider>
-            <TooltipPrimitive.Root
-                {...props}
-                open={isControlled ? openProp : open}
-                onOpenChange={handleOpenChange}
-            />
-        </TooltipProvider>
+        <TooltipPrimitive.Root
+            {...props}
+            open={isControlled ? openProp : open}
+            onOpenChange={handleOpenChange}
+        />
     )
 }
 
