@@ -1,11 +1,9 @@
 // ngafid-frontend/src/app/components/modals/success_modal.tsx
-import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "motion/react";
 
 import { useModal } from '@/components/modals/modal_context';
 import { getLogger } from "@/components/providers/logger";
-import { X } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 
 
@@ -19,7 +17,7 @@ export type ModalDataSuccess = ModalData & {
 
 export default function SuccessModal({ data }: ModalProps) {
 
-    const { close } = useModal();
+    const { renderModalHeader } = useModal();
     const { title, message } = (data as ModalDataSuccess) ?? {};
     const isUnknownOperation = (!message || message.length === 0);
 
@@ -33,24 +31,7 @@ export default function SuccessModal({ data }: ModalProps) {
             className="w-full h-full"
         >
             <Card className="w-full max-w-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <CardHeader className="grid gap-2">
-
-                    <div className="grid gap-2">
-                        <CardTitle>Success</CardTitle>
-                        <CardDescription>
-                            <div>
-                                {title as string}
-                            </div>
-                        </CardDescription>
-                    </div>
-
-                    <CardAction>
-                        <Button variant="link" onClick={close}>
-                            <X/>
-                        </Button>
-                    </CardAction>
-
-                </CardHeader>
+                {renderModalHeader("Success", title as string, true)}
                 <CardContent>
                     <div>
                         {
