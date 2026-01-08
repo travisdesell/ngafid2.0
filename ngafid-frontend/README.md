@@ -13,15 +13,15 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
 
 2. Install Dependencies:
 ~~~
-    npm install
+    pnpm install
 ~~~
 
 3. Run the Vite development server (2 options):
 ~~~
-    npm run dev
+    npx vite [--port=<TARGET PORT HERE>]
 ~~~
 ~~~
-    npx vite --port=<TARGET PORT HERE>
+    pnpm run dev [--port=<TARGET PORT HERE>]
 ~~~
 
 3. Connect to the device at the given IP address.
@@ -53,10 +53,13 @@ Use **Providers** to pass globally-accessible values down the component tree.
 
 Page Routes will be automatically generated inside ```main.tsx``` without having to define them manually.
 
-1. Pages live inside the ```ngafid-frontend/src/components/pages``` directory.
-2. Protected pages (requiring the user to be logged in) live inside the ```/protected``` sub-directory (pages outside of this subdirectory can be considered public, and won't require a login to access).
-3. To add a new page, create a new folder with the page's name, and add a new .tsx file with the page's name to that folder.
-4. Folders with a leading underscore (e.g., ```.../pages/summary/_charts/...```) will be excluded from the Route generation. (See ```isPageCandidate``` in ```main.tsx``` for additional rules.)
+<ol>
+    <li>Pages live inside the <code>ngafid-frontend/src/components/pages</code> directory.
+    <li>Protected pages (requiring the user to be logged in) live inside the <code>/protected</code> sub-directory (pages outside of this subdirectory can be considered public, and won't require a login to access).
+    <li>Both protected and non-protected routes will be generated for pages inside the <code>/auto</code> sub-directory.
+    <li>To add a new page, create a new folder with the page's name, and add a new .tsx file with the page's name to that folder.
+    <li>Folders with a leading underscore (e.g., <code>.../pages/summary/_charts/...</code>) will be excluded from the Route generation. (See the <code>isPageCandidate</code> function in <code>main.tsx</code> for additional rules.)
+</ol>
 
 ---
 

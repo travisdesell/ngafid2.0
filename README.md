@@ -132,17 +132,19 @@ env and container env into two separate files, a single common file is used.
 
 ## 5. Build Node Modules
 
-Initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
+<span style="opacity:0.50">🛈 The front-end is undergoing a significant rework. Cross-reference the information in this section with the information in the `ngafid-frontend/README.md` file.</span>
+
+Initialize node. You'll need [pnpm](https://pnpm.io/installation) installed for this, then inside the `ngafid-frontend` directory run:
 
 ```
-~/ngafid2.0/ngafid-frontend $ npm install
+~/ngafid2.0/ngafid-frontend $ pnpm install
 ```
 
-This will download the javascript dependencies. Then, in order to compile the javascript and automatically recompile
+This will download the JavaScript dependencies. Then, in order to compile the JavaScript and automatically recompile
 whenever you change one of the files:
 
 ```
-~/ngafid2.0/ngafid-frontend $ npm run watch
+~/ngafid2.0/ngafid-frontend $ npx vite
 ```
 
 ## 6. Run Kafka
