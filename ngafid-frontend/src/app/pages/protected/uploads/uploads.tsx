@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { fetchJson } from "@/fetchJson";
-import { CHUNK_SIZE } from "@/workers/md5.worker";
+import { CHUNK_SIZE } from "@/workers/md5.shared";
 import Md5Worker from "@/workers/md5.worker.ts?worker";
 import {
     AlertTriangle,
@@ -189,18 +189,16 @@ async function md5OnMainThread(
 
 }
 
-async function md5BestEffort(
-    file: File,
-    onProgress: (done: number, total: number) => void
-): Promise<string> {
+async function md5BestEffort(file: File, onProgress: (done: number, total: number) => void): Promise<string> {
 
     // Attempt to use the worker path first...
     try {
 
         const worker = createMd5Worker();
-        return await new Promise((resolve) => {
+        return await new Promise((resolve, reject) => {
 
-            const finish = (hash: string) => {
+            let settled = false;
+            const cleanup = () => {
 
                 // Attempt to clean up the worker
                 try {
@@ -209,19 +207,50 @@ async function md5BestEffort(
                     /* ... */
                 }
 
+            };
+
+            const finish = (hash: string) => {
+
+                // Already settled, exit
+                if (settled)
+                    return;
+
+                // Flag as settled
+                settled = true;
+
+                // Clean up resources
+                cleanup();
+
                 // Resolve the hash
                 resolve(hash);
 
             };
 
-            const fallback = async () => {
 
-                // Worker blocked or errored, compute on main thread instead
-                log.warn("MD5 worker failed, falling back to main thread hashing.");
+            const fallback = () => {
 
-                const hash = await md5OnMainThread(file, onProgress);
-                finish(hash);
+                // Already settled, exit
+                if (settled)
+                    return;
 
+                void md5OnMainThread(file, onProgress)
+                    .then(finish)
+                    .catch((err) => {
+
+                        // Already settled, exit
+                        if (settled)
+                            return;
+
+                        // Flag as settled
+                        settled = true;
+
+                        // Clean up resources
+                        cleanup();
+
+                        // Reject the main-thread error
+                        reject(err);
+                        
+                    });
             };
 
             worker.onmessage = (ev: MessageEvent) => {
@@ -231,8 +260,11 @@ async function md5BestEffort(
                 if (msg?.type === "progress")
                     onProgress(msg.done, msg.total);
 
-                if (msg?.type === "done")
+                else if (msg?.type === "done")
                     finish(msg.hash);
+
+                else if (msg?.type === "error")
+                    fallback();
 
             };
 
@@ -242,10 +274,14 @@ async function md5BestEffort(
 
             // Post the file to the worker
             try {
+
                 worker.postMessage(file);
+
             } catch {
+
                 // Posting failed (probably from cross-origin restrictions)
                 void fallback();
+                
             }
 
         });

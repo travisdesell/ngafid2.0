@@ -45,28 +45,10 @@ export default function UploadsDropzone({ onPickFiles }: Props) {
 
                 }
 
-                const reader = new FileReader();
-                reader.onabort = () =>
-                    setModal(ErrorModal, {
-                        title: "File Read Aborted",
-                        message: "The file reading was aborted.",
-                    });
+                const dataTransferInst = new DataTransfer();
+                acceptedFiles.forEach((f) => dataTransferInst.items.add(f));
 
-                reader.onerror = () =>
-                    setModal(ErrorModal, {
-                        title: "File Read Error",
-                        message: "There was an error reading the file.",
-                    });
-
-                reader.onload = () =>
-                    onPickFiles(acceptedFiles as unknown as FileList).catch(() =>
-                        setModal(ErrorModal, {
-                            title: "File Upload Error",
-                            message: "There was an error uploading the file(s).",
-                        })
-                    );
-
-                reader.readAsArrayBuffer(file);
+                void onPickFiles(dataTransferInst.files);
 
             });
 
