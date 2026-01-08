@@ -42,6 +42,33 @@ export type AirframeNameIDType = { // ⚠️ TODO: Figure out what to do with th
     }
 } & AirframeNameID;
 
+export type FlightEvent = {
+    endLine: number;
+    endTime: string;
+    eventDefinitionId: number;
+    fleetId: number;
+    flightdId: number;
+    id: number;
+    otherFlightId: number | null;
+    severity: number;
+    startLine: number;
+    startTime: string;
+}
+
+export type EventDefinition = {
+    id: number;
+    fleetId: number;
+    name: string;
+    startBuffer: number;
+    stopBuffer: number;
+
+    airframeNameId: number;
+
+    columnNames: string[];
+    severityColumnNames: string[];
+    severityType: string;
+    filter: unknown;    // ⚠️ TODO: Define EventDefinition filter type
+}
 
 export interface Flight {
     filename: string;
@@ -60,7 +87,9 @@ export interface Flight {
     numberRows: number;
     doubleTimeSeries: DoubleTimeSeries;  // ⚠️ TODO: Define valid double time series types
     stringTimeSeries: object;  // ⚠️ TODO: Define valid string time series types
-    events: any[];  // ⚠️ TODO: Define valid event types
+    events: FlightEvent[] | null;
+    eventCount: number;
+    eventDefinitions: EventDefinition[] | null;
     tags: TagData[] | null;
 
     commonTraceNames: string[] | null;
