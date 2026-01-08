@@ -102,6 +102,7 @@ function TooltipContent({
         <TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
                 sideOffset={sideOffset}
+                updatePositionStrategy="always"
                 className={cn(
                     `
                         bg-foreground text-background
