@@ -287,6 +287,31 @@ html.dark { color-scheme: dark; }
 .page-content { color-scheme: inherit; }
 
 
+
+
+/*
+    Ensure all focused elements are on top of other elements
+    to prevent clipping issues with focus rings.
+
+    TODO: Double check this doesn't cause any unexpected issues
+    anywhere.
+*/
+* {
+    @apply focus:z-10000;
+}
+
+/*
+    Apply consistent focus ring styles to all interactive
+    elements.
+*/
+a, button, select, input, textarea {
+    @apply focus:outline-none!;
+    @apply focus:ring-2!;
+    @apply focus:ring-black!;
+    @apply focus:dark:ring-white!;
+}
+
+
 /* Tooltip Classes */
 [data-radix-popper-content-wrapper] {
     pointer-events: none;   /* <-- Prevent user interacting with Tooltip with cursor at all */
