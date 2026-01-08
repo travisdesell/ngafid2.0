@@ -29,7 +29,7 @@ import SuccessModal from "@/components/modals/success_modal";
 import { getLogger } from "@/components/providers/logger";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
-import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropdzone";
+import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropzone";
 import type {
     APIError,
     ImportsListResponse,
