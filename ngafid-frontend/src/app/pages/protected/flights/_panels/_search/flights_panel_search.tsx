@@ -244,7 +244,10 @@ export default function FlightsPanelSearch() {
             <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip">
 
                 {/* Search Filter */}
-                <motion.div className="flex-1 min-h-0 w-full overflow-y-auto relative">
+                <motion.div
+                    animate={{overflow: "clip"}}
+                    className="flex-1 min-h-0 w-full overflow-y-auto relative"
+                >
 
                     {/* Empty Filter Message */}
                     <AnimatePresence mode="wait" initial={false}>

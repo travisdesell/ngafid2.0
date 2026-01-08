@@ -276,7 +276,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
         const hasAnySubGroups = (subGroups.length > 0);
 
         const groupClasses = `
-            w-full overflow-clip ${
+            w-full ${
                 isRoot
                 ? ""
                 : "border-1 border-gray-400 rounded-lg bg-neutral-500/10"
@@ -290,16 +290,19 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
 
         return (
             <motion.div
-                layout="position"
+                layout="size"
                 className={groupClasses}
                 initial={{ opacity: 0  }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: 1, overflow: "clip" }}
                 transition={{ duration: 0.2 }}
                 exit={{ opacity: 0 }}
             >
 
                 {/* Group Header */}
-                <div className="flex flex-row justify-between items-center w-full p-2">
+                <motion.div
+                    layout="position"
+                    className="flex flex-row justify-between items-center w-full p-2"
+                >
 
                     {/* Group Operator */}
                     {renderGroupOperator()}
@@ -311,22 +314,21 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                         {renderDeleteGroupButton(isRoot, indexPath)}
                     </div>
 
-                </div>
+                </motion.div>
 
                 {/* Group Rules & Subgroups */}
                 <motion.div
                     layout="position"
-                    className={subGroupContainerClasses}
+                    className={`${subGroupContainerClasses} relative`}
                 >
                     {/* Rules */}
-                    <AnimatePresence initial={false} mode="sync">
-                        {group.rules?.map((rule, index) => (
+                    <AnimatePresence initial={false} mode="popLayout">
+                        {(group.rules ?? []).map((rule, index) => (
                             <motion.div
                                 key={rule.id}
-                                layout
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, position: "absolute", y: -48, pointerEvents: "none" }}
+                                exit={{ opacity: 0, y: -48 }}
                                 transition={{ duration: 0.2 }}
                             >
                                 <FlightsPanelSearchRule
@@ -339,14 +341,13 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                     </AnimatePresence>
 
                     {/* Sub-Groups */}
-                    <AnimatePresence initial={false} mode="sync">
+                    <AnimatePresence initial={false} mode="popLayout">
                         {(group.groups ?? []).map((sg, index) => (
                             <motion.div
                                 key={sg.id}
-                                layout
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, position: "absolute", y: -48, pointerEvents: "none" }}
+                                exit={{ opacity: 0, y: -48 }}
                                 transition={{ duration: 0.2 }}
                             >
                                 <FlightsPanelSearchGroupInner
