@@ -85,7 +85,12 @@ public final class User implements Serializable {
         fleetAccess = FleetAccess.get(connection, id, fleetId);
         fleet = Fleet.get(connection, fleetId);
 
-        LOG.log(Level.INFO, "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}", new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType()});
+        if (fleetAccess != null) {
+            LOG.log(Level.INFO, "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}", new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType()});
+        } else {
+            LOG.log(Level.WARNING, "Instantiated user with ID: {0}, Fleet ID: {1}, but no fleet access found. Fleet access methods will throw NullPointerException.", new Object[]{this.id, this.fleet.getId()});
+            // Note: fleetAccess remains null - this will cause NullPointerException if fleetAccess methods are called
+        }
     }
 
     private User(ResultSet resultSet) throws SQLException {

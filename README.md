@@ -276,3 +276,83 @@ To manually disable two-factor authentication for a user. System administrators 
 ```
 UPDATE user SET two_factor_enabled = 0,     two_factor_setup_complete = 0,     two_factor_secret = NULL,     backup_codes = NULL WHERE id = "TARGET_ID";
 ```
+## 13. AirSync Setup
+NGAFID integrates with AirSync to automatically import flight data. AirSync utilizes Partner API for accessing flight logs. See [Partner API Documentation](documentation/partner-api-documentation.pdf) for  API specifications.
+
+### Architecture overview 
+NGAFID uses a pull-based approach: the AirSync daemon periodically(every 24 hs) polls the AirSync API for new flight logs, downloads them, packages them into ZIP files, and processes them through the standard upload pipeline. 
+We can trigger upload by pressing Sync upload button in the AirSync Uploads page. This will set the override flag in the airsync database to 1 and force an upload. 
+The Partner API documentation recommends a push-based approach using webhooks/Amazon SNS for real-time notifications. Our pull-based implementation can be revisited to comply with the Partern API recomenteation. 
+
+### Key components
+- AirSync Daemon (run/airsync_daemon): Polls the AirSync API, downloads flight logs, creates ZIP archives
+- Upload Consumer (run/kafka/upload_consumer): Processes ZIP files and extracts flight data
+- Database Tables: airsync_fleet_info (configuration), airsync_imports (log tracking), uploads (processed files)
+
+### Adding User to the AirSync System
+
+1. Ensure the fleet exists in the database.
+
+``` 
+SELECT id, fleet_name FROM fleet WHERE id = <fleet_id>;
+```
+2. Grant User Access to the Fleet.
+The User needs MANAGER or UPLOAD_ONLY access to trigger AirSync updates via the web UI (Sync button in Uploads page)
+
+``` 
+INSERT INTO fleet_access (user_id, fleet_id, type) 
+VALUES (<user_id>, <fleet_id>, 'MANAGER') 
+ON DUPLICATE KEY UPDATE type = 'MANAGER';
+``` 
+3. Confugure AirSync Fleet Information
+
+``` 
+INSERT INTO airsync_fleet_info 
+    (fleet_id, airsync_fleet_name, api_key, api_secret, timeout, override) 
+VALUES 
+    (<fleet_id>, '<AirSync Account Name>', '<API_KEY>', '<API_SECRET>', 1440, 0)
+ON DUPLICATE KEY UPDATE 
+    airsync_fleet_name = '<AirSync Account Name>',
+    api_key = '<API_KEY>',
+    api_secret = '<API_SECRET>',
+    timeout = 1440,
+    override = 0;
+  
+  ``` 
+Parameters:
+
+- fleet_id: The ID of the fleet from the fleet table
+- airsync_fleet_name: The exact account name as it appears in the AirSync API n
+- api_key: Your AirSync API key
+- api_secret: Your AirSync API secret
+- timeout: Time in minutes between automatic syncs (1440 = 24 hours)
+- override: Set to 1 to force immediate sync, 0 for normal operation
+
+
+### Force imediate Synchronization
+``` 
+UPDATE airsync_fleet_info 
+SET override = 1 
+WHERE fleet_id = <fleet_id>;
+``` 
+
+The daemon will detect this within 30 seconds and start syncing. After processing, it will reset override to 0.
+
+
+### Using Upload Helper to Re-enqueue Uploads
+The run/upload_helper script can manually add uploads to the Kafka processing queue. This is useful when uploads are stuck in UPLOADED status but not being processed.
+
+Re-enqueue specific uploads 
+``` 
+run/upload_helper -u <upload_id_1> <upload_id_2>
+``` 
+
+Re-enqueue  all uploads for a fleet
+``` 
+run/upload_helper -f <fleet_id>
+``` 
+
+Re-enqueue  uploads from a file
+``` 
+run/upload_helper -F <file_path>
+``` 
