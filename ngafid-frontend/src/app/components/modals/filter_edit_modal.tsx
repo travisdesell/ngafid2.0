@@ -47,7 +47,13 @@ export default function FilterEditModal({ data }: ModalProps) {
             <ColorPicker value={colorPickerValue} onChange={setColorPickerValue} />
 
             {/* Filter Name Input */}
-            <Input className="ml-4" placeholder="Filter Name" value={nameInputValue} onChange={(e) => setNameInputValue(e.target.value)} />
+            <Input
+                id="filter-name-input"
+                className="ml-4"
+                placeholder="Filter Name"
+                value={nameInputValue}
+                onChange={(e) => setNameInputValue(e.target.value)}
+            />
 
         </div>
 
