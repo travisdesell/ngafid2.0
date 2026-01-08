@@ -6,11 +6,12 @@ import { getLogger } from "@/components/providers/logger";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FilterGroup, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
-import { useFlights } from "@/pages/protected/flights/_flights_context";
-import FlightsPanelSearchRule from "@/pages/protected/flights/_panels/flights_panel_search_rule";
+import { useFlightsFilter } from "@/pages/protected/flights/_flights_context_search_filter";
 import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/types";
 import { Bolt, Folder, FolderSearch, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { memo } from "react";
+import FlightsPanelSearchRule from "./flights_panel_search_rule";
 
 
 const log = getLogger("FlightsPanelSearchGroup", "green", "Component");
@@ -22,9 +23,9 @@ type Props = {
     indexPath: number[];
     ruleDefinitions: FilterRuleDefinition[];
 }
-export function FlightsPanelSearchGroup({ depth, group, indexPath, ruleDefinitions }: Props) {
+function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions }: Props) {
 
-    const { filter, setFilter, newID, filterIsEmpty } = useFlights();
+    const { filter, setFilter, newID, filterIsEmpty } = useFlightsFilter();
     const { setModal } = useModal();
 
     const isSpecialFilter = (group.id === SPECIAL_FILTER_GROUP_ID);
@@ -325,7 +326,7 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath, ruleDefinitio
                                 layout
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
+                                exit={{ opacity: 0, position: "absolute", y: -48, pointerEvents: "none" }}
                                 transition={{ duration: 0.2 }}
                             >
                                 <FlightsPanelSearchRule
@@ -345,10 +346,10 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath, ruleDefinitio
                                 layout
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
+                                exit={{ opacity: 0, position: "absolute", y: -48, pointerEvents: "none" }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <FlightsPanelSearchGroup
+                                <FlightsPanelSearchGroupInner
                                     depth={depth + 1}
                                     group={sg}
                                     indexPath={[...indexPath, index]}
@@ -369,3 +370,5 @@ export function FlightsPanelSearchGroup({ depth, group, indexPath, ruleDefinitio
     return render();
 
 }
+
+export const FlightsPanelSearchGroup = memo(FlightsPanelSearchGroupInner);

@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FilterCondition, FilterRule, FilterRuleDefinition } from "@/pages/protected/flights/_filters/types";
-import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { FilterCondition, FilterGroup, FilterRule, FilterRuleDefinition } from "@/pages/protected/flights/_filters/types";
+import { useFlightsFilter } from "@/pages/protected/flights/_flights_context_search_filter";
 import { FILTER_RULE_NAME_NEW } from "@/pages/protected/flights/types";
 import { Trash } from "lucide-react";
+import { memo } from "react";
 
 const log = getLogger("FlightsPanelSearchRule", "blue", "Component");
 
@@ -20,67 +21,63 @@ type Props = {
     indexPath: number[];
     ruleDefinitions: FilterRuleDefinition[];
 }
-export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinitions }: Props) {
+function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props) {
 
-    const { filter, setFilter } = useFlights();
+    const { filter, setFilter } = useFlightsFilter();
 
     const updateCurrentRule = (updater: (prev: FilterRule) => FilterRule) => {
 
-        /*
-            Update the name of the current rule
-            and the conditions associated with it.
-        */
-
         log("Flights Panel Search Rule - Updating current rule:", rule);
 
-        setFilter((prev) => {
+        setFilter((prevFilter) => {
+            
+            // indexPath is: [g0, g1, ..., ruleIndex]
+            if (indexPath.length === 0)
+                return prevFilter;
 
-            // Deep clone (for immutability)
-            const next = structuredClone(prev);
+            // Clone root filter group
+            const nextFilter: FilterGroup = { ...prevFilter };
 
-            // Find and update the rule in the filter
-            const updateRuleInGroup = (group: any) => {
+            // Walk groups down to the parent group of this rule
+            let cursor: FilterGroup = nextFilter;
+            for (let i = 0; i < indexPath.length - 1; i++) {
+                const groupIndex = indexPath[i];
 
-                if (group.rules) {
+                const groups = cursor.groups ?? [];
+                if (groupIndex < 0 || groupIndex >= groups.length)
+                    return prevFilter; // Invalid path, bail
 
-                    for (let i = 0; i < group.rules.length; i++) {
-                        
-                        // Found rule, update it
-                        if (group.rules[i].id === rule.id) {
-                            group.rules[i] = updater(group.rules[i]);
-                            return true;
-                        }
+                const child = groups[groupIndex];
+                const childClone: FilterGroup = { ...child };
 
-                    }
+                const newGroups = [...groups];
+                newGroups[groupIndex] = childClone;
+                cursor.groups = newGroups;
 
-                }
-                
-                if (group.groups) {
+                cursor = childClone;
+            }
 
-                    for (const subGroup of group.groups) {
+            const ruleIndex = indexPath[indexPath.length - 1];
+            const rules = cursor.rules ?? [];
+            if (ruleIndex < 0 || ruleIndex >= rules.length)
+                return prevFilter;
 
-                        // Found rule in a subgroup
-                        if (updateRuleInGroup(subGroup))
-                            return true;
-                        
-                    }
+            const oldRule = rules[ruleIndex];
+            const updatedRule = updater(oldRule);
 
-                }
+            // No change -> bail to avoid useless re-renders
+            if (updatedRule === oldRule)
+                return prevFilter;
 
-                // Rule not found in this group
-                return false;
+            const newRules = [...rules];
+            newRules[ruleIndex] = updatedRule;
+            cursor.rules = newRules;
 
-            };
-
-            updateRuleInGroup(next);
-
-            return next;
-
+            return nextFilter as any;
         });
 
         log("Flights Panel Search Rule - Current rule updated. Updated filter (will reflect after render):", filter);
-
-    }
+    };
 
     const renderDeleteRuleButton = (indexPath: number[]) => {
 
@@ -91,35 +88,47 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
         */
 
         const handleDeleteRule = () => {
-
             log("Flights Panel Search Rule - Deleting rule at index path:", indexPath);
 
             setFilter((prev) => {
+                const next: FilterGroup = { ...prev };
 
-                // Deep clone (for immutability)
-                const next = structuredClone(prev);
-
-                // Navigate to the parent group of the rule to delete
-                let currentGroup: any = next;
+                // Navigate to parent group
+                let currentGroup: FilterGroup = next;
                 for (let i = 0; i < indexPath.length - 1; i++) {
                     const groupIndex = indexPath[i];
-                    currentGroup = currentGroup.groups ? currentGroup.groups[groupIndex] : currentGroup;
+                    const groups = currentGroup.groups ?? [];
+                    if (groupIndex < 0 || groupIndex >= groups.length)
+                        return prev; // invalid path
+
+                    const child = groups[groupIndex];
+                    const childClone: FilterGroup = { ...child };
+                    const newGroups = [...groups];
+                    newGroups[groupIndex] = childClone;
+                    currentGroup.groups = newGroups;
+                    currentGroup = childClone;
                 }
 
-                // Remove the rule from the parent group
                 const ruleIndexToDelete = indexPath[indexPath.length - 1];
-                if (currentGroup.rules && ruleIndexToDelete >= 0 && ruleIndexToDelete < currentGroup.rules.length)
-                    currentGroup.rules.splice(ruleIndexToDelete, 1);
+                const rules = currentGroup.rules ?? [];
+                if (ruleIndexToDelete < 0 || ruleIndexToDelete >= rules.length)
+                    return prev;
 
-                return next;
+                const newRules = [...rules];
+                newRules.splice(ruleIndexToDelete, 1);
+                currentGroup.rules = newRules;
 
+                return next as any;
             });
 
             log("Flights Panel Search Rule - Rule deleted. Updated filter (will reflect after render):", filter);
-
         };
 
-        return <Button onClick={handleDeleteRule} variant="outline" className="hover:bg-red-200 hover:dark:bg-red-900 hover:text-red-500 focus:ring-red-500">
+        return <Button
+            onClick={handleDeleteRule}
+            variant="outline"
+            className="hover:bg-red-200 hover:dark:bg-red-900 hover:text-red-500 focus:ring-red-500"
+        >
             <Trash />
         </Button>;
 
@@ -136,16 +145,22 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
 
         const key = `${rule.id}-condition-${idx}`;
 
-        const valueCurrentOrDefault = condition.value ?? (condition.options?.length ? condition.options[0] : undefined);
+        const valueCurrentOrDefault = (condition.value ?? "");
+
         const hasOptions = !!condition.options?.length;
         const updateConditionValue = (value: string | number | undefined) => {
 
-            updateCurrentRule((prev) => {
-                const next = structuredClone(prev);
-                next.conditions[idx].value = (value as any);
-                return next;
+            updateCurrentRule((prevRule) => {
+                const nextConditions = [...prevRule.conditions];
+                nextConditions[idx] = {
+                    ...nextConditions[idx],
+                    value: value as any,
+                };
+                return {
+                    ...prevRule,
+                    conditions: nextConditions,
+                };
             });
-
         };
 
         switch (condition.type) {
@@ -185,7 +200,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
                     value={(valueCurrentOrDefault as string) ?? ''}
                     onChange={(e) => updateConditionValue(e.target.value)}
                     placeholder={condition.name}
-                    className="min-w-[128px]"
+                    className="min-w-32"
                 />;
 
             /* Time Input */
@@ -200,22 +215,32 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
             case 'date':
             case 'datetime-local': {
 
-                const setDateValue = (date: Date) => {
-                    updateCurrentRule((prev) => {
-                        const next = structuredClone(prev);
-                        next.conditions[idx].value = date.toISOString();
-                        return next;
+                const setDateValue = (date?: Date) => {
+                    updateCurrentRule((prevRule) => {
+                        const nextConditions = [...prevRule.conditions];
+                        nextConditions[idx] = {
+                            ...nextConditions[idx],
+                            value: date ? date.toISOString() : undefined,
+                        };
+                        return {
+                            ...prevRule,
+                            conditions: nextConditions,
+                        };
                     });
+                };
+
+                // No date value set, use today as default
+                if (!valueCurrentOrDefault) {
+
+                    const dateToday = new Date();
+
+                    return <Button key={key} asChild variant="outline" className="rounded-none! bg-fuchsia-500">
+                        <DatePicker date={dateToday} setDate={setDateValue} />
+                    </Button>;
+
                 }
 
-                let dateValue = valueCurrentOrDefault;
-                if (!dateValue) {
-                    dateValue = new Date().toISOString();
-                    setDateValue(new Date(dateValue));
-                } else {
-                    dateValue = new Date(dateValue);
-                }
-
+                const dateValue = new Date(valueCurrentOrDefault as string);
                 return <Button key={key} asChild variant="outline" className="rounded-none! bg-fuchsia-500">
                         <DatePicker date={dateValue} setDate={setDateValue} />
                     </Button>;
@@ -235,7 +260,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
                 const max = (typeof condition.max === 'number') ? condition.max : undefined;
 
                 return <NumberInput
-                    className="min-w-[128px] rounded-none!"
+                    className="min-w-32 rounded-none!"
                     key={key}
                     value={valueNumeric}
                     onValueChange={(n) => updateConditionValue(n)}
@@ -251,7 +276,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
                 return <Input
                     key={key}
                     placeholder={condition.name}
-                    className="min-w-[128px] bg-fuchsia-500 after:content-['⚠']! pointer-events-none"
+                    className="min-w-32 bg-fuchsia-500 after:content-['⚠']! pointer-events-none"
                 />;
 
         };
@@ -303,7 +328,7 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
             {renderDeleteRuleButton(indexPath)}
 
             {/* Rule Name */}
-            <Select onValueChange={updateRuleName} defaultValue={rule.name} value={rule.name}>
+            <Select onValueChange={updateRuleName} value={rule.name}>
 
                 <Button asChild variant="outline">
                     <SelectTrigger className="min-w-[256px]">
@@ -339,3 +364,5 @@ export default function FlightsPanelSearchRule({ rule, indexPath, ruleDefinition
 
     
 }   
+
+export default memo(FlightsPanelSearchRuleInner);
