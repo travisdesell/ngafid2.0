@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/components/modals/tags_list_modal.tsx
 import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "motion/react";
 
 import { ColorPicker, randomHexColor } from '@/components/color_picker';
@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { fetchJson } from '@/fetchJson';
-import { Link, Pencil, Plus, Tag, Trash, Unlink, X } from 'lucide-react';
+import { Link, Pencil, Plus, Tag, Trash, Unlink } from 'lucide-react';
 import { JSX, useEffect, useState } from 'react';
 import type { ModalData, ModalProps } from "./types";
 
@@ -30,7 +30,7 @@ export type ModalDataTagsList = ModalData & {
 
 export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
 
-    const { close, setModal } = useModal();
+    const { renderModalHeader, setModal } = useModal();
     const { fleetTags, associateTagWithFlight, unassociateTagWithFlight, editTag, updateFleetTag, addFleetTag, deleteFleetTag } = useTags();
     const { flightId, flightTags, onTagsUpdate } = (data as ModalDataTagsList);
 
@@ -568,24 +568,9 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
             exit={{ scale: 0, opacity: 0 }}
             className="w-full h-full"
         >
-            <Card className="w-full max-w-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <CardHeader className="grid gap-2">
-
-                    <div className="grid gap-2">
-                        <CardTitle>Flight Tags</CardTitle>
-                        <CardDescription>
-                            {/* Choose which tags to associate with this flight. */}
-                            {MODAL_TABS[modalTab].description}
-                        </CardDescription>
-                    </div>
-
-                    <CardAction>
-                        <Button variant="link" onClick={close}>
-                            <X/>
-                        </Button>
-                    </CardAction>
-
-                </CardHeader>
+            <Card className="w-full max-w-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-180">
+      
+                {renderModalHeader("Flight Tags", MODAL_TABS[modalTab].description ?? "")}
                 <CardContent className="space-y-8">
 
                     <Tabs
