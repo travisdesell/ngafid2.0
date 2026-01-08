@@ -8,11 +8,13 @@ const log = getLogger("PlatformProvider", "green", "Provider");
 type PlatformState = {
     userOS: string;
     commandKeyStr: string;
+    testCtrlCmd: (e: KeyboardEvent) => boolean;
 };
 
 export const PlatformContext = createContext<PlatformState>({
     userOS: "Unknown",
     commandKeyStr: "Ctrl",
+    testCtrlCmd: (e: KeyboardEvent) => false,
 });
 
 export function PlatformProvider({ children }: { children: React.ReactNode }) {
@@ -71,8 +73,17 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
 
     }, []);
 
+    function testCtrlCmd(e: KeyboardEvent): boolean {
+
+        if (userOS === "Mac OS")
+            return e.metaKey;
+        else
+            return e.ctrlKey;
+
+    }
+
     return (
-        <PlatformContext.Provider value={{ userOS, commandKeyStr }}>
+        <PlatformContext.Provider value={{ userOS, commandKeyStr, testCtrlCmd }}>
             {children}
         </PlatformContext.Provider>
     );
