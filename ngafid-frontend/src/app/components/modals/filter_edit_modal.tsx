@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/components/modals/filter_edit_modal.tsx
 import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "motion/react";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ import { getLogger } from "@/components/providers/logger";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { FilterGroup } from '@/pages/protected/flights/_filters/types';
-import { AlertCircleIcon, X } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
 import type { ModalData, ModalProps } from "./types";
 
 
@@ -28,7 +28,7 @@ export type ModalDataFilterEdit = ModalData & {
 
 export default function FilterEditModal({ data }: ModalProps) {
 
-    const { setModal, close } = useModal();
+    const { setModal, renderModalHeader } = useModal();
     const { colorIn, nameIn, saveFilter, filter } = (data as ModalDataFilterEdit);
 
 
@@ -48,6 +48,7 @@ export default function FilterEditModal({ data }: ModalProps) {
 
             {/* Filter Name Input */}
             <Input
+                data-modal-initial-focus
                 id="filter-name-input"
                 className="ml-4"
                 placeholder="Filter Name"
@@ -98,22 +99,7 @@ export default function FilterEditModal({ data }: ModalProps) {
             className="w-full h-full"
         >
             <Card className="w-full max-w-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <CardHeader className="grid gap-2">
-
-                    <div className="grid gap-2">
-                        <CardTitle>Editing Filter</CardTitle>
-                        <CardDescription>
-                            Save a new filter or edit an existing saved filter.
-                        </CardDescription>
-                    </div>
-
-                    <CardAction>
-                        <Button variant="link" onClick={close}>
-                            <X/>
-                        </Button>
-                    </CardAction>
-
-                </CardHeader>
+                {renderModalHeader("Editing Filter", "Save a new filter or edit an existing saved filter.")}    
                 <CardContent className="space-y-8">
 
                     {/* Overwrite Warning */}
