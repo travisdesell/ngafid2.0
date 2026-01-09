@@ -12,10 +12,12 @@ import FilterEditModal from "@/components/modals/filter_edit_modal";
 import { useModal } from "@/components/modals/modal_context";
 import type { FlightFilter } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
+import { usePlatform } from '@/components/providers/platform_provider';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Filter } from '@/pages/protected/flights/_filters/types';
 import { AlertCircleIcon, Check, ClipboardCopy, Pencil, Trash, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { ModalData, ModalProps } from "../types";
 
 
@@ -34,6 +36,58 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
 
     const { close, setModal } = useModal();
     const { filters, saveFilter, deleteFilterByName, setFilterFromJSON, copyFilterURL } = (data as ModalDataFilterList);
+    const { commandKeyStr, testCtrlCmd } = usePlatform();
+
+    const [hasCtrlHeld, setHasCtrlHeld] = useState(false);
+
+    const KEYBOARD_SHORTCUT_INDEX_MAX = 9;
+
+    // Keyboard shortcuts for opening filters 1-9 with Ctrl+1 ... Ctrl+9
+    useEffect(() => {
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+
+            // Ctrl key not held / key is being repeated, exit
+            if (!testCtrlCmd(event) || event.repeat)
+                return;
+
+            // Ctrl key held, set flag
+            setHasCtrlHeld(true);
+
+            const key = event.key;
+            const index = parseInt(key) - 1;
+
+            if (!(index >= 0 && index < filters.length)) 
+                return;
+
+            log("Applying filter via keyboard shortcut: ", filters[index]);
+
+            try {
+                setFilterFromJSON(filters[index].filter);
+                close();
+            } catch (error) {
+                const errorCode = `${error}\n\n${JSON.stringify(filters[index])}`
+                setModal(ErrorModal, { title: "Invalid Filter", message: `The selected filter is invalid and cannot be applied.`, code: errorCode });
+            }
+
+        };
+
+        const handleKeyUp = (event: KeyboardEvent) => {
+
+            // Ctrl key released, clear flag
+            if (!event.ctrlKey)
+                setHasCtrlHeld(false);
+            
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+
+    }, [filters, setFilterFromJSON, close, setModal]);
 
 
     const renderFilterViewRow = (filter: FlightFilter, index: number) => {
@@ -55,6 +109,10 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             }
 
         }
+
+        const tooltipKeyboardAction = (index <= (KEYBOARD_SHORTCUT_INDEX_MAX-1))
+            ? `${commandKeyStr}+${index + 1}`
+            : undefined;
 
         return <div key={index} className="flex flex-row items-center p-2 border-b last:border-b-0 gap-1 hover:bg-background">
 
@@ -118,14 +176,19 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="aspect-square" onClick={applyFilter}>
-                        <Check size={16} />
+                        {
+                            (hasCtrlHeld && index <= (KEYBOARD_SHORTCUT_INDEX_MAX-1))
+                            ?
+                            <kbd className="font-sans text-base">{index + 1}</kbd>
+                            :
+                            <Check size={16} />
+                        }
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent keyboardAction={tooltipKeyboardAction}>
                     Apply Filter
                 </TooltipContent>
             </Tooltip>
-
 
         </div>
 
