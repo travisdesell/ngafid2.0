@@ -379,3 +379,26 @@ a, button, select, input, textarea {
         @apply border-foreground;
     }
 }
+
+
+
+/* Disable interaction with popped motion elements */
+[data-motion-pop-id] {
+    pointer-events: none;
+}
+
+
+
+
+/* Flights page panel resizing transitions */
+[data-panel-group] [data-panel] {
+    transition:
+        flex-grow 450ms cubic-bezier(0.22, 1, 0.36, 1),
+        flex-basis 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: flex-grow;
+}
+
+
+[data-panel-group]:has([data-resize-handle-active]) [data-panel] {
+    transition: none;   /* <-- Disable transitions while actively dragging a handle */
+}
