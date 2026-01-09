@@ -4,12 +4,12 @@ import BugReportModal from "@/components/modals/bug_report_modal";
 import CommandModalContentItem from "@/components/modals/command_modal/command_modal_content_item";
 import { useModal } from "@/components/modals/modal_context";
 import { useAuth } from "@/components/providers/auth_provider";
-import { useCommands } from "@/components/providers/commands_provider";
+import { CommandData, useCommands } from "@/components/providers/commands_provider";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Input } from "@/components/ui/input";
 import { Command } from "cmdk";
-import { Bug, ChartArea, Flame, Grid2X2Plus, Home, Image, Info, ListOrdered, LogOut, LucideIcon, Menu, Moon, Plane, Rows3, Search, Upload, User, Users } from "lucide-react";
+import { Bug, ChartArea, Flame, Grid2X2Plus, Home, Image, Info, ListOrdered, LogOut, Menu, Moon, Plane, Rows3, Search, Upload, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -19,14 +19,6 @@ type CommandModalContentProps = {
     submitCommand: (command: any) => void;
     inputRef: React.RefObject<HTMLInputElement> | undefined;
 };
-
-export type CommandData = {
-    name: string;
-    command: () => void;
-    Icon: LucideIcon;
-    hotkey: string;
-    toggleState?: boolean;
-}
 
 export default function CommandModalContent({ submitCommand, inputRef }: CommandModalContentProps) {
 
@@ -98,6 +90,11 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         <Command.Group heading="Page Actions">
                         {
                             pageCommands.map((commandData, index) => (
+
+                                (commandData === undefined)
+                                ?
+                                <Command.Separator key={index} />
+                                :
                                 <CommandModalContentItem
                                     key={index}
                                     submitCommand={submitCommand}
@@ -106,6 +103,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                                     Icon={commandData.Icon}
                                     hotkey={commandData.hotkey}
                                     toggleState={commandData.toggleState}
+                                    disabled={(typeof commandData.disabled === "function") ? commandData.disabled() : commandData.disabled}
                                 />
                             ))
                         }
