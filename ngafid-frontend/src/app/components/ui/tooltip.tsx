@@ -78,7 +78,7 @@ function TooltipTrigger({
     return (
         <TooltipPrimitive.Trigger
             {...props}
-            className={cn("mx-0 p-0 w-fit select-text cursor-auto *:pointer-events-none!", className)}
+            className={cn("mx-0 p-0 w-fit select-text cursor-auto", className)}
         />
     )
 }
@@ -101,6 +101,7 @@ function TooltipContent({
     return (
         <TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
+                data-tooltip-content
                 sideOffset={sideOffset}
                 updatePositionStrategy="always"
                 className={cn(

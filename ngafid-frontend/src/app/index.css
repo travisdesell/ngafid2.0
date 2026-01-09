@@ -313,7 +313,7 @@ a, button, select, input, textarea {
 
 
 /* Tooltip Classes */
-[data-radix-popper-content-wrapper] {
+[data-radix-popper-content-wrapper]:has([data-tooltip-content]) {
     pointer-events: none;   /* <-- Prevent user interacting with Tooltip with cursor at all */
 }
 
