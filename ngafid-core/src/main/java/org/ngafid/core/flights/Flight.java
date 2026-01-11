@@ -65,9 +65,13 @@ public class Flight {
 
     // the tags associated with this flight
     private List<FlightTag> tags = null;
+
+    // Event info
     private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
     private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
     private List<Event> events = new ArrayList<>();
+    private int eventCount = 0;
+
     private transient List<MalformedFlightFileException> exceptions = new ArrayList<>();
 
     public Flight(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -1295,6 +1299,52 @@ public class Flight {
         this.stringTimeSeries.put(name, series);
         return series;
     }
+
+    public int getEventCount() {
+        return eventCount;
+    }
+
+    public void setEventCount(int eventCount) {
+        this.eventCount = eventCount;
+    }
+
+
+    public static Map<Integer, Integer> getEventCounts(Connection connection, List<Integer> flightIds) throws SQLException {
+
+        Map<Integer, Integer> counts = new HashMap<>();
+
+        // No flight IDs, return empty map
+        if (flightIds == null || flightIds.isEmpty())
+            return counts;
+
+        // Create a comma-separated list of placeholders for the IN clause
+        String placeholders = String.join(",", Collections.nCopies(flightIds.size(), "?"));
+
+        String sql =
+            "SELECT flight_id, COUNT(*) AS event_count "
+            + "FROM events "
+            + "WHERE flight_id IN (" + placeholders + ") "
+            + "GROUP BY flight_id"
+        ;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            for (int i = 0; i < flightIds.size(); i++)
+                ps.setInt(i + 1, flightIds.get(i));
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next())
+                    counts.put(rs.getInt("flight_id"), rs.getInt("event_count"));
+
+            }
+
+        }
+
+        return counts;
+
+    }
+
 
     private void addBatch(PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.setInt(1, fleetId);

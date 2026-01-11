@@ -240,6 +240,18 @@ public class FlightsJavalinRoutes {
                  **/
                 List<Flight> flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
+                // Populate event counts for each flight
+                if (!flights.isEmpty()) {
+
+                    List<Integer> ids = new ArrayList<>(flights.size());
+                    for (Flight f : flights) ids.add(f.getId());
+
+                    Map<Integer, Integer> counts = Flight.getEventCounts(connection, ids);
+                    for (Flight f : flights)
+                        f.setEventCount(counts.getOrDefault(f.getId(), 0));
+
+                }
+
                 if (flights.isEmpty()) {
                     ctx.status(204);
                 } else {
