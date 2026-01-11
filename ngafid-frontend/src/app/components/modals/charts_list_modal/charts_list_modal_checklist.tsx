@@ -4,7 +4,7 @@
 
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxStatic } from "@/components/ui/checkbox-static";
 import { Separator } from "@/components/ui/separator";
 import { Flight } from "@/pages/protected/flights/types";
 
@@ -69,7 +69,7 @@ export function ChartsListModalChecklist({ chartFlights, disableItems, universal
                     onClick={handleClick}
                 >
                     <span className="truncate">{item}</span>
-                    <Checkbox
+                    <CheckboxStatic
                         className="pointer-events-none"
                         checked={checked}
                     />

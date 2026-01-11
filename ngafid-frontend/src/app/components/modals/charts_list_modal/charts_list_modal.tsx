@@ -32,7 +32,12 @@ export function ChartsListModal({ data }: ModalProps<ModalDataChartsList>) {
     const { chartFlights, setChartFlights, chartSelection, toggleUniversalParam, togglePerFlightParam } = (data as ModalDataChartsList) ?? {};
 
     const [localChartFlights, setLocalChartFlights] = useState<Flight[]>(chartFlights);
-    const [localSelection, setLocalSelection] = useState<ChartSelectionState>(chartSelection);
+    const [localSelection, setLocalSelection] = useState<ChartSelectionState>(() => ({
+        universalParams: new Set(chartSelection.universalParams),
+        perFlightParams: Object.fromEntries(
+            Object.entries(chartSelection.perFlightParams).map(([id, set]) => [Number(id), new Set(set)]),
+        ),
+    }));
 
 
     const handleSetChartFlights: Dispatch<SetStateAction<Flight[]>> = (updater) => {
@@ -147,6 +152,12 @@ export function ChartsListModal({ data }: ModalProps<ModalDataChartsList>) {
                         <div className="flex items-center gap-2">
                             <Circle className="text-foreground" size={8} fill="var(--primary)" />
                             <span>Universal Parameter</span>
+                        </div>
+
+                        {/* Universal (Missing) Badge Color */}
+                        <div className="flex items-center gap-2">
+                            <Circle className="text-foreground" size={8} fill="var(--warning)" />
+                            <span>Universal Parameter Missing</span>
                         </div>
 
                         {/* Flight-Specific Badge Color */}

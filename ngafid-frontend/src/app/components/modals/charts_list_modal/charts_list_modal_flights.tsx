@@ -2,7 +2,7 @@
 
 "use client";
 
-import { ChartsListModalBadge } from "@/components/modals/charts_list_modal/charts_list_modal_badge";
+import { FlightsSelectedModalBadge } from "@/components/modals/flights_selected_modal/flights_selected_modal_badge";
 import { NumberInput } from "@/components/number_input";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
@@ -92,9 +92,13 @@ export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSel
                     <div className="flex flex-row gap-2 flex-wrap my-1">
                         {
                             badgesForFlight.map((badge) => (
-                                <ChartsListModalBadge
+                                <FlightsSelectedModalBadge
                                     label={badge.label}
-                                    isUniversal={badge.isUniversal}
+                                    kind={
+                                        badge.isUniversal
+                                            ? (flight.commonTraceNames?.includes(badge.label) ? "universal" : "universal-missing")
+                                            : "per-flight"
+                                    }
                                     key={`badge-${flight.id}-${badge.label}`}
                                     onClick={() => {
                                         
@@ -115,6 +119,7 @@ export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSel
 
                                     }}
                                 />
+
                             ))
                         }
                     </div>
@@ -132,7 +137,7 @@ export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSel
                 // Combine common and uncommon trace names, filtering out active ones
                 const commonUnused = (flight.commonTraceNames ?? []).filter((name) => !isActive(name));
                 const uncommonUnused = (flight.uncommonTraceNames ?? []).filter((name) => !isActive(name));
-                const allTraceNames = [...commonUnused, ...uncommonUnused,];
+                const allTraceNames = [...commonUnused, ...uncommonUnused];
 
                 log(`Rendering parameters dropdown for flight ${flight.id} with ${allTraceNames.length} options.`);
 

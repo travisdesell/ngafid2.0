@@ -34,10 +34,10 @@ export function ChartsListModalBadge({ label, isUniversal, onClick }: Props) {
                 transition={{ duration: 0.2 }} 
             >
                 <Badge
-                        variant={isUniversal ? "default" : "outline"}
-                        className="w-fit h-fit rounded-full flex gap-1 whitespace-nowrap cursor-pointer group relative select-none"
-                        onClick={onClick}
-                    >
+                    variant={isUniversal ? "default" : "outline"}
+                    className="w-fit h-fit rounded-full flex gap-1 whitespace-nowrap cursor-pointer group relative select-none"
+                    onClick={onClick}
+                >
                     <span className="group-hover:opacity-50 ">{label}</span>
                     <hr className="absolute left-2 bottom-1/2 border-foreground border mt-0.5 w-[calc(100%-1rem)] hidden! group-hover:block!" />
                 </Badge>
@@ -46,7 +46,6 @@ export function ChartsListModalBadge({ label, isUniversal, onClick }: Props) {
         </TooltipTrigger>
 
         <TooltipContent>
-
             <div className="opacity-50 flex items-center">
                 <MousePointerClick size={16} className="mr-1"/>
                 <span>{removeMessage}</span>
