@@ -9,6 +9,11 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
 
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
@@ -20,6 +25,105 @@ public class Filter {
 
     protected ArrayList<String> inputs = null;
     protected ArrayList<Filter> filters = null;
+
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class UiGroup {
+        public String id;
+        public String operator;           // <-- 'AND' | 'OR'
+        public ArrayList<UiRule> rules;   // <-- Possibly null
+        public ArrayList<UiGroup> groups; // <-- Possibly null
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class UiRule {
+        public String id;
+        public String name; // <-- e.g. 'Flight ID'
+        public ArrayList<UiCondition> conditions;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class UiCondition {
+        public String type;   // <-- 'select' | 'number' | ...
+        public String name;   // <-- 'condition', 'number', etc
+        public Object value;  // <-- Number / String / ISO date
+    }
+
+    public static Filter fromUiJson(String json) {
+
+        try {
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            UiGroup root = objectMapper.readValue(json, UiGroup.class);
+
+            return fromUiGroup(root);
+
+        } catch (JsonProcessingException e) {
+
+            throw new IllegalArgumentException("Invalid filter JSON", e);
+
+        }
+
+    }
+
+    private static Filter fromUiGroup(UiGroup group) {
+
+        // Got null group, throw an exception
+        if (group == null)
+            throw new IllegalArgumentException("Filter group is null");
+
+        final String OPERATOR_DEFAULT = "AND";
+        Filter out = new Filter(group.operator == null ? OPERATOR_DEFAULT : group.operator);
+
+        // Got rules, convert them
+        if (group.rules != null) {
+
+            for (UiRule r : group.rules) {
+                out.addFilter(fromUiRule(r));
+            }
+
+        }
+
+        // Got subgroups, convert them
+        if (group.groups != null) {
+
+            for (UiGroup subGroup : group.groups) {
+                out.addFilter(fromUiGroup(subGroup));
+            }
+
+        }
+
+        return out;
+
+    }
+
+    private static Filter fromUiRule(UiRule rule) {
+
+        // Got null rule or name, throw an exception
+        if (rule == null || rule.name == null)
+            throw new IllegalArgumentException("Rule is missing name");
+        
+        ArrayList<String> inputs = new ArrayList<>();
+        inputs.add(rule.name);
+
+        // Preserve UI condition order (expected order in getRuleQuery)
+        if (rule.conditions != null) {
+
+            for (UiCondition condition : rule.conditions) {
+
+                if (condition != null && condition.name != null)
+                    inputs.add(condition.name);
+                else
+                    inputs.add("");
+                
+            }
+
+        }
+
+        return new Filter(inputs);
+
+    }
+
 
     /**
      * Creates a RULE filter with the given inputs
@@ -63,7 +167,7 @@ public class Filter {
             }
         } else {
             LOG.severe("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
+            throw new IllegalStateException("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
         }
     }
 
@@ -88,7 +192,7 @@ public class Filter {
             filters.add(filter);
         } else {
             LOG.severe("Attempted to add a filter " + filter + " to a non-group filter");
-            System.exit(1);
+            throw new IllegalStateException("Attempted to add a filter " + filter + " to a non-group filter");
         }
     }
 
@@ -100,10 +204,14 @@ public class Filter {
      * @return the passed string if valid, null otherwise
      */
     public String checkOperator(String op) {
-        if (op.equals(">=") || op.equals(">") || op.equals("=") || op.equals("<") || op.equals("<=")) {
-            return op;
-        }
-        return null;
+
+        if (op == null)
+            return null;
+
+        return (">=".equals(op) || ">".equals(op) || "=".equals(op) || "<".equals(op) || "<=".equals(op))
+            ? op
+            : null;
+
     }
 
     /**
@@ -114,10 +222,14 @@ public class Filter {
      * @return the passed string if valid, null otherwise
      */
     public String checkSeriesOp(String op) {
-        if (op.equals("min") || op.equals("avg") || op.equals("max")) {
-            return op;
-        }
-        return null;
+        
+        if (op == null)
+            return null;
+
+        return ("min".equals(op) || "avg".equals(op) || "max".equals(op))
+            ? op
+            : null;
+
     }
 
     /**
@@ -384,23 +496,35 @@ public class Filter {
      * @return A string mysql query of this filter
      */
     public String toQueryString(int fleetId, ArrayList<Object> parameters) {
-        if (type.equals("RULE")) {
+
+        // Got a rule...
+        if ("RULE".equals(type)) {
+
             return "(" + getRuleQuery(fleetId, parameters) + ")";
 
-        } else if (type.equals("GROUP")) {
-            StringBuilder string = new StringBuilder();
-            for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string.append(" ").append(condition).append(" ");
-                string.append(filters.get(i).toQueryString(fleetId, parameters));
+        // Got a group...
+        } else if ("GROUP".equals(type)) {
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < (filters == null ? 0 : filters.size()); i++) {
+
+                // Add the condition between filters
+                if (i > 0)
+                    sb.append(" ").append(condition).append(" ");
+
+                sb.append(filters.get(i).toQueryString(fleetId, parameters));
+
             }
 
-            return "(" + string + ")";
+            return "(" + sb + ")";
 
+        // Otherwise, throw an exception
         } else {
-            LOG.severe("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
+
+            throw new IllegalArgumentException("Unknown filter type: " + type);
+
         }
-        return "";
+
     }
 
 
@@ -436,9 +560,8 @@ public class Filter {
 
         } else {
             LOG.severe("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
+            throw new IllegalStateException("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
         }
-        return "";
     }
 
     /**
@@ -467,9 +590,9 @@ public class Filter {
 
         } else {
             LOG.severe("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
+            throw new IllegalStateException("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
         }
-        return "";
+        
     }
 
     /**
