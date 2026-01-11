@@ -88,19 +88,22 @@ public class Event {
      * @param resultSet is the row selected from the database
      */
     public Event(ResultSet resultSet) throws SQLException {
-        this.id = resultSet.getInt(1);
-        this.fleetId = resultSet.getInt(1);
-        this.flightId = resultSet.getInt(3);
-        this.eventDefinitionId = resultSet.getInt(4);
-        this.startLine = resultSet.getInt(5);
-        this.endLine = resultSet.getInt(6);
-        this.startTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString(7));
-        this.endTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString(8));
-        this.severity = resultSet.getDouble(9);
-        this.otherFlightId = resultSet.getInt(10);
-        if (resultSet.wasNull()) {
+
+        this.id = resultSet.getInt("id");
+        this.fleetId = resultSet.getInt("fleet_id");
+        this.flightId = resultSet.getInt("flight_id");
+        this.eventDefinitionId = resultSet.getInt("event_definition_id");
+        this.startLine = resultSet.getInt("start_line");
+        this.endLine = resultSet.getInt("end_line");
+        this.startTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString("start_time"));
+        this.endTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString("end_time"));
+        this.severity = resultSet.getDouble("severity");
+        this.otherFlightId = resultSet.getInt("other_flight_id");
+
+        // Got null value for previous getInt call, set otherFlightId to null
+        if (resultSet.wasNull())
             this.otherFlightId = null;
-        }
+        
     }
 
     /**
