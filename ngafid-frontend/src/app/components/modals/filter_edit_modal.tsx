@@ -28,7 +28,7 @@ export type ModalDataFilterEdit = ModalData & {
 
 export default function FilterEditModal({ data }: ModalProps) {
 
-    const { setModal, renderModalHeader } = useModal();
+    const { setModal, close, renderModalHeader } = useModal();
     const { colorIn, nameIn, saveFilter, filter } = (data as ModalDataFilterEdit);
 
 
