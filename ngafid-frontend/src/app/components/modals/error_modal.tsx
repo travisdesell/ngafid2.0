@@ -31,12 +31,20 @@ export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
     // 'Code' is an object, convert to string
     if (code && typeof code !== "string") {
 
+        log("Converting 'code' object to string for display: ", code);
+
         try {
             codeString = JSON.stringify(code, null, 2);
         } catch (e) {
             codeString = String(code);
         }
 
+    // Otherwise, use as-is
+    } else {
+
+        log("Using 'code' string as-is for display: ", code);
+        codeString = code as string | undefined;
+        
     }
 
     // No 'code' provided, log without it
