@@ -247,7 +247,7 @@ export default function FlightsPanelMap(props: FlightsPanelMapProps) {
         const mapContainerClass = `bg-background h-full w-full ${mapError ? 'hidden!' : ''}`;
 
         return (
-            <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip">
+            <Card className="border rounded-lg w-full h-full card-glossy relative @container">
                 <motion.div layoutScroll className="flex-1 min-h-0 h-full w-full overflow-y-auto">
 
                     {/* Overlay */}

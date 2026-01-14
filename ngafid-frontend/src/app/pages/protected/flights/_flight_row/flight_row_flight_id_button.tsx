@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/flights/_flight_row/flight_row.tsx
 
 import { Button } from "@/components/ui/button";
-import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { useFlightsFilter } from "@/pages/protected/flights/_flights_context_search_filter";
 import { Check, FolderSearch, Plane } from "lucide-react";
 import React, { forwardRef } from "react";
 import type { JSX } from "react/jsx-runtime";
@@ -15,7 +15,7 @@ type Props = {
 
 const FlightRowFlightIDButton = forwardRef<HTMLButtonElement, Props>(({ flightID, renderDetailItem, className, onClick, ...rest }, ref) => {
 
-    const { addFlightIDToFilter, flightIDInSpecialGroup } = useFlights();
+    const { addFlightIDToFilter, flightIDInSpecialGroup } = useFlightsFilter();
     const flightIDString = flightID.toString();
 
     return (

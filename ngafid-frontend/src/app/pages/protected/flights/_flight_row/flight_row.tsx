@@ -71,7 +71,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
 
     const renderFlightMainDetails = () => {
 
-        const renderDetailItem = (value: string|number, fallback: string) => {
+        const renderDetailItem = (value: string|number|null, fallback: string) => {
 
             // Valid value
             if (value !== null && value !== undefined && value !== "")
@@ -127,6 +127,17 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipTrigger>
                 <TooltipContent>
                     Aircraft Tail Number
+                </TooltipContent>
+            </Tooltip>
+
+            {/* Event Count */}
+            <Tooltip disableHoverableContent>
+                <TooltipTrigger>
+                    <Dot size={16} className="inline" />
+                    {renderDetailItem(flight.eventCount > 0 ? `${flight.eventCount} Events` : null, "No Events")}
+                </TooltipTrigger>
+                <TooltipContent>
+                    Event Count
                 </TooltipContent>
             </Tooltip>
 
@@ -304,7 +315,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 ?
                 <>
                     <Tag size={16} />
-                    <span>No Tags</span>
+                    <span className="pointer-events-none">No Tags</span>
                 </>
                 :
                 tagsSorted.map((tag, index) => (

@@ -44,7 +44,7 @@ import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes;
 import org.ngafid.www.routes.AirsyncJavalinRoutes;
 import org.ngafid.www.routes.AnalysisJavalinRoutes;
 import org.ngafid.www.routes.BugReportJavalinRoutes;
-import org.ngafid.www.routes.CesiumDataJavalinRoutes;
+//import org.ngafid.www.routes.CesiumDataJavalinRoutes;
 import org.ngafid.www.routes.DataJavalinRoutes;
 import org.ngafid.www.routes.DoubleSeriesJavalinRoutes;
 import org.ngafid.www.routes.EventJavalinRoutes;
@@ -89,6 +89,7 @@ public class JavalinWebServer extends WebServer {
             TagRoutes.INSTANCE.bind(config);
             UploadRoutes.INSTANCE.bind(config);
             UserRoutes.INSTANCE.bind(config);
+            CesiumRoutes.INSTANCE.bind(config);
 
         });
 
@@ -157,7 +158,7 @@ public class JavalinWebServer extends WebServer {
 
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
-        CesiumDataJavalinRoutes.bindRoutes(app);
+        //CesiumDataJavalinRoutes.bindRoutes(app);
         StatusJavalinRoutes.bindRoutes(app);
         BugReportJavalinRoutes.bindRoutes(app);
     }
@@ -315,4 +316,9 @@ public class JavalinWebServer extends WebServer {
         }
         return null;
     }
+
+    public Javalin getApp() {
+        return app;
+    }
+
 }

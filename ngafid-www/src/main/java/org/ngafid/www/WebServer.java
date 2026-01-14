@@ -232,9 +232,14 @@ public abstract class WebServer {
             System.err.println("Could not initialize log manager because: " + e.getMessage());
         }
 
-        WebServer webserver = new JavalinWebServer(Config.NGAFID_PORT, Config.NGAFID_STATIC_DIR);
+        JavalinWebServer webserver = new JavalinWebServer(Config.NGAFID_PORT, Config.NGAFID_STATIC_DIR);
+
+        /* Register the AzureMapsProxyController */
+        AzureMapsProxyController.register(webserver.getApp());
+
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();
+
     }
 
 }

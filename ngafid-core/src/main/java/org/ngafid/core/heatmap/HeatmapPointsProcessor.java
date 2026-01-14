@@ -1,23 +1,30 @@
 package org.ngafid.core.heatmap;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.Config;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventMetaData;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.flights.Parameters;
-import org.ngafid.core.agl_converter.MSLtoAGLConverter;
-
-
-import java.sql.*;
-import java.time.OffsetDateTime;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
+
+import org.ngafid.core.Database;
+import org.ngafid.core.agl_converter.MSLtoAGLConverter;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventMetaData;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.Parameters;
+import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.TimeUtils;
 
 public class HeatmapPointsProcessor {
@@ -94,41 +101,6 @@ public class HeatmapPointsProcessor {
         return  MSLtoAGLConverter.convertMSLToAGL(altitudeMSL, latitude, longitude);
     }
 
-    /**
-     * Get AGL by fetching MSL from database and converting it
-     */
-    private static double getAGLFromMSL(Connection connection, int flightId, double latitude, double longitude, OffsetDateTime timestamp) {
-        try {
-            // Get MSL value from the flight's time series at the given timestamp
-            // Use approximate matching for coordinates and timestamp
-            String sql = "SELECT altitude_msl FROM flight_data WHERE flight_id = ? " +
-                        "AND ABS(latitude - ?) < 0.001 AND ABS(longitude - ?) < 0.001 " +
-                        "AND utc_date_time = ? LIMIT 1";
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setInt(1, flightId);
-                stmt.setDouble(2, latitude);
-                stmt.setDouble(3, longitude);
-                stmt.setString(4, timestamp.toString());
-                
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        double altitudeMSL = rs.getDouble("altitude_msl");
-                        if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL) && altitudeMSL > 0) {
-                            double convertedAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
-                            return convertedAGL;
-                        }
-                    } else {
-                        LOG.info("No MSL data found for flight " + flightId + " at " + timestamp + " with coordinates " + latitude + ", " + longitude);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            LOG.warning("Failed to get MSL for flight " + flightId + " at " + timestamp + ": " + e.getMessage());
-        }
-        return Double.NaN;
-    }
-
-
 
     public static void insertCoordinatesForProximityEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
 
@@ -149,19 +121,28 @@ public class HeatmapPointsProcessor {
                         stmt.setDouble(4, point.getLongitude());
                         stmt.setTimestamp(5, Timestamp.from(point.getTimestamp().toInstant()));
 
-                        // Handle altitude - try AGL first, fallback to MSL conversion if needed
+                        // // Handle altitude - try AGL first, fallback to MSL conversion if needed
+                        // double altitudeAGL = point.getAltitudeAGL();
+                        // if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL <= 0.0) {
+                        //     // AGL is invalid, try to get MSL from database and convert
+                        //     double convertedAGL = getAGLFromMSL(connection, event.getFlightId(), point.getLatitude(), point.getLongitude(), point.getTimestamp());
+                        //     if (!Double.isNaN(convertedAGL)) {
+                        //         stmt.setDouble(6, convertedAGL);
+                        //     } else {
+                        //         stmt.setDouble(6, 0.0);
+                        //     }
+                        // } else {
+                        //     stmt.setDouble(6, altitudeAGL);
+                        // }
+
                         double altitudeAGL = point.getAltitudeAGL();
                         if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL <= 0.0) {
-                            // AGL is invalid, try to get MSL from database and convert
-                            double convertedAGL = getAGLFromMSL(connection, event.getFlightId(), point.getLatitude(), point.getLongitude(), point.getTimestamp());
-                            if (!Double.isNaN(convertedAGL)) {
-                                stmt.setDouble(6, convertedAGL);
-                            } else {
-                                stmt.setDouble(6, 0.0);
-                            }
+                            // stmt.setDouble(6, 0.0);
+                            stmt.setNull(6, Types.DOUBLE);
                         } else {
                             stmt.setDouble(6, altitudeAGL);
                         }
+
 
                         stmt.addBatch();
                         inserted++;
@@ -184,16 +165,24 @@ public class HeatmapPointsProcessor {
                         stmt.setDouble(4, point.getLongitude());
                         stmt.setTimestamp(5, Timestamp.from(point.getTimestamp().toInstant()));
 
-                        // Handle altitude - try AGL first, fallback to MSL conversion if needed
+                        // // Handle altitude - try AGL first, fallback to MSL conversion if needed
+                        // double altitudeAGL = point.getAltitudeAGL();
+                        // if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL <= 0.0) {
+                        //     // AGL is invalid, try to get MSL from database and convert
+                        //     double convertedAGL = getAGLFromMSL(connection, otherFlightId, point.getLatitude(), point.getLongitude(), point.getTimestamp());
+                        //     if (!Double.isNaN(convertedAGL)) {
+                        //         stmt.setDouble(6, convertedAGL);
+                        //     } else {
+                        //         stmt.setDouble(6, 0.0);
+                        //     }
+                        // } else {
+                        //     stmt.setDouble(6, altitudeAGL);
+                        // }
+
                         double altitudeAGL = point.getAltitudeAGL();
                         if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL <= 0.0) {
-                            // AGL is invalid, try to get MSL from database and convert
-                            double convertedAGL = getAGLFromMSL(connection, otherFlightId, point.getLatitude(), point.getLongitude(), point.getTimestamp());
-                            if (!Double.isNaN(convertedAGL)) {
-                                stmt.setDouble(6, convertedAGL);
-                            } else {
-                                stmt.setDouble(6, 0.0);
-                            }
+                            // stmt.setDouble(6, 0.0);
+                            stmt.setNull(6, Types.DOUBLE);
                         } else {
                             stmt.setDouble(6, altitudeAGL);
                         }
