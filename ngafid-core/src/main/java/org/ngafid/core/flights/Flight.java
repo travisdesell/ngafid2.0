@@ -1,22 +1,32 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.filters.Filter;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
 import static org.ngafid.core.flights.Parameters.COMP_CONV;
 import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.util.filters.Filter;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods
@@ -226,23 +236,41 @@ public class Flight {
      * no filter if the filter is null).
      */
     public static int getNumFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
 
+        final boolean usingFilter = (filter != null);
+        final boolean queryAllFleets = (fleetId <= 0);      // <-- Negative fleet ID means query all fleets
+
+        LOG.info("Attempting to query the number of flights... (%s fleetId=%d, usingFilter=%b)"
+            .formatted((queryAllFleets ? "ALL" : "Specific"), fleetId, usingFilter));
+
+        ArrayList<Object> parameters = new ArrayList<>();
         String queryStr;
-        if (fleetId <= 0) {
-            if (filter != null) {
+
+        // Negative Fleet ID...
+        if (queryAllFleets) {
+
+            // ...Filter is provided, query all fleets with filter
+            if (filter != null)
                 queryStr = "SELECT count(id) FROM flights WHERE (" + filter.toQueryString(fleetId, parameters) + ")";
-            } else {
+
+            // Otherwise, just get the total number of flights from all fleets
+            else 
                 queryStr = "SELECT count(id) FROM flights";
-            }
+            
+        // Otherwise...
         } else {
-            if (filter != null) {
-                queryStr = "SELECT count(id) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId,
-                        parameters) + ")";
-            } else {
+
+            // ...Filter is provided, query specific fleet with filter
+            if (filter != null)
+                queryStr = "SELECT count(id) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+
+            // Otherwise, just get the total number of flights from the specific fleet
+            else 
                 queryStr = "SELECT count(id) FROM flights WHERE fleet_id = ?";
-            }
+            
         }
+
+        LOG.info(() -> "Using query to get number of flights: " + queryStr);
 
         try (PreparedStatement query = connection.prepareStatement(queryStr)) {
             prepareFilterQuery(fleetId, filter, parameters, query);
