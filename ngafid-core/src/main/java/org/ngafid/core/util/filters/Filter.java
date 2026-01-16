@@ -111,10 +111,23 @@ public class Filter {
 
             for (UiCondition condition : rule.conditions) {
 
-                if (condition != null && condition.name != null)
-                    inputs.add(condition.name);
-                else
+                // Got null condition or name, add empty string
+                if (condition == null || condition.name == null) {
                     inputs.add("");
+                    continue;
+                }
+
+                // Convert value to string
+                String valueStr;
+                if (condition.value == null)
+                    valueStr = "";
+                else if (condition.value instanceof String string)
+                    valueStr = string;
+                else
+                    valueStr = condition.value.toString();
+
+                // Add the value string
+                inputs.add(valueStr);
                 
             }
 
@@ -318,6 +331,8 @@ public class Filter {
 
             case "Flight ID":
                 cond = checkOperator(inputs.get(1));
+                if (cond == null)
+                    throw new IllegalArgumentException("Invalid operator for Flight ID filter: " + inputs.get(1));
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 return "flights.fleet_id = ? AND flights.id " + cond + " ?";
