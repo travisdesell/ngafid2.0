@@ -34,7 +34,7 @@ export default function FlightsPanelSearch() {
     const filterRef = useRef(filter);
     useEffect(() => { filterRef.current = filter; }, [filter]);
 
-    const commands = useMemo<CommandData[]>(() => ([
+    const buildCommands = () => useMemo<CommandData[]>(() => ([
         {
             id: "flights.copyFilterUrl",
             name: "Copy Filter URL",
@@ -76,20 +76,16 @@ export default function FlightsPanelSearch() {
             Icon: Search,
             hotkey: "Ctrl+Shift+Enter",
             command: () => {
-                if (!filterIsValid(filterRef.current))
+                if (!allowSearchSubmit)
                     return;
+
                 void fetchFlightsWithFilter(filterRef.current, true);
             },
             disabled: () => {
-                const isFilterValid = filterIsValid(filterRef.current);
-                const hasPreviousSearch = (!!filterSearched && !filterIsEmpty(filterSearched));
-                const filterDiffersFromLastSearch = (hasPreviousSearch && (filterRef.current !== filterSearched));
-                return !(isFilterValid && (!hasPreviousSearch || filterDiffersFromLastSearch));
+                return !allowSearchSubmit;
             }
         }
-    ]), [copyFilterURL, filterIsEmpty, saveFilter, setModal, deleteFilterByName, filters, setFilterFromJSON]);
-
-    useRegisterCommands(commands);
+    ]), [copyFilterURL, filterIsEmpty, saveFilter, setModal, deleteFilterByName, filters, setFilterFromJSON, allowSearchSubmit]);
 
 
     const ruleDefinitions = useMemo(() => {
@@ -131,8 +127,7 @@ export default function FlightsPanelSearch() {
 
     const allowFilterURLCopyAndSave = isFilterValid;
 
-    const allowSearchSubmit = (isFilterValid)
-        && (!hasPreviousSearch || filterDiffersFromLastSearch);
+    const allowSearchSubmit = isFilterValid && (!hasPreviousSearch || filterDiffersFromLastSearch);
 
     const handleSearchClick = () => {
 
@@ -237,6 +232,9 @@ export default function FlightsPanelSearch() {
         </motion.div>
 
     }
+
+    const commands = buildCommands();
+    useRegisterCommands(commands);
 
     const render = () => {
 
