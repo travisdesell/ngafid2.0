@@ -68,7 +68,6 @@ services:
     build:
       context: .
       dockerfile: ngafid-www/Dockerfile
-    command: ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.www.NgafidWebServer"]
     ports:
       - "8181:8181"
     <<: *ngafid-service-common
