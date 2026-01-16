@@ -210,17 +210,26 @@ public class FlightsJavalinRoutes {
             }
 
             try (Connection connection = Database.getConnection()) {
+
+                LOG.info("Established database connection for getting flights, parsing parameters...");
+
                 final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
+                LOG.info(() -> "Current Page: " + currentPage);
+
                 final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
+                LOG.info(() -> "Page Size: " + pageSize);
+                
                 final String orderingColumnn = Objects.requireNonNull(ctx.queryParam("sortingColumn"));
+                LOG.info(() -> "Ordering Column: " + orderingColumnn);
 
                 final boolean isAscending = Objects.equals(ctx.queryParam("sortingOrder"), "Ascending");
+                LOG.info(() -> "Is Ascending: " + isAscending);
 
                 final int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
                 final int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
 
-                LOG.info("Ordered by: " + orderingColumnn);
-                LOG.info("Filter: " + filter.toString());
+                LOG.info(() -> "Ordered by: " + orderingColumnn);
+                LOG.info(() -> "Filter: " + filter.toString());
 
                 /**
                  * Valid Column Names:
@@ -259,6 +268,7 @@ public class FlightsJavalinRoutes {
                 }
 
             } catch (SQLException e) {
+                LOG.severe(() -> "Failed to get flights due to SQL exception: " + e.toString());
                 ctx.json(new ErrorResponse(e)).status(500);
             }
 
