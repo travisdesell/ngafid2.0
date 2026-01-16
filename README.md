@@ -190,6 +190,7 @@ them into docker containers:
 ~/ngafid2.0 $ run/build
 ~/ngafid2.0 $ run/package
 ```
+Before building the docker images, configure `ngafid-core/src/main/resources/ngafid.properties` by configuring `ngafid.repo.path` and `ngafid.data.folder` to the correct directory paths.
 
 Then, build the docker images. Note, that we define a `base` image from which other service-specific images are
 dependent on. The docker build system does not handle dependencies like this properly, so in order to prevent issues you
@@ -198,6 +199,7 @@ must run the following commands in-order:
 ```shell
 ~/ngafid2.0 $ docker compose build base # create base image
 ~/ngafid2.0 $ docker compose build
+~/ngafid2.0 $ docker compose up # builds and runs 
 ```
 
 ## 8. Workflow
