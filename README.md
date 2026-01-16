@@ -109,28 +109,7 @@ $NGAFID_DATA_FOLDER
 │   ├── H13
 ...
 ```
-
-## 4. Configure the environment
-
-We need to set up two configuration files -- one for docker, the other for locally running services.
-
-Copy `template.env` to `.env.host` and modify it to fit your setup, then modify your shell profile to source, e.g.
-
-```shell
-source ~/ngafid2.0/.env.host
-```
-
-Similarly, copy `template.docker.env` to `.env` and modify it to fit your setup. The `docker-compose.yml` file
-is configured to automatically load all environmental variables from this file.
-
-Note that the variables specified in the `.env` file are read by docker compose and available in the docker-compose file
-for substitution. Within Dockerfiles, however, variables will have to be manually passed as arguments.
-
-We also pass `.env` as an `env_file` in `docker-compose.yml`, which provides the variables for use within the container.
-The `.env` file format used by docker doesn't support any scripting (e.g. source) so rather than splitting the compose
-env and container env into two separate files, a single common file is used.
-
-## 5. Build Node Modules
+## 4. Build Node Modules
 
 Initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
 
@@ -145,7 +124,7 @@ whenever you change one of the files:
 ~/ngafid2.0/ngafid-frontend $ npm run watch
 ```
 
-## 6. Run Kafka
+## 5. Run Kafka
 
 Kafka is used by the ngafid for simple message passing between processes.
 Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart) to configure kafkas storage,
@@ -162,7 +141,7 @@ Next, run the following script to create the appropriate kafka topics:
 ~/ngafid2.0 $ run/kafka/create_topics
 ```
 
-## 7. Services
+## 6. Services
 
 The NGAFID is essentially composed of several services:
 
@@ -202,7 +181,7 @@ The airsync importer (you shouldn't run this locally unless you are working dire
 ~/ngafid2.0 $ run/airsync_daemon
 ```
 
-## 8. Launching with Docker
+## 7. Launching with Docker
 
 To build and run all requires services simultaneously, we can use docker. We build the java packages and then inject
 them into docker containers:
@@ -221,7 +200,7 @@ must run the following commands in-order:
 ~/ngafid2.0 $ docker compose build
 ```
 
-## 9. Workflow
+## 8. Workflow
 
 Note that these things should work regardless of whether you launching services directly or with docker so long as your
 configuration is correct.
@@ -241,7 +220,7 @@ not to be recomputed.
 ~/ngafid2.0 $ run/kafka/event_helper --help
 ```
 
-## 10. Event Statistics
+## 9. Event Statistics
 
 Event statistics are to be computed and cached occasionally. If you import data and want to see it reflected on the
 website, you must update these cached tables:
@@ -254,12 +233,12 @@ $ run/liquibase/hourly-materialized-views
 You can set up a timer with `cron` or `systemd` to automatically do this on a schedule. Website features that work on
 event statistics, frequency, severity, etc. will need to have this data updated to be 100% accurate.
 
-## 11. Chart Processing Service
+## 10. Chart Processing Service
 
 [Chart Processing Service Documentation](ngafid-chart-processor/README.md)
 
 
-## 12. Two-factor authentication
+## 11. Two-factor authentication
 
 
 A Time-based One-time Password (TOTP) library was used to implement 2F Authentication.
@@ -276,7 +255,7 @@ To manually disable two-factor authentication for a user. System administrators 
 ```
 UPDATE user SET two_factor_enabled = 0,     two_factor_setup_complete = 0,     two_factor_secret = NULL,     backup_codes = NULL WHERE id = "TARGET_ID";
 ```
-## 13. AirSync Setup
+## 12. AirSync Setup
 NGAFID integrates with AirSync to automatically import flight data. AirSync utilizes Partner API for accessing flight logs. See [Partner API Documentation](documentation/partner-api-documentation.pdf) for  API specifications.
 
 ### Architecture overview 
