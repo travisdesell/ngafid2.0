@@ -256,142 +256,140 @@ export default function Status() {
     }, []);
 
     return (
-        <div className="page-container">
 
-            <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-7xl min-h-screen py-8">
+        <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full *:max-w-7xl py-8">
 
-                {/* Kafka Services */}
-                <Card className="relative card-glossy h-80 w-full self-center my-auto">
+            {/* Kafka Services */}
+            <Card className="relative card-glossy w-full h-full self-center my-auto">
 
-                    <Ping color={kafkaEntriesStatusColor} />
+                <Ping color={kafkaEntriesStatusColor} />
 
-                    <CardHeader>
-                        <CardTitle>Kafka Services</CardTitle>
-                        <CardDescription>Displays the status of all back-end Kafka services.</CardDescription>
-                    </CardHeader>
+                <CardHeader>
+                    <CardTitle>Kafka Services</CardTitle>
+                    <CardDescription>Displays the status of all back-end Kafka services.</CardDescription>
+                </CardHeader>
 
-                    <CardContent className="overflow-y-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[256px]">Service</TableHead>
-                                    <TableHead className="w-[256px]">Status</TableHead>
-                                    <TableHead>Message</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {
-                                    kafkaEntries.map((entry) => (
-                                        <TableRow key={entry.name}>
-                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
-                                            <TableCell className="flex items-center">
-                                                <entry.status.icon className="inline mr-2" size={16} />
-                                                {entry.status.name}
-                                            </TableCell>
-                                            <TableCell>{entry.message}</TableCell>
-                                        </TableRow>
-                                    ))
-                                }
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                <CardContent className="overflow-y-auto h-full">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[256px]">Service</TableHead>
+                                <TableHead className="w-[256px]">Status</TableHead>
+                                <TableHead>Message</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {
+                                kafkaEntries.map((entry) => (
+                                    <TableRow key={entry.name}>
+                                        <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
+                                        <TableCell className="flex items-center">
+                                            <entry.status.icon className="inline mr-2" size={16} />
+                                            {entry.status.name}
+                                        </TableCell>
+                                        <TableCell>{entry.message}</TableCell>
+                                    </TableRow>
+                                ))
+                            }
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
-                {/* Database Services */}
-                <Card className="relative card-glossy h-64 w-full self-center my-auto">
+            {/* Database Services */}
+            <Card className="relative card-glossy w-full h-full self-center my-auto">
 
-                    <Ping color={databaseEntriesStatusColor} />
+                <Ping color={databaseEntriesStatusColor} />
 
-                    <CardHeader>
-                        <CardTitle>Database Services</CardTitle>
-                        <CardDescription>Displays the status of all back-end database services.</CardDescription>
-                    </CardHeader>
+                <CardHeader>
+                    <CardTitle>Database Services</CardTitle>
+                    <CardDescription>Displays the status of all back-end database services.</CardDescription>
+                </CardHeader>
 
-                    <CardContent className="overflow-y-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[256px]">Service</TableHead>
-                                    <TableHead className="w-[256px]">Status</TableHead>
-                                    <TableHead>Message</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {
-                                    databaseEntries.map((entry) => (
-                                        <TableRow key={entry.name}>
-                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
-                                            <TableCell className="flex items-center">
-                                                <entry.status.icon className="inline mr-2" size={16} />
-                                                {entry.status.name}
-                                            </TableCell>
-                                            <TableCell>{entry.message}</TableCell>
-                                        </TableRow>
-                                    ))
-                                }
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                <CardContent className="overflow-y-auto h-full">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[256px]">Service</TableHead>
+                                <TableHead className="w-[256px]">Status</TableHead>
+                                <TableHead>Message</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {
+                                databaseEntries.map((entry) => (
+                                    <TableRow key={entry.name}>
+                                        <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
+                                        <TableCell className="flex items-center">
+                                            <entry.status.icon className="inline mr-2" size={16} />
+                                            {entry.status.name}
+                                        </TableCell>
+                                        <TableCell>{entry.message}</TableCell>
+                                    </TableRow>
+                                ))
+                            }
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
-                {/* Docker Services */}
-                <Card className="relative card-glossy h-80 w-full self-center my-auto">
+            {/* Docker Services */}
+            <Card className="relative card-glossy h-80 w-full self-center my-auto">
 
-                    <Ping color={dockerEntriesStatusColor} />
+                <Ping color={dockerEntriesStatusColor} />
 
-                    <CardHeader>
-                        <CardTitle>Docker Services</CardTitle>
-                        <CardDescription>Displays the status of all back-end Docker services.</CardDescription>
-                    </CardHeader>
+                <CardHeader>
+                    <CardTitle>Docker Services</CardTitle>
+                    <CardDescription>Displays the status of all back-end Docker services.</CardDescription>
+                </CardHeader>
 
-                    <CardContent className="overflow-y-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[256px]">Service</TableHead>
-                                    <TableHead className="w-[256px]">Status</TableHead>
-                                    <TableHead>Message</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {
-                                    dockerEntries.map((entry) => (
-                                        <TableRow key={entry.name}>
-                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
-                                            <TableCell className="flex items-center">
-                                                <AnimatePresence>
-                                                    <motion.div
-                                                        className="absolute translate-y-1/2"
-                                                        key={entry.status.name}
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-                                                        transition={{ duration: 0.3 }}
-                                                    >
-                                                        <entry.status.icon className="inline mr-2" size={16} />
-                                                        {entry.status.name}
-                                                    </motion.div>
-                                                </AnimatePresence>
-                                            </TableCell>
-                                            <TableCell className="relative">
-                                                {entry.messageDisplay}
-                                                <Loader2
-                                                    className="animate-spin duration-200 transition-opacity absolute left-0 top-0 translate-x-1/2 translate-y-1/2"
-                                                    size={16}
-                                                    style={{
-                                                        opacity: (entry.messageDisplay.length) ? 0.00 : 1.00
-                                                    }}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                }
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                <CardContent className="overflow-y-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[256px]">Service</TableHead>
+                                <TableHead className="w-[256px]">Status</TableHead>
+                                <TableHead>Message</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {
+                                dockerEntries.map((entry) => (
+                                    <TableRow key={entry.name}>
+                                        <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
+                                        <TableCell className="flex items-center">
+                                            <AnimatePresence>
+                                                <motion.div
+                                                    className="absolute translate-y-1/2"
+                                                    key={entry.status.name}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                >
+                                                    <entry.status.icon className="inline mr-2" size={16} />
+                                                    {entry.status.name}
+                                                </motion.div>
+                                            </AnimatePresence>
+                                        </TableCell>
+                                        <TableCell className="relative">
+                                            {entry.messageDisplay}
+                                            <Loader2
+                                                className="animate-spin duration-200 transition-opacity absolute left-0 top-0 translate-x-1/2 translate-y-1/2"
+                                                size={16}
+                                                style={{
+                                                    opacity: (entry.messageDisplay.length) ? 0.00 : 1.00
+                                                }}
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            }
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
-            </div>
         </div>
     );
 }
