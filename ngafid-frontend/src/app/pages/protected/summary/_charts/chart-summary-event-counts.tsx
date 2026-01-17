@@ -1,7 +1,10 @@
 // ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-counts.tsx
 "use client"
 
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts"
+import { getLogger } from "@/components/providers/logger"
+import { useTheme } from "@/components/providers/theme-provider"
+import { useTimeHeader } from "@/components/providers/time_header/time_header_provider"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     BAR_RADIUS_HORIZONTAL_FIRST,
     BAR_RADIUS_HORIZONTAL_LAST,
@@ -14,12 +17,9 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
-import { useTimeHeader } from "@/components/providers/time_header/time_header_provider"
-import { AirframeEventCounts } from "src/types"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { JSX } from "react"
-import { useTheme } from "@/components/providers/theme-provider"
-import { getLogger } from "@/components/providers/logger"
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts"
+import { AirframeEventCounts } from "src/types"
 
 
 const log = getLogger("ChartSummaryEventCounts", "black", "Chart");
