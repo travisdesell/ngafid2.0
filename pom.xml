@@ -17,10 +17,13 @@
     </modules>
 
     <properties>
-        <kotlin.version>2.0.21</kotlin.version>
+        <kotlin.version>2.3.0</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <jvm.target>21</jvm.target>
+        <jvm.target>25</jvm.target>
+        <kotlin.jvm.target>25</kotlin.jvm.target>
+        <maven.compiler.release>25</maven.compiler.release>
+
 
         <spark.version>2.7.2</spark.version>
         <gson.version>2.13.1</gson.version>
@@ -162,7 +165,7 @@
                     <version>${kotlin.version}</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <jvmTarget>${jvm.target}</jvmTarget>
+                        <jvmTarget>${kotlin.jvm.target}</jvmTarget>
                         <args>
                             <arg>-Xjvm-default=all</arg>
                         </args>
@@ -193,10 +196,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.14.1</version>
                     <configuration>
-                        <source>21</source>
-                        <target>${jvm.target}</target>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xmaxwarns</arg>
@@ -211,7 +213,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.6.3</version>
                     <configuration>
-                        <source>21</source>
+                        <release>${maven.compiler.release}</release>
                         <doclint>none</doclint>
                         <failOnError>false</failOnError>
 
@@ -231,6 +233,26 @@
                         </sourcepath>
 
                     </configuration>
+                </plugin>
+
+                <plugin> 
+                    <groupId>org.codehaus.mojo</groupId> 
+                    <artifactId>build-helper-maven-plugin</artifactId> 
+                    <version>3.6.1</version> 
+                    <executions> 
+                        <execution> 
+                            <id>add-source</id> 
+                            <phase>generate-sources</phase> 
+                            <goals>
+                                <goal>add-source</goal>
+                            </goals> 
+                            <configuration> 
+                                <sources> 
+                                    <source>src/main/kotlin</source> 
+                                </sources> 
+                            </configuration> 
+                        </execution> 
+                    </executions> 
                 </plugin>
 
             </plugins>
