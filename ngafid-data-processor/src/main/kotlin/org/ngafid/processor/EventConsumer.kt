@@ -26,6 +26,7 @@ import org.ngafid.core.heatmap.HeatmapPointsProcessor
 
 import java.sql.Connection
 import java.sql.SQLException
+import java.sql.SQLIntegrityConstraintViolationException
 import java.util.function.Consumer
 import java.util.logging.Logger
 import java.rmi.UnknownHostException
@@ -51,6 +52,39 @@ class EventConsumer protected constructor(
     DisjointConsumer<String?, String?>(mainThread, consumer, producer) {
     private val objectMapper = ObjectMapper()
     private var eventDefinitionMap: Map<Int, EventDefinition>? = null
+
+    /*
+    * Marks a flight as having had its events processed for a particular event definition.
+    * If hadError is true, marks that the processing had an error.
+    */
+    private fun markFlightProcessed(connection: Connection, flight: Flight, def: EventDefinition, hadError: Boolean) {
+
+        try {
+
+            connection.prepareStatement(
+                """
+                INSERT INTO flight_processed (fleet_id, flight_id, event_definition_id, had_error)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE had_error = GREATEST(had_error, VALUES(had_error))
+                """.trimIndent()
+            ).use { ps ->
+                ps.setInt(1, flight.fleetId)
+                ps.setInt(2, flight.id)
+                ps.setInt(3, def.id)
+                ps.setInt(4, if (hadError) 1 else 0)
+                ps.executeUpdate()
+            }
+
+        } catch (e: SQLIntegrityConstraintViolationException) {
+
+            // The flight row is gone (or never existed), treat it as a non-critical stale request
+            LOG.warning("Skipping markFlightProcessed for flight ${flight.id} (it was probably deleted): ${e.message}")
+
+        }
+
+    }
+
+
 
     override fun preProcess(records: ConsumerRecords<String?, String?>?) {
         try {
@@ -83,7 +117,7 @@ class EventConsumer protected constructor(
                     return Pair(record, false)
                 }
 
-                if (def.airframeNameId > 0 && def.airframeNameId == flight.airframe.id) {
+                if (def.airframeNameId > 0 && def.airframeNameId != flight.airframe.id) {
                     LOG.info("Skipping event - airframe mismatch: event airframe=${def.airframeNameId}, flight airframe=${flight.airframe.id}")
                     return Pair(record, false)
                 }
@@ -94,6 +128,7 @@ class EventConsumer protected constructor(
                     val existingEvents = allEvents.filter { it.eventDefinitionId == def.id }
                     if (existingEvents.isNotEmpty()) {
                         LOG.warning("Event already exists in database, skipping reprocessing")
+                        markFlightProcessed(connection, flight, def, hadError=false)
                         return Pair(record, false)
                     }
                 } catch (e: Exception) {
@@ -136,17 +171,30 @@ class EventConsumer protected constructor(
                         )
                     }
 
+                    markFlightProcessed(connection, flight, def, hadError=false)
+
                     return Pair(record, false)
+
                 } catch (e: ColumnNotAvailableException) {
+
                     e.printStackTrace()
-                    return Pair(record, true)
+                    markFlightProcessed(connection, flight, def, hadError=true)
+                    return Pair(record, false)
+
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    markFlightProcessed(connection, flight, def, hadError=true)
                     // Retry
                     return Pair(record, true)
                 }
             }
         } catch (e: SQLException) {
+
+            if (e is SQLIntegrityConstraintViolationException) {
+                LOG.warning("SQL FK violation while processing flight ${etc.flightId} and event ${etc.eventId} (it was probably deleted), skipping...")
+                return Pair(record, false)
+            }
+
             // If a sql exception happens, there is likely a bug that needs to addressed or the process should be rebooted. Crash process.
             e.printStackTrace()
             done.set(true)
@@ -192,7 +240,14 @@ class EventConsumer protected constructor(
                 EventScanner(def)
             } else {
                 when (def.id) {
-                    -6, -5, -4 -> LowEndingFuelScanner(flight.airframe, def)
+
+                    /*
+                        Low Ending Fuel: [-7, -4]
+                        High Altitude Spin / Low Altitude Spin: [-3, -2]
+                        Proximity: -1
+                    */
+
+                    -7, -6, -5, -4 -> LowEndingFuelScanner(flight.airframe, def)
                     -3, -2 -> SpinEventScanner(def)
                     -1 -> ProximityEventScanner(flight, def)
                     else -> throw RuntimeException("Cannot create scanner for event with definition id " + def.id + ". Please manually update `org.ngafid.kafka.EventConsumer with the mapping to the scanner.")
