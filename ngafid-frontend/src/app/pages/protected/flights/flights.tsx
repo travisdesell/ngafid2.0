@@ -3,44 +3,61 @@
 
 import ConfirmModal from "@/components/modals/confirm_modal";
 import ErrorModal from "@/components/modals/error_modal";
+import { FlightsSelectedModal } from "@/components/modals/flights_selected_modal/flights_selected_modal";
 import { useModal } from "@/components/modals/modal_context";
 import SuccessModal from "@/components/modals/success_modal";
 import { NavbarExtras } from "@/components/navbars/navbar_slot";
+import { CommandData, useRegisterCommands } from "@/components/providers/commands_provider";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
-import { useEffectPrev } from "@/lib/useEffectPrev";
 import { base64urlToU8, fromWire, toWire, u8ToBase64url } from "@/pages/protected/flights/_filters/flights_filter_copy_helpers";
 import { BASE_RULE_DEFINITIONS, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import { Filter, FilterCondition, FilterGroup, FilterRule, FilterRuleDefinition, SPECIAL_FILTER_GROUP_ID } from "@/pages/protected/flights/_filters/types";
-import { EnsureSeriesFn, FlightsContext, FlightsContextValue, FlightsResponse, FlightsState } from "@/pages/protected/flights/_flights_context";
+import { EnsureSeriesFn, FlightsChartContext, FlightsChartContextValue, FlightsChartState } from "@/pages/protected/flights/_flights_context_chart";
+import { FlightsResponse, FlightsResultsContext, FlightsResultsContextValue } from "@/pages/protected/flights/_flights_context_results";
+import { FlightsFilterContext, FlightsFilterContextValue, FlightsFilterState, FlightsSearchFilterContext, FlightsSearchFilterContextValue, FlightsSearchFilterState } from "@/pages/protected/flights/_flights_context_search_filter";
 import { FlightsPanelChart } from "@/pages/protected/flights/_panels/flights_panel_chart";
 import FlightsPanelMap from "@/pages/protected/flights/_panels/flights_panel_map";
-import FlightsPanelResults from "@/pages/protected/flights/_panels/flights_panel_results";
+import { FlightsPanelResults } from "@/pages/protected/flights/_panels/flights_panel_results";
 import { fetchSeries } from "@/pages/protected/flights/chart_data";
 import { FILTER_RULE_NAME_NEW, FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection, SortingDirection, type Flight } from "@/pages/protected/flights/types";
 import { SeriesKey, TraceSeries } from "@/pages/protected/flights/types_charts";
-import { ChartArea, Earth, Map, Search, Slash } from "lucide-react";
+import { EventSelectionState } from "@/pages/protected/flights/types_events";
+import { ChartArea, Earth, List, Map as MapIcon, Search, Slash } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import pako from "pako";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { startTransition as startConcurrentTransition, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
-import FlightsPanelSearch from "./_panels/flights_panel_search";
+import FlightsPanelCesium from "./_panels/_cesium/flights_panel_cesium";
+import FlightsPanelSearch from "./_panels/_search/flights_panel_search";
 
 
 const log = getLogger("Flights", "black", "Page");
+
+
+type FlightsModalChartStoreSnapshot = {
+    chartFlights: Flight[];
+    eventSelection: EventSelectionState;
+};
+
+type FlightsModalChartStore = {
+    subscribe: (listener: () => void) => () => void;
+    getSnapshot: () => FlightsModalChartStoreSnapshot;
+};
+
 
 
 /* Chart & Time-Series Functions */
 const makeSeriesKey = (flightId: number, name: string): SeriesKey =>
     `${flightId}:${name}` as SeriesKey;
 
-const getSeriesFromState = (state: FlightsState, flightId: number, name: string): TraceSeries | undefined =>
+const getSeriesFromState = (state: FlightsChartState, flightId: number, name: string): TraceSeries | undefined =>
     state.chartData.seriesByFlight[flightId]?.[name];
 
-const setSeriesInState = (state: FlightsState, series: TraceSeries): FlightsState => {
+const setSeriesInState = (state: FlightsChartState, series: TraceSeries): FlightsChartState => {
 
     const byFlight = { ...state.chartData.seriesByFlight };
     const forFlight = { ...(byFlight[series.flightId] ?? {}) };
@@ -58,6 +75,77 @@ const setSeriesInState = (state: FlightsState, series: TraceSeries): FlightsStat
 
 };
 
+const filterIsEmpty = (filter: Filter): boolean => {
+
+    // Has rules -> Not Empty
+    if (filter.rules && filter.rules.length > 0)
+        return false;
+
+    // Has Groups -> Not Empty
+    if (filter.groups && filter.groups.length > 0)
+        return false;
+
+    // No rules or groups -> Empty
+    return true;
+
+}
+
+const filterIsValid = (filter: Filter): boolean => {
+
+    /*
+        Valid filter conditions:
+
+        - All groups have at least 1 rule
+        - All rules have every field filled out
+
+        Note: Groups don't necessarily have to have rules,
+        since they can have sub-groups which contain rules.
+    */
+
+    // No rules or groups -> Invalid
+    const hasNoRules = (!filter.rules || filter.rules.length === 0);
+    const hasNoGroups = (!filter.groups || filter.groups.length === 0);
+    if (hasNoRules && hasNoGroups) {
+        log.warn(`Filter is invalid: Found group with no rules or sub-groups.`);
+        return false;
+    }
+
+    // Check rules...
+    for (const rule of filter.rules ?? []) {
+
+        // ... Rule is a new/placeholder rule -> Invalid
+        if (rule.name === FILTER_RULE_NAME_NEW) {
+            log.warn(`Filter is invalid: Found rule ${rule.id} with placeholder name.`);
+            return false;
+        }
+
+        // ...Check conditions of each rule...
+        for (const condition of rule.conditions) {
+
+            // ...Condition has no value -> Invalid
+            if ((condition.value === undefined) || (condition.value === null) || (condition.value === "")) {
+                log.warn(`Filter is invalid: Rule ${rule.id} has condition ${condition.name} with no value.`);
+                return false;
+            }
+
+        }
+
+    }
+
+    // Check sub-groups...
+    for (const group of filter.groups ?? []) {
+
+        // ...Recursively validate sub-group
+        if (!filterIsValid(group))
+            return false;
+
+    }
+
+    // All checks passed -> Valid
+    return true;
+
+}
+
 export default function FlightsPage() {
 
     useEffect(() => {
@@ -66,8 +154,9 @@ export default function FlightsPage() {
 
     const { setModal } = useModal();
 
+
     // Animation Config
-    const spring = { type: "spring" as const, stiffness: 420, damping: 34, mass: 0.6 };
+    const spring = { type: "spring" as const, stiffness: 350, damping: 34, mass: 0.6, bounce: 0 };
     const panelInitial = { opacity: 0.00, scale: 0.00 };
     const panelAnimate = { opacity: 1.00, scale: 1.00 };
     const panelExit = { opacity: 0.00, scale: 0.00 };
@@ -80,12 +169,12 @@ export default function FlightsPage() {
     // Filter Search Helpers (Debounce, AbortController, loading flag...)
     const inflightCtrlRef = useRef<AbortController | null>(null);
     const reqIdRef = useRef(0);
-    const [isFilterSearchLoading, startTransition] = useTransition();
+    const [isFilterSearchLoading, startFilterSearchLoadingTransition] = useTransition();
     const [isFilterSearchLoadingManual, setIsFilterSearchLoadingManual] = useState(false);
-    
+
     // Chart Data State
     const [chartFlights, setChartFlightsRaw] = useState<Flight[]>([]);
-    
+
     // Layout State
     const [searchPanelVisible, setSearchPanelVisible] = useState(true);
 
@@ -93,6 +182,7 @@ export default function FlightsPage() {
     const [chartPanelVisible, setChartPanelVisible] = useState(false);
     const [cesiumPanelVisible, setCesiumPanelVisible] = useState(false);
     const [mapPanelVisible, setMapPanelVisible] = useState(false);
+    const [analysisAreaOpen, setAnalysisAreaOpen] = useState(false);
 
     // Search Options State
     const [filterSearched, setFilterSearched] = useState<Filter | null>(null);
@@ -102,90 +192,32 @@ export default function FlightsPage() {
     const [currentPage, setCurrentPage] = useState<number>(0);
 
     const anyAnalysisPanelVisible = (chartPanelVisible || cesiumPanelVisible || mapPanelVisible);
-    const analysisPanelCount = (chartPanelVisible ? 1 : 0) + (cesiumPanelVisible ? 1 : 0) + (mapPanelVisible ? 1 : 0);
-    const analysisSectionGridClasses = `grid-cols-1 grid-rows-${analysisPanelCount}`;
+    const analysisPanelGridRowCount = [chartPanelVisible, cesiumPanelVisible, mapPanelVisible].filter(v => v).length;
 
     const searchPanelRef = useRef<ImperativePanelHandle | null>(null);
     const analysisPanelRef = useRef<ImperativePanelHandle | null>(null);
 
-    const filterIsEmpty = (filter: Filter): boolean => {
-
-        // Has rules -> Not Empty
-        if (filter.rules && filter.rules.length > 0)
-            return false;
-
-        // Has Groups -> Not Empty
-        if (filter.groups && filter.groups.length > 0)
-            return false;
-
-        // No rules or groups -> Empty
-        return true;
-
-    }
-
-    const filterIsValid = (filter: Filter): boolean => {
-
-        /*
-            Valid filter conditions:
-
-            - All groups have at least 1 rule
-            - All rules have every field filled out
-
-            Note: Groups don't necessarily have to have rules,
-            since they can have sub-groups which contain rules.
-        */
-
-        // No rules or groups -> Invalid
-        const hasNoRules = (!filter.rules || filter.rules.length === 0);
-        const hasNoGroups = (!filter.groups || filter.groups.length === 0);
-        if (hasNoRules && hasNoGroups) {
-            log.warn(`Filter is invalid: Found group with no rules or sub-groups.`);
-            return false;
+    const anyAnalysisPanelVisibleRef = useRef(false);
+    useEffect(() => {
+        anyAnalysisPanelVisibleRef.current = anyAnalysisPanelVisible;
+    }, [anyAnalysisPanelVisible]);
+    useEffect(() => {
+        if (anyAnalysisPanelVisible) {
+            setAnalysisAreaOpen(true);
+            analysisPanelRef.current?.expand();
         }
-
-        // Check rules...
-        for (const rule of filter.rules ?? []) {
-
-            // ... Rule is a new/placeholder rule -> Invalid
-            if (rule.name === FILTER_RULE_NAME_NEW) {
-                log.warn(`Filter is invalid: Found rule ${rule.id} with placeholder name.`);
-                return false;
-            }
-
-            // ...Check conditions of each rule...
-            for (const condition of rule.conditions) {
-
-                // ...Condition has no value -> Invalid
-                if ((condition.value === undefined) || (condition.value === null) || (condition.value === "")) {
-                    log.warn(`Filter is invalid: Rule ${rule.id} has condition ${condition.name} with no value.`);
-                    return false;
-                }
-
-            }
-
-        }
-
-        // Check sub-groups...
-        for (const group of filter.groups ?? []) {
-
-            // ...Recursively validate sub-group
-            if (!filterIsValid(group))
-                return false;
-
-        }
-
-        // All checks passed -> Valid
-        return true;
-
-    }
-
-    const newID = () => ((typeof crypto !== "undefined") && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+    }, [anyAnalysisPanelVisible]);
 
 
 
-    
+    const newID = useCallback(() => (
+        (typeof crypto !== "undefined") && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : Math.random().toString(36).slice(2)
+    , []);
+
+
+
     // Parse filter from URL / Set initial empty filter
     function parseFilterFromURL(): { filter?: Filter; outcome: "ok" | "error" | "none" } {
 
@@ -235,35 +267,33 @@ export default function FlightsPage() {
 
         const { filter: parsed, outcome } = parseFilterFromURL();
 
-        // Got parsed filter from URL, set it
+        // Got parsed filter from URL, set it on the real filter state
         if (parsed) {
-            setState(prev => ({
+            setFilterState(prev => ({
                 ...prev,
                 filter: parsed,
             }));
         }
 
-        // Parsed successfully, show success modal
         if (outcome === "ok") {
             setModal(SuccessModal, {
                 title: "Filter Loaded from URL",
                 message: "Successfully loaded filter from URL parameter.",
             });
-
-        // Otherwise, show error modal
         } else if (outcome === "error") {
             setModal(ErrorModal, {
                 title: "Error Loading Filter from URL",
                 message: "There was an error loading the filter from the URL. An empty filter has been loaded instead.",
             });
         }
-
+        
     }, []);
 
 
 
+
     // Flights Search
-    const fetchFlightsWithFilter = async (filter: FilterGroup, isTriggeredManually: boolean) => {
+    const fetchFlightsWithFilter = useCallback(async (filter: FilterGroup, isTriggeredManually: boolean) => {
 
         log(`Attempting to fetch flights with filter: (Triggered Manually: ${isTriggeredManually})`, filter);
 
@@ -369,7 +399,7 @@ export default function FlightsPage() {
             log.table(`Fetched flights (${response.flights.length}):`, response.flights);
 
             // Update flights state
-            startTransition(() => {
+            startFilterSearchLoadingTransition(() => {
                 setFlights(response.flights);
                 setTotalFlights(response.totalFlights);
                 setNumberPages(response.numberPages ?? 0);
@@ -378,7 +408,7 @@ export default function FlightsPage() {
             return response;
 
         } catch (error: any) {
-            
+
             // Ignore errors from stale requests
             if (reqIdRef.current !== reqId) {
                 log.warn("Ignoring error from stale request:", error);
@@ -406,35 +436,55 @@ export default function FlightsPage() {
             const errorCode = (error instanceof Error)
                 ? error.message
                 : "An unknown error occurred.";
-                
+
             setModal(ErrorModal, { title: "Error Fetching Flights", message: "An error occurred while fetching flights with the current filter.", code: errorCode });
 
         } finally {
 
-            setIsFilterSearchLoadingManual(false);
+            // This is the current request, end loading state
+            if (reqIdRef.current === reqId)
+                setIsFilterSearchLoadingManual(false);
 
         }
 
-    }
+    }, [currentPage,
+        pageSize,
+        sortingColumn,
+        sortingDirection,
+        setModal,
+        startFilterSearchLoadingTransition,
+        setFlights,
+        setTotalFlights,
+        setNumberPages,
+        setIsFilterSearchLoadingManual,
+        setFilterSearched]
+    );
 
     // Revert filter to last searched
-    const revertFilter = () => {
+    const revertFilter = useCallback(() => {
 
         if (!filterSearched) {
+
             log.warn("No previously searched filter to revert to.");
-            setModal(ErrorModal, { allowReport: false, title: "No Previous Filter", message: "There is no previously searched filter to revert to." });
+            setModal(ErrorModal, {
+                allowReport: false,
+                title: "No Previous Filter",
+                message: "There is no previously searched filter to revert to.",
+            });
+
             return;
+
         }
 
         const confirmRevert = () => {
 
             log("Reverting filter to last searched filter:", filterSearched);
-            setState((prev) => ({
+            setFilterState((prev) => ({
                 ...prev,
-                filter: filterSearched!,
+                filter: filterSearched!, //<-- Re-attach the last searched filter
             }));
 
-        }
+        };
 
         setModal(ConfirmModal, {
             title: "Revert Filter",
@@ -443,10 +493,11 @@ export default function FlightsPage() {
             onConfirm: confirmRevert,
         });
 
-    }
+    }, [filterSearched, setModal]);
+
 
     // Filter URL Copying
-    const copyFilterURL = (filterTarget:Filter) => {
+    const copyFilterURL = useCallback((filterTarget: Filter) => {
 
         /*
             Generates a URL encoding for the
@@ -490,10 +541,10 @@ export default function FlightsPage() {
                 () => setModal(ErrorModal, { title: "Error Copying Filter URL", message: "An error occurred while trying to copy the filter URL to your clipboard.", code: "kek!" })
             );
 
-    }
+    }, [setModal]);
 
     // Add Flight ID to special filter group
-    const addFlightIDToFilter = (flightID: string) => {
+    const addFlightIDToFilter = useCallback((flightID: string) => {
 
         /*
             Creates a new rule that checks if the
@@ -589,7 +640,7 @@ export default function FlightsPage() {
 
                 updatedFilter.groups = [...groups, specialGroup];
 
-            // Otherwise, add the new rule to the existing group
+                // Otherwise, add the new rule to the existing group
             } else {
                 specialGroup.rules = [...(specialGroup.rules ?? []), newRule];
             }
@@ -598,93 +649,90 @@ export default function FlightsPage() {
 
         });
 
-    };
+    }, []);
 
-    const flightIDInSpecialGroup = (flightID: string): boolean => {
 
-        const specialGroup = state.filter.groups?.find((g) => g.id === SPECIAL_FILTER_GROUP_ID);
+    const [filterState, setFilterState] = useState<FlightsFilterState>({
+        filter: makeEmpty(),
+    });
+
+    const [searchFilterState, setSearchFilterState] = useState<FlightsSearchFilterState>({
+        isFilterSearchLoading: isFilterSearchLoading,
+        isFilterSearchLoadingManual: isFilterSearchLoadingManual,
+
+        sortingColumn: sortingColumn,
+        sortingDirection: sortingDirection,
+        pageSize: pageSize,
+        currentPage,
+    });
+    const searchFilterStateRef = useRef(searchFilterState);
+    useEffect(() => {
+        searchFilterStateRef.current = searchFilterState;
+    }, [searchFilterState]);
+
+    const [chartState, setChartState] = useState<FlightsChartState>({
+        chartFlights: chartFlights,
+        chartData: {
+            seriesByFlight: {},
+            loadingSeries: new Set<SeriesKey>(),
+        },
+        chartSelection: {
+            universalParams: new Set<string>(),
+            perFlightParams: {},
+        },
+
+        eventSelection: {
+            universalEvents: new Set<string>(),
+            perFlightEvents: {},
+        } satisfies EventSelectionState,
+
+        selectedIds: new Set<number>(),
+    });
+    const chartStateRef = useRef(chartState);
+    useEffect(() => {
+        chartStateRef.current = chartState;
+    }, [chartState]);
+
+
+    const flightIDInSpecialGroup = useCallback((flightID: string): boolean => {
+
+        const currentFilter = filterState.filter;
+
+        const specialGroup = currentFilter.groups?.find((g) => g.id === SPECIAL_FILTER_GROUP_ID);
         if (!specialGroup || !specialGroup.rules)
             return false;
 
-        return specialGroup.rules.some((r) => r.name === "Flight ID" && r.conditions.some((c) => c.name === "number" && c.value === flightID));
+        return specialGroup.rules.some(
+            (r) => r.name === "Flight ID"
+                && r.conditions.some((c) =>
+                    c.name === "number" && c.value === flightID
+                )
+        );
 
-    }
-
-
-    const ensureSeries: EnsureSeriesFn = async (flightId, paramName) => {
-
-        const key = makeSeriesKey(flightId, paramName);
-
-        // Already loaded, return
-        const cached = getSeriesFromState(state, flightId, paramName);
-        if (cached)
-            return cached;
-
-        // Avoid duplicate fetches
-        if (state.chartData.loadingSeries.has(key)) {
-            // Optionally you can keep a map of promises, or just
-            // return after some polling; for now, just fetch again if needed.
-
-            // TODO
-        }
-
-        setState((prev) => ({
-            ...prev,
-            chartData: {
-                ...prev.chartData,
-                loadingSeries: new Set(prev.chartData.loadingSeries).add(key),
-            },
-        }));
-
-        const series = await fetchSeries(flightId, paramName);
-
-        setState((prev) => {
-            const next = setSeriesInState(prev, series);
-            const loading = new Set(next.chartData.loadingSeries);
-            loading.delete(key);
-
-            return {
-                ...next,
-                chartData: {
-                    ...next.chartData,
-                    loadingSeries: loading,
-                },
-            };
-        });
-
-        return series;
-        
-    };
+    }, [filterState]);
 
 
-    // Open chart panel when a flight is selected
-    useEffectPrev(chartFlights, (prevChartFlights) => {
+    const toggleUniversalParam = useCallback((name: string) => {
 
-        // Chart is already open, exit
-        if (chartPanelVisible)
-            return;
+        setChartState(prev => {
 
-        // Flight was added, open the chart panel
-        if (prevChartFlights && chartFlights.length > prevChartFlights.length) {
-            log("Flight added to chart, opening chart panel.");
-            setChartPanelVisible(true);
-        }
-
-    });
-
-    const toggleUniversalParam = (name: string) => {
-
-        setState((prev) => {
+            log("Toggling universal parameter:", name);
 
             const universal = new Set(prev.chartSelection.universalParams);
 
-            // Universal param already selected, deselect it
-            if (universal.has(name))
+            // Already selected, deselect
+            if (universal.has(name)) {
+
+                log("Deselecting universal parameter:", name);
                 universal.delete(name);
 
-            // Otherwise, select it
-            else
+            // Otherwise, select
+            } else {
+
+                log("Selecting universal parameter:", name);
                 universal.add(name);
+
+            }
 
             return {
                 ...prev,
@@ -696,22 +744,31 @@ export default function FlightsPage() {
 
         });
 
-    };
+    }, [setChartState]);
 
-    const togglePerFlightParam = (flightId: number, name: string) => {
 
-        setState((prev) => {
+    const togglePerFlightParam = useCallback((flightId: number, name: string) => {
+
+        setChartState(prev => {
+
+            log("Toggling per-flight parameter:", { flightId, name });
 
             const perFlight = { ...prev.chartSelection.perFlightParams };
-            const forFlight = (new Set(perFlight[flightId] ?? new Set<string>()));
+            const forFlight = new Set(perFlight[flightId] ?? new Set<string>());
 
-            // Param already selected for this flight, deselect it
-            if (forFlight.has(name))
+            // Already selected, deselect
+            if (forFlight.has(name)) {
+
+                log("Deselecting per-flight parameter for flight:", flightId, name);
                 forFlight.delete(name);
 
-            // Otherwise, select it
-            else
+            // Otherwise, select
+            } else {
+
+                log("Selecting per-flight parameter for flight:", flightId, name);
                 forFlight.add(name);
+
+            }
 
             perFlight[flightId] = forFlight;
 
@@ -725,53 +782,158 @@ export default function FlightsPage() {
 
         });
 
-    };
+    }, [setChartState]);
 
-    // Flights State
-    const [state, setState] = useState<FlightsState>({
-        flights: flights,
-        totalFlights: totalFlights,
-        numberPages: numberPages,
 
-        filter: makeEmpty(),
+    const toggleUniversalEvent = useCallback((name: string) => {
 
-        isFilterSearchLoading: isFilterSearchLoading,
-        isFilterSearchLoadingManual: isFilterSearchLoadingManual,
+        setChartState(prev => {
 
-        filterSearched: null,
-        sortingColumn: sortingColumn,
-        sortingDirection: sortingDirection,
-        pageSize: pageSize,
-        currentPage,
+            log("Toggling universal event:", name);
 
-        // Chart Data
-        chartFlights: chartFlights,
+            const universal = new Set(prev.eventSelection.universalEvents);
 
-        chartSelection: {
-            universalParams: new Set<string>(),
-            perFlightParams: {},
-        }, 
-        chartData: {
-            seriesByFlight: {},
-            loadingSeries: new Set<SeriesKey>(),
+            // Already selected, deselect
+            if (universal.has(name)) {
+
+                log("Deselecting universal event:", name);
+                universal.delete(name);
+
+            // Otherwise, select
+            } else {
+
+                log("Selecting universal event:", name);
+                universal.add(name);
+
+            }
+
+            return {
+                ...prev,
+                eventSelection: {
+                    ...prev.eventSelection,
+                    universalEvents: universal,
+                },
+            };
+
+        });
+
+    }, [setChartState]);
+
+    const togglePerFlightEvent = useCallback((flightId: number, name: string) => {
+
+        setChartState(prev => {
+
+            log("Toggling per-flight event:", { flightId, name });
+
+            const perFlight = { ...prev.eventSelection.perFlightEvents };
+            const forFlight = new Set(perFlight[flightId] ?? new Set<string>());
+
+            // Already selected, deselect
+            if (forFlight.has(name)) {
+
+                log("Deselecting per-flight event for flight:", flightId, name);
+                forFlight.delete(name);
+
+            // Otherwise, select
+            } else {
+
+                log("Selecting per-flight event for flight:", flightId, name);
+                forFlight.add(name);
+
+            }
+
+            perFlight[flightId] = forFlight;
+
+            return {
+                ...prev,
+                eventSelection: {
+                    ...prev.eventSelection,
+                    perFlightEvents: perFlight,
+                },
+            };
+
+        });
+        
+    }, [setChartState]);
+
+    const inflightSeriesRef = useRef<Map<SeriesKey, Promise<TraceSeries>>>(new Map());
+
+    const ensureSeries = useCallback<EnsureSeriesFn>(
+        async (flightId: number, paramName: string) => {
+            const key = makeSeriesKey(flightId, paramName);
+
+            // Use latest chart snapshot
+            const snapshot = chartStateRef.current;
+
+            const cached = getSeriesFromState(snapshot, flightId, paramName);
+            if (cached)
+                return cached;
+
+            const existingPromise = inflightSeriesRef.current.get(key);
+            if (existingPromise)
+                return existingPromise;
+
+            const promise = (async () => {
+                // Mark as loading
+                setChartState(prev => ({
+                    ...prev,
+                    chartData: {
+                        ...prev.chartData,
+                        loadingSeries: new Set(prev.chartData.loadingSeries).add(key),
+                    },
+                }));
+
+                const series = await fetchSeries(flightId, paramName);
+
+                setChartState(prev => {
+                    const next = setSeriesInState(prev, series);
+                    const loading = new Set(next.chartData.loadingSeries);
+                    loading.delete(key);
+
+                    return {
+                        ...next,
+                        chartData: {
+                            ...next.chartData,
+                            loadingSeries: loading,
+                        },
+                    };
+                });
+
+                inflightSeriesRef.current.delete(key);
+
+                return series;
+            })();
+
+            inflightSeriesRef.current.set(key, promise);
+            return promise;
         },
+        [],
+    );
 
         
-    });
 
-    const setFilter: FlightsContextValue["setFilter"] = (updater) => {
+    const setFilter: FlightsFilterContextValue["setFilter"] = useCallback(
 
-        const updatedFilter = updater(state.filter);
-        log("Setting new filter:", updatedFilter);
+        (updater) => {
+            startConcurrentTransition(() => {
+                setFilterState((prevState) => {
+                    const nextFilter = updater(prevState.filter);
 
-        setState((prev: any) => ({
-            ...prev,
-            filter: updatedFilter,
-        }));
+                    if (nextFilter === prevState.filter)
+                        return prevState;
 
-    };
+                    return {
+                        ...prevState,
+                        filter: nextFilter,
+                    };
+                });
+            });
+        },
 
-    const setFilterFromJSON: FlightsContextValue["setFilterFromJSON"] = (json) => {
+    []);
+
+
+    const setFilterFromJSON: FlightsFilterContextValue["setFilterFromJSON"] = useCallback((json) => {
 
         log("Attempting to parse filter from JSON:", json);
 
@@ -779,93 +941,133 @@ export default function FlightsPage() {
         log("Setting filter from parsed JSON:", parsed);
 
         setFilter(() => parsed);
-        
-    }
 
-    const updateFlightTags: FlightsContextValue["updateFlightTags"] = (flightId, tags) => {
+    }, [setFilter]);
 
-        log(`Updating tags for flight ${flightId}:`, tags);
+    const updateFlightTags: FlightsSearchFilterContextValue["updateFlightTags"] = useCallback(
+        (flightId, tags) => {
+            log(`Updating tags for flight ${flightId}:`, tags);
 
-        setFlights((prev) =>
-            prev.map((flight) =>
-                flight.id === flightId ? { ...flight, tags } : flight,
-            ),
-        );
+            // Local optimistic update
+            setFlights(prev =>
+                prev.map(flight =>
+                    flight.id === flightId ? { ...flight, tags } : flight,
+                ),
+            );
 
-    };
+            // Only re-fetch using the last searched filter
+            if (!filterSearched)
+                return;
 
-    const setChartFlights: FlightsContextValue["setChartFlights"] = (updater) => {
+            // filterSearched was only ever set from a valid, non-empty filter
+            void fetchFlightsWithFilter(filterSearched, true);
+        },
+        [setFlights, filterSearched, fetchFlightsWithFilter],
+    );
 
-        setChartFlightsRaw((prev) => {
 
-            const next = (typeof updater === "function")
-                ? (updater as (prevFlights: Flight[]) => Flight[])(prev)
-                : updater;
 
-            setState((prevState) => {
+    const setChartFlights = useCallback<FlightsChartContextValue["setChartFlights"]>(
 
-                const remainingIDs = new Set(next.map((f) => f.id));
+        (updater) => {
 
-                const newPerFlightParams: Record<number, Set<string>> = {};
-                for (const [flighIDstr, params] of Object.entries(prevState.chartSelection.perFlightParams)) {
+            startConcurrentTransition(() => {
 
-                    const flightID = Number(flighIDstr);
+                setChartFlightsRaw(prev => {
 
-                    // Flight is still in the chart, keep its params
-                    if (remainingIDs.has(flightID))
-                        newPerFlightParams[flightID] = params;
-                    
-                }
+                    const next = (typeof updater === "function")
+                        ? (updater as (prevFlights: Flight[]) => Flight[])(prev)
+                        : updater;
 
-                return {
-                    ...prevState,
-                    chartFlights: next,
-                    chartSelection: {
-                        ...prevState.chartSelection,
-                        perFlightParams: newPerFlightParams,
-                    },
-                };
+                    setChartState(prevState => {
+
+                        const remainingIDs = new Set(next.map(f => f.id));
+
+                        // Prune per-flight param selections for removed flights
+                        const newPerFlightParams: Record<number, Set<string>> = {};
+                        for (const [flightIDStr, params] of Object.entries(prevState.chartSelection.perFlightParams)) {
+
+                            const flightID = Number(flightIDStr);
+                            if (remainingIDs.has(flightID))
+                                newPerFlightParams[flightID] = params;
+
+                        }
+
+                        // Prune per-flight event selections for removed flights
+                        const newPerFlightEvents: Record<number, Set<string>> = {};
+                        for (const [flightIDStr, events] of Object.entries(prevState.eventSelection.perFlightEvents)) {
+                            const flightID = Number(flightIDStr);
+                            if (remainingIDs.has(flightID))
+                                newPerFlightEvents[flightID] = events;
+                        }
+
+                        return {
+                            ...prevState,
+                            chartFlights: next,
+                            chartSelection: {
+                                ...prevState.chartSelection,
+                                perFlightParams: newPerFlightParams,
+                            },
+                            eventSelection: {
+                                ...prevState.eventSelection,
+                                perFlightEvents: newPerFlightEvents,
+                            },
+                        };
+
+                    });
+
+                    return next;
+
+                });
 
             });
 
-        return next;
+        }, [setChartFlightsRaw, setChartState],
 
-        });
+    );
 
-    }
 
-    const value: FlightsContextValue = {
-        flights: flights,
-        totalFlights: totalFlights,
-        numberPages: numberPages,
+    const flightsResultsContextValue: FlightsResultsContextValue = useMemo(() => ({
+        flights,
+        totalFlights,
+        numberPages,
+    }), [flights, totalFlights, numberPages]);
 
-        filter: state.filter,
+            
+    const flightsSearchContextValue: FlightsSearchFilterContextValue = useMemo(() => ({
+            isFilterSearchLoading,
+            isFilterSearchLoadingManual,
+            sortingColumn,
+            sortingDirection,
+            pageSize,
+            currentPage,
 
-        isFilterSearchLoading: isFilterSearchLoading,
-        isFilterSearchLoadingManual: isFilterSearchLoadingManual,
+            setSortingColumn,
+            setSortingDirection,
+            setPageSize,
+            setCurrentPage,
 
-        filterSearched: filterSearched,
+            fetchFlightsWithFilter,
+            updateFlightTags,
+        }), [
+            isFilterSearchLoading,
+            isFilterSearchLoadingManual,
+            sortingColumn,
+            sortingDirection,
+            pageSize,
+            currentPage,
+            fetchFlightsWithFilter,
+            updateFlightTags,
+        ]
+    );
+
+    const flightsFilterSearchContextValue: FlightsSearchFilterContextValue = {
+        isFilterSearchLoading,
+        isFilterSearchLoadingManual,
         sortingColumn,
         sortingDirection,
         pageSize,
         currentPage,
-
-        chartFlights: chartFlights,
-        chartSelection: state.chartSelection,
-        chartData: state.chartData,
-
-        setFilter,
-        setFilterFromJSON,
-        filterIsEmpty: filterIsEmpty,
-        filterIsValid: filterIsValid,
-        revertFilter,
-
-        copyFilterURL,
-        
-        addFlightIDToFilter,
-        flightIDInSpecialGroup,
-
-        newID,
 
         setSortingColumn,
         setSortingDirection,
@@ -873,14 +1075,55 @@ export default function FlightsPage() {
         setCurrentPage,
 
         fetchFlightsWithFilter,
-
         updateFlightTags,
+    };
 
+    const flightsFilterContextValue: FlightsFilterContextValue = {
+        filter: filterState.filter,
+        filterSearched: filterSearched,
+
+        setFilter,
+        setFilterFromJSON,
+        revertFilter,
+        copyFilterURL,
+        addFlightIDToFilter,
+        flightIDInSpecialGroup,
+        newID,
+        filterIsEmpty,
+        filterIsValid,
+    };
+
+    const selectedIds = useMemo(
+        () => new Set(chartState.chartFlights.map(f => f.id)),
+        [chartState.chartFlights],
+    );
+
+    const flightsChartContextValue = useMemo<FlightsChartContextValue>(() => ({
+        chartFlights,
+        chartData: chartState.chartData,
+        chartSelection: chartState.chartSelection,
+        eventSelection: chartState.eventSelection,
+        selectedIds,
         setChartFlights,
         ensureSeries,
         toggleUniversalParam,
         togglePerFlightParam,
-    };
+        toggleUniversalEvent,
+        togglePerFlightEvent,
+    }), [
+        chartFlights,
+        chartState.chartData,
+        chartState.chartSelection,
+        chartState.eventSelection,
+        selectedIds,
+        setChartFlights,
+        ensureSeries,
+        toggleUniversalParam,
+        togglePerFlightParam,
+        toggleUniversalEvent,
+        togglePerFlightEvent,
+    ]);
+
 
     useEffect(() => {
 
@@ -913,11 +1156,9 @@ export default function FlightsPage() {
             return;
         }
 
-        // fetchFlightsWithFilter(filterSearched, false);
-        const id = setTimeout(() => fetchFlightsWithFilter(filterSearched, false), 150);
-        return () => clearTimeout(id);
+        void fetchFlightsWithFilter(filterSearched, false);
 
-    }, [sortingColumn, sortingDirection, pageSize, currentPage, filterSearched]);
+    }, [sortingColumn, sortingDirection, pageSize, currentPage, filterSearched, fetchFlightsWithFilter]);
 
 
     useEffect(() => {
@@ -951,199 +1192,329 @@ export default function FlightsPage() {
     }, [anyAnalysisPanelVisible]);
 
 
-    const renderSectionToggleButton = (Icon: React.ElementType, isActive: boolean, toggleMethod: (isActive: boolean) => void, buttonClass = "") => (
+    const renderSectionToggleButton = (Icon: React.ElementType, isActive: boolean, tooltipName:string,  toggleMethod: (isActive: boolean) => void, buttonClass = "") => (
 
-        <Button variant="outline" size="icon" onClick={() => toggleMethod(!isActive)} className={`relative ${buttonClass}`}>
-            <Icon className={`${isActive ? 'opacity-100' : 'opacity-25'}`} />
-            {
-                (!isActive)
-                &&
-                <Slash className="absolute" />
-            }
-        </Button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="outline" onClick={() => toggleMethod(!isActive)} className={`relative ${buttonClass} w-9`}>
+                    <Icon className={`${isActive ? 'opacity-100' : 'opacity-25'}`} />
+                    {
+                        (!isActive)
+                        &&
+                        <Slash className="absolute" />
+                    }
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+                Toggle {tooltipName} Panel
+            </TooltipContent>
+        </Tooltip>
 
     );
 
+
+
+    const modalChartListenersRef = useRef(new Set<() => void>());
+    const modalChartSnapshotRef = useRef<FlightsModalChartStoreSnapshot>({
+        chartFlights: [],
+        eventSelection: { universalEvents: new Set(), perFlightEvents: {} },
+    });
+
+    const modalChartStore = useMemo<FlightsModalChartStore>(() => ({
+
+        subscribe: (listener) => {
+            modalChartListenersRef.current.add(listener);
+            return () => modalChartListenersRef.current.delete(listener);
+        },
+        getSnapshot: () => modalChartSnapshotRef.current,
+
+    }), []);
+
+    // Update snapshot and notify whenever the relevant state changes
+    useEffect(() => {
+
+        // Use a new object so useSyncExternalStore detects a changed snapshot reference
+        modalChartSnapshotRef.current = {
+            chartFlights: chartState.chartFlights,
+            eventSelection: chartState.eventSelection,
+        };
+
+        for (const listener of modalChartListenersRef.current)
+            listener();
+
+    }, [chartState.chartFlights, chartState.eventSelection]);
+
+    const expandSelectedFlightsModal = () => {
+
+        setModal(FlightsSelectedModal, {
+            chartStore: modalChartStore,
+            setChartFlights,
+            toggleUniversalEvent,
+            togglePerFlightEvent,
+        });
+
+    }
+
+    const noChartFlightsSelected = (chartFlights.length === 0);
     const navbarExtras = (
         <>
             {/* Search Area Toggle */}
-            {renderSectionToggleButton(Search, searchPanelVisible, setSearchPanelVisible)}
+            {renderSectionToggleButton(Search, searchPanelVisible, "Search", setSearchPanelVisible)}
 
             {/* Chart Toggle */}
-            {renderSectionToggleButton(ChartArea, chartPanelVisible, setChartPanelVisible)}
+            {renderSectionToggleButton(ChartArea, chartPanelVisible, "Chart", setChartPanelVisible)}
 
             {/* Cesium Toggle */}
-            {renderSectionToggleButton(Earth, cesiumPanelVisible, setCesiumPanelVisible)}
+            {renderSectionToggleButton(Earth, cesiumPanelVisible, "Cesium", setCesiumPanelVisible)}
 
             {/* Map Toggle & Select */}
-            <div className="flex">
+            {renderSectionToggleButton(MapIcon, mapPanelVisible, "Map", setMapPanelVisible)}
 
-                {renderSectionToggleButton(Map, mapPanelVisible, setMapPanelVisible)}
+            {/* Selected Flights */}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        id="expand-chart-items-button"
+                        variant="ghost"
+                        onClick={expandSelectedFlightsModal}
+                        className={`p-2 ${noChartFlightsSelected ? "opacity-0 pointer-events-none" : "opacity-100"} transition-opacity`}
+                        inert={noChartFlightsSelected ? true : false}
+                    >
+                        <List />
+                        <span>
+                            {chartFlights.length}&nbsp;
+                            <span className="@max-3xl:hidden!">Selected</span>
+                        </span>
 
-                {/* <Select>
-                    <SelectTrigger className="w-[180px] rounded-l-none">
-                        <SelectValue placeholder="Select Map Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="cesium">Cesium</SelectItem>
-                        <SelectItem value="leaflet">Leaflet</SelectItem>
-                    </SelectContent>
-                </Select> */}
-            </div>
+                        {/* {gotChartFlightAdded && <Ping />} */}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Expand Selected Flights & Events</TooltipContent>
+            </Tooltip>
+
         </>
     );
 
+    const commands = useMemo<CommandData[]>(() => ([
+
+        /* -- Panel Toggle Commands -- */
+        {
+            id: "flights.toggleSearchPanel",
+            name: "Toggle Search Panel",
+            Icon: Search,
+            command: () => {
+                log.info("Toggling Search Panel via command...");
+                setSearchPanelVisible((prev) => !prev);
+            },
+            hotkey: "Ctrl+Shift+F",
+
+        },
+        {
+            id: "flights.toggleChartPanel",
+            name: "Toggle Chart Panel",
+            Icon: ChartArea,
+            command: () => {
+                log.info("Toggling Chart Panel via command...");
+                setChartPanelVisible((prev) => !prev);
+            },
+            hotkey: "Ctrl+Shift+H",
+        },
+        {
+            id: "flights.toggleCesiumPanel",
+            name: "Toggle Cesium Panel",
+            Icon: Earth,
+            command: () => {
+                log.info("Toggling Cesium Panel via command...");
+                setCesiumPanelVisible((prev) => !prev);
+            },
+            hotkey: "Ctrl+Shift+E",
+        },
+        {
+            id: "flights.toggleMapPanel",
+            name: "Toggle Map Panel",
+            Icon: MapIcon,
+            command: () => {
+                log.info("Toggling Map Panel via command...");
+                setMapPanelVisible((prev) => !prev);
+            },
+            hotkey: "Ctrl+Shift+M",
+        },
+        
+    ]), [setSearchPanelVisible, setChartPanelVisible, setCesiumPanelVisible, setMapPanelVisible]);
+    useRegisterCommands(commands);
+
     const render = () => (
-        <FlightsContext.Provider value={value}>
-            <div className="page-container">
-                <AnimatePresence mode="sync">
+        <FlightsSearchFilterContext.Provider value={ flightsSearchContextValue }>
+            <FlightsFilterContext.Provider value={flightsFilterContextValue}>
+                <FlightsResultsContext.Provider value={ flightsResultsContextValue }>
+                    <FlightsChartContext.Provider value={ flightsChartContextValue }>
+                        <div className="page-container">
+                            <AnimatePresence mode="sync">
 
-                    <NavbarExtras>
-                        {navbarExtras}
-                    </NavbarExtras>
+                                <NavbarExtras>
+                                    {navbarExtras}
+                                </NavbarExtras>
 
-                    <motion.div key="flights-page-content" layout className="page-content gap-4">
+                                <motion.div key="flights-page-content" layout className="page-content gap-4">
 
-                        <ResizablePanelGroup direction={"horizontal"} className="gap-2">
+                                    <ResizablePanelGroup direction={"horizontal"} className="gap-2">
 
-                            {/* Search Section */}
-                            <ResizablePanel
-                                defaultSize={60}
-                                minSize={20}
-                            >
+                                        {/* Search Section */}
+                                        <ResizablePanel
+                                            defaultSize={60}
+                                            minSize={20}
+                                        >
 
-                                <ResizablePanelGroup direction="vertical" className="gap-2 h-full w-full">
+                                            <ResizablePanelGroup direction="vertical" className="gap-2 h-full w-full">
 
-                                    <LayoutGroup id="search-and-results-panels">
+                                                <LayoutGroup id="search-and-results-panels">
 
-                                        {/* Search Panel */}
-                                        {
-                                            <ResizablePanel
-                                                ref={searchPanelRef}
-                                                collapsible
-                                                key="search"
-                                                onCollapse={() => setSearchPanelVisible(false)}
-                                                onExpand={() => setSearchPanelVisible(true)}
-                                            >
-                                                <motion.div
-                                                    layout
-                                                    initial={panelInitial}
-                                                    animate={panelAnimate}
-                                                    exit={panelExit}
-                                                    transition={spring}
-                                                    className="w-full h-full min-h-0"
-                                                >
-                                                    <FlightsPanelSearch />
-                                                </motion.div>
-                                            </ResizablePanel>
-                                        }
+                                                    {/* Search Panel */}
+                                                    {
+                                                        <ResizablePanel
+                                                            ref={searchPanelRef}
+                                                            collapsible
+                                                            key="search"
+                                                            onCollapse={() => setSearchPanelVisible(false)}
+                                                            onExpand={() => setSearchPanelVisible(true)}
+                                                        >
+                                                            <motion.div
+                                                                initial={panelInitial}
+                                                                animate={panelAnimate}
+                                                                exit={panelExit}
+                                                                transition={spring}
+                                                                className="w-full h-full min-h-0"
+                                                            >
+                                                                <FlightsPanelSearch />
+                                                            </motion.div>
+                                                        </ResizablePanel>
+                                                    }
 
-                                        <ResizableHandle withHandle />
+                                                    <ResizableHandle withHandle />
 
-                                        {/* Results Panel */}
-                                        <ResizablePanel>
-                                            <motion.div
-                                                layout
-                                                initial={panelInitial}
-                                                animate={panelAnimate}
-                                                exit={panelExit}
-                                                transition={spring}
-                                                className="w-full h-full"
-                                            >
-                                                <FlightsPanelResults />
-                                            </motion.div>
+                                                    {/* Results Panel */}
+                                                    <ResizablePanel>
+                                                        <motion.div
+                                                            initial={panelInitial}
+                                                            animate={panelAnimate}
+                                                            exit={panelExit}
+                                                            transition={spring}
+                                                            className="w-full h-full min-h-0"
+                                                        >
+                                                            <FlightsPanelResults />
+                                                        </motion.div>
 
+                                                    </ResizablePanel>
+
+                                                </LayoutGroup>
+
+                                            </ResizablePanelGroup>
                                         </ResizablePanel>
 
-                                    </LayoutGroup>
+                                        {/* Analysis Section */}
+                                        <>
+                                            <ResizableHandle
+                                                withHandle
+                                                className={`${analysisAreaOpen ? "opacity-100" : "opacity-0 pointer-events-none"} transition-opacity`}
+                                            />
 
-                                </ResizablePanelGroup>
-                            </ResizablePanel>
-
-                            {/* Analysis Section */}
-                            <>
-                                <ResizableHandle withHandle className={`${anyAnalysisPanelVisible ? "visible" : "hidden"}`} />
-
-                                <ResizablePanel
-                                    ref={analysisPanelRef}
-                                    collapsible
-                                    defaultSize={40}
-                                    className={`${anyAnalysisPanelVisible ? "visible" : "hidden"}`}
-                                >
-                                    <motion.div
-                                        layout
-                                        layoutRoot
-                                        initial={false}
-                                        className={`grid ${analysisSectionGridClasses} gap-4 h-full`}
-                                    >
-                                        <LayoutGroup id="analysis-panels">
-
-                                            {/* Chart Panel */}
-                                            {
-                                                (chartPanelVisible)
-                                                &&
+                                            <ResizablePanel
+                                                ref={analysisPanelRef}
+                                                collapsible
+                                                collapsedSize={0}
+                                                minSize={0}
+                                                defaultSize={40}
+                                                className={`min-w-0 overflow-hidden ${analysisAreaOpen ? "opacity-100" : "opacity-0 pointer-events-none"} transition-opacity`}
+                                            >
                                                 <motion.div
-                                                    key="chart"
                                                     layout
-                                                    initial={panelInitial}
-                                                    animate={panelAnimate}
-                                                    exit={panelExit}
-                                                    transition={spring}
+                                                    layoutRoot
+                                                    initial={false}
+                                                    className={`relative grid grid-cols-1 gap-4 h-full min-h-0`}
+                                                    style={{gridTemplateRows: `repeat(${analysisPanelGridRowCount}, 1fr)`}}
                                                 >
-                                                    {/* <Card className="p-4 border rounded-lg w-full h-full card-glossy">
-                                                        Chart Panel
-                                                    </Card> */}
-                                                    <FlightsPanelChart />
+                                                    <LayoutGroup id="analysis-panels">
+                                                        <AnimatePresence
+                                                            initial={false}
+                                                            mode="popLayout"
+                                                            onExitComplete={() => {
+                                                                if (!anyAnalysisPanelVisibleRef.current) {
+                                                                    analysisPanelRef.current?.collapse();
+                                                                    setAnalysisAreaOpen(false);
+                                                                }
+                                                            }}
+                                                        >
+
+                                                            {/* Chart Panel */}
+                                                            {
+                                                                (chartPanelVisible)
+                                                                &&
+                                                                <motion.div
+                                                                    key="chart"
+                                                                    layout
+                                                                    initial={panelInitial}
+                                                                    animate={panelAnimate}
+                                                                    exit={panelExit}
+                                                                    transition={spring}
+                                                                    style={{transformOrigin: "top"}}
+                                                                    className="w-full h-full min-h-0"
+                                                                >
+                                                                    <FlightsPanelChart />
+                                                                </motion.div>
+                                                            }
+
+                                                            {/* Cesium Panel */}
+                                                            {
+                                                                (cesiumPanelVisible)
+                                                                &&
+                                                                <motion.div
+                                                                    key="cesium"
+                                                                    layout
+                                                                    initial={panelInitial}
+                                                                    animate={panelAnimate}
+                                                                    exit={panelExit}
+                                                                    transition={spring}
+                                                                    style={{transformOrigin: "top"}}
+                                                                    className="w-full h-full min-h-0"
+                                                                >
+                                                                    <FlightsPanelCesium />
+                                                                </motion.div>
+                                                            }
+
+                                                            {/* Map Panel */}
+                                                            {
+                                                                (mapPanelVisible)
+                                                                &&
+                                                                <motion.div
+                                                                    key="map"
+                                                                    layout
+                                                                    initial={panelInitial}
+                                                                    animate={panelAnimate}
+                                                                    exit={panelExit}
+                                                                    transition={spring}
+                                                                    style={{transformOrigin: "top"}}
+                                                                    className="w-full h-full min-h-0"
+                                                                >
+                                                                    <FlightsPanelMap />
+                                                                </motion.div>
+                                                            }
+
+                                                        </AnimatePresence>
+                                                    </LayoutGroup>
                                                 </motion.div>
-                                            }
-
-                                            {/* Cesium Panel */}
-                                            {
-                                                (cesiumPanelVisible)
-                                                &&
-                                                <motion.div
-                                                    key="cesium"
-                                                    layout
-                                                    initial={panelInitial}
-                                                    animate={panelAnimate}
-                                                    exit={panelExit}
-                                                    transition={spring}
-                                                >
-                                                    <Card className="p-4 border rounded-lg w-full h-full card-glossy">
-                                                        Cesium Panel
-                                                    </Card>
-                                                </motion.div>
-                                            }
-
-                                            {/* Map Panel */}
-                                            {
-                                                (mapPanelVisible)
-                                                &&
-                                                <motion.div
-                                                    key="map"
-                                                    layout
-                                                    initial={panelInitial}
-                                                    animate={panelAnimate}
-                                                    exit={panelExit}
-                                                    transition={spring}
-                                                >
-                                                    <FlightsPanelMap />
-                                                </motion.div>
-                                            }
-
-                                        </LayoutGroup>
-                                    </motion.div>
-                                </ResizablePanel>
-                            </>
+                                            </ResizablePanel>
+                                        </>
 
 
-                        </ResizablePanelGroup>
+                                    </ResizablePanelGroup>
 
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-        </FlightsContext.Provider>
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                    </FlightsChartContext.Provider>
+                </FlightsResultsContext.Provider>
+            </FlightsFilterContext.Provider>
+        </FlightsSearchFilterContext.Provider>
     );
 
 
