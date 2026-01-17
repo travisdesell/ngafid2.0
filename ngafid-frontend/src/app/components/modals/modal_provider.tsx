@@ -229,6 +229,8 @@ export function ModalOutlet() {
             escapeDeactivates: false,   // <-- Already handled globally
             fallbackFocus: `#${trapID}`,    // <-- Focus the trap root as last resort
 
+            allowOutsideClick: true,
+
             /* 
                 Initial focus logic:
 
