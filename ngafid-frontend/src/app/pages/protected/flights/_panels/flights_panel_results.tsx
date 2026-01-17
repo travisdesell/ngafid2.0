@@ -1,5 +1,4 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/flights_panel_search.tsx
-import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -10,27 +9,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { SORTABLE_COLUMN_NAMES, SORTABLE_COLUMN_VALUES, SORTABLE_COLUMNS } from "@/pages/protected/flights/_filters/flights_filter_rules";
 import FlightRow from "@/pages/protected/flights/_flight_row/flight_row";
-import { useFlights } from "@/pages/protected/flights/_flights_context";
+import { useFlightsResults } from "@/pages/protected/flights/_flights_context_results";
+import { useFlightsSearchFilter } from "@/pages/protected/flights/_flights_context_search_filter";
 import { FLIGHTS_PER_PAGE_OPTIONS, isValidSortingDirection } from "@/pages/protected/flights/types";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDownWideNarrow, ArrowUpDown, Info, ListOrdered, Loader2 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { memo, useRef } from "react";
 
 const log = getLogger("FlightsPanelResults", "black", "Component");
 
 
-export default function FlightsPanelResults() {
+function FlightsPanelResultsInner() {
 
-    const { setModal } = useModal();
+    const { flights, totalFlights } = useFlightsResults();
     const {
-        flights,
-        totalFlights,
         isFilterSearchLoading,
         isFilterSearchLoadingManual,
         currentPage, setCurrentPage,
         sortingColumn, setSortingColumn,
         sortingDirection, setSortingDirection,
         pageSize, setPageSize
-    } = useFlights();
+    } = useFlightsSearchFilter();
+
+    const scrollParentRef = useRef<HTMLDivElement | null>(null);
+    const FLIGHT_ROW_HEIGHT_ESTIMATE_PX = 144;
+
+    const rowVirtualizer = useVirtualizer({
+        count: flights.length,
+        getScrollElement: () => scrollParentRef.current,
+        estimateSize: () => FLIGHT_ROW_HEIGHT_ESTIMATE_PX,  //<-- Estimated height of each row in pixels
+        overscan: 2,    //<-- Extra rows rendered beyond the visible area
+    });
 
     const updateSortingColumn = (value: string) => {
 
@@ -124,7 +134,7 @@ export default function FlightsPanelResults() {
 
         const pageNext = () => {
 
-            const maxPage = Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])) - 1;
+            // const maxPage = Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])) - 1;
             if (!pageNextAvailable) {
                 log("Already on last page, cannot navigate to next page.");
                 return;
@@ -182,7 +192,7 @@ export default function FlightsPanelResults() {
             {/* Sorting Select Dropdown */}
             <Select onValueChange={(value) => updateSortingColumn(value)} value={sortingColumn || ""}>
                 <Button variant="outline" asChild>
-                    <SelectTrigger className="min-w-[40px] w-fit">
+                    <SelectTrigger className="min-w-16 w-fit">
                         <ArrowDownWideNarrow />
                         <div className="@max-4xl:hidden!">
                             <SelectValue placeholder="Sort by" />
@@ -203,7 +213,7 @@ export default function FlightsPanelResults() {
             {/* Sorting Order (Ascending/Descending) Select Dropdown */}
             <Select onValueChange={(value) => updateSortingDirection(value)} value={sortingDirection}>
                 <Button variant="outline" asChild>
-                    <SelectTrigger className="min-w-[40px] w-fit">
+                    <SelectTrigger className="min-w-16 w-fit">
                         <ArrowUpDown />
                         <div className="@max-4xl:hidden!">
                             <SelectValue placeholder="Order" />
@@ -219,7 +229,7 @@ export default function FlightsPanelResults() {
             {/* Flights Per Page Select Dropdown */}
             <Select onValueChange={(value) => updatePageSize(value)} value={pageSize?.toString()}>
                 <Button variant="outline" asChild>
-                    <SelectTrigger className="min-w-[40px] w-fit">
+                    <SelectTrigger className="min-w-16 w-fit">
                         <ListOrdered />
                         <div className="@max-4xl:hidden!">
                             <SelectValue placeholder="Flights per page" />
@@ -264,13 +274,14 @@ export default function FlightsPanelResults() {
 
                 {/* Results List */}
                 <motion.div
-                    layoutScroll
+                    ref={scrollParentRef}
                     className="flex-1 min-h-0 h-full w-full overflow-y-auto"
                 >
 
                     {/* Loading Spinner */}
+                    <AnimatePresence>
                     {
-                        (isFilterSearchLoadingManual||isFilterSearchLoading)
+                        (isFilterSearchLoadingManual || isFilterSearchLoading)
                         &&
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -278,9 +289,19 @@ export default function FlightsPanelResults() {
                             exit={{ opacity: 0 }}
                             className="absolute w-full h-full bg-muted/80 z-1 overflow-clip"
                         >
-                            <Loader2 className="animate-spin ml-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" size={64} />
+                            <AnimatePresence>
+                            <motion.div
+                                initial={{ scale: 0.0 }}
+                                animate={{ scale: 1.0 }}
+                                exit={{ scale: 0.0 }}
+                                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                            >
+                                <Loader2 className="animate-spin ml-auto" size={64} />
+                            </motion.div>
+                            </AnimatePresence>
                         </motion.div>
                     }
+                    </AnimatePresence>
 
                     {/* Empty Results Message */}
                     {
@@ -291,20 +312,39 @@ export default function FlightsPanelResults() {
                         </div>
                     }
 
-                    {/* Top-Level Search Group */}
-                    <div id="flights-results-list" className="flex flex-col w-full">
+                    {/* Virtualized Flight Results List */}
                     {
-                        flights.map((flight, index) => (
-                            <motion.div key={flight.id}
-                                initial={{ opacity: 0, }}
-                                animate={{ opacity: 1, }}
-                                transition={{ duration: 0.20, delay: getFlightRowAnimationDelay(index) }}
-                            >
-                                <FlightRow flight={flight} key={flight.id} />
-                            </motion.div>
-                        ))
+                        (!displayFlightsEmpty)
+                        &&
+                        <div
+                            id="flights-results-list-virtualized"
+                            className="w-full relative"
+                            style={{height: rowVirtualizer.getTotalSize()}}
+                        >
+                                {
+                                    rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                                        const flight = flights[virtualRow.index];
+
+                                        return <div
+                                                key={virtualRow.key}
+                                                className="absolute top-0 left-0 w-full"
+                                                style={{
+                                                    transform: `translateY(${virtualRow.start}px)`,
+                                                }}
+                                            >
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 0 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                >
+                                                    <FlightRow flight={flight} />
+                                                </motion.div>
+                                            </div>
+                                    })
+                                }
+                                        
+                        </div>
+
                     }
-                    </div>
 
                 </motion.div>
 
@@ -322,3 +362,5 @@ export default function FlightsPanelResults() {
     return render();
 
 }
+
+export const FlightsPanelResults = memo(FlightsPanelResultsInner);

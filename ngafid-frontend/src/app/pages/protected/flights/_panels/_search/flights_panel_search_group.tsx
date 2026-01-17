@@ -276,7 +276,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
         const hasAnySubGroups = (subGroups.length > 0);
 
         const groupClasses = `
-            w-full ${
+            w-full overflow-clip ${
                 isRoot
                 ? ""
                 : "border-1 border-gray-400 rounded-lg bg-neutral-500/10"
@@ -290,10 +290,10 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
 
         return (
             <motion.div
-                layout="size"
+                layout
                 className={groupClasses}
                 initial={{ opacity: 0  }}
-                animate={{ opacity: 1, overflow: "clip" }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
                 exit={{ opacity: 0 }}
             >
@@ -326,10 +326,12 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                         {(group.rules ?? []).map((rule, index) => (
                             <motion.div
                                 key={rule.id}
-                                initial={{ opacity: 0, scale: 0.95 }}
+                                layout
+                                initial={{ opacity: 0, scale: 0.96 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, y: -48 }}
+                                exit={{ opacity: 0, scale: 0.96, y: -48 }}
                                 transition={{ duration: 0.2 }}
+                                style={{ transformOrigin: "top" }}
                             >
                                 <FlightsPanelSearchRule
                                     rule={rule}
@@ -345,10 +347,12 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                         {(group.groups ?? []).map((sg, index) => (
                             <motion.div
                                 key={sg.id}
-                                initial={{ opacity: 0, scale: 0.95 }}
+                                layout
+                                initial={{ opacity: 0, scale: 0.96 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, y: -48 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
                                 transition={{ duration: 0.2 }}
+                                style={{ transformOrigin: "top" }}
                             >
                                 <FlightsPanelSearchGroupInner
                                     depth={depth + 1}
