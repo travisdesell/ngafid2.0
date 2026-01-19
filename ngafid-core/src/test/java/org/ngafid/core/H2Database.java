@@ -14,11 +14,16 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.sql2o.Sql2o;
 
 public class H2Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
+
+    private static volatile Sql2o SQL2O = null;
 
     private static final Logger LOG = Logger.getLogger(H2Database.class.getName());
 
@@ -34,6 +39,34 @@ public class H2Database {
     public static Connection getConnection() throws SQLException {
         return CONNECTION_POOL.getConnection();
     }
+
+
+    public static Sql2o getSql2o() {
+
+        Sql2o local = SQL2O;
+        if (local == null) {
+
+            synchronized (Database.class) {
+
+                local = SQL2O;
+                if (local == null) {
+
+                    LOG.info("Creating new Sql2o instance...");
+
+                    local = new Sql2o(CONNECTION_POOL);
+                    SQL2O = local;
+
+                    LOG.log(Level.INFO, "Created Sql2o instance with Quirks: {0}", local.getQuirks().getClass().getName());
+
+                }
+
+            }
+
+        }
+
+        return local;
+    }
+
 
     private static void createConnectionPool() {
         HikariConfig config = new HikariConfig();

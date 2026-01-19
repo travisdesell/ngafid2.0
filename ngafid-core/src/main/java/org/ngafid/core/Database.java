@@ -4,17 +4,27 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+
+import org.sql2o.Sql2o;
+import org.sql2o.quirks.Quirks;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.mysql.cj.jdbc.exceptions.*;
 
 public class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
+
+    private static volatile Sql2o SQL2O = null;
+
     private static String dbUser = null;
     private static String dbPassword = null;
     private static String dbUrl = null;
@@ -26,14 +36,43 @@ public class Database {
     }
 
     public static Connection getConnection() throws SQLException {
-        var info = CONNECTION_POOL.getHikariPoolMXBean();
+
+        //  var info = CONNECTION_POOL.getHikariPoolMXBean();
         // LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
         //         + " active / " + info.getTotalConnections() + " total");
+
         return CONNECTION_POOL.getConnection();
+
     }
 
     public static DataSource getDataSource() {
         return CONNECTION_POOL;
+    }
+
+    public static Sql2o getSql2o() {
+
+        Sql2o local = SQL2O;
+        if (local == null) {
+
+            synchronized (Database.class) {
+
+                local = SQL2O;
+                if (local == null) {
+
+                    LOG.info("Creating new Sql2o instance...");
+
+                    local = new Sql2o(CONNECTION_POOL);
+                    SQL2O = local;
+
+                    LOG.log(Level.INFO, "Created Sql2o instance with Quirks: {0}", local.getQuirks().getClass().getName());
+
+                }
+
+            }
+
+        }
+
+        return local;
     }
 
     public static boolean dbInfoExists() {
