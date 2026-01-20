@@ -59,21 +59,24 @@ public class DockerServiceHeartbeat {
          * when called from the main method of a consumer.
          */
 
-        //Get service name - try to detect from context or use default
+        // Get service name - try to detect from context or use default
         String service = Config.getProperty("ngafid.service.name");
         
-        // If still unknown, try to detect from main class or stack trace
-        if (service.equals(SERVICE_NAME_UNKNOWN)) {
+        // Still unknown, try to detect from main class or stack trace
+        if (service == null || service.isBlank() || service.equals(SERVICE_NAME_UNKNOWN) || service.equals("ngafid-service")) {
+            LOG.info("No service name configured, attempting to detect from context...");
             service = detectServiceName();
         }
 
-        //Got unknown service name, do not start heartbeat
+        LOG.log(Level.INFO, "Heartbeat autostart: service={0}", service);
+
+        // Got unknown service name, do not start heartbeat
         if (service.equals(SERVICE_NAME_UNKNOWN)) {
             LOG.warning("No service name configured, not starting heartbeat");
             return;
         }
 
-        //Not running in Docker, do not start heartbeat
+        // Not running in Docker, do not start heartbeat
         if (!USING_DOCKER) {
             LOG.log(Level.WARNING, "Detected running outside of Docker, heartbeat not started for service: {0}", service);
             return;
@@ -86,14 +89,14 @@ public class DockerServiceHeartbeat {
         heartbeatProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         heartbeatProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
-        //Create the heartbeat producer
+        // Create the heartbeat producer
         final KafkaProducer<String, String> heartbeatProducer = new KafkaProducer<>(heartbeatProps);
 
-        //Get instance ID and heartbeat interval
+        // Get instance ID and heartbeat interval
         final String instance = InetAddress.getLocalHost().getHostName();
         final long heartbeatIntervalMS = Long.parseLong(Config.getProperty("ngafid.heartbeat.interval.ms"));
 
-        //Start the heartbeat
+        // Start the heartbeat
         DockerServiceHeartbeat.start(heartbeatProducer, service, instance, heartbeatIntervalMS);
         
     }

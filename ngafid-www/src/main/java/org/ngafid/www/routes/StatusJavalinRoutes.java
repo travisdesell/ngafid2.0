@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -137,6 +136,37 @@ public class StatusJavalinRoutes {
 
     }
 
+    private static String resolveDockerLogicalService(String requestedName) {
+
+        // Null/blank request -> null
+        if (requestedName == null || requestedName.isBlank())
+            return null;
+
+        final String req = requestedName.toLowerCase();
+
+        // Accept if either contains the other (covers: prefixed names, short names, etc.)
+        var matches = DOCKER_SERVICES.stream()
+            .filter(logical -> {
+                String l = logical.toLowerCase();
+                return req.contains(l) || l.contains(req);
+            })
+            .toList();
+
+        // No matches -> null
+        if (matches.isEmpty())
+            return null;
+
+        // Warn when there's an ambiguous match -> null
+        if (matches.size() > 1) {
+            LOG.log(Level.WARNING, "Ambiguous Docker service match for ''{0}'': {1}", new Object[]{ requestedName, matches });
+            return null;
+        }
+
+        return matches.getFirst();
+        
+    }
+
+
     private static ServiceStatusResult checkDockerHeartbeat(String logicalService) {
 
         DockerServiceHeartbeatMonitor monitor = WebServer.getMonitor();
@@ -174,59 +204,64 @@ public class StatusJavalinRoutes {
     }
 
     private static void getServiceStatus(Context ctx) {
-        String service = ctx.pathParam("service-name");
+        
+        
+        String requested = ctx.pathParam("service-name");
 
-        Pair<ServiceStatusResult, Long> cachedStatus = SERVICE_STATUS_CACHE.getOrDefault(service, null);
-        if (cachedStatus != null) {
-            if (System.nanoTime() - cachedStatus.getRight() > TimeUnit.SECONDS.toNanos(60)) {
-                try {
-                    SERVICE_STATUS_CACHE.remove(service);
-                } catch (NullPointerException e) {
-                    // Ignore. Will occur if the key is already removed by a different thread.
-                }
-            } else {
-                ctx.json(cachedStatus.getLeft());
-                return;
-            }
-        }
+        // Resolve docker logical name first
+        String dockerLogical = resolveDockerLogicalService(requested);
+        boolean isDockerRequest = (dockerLogical != null);
 
-        //Service name in Docker services list...
-        if (DOCKER_SERVICES.contains(service)) {
+        if (isDockerRequest) {
 
-            //...Not using Docker -> Unchecked
             if (!DockerServiceHeartbeat.USING_DOCKER) {
-                ctx.json(new ServiceStatusResult(ServiceStatus.UNCHECKED, "Detected as not using Docker, but this is in the Docker services list"));
+                ctx.json(new ServiceStatusResult(
+                    ServiceStatus.UNCHECKED,
+                    "Not running in Docker; requested Docker service '" + requested + "'"
+                ));
                 return;
             }
 
-            //...Otherwise, check via heartbeat
-            LOG.log(Level.INFO, "Docker service detected: {0}", service);
-            ServiceStatusResult r = checkDockerHeartbeat(service);
-            LOG.log(Level.INFO, "Docker service {0} status: {1} - {2}", new Object[]{service, r.status(), r.message()});
+            LOG.log(Level.INFO, "Docker service request ''{0}'' resolved to logical ''{1}''",
+                new Object[]{ requested, dockerLogical });
 
+            ServiceStatusResult r = checkDockerHeartbeat(dockerLogical);
             ctx.json(r);
             return;
+        }
 
-        //Using Docker but service not in list -> Unchecked
-        } else if (DockerServiceHeartbeat.USING_DOCKER) {
-            ctx.json(new ServiceStatusResult(ServiceStatus.UNCHECKED, "Detected as using Docker, but this is not in the Docker services list"));
+        // Got non-Docker request while running in Docker -> Unchecked
+        if (DockerServiceHeartbeat.USING_DOCKER) {
+
+            ctx.json(new ServiceStatusResult(
+                ServiceStatus.UNCHECKED,
+                "Using Docker, but '" + requested + "' did not match any known Docker service"
+            ));
+
             return;
         }
 
+        String service = requested.toLowerCase();
+    
+        // Check cache first
         List<String> serviceNames = SERVICE_NAME_TO_SYSTEMD_SERVICE.getOrDefault(service, null);
         if (serviceNames != null) {
+
             ServiceStatusResult result;
-            if (serviceNames.size() == 1) {
+            if (serviceNames.size() == 1)
                 result = checkSystemdService(service, serviceNames.getFirst());
-            } else {
+            else
                 result = checkSystemdTemplateService(service, serviceNames);
-            }
 
             SERVICE_STATUS_CACHE.put(service, new ImmutablePair<>(result, System.nanoTime()));
             ctx.json(result);
+
         } else {
+
             ctx.json("No service with name '" + service + "'");
+
         }
+        
     }
 
     /**
