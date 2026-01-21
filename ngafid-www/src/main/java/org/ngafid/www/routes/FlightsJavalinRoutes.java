@@ -3,6 +3,8 @@ package org.ngafid.www.routes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+
+import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.EventDefinition;
@@ -148,6 +150,14 @@ public class FlightsJavalinRoutes {
             sb.append("');\n");
 
             sb.append("var flights = [];");
+
+            String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
+            if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
+                sb.append("var azureMapsKey = '").append(azureMapsKey).append("';\n");
+            } else {
+                LOG.warning("Azure Maps key is not configured.");
+                sb.append("var azureMapsKey = undefined;\n");
+            }
 
             scopes.put("flights_js", sb.toString());
 
