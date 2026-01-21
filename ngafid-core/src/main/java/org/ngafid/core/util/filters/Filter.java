@@ -384,23 +384,31 @@ public class Filter {
      * @return A string mysql query of this filter
      */
     public String toQueryString(int fleetId, ArrayList<Object> parameters) {
-        if (type.equals("RULE")) {
-            return "(" + getRuleQuery(fleetId, parameters) + ")";
 
-        } else if (type.equals("GROUP")) {
-            StringBuilder string = new StringBuilder();
-            for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string.append(" ").append(condition).append(" ");
-                string.append(filters.get(i).toQueryString(fleetId, parameters));
+        if (type != null) {
+        
+            if (type.equals("RULE")) {
+                return "(" + getRuleQuery(fleetId, parameters) + ")";
+
+            } else if (type.equals("GROUP")) {
+                StringBuilder string = new StringBuilder();
+                for (int i = 0; i < filters.size(); i++) {
+                    if (i > 0) string.append(" ").append(condition).append(" ");
+                    string.append(filters.get(i).toQueryString(fleetId, parameters));
+                }
+
+                return "(" + string + ")";
+
             }
 
-            return "(" + string + ")";
+            LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
+            return "";
+            
+        } 
 
-        } else {
-            LOG.severe("Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
-        }
+        LOG.severe("Attempted to convert a filter to a String with a 'null' type");
         return "";
+
     }
 
 
