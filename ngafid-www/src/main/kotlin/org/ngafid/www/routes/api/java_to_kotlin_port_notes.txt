@@ -1,0 +1,42 @@
+- getEmailUnsubscribe -> deleteEmailUnsubscribe
+  Route no longer uses formParam and uses queryParam instead.
+  Need to make an HTTP delete request instead of GET request to /email_unsubscribe
+
+StartPageJavalinRoutes.java
+- / becomes /api/start
+- /logout_success becomes /api/start?msg=logout_success
+- /access_denied becomes /api/start?msg=access_denied
+- /protected/waiting becomes /api/waiting
+- /protected/welcome becomes /api/welcome
+
+StatisticsJavalinRoutes.java
+- /protected/aggregate becomes /api/aggregate/meta
+- /protected/aggregate_trends becomes /api/aggregate/trends/meta
+- /protected/event_statistics becomes /api/event_statistics/meta
+
+
+NEW ROUTES
+-------------
+StartApiRoutes
+- GET /api/start returns start page info like login status, messages and user info
+- GET /api/navbar returns navbar data forloggedin user
+- GET /api/welcome returns welcome page info
+- GET /api/waitin returns waiting page status for awaiting approval
+Above should replace  / /logout_success /access_denied /protected/waiting and /protected/welcome
+
+StatisticsApiRoutes
+- GET /api/aggregate/airframes - Returns all airframes
+- GET /api/aggregate/meta - Returns aggregate page metadata
+- GET /api/aggregate/trends/meta - Returns aggregate trends metadata
+- GET /api/event_statistics/meta - Returns event statistics page metadata
+- GET /api/event_statistics/event_counts?startDate=...&endDate=...&aggregate=... - Returns event counts by airframe
+- GET /api/event_statistics/monthly_event_counts?startDate=...&endDate=...&aggregatePage=...&eventName=... - Returns monthly event counts
+- GET /api/event_statistics/airframe/{airframe_id} - Returns event counts for specific airframe
+- GET /api/airframes - Returns airframes for current user's fleet
+Above should replace /protected/aggregate /protected/event_statistics and /protected/event_statistics
+
+- StatusApiRoutes
+- GET /api/status/all - Status for all services
+- GET /api/status/docker - Status for docker service
+- GET /api/status/systemd - Status for systemd services
+

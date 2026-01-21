@@ -21,8 +21,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import org.apache.kafka.streams.processor.ConnectedStoreProvider;
-
 import static org.ngafid.www.WebServer.gson;
 
 public class AccountJavalinRoutes {
