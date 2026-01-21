@@ -20,8 +20,8 @@ class AirSyncSettings extends React.Component {
             timeout: timeout
         }
 
-        console.log(submissionData);
-
+            timeout: timeout
+        }
         var theseSettings = this;
 
         $.ajax({
@@ -32,14 +32,19 @@ class AirSyncSettings extends React.Component {
             success: function (response) {
                 console.log("got airsync_settings response:");
                 console.log(response);
-
+            data: submissionData,
                 theseSettings.state = {
                     timeout: response.timeout
                 };
-
+                console.log(response);
                 theseSettings.setState(theseSettings.state);
             },
             error: function (jqXHR, textStatus, errorThrown) {
+                console.log("error updating the timeout");
+            },
+                };
+            async: false
+        });
                 console.log("error updating the timeout");
             },
 
