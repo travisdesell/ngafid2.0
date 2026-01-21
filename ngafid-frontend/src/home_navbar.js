@@ -48,7 +48,7 @@ class HomeNavbar extends React.Component {
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
                  style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
 
-                <a className="navbar-brand" href="../../src/main/javascript">NGAFID</a>
+                <a className="navbar-brand" href="./">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
