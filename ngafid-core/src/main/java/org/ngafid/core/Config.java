@@ -16,6 +16,7 @@ public class Config {
     public static final boolean NGAFID_USE_MARIA_DB;
     public static final boolean NGAFID_EMAIL_ENABLED;
     public static final boolean DISABLE_PERSISTENT_SESSIONS;
+    public static final boolean MEMORY_EFFICIENT_UPLOAD_PROCESSOR;
 
     public static final String NGAFID_DB_INFO;
     public static final String NGAFID_UPLOAD_DIR;
@@ -44,6 +45,7 @@ public class Config {
         NGAFID_USE_MARIA_DB = getBooleanPropertyWithDefault("ngafid.use.maria.db", false);
         NGAFID_EMAIL_ENABLED = getBooleanPropertyWithDefault("ngafid.email.enabled", false);
         DISABLE_PERSISTENT_SESSIONS = getBooleanPropertyWithDefault("ngafid.disable.persistent.sessions", false);
+        MEMORY_EFFICIENT_UPLOAD_PROCESSOR = getBooleanPropertyWithDefault("ngafid.memory.efficient.upload.processor", true);
 
         AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
         RUNWAYS_FILE = getStringProperty("ngafid.runways.file");

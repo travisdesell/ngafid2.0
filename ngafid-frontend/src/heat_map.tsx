@@ -223,7 +223,7 @@ declare const azureMapsKey: string | undefined;
 
 // Airframes configuration - define airframes if not already defined
 declare const airframes: string[] | undefined;
-let airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
+const airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
 if (!airframesList.includes('All Airframes')) {
     airframesList.unshift('All Airframes');
 }

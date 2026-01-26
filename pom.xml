@@ -21,6 +21,7 @@
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <jvm.target>21</jvm.target>
+        <maven.compiler.release>21</maven.compiler.release>
 
         <spark.version>2.7.2</spark.version>
         <gson.version>2.13.1</gson.version>
@@ -160,7 +161,6 @@
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-maven-plugin</artifactId>
                     <version>${kotlin.version}</version>
-                    <extensions>true</extensions>
                     <configuration>
                         <jvmTarget>${jvm.target}</jvmTarget>
                         <args>
@@ -169,20 +169,27 @@
                     </configuration>
                     <executions>
                         <execution>
-                            <id>compile</id>
+                            <id>kotlin-compile</id>
+                            <phase>process-sources</phase>
                             <goals>
                                 <goal>compile</goal>
                             </goals>
+                            <configuration>
+                                <sourceDirs>
+                                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                </sourceDirs>
+                            </configuration>
                         </execution>
+
                         <execution>
-                            <id>test-compile</id>
+                            <id>kotlin-test-compile</id>
+                            <phase>process-test-sources</phase>
                             <goals>
                                 <goal>test-compile</goal>
                             </goals>
                             <configuration>
                                 <sourceDirs>
                                     <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                                    <sourceDir>${project.basedir}/src/test/java</sourceDir>
                                 </sourceDirs>
                             </configuration>
                         </execution>
@@ -193,10 +200,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.14.1</version>
                     <configuration>
-                        <source>21</source>
-                        <target>${jvm.target}</target>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xmaxwarns</arg>
@@ -247,38 +253,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <!--                        Exclude everything under org.ngafid.routes.spark-->
+                    <!-- Exclude everything under org.ngafid.routes.spark-->
                     <excludes>
                         <exclude>org/ngafid/routes/spark/**</exclude>
                         <exclude>org/ngafid/webserver</exclude>
                     </excludes>
                 </configuration>
-                <executions>
-                    <!-- Replacing default-compile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <!-- Replacing default-testCompile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>java-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>java-test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>

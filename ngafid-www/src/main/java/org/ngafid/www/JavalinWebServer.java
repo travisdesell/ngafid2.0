@@ -1,30 +1,27 @@
 package org.ngafid.www;
 
-import io.javalin.Javalin;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.UnauthorizedResponse;
-import io.javalin.http.staticfiles.Location;
-import io.javalin.json.JavalinGson;
 import io.javalin.openapi.JsonSchemaLoader;
 import io.javalin.openapi.JsonSchemaResource;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.security.RouteRole;
-import org.eclipse.jetty.server.session.*;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.ngafid.core.Database;
+
 import org.ngafid.core.accounts.FleetAccess;
 
-import org.ngafid.core.accounts.User;
-import org.ngafid.www.routes.*;
-import org.ngafid.www.routes.api.*;
-import org.ngafid.www.routes.Role;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.www.routes.Role;  // (kt)
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -51,6 +48,18 @@ import org.ngafid.www.routes.EventJavalinRoutes;
 import org.ngafid.www.routes.FlightsJavalinRoutes;
 import org.ngafid.www.routes.ImportUploadJavalinRoutes;
 
+/* (kt) API route singletons live under org.ngafid.www.routes.api */
+import org.ngafid.www.routes.api.AircraftRoutes;
+import org.ngafid.www.routes.api.AirSyncRoutes;
+import org.ngafid.www.routes.api.AuthRoutes;
+import org.ngafid.www.routes.api.EventRoutes;
+import org.ngafid.www.routes.api.FilterRoutes;
+import org.ngafid.www.routes.api.FleetRoutes;
+import org.ngafid.www.routes.api.FlightRoutes;
+import org.ngafid.www.routes.api.TagRoutes;
+import org.ngafid.www.routes.api.UploadRoutes;
+import org.ngafid.www.routes.api.UserRoutes;
+
 import org.ngafid.www.routes.StartPageJavalinRoutes;
 import org.ngafid.www.routes.StatisticsJavalinRoutes;
 import org.ngafid.www.routes.StatusJavalinRoutes;
@@ -65,9 +74,10 @@ public class JavalinWebServer extends WebServer {
 
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
-        LOG.info("Using static files location: " + staticFilesLocation);
+        LOG.info(() -> "Using static files location: " + staticFilesLocation);
     }
 
+    @Override
     public void start() {
         app.start();
     }
@@ -76,12 +86,16 @@ public class JavalinWebServer extends WebServer {
     protected void preInitialize() {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
+
+
             config.jsonMapper(new JavalinGson(WebServer.gson, false));
 
-            //Bind Kotlin Routes
-            AuthRoutes.INSTANCE.bind(config);
+            config.bundledPlugins.enableRouteOverview("/api");
+
+            // (kt) Bind all routes
             AircraftRoutes.INSTANCE.bind(config);
             AirSyncRoutes.INSTANCE.bind(config);
+            AuthRoutes.INSTANCE.bind(config);
             EventRoutes.INSTANCE.bind(config);
             FilterRoutes.INSTANCE.bind(config);
             FleetRoutes.INSTANCE.bind(config);
@@ -90,6 +104,7 @@ public class JavalinWebServer extends WebServer {
             UploadRoutes.INSTANCE.bind(config);
             UserRoutes.INSTANCE.bind(config);
 
+            configureSwagger(config);
         });
 
     }
@@ -220,7 +235,7 @@ public class JavalinWebServer extends WebServer {
         });
 
         app.before("/protected/*", ctx -> {
-            LOG.info("protected URI: " + ctx.path());
+            LOG.info(() -> "Protected URI: " + ctx.path());
 
             User user = ctx.sessionAttribute("user");
             String previousURI = ctx.sessionAttribute("previous_uri");

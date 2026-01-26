@@ -22,6 +22,10 @@ public final class Airports {
     private static final HashMap<String, Airport> SITE_NUMBER_TO_AIRPORT;
     private static final HashMap<String, Airport> IATA_TO_AIRPORT;
 
+    private static final boolean TEST_MODE =
+        Boolean.getBoolean("testMode") ||
+        "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
+
     private Airports() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
@@ -30,87 +34,88 @@ public final class Airports {
         GEO_HASH_TO_AIRPORT = new HashMap<String, ArrayList<Airport>>();
         SITE_NUMBER_TO_AIRPORT = new HashMap<String, Airport>();
         IATA_TO_AIRPORT = new HashMap<String, Airport>();
+        if (TEST_MODE) {
+            LOG.info("TEST MODE: skipping reading airports and runways files");
+        } else {
+            int maxHashSize = 0;
+            int numberAirports = 0;
 
-        int maxHashSize = 0;
-        int numberAirports = 0;
+            try (BufferedReader airportsReader = new BufferedReader(new FileReader(Config.AIRPORTS_FILE));
+                 BufferedReader runwaysReader = new BufferedReader(new FileReader(Config.RUNWAYS_FILE))) {
 
-        try (BufferedReader airportsReader = new BufferedReader(new FileReader(Config.AIRPORTS_FILE));
-             BufferedReader runwaysReader = new BufferedReader(new FileReader(Config.RUNWAYS_FILE))) {
+                String line;
+                while ((line = airportsReader.readLine()) != null) {
+                    String[] values = line.split(",");
+                    String iataCode = values[1];
+                    String siteNumber = values[2];
+                    String type = values[3];
+                    double latitude = JavaDoubleParser.parseDouble(values[4]);
+                    double longitude = JavaDoubleParser.parseDouble(values[5]);
 
-            String line;
-            while ((line = airportsReader.readLine()) != null) {
-                // process the line.
+                    Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
 
-                String[] values = line.split(",");
-                String iataCode = values[1];
-                String siteNumber = values[2];
-                String type = values[3];
-                double latitude = JavaDoubleParser.parseDouble(values[4]);
-                double longitude = JavaDoubleParser.parseDouble(values[5]);
+                    ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.computeIfAbsent(airport.geoHash,
+                            k -> new ArrayList<>());
+                    hashedAirports.add(airport);
 
-                Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
+                    if (SITE_NUMBER_TO_AIRPORT.get(siteNumber) != null) {
+                        System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as"
+                                + " " + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
+                        System.exit(1);
 
-                ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.computeIfAbsent(airport.geoHash,
-                        k -> new ArrayList<>());
-                hashedAirports.add(airport);
+                    }
+                    SITE_NUMBER_TO_AIRPORT.put(airport.siteNumber, airport);
+                    IATA_TO_AIRPORT.put(airport.iataCode, airport);
 
-                if (SITE_NUMBER_TO_AIRPORT.get(siteNumber) != null) {
-                    System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as"
-                            + " " + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
-                    System.exit(1);
-
+                    if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
+                    // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
+                    numberAirports++;
                 }
-                SITE_NUMBER_TO_AIRPORT.put(airport.siteNumber, airport);
-                IATA_TO_AIRPORT.put(airport.iataCode, airport);
 
-                if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
-                // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
-                numberAirports++;
+                while ((line = runwaysReader.readLine()) != null) {
+                    // LOG.info("read runways line: " + line);
+
+                    String[] values = line.split(",");
+
+                    String siteNumber = values[1];
+                    String name = values[2];
+
+                    Runway runway = null;
+                    if (values.length == 3) {
+                        runway = new Runway(siteNumber, name);
+                    } else if (values.length == 7) {
+                        double lat1 = JavaDoubleParser.parseDouble(values[3]);
+                        double lon1 = JavaDoubleParser.parseDouble(values[4]);
+                        double lat2 = JavaDoubleParser.parseDouble(values[5]);
+                        double lon2 = JavaDoubleParser.parseDouble(values[6]);
+
+                        runway = new Runway(siteNumber, name, lat1, lon1, lat2, lon2);
+                    } else {
+                        System.err.println("ERROR: incorrect number of values in runways file: " + values.length);
+                        System.err.println("line: '" + line + "'");
+                        System.exit(1);
+                    }
+
+                    Airport airport = SITE_NUMBER_TO_AIRPORT.get(siteNumber);
+
+                    if (airport == null) {
+                        System.err.println("ERROR: parsed runway for unknown airport, site number: " + siteNumber);
+                        System.err.println("line: '" + line + "'");
+                        System.exit(1);
+                    }
+
+                    airport.addRunway(runway);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
             }
 
-            while ((line = runwaysReader.readLine()) != null) {
-                // LOG.info("read runways line: " + line);
-
-                String[] values = line.split(",");
-
-                String siteNumber = values[1];
-                String name = values[2];
-
-                Runway runway = null;
-                if (values.length == 3) {
-                    runway = new Runway(siteNumber, name);
-                } else if (values.length == 7) {
-                    double lat1 = JavaDoubleParser.parseDouble(values[3]);
-                    double lon1 = JavaDoubleParser.parseDouble(values[4]);
-                    double lat2 = JavaDoubleParser.parseDouble(values[5]);
-                    double lon2 = JavaDoubleParser.parseDouble(values[6]);
-
-                    runway = new Runway(siteNumber, name, lat1, lon1, lat2, lon2);
-                } else {
-                    System.err.println("ERROR: incorrect number of values in runways file: " + values.length);
-                    System.err.println("line: '" + line + "'");
-                    System.exit(1);
-                }
-
-                Airport airport = SITE_NUMBER_TO_AIRPORT.get(siteNumber);
-
-                if (airport == null) {
-                    System.err.println("ERROR: parsed runway for unknown airport, site number: " + siteNumber);
-                    System.err.println("line: '" + line + "'");
-                    System.exit(1);
-                }
-
-                airport.addRunway(runway);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
+            LOG.info("Read " + numberAirports + " airports.");
+            LOG.info("airports HashMap size: " + GEO_HASH_TO_AIRPORT.size());
+            LOG.info("max airport ArrayList: " + maxHashSize);
         }
-
-        LOG.info("Read " + numberAirports + " airports.");
-        LOG.info("airports HashMap size: " + GEO_HASH_TO_AIRPORT.size());
-        LOG.info("max airport ArrayList: " + maxHashSize);
     }
 
     /**
@@ -221,14 +226,6 @@ public final class Airports {
             }
         }
 
-        /*
-         * if (nearestAirport != null) {
-         * LOG.info("nearest airport: " + nearestAirport + ", " + minDistance);
-         * } else {
-         * LOG.info("nearest airport: NULL");
-         * }
-         */
-
         return nearestAirport;
     }
 
@@ -237,4 +234,18 @@ public final class Airports {
         return ap != null && ap.hasRunways();
     }
 
+    public static void injectTestData(Map<String, Airport> iata,
+                                      Map<String, Airport> site,
+                                      Map<String, ArrayList<Airport>> geo) {
+        if (!TEST_MODE) {
+            throw new IllegalStateException("Can only inject test data in test mode");
+        }
+
+        IATA_TO_AIRPORT.clear();
+        IATA_TO_AIRPORT.putAll(iata);
+        SITE_NUMBER_TO_AIRPORT.clear();
+        SITE_NUMBER_TO_AIRPORT.putAll(site);
+        GEO_HASH_TO_AIRPORT.clear();
+        GEO_HASH_TO_AIRPORT.putAll(geo);
+    }
 }

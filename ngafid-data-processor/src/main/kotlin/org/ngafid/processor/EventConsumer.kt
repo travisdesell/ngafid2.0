@@ -26,6 +26,7 @@ import org.ngafid.core.heatmap.HeatmapPointsProcessor
 
 import java.sql.Connection
 import java.sql.SQLException
+import java.sql.PreparedStatement
 import java.util.function.Consumer
 import java.util.logging.Logger
 import java.rmi.UnknownHostException
@@ -83,8 +84,13 @@ class EventConsumer protected constructor(
                     return Pair(record, false)
                 }
 
-                if (def.airframeNameId > 0 && def.airframeNameId == flight.airframe.id) {
+                if (def.airframeNameId > 0 && def.airframeNameId != flight.airframe.id) {
                     LOG.info("Skipping event - airframe mismatch: event airframe=${def.airframeNameId}, flight airframe=${flight.airframe.id}")
+                    try {
+                        markFlightProcessed(connection, flight, def, hadError = false)
+                    } catch (e: Exception) {
+                        LOG.warning("Failed to mark flight_processed on airframe mismatch skip: ${e.message}")
+                    }
                     return Pair(record, false)
                 }
                 
@@ -94,6 +100,11 @@ class EventConsumer protected constructor(
                     val existingEvents = allEvents.filter { it.eventDefinitionId == def.id }
                     if (existingEvents.isNotEmpty()) {
                         LOG.warning("Event already exists in database, skipping reprocessing")
+                        try {
+                            markFlightProcessed(connection, flight, def, hadError = false)
+                        } catch (e: Exception) {
+                            LOG.warning("Failed to mark flight_processed when event already exists: ${e.message}")
+                        }
                         return Pair(record, false)
                     }
                 } catch (e: Exception) {
@@ -136,10 +147,23 @@ class EventConsumer protected constructor(
                         )
                     }
 
+                    /*
+                        Mark this flight+event_definition_id as processed so
+                        EventObserver stops re-queueing.
+
+                        Also clears any previous had_error for this pair.
+                    */
+                    markFlightProcessed(connection, flight, def, hadError = false)
+
                     return Pair(record, false)
                 } catch (e: ColumnNotAvailableException) {
                     e.printStackTrace()
-                    return Pair(record, true)
+                    try {
+                        markFlightProcessed(connection, flight, def, hadError = true)
+                    } catch (markErr: Exception) {
+                        LOG.warning("Failed to mark flight_processed after ColumnNotAvailableException: ${markErr.message}")
+                    }
+                    return Pair(record, false)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     // Retry
@@ -203,6 +227,23 @@ class EventConsumer protected constructor(
         @Throws(SQLException::class)
         private fun clearExistingEvents(connection: Connection, flight: Flight, def: EventDefinition) {
             Event.deleteEvents(connection, flight.id, def.id)
+        }
+
+        @Throws(SQLException::class)
+        private fun markFlightProcessed(connection: Connection, flight: Flight, def: EventDefinition, hadError: Boolean) {
+            val sql = """
+                INSERT INTO flight_processed (fleet_id, flight_id, event_definition_id, had_error)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE had_error = VALUES(had_error)
+            """.trimIndent()
+
+            connection.prepareStatement(sql).use { ps: PreparedStatement ->
+                ps.setInt(1, flight.fleetId)
+                ps.setInt(2, flight.id)
+                ps.setInt(3, def.id)
+                ps.setInt(4, if (hadError) 1 else 0)
+                ps.executeUpdate()
+            }
         }
 
         @Throws(SQLException::class)

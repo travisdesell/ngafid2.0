@@ -25,3 +25,4 @@ ngafid-db/src/liquibase.docker.properties
 ngafid-email.conf
 ngafid.properties
 .vscode/
+*.log

@@ -141,6 +141,21 @@ public enum TerrainCache {
             return new TileCoordinate(lat, lon, latIndex, lonIndex);
         }
 
+        @Override
+        public boolean equals(Object otherObj) {
+            if (otherObj instanceof TileCoordinate other) {
+                return latIndex == other.latIndex && lonIndex == other.lonIndex;
+            }
+
+            return false;
+        }
+
+        // This should be a perfectly unique hash on the indices.
+        @Override
+        public int hashCode() {
+            return latIndex << 16 | lonIndex;
+        }
+
         SRTMTile getTile() throws TerrainUnavailableException {
             try {
                 return new SRTMTile(90 - latIndex, lonIndex - 180);

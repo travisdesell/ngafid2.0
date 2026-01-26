@@ -1034,8 +1034,6 @@ public class Flight {
 
         }
 
-        for (Flight flight : flightList)
-            Event.batchInsertion(connection, flight, flight.events);
 
         try (PreparedStatement processingStatusStatement = connection.prepareStatement("UPDATE flights SET " +
                 "status = ? WHERE id = ?")) {

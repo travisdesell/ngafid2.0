@@ -1,6 +1,11 @@
 import React from "react";
 import { createRoot } from 'react-dom/client';
 
+import './index.css'; //<-- include Tailwind
+
+const REDIRECT_DELAY_MS = 10_000;
+const REDIRECT_DELAY_S = (REDIRECT_DELAY_MS / 1000).toFixed(0);
+const LOCALSTORAGE_KEY = "ngafid-flight-doRedirectDelay";
 
 class FlightPage extends React.Component {
 
@@ -10,7 +15,12 @@ class FlightPage extends React.Component {
             <div className="p-2 w-100 h-100" style={{ backgroundColor: "black", color: "white" }}>
                 The Flight page has been deprecated.
                 <br />
-                Redirecting to the Flights page momentarily...
+                <div className="flex gap-2 items-center mt-2">
+                    <i className="fa fa-spinner fa-spin"></i>
+                    Redirecting to the Flights page after {REDIRECT_DELAY_S} seconds...
+                </div>
+                <br />
+                <span className="opacity-50">(This message will only appear once on this browser)</span>
             </div>
         );
 
@@ -19,7 +29,7 @@ class FlightPage extends React.Component {
 }
 
 
-const doRedirectDelay = localStorage.getItem("doRedirectDelay") ?? "true";
+const doRedirectDelay = localStorage.getItem(LOCALSTORAGE_KEY) ?? "true";
 
 //Only render the FlightPage component if the redirect delay is enabled
 if (doRedirectDelay === "true") {
@@ -88,7 +98,9 @@ if (doRedirectDelay === "true") {
 
     }
 
-    const REDIRECT_DELAY_MS = (doRedirectDelay==="true" ? 10_000 : 0);
+    const redirectDelayCurrentMS = (doRedirectDelay==="true")
+        ? REDIRECT_DELAY_MS
+        : 0;
 
     //Short delay before redirecting
     setTimeout(() => {
@@ -96,11 +108,11 @@ if (doRedirectDelay === "true") {
         console.log(`Redirecting to: ${  redirectURL}`);
 
         //Disable the redirect delay
-        localStorage.setItem("doRedirectDelay", "false");
+        localStorage.setItem(LOCALSTORAGE_KEY, "false");
             
         //Redirect to the new URL
         window.location.replace(redirectURL);
 
-    }, REDIRECT_DELAY_MS);
+    }, redirectDelayCurrentMS);
 
 })();

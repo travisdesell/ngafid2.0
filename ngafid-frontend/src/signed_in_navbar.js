@@ -69,7 +69,7 @@ function MultifleetSelectDropdown() {
     };
 
     return (
-        <div className="nav-item dropdown">
+        <div className="nav-item dropdown mr-4">
             <a
                 className={`nav-link dropdown-toggle`}
                 style={{color: "var(--c_text)"}}

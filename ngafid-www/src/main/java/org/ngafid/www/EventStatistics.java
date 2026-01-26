@@ -63,20 +63,86 @@ public class EventStatistics {
 
         final String dateClause = buildDateClause(startDate, endDate);
 
+        /*
+            Only include events that occur at least once in the
+            selected date range.
+
+            We still want airframes with 0 occurrences to be
+            present for those events, otherwise percentages can
+            appear unexpectedly high for events that only occur
+            on a small subset of airframes.
+        */
+        final Set<Integer> eventDefinitionIdsInRange = new HashSet<>();
+
+        final String distinctEventIdsQuery = "SELECT DISTINCT event_definition_id FROM m_fleet_airframe_monthly_event_counts WHERE " + dateClause;
+
         String query = """
             SELECT fleet_id, event_definition_id, airframe_id, SUM(event_count) as event_count, SUM(flight_count) as flight_count FROM m_fleet_airframe_monthly_event_counts
             WHERE """ + dateClause + """
             GROUP BY fleet_id, event_definition_id, airframe_id
         """;
 
+        Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
+        Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
+
+        try (PreparedStatement distinctEventIdsStatement = connection.prepareStatement(distinctEventIdsQuery);
+             ResultSet distinctEventIdsResult = distinctEventIdsStatement.executeQuery()) {
+
+            while (distinctEventIdsResult.next()) {
+                eventDefinitionIdsInRange.add(distinctEventIdsResult.getInt(1));
+            }
+            
+        }
+
+        final List<String> eventNamesInRange = eventDefinitionIdsInRange
+                .stream()
+                .map(idToEventNameMap::get)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        FlightCounts fc = getFlightCounts(connection, startDate, endDate);
+        Map<String, EventCountsBuilder> eventCounts = new HashMap<>();
+
+        /*
+            Seed (airframe, eventName) keys for every airframe that
+            has flights in range.
+
+            Prevents downstream percentage calculations from dropping
+            airframes with 0 occurrences.
+        */
+        for (Map.Entry<Integer, Integer> entry : fc.getAggregateCounts().entrySet()) {
+
+            final int airframeId = entry.getKey();
+            final int aggregateTotalFlights = entry.getValue();
+
+            final String airframeName = idToAirframeNameMap.get(airframeId);
+            if (airframeName == null) {
+                LOG.log(Level.WARNING, "Got null airframe name for id {0} while seeding event counts, skipping", airframeId);
+                continue;
+            }
+
+            final EventCountsBuilder ecBuilder = eventCounts.computeIfAbsent(airframeName, EventCountsBuilder::new);
+            final Map<Integer, Integer> fleetCounts = fleetId >= 0 ? fc.getFleetCounts(fleetId) : null;
+            final int fleetTotalFlights = (fleetCounts == null)
+                ? 0
+                : fleetCounts.getOrDefault(airframeId, 0);
+
+            for (String eventName : eventNamesInRange) {
+                
+                ecBuilder.ensureEventKey(eventName);
+                ecBuilder.setAggregateTotalFlights(eventName, aggregateTotalFlights);
+
+                if (fleetId >= 0)
+                    ecBuilder.setTotalFlights(eventName, fleetTotalFlights);
+                
+            }
+
+        }
+
         try (PreparedStatement statement = connection.prepareStatement(query);
              ResultSet result = statement.executeQuery()) {
-            Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
-            Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
-
-            FlightCounts fc = getFlightCounts(connection, startDate, endDate);
-            Map<String, EventCountsBuilder> eventCounts = new HashMap<>();
-
             while (result.next()) {
                 int fleet = result.getInt("fleet_id");
                 int eventCount = result.getInt("event_count");
@@ -100,31 +166,8 @@ public class EventStatistics {
 
                 EventCountsBuilder ec = eventCounts.computeIfAbsent(airframeName, EventCountsBuilder::new);
                 ec.updateAggregate(eventName, flightCount, 0, eventCount);
-
-                final Map<Integer, Integer> aggregateCounts = fc.getAggregateCounts();
-                Integer totalFlights = aggregateCounts.getOrDefault(airframeId, null);
-
-                //Failed to find total aggregate flights for this airframe, default to 0
-                if (totalFlights == null) {
-                    LOG.log(Level.WARNING, "No total aggregate flight count found for airframe id {0}, setting to 0", airframeId);
-                    totalFlights = 0;
-                }
-                ec.setAggregateTotalFlights(eventName, totalFlights);
-
-
-                if (fleetId == fleet) {
-
-                    final Map<Integer, Integer> fleetCounts = fc.getFleetCounts(fleet);
-                    Integer flightCountForAirframe = fleetCounts.getOrDefault(airframeId, null);
-
-                    //Failed to find flight count for this airframe in the fleet, default to 0
-                    if (flightCountForAirframe == null) {
-                        LOG.log(Level.WARNING, "No flight count found for fleet {0} and airframe id {1}, setting to 0", new Object[]{fleet, airframeId});
-                        flightCountForAirframe = 0;
-                    }
-
-                    ec.update(eventName, flightCount, flightCountForAirframe, eventCount);
-                }
+                if (fleetId == fleet)
+                    ec.update(eventName, flightCount, 0, eventCount);
 
             }
 
@@ -583,8 +626,6 @@ public class EventStatistics {
             flightsWithEventMap.merge(key, flightsWithEvent, Integer::sum);
             totalFlightsMap.merge(key, totalFlights, Integer::sum);
             totalEventsMap.merge(key, totalEvents, Integer::sum);
-
-            System.out.println(flightsWithEvent + " : " + totalFlights + " : " + totalFlights);
         }
 
         public void updateAggregate(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
@@ -701,7 +742,17 @@ public class EventStatistics {
             this.airframeName = airframeName;
         }
 
+        public void ensureEventKey(String eventName) {
+            keys.add(eventName);
+        }
+
+        public void setTotalFlights(String eventName, int totalFlights) {
+            keys.add(eventName);
+            totalFlightsMap.put(eventName, totalFlights);
+        }
+
         public void setAggregateTotalFlights(String eventName, int totalFlights) {
+            keys.add(eventName);
             aggregateTotalFlightsMap.put(eventName, totalFlights);
         }
 

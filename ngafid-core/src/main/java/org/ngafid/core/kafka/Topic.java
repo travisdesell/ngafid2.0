@@ -1,9 +1,10 @@
 package org.ngafid.core.kafka;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DeleteTopicsOptions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
@@ -45,6 +46,18 @@ public enum Topic {
 
     public static void main(String[] args) throws Exception {
         try (AdminClient adminClient = AdminClient.create(Configuration.getProperties())) {
+            if (args.length != 0 && args[0].equals("drain")) {
+                List<String> toDelete = new ArrayList<>();
+                for (int i = 1; i < args.length; i++) {
+                    System.out.println("Will delete topic '" + args[i] + "'");
+                    toDelete.add(args[i]);
+                }
+
+                adminClient.deleteTopics(toDelete, new DeleteTopicsOptions());
+                System.out.println("Jobs done");
+            }
+
+            // Always create the topics
             List<NewTopic> newTopics = Arrays.stream(Topic.values())
                     .map(topic -> new NewTopic(topic.toString(), 6, (short) 1))
                     .toList();
