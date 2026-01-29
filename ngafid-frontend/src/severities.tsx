@@ -99,6 +99,7 @@ export function SeveritiesPage() {
     const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
     const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(iniitalEventFlags.checked);
     const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(iniitalEventFlags.empty);
+    const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
     const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
     const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
 
@@ -516,7 +517,13 @@ export function SeveritiesPage() {
                     );
 
                     setEventsEmpty((prev) => ({ ...prev, [eventName]: !hasAnyData }));
+                    
+                    // Update both the global object (for CSV export) and state (for rendering)
                     eventSeverities[eventName] = hasAnyData ? response : {};
+                    setEventSeveritiesState((prev) => ({
+                        ...prev,
+                        [eventName]: hasAnyData ? response : {}
+                    }));
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
                     showErrorModal("Error Loading Uploads", errorThrown);
@@ -585,11 +592,46 @@ export function SeveritiesPage() {
         setEventChecked(cleared);
         setDatesChanged(false);
 
-        await fetchAllEventSeverities();
+        // PERFORMANCE FIX: Check event availability with COUNT queries instead of fetching all events
+        // This is fast (~100ms) compared to fetching all events (30+ seconds)
+        $('#loading').show();
+        
+        const startDate = buildStartDate(startYear, startMonth);
+        const endDate = buildEndDate(endYear, endMonth);
 
-        displayPlot(airframe.name);
+        const submissionData = {
+            startDate: startDate,
+            endDate: endDate,
+            eventNames: JSON.stringify(eventNames),
+            tagName: tagName
+        };
 
-    }, [airframe.name, fetchAllEventSeverities, displayPlot]);
+        $.ajax({
+            type: 'GET',
+            url: '/api/event/severities/available',
+            data: submissionData,
+            success: (response: Record<string, number>) => {
+                $('#loading').hide();
+                
+                // Update eventsEmpty based on counts
+                const newEventsEmpty: Record<string, boolean> = {};
+                for (const eventName of eventNames) {
+                    newEventsEmpty[eventName] = (response[eventName] || 0) === 0;
+                }
+                setEventsEmpty(newEventsEmpty);
+                setEventCounts(response);
+                
+                // Clear any previously loaded event data
+                setEventSeveritiesState({});
+                displayPlot(airframe.name);
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                $('#loading').hide();
+                showErrorModal("Error Checking Event Availability", errorThrown);
+            }
+        });
+
+    }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName]);
 
 
     const airframeChangeFromName = (airframeName: string) => {
@@ -696,7 +738,7 @@ export function SeveritiesPage() {
                                                                 placement="bottom"
                                                             >
                                                                 <label className="form-check-label">
-                                                                    {eventName}
+                                                                    {eventName}{eventCounts[eventName] ? ` (${eventCounts[eventName]})` : ''}
                                                                 </label>
                                                             </OverlayTrigger>
 
