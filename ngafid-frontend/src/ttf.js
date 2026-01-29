@@ -1,20 +1,20 @@
 import 'bootstrap';
 import React from "react";
-import { createRoot } from 'react-dom/client';
-import Popover from 'react-bootstrap/Popover';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import Col from 'react-bootstrap/Col';
+import Popover from 'react-bootstrap/Popover';
+import Row from 'react-bootstrap/Row';
+import { createRoot } from 'react-dom/client';
 
-import {closer, container, initializeMap, layers, map, overlay, styles} from "./map.js";
-import {TimeHeader, TurnToFinalHeaderComponents} from "./time_header.js";
+import { Vector as VectorLayer } from 'ol/layer.js';
+import { fromLonLat } from 'ol/proj.js';
+import { Vector as VectorSource } from 'ol/source.js';
+import { Circle, Stroke, Style } from 'ol/style.js';
+import { closer, container, initializeMap, layers, map, overlay, styles } from "./map.js";
+import { paletteGenerator } from "./map_utils.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-import {paletteGenerator} from "./map_utils.js";
-import {fromLonLat} from 'ol/proj.js';
-import {Vector as VectorLayer} from 'ol/layer.js';
-import {Vector as VectorSource} from 'ol/source.js';
-import {Circle, Stroke, Style} from 'ol/style.js';
+import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
 
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
@@ -226,7 +226,8 @@ class TTFCard extends React.Component {
             return feature;
         });
 
-        console.log(f);
+        
+        console.log("Handling map click event with feature: ", f ?? "(No feature)");
         if (f && f.get('type') == 'ttf') {
 
             console.log(`selected feature ${  f.get('name')}`);
@@ -514,10 +515,10 @@ class TTFCard extends React.Component {
 
         const devPlot = document.getElementById('deviations-plot');
         Plotly.newPlot('deviations-plot', deviationsCurves, this.deviationsPlotlyLayout, this.state.plotlyConfig);
-        console.log(devPlot);
+        console.log("Deviations Plot: ", devPlot);
 
         const maxGlideAngles = curves.map(x => x.maxGlideAngle);
-        console.log(maxGlideAngles);
+        console.log("Max Glide Angles: ", maxGlideAngles);
         const glideAngleTrace = {
             type: 'histogram',
             y: maxGlideAngles,
@@ -626,7 +627,7 @@ class TTFCard extends React.Component {
             This will show TTFs in the specified date range and hide every other TTF.
             If the TTFs have already been plotted it will use the previous layer.
         */
-        function responseFunction(response) {
+        const responseFunction = (response) => {
 
             const ttfs = [];
             const approachCounts = {};
@@ -644,7 +645,7 @@ class TTFCard extends React.Component {
             this.setState({data: response});
             this.plotCharts(ttfs, true);
 
-        }
+        };
 
         this.setState({datesChanged: false});
 
@@ -699,8 +700,7 @@ class TTFCard extends React.Component {
                     });
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    console.log(textStatus);
-                    console.log(errorThrown);
+                    console.error("Error fetching TTF data: ", jqXHR.responseText);
                     this.setState({disableFetching: false, datesChanged: false,});
                 },
             });
@@ -972,4 +972,5 @@ root.render(<TTFCard/>);
 
 console.log("Rendered ttfCard!");
 
-export {TTFCard};
+export { TTFCard };
+

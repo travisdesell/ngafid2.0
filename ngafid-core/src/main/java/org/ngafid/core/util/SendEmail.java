@@ -1,7 +1,30 @@
 package org.ngafid.core.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Logger;
+
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Config;
@@ -10,15 +33,8 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
 
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public enum SendEmail {
     ;
@@ -31,10 +47,10 @@ public enum SendEmail {
     private static final java.sql.Date LAST_TOKEN_FREE = new java.sql.Date(0);
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
     private static final int MS_PER_DAY = 86_400_000;
-    private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY); // Minimum number of milliseconds needed
+    private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY); // Minimum number of milliseconds needed before trying to free old tokens
+    
     private static String password;
-    private static String username;
-    // before trying to free old tokens
+    private static String username = null;
 
     static {
         ADMIN_EMAILS = new ArrayList<>(Arrays.asList(Config.NGAFID_ADMIN_EMAILS.split(";")));
@@ -50,49 +66,43 @@ public enum SendEmail {
             if (!file.exists()) {
 
                 // ...Create a new file and will populate it
-                if (!file.createNewFile()) {
+                if (!file.createNewFile())
                     throw new IllegalStateException("Could not create email file: " + Config.EMAIL_INFO_FILE);
-                }
 
-                try {
-                    PrintWriter pw = new PrintWriter(file);
+                try (PrintWriter pw = new PrintWriter(file)) {
 
                     pw.write("# E-mail not configured for the NGAFID\n");
                     pw.write("# To change this, replace these lines with the email login info\n");
 
-                    pw.close();
                 } catch (IOException ie) {
-                    LOG.severe("ERROR: Could not write default information to email file: " + Config.EMAIL_INFO_FILE);
+                    LOG.severe(() -> "ERROR: Could not write default information to email file: " + Config.EMAIL_INFO_FILE);
                 }
 
-                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + Config.EMAIL_INFO_FILE +
-                        ".");
+                LOG.severe(() -> "Email not being used with the NGAFID for uploads, to change this edit " + Config.EMAIL_INFO_FILE + ".");
 
-            } else { // Email info file does exist...
+             // Otherwise...
+            } else {
 
                 // ...Read the file
                 try (BufferedReader bufferedReader = new BufferedReader(new FileReader(Config.EMAIL_INFO_FILE))) {
 
-                    username = bufferedReader.readLine();
-                    // System.out.println("read username: '" + username + "'");
+                    String fileUsername = bufferedReader.readLine();
 
-                    if (username != null && username.startsWith("#")) {
-                        LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login" +
-                                " information to " + Config.EMAIL_INFO_FILE);
+                    if (fileUsername != null && fileUsername.startsWith("#")) {
+                        LOG.severe(() -> "Email not being used with the NGAFID for uploads. To change this, add the email login" + " information to " + Config.EMAIL_INFO_FILE);
                     } else {
+                        username = fileUsername;
                         password = bufferedReader.readLine();
-                        // System.out.println("read password: '" + password + "'");
-                        LOG.info("Using email address to send emails: " + username);
+                        LOG.info(() -> "Using email address to send emails: " + fileUsername);
                     }
 
                     // Don't remove this!
-                }
 
+                }
             }
 
         } catch (IOException e) {
-            System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + Config.EMAIL_INFO_FILE + "'");
-            e.printStackTrace();
+            LOG.severe(() -> "Error reading from NGAFID_EMAIL_INFO: '" + Config.EMAIL_INFO_FILE + "': " + e.getMessage());
             System.exit(1);
         }
 
@@ -108,11 +118,10 @@ public enum SendEmail {
 
         // Wait at least 24 hours before trying to free tokens again
         long tokenDeltaTime = (currentDate.getTime() - LAST_TOKEN_FREE.getTime());
-        LOG.info("Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " +
-                currentDate.getTime() + " " + LAST_TOKEN_FREE.getTime());
+        LOG.info(() -> "Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " + currentDate.getTime() + " " + LAST_TOKEN_FREE.getTime());
+
         if (tokenDeltaTime < EXPIRATION_POLL_THRESHOLD_MS) {
-            LOG.info("Not attempting to free expired tokens (only " +
-                    tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
+            LOG.info(() -> "Not attempting to free expired tokens (only " + tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
             return;
         }
         LAST_TOKEN_FREE.setTime(currentDate.getTime());
@@ -144,12 +153,10 @@ public enum SendEmail {
             preparedStatement.execute();
 
         } catch (SQLException e) {
-            LOG.severe("(SQL Exception) Failed to generate token for email recipient: "
-                    + recipientEmail + ": " + e.getMessage());
+            LOG.severe(() -> "(SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.severe("(Non-SQL Exception) Failed to generate token for email recipient: "
-                    + recipientEmail + ": " + e.getMessage());
+            LOG.severe(() -> "(Non-SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": " + e.getMessage());
         }
 
         // Log the token's expiration date
@@ -160,8 +167,7 @@ public enum SendEmail {
                 " " + expirationCalendar.get(Calendar.HOUR_OF_DAY) + ":" + expirationCalendar.get(Calendar.MINUTE) +
                 ":" + expirationCalendar.get(Calendar.SECOND);
 
-        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token
-                + " (Expires at " + expirationDateString + ")");
+        LOG.info(() -> "Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at " + expirationDateString + ")");
 
         return token;
 
@@ -179,14 +185,14 @@ public enum SendEmail {
         try {
             sendEmail(ADMIN_EMAILS, new ArrayList<>(), subject, body, emailType);
         } catch (SQLException e) {
-            LOG.severe("(SQL Exception) Failed to send admin email: " + e.getMessage());
+            LOG.severe(() -> "(SQL Exception) Failed to send admin email: " + e.getMessage());
         }
     }
 
     public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
                                  String body, EmailType emailType) throws SQLException {
 
-        LOG.info("Sending an email with a fresh SQL connection");
+        LOG.info(() -> "Sending an email with a fresh SQL connection");
         enqueueEmail(new Email(toRecipients, bccRecipients, subject, body, emailType));
     }
 
@@ -253,10 +259,10 @@ public enum SendEmail {
         for (Email email : emails) {
             if (auth.isValid()) {
 
-                LOG.info("emailing to " + String.join(", ", email.recipients));
-                LOG.info("BCCing to " + String.join(", ", email.bccRecipients));
-                LOG.info("subject: '" + email.subject);
-                LOG.info("body: '" + email.body);
+                LOG.info(() -> "Emailing to " + String.join(", ", email.recipients));
+                LOG.info(() -> "BCCing to " + String.join(", ", email.bccRecipients));
+                LOG.info(() -> "Subject: '" + email.subject);
+                LOG.info(() -> "Body: '" + email.body);
 
                 try {
                     /* SEND TO toRecipients */
@@ -278,7 +284,7 @@ public enum SendEmail {
                         // Check if the emailType is forced
                         boolean embedUnsubscribeURL = true;
                         if (EmailType.isForced(email.emailType)) {
-                            LOG.info("Delivering FORCED email type: " + email.emailType);
+                            LOG.info(() -> "Delivering FORCED email type: " + email.emailType);
                             embedUnsubscribeURL = false;
                         } else {
                             User user = User.get(connection, toRecipient);
@@ -302,9 +308,8 @@ public enum SendEmail {
                                 bodyPersonalized = ("<a href=\"" + unsubscribeURL + "\">Unsubscribe from non-critical " +
                                         "NGAFID emails</a><br><br>" + email.body);
 
-                            } catch (Exception e) {
-                                LOG.severe("Recipient email " + toRecipient + " is not mapped in UserEmailPreferences, " +
-                                        "skipping unsubscribe URL");
+                            } catch (SQLException e) {
+                                LOG.severe(() -> "Recipient email " + toRecipient + " is not mapped in UserEmailPreferences, " + "skipping unsubscribe URL");
                             }
                         }
 
@@ -340,37 +345,35 @@ public enum SendEmail {
                         Transport.send(message);
                     }
 
-                    LOG.info("Sent email messages successfully...");
+                    LOG.info(() -> "Sent email messages successfully...");
 
                 } catch (MessagingException mex) {
-                    mex.printStackTrace();
+                    LOG.severe(() -> "ERROR: Could not send email: " + mex.getMessage());
                 }
 
             } else {
-                LOG.severe("E-mail info not valid, continuing without sending.");
+                LOG.severe(() -> "E-mail info not valid, continuing without sending.");
             }
         }
     }
 
+    @SuppressWarnings("LoggerStringConcat")
     public static void main(String[] args) {
 
-        /*
-         *
-         * // Recipient's email ID needs to be mentioned.
-         *
-         * ArrayList<String> recipients = new ArrayList<String>();
-         * recipients.add("apl1341@rit.edu");
-         * recipients.add("aidan@labellahome.org");
-         *
-         * ArrayList<String> bccRecipients = new ArrayList<String>();
-         *
-         * // New email system does not support having no Email Type specified,
-         * // so this won't work unless a test Email Type is added.
-         *
-         * // sendEmail(recipients, bccRecipients, "test NGAFID email",
-         * "testing testing 123", EmailType.TEST_EMAIL_TYPE);
-         *
-         */
+        // Recipient's email ID needs to be mentioned.
+        ArrayList<String> recipients = new ArrayList<>();
+        recipients.add("travis.desell@gmail.com");
+
+        ArrayList<String> bccRecipients = new ArrayList<>();
+
+        // New email system does not support having no Email Type specified,
+        // so this won't work unless a test Email Type is added.
+
+        try {
+            sendEmail(recipients, bccRecipients, "test NGAFID email", "testing testing 123", EmailType.UPLOAD_PROCESS_START);
+        } catch (SQLException e) {
+            LOG.severe(() -> "(SQL Exception) Failed to send test email: " + e.getMessage());
+        }
 
     }
 
@@ -382,20 +385,20 @@ public enum SendEmail {
         SMTPAuthenticator(String username, String password) {
             this.username = username;
             this.password = password;
-            System.out.println("Created authenticator with username: '" + this.username
-                    + "' and password: '" + this.password + "'");
+            LOG.info(() -> "Created authenticator with username: '" + this.username + "' and password: '" + this.password + "'");
         }
 
+        @Override
         public PasswordAuthentication getPasswordAuthentication() {
-            System.out.println("Attempting to authenticate with username: '" + this.username
-                    + "' and password: '" + this.password + "'");
+            LOG.info(() -> "Attempting to authenticate with username: '" + this.username + "' and password: '" + this.password + "'");
             return new PasswordAuthentication(this.username, this.password);
         }
 
         public boolean isValid() {
-            System.out.println("Checking if valid with username: '" + this.username
-                    + "' and password: '" + this.password + "'");
+            LOG.info(() -> "Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
             return !(this.username == null || this.password == null);
         }
+
     }
+    
 }

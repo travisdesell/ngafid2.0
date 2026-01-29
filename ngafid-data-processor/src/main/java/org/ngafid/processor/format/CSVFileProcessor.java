@@ -7,11 +7,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -135,7 +137,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param pipeline
      * @return
      */
-    public static FlightFileProcessor factory(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws Exception {
+    public static FlightFileProcessor factory(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException, FatalFlightFileException, SQLException {
         byte[] bytes = stream.readAllBytes();
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 
@@ -376,7 +378,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         String airframeType = null;
 
-        LOG.info("[EX] Setting airframe name '" + airframeName + "' for incoming name '" + name + "'");
+        LOG.log(Level.INFO, "Setting airframe name ''{0}'' for incoming name ''{1}''", new Object[]{airframeName, name});
 
         //Fixed Wing Airframe
         if (Airframes.FIXED_WING_AIRFRAMES.contains(airframeName) || airframeName.contains("Garmin")) {

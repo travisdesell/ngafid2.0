@@ -349,10 +349,22 @@ class Events extends React.Component {
                             //Got rate of closure data, show button
                             if (rocPlotData != null) {
 
+                                const rocPlotDataMissing = (!rocPlotData.x || !rocPlotData.y || rocPlotData.x.length == 0 || rocPlotData.y.length == 0);
+                                const rocButtonTitle = (rocPlotDataMissing)
+                                    ? "Rate of Closure Data Unavailable"
+                                    : "Show Rate of Closure Plot";
+
                                 rateOfClosureBtn = (
-                                    <button id="rocButton" data-bs-toggle="button" className={buttonClasses}
-                                            onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
-                                        <i className="fa fa-area-chart p-1"/>
+                                    <button
+                                        id="rocButton"
+                                        data-bs-toggle="button"
+                                        className={`${buttonClasses} group`}
+                                        onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}
+                                        aria-pressed={event.rocPlotVisible}
+                                        title={rocButtonTitle}
+                                        disabled={rocPlotDataMissing}
+                                    >
+                                        <i className="fa fa-area-chart p-1 text-red-500"/>
                                     </button>
                                 );
 
@@ -435,6 +447,9 @@ class Events extends React.Component {
     }
 
     displayRateOfClosurePlot(data, event) {
+
+        console.log("Displaying Rate of Closure Plot for event: '", event, "' with data: ", data);
+
         const id = `${event.id  }-rocPlot`;
         if (!event.rocPlotVisible) {
             const trace = {

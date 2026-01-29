@@ -28,8 +28,8 @@ export default class TimeHeader extends React.Component {
     }
 
     makeHeaderContents(additionalHeaderContents, additionalRowContents) {
-        console.log(this.props.airframes);
-        console.log(this.state);
+        console.log("TimeHeader - makeHeaderContents - Airframes: ", this.props.airframes);
+        console.log("TimeHeader - makeHeaderContents - State: ", this.state);
 
         let exportButton = null;
         if ('exportCSV' in this.props) {

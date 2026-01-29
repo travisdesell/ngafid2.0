@@ -31,8 +31,7 @@ public class AirSyncAccount {
 
     private static byte[] getBytes(AirSyncFleet fleet) throws IOException {
         AirSyncAuth authentication = fleet.getAuth();
-        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" +
-                "/accounts").openConnection();
+        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" + "/accounts").openConnection();
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
         netConnection.setRequestProperty("Authorization", authentication.getBearerString());

@@ -156,6 +156,26 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    public static void addAzureMapsKeyToScopes(Map<String, Object> scopes) {
+
+        // Inject Azure Maps API key from properties (only if configured)
+        try {
+
+            String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
+            if (azureMapsKey != null && !azureMapsKey.trim().isEmpty())
+                scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
+            else
+                scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
+
+        } catch (RuntimeException e) {
+
+            // Azure Maps key not configured - maps will use fallback layers
+            scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
+
+        }
+
+    }
+
     public static void getSeverities(Context ctx) {
         final String templateFile = "severities.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -187,7 +207,11 @@ public class AnalysisJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("ttf_js", "var airports = " + GSON.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n" + "var runways = " + GSON.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n");
+            scopes.put("ttf_js",
+                "var airports = " + GSON.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n"
+                + "var runways = " + GSON.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n"
+            );
+            addAzureMapsKeyToScopes(scopes);
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -273,18 +297,7 @@ public class AnalysisJavalinRoutes {
             scopes.put("fleet_info_js", "var airframes = [];\n");
         }
         
-        // Inject Azure Maps API key from properties (only if configured)
-        try {
-            String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
-            if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
-                scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
-            } else {
-                scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
-            }
-        } catch (RuntimeException e) {
-            // Azure Maps key not configured - maps will use fallback layers
-            scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
-        }
+        addAzureMapsKeyToScopes(scopes);
         
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -582,19 +595,8 @@ public class AnalysisJavalinRoutes {
             }
 
             scopes.put("cesium_data", GSON.toJson(flights));
-            
-            // Inject Azure Maps API key from properties (only if configured)
-            try {
-                String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
-                if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
-                    scopes.put("azure_maps_key", "var azureMapsKey = '" + azureMapsKey + "';\n");
-                } else {
-                    scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
-                }
-            } catch (RuntimeException e) {
-                // Azure Maps key not configured - maps will use fallback layers
-                scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
-            }
+
+            addAzureMapsKeyToScopes(scopes);
 
             // This is for webpage section
             final String templateFile = "ngafid_cesium.html";
@@ -714,13 +716,13 @@ public class AnalysisJavalinRoutes {
         int eventId = Integer.parseInt(ctx.queryParam("event_id"));
         int flightId = Integer.parseInt(ctx.queryParam("flight_id"));
         
-        LOG.info("Testing event definition retrieval for event_id=" + eventId + ", flight_id=" + flightId);
+        LOG.info(() -> "Testing event definition retrieval for event_id=" + eventId + ", flight_id=" + flightId);
         
         try {
             Map<String, Object> result = HeatmapPointsProcessor.getEventDefinitionColumns(eventId, flightId);
             ctx.json(result);
         } catch (Exception e) {
-            LOG.severe("Error in testEventDefinition: " + e.getMessage());
+            LOG.severe(() -> "Error in testEventDefinition: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).json(Map.of("error", e.getMessage()));
         }
