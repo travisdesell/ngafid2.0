@@ -35,7 +35,7 @@
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
                 <configuration>
-                    <searchPath>src</searchPath>
+                    <searchPath>ngafid-db/src</searchPath>
                     <propertyFile>liquibase.properties</propertyFile>
                     <changeLogFile>changelog-root.xml</changeLogFile>
                 </configuration>
