@@ -350,7 +350,7 @@ export function SeveritiesPage() {
                         '<extra></extra>'
                 };
 
-                //Put ANY Event underneath other points
+            
                 if (eventName === "ANY Event")
                     severityTraces.unshift(trace as Plotly.Data);
 
@@ -518,7 +518,6 @@ export function SeveritiesPage() {
 
                     setEventsEmpty((prev) => ({ ...prev, [eventName]: !hasAnyData }));
                     
-                    // Update both the global object (for CSV export) and state (for rendering)
                     eventSeverities[eventName] = hasAnyData ? response : {};
                     setEventSeveritiesState((prev) => ({
                         ...prev,
@@ -592,8 +591,7 @@ export function SeveritiesPage() {
         setEventChecked(cleared);
         setDatesChanged(false);
 
-        // PERFORMANCE FIX: Check event availability with COUNT queries instead of fetching all events
-        // This is fast (~100ms) compared to fetching all events (30+ seconds)
+        // Check event availability with COUNT queries instead of fetching all events
         $('#loading').show();
         
         const startDate = buildStartDate(startYear, startMonth);

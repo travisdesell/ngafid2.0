@@ -226,8 +226,7 @@ public class Event {
             preparedStatement.setString(2, eventName);
         }
 
-        // PERFORMANCE FIX: Collect all definition IDs first, then query once with IN clause
-        // This eliminates N+1 queries (was: 1 query for IDs + N queries for events per ID)
+        // Collect all definition IDs first, then query once with IN clause
         ArrayList<Integer> definitionIds = new ArrayList<>();
         try (PreparedStatement ps = preparedStatement; ResultSet resultSet = preparedStatement.executeQuery()) {
             while (resultSet.next()) {
@@ -334,7 +333,6 @@ public class Event {
             int airframeId = eventSet.getInt(9);
             String airframe = airframeIds.get(airframeId);
 
-            // add the airframe to
             eventsByAirframe.get(airframe).add(event);
         }
 
