@@ -9,6 +9,8 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import java.time.Duration
+import org.openqa.selenium.edge.EdgeDriver
+import org.openqa.selenium.edge.EdgeOptions
 
 class SeleniumSmokeTest {
     @Test
@@ -26,15 +28,23 @@ class SeleniumSmokeTest {
                 ?: "http://localhost:8181/"
             if (url.endsWith("/")) url else "$url/"
         }
-
+        @BeforeAll
+        @JvmStatic
+        fun verifyServerIsUp() {
+            try {
+                java.net.URL(baseUrl).openConnection().connect()
+            } catch (e: Exception) {
+                throw IllegalStateException(
+                    "NGAFID server is not reachable at $baseUrl, check if the server is up first"
+                )
+            }
+        }
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
-            WebDriverManager.chromedriver().setup()
-            val options = ChromeOptions()
+            val options = EdgeOptions()
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
-            driver = ChromeDriver(options)
-            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5))
+            driver = EdgeDriver(options)
         }
 
         @JvmStatic
