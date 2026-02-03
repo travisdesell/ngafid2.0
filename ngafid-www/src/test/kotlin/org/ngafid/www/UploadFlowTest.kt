@@ -12,6 +12,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.openqa.selenium.By
+import org.openqa.selenium.JavascriptExecutor
+import org.openqa.selenium.WebElement
+
 
 class UploadFlowTest {
     companion object {
@@ -47,34 +50,30 @@ class UploadFlowTest {
         modal.findElement(By.id("loginPassword")).sendKeys(password)
         modal.findElement(By.cssSelector("button[type='submit']")).click()
         wait.until(ExpectedConditions.invisibilityOf(modal))
-        driver.get("${baseUrl}/protected/uploads")
-        wait.until(
-            ExpectedConditions.elementToBeClickable(
-                By.id("upload-flights-button")
-            )
-        ).click()
-        val fileInput = wait.until(
-            ExpectedConditions.presenceOfElementLocated(
-                By.cssSelector("input[type='file']")
-            )
-        )
-        val filePath = Paths.get(
-            "src/test/resources/ProximityTestFlights.zip"
-        ).toAbsolutePath().toString()
-        fileInput.sendKeys(filePath)
-        wait.until(
-            ExpectedConditions.elementToBeClickable(By.cssSelector("button[type='submit']"))).click()
-        assertTrue(
-            wait.until(
-                ExpectedConditions.or(
-                    ExpectedConditions.visibilityOfElementLocated(By.className("alert-success")),
-                    ExpectedConditions.textToBePresentInElementLocated(
-                        By.tagName("body"),
-                        "Upload"
-                    )
+        try {
+            val notNowBtn = WebDriverWait(driver, Duration.ofSeconds(3)).until(
+                ExpectedConditions.elementToBeClickable(
+                    By.xpath("//button[normalize-space()='Not Now']")
                 )
-            ) != null,
-            "Expected upload success indication"
+            )
+            notNowBtn.click()
+        } catch (e: Exception) {
+        }
+        driver.get("${baseUrl}protected/uploads")
+
+        val filePath = this::class.java.classLoader.getResource("ProximityTestFlights.zip")?.toURI()?.let {
+            Paths.get(it).toString()
+        } ?: error("Test file not found")
+        val fileInput = wait.until {
+            val js = driver as JavascriptExecutor
+            val inputs = js.executeScript("""
+            return Array.from(document.querySelectorAll('input[type="file"]')).filter(i => i.offsetParent !== null || i.type === 'file');
+            """
+            ) as List<WebElement>
+            inputs.firstOrNull()
+        } ?: error("No file input found")
+        fileInput.sendKeys(filePath)
+        assertTrue(wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Uploaded")), "Expected uploaded flight to be processed"
         )
     }
 
