@@ -11,6 +11,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 class PersistenceTest {
+    private fun requireEnv(name: String): String =
+        System.getenv(name)
+            ?: throw IllegalStateException("Missing required env var: $name")
     companion object {
         private lateinit var driver: WebDriver
         private const val baseUrl = "http://localhost:8181/"
