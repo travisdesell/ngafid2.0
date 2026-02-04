@@ -1,9 +1,9 @@
 package org.ngafid.www
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.openqa.selenium.By
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.edge.EdgeDriver
 import org.openqa.selenium.edge.EdgeOptions
@@ -38,6 +38,21 @@ class PersistenceTest {
         modal.findElement(By.id("loginEmail")).sendKeys(email)
         modal.findElement(By.id("loginPassword")).sendKeys(password)
         modal.findElement(By.cssSelector("button[type='submit']")).click()
+        println("login successful")
+        driver.get(baseUrl)
+        println("base url is $baseUrl")
         wait.until(ExpectedConditions.invisibilityOf(modal))
+    }
+    @Test
+    fun userStaysLoggedInAfterRefresh() {
+        driver.get(baseUrl)
+        println("base url is $baseUrl")
+        val wait = WebDriverWait(driver, Duration.ofSeconds(10))
+        login(wait)
+        driver.navigate().refresh()
+         assertTrue(
+            driver.pageSource.contains("Account") || driver.pageSource.contains("Status"),
+            "Expected logged-in UI after login"
+        )
     }
 }
