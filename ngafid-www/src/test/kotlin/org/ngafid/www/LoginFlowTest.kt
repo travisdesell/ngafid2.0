@@ -40,26 +40,14 @@ class LoginFlowTest {
         val password = requireEnv("NGAFID_TEST_PASSWORD")
         driver.get(baseUrl)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
-        wait.until(
-            ExpectedConditions.elementToBeClickable(
-                By.linkText("Login")
-            )
-        ).click()
-        val modal = wait.until(
-            ExpectedConditions.visibilityOfElementLocated(
-                By.cssSelector(".modal-dialog")
-            )
-        )
+        wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
+        val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))
         modal.findElement(By.id("loginEmail")).sendKeys(email)
         modal.findElement(By.id("loginPassword")).sendKeys(password)
-
         modal.findElement(By.cssSelector("button[type='submit']")).click()
-
         wait.until(ExpectedConditions.invisibilityOf(modal))
-        assertTrue(
-            driver.pageSource.contains("Account") ||
-                    driver.pageSource.contains("Status"),
-            "Expected logged-in UI after login"
-        )
+        wait.until { driver.currentUrl.contains("/protected") }
+        println(driver.currentUrl)
+        assertTrue(driver.currentUrl.contains("/protected"), "Expected redirect to protected area after login")
     }
 }

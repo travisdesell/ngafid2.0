@@ -40,7 +40,8 @@ class PersistenceTest {
         modal.findElement(By.cssSelector("button[type='submit']")).click()
         println("login successful")
         driver.get(baseUrl)
-        println("base url is $baseUrl")
+        val currentUrl = driver.currentUrl
+        println("logged in url is $currentUrl")
         wait.until(ExpectedConditions.invisibilityOf(modal))
     }
     @Test
