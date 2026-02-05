@@ -1,20 +1,19 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.core.flights.Parameters;
-import org.ngafid.processor.format.FlightBuilder;
+import static org.ngafid.core.flights.Airframes.AIRFRAME_DJI;
+import static org.ngafid.core.flights.Airframes.AIRFRAME_SCAN_EAGLE;
+import static org.ngafid.core.flights.Parameters.ALT_MSL;
+import static org.ngafid.core.flights.Parameters.ALT_MSL_LAG_DIFF;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
-
-import static org.ngafid.core.flights.Airframes.AIRFRAME_DJI;
-import static org.ngafid.core.flights.Airframes.AIRFRAME_SCAN_EAGLE;
-import static org.ngafid.core.flights.Parameters.ALT_MSL;
-import static org.ngafid.core.flights.Parameters.ALT_MSL_LAG_DIFF;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.core.flights.Parameters;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Computes a double time series that contains the altitude above sea level 10 seconds ago (i.e. alt msl lagged by 10 seconds).

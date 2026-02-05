@@ -1,12 +1,11 @@
 package org.ngafid.core.bin;
 
-import org.apache.commons.cli.*;
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.apache.commons.cli.*;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
 
 public enum ExtractFlights {
     ;

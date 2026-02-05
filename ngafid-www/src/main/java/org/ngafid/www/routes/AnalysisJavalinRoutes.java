@@ -1,10 +1,15 @@
 package org.ngafid.www.routes;
 
+import static java.util.Map.of;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
@@ -14,18 +19,10 @@ import org.ngafid.core.airports.Airports;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.RateOfClosure;
 import org.ngafid.core.flights.*;
+import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-
-import static java.util.Map.of;
-
 import org.ngafid.www.WebServer;
-import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
@@ -267,7 +264,7 @@ public class AnalysisJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
 
-            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId); 
+            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
             final String fleetInfo = "var airframes = " + GSON.toJson(airframes) + ";\n" + "var eventNames = " + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = " + GSON.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
@@ -296,9 +293,9 @@ public class AnalysisJavalinRoutes {
             // fallback: empty airframes
             scopes.put("fleet_info_js", "var airframes = [];\n");
         }
-        
+
         addAzureMapsKeyToScopes(scopes);
-        
+
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
     }
@@ -312,18 +309,18 @@ public class AnalysisJavalinRoutes {
         try {
             String eventIdParam = ctx.queryParam("event_id");
             String flightIdParam = ctx.queryParam("flight_id");
-            
+
             if (eventIdParam == null || flightIdParam == null) {
                 LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
                 ctx.status(400).result("Missing required parameters: event_id and flight_id");
                 return;
             }
-            
+
             int eventId = Integer.parseInt(eventIdParam);
             int flightId = Integer.parseInt(flightIdParam);
-            
+
             LOG.info("Fetching proximity points for event_id=" + eventId + ", flight_id=" + flightId);
-            
+
             Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getCoordinates(eventId, flightId);
             ctx.json(result);
         } catch (NumberFormatException e) {
@@ -345,18 +342,18 @@ public class AnalysisJavalinRoutes {
         try {
             String eventIdParam = ctx.queryParam("event_id");
             String flightIdParam = ctx.queryParam("flight_id");
-            
+
             if (eventIdParam == null || flightIdParam == null) {
                 LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
                 ctx.status(400).result("Missing required parameters: event_id and flight_id");
                 return;
             }
-            
+
             int eventId = Integer.parseInt(eventIdParam);
             int flightId = Integer.parseInt(flightIdParam);
-            
+
             LOG.info("Fetching heatmap points for event_id=" + eventId + ", flight_id=" + flightId);
-            
+
             Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getCoordinates(eventId, flightId);
             ctx.json(result);
         } catch (NumberFormatException e) {
@@ -685,18 +682,18 @@ public class AnalysisJavalinRoutes {
             String eventIdParam = ctx.queryParam("event_id");
             String flightIdParam = ctx.queryParam("flight_id");
             String timestampParam = ctx.queryParam("timestamp");
-            
+
             if (eventIdParam == null || flightIdParam == null || timestampParam == null) {
                 LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam + ", timestamp=" + timestampParam);
                 ctx.status(400).result("Missing required parameters: event_id, flight_id, and timestamp");
                 return;
             }
-            
+
             int eventId = Integer.parseInt(eventIdParam);
             int flightId = Integer.parseInt(flightIdParam);
-            
+
             LOG.info("Fetching event columns values for event_id=" + eventId + ", flight_id=" + flightId + ", timestamp=" + timestampParam);
-            
+
             Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getEventColumnsValues(eventId, flightId, timestampParam);
             ctx.json(result);
         } catch (NumberFormatException e) {
@@ -715,9 +712,9 @@ public class AnalysisJavalinRoutes {
     public static void testEventDefinition(Context ctx) {
         int eventId = Integer.parseInt(ctx.queryParam("event_id"));
         int flightId = Integer.parseInt(ctx.queryParam("flight_id"));
-        
+
         LOG.info(() -> "Testing event definition retrieval for event_id=" + eventId + ", flight_id=" + flightId);
-        
+
         try {
             Map<String, Object> result = HeatmapPointsProcessor.getEventDefinitionColumns(eventId, flightId);
             ctx.json(result);

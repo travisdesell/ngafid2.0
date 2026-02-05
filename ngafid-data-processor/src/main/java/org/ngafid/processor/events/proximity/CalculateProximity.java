@@ -3,7 +3,6 @@ package org.ngafid.processor.events.proximity;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.logging.Logger;
-
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.event.Event;
 
@@ -138,14 +137,14 @@ public class CalculateProximity {
         for (Event event : eventList) {
             Integer eventOtherFlightId = event.getOtherFlightId();
             Integer testEventOtherFlightId = testEvent.getOtherFlightId();
-            boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId() && 
+            boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId() &&
                                       Objects.equals(eventOtherFlightId, testEventOtherFlightId));
-            boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime()) && 
+            boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime()) &&
                                        event.getEndTime().equals(testEvent.getEndTime()));
 
             if (hasSameFlightIDs && hasSameTimestamps) {
                 LOG.info(String.format("Skipping duplicate event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
-                    testEvent.getFlightId(), testEvent.getOtherFlightId(), 
+                    testEvent.getFlightId(), testEvent.getOtherFlightId(),
                     testEvent.getStartTime(), testEvent.getEndTime()));
                 return;
             }
@@ -153,7 +152,7 @@ public class CalculateProximity {
 
         // Event not in the list, add it
         LOG.info(String.format("Adding new event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
-            testEvent.getFlightId(), testEvent.getOtherFlightId(), 
+            testEvent.getFlightId(), testEvent.getOtherFlightId(),
             testEvent.getStartTime(), testEvent.getEndTime()));
         eventList.add(testEvent);
     }

@@ -1,8 +1,9 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for PasswordAuthentication class.
@@ -67,9 +68,9 @@ public class PasswordAuthenticationTest {
     public void testHashPassword() {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
-        
+
         String hash = auth.hash(password);
-        
+
         assertNotNull(hash);
         assertTrue(hash.startsWith("$31$"));
         assertTrue(hash.length() > 10); // Should be a substantial hash
@@ -80,10 +81,10 @@ public class PasswordAuthenticationTest {
     public void testAuthenticateCorrectPassword() {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
-        
+
         String hash = auth.hash(password);
         boolean result = auth.authenticate(password, hash);
-        
+
         assertTrue(result);
     }
 
@@ -93,10 +94,10 @@ public class PasswordAuthenticationTest {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
         char[] wrongPassword = "wrongpassword".toCharArray();
-        
+
         String hash = auth.hash(password);
         boolean result = auth.authenticate(wrongPassword, hash);
-        
+
         assertFalse(result);
     }
 
@@ -106,7 +107,7 @@ public class PasswordAuthenticationTest {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
         String invalidToken = "invalidtoken";
-        
+
         assertThrows(IllegalArgumentException.class, () -> {
             auth.authenticate(password, invalidToken);
         });
@@ -118,7 +119,7 @@ public class PasswordAuthenticationTest {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
         String malformedToken = "$30$16$invalidhash";
-        
+
         assertThrows(IllegalArgumentException.class, () -> {
             auth.authenticate(password, malformedToken);
         });
@@ -130,7 +131,7 @@ public class PasswordAuthenticationTest {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
         String invalidCostToken = "$31$99$invalidhash";
-        
+
         assertThrows(IllegalArgumentException.class, () -> {
             auth.authenticate(password, invalidCostToken);
         });
@@ -142,7 +143,7 @@ public class PasswordAuthenticationTest {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
         String incompleteToken = "$31$16";
-        
+
         assertThrows(IllegalArgumentException.class, () -> {
             auth.authenticate(password, incompleteToken);
         });
@@ -154,7 +155,7 @@ public class PasswordAuthenticationTest {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
         String emptyToken = "";
-        
+
         assertThrows(IllegalArgumentException.class, () -> {
             auth.authenticate(password, emptyToken);
         });
@@ -165,7 +166,7 @@ public class PasswordAuthenticationTest {
     public void testNullToken() {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
-        
+
         assertThrows(NullPointerException.class, () -> {
             auth.authenticate(password, null);
         });
@@ -179,7 +180,7 @@ public class PasswordAuthenticationTest {
         char[] password = "testpassword".toCharArray();
         String hash5 = auth5.hash(password);
         assertTrue(auth5.authenticate(password, hash5));
-        
+
         // Test with cost 20
         PasswordAuthentication auth20 = new PasswordAuthentication(20);
         String hash20 = auth20.hash(password);
@@ -192,21 +193,21 @@ public class PasswordAuthenticationTest {
         // These catch blocks in the pbkdf2 method are marked as "UNREACHABLE" because:
         // 1. NoSuchAlgorithmException: PBKDF2WithHmacSHA1 is part of standard Java security providers
         // 2. InvalidKeySpecException: PBEKeySpec parameters are all valid in this implementation
-        
+
         // These are defensive programming catch blocks that cannot be triggered in practice
         // They are kept for theoretical edge cases but are truly unreachable
-        
+
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "testpassword".toCharArray();
-        
+
         // Test that normal operation works (which exercises the try block)
         String hash = auth.hash(password);
         assertNotNull(hash);
         assertTrue(hash.startsWith("$31$"));
-        
+
         boolean result = auth.authenticate(password, hash);
         assertTrue(result);
-        
+
         // The catch blocks are unreachable in normal operation
         // This test documents that fact rather than trying to trigger them
     }
@@ -215,18 +216,18 @@ public class PasswordAuthenticationTest {
     @DisplayName("Should handle edge case with very long password")
     public void testVeryLongPassword() {
         PasswordAuthentication auth = new PasswordAuthentication();
-        
+
         // Create a very long password to test edge cases
         StringBuilder longPassword = new StringBuilder();
         for (int i = 0; i < 1000; i++) {
             longPassword.append("a");
         }
         char[] password = longPassword.toString().toCharArray();
-        
+
         String hash = auth.hash(password);
         assertNotNull(hash);
         assertTrue(hash.startsWith("$31$"));
-        
+
         boolean result = auth.authenticate(password, hash);
         assertTrue(result);
     }
@@ -236,11 +237,11 @@ public class PasswordAuthenticationTest {
     public void testVeryShortPassword() {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "a".toCharArray();
-        
+
         String hash = auth.hash(password);
         assertNotNull(hash);
         assertTrue(hash.startsWith("$31$"));
-        
+
         boolean result = auth.authenticate(password, hash);
         assertTrue(result);
     }
@@ -250,11 +251,11 @@ public class PasswordAuthenticationTest {
     public void testSpecialCharactersPassword() {
         PasswordAuthentication auth = new PasswordAuthentication();
         char[] password = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~".toCharArray();
-        
+
         String hash = auth.hash(password);
         assertNotNull(hash);
         assertTrue(hash.startsWith("$31$"));
-        
+
         boolean result = auth.authenticate(password, hash);
         assertTrue(result);
     }

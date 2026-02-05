@@ -1,5 +1,9 @@
 package org.ngafid.processor.events;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.DoubleTimeSeries;
@@ -7,11 +11,6 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Conditional;
 import org.ngafid.core.util.filters.Filter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Scans a flight for a normal event, i.e. an event defined with a `Conditional`.

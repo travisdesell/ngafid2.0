@@ -1,11 +1,6 @@
 package org.ngafid.www.routes;
 
 import io.javalin.http.Context;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.ngafid.www.Navbar;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -14,8 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
+import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
 public class StatusJavalinRoutes {
@@ -163,7 +160,7 @@ public class StatusJavalinRoutes {
         }
 
         return matches.getFirst();
-        
+
     }
 
 
@@ -193,7 +190,7 @@ public class StatusJavalinRoutes {
                 "All instances of %s have timed‑out".formatted(logicalService),
                 instancesMap
             );
-            
+
             case UNCHECKED -> new ServiceStatusResult(
                 aggregate,
                 "Unchecked: %s (This should never happen for Docker entries!)".formatted(logicalService),
@@ -204,8 +201,8 @@ public class StatusJavalinRoutes {
     }
 
     private static void getServiceStatus(Context ctx) {
-        
-        
+
+
         String requested = ctx.pathParam("service-name");
 
         // Resolve docker logical name first
@@ -242,7 +239,7 @@ public class StatusJavalinRoutes {
         }
 
         String service = requested.toLowerCase();
-    
+
         // Check cache first
         List<String> serviceNames = SERVICE_NAME_TO_SYSTEMD_SERVICE.getOrDefault(service, null);
         if (serviceNames != null) {
@@ -261,7 +258,7 @@ public class StatusJavalinRoutes {
             ctx.json("No service with name '" + service + "'");
 
         }
-        
+
     }
 
     /**

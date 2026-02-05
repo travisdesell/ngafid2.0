@@ -93,7 +93,7 @@ class EventConsumer protected constructor(
                     }
                     return Pair(record, false)
                 }
-                
+
                 // Check if this event actually exists in the database for this flight
                 try {
                     val allEvents = Event.getAll(connection, flight.id)
@@ -130,7 +130,7 @@ class EventConsumer protected constructor(
                     Event.batchInsertion(connection, flight, events)
 
 
-                    // inserts proximity points for each event into the heatmap_points table 
+                    // inserts proximity points for each event into the heatmap_points table
                     if (scanner is ProximityEventScanner) {
                         HeatmapPointsProcessor.insertCoordinatesForProximityEvents(
                             connection,

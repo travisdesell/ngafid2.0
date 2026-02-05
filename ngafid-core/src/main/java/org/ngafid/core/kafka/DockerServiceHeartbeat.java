@@ -10,7 +10,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -30,7 +29,7 @@ public class DockerServiceHeartbeat {
         ||  Files.exists(Path.of("/run/.containerenv"))
     ;
 
-    
+
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeat.class.getName());
 
 
@@ -61,7 +60,7 @@ public class DockerServiceHeartbeat {
 
         // Get service name - try to detect from context or use default
         String service = Config.getProperty("ngafid.service.name");
-        
+
         // Still unknown, try to detect from main class or stack trace
         if (service == null || service.isBlank() || service.equals(SERVICE_NAME_UNKNOWN) || service.equals("ngafid-service")) {
             LOG.info("No service name configured, attempting to detect from context...");
@@ -98,9 +97,9 @@ public class DockerServiceHeartbeat {
 
         // Start the heartbeat
         DockerServiceHeartbeat.start(heartbeatProducer, service, instance, heartbeatIntervalMS);
-        
+
     }
-    
+
     /**
      * Detects the service name from the calling context
      */

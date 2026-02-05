@@ -1,16 +1,6 @@
 package org.ngafid.processor;
 
 
-import org.apache.parquet.io.InputFile;
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.uploads.UploadException;
-import org.ngafid.processor.format.FlightBuilder;
-import org.ngafid.processor.format.ParquetFileProcessor;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -21,6 +11,15 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.parquet.io.InputFile;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.core.uploads.UploadException;
+import org.ngafid.processor.format.FlightBuilder;
+import org.ngafid.processor.format.ParquetFileProcessor;
 
 /**
  * Processes a Parquet file by parsing its records, converting them to flights, and inserting them into the database.

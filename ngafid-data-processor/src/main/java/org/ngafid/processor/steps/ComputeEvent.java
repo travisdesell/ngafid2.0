@@ -1,5 +1,9 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
@@ -11,11 +15,6 @@ import org.ngafid.processor.events.EventScanner;
 import org.ngafid.processor.events.LowEndingFuelScanner;
 import org.ngafid.processor.events.SpinEventScanner;
 import org.ngafid.processor.format.FlightBuilder;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of {@link EventScanner}.

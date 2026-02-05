@@ -1,11 +1,5 @@
 package org.ngafid.processor.format;
 
-import org.ngafid.core.flights.*;
-import org.ngafid.processor.Pipeline;
-import org.ngafid.processor.steps.ComputeScanEagleStartEndTime;
-import org.ngafid.processor.steps.ComputeStep;
-import org.ngafid.processor.steps.ComputeUnitConversion;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.ngafid.core.flights.*;
+import org.ngafid.processor.Pipeline;
+import org.ngafid.processor.steps.ComputeScanEagleStartEndTime;
+import org.ngafid.processor.steps.ComputeStep;
+import org.ngafid.processor.steps.ComputeUnitConversion;
 
 /**
  * Flight file processor and flight builder for Scan Eagle data. We can't do a lot with the scan eagle data, so

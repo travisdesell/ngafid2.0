@@ -1,17 +1,15 @@
 package org.ngafid.processor.terrain;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.nio.file.NoSuchFileException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.jetbrains.annotations.NotNull;
 import org.ngafid.core.Config;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 public enum TerrainCache {
     ;
@@ -130,7 +128,7 @@ public enum TerrainCache {
 
             return (k.latIndex == latIndex && k.lonIndex == lonIndex);
         }
-        
+
     }
 
     private record TileCoordinate(double lat, double lon, int latIndex, int lonIndex) {

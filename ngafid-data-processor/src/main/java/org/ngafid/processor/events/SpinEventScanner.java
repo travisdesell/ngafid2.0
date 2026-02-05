@@ -1,18 +1,17 @@
 package org.ngafid.processor.events;
 
+import static org.ngafid.core.event.CustomEvent.getHighAltitudeSpin;
+import static org.ngafid.core.event.CustomEvent.getLowAltitudeSpin;
+import static org.ngafid.core.flights.Parameters.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.ngafid.core.event.CustomEvent;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.StringTimeSeries;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.ngafid.core.event.CustomEvent.getHighAltitudeSpin;
-import static org.ngafid.core.event.CustomEvent.getLowAltitudeSpin;
-import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Scans a flight for both HIGH and LOW altitude spins. This scanner technically searches for two event definitions,

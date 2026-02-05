@@ -1,18 +1,17 @@
 package org.ngafid.processor.steps;
 
+import static org.ngafid.core.flights.Parameters.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
 import org.ngafid.processor.terrain.TerrainCache;
 import org.ngafid.processor.terrain.TerrainUnavailableException;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Set;
-
-import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Computes the altitude above ground level based on the altitude above sea level and lat / long coordinates.

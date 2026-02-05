@@ -2,14 +2,13 @@ package org.ngafid.core.util.filters;
 
 //CHECKSTYLE:OFF
 
-import org.ngafid.core.accounts.User;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.ngafid.core.accounts.User;
 
 /**
  * This class contains data pertaining to a {@link User}'s stored {@link Filter} that they wish to apply in future

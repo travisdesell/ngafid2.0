@@ -1,15 +1,14 @@
 package org.ngafid.core.accounts;
 
+import java.io.Serializable;
+import java.sql.*;
+import java.util.*;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.core.util.SendEmail;
-
-import java.io.Serializable;
-import java.sql.*;
-import java.util.Date;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class User implements Serializable {
 
@@ -32,7 +31,7 @@ public final class User implements Serializable {
     private boolean admin;
     private boolean aggregateView;
     private String passwordToken;
-    
+
     // 2FA fields
     private boolean twoFactorEnabled = false;
     private String twoFactorSecret;
@@ -109,12 +108,12 @@ public final class User implements Serializable {
         passwordToken = resultSet.getString(13);
         fleetSelected = resultSet.getInt(14);
 
-        // 2FA fields 
+        // 2FA fields
         twoFactorEnabled = false;
         twoFactorSecret = null;
         backupCodes = null;
         twoFactorSetupComplete = false;
-        
+
         try {
             twoFactorEnabled = resultSet.getBoolean(15);
             twoFactorSecret = resultSet.getString(16);
@@ -1295,6 +1294,3 @@ public final class User implements Serializable {
                 && Objects.equals(this.fleetAccess, u.fleetAccess) && Objects.equals(this.fleet, u.fleet);
     }
 }
-
-
-   

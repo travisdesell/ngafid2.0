@@ -2,14 +2,6 @@ package org.ngafid.processor.format;
 
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.parquet.avro.AvroParquetReader;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.io.InputFile;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.util.MD5;
-import org.ngafid.core.util.TimeUtils;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -18,6 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.parquet.avro.AvroParquetReader;
+import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.io.InputFile;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.util.MD5;
+import org.ngafid.core.util.TimeUtils;
 
 /**
  * Processes a Parquet file and extracts flights.
@@ -191,4 +190,3 @@ public class ParquetFileProcessor {
         return MD5.computeHexHash(primaryKey);
     }
 }
-

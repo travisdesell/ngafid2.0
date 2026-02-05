@@ -1,18 +1,17 @@
 package org.ngafid.processor.format;
 
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FlightMeta;
-import org.ngafid.core.flights.Parameters;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.processor.steps.*;
+import static org.ngafid.processor.steps.ComputeStep.required;
 
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static org.ngafid.processor.steps.ComputeStep.required;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FlightMeta;
+import org.ngafid.core.flights.Parameters;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.processor.steps.*;
 
 
 public class ParquetFlightBuilder extends FlightBuilder {

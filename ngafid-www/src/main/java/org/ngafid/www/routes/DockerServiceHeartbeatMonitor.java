@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -21,7 +20,7 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeatMonitor.class.getName());
 
     final int TIMEOUT_DURATION_MS = 60_000;
-    
+
     private final Map<String, Map<String, Long>> lastSeen = new ConcurrentHashMap<>();
     private final KafkaConsumer<String,String> consumer;
 
@@ -32,7 +31,7 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
 
     }
 
-    public static DockerServiceHeartbeatMonitor initialize() { 
+    public static DockerServiceHeartbeatMonitor initialize() {
 
         //Not running in Docker, do not start heartbeat
         if (!DockerServiceHeartbeat.USING_DOCKER) {
@@ -123,7 +122,7 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
                     : StatusJavalinRoutes.ServiceStatus.WARNING
             )
         );
-        
+
     }
 
     public StatusJavalinRoutes.ServiceStatus status(String service) {
@@ -155,7 +154,7 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
                 anyTimeout = true;
 
         }
-        
+
         //All (at least 1) service instances have been seen recently -> OK
         if (anyAlive && !anyTimeout)
             return StatusJavalinRoutes.ServiceStatus.OK;

@@ -1,20 +1,19 @@
 package org.ngafid.www.routes;
 
-import io.javalin.http.Context;
-import org.ngafid.core.Config;
-import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.util.SendEmail;
-import org.ngafid.www.Navbar;
+import static org.ngafid.www.HttpCodes.*;
+import static org.ngafid.www.WebServer.gson;
 
+import io.javalin.http.Context;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import static org.ngafid.www.HttpCodes.*;
-import static org.ngafid.www.WebServer.gson;
+import org.ngafid.core.Config;
+import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.util.SendEmail;
+import org.ngafid.www.Navbar;
 
 
 @SuppressWarnings("LoggerStringConcat")
@@ -160,4 +159,3 @@ public final class BugReportJavalinRoutes {
     }
 
 }
-

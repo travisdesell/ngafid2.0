@@ -1,11 +1,5 @@
 package org.ngafid.processor;
 
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.processor.format.FlightBuilder;
-import org.ngafid.processor.steps.ComputeStep;
-
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +8,11 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.processor.format.FlightBuilder;
+import org.ngafid.processor.steps.ComputeStep;
 
 /**
  * A directed acyclic graph, where nodes are individual process steps and the edges are defined by column names that are

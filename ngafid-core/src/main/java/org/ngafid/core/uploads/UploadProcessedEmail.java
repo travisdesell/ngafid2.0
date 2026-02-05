@@ -1,14 +1,13 @@
 package org.ngafid.core.uploads;
 
-import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.util.SendEmail;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.util.SendEmail;
 
 
 public class UploadProcessedEmail {

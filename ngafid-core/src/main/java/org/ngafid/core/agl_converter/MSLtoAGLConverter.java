@@ -15,27 +15,27 @@ import org.ngafid.core.Config;
  */
 public class MSLtoAGLConverter {
     private static final Logger LOG = Logger.getLogger(MSLtoAGLConverter.class.getName());
-    
+
     // SRTM tile configuration
     private static final int SRTM_TILE_SIZE = 1201;
     private static final double SRTM_GRID_SIZE = 1.0 / (SRTM_TILE_SIZE - 1.0);
-    
+
     // Terrain data directory from configuration
     private static final String TERRAIN_DIR = Config.NGAFID_TERRAIN_DIR;
-    
+
     // Simple cache for file existence checks to avoid repeated file system calls
     private static final ConcurrentHashMap<String, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
-    
+
     /**
      * Converts MSL altitude to AGL altitude using terrain data.
-     * 
+     *
      * @param altitudeMSL MSL altitude in feet
      * @param latitude Latitude coordinate
      * @param longitude Longitude coordinate
      * @return AGL altitude in feet, or NaN if conversion not possible
      */
     public static double convertMSLToAGL(double altitudeMSL, double latitude, double longitude) {
-        
+
         if (Double.isNaN(altitudeMSL) || Double.isInfinite(altitudeMSL) ||
             Double.isNaN(latitude) || Double.isInfinite(latitude) ||
             Double.isNaN(longitude) || Double.isInfinite(longitude)) {
@@ -58,24 +58,24 @@ public class MSLtoAGLConverter {
         try {
             // Get terrain elevation at the given coordinates
             double terrainElevationFt = getTerrainElevation(latitude, longitude);
-            
+
             // AGL = MSL - terrain elevation
             double agl = altitudeMSL - terrainElevationFt;
             // Ensure AGL is not negative (aircraft can't be below ground)
             double finalAgl = Math.max(0.0, agl);
             return finalAgl;
-            
+
         } catch (Exception e) {
-            LOG.warning("Failed to convert MSL to AGL for lat=" + latitude + 
+            LOG.warning("Failed to convert MSL to AGL for lat=" + latitude +
                        ", lon=" + longitude + ", MSL=" + altitudeMSL + ": " + e.getMessage());
             e.printStackTrace();
             return Double.NaN;
         }
     }
-    
+
     /**
      * Gets terrain elevation at the specified coordinates.
-     * 
+     *
      * @param latitude Latitude coordinate
      * @param longitude Longitude coordinate
      * @return Terrain elevation in feet
@@ -84,41 +84,41 @@ public class MSLtoAGLConverter {
     private static double getTerrainElevation(double latitude, double longitude) throws IOException {
         int latIndex = -((int) Math.ceil(latitude) - 91);
         int lonIndex = (int) Math.floor(longitude) + 180;
-        
+
         // Validate tile coordinates
         if (latIndex < 0 || latIndex >= 180 || lonIndex < 0 || lonIndex >= 360) {
             throw new IOException("Invalid coordinates: lat=" + latitude + ", lon=" + longitude);
         }
-        
+
         // Convert to SRTM tile coordinates
         int tileLat = 90 - latIndex;
         int tileLon = lonIndex - 180;
-        
+
         // Get directory and filename for the tile
         String directory = getDirectoryFromLatLon(tileLat, tileLon);
         String filename = getFilenameFromLatLon(tileLat, tileLon);
-        
+
         Path tilePath = Paths.get(TERRAIN_DIR, directory, filename);
         String tileKey = tilePath.toString();
-        
+
         // Check cache first, then file system
         Boolean exists = FILE_EXISTS_CACHE.get(tileKey);
         if (exists == null) {
             exists = Files.exists(tilePath);
             FILE_EXISTS_CACHE.put(tileKey, exists);
         }
-        
+
         if (!exists) {
             throw new IOException("Terrain tile not found: " + tilePath);
         }
-        
+
         // Read terrain elevation from the tile file
         return readTerrainElevation(tilePath, latitude, longitude);
     }
-    
+
     /**
      * Reads terrain elevation from SRTM tile file using bilinear interpolation.
-     * 
+     *
      * @param tilePath Path to the SRTM tile file
      * @param latitude Latitude coordinate
      * @param longitude Longitude coordinate
@@ -130,32 +130,32 @@ public class MSLtoAGLConverter {
             // Calculate position within the tile
             double latDiff = Math.ceil(latitude) - latitude;
             double lonDiff = longitude - Math.floor(longitude);
-            
+
             int latIndex0 = (int) (latDiff / SRTM_GRID_SIZE);
             int latIndex1 = Math.min(latIndex0 + 1, SRTM_TILE_SIZE - 1);
             int lonIndex0 = (int) (lonDiff / SRTM_GRID_SIZE);
             int lonIndex1 = Math.min(lonIndex0 + 1, SRTM_TILE_SIZE - 1);
-            
+
             // Read the four surrounding elevation points
             double alt00 = readElevationPoint(file, latIndex0, lonIndex0);
             double alt10 = readElevationPoint(file, latIndex1, lonIndex0);
             double alt01 = readElevationPoint(file, latIndex0, lonIndex1);
             double alt11 = readElevationPoint(file, latIndex1, lonIndex1);
-            
+
             // Bilinear interpolation
             double x = lonDiff - (lonIndex0 * SRTM_GRID_SIZE);
             double y = latDiff - (latIndex0 * SRTM_GRID_SIZE);
-            
+
             return (alt00 * (1 - x) * (1 - y)) +
                    (alt10 * x * (1 - y)) +
                    (alt01 * (1 - x) * y) +
                    (alt11 * x * y);
         }
     }
-    
+
     /**
      * Reads a single elevation point from the SRTM tile file.
-     * 
+     *
      * @param file RandomAccessFile for the tile
      * @param latIndex Latitude index within tile
      * @param lonIndex Longitude index within tile
@@ -166,17 +166,17 @@ public class MSLtoAGLConverter {
         // Calculate byte offset for the point (2 bytes per elevation value)
         long offset = (latIndex * SRTM_TILE_SIZE + lonIndex) * 2L;
         file.seek(offset);
-        
+
         // Read 2 bytes and convert to elevation in feet
         int altitudeM = ((file.readByte() & 0xff) << 8) | (file.readByte() & 0xff);
-        
+
         // Convert meters to feet
         return altitudeM * 3.2808399;
     }
-    
+
     /**
      * Gets directory name from latitude and longitude for SRTM tile organization.
-     * 
+     *
      * @param latitude Latitude coordinate
      * @param longitude Longitude coordinate
      * @return Directory name
@@ -198,10 +198,10 @@ public class MSLtoAGLConverter {
 
         return directory;
     }
-    
+
     /**
      * Gets filename from latitude and longitude for SRTM tile.
-     * 
+     *
      * @param latitude Latitude coordinate
      * @param longitude Longitude coordinate
      * @return Filename
@@ -221,5 +221,5 @@ public class MSLtoAGLConverter {
 
         return ns + ilatitude + ew + strLongitude + ".hgt";
     }
-    
-} 
+
+}

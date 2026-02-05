@@ -1,23 +1,20 @@
 package org.ngafid.core.heatmap;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.Config;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventMetaData;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.flights.Parameters;
-import org.ngafid.core.agl_converter.MSLtoAGLConverter;
-
-
 import java.sql.*;
-import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
+import org.ngafid.core.Database;
+import org.ngafid.core.agl_converter.MSLtoAGLConverter;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventMetaData;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.Parameters;
+import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.TimeUtils;
 
 public class HeatmapPointsProcessor {
@@ -49,7 +46,7 @@ public class HeatmapPointsProcessor {
         int success = 0;
         int skipped = 0;
         int error = 0;
-        
+
         for (Map<String, Object> result : results) {
             String status = (String) result.get("status");
             switch (status) {
@@ -64,13 +61,13 @@ public class HeatmapPointsProcessor {
                     break;
             }
         }
-        
+
         System.out.println("\n=== BACKFILL SUMMARY ===");
         System.out.println("Total events processed: " + total);
         System.out.println("Successful: " + success);
         System.out.println("Skipped (already had points): " + skipped);
         System.out.println("Errors: " + error);
-        
+
         if (error > 0) {
             System.out.println("\n=== ERROR DETAILS ===");
             for (Map<String, Object> result : results) {
@@ -109,7 +106,7 @@ public class HeatmapPointsProcessor {
                 stmt.setDouble(2, latitude);
                 stmt.setDouble(3, longitude);
                 stmt.setString(4, timestamp.toString());
-                
+
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         double altitudeMSL = rs.getDouble("altitude_msl");
@@ -138,7 +135,7 @@ public class HeatmapPointsProcessor {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int inserted = 0;
             for (Event event : events) {
-                
+
                 List<ProximityPointData> mainPoints = mainFlightPointsMap.get(event);
 
                 if (mainPoints != null) {
@@ -376,25 +373,25 @@ public class HeatmapPointsProcessor {
      */
     public static Map<String, Object> getEventDefinitionColumns(int eventId, int flightId) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try (Connection connection = Database.getConnection()) {
             // First, get the event definition ID from the events table
             String eventQuery = "SELECT e.event_definition_id, e.start_line, e.end_line, ed.column_names " +
                                "FROM events e " +
                                "JOIN event_definitions ed ON e.event_definition_id = ed.id " +
                                "WHERE e.id = ? AND e.flight_id = ?";
-            
+
             try (PreparedStatement stmt = connection.prepareStatement(eventQuery)) {
                 stmt.setInt(1, eventId);
                 stmt.setInt(2, flightId);
-                
+
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         int eventDefinitionId = rs.getInt("event_definition_id");
                         int startLine = rs.getInt("start_line");
                         int endLine = rs.getInt("end_line");
                         String columnNamesJson = rs.getString("column_names");
-                        
+
                         // Parse the JSON column names
                         List<String> columnNames = new ArrayList<>();
                         if (columnNamesJson != null && !columnNamesJson.isEmpty()) {
@@ -413,7 +410,7 @@ public class HeatmapPointsProcessor {
                                 // Failed to parse column_names JSON
                             }
                         }
-                        
+
                         result.put("event_id", eventId);
                         result.put("flight_id", flightId);
                         result.put("event_definition_id", eventDefinitionId);
@@ -430,7 +427,7 @@ public class HeatmapPointsProcessor {
             e.printStackTrace();
             result.put("error", "Database error: " + e.getMessage());
         }
-        
+
         return result;
     }
 
@@ -445,33 +442,33 @@ public class HeatmapPointsProcessor {
      */
     public static Map<String, Object> getEventColumnsValues(int eventId, int flightId, String timestamp) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try (Connection connection = Database.getConnection()) {
             // Get event definition and column names
             Map<String, Object> eventDefinition = getEventDefinitionColumns(eventId, flightId);
-            
+
             if (eventDefinition.containsKey("error")) {
                 result.put("error", eventDefinition.get("error"));
                 return result;
             }
-            
+
             @SuppressWarnings("unchecked")
             List<String> columnNames = (List<String>) eventDefinition.get("column_names");
-            
+
             if (columnNames == null || columnNames.isEmpty()) {
                 result.put("error", "No relevant columns found for this event");
                 return result;
             }
-            
+
             // Get event details to find the time range
             String eventQuery = "SELECT start_line, end_line FROM events WHERE id = ? AND flight_id = ?";
             int startLine = -1;
             int endLine = -1;
-            
+
             try (PreparedStatement stmt = connection.prepareStatement(eventQuery)) {
                 stmt.setInt(1, eventId);
                 stmt.setInt(2, flightId);
-                
+
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         startLine = rs.getInt("start_line");
@@ -482,15 +479,15 @@ public class HeatmapPointsProcessor {
                     }
                 }
             }
-            
+
             // Find the time index within the event range
             int timeIndex = getTimeIndexInRange(connection, flightId, timestamp, startLine, endLine);
-            
+
             if (timeIndex == -1) {
                 // If exact match fails, use the middle of the event range as fallback
                 timeIndex = startLine + (endLine - startLine) / 2;
             }
-            
+
             // Get values for each column
             Map<String, Object> columnValues = new HashMap<>();
             for (String columnName : columnNames) {
@@ -510,22 +507,22 @@ public class HeatmapPointsProcessor {
                     columnValues.put(columnName, null);
                 }
             }
-            
+
             result.put("event_id", eventId);
             result.put("flight_id", flightId);
             result.put("timestamp", timestamp);
             result.put("time_index", timeIndex);
             result.put("column_names", columnNames);
             result.put("column_values", columnValues);
-            
+
             return result;
-            
+
         } catch (SQLException e) {
             LOG.severe("SQL error in getEventColumnsValues for event_id=" + eventId + ", flight_id=" + flightId + ": " + e.getMessage());
             e.printStackTrace();
             result.put("error", "Database error: " + e.getMessage());
         }
-        
+
         return result;
     }
 
@@ -547,7 +544,7 @@ public class HeatmapPointsProcessor {
             if (timestampSeries == null) {
                 return -1;
             }
-            
+
             // Parse the input timestamp - try different formats
             OffsetDateTime targetTime = null;
             try {
@@ -557,17 +554,17 @@ public class HeatmapPointsProcessor {
                 try {
                     // Try MySQL format (yyyy-MM-dd HH:mm:ss.S) and convert to ISO 8601
                     String cleanedTimestamp = timestamp.replaceAll("\\.0$", ""); // Remove .0 suffix
-                    LocalDateTime localDateTime = LocalDateTime.parse(cleanedTimestamp, 
+                    LocalDateTime localDateTime = LocalDateTime.parse(cleanedTimestamp,
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                     targetTime = localDateTime.atOffset(ZoneOffset.UTC);
                 } catch (Exception e2) {
                     return -1;
                 }
             }
-            
+
             // Convert target time to ISO 8601 string format for comparison
             String targetTimeString = targetTime.format(TimeUtils.ISO_8601_FORMAT);
-            
+
             // Find exact timestamp match within the event range
             for (int i = startLine; i <= endLine; i++) {
                 String seriesTimestamp = timestampSeries.get(i);
@@ -578,7 +575,7 @@ public class HeatmapPointsProcessor {
                     }
                 }
             }
-            
+
             return -1;
         } catch (Exception e) {
             return -1;
@@ -622,7 +619,7 @@ public class HeatmapPointsProcessor {
                 sql.append(" AND e.severity <= ?");
             }
             sql.append(" ORDER BY e.id");
-            
+
             try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
                 int idx = 1;
                 stmt.setDate(idx++, startDate);
@@ -686,17 +683,17 @@ public class HeatmapPointsProcessor {
      */
     public static List<Map<String, Object>> backfillAllMissingHeatmapPoints(Connection connection, int batchSize, Integer limit) throws SQLException {
         List<Map<String, Object>> results = new ArrayList<>();
-        
+
         // Get all events that don't have heatmap points
         String sql = "SELECT e.id FROM events e " +
                      "LEFT JOIN heatmap_points hp ON e.id = hp.event_id " +
                      "WHERE hp.event_id IS NULL " +
                      "ORDER BY e.id";
-        
+
         if (limit != null) {
             sql += " LIMIT " + limit;
         }
-        
+
         List<Integer> eventIds = new ArrayList<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             try (ResultSet rs = stmt.executeQuery()) {
@@ -705,26 +702,26 @@ public class HeatmapPointsProcessor {
                 }
             }
         }
-        
+
         LOG.info("Found " + eventIds.size() + " events without heatmap points");
-        
+
         if (eventIds.isEmpty()) {
             LOG.info("No events found that need backfilling");
             return results;
         }
-        
+
         // Process events in batches
         for (int i = 0; i < eventIds.size(); i += batchSize) {
             int endIndex = Math.min(i + batchSize, eventIds.size());
             List<Integer> batch = eventIds.subList(i, endIndex);
-            
+
             LOG.info("Processing batch " + (i / batchSize + 1) + " with " + batch.size() + " events");
-            
+
             for (Integer eventId : batch) {
                 try {
                     Map<String, Object> result = backfillSingleEvent(connection, eventId);
                     results.add(result);
-                    
+
                     // Log progress
                     String status = (String) result.get("status");
                     if ("success".equals(status)) {
@@ -734,7 +731,7 @@ public class HeatmapPointsProcessor {
                     } else {
                         LOG.warning("Failed to backfill event " + eventId + ": " + result.get("message"));
                     }
-                    
+
                 } catch (Exception e) {
                     Map<String, Object> errorResult = new HashMap<>();
                     errorResult.put("event_id", eventId);
@@ -747,7 +744,7 @@ public class HeatmapPointsProcessor {
                 }
             }
         }
-        
+
         return results;
     }
 
@@ -761,7 +758,7 @@ public class HeatmapPointsProcessor {
      */
     private static Map<String, Object> backfillSingleEvent(Connection connection, int eventId) throws SQLException {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             // First, check if heatmap points already exist for this event
             String checkSql = "SELECT COUNT(*) as count FROM heatmap_points WHERE event_id = ?";
@@ -774,7 +771,7 @@ public class HeatmapPointsProcessor {
                     }
                 }
             }
-            
+
             if (existingPoints > 0) {
                 result.put("event_id", eventId);
                 result.put("status", "skipped");
@@ -782,23 +779,23 @@ public class HeatmapPointsProcessor {
                 result.put("existing_points", existingPoints);
                 return result;
             }
-            
+
             // Get event details
             String eventSql = "SELECT e.*, ed.id as event_def_id FROM events e " +
                              "LEFT JOIN event_definitions ed ON e.event_definition_id = ed.id " +
                              "WHERE e.id = ?";
-            
+
             Event event = null;
             Flight flight = null;
             int eventDefinitionId = -1;
-            
+
             try (PreparedStatement eventStmt = connection.prepareStatement(eventSql)) {
                 eventStmt.setInt(1, eventId);
                 try (ResultSet rs = eventStmt.executeQuery()) {
                     if (rs.next()) {
                         eventDefinitionId = rs.getInt("event_definition_id");
                         int flightId = rs.getInt("flight_id");
-                        
+
                         // Load the flight
                         flight = Flight.getFlight(connection, flightId);
                         if (flight == null) {
@@ -807,7 +804,7 @@ public class HeatmapPointsProcessor {
                             result.put("message", "Flight not found for event " + eventId);
                             return result;
                         }
-                        
+
                         // Create event object using the constructor that takes all required fields
                         int fleetId = rs.getInt("fleet_id");
                         int startLine = rs.getInt("start_line");
@@ -816,19 +813,19 @@ public class HeatmapPointsProcessor {
                         String endTime = rs.getString("end_time");
                         double severity = rs.getDouble("severity");
                         Integer otherFlightId = rs.getObject("other_flight_id") != null ? rs.getInt("other_flight_id") : null;
-                        
+
                         // Convert MySQL datetime format to ISO 8601 format
                         String isoStartTime = convertToISO8601(startTime);
                         String isoEndTime = convertToISO8601(endTime);
-                        
-                        LOG.info("Creating Event with: eventId=" + eventId + ", fleetId=" + fleetId + ", flightId=" + flightId + 
-                                ", eventDefinitionId=" + eventDefinitionId + ", startLine=" + startLine + ", endLine=" + endLine + 
-                                ", isoStartTime=" + isoStartTime + ", isoEndTime=" + isoEndTime + ", severity=" + severity + 
+
+                        LOG.info("Creating Event with: eventId=" + eventId + ", fleetId=" + fleetId + ", flightId=" + flightId +
+                                ", eventDefinitionId=" + eventDefinitionId + ", startLine=" + startLine + ", endLine=" + endLine +
+                                ", isoStartTime=" + isoStartTime + ", isoEndTime=" + isoEndTime + ", severity=" + severity +
                                 ", otherFlightId=" + otherFlightId);
-                        
-                        event = new Event(eventId, fleetId, flightId, eventDefinitionId, startLine, endLine, 
+
+                        event = new Event(eventId, fleetId, flightId, eventDefinitionId, startLine, endLine,
                                         isoStartTime, isoEndTime, severity, otherFlightId);
-                        
+
                         LOG.info("Event created successfully");
                     } else {
                         result.put("event_id", eventId);
@@ -838,7 +835,7 @@ public class HeatmapPointsProcessor {
                     }
                 }
             }
-            
+
             // Process based on event type
             LOG.info("Event definition ID: " + eventDefinitionId);
             if (eventDefinitionId == -1) {
@@ -849,7 +846,7 @@ public class HeatmapPointsProcessor {
                 // Regular event - use the existing non-proximity logic
                 LOG.info("Processing as regular event (eventDefinitionId=" + eventDefinitionId + ")");
                 List<Event> events = Arrays.asList(event);
-                
+
                 // Load the required time series data
                 DoubleTimeSeries latitudeSeries = flight.getDoubleTimeSeries(connection, Parameters.LATITUDE);
                 DoubleTimeSeries longitudeSeries = flight.getDoubleTimeSeries(connection, Parameters.LONGITUDE);
@@ -864,10 +861,10 @@ public class HeatmapPointsProcessor {
                     result.put("message", "Missing required time series data for flight " + flight.getId());
                     return result;
                 }
-                
+
 
                 insertCoordinatesForNonProximityEvents(connection, events, flight);
-                
+
                 // Count and print the inserted points
                 String countSql = "SELECT COUNT(*) as count FROM heatmap_points WHERE event_id = ?";
                 int insertedPoints = 0;
@@ -879,43 +876,43 @@ public class HeatmapPointsProcessor {
                         }
                     }
                 }
-                
+
                 System.out.println("Event " + eventId + " backfilled: " + insertedPoints + " points inserted");
-                
+
                 result.put("event_id", eventId);
                 result.put("status", "success");
                 result.put("message", "Successfully backfilled " + insertedPoints + " heatmap points for event " + eventId);
                 result.put("inserted_points", insertedPoints);
                 result.put("event_type", "regular");
             }
-            
+
         } catch (Exception e) {
             result.put("event_id", eventId);
             result.put("status", "error");
             result.put("message", "Error backfilling event " + eventId + ": " + e.getMessage());
             result.put("exception", e);
         }
-        
+
         return result;
     }
 
     /**
      * Converts MySQL datetime format to ISO 8601 format.
-     * 
+     *
      * @param mysqlDateTime MySQL datetime string (e.g., "2025-06-13 17:59:04")
      * @return ISO 8601 formatted string (e.g., "2025-06-13T17:59:04Z")
      */
     private static String convertToISO8601(String mysqlDateTime) {
         LOG.info("Converting datetime: " + mysqlDateTime);
-        
+
         if (mysqlDateTime == null || mysqlDateTime.trim().isEmpty()) {
             LOG.warning("Empty datetime string");
             return null;
         }
-        
+
         try {
             // Parse MySQL datetime format and convert to ISO 8601
-            LocalDateTime localDateTime = LocalDateTime.parse(mysqlDateTime, 
+            LocalDateTime localDateTime = LocalDateTime.parse(mysqlDateTime,
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             String result = localDateTime.atOffset(ZoneOffset.UTC).format(TimeUtils.ISO_8601_FORMAT);
             return result;
@@ -939,37 +936,37 @@ public class HeatmapPointsProcessor {
     private static Map<String, Object> backfillProximityEvent(Connection connection, Event event, Flight mainFlight) throws SQLException {
         Map<String, Object> result = new HashMap<>();
         int eventId = event.getId();
-        
+
         LOG.info("Starting backfillProximityEvent for event " + eventId);
-        
+
         try {
             // Get the other flight ID
             Integer otherFlightId = event.getOtherFlightId();
             LOG.info("Other flight ID: " + otherFlightId);
-            
+
             if (otherFlightId == null || otherFlightId == -1) {
                 result.put("event_id", eventId);
                 result.put("status", "error");
                 result.put("message", "Proximity event " + eventId + " has no valid other_flight_id");
                 return result;
             }
-            
+
             // Load the other flight
             Flight otherFlight = Flight.getFlight(connection, otherFlightId);
             LOG.info("Other flight loaded: " + (otherFlight != null ? "OK" : "NULL"));
-            
+
             if (otherFlight == null) {
                 result.put("event_id", eventId);
                 result.put("status", "error");
                 result.put("message", "Other flight " + otherFlightId + " not found for proximity event " + eventId);
                 return result;
             }
-            
+
             // Get event metadata (lateral and vertical distances)
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
             double lateralDistance = 0.0;
             double verticalDistance = 0.0;
-            
+
             for (EventMetaData metaData : metaDataList) {
                 if (metaData.getName() == EventMetaData.EventMetaDataKey.LATERAL_DISTANCE) {
                     lateralDistance = metaData.getValue();
@@ -977,21 +974,21 @@ public class HeatmapPointsProcessor {
                     verticalDistance = metaData.getValue();
                 }
             }
-            
+
             // Extract flight data for the event time window
             DoubleTimeSeries mainLatitudeSeries = mainFlight.getDoubleTimeSeries(connection, Parameters.LATITUDE);
             DoubleTimeSeries mainLongitudeSeries = mainFlight.getDoubleTimeSeries(connection, Parameters.LONGITUDE);
             DoubleTimeSeries mainAltitudeAGLSeries = mainFlight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
             DoubleTimeSeries mainAltitudeMSLSeries = mainFlight.getDoubleTimeSeries(connection, Parameters.ALT_MSL);
             StringTimeSeries mainTimestampSeries = mainFlight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
-            
+
             DoubleTimeSeries otherLatitudeSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.LATITUDE);
             DoubleTimeSeries otherLongitudeSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.LONGITUDE);
             DoubleTimeSeries otherAltitudeAGLSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
             DoubleTimeSeries otherAltitudeMSLSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.ALT_MSL);
             StringTimeSeries otherTimestampSeries = otherFlight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
 
-            
+
             if (mainLatitudeSeries == null || mainLongitudeSeries == null || mainTimestampSeries == null ||
                 otherLatitudeSeries == null || otherLongitudeSeries == null || otherTimestampSeries == null) {
                 result.put("event_id", eventId);
@@ -999,29 +996,29 @@ public class HeatmapPointsProcessor {
                 result.put("message", "Missing required flight data for proximity event " + eventId);
                 return result;
             }
-            
+
             // Create ProximityPointData lists
             List<ProximityPointData> mainFlightPoints = new ArrayList<>();
             List<ProximityPointData> otherFlightPoints = new ArrayList<>();
-            
+
             // Extract main flight points
             for (int i = event.getStartLine(); i <= event.getEndLine() && i < mainLatitudeSeries.size() && i < mainLongitudeSeries.size() && i < mainTimestampSeries.size(); i++) {
                 double latitude = mainLatitudeSeries.get(i);
                 double longitude = mainLongitudeSeries.get(i);
-                
+
                 // Skip invalid coordinates
                 if (latitude == 0.0 && longitude == 0.0 ||
                     Double.isNaN(latitude) || Double.isNaN(longitude) ||
                     Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
                     continue;
                 }
-                
+
                 String timestampStr = mainTimestampSeries.get(i);
                 if (timestampStr == null) continue;
-                
+
                 try {
                     OffsetDateTime timestamp = OffsetDateTime.parse(timestampStr);
-                    
+
                                          // Try to get AGL altitude first
                      double altitudeAGL = Double.NaN;
                      if (mainAltitudeAGLSeries != null && i < mainAltitudeAGLSeries.size()) {
@@ -1033,7 +1030,7 @@ public class HeatmapPointsProcessor {
                      } else {
                          LOG.info("Point " + i + ": AGL series not available");
                      }
-                     
+
                      // If AGL is not available, try MSL conversion
                      if (Double.isNaN(altitudeAGL)) {
                          if (mainAltitudeMSLSeries != null && i < mainAltitudeMSLSeries.size()) {
@@ -1056,9 +1053,9 @@ public class HeatmapPointsProcessor {
                      if (mainAltitudeMSLSeries != null && i < mainAltitudeMSLSeries.size()) {
                          double rawMSL = mainAltitudeMSLSeries.get(i);
                      }
-                     
 
-                    
+
+
                     ProximityPointData point = new ProximityPointData(
                         latitude, longitude, timestamp, altitudeAGL);
                     mainFlightPoints.add(point);
@@ -1067,25 +1064,25 @@ public class HeatmapPointsProcessor {
                     continue;
                 }
             }
-            
+
             // Extract other flight points (use same time range)
             for (int i = event.getStartLine(); i <= event.getEndLine() && i < otherLatitudeSeries.size() && i < otherLongitudeSeries.size() && i < otherTimestampSeries.size(); i++) {
                 double latitude = otherLatitudeSeries.get(i);
                 double longitude = otherLongitudeSeries.get(i);
-                
+
                 // Skip invalid coordinates
                 if (latitude == 0.0 && longitude == 0.0 ||
                     Double.isNaN(latitude) || Double.isNaN(longitude) ||
                     Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
                     continue;
                 }
-                
+
                 String timestampStr = otherTimestampSeries.get(i);
                 if (timestampStr == null) continue;
-                
+
                 try {
                     OffsetDateTime timestamp = OffsetDateTime.parse(timestampStr);
-                    
+
                     // Try to get AGL altitude first
                     double altitudeAGL = Double.NaN;
                     if (otherAltitudeAGLSeries != null && i < otherAltitudeAGLSeries.size()) {
@@ -1094,7 +1091,7 @@ public class HeatmapPointsProcessor {
                             altitudeAGL = Double.NaN;
                         }
                     }
-                    
+
                                          // If AGL is not available, try MSL conversion
                      if (Double.isNaN(altitudeAGL)) {
                          if (otherAltitudeMSLSeries != null && i < otherAltitudeMSLSeries.size()) {
@@ -1108,7 +1105,7 @@ public class HeatmapPointsProcessor {
                              LOG.info("Other flight point " + i + ": MSL series not available");
                          }
                      }
-                    
+
                     ProximityPointData point = new ProximityPointData(
                         latitude, longitude, timestamp, altitudeAGL);
                     otherFlightPoints.add(point);
@@ -1117,18 +1114,18 @@ public class HeatmapPointsProcessor {
                     continue;
                 }
             }
-            
+
             // Create maps for the proximity event insertion
             Map<Event, List<ProximityPointData>> mainFlightPointsMap = new HashMap<>();
             Map<Event, List<ProximityPointData>> otherFlightPointsMap = new HashMap<>();
-            
+
             mainFlightPointsMap.put(event, mainFlightPoints);
             otherFlightPointsMap.put(event, otherFlightPoints);
-            
+
             // Insert the proximity points
             List<Event> events = Arrays.asList(event);
             insertCoordinatesForProximityEvents(connection, events, mainFlightPointsMap, otherFlightPointsMap);
-            
+
             // Count and print the inserted points
             String countSql = "SELECT COUNT(*) as count FROM heatmap_points WHERE event_id = ?";
             int insertedPoints = 0;
@@ -1142,7 +1139,7 @@ public class HeatmapPointsProcessor {
             }
 
             System.out.println("Event " + eventId + " backfilled: " + insertedPoints + " points inserted");
-            
+
             result.put("event_id", eventId);
             result.put("status", "success");
             result.put("message", "Successfully backfilled " + insertedPoints + " proximity heatmap points for event " + eventId);
@@ -1152,14 +1149,14 @@ public class HeatmapPointsProcessor {
             result.put("other_flight_points", otherFlightPoints.size());
             result.put("lateral_distance_ft", lateralDistance);
             result.put("vertical_distance_ft", verticalDistance);
-            
+
         } catch (Exception e) {
             result.put("event_id", eventId);
             result.put("status", "error");
             result.put("message", "Error backfilling proximity event " + eventId + ": " + e.getMessage());
             result.put("exception", e);
         }
-        
+
         return result;
     }
 }

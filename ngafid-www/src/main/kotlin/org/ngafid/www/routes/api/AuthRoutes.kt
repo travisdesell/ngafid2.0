@@ -75,7 +75,7 @@ object AuthRoutes : RouteProvider() {
                     ctx.json(LoginResponse(true, false, false, false, "Invalid email or password.", null))
                     return
                 }
-                
+
                 LOG.info("User found: ${user.email}, 2FA Enabled: ${user.isTwoFactorEnabled}, Setup Complete: ${user.isTwoFactorSetupComplete}")
 
                 // Check if 2FA is enabled but not set up
@@ -190,7 +190,7 @@ object AuthRoutes : RouteProvider() {
     fun postLogout(ctx: Context) {
         try {
             val user = SessionUtility.getUser(ctx)
-            
+
             // Set the session attribute for this user so it will be considered logged in.
             ctx.sessionAttribute("user", null)
             ctx.req().session.invalidate()
@@ -379,20 +379,20 @@ object AuthRoutes : RouteProvider() {
     // 2FA Setup - Generate secret and QR code
     fun postSetup2FA(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
-        
+
         Database.getConnection().use { connection ->
             val secret = TwoFactorAuthService.generateSecret()
             val qrCodeUrl = TwoFactorAuthService.generateQRCodeUrl(secret, user.email)
-            
+
             // Update user with 2FA secret but DON'T enable 2FA yet
             // Only set twoFactorEnabled = true after setup is complete
             user.setTwoFactorSecret(secret)
             user.setTwoFactorEnabled(false)  // Keep disabled until setup is complete
             user.setTwoFactorSetupComplete(false)
-            
+
             // Save to database - note: twoFactorEnabled = false
             updateUser2FA(connection, user.id, secret, false, false)
-            
+
             ctx.json(mapOf(
                 "success" to true,
                 "secret" to secret,
@@ -406,7 +406,7 @@ object AuthRoutes : RouteProvider() {
     fun postVerify2FASetup(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         val code: String = ctx.formParam("code")!!
-        
+
         Database.getConnection().use { connection ->
             if (!TwoFactorAuthService.verifyCode(user.getTwoFactorSecret(), code.toInt())) {
                 ctx.json(mapOf(
@@ -415,19 +415,19 @@ object AuthRoutes : RouteProvider() {
                 ))
                 return
             }
-            
+
             // Generate backup codes
             val backupCodes = TwoFactorAuthService.generateBackupCodes()
             val hashedCodes = backupCodes.map { TwoFactorAuthService.hashBackupCode(it) }
-            
+
             // Update user - NOW enable 2FA since setup is complete
             user.setTwoFactorEnabled(true)  // Enable 2FA only after setup is complete
             user.setTwoFactorSetupComplete(true)
             user.setBackupCodes(hashedCodes.joinToString(","))
-            
+
             // Save to database - now twoFactorEnabled = true
             updateUser2FA(connection, user.id, user.getTwoFactorSecret(), true, true, hashedCodes.joinToString(","))
-            
+
             ctx.json(mapOf(
                 "success" to true,
                 "backupCodes" to backupCodes,
@@ -440,7 +440,7 @@ object AuthRoutes : RouteProvider() {
     fun postDisable2FA(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         val password: String = ctx.formParam("password")!!
-        
+
         Database.getConnection().use { connection ->
             // Verify current password
             if (!user.validate(connection, password)) {
@@ -450,15 +450,15 @@ object AuthRoutes : RouteProvider() {
                 ))
                 return
             }
-            
+
             // Disable 2FA
             updateUser2FA(connection, user.id, null, false, false, null)
-            
+
             user.setTwoFactorEnabled(false)
             user.setTwoFactorSecret(null)
             user.setTwoFactorSetupComplete(false)
             user.setBackupCodes(null)
-            
+
             ctx.json(mapOf(
                 "success" to true,
                 "message" to "2FA has been disabled."
@@ -470,7 +470,7 @@ object AuthRoutes : RouteProvider() {
     fun postGenerateBackupCodes(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         val password: String = ctx.formParam("password")!!
-        
+
         Database.getConnection().use { connection ->
             // Verify current password
             if (!user.validate(connection, password)) {
@@ -480,15 +480,15 @@ object AuthRoutes : RouteProvider() {
                 ))
                 return
             }
-            
+
             // Generate new backup codes
             val backupCodes = TwoFactorAuthService.generateBackupCodes()
             val hashedCodes = backupCodes.map { TwoFactorAuthService.hashBackupCode(it) }
-            
+
             // Update user
             user.setBackupCodes(hashedCodes.joinToString(","))
             updateUserBackupCodes(connection, user.id, hashedCodes.joinToString(","))
-            
+
             ctx.json(mapOf(
                 "success" to true,
                 "backupCodes" to backupCodes,
@@ -502,19 +502,19 @@ object AuthRoutes : RouteProvider() {
         val sql = "UPDATE user SET two_factor_enabled = ?, two_factor_secret = ?, two_factor_setup_complete = ?" +
                 (if (backupCodes != null) ", backup_codes = ?" else "") +
                 " WHERE id = ?"
-        
+
         connection.prepareStatement(sql).use { stmt ->
             stmt.setBoolean(1, enabled)
             stmt.setString(2, secret)
             stmt.setBoolean(3, setupComplete)
-            
+
             if (backupCodes != null) {
                 stmt.setString(4, backupCodes)
                 stmt.setInt(5, userId)
             } else {
                 stmt.setInt(4, userId)
             }
-            
+
             stmt.executeUpdate()
         }
     }
@@ -532,7 +532,7 @@ object AuthRoutes : RouteProvider() {
     fun postReset2FASetup(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         val password: String = ctx.formParam("password")!!
-        
+
         Database.getConnection().use { connection ->
             // Verify current password
             if (!user.validate(connection, password)) {
@@ -542,15 +542,15 @@ object AuthRoutes : RouteProvider() {
                 ))
                 return
             }
-            
+
             // Reset 2FA setup
             updateUser2FA(connection, user.id, null, false, false, null)
-            
+
             user.setTwoFactorEnabled(false)
             user.setTwoFactorSecret(null)
             user.setTwoFactorSetupComplete(false)
             user.setBackupCodes(null)
-            
+
             ctx.json(mapOf(
                 "success" to true,
                 "message" to "2FA setup has been reset. You can now set it up again."
@@ -561,7 +561,7 @@ object AuthRoutes : RouteProvider() {
     // Cancel incomplete 2FA setup - no password required since 2FA is not enabled yet
     fun postCancel2FASetup(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
-        
+
         Database.getConnection().use { connection ->
             // Only allow cancellation if 2FA is not enabled (setup is incomplete)
             if (user.isTwoFactorEnabled) {
@@ -571,13 +571,13 @@ object AuthRoutes : RouteProvider() {
                 ))
                 return
             }
-            
+
             // Cancel incomplete setup by clearing the secret
             updateUser2FA(connection, user.id, null, false, false, null)
-            
+
             user.setTwoFactorSecret(null)
             user.setTwoFactorSetupComplete(false)
-            
+
             ctx.json(mapOf(
                 "success" to true,
                 "message" to "2FA setup has been cancelled."

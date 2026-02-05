@@ -1,8 +1,8 @@
 package org.ngafid.core.flights.export;
 
-import java.util.Map;
-
 import static org.ngafid.core.flights.export.XPlaneParameters.*;
+
+import java.util.Map;
 
 /**
  * Create exports for X-Plane 11
@@ -40,4 +40,3 @@ public class XPlane11Export extends XPlaneExport {
         }
     }
 }
-

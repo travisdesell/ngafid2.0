@@ -1,13 +1,6 @@
 package org.ngafid.core.uploads;
 
-import org.apache.commons.compress.archivers.zip.Zip64Mode;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.Config;
-import org.ngafid.core.kafka.Configuration;
-import org.ngafid.core.kafka.Topic;
-import org.ngafid.core.util.MD5;
+import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -22,8 +15,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Config;
+import org.ngafid.core.kafka.Configuration;
+import org.ngafid.core.kafka.Topic;
+import org.ngafid.core.util.MD5;
 
 /**
  * Upload object, corresponding to a file uploaded by a user.

@@ -1,14 +1,13 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.flights.Parameters.Unit;
-import org.ngafid.core.util.Compression;
-import org.ngafid.core.util.NormalizedColumn;
-
-import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.core.flights.Parameters.Unit;
+import org.ngafid.core.util.Compression;
+import org.ngafid.core.util.NormalizedColumn;
 
 public final class StringTimeSeries {
 

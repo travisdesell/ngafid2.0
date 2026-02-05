@@ -1,10 +1,11 @@
 package org.ngafid.processor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Database;
@@ -13,9 +14,6 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Events;
 import org.ngafid.core.kafka.Topic;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Scans the database for flights with missing rows from the `flight_processed` table and adds the appropriate events
@@ -41,7 +39,7 @@ public class EventObserver {
         condition.append("""
                 NOT EXISTS (
                     SELECT flight_id FROM flight_processed WHERE
-                        flight_processed.event_definition_id =\s""").append(event.getId()).append(""" 
+                        flight_processed.event_definition_id =\s""").append(event.getId()).append("""
                         AND flight_processed.flight_id = flights.id)
                 """);
 
@@ -58,7 +56,7 @@ public class EventObserver {
 
         /* Start Docker Service Heartbeat Producer */
         DockerServiceHeartbeat.autostart();
-        
+
         try (KafkaProducer<String, String> producer = Events.createProducer()) {
 
             while (true) {

@@ -1,15 +1,14 @@
 package org.ngafid.processor.events.proximity;
 
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Logger;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Pair;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.logging.Logger;
 
 public final class FlightTimeLocation {
     //CHECKSTYLE:OFF
@@ -186,4 +185,3 @@ public final class FlightTimeLocation {
         return hasSeriesData;
     }
 }
-

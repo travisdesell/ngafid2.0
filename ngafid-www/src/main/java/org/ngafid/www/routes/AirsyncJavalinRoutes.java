@@ -1,17 +1,12 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.airsync.AirSyncImport.getImports;
+import static org.ngafid.airsync.AirSyncImport.getNumImports;
+import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.GSON;
+
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.airsync.AirSyncFleet;
-import org.ngafid.airsync.AirSyncImport;
-import org.ngafid.airsync.AirSyncImportResponse;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.PaginationResponse;
-import org.ngafid.www.Navbar;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,11 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import static org.ngafid.airsync.AirSyncImport.getImports;
-import static org.ngafid.airsync.AirSyncImport.getNumImports;
-import static org.ngafid.www.WebServer.gson;
-import static org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.GSON;
+import org.ngafid.airsync.AirSyncFleet;
+import org.ngafid.airsync.AirSyncImport;
+import org.ngafid.airsync.AirSyncImportResponse;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.Navbar;
 
 public class AirsyncJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AirsyncJavalinRoutes.class.getName());

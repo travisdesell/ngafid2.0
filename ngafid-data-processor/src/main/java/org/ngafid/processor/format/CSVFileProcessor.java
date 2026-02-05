@@ -1,5 +1,8 @@
 package org.ngafid.processor.format;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,7 +21,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.Airframes.AliasKey;
 import org.ngafid.core.flights.DoubleTimeSeries;
@@ -28,11 +30,6 @@ import org.ngafid.core.flights.FlightProcessingException;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.MD5;
 import org.ngafid.processor.Pipeline;
-
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
-
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders

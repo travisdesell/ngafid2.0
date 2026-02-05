@@ -1,5 +1,11 @@
 package org.ngafid.processor.steps;
 
+import static org.ngafid.core.flights.Parameters.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
@@ -9,13 +15,6 @@ import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.processor.format.FlightBuilder;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Set;
-
-import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Computes the set of series related to airport proximity. This provides the nearest runway, nearest airport, and the

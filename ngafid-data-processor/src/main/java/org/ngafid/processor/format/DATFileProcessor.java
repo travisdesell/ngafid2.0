@@ -1,13 +1,13 @@
 package org.ngafid.processor.format;
 
+import static org.ngafid.core.flights.Parameters.UNIX_TIME_SECONDS;
+import static org.ngafid.core.flights.Parameters.UTC_DATE_TIME;
+import static org.ngafid.core.util.TimeUtils.addMilliseconds;
+
 import Files.*;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.processor.Pipeline;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,10 +23,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.ngafid.core.flights.Parameters.UNIX_TIME_SECONDS;
-import static org.ngafid.core.flights.Parameters.UTC_DATE_TIME;
-import static org.ngafid.core.util.TimeUtils.addMilliseconds;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.processor.Pipeline;
 
 /**
  * Parses DAT files from DJI flights after converting them to CSV

@@ -1,5 +1,10 @@
 package org.ngafid.processor.steps;
 
+import static org.ngafid.core.flights.Parameters.VSPD;
+import static org.ngafid.core.flights.Parameters.VSPD_CALCULATED;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 import org.ngafid.core.event.CustomEvent;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.FatalFlightFileException;
@@ -7,12 +12,6 @@ import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.events.AbstractEventScanner;
 import org.ngafid.processor.events.SpinEventScanner;
 import org.ngafid.processor.format.FlightBuilder;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import static org.ngafid.core.flights.Parameters.VSPD;
-import static org.ngafid.core.flights.Parameters.VSPD_CALCULATED;
 
 /**
  * There are two event definitions for spin events, high and low altitude spins. The scanner searches for both simultaneously,

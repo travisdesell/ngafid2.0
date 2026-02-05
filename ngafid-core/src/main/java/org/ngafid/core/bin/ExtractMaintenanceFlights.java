@@ -1,12 +1,6 @@
 package org.ngafid.core.bin;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.export.CSVWriter;
-import org.ngafid.core.flights.export.CachedCSVWriter;
-import org.ngafid.core.flights.maintenance.AircraftTimeline;
-import org.ngafid.core.flights.maintenance.MaintenanceRecord;
-import org.ngafid.core.util.TimeUtils;
+import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 import java.io.*;
 import java.sql.Connection;
@@ -17,8 +11,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
-import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.export.CSVWriter;
+import org.ngafid.core.flights.export.CachedCSVWriter;
+import org.ngafid.core.flights.maintenance.AircraftTimeline;
+import org.ngafid.core.flights.maintenance.MaintenanceRecord;
+import org.ngafid.core.util.TimeUtils;
 
 public final class ExtractMaintenanceFlights {
     private static final HashMap<Integer, MaintenanceRecord> RECORDS_BY_WORKORDER = new HashMap<>();

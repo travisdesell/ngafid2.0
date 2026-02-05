@@ -1,9 +1,5 @@
 package org.ngafid.airsync;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.Upload;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.ngafid.core.Database;
+import org.ngafid.core.uploads.Upload;
 
 /**
  * This class contains code for controlling the AirSync daemon, as well

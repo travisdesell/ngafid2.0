@@ -386,7 +386,7 @@ public class Filter {
     public String toQueryString(int fleetId, ArrayList<Object> parameters) {
 
         if (type != null) {
-        
+
             if (type.equals("RULE")) {
                 return "(" + getRuleQuery(fleetId, parameters) + ")";
 
@@ -403,8 +403,8 @@ public class Filter {
 
             LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
             return "";
-            
-        } 
+
+        }
 
         LOG.severe("Attempted to convert a filter to a String with a 'null' type");
         return "";

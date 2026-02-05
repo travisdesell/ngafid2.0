@@ -1,10 +1,6 @@
 package org.ngafid.core.bin;
 
-import org.apache.commons.cli.*;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.UploadDoesNotExistException;
+import static org.ngafid.core.kafka.Configuration.getUploadProperties;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,8 +13,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.kafka.Configuration.getUploadProperties;
+import org.apache.commons.cli.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Database;
+import org.ngafid.core.uploads.UploadDoesNotExistException;
 
 public enum UploadHelper {
     ;
@@ -91,17 +90,17 @@ public enum UploadHelper {
                 }
             }
         } else if (cmd.hasOption("q")) {
-	    String query = cmd.getOptionValue("q");
-	    String table = cmd.hasOption("fleet") ? "fleet" : "uploads";
+        String query = cmd.getOptionValue("q");
+        String table = cmd.hasOption("fleet") ? "fleet" : "uploads";
 
-	    try (Connection connection = Database.getConnection();
-		 PreparedStatement statement = connection.prepareStatement("SELECT id FROM " + table + " WHERE " + query);
-		 ResultSet resultSet = statement.executeQuery()) {
-	        while (resultSet.next()) {
-		    ids.add(resultSet.getInt(1));
-		}
-	    }
-	}
+        try (Connection connection = Database.getConnection();
+         PreparedStatement statement = connection.prepareStatement("SELECT id FROM " + table + " WHERE " + query);
+         ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+            ids.add(resultSet.getInt(1));
+        }
+        }
+    }
 
         if (cmd.hasOption("fleet")) {
             if (ids.isEmpty())

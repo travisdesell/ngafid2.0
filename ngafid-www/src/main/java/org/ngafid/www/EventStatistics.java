@@ -1,9 +1,7 @@
 package org.ngafid.www;
 
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.www.flights.FlightStatistics;
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateAirframeClause;
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,9 +16,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateAirframeClause;
-import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.www.flights.FlightStatistics;
 
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
@@ -91,7 +90,7 @@ public class EventStatistics {
             while (distinctEventIdsResult.next()) {
                 eventDefinitionIdsInRange.add(distinctEventIdsResult.getInt(1));
             }
-            
+
         }
 
         final List<String> eventNamesInRange = eventDefinitionIdsInRange
@@ -130,13 +129,13 @@ public class EventStatistics {
                 : fleetCounts.getOrDefault(airframeId, 0);
 
             for (String eventName : eventNamesInRange) {
-                
+
                 ecBuilder.ensureEventKey(eventName);
                 ecBuilder.setAggregateTotalFlights(eventName, aggregateTotalFlights);
 
                 if (fleetId >= 0)
                     ecBuilder.setTotalFlights(eventName, fleetTotalFlights);
-                
+
             }
 
         }
@@ -351,7 +350,7 @@ public class EventStatistics {
     public static int getTotalEventCount(Connection connection, int fleetId) throws SQLException {
         return getEventCount(connection, "v_fleet_total_event_counts", "fleet_id = " + fleetId);
     }
-    
+
     public static int getTotalEventCountDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
         return getTotalEventCountDated(connection, fleetId, startDate, endDate, -1);
     }
@@ -366,7 +365,7 @@ public class EventStatistics {
         return getEventCount(connection, "v_fleet_total_event_counts_dated", "fleet_id = " + fleetId + " AND " + clause);
 
     }
-    
+
     public static class FlightCounts {
 
         // Maps airframeId to another map, which maps fleetId to the number of flights

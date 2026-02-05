@@ -1,9 +1,8 @@
 package org.ngafid.core.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.common.serialization.Deserializer;
-
 import java.util.Map;
+import org.apache.kafka.common.serialization.Deserializer;
 
 public class JsonDeserializer<T> implements Deserializer<T> {
     private final ObjectMapper objectMapper = new ObjectMapper();

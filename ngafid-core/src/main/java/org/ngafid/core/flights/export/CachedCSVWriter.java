@@ -1,9 +1,5 @@
 package org.ngafid.core.flights.export;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.uploads.Upload;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +10,9 @@ import java.util.Enumeration;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.uploads.Upload;
 
 public class CachedCSVWriter extends CSVWriter {
     private File zipFile;

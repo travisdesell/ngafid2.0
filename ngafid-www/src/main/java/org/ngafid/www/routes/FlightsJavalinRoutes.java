@@ -1,9 +1,15 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.gson;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
@@ -12,14 +18,6 @@ import org.ngafid.core.flights.*;
 import org.ngafid.core.util.filters.Filter;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
-
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-
-import static org.ngafid.www.WebServer.gson;
 
 public class FlightsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());

@@ -1,10 +1,11 @@
 package org.ngafid.core.airports;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.*;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.*;
 
 class AirportTest {
     @BeforeAll

@@ -1,13 +1,12 @@
 package org.ngafid.processor.terrain;
 
-import org.ngafid.core.Config;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
+import org.ngafid.core.Config;
 
 public class SRTMTile {
     private static final Logger LOG = Logger.getLogger(SRTMTile.class.getName());

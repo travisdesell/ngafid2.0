@@ -1,18 +1,6 @@
 package org.ngafid.processor.format;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.processor.Pipeline;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -24,6 +12,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.processor.Pipeline;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * This class is responsible for parsing GPX files.

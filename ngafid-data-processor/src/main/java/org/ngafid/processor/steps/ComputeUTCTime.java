@@ -1,11 +1,7 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.processor.format.FlightBuilder;
+import static org.ngafid.core.flights.Parameters.*;
+import static org.ngafid.core.util.TimeUtils.ISO_8601_FORMAT;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,9 +12,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Parameters.*;
-import static org.ngafid.core.util.TimeUtils.ISO_8601_FORMAT;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Combines LCL_DATE, LCL_TIME, and UTC_OFFSET into a ISO 8601 extended offset date time. This time coordinate is then
