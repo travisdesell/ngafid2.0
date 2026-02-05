@@ -49,7 +49,6 @@ class InvalidLoginTest {
         modal.findElement(By.id("loginEmail")).sendKeys(fakeemail)
         modal.findElement(By.id("loginPassword")).sendKeys(fakepassword)
         modal.findElement(By.cssSelector("button[type='submit']")).click()
-        println(driver.currentUrl)
         assertTrue(
             wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Invalid")) || (driver.currentUrl.contains("/#!") ))
     }
