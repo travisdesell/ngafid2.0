@@ -9,8 +9,6 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import java.time.Duration
-import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.edge.EdgeOptions
 
 class SeleniumSmokeTest {
     @Test
@@ -42,9 +40,10 @@ class SeleniumSmokeTest {
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
-            val options = EdgeOptions()
+            WebDriverManager.chromedriver().setup()
+            val options = ChromeOptions()
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
-            driver = EdgeDriver(options)
+            driver = ChromeDriver(options)
         }
 
         @JvmStatic
@@ -56,3 +55,4 @@ class SeleniumSmokeTest {
         }
     }
 }
+
