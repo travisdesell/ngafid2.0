@@ -183,10 +183,10 @@ public class Filter {
         String eventName;
         String cond;
 
-        int seperatorIndex;
+        int separatorIndex;
 
         switch (inputs.get(0)) {
-            case "Airframe":
+            case "Airframe" -> {
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 if (inputs.get(1).equals("is")) {
@@ -194,8 +194,9 @@ public class Filter {
                 } else {
                     return "flights.airframe_id = (SELECT id FROM airframes WHERE fleet_id = ? AND airframe != ?)";
                 }
+            }
 
-            case "System ID":
+            case "System ID" -> {
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 if (inputs.get(1).equals("is")) {
@@ -203,15 +204,17 @@ public class Filter {
                 } else {
                     return "flights.fleet_id = ? AND flights.system_id != ?";
                 }
+            }
 
-            case "Flight ID":
+            case "Flight ID" -> {
                 cond = checkOperator(inputs.get(1));
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 return "flights.fleet_id = ? AND flights.id " + cond + " ?";
+            }
 
 
-            case "Tail Number":
+            case "Tail Number" -> {
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 if (inputs.get(1).equals("is")) {
@@ -219,39 +222,47 @@ public class Filter {
                 } else {
                     return "flights.system_id in (SELECT system_id FROM tails WHERE fleet_id = ? AND tail != ?)";
                 }
+            }
 
-            case "Duration":
+            case "Duration" -> {
                 parameters.add(timePad(inputs.get(2)) + ":" + timePad(inputs.get(3)) + ":" + timePad(inputs.get(4)));
                 return "TIMEDIFF(flights.end_time, flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
+            }
 
-            case "Start Date and Time":
+            case "Start Date and Time" -> {
                 parameters.add(getOffsetDateTime(inputs.get(2), inputs.get(3)));
                 return "flights.start_time " + checkOperator(inputs.get(1)) + " ?";
+            }
 
-            case "End Date and Time":
+            case "End Date and Time" -> {
                 parameters.add(getOffsetDateTime(inputs.get(2), inputs.get(3)));
                 return "flights.end_time " + checkOperator(inputs.get(1)) + " ?";
+            }
 
-            case "Start Date":
+            case "Start Date" -> {
                 parameters.add(inputs.get(2));
                 return "DATE(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
+            }
 
-            case "End Date":
+            case "End Date" -> {
                 parameters.add(inputs.get(2));
                 return "DATE(flights.end_time) " + checkOperator(inputs.get(1)) + " ?";
+            }
 
-            case "Start Time", "End Time":
+            case "Start Time", "End Time" -> {
                 parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
                 return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
+            }
 
-            case "Parameter":
+            case "Parameter" -> {
                 parameters.add(inputs.get(2));
                 parameters.add(inputs.get(4));
                 return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND " +
                         "double_series.name_id = (SELECT id FROM double_series_names WHERE name = ?) AND " +
                         "double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
+            }
 
-            case "Airport":
+            case "Airport" -> {
                 String iataCode1 = inputs.get(1).substring(0, 3);
                 parameters.add(iataCode1);
 
@@ -262,8 +273,9 @@ public class Filter {
                     return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
                             ".airport = ?)";
                 }
+            }
 
-            case "Runway":
+            case "Runway" -> {
                 String iataRunway = inputs.get(1);
                 String iataCode2 = iataRunway.substring(0, 3);
                 String runway = iataRunway.substring(6);
@@ -277,40 +289,57 @@ public class Filter {
                     return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
                             ".airport = ? AND itinerary.runway = ?)";
                 }
+            }
 
-            case "Event Count":
+            case "Event Count" -> {
                 eventName = inputs.get(1);
                 cond = checkOperator(inputs.get(2));
+                final int countTarget = Integer.parseInt(inputs.get(3));
 
-                seperatorIndex = eventName.indexOf(" - ");
-                if (seperatorIndex < 0) {
-                    parameters.add(eventName);
-                    parameters.add(inputs.get(3));
+                separatorIndex = eventName.indexOf(" - ");
 
-                    return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed" +
-                            ".flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions " +
-                            "WHERE event_definitions.name = ? AND event_definitions.airframe_id = 0) AND " +
-                            "flight_processed.count " + cond + " ?)";
-                } else {
-                    String airframeName = eventName.substring(seperatorIndex + 3);
-                    eventName = eventName.substring(0, seperatorIndex);
+                // No airframe specified
+                if (separatorIndex < 0) {
 
                     parameters.add(eventName);
-                    parameters.add(airframeName);
-                    parameters.add(inputs.get(3));
+                    parameters.add(countTarget);
 
-                    return "EXISTS (SELECT flight_id FROM flight_processed WHERE flights.id = flight_processed" +
-                            ".flight_id AND flight_processed.event_definition_id = (SELECT id FROM event_definitions " +
-                            "WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM " +
-                            "airframes WHERE airframe = ?)) AND flight_processed.count " + cond + " ?)";
+                    return
+                        " (SELECT COUNT(*) FROM events e "
+                        + " WHERE e.flight_id = flights.id "
+                        + " AND e.event_definition_id = ( "
+                        + "     SELECT id FROM event_definitions "
+                        + "     WHERE name = ? and airframe_id = 0 "
+                        + " )) " + cond + " ? ";
+                    
                 }
 
-            case "Event Severity":
+                // Otherwise, use specified airframe
+                final int AIRFRAME_NAME_START_OFFSET = 3;
+                final String airframeName = eventName.substring(separatorIndex + AIRFRAME_NAME_START_OFFSET);
+                eventName = eventName.substring(0, separatorIndex);
+
+                parameters.add(eventName);
+                parameters.add(airframeName);
+                parameters.add(countTarget);
+
+                return
+                    " (SELECT COUNT(*) FROM events e "
+                    + " WHERE e.flight_id = flights.id "
+                    + " AND e.event_definition_id = ( "
+                    + "     SELECT id FROM event_definitions "
+                    + "     WHERE name = ? AND airframe_id = ( "
+                    + "         SELECT id FROM airframes WHERE airframe = ? "
+                    + "     ) "
+                    + " )) " + cond + " ? ";
+            }
+
+            case "Event Severity" -> {
                 eventName = inputs.get(1);
                 cond = checkOperator(inputs.get(2));
 
-                seperatorIndex = eventName.indexOf(" - ");
-                if (seperatorIndex < 0) {
+                separatorIndex = eventName.indexOf(" - ");
+                if (separatorIndex < 0) {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
@@ -318,8 +347,8 @@ public class Filter {
                             ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
                             "? AND event_definitions.airframe_id = 0) AND events.severity " + cond + " ?)";
                 } else {
-                    String airframeName = eventName.substring(seperatorIndex + 3);
-                    eventName = eventName.substring(0, seperatorIndex);
+                    String airframeName = eventName.substring(separatorIndex + 3);
+                    eventName = eventName.substring(0, separatorIndex);
 
                     parameters.add(eventName);
                     parameters.add(airframeName);
@@ -330,13 +359,14 @@ public class Filter {
                             "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
                             " events.severity " + cond + " ?)";
                 }
+            }
 
-            case "Event Duration":
+            case "Event Duration" -> {
                 eventName = inputs.get(1);
                 cond = checkOperator(inputs.get(2));
 
-                seperatorIndex = eventName.indexOf(" - ");
-                if (seperatorIndex < 0) {
+                separatorIndex = eventName.indexOf(" - ");
+                if (separatorIndex < 0) {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
@@ -345,8 +375,8 @@ public class Filter {
                             "? AND event_definitions.airframe_id = 0) AND ((events.end_line - events.start_line) + 1)" +
                             " " + cond + " ?)";
                 } else {
-                    String airframeName = eventName.substring(seperatorIndex + 3);
-                    eventName = eventName.substring(0, seperatorIndex);
+                    String airframeName = eventName.substring(separatorIndex + 3);
+                    eventName = eventName.substring(0, separatorIndex);
 
                     parameters.add(eventName);
                     parameters.add(airframeName);
@@ -357,8 +387,9 @@ public class Filter {
                             "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
                             " ((events.end_line - events.start_line) + 1) " + cond + " ?)";
                 }
+            }
 
-            case "Tag":
+            case "Tag" -> {
                 parameters.add(fleetId);
                 parameters.add(inputs.get(1)); //we can ignore index 0, it is for the UI only
                 String det = inputs.get(2);
@@ -369,9 +400,11 @@ public class Filter {
                     return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags " +
                             "WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
                 }
+            }
 
-            default:
+            default -> {
                 return "";
+            }
         }
     }
 
@@ -387,22 +420,25 @@ public class Filter {
 
         if (type != null) {
         
-            if (type.equals("RULE")) {
-                return "(" + getRuleQuery(fleetId, parameters) + ")";
+            String queryStringOut;
 
-            } else if (type.equals("GROUP")) {
-                StringBuilder string = new StringBuilder();
-                for (int i = 0; i < filters.size(); i++) {
-                    if (i > 0) string.append(" ").append(condition).append(" ");
-                    string.append(filters.get(i).toQueryString(fleetId, parameters));
+            switch (type) {
+                case "RULE" -> queryStringOut = "(" + getRuleQuery(fleetId, parameters) + ")";
+                case "GROUP" -> {
+                    StringBuilder string = new StringBuilder();
+                    for (int i = 0; i < filters.size(); i++) {
+                        if (i > 0) string.append(" ").append(condition).append(" ");
+                        string.append(filters.get(i).toQueryString(fleetId, parameters));
+                    }   queryStringOut = "(" + string + ")";
                 }
-
-                return "(" + string + ")";
-
+                default -> {
+                    LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
+                    return "";
+                }
             }
 
-            LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            return "";
+            LOG.info(() -> "Generated Filter query string: " + queryStringOut);
+            return queryStringOut;
             
         } 
 
