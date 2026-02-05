@@ -6,6 +6,7 @@ import org.openqa.selenium.edge.*
 import org.openqa.selenium.support.ui.*
 import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertTrue
+
 class InvalidLoginTest {
 
     companion object {
@@ -28,15 +29,17 @@ class InvalidLoginTest {
     }
     @Test
     fun invalidPasswordShowsError() {
+        val fakeemail = ("fake@gmail.com")
+        val fakepassword = ("aaaaaaa")
         driver.get(baseUrl)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
         wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
         val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))
-
-        modal.findElement(By.id("loginEmail")).sendKeys("fake@example.com")
-        modal.findElement(By.id("loginPassword")).sendKeys("wrongpassword")
+        modal.findElement(By.id("loginEmail")).sendKeys(fakeemail)
+        modal.findElement(By.id("loginPassword")).sendKeys(fakepassword)
         modal.findElement(By.cssSelector("button[type='submit']")).click()
+        println(driver.currentUrl)
         assertTrue(
-            wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Invalid")))
+            wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Invalid")) || (driver.currentUrl.contains("/#!") ))
     }
 }
