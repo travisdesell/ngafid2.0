@@ -33,30 +33,32 @@ class PersistenceTest {
             driver.quit()
         }
     }
-    private fun login(wait: WebDriverWait) {
-        val email = requireEnv("NGAFID_TEST_EMAIL")
-        val password = requireEnv("NGAFID_TEST_PASSWORD")
-        wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
-        val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))
-        modal.findElement(By.id("loginEmail")).sendKeys(email)
-        modal.findElement(By.id("loginPassword")).sendKeys(password)
-        modal.findElement(By.cssSelector("button[type='submit']")).click()
-        println("login successful")
-        driver.get(baseUrl)
-        val currentUrl = driver.currentUrl
-        println("logged in url is $currentUrl")
-        wait.until(ExpectedConditions.invisibilityOf(modal))
-    }
     @Test
     fun userStaysLoggedInAfterRefresh() {
-        driver.get(baseUrl)
-        println("base url is $baseUrl")
+        val options = EdgeOptions()
+        options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox")
+
+        val driver = EdgeDriver(options)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
-        login(wait)
-        driver.navigate().refresh()
-         assertTrue(
-            driver.pageSource.contains("Account") || driver.pageSource.contains("Status"),
-            "Expected logged-in UI after login"
-        )
+
+        try {
+            val email = requireEnv("NGAFID_TEST_EMAIL")
+            val password = requireEnv("NGAFID_TEST_PASSWORD")
+            driver.get("http://localhost:8181")
+            wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
+            val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))
+            modal.findElement(By.id("loginEmail")).sendKeys(email)
+            modal.findElement(By.id("loginPassword")).sendKeys(password)
+            modal.findElement(By.cssSelector("button[type='submit']")).click()
+            wait.until(ExpectedConditions.invisibilityOf(modal))
+            wait.until { driver.currentUrl.contains("/protected") }
+            driver.navigate().refresh()
+            wait.until { driver.currentUrl.contains("/protected") }
+            assertTrue(driver.findElements(By.linkText("Login")).isEmpty(),"User should remain logged in after refresh"
+            )
+        } finally {
+            driver.quit()
+        }
     }
+
 }
