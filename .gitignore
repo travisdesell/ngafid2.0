@@ -26,4 +26,3 @@ ngafid-email.conf
 ngafid.properties
 .vscode/
 *.log
-ngafid-www/src/test/kotlin/org/ngafid/www/.env
