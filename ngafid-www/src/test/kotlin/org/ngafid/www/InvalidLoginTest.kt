@@ -6,6 +6,8 @@ import org.openqa.selenium.edge.*
 import org.openqa.selenium.support.ui.*
 import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 
 class InvalidLoginTest {
 
@@ -14,9 +16,9 @@ class InvalidLoginTest {
         @BeforeAll
         @JvmStatic
         fun setup() {
-            val options = EdgeOptions()
+            val options = ChromeOptions()
             options.addArguments("--headless=new")
-            driver = EdgeDriver(options)
+            driver = ChromeDriver(options)
         }
 
         @AfterAll

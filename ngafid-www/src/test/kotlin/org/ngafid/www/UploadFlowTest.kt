@@ -3,8 +3,8 @@ package org.ngafid.www
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.edge.EdgeOptions
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import org.junit.jupiter.api.Test
 import java.nio.file.Paths
 import java.time.Duration
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.WebElement
+import org.openqa.selenium.edge.EdgeDriver
 
 
 class UploadFlowTest {
@@ -25,9 +26,9 @@ class UploadFlowTest {
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
-            val options = EdgeOptions()
+            val options = ChromeOptions()
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
-            UploadFlowTest.Companion.driver = EdgeDriver(options)
+            UploadFlowTest.Companion.driver = ChromeDriver(options)
         }
         @JvmStatic
         @AfterAll
