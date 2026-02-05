@@ -11,8 +11,6 @@ class InvalidLoginTest {
 
     companion object {
         private lateinit var driver: WebDriver
-        private const val baseUrl = "http://localhost:8181/"
-
         @BeforeAll
         @JvmStatic
         fun setup() {
@@ -27,11 +25,24 @@ class InvalidLoginTest {
             driver.quit()
         }
     }
+    private fun baseUrlFromProperties(): String {
+        val props = java.util.Properties()
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("ngafid.properties")
+            .use { props.load(it) }
+
+        val port = props.getProperty("ngafid.port")
+            ?: error("ngafid.port not found in ngafid.properties")
+
+        return "http://localhost:$port/"
+    }
     @Test
     fun invalidPasswordShowsError() {
+        val baseurl = baseUrlFromProperties()
         val fakeemail = ("fake@gmail.com")
         val fakepassword = ("aaaaaaa")
-        driver.get(baseUrl)
+        driver.get(baseurl)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
         wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
         val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))

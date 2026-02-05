@@ -51,7 +51,6 @@ class LoginFlowTest {
         val email = requireEnv("NGAFID_TEST_EMAIL")
         val password = requireEnv("NGAFID_TEST_PASSWORD")
         driver.get(baseurl)
-        println(baseurl)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
         wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
         val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))

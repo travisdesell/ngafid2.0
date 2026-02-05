@@ -16,7 +16,6 @@ class PersistenceTest {
             ?: throw IllegalStateException("Missing required env var: $name")
     companion object {
         private lateinit var driver: WebDriver
-        private const val baseUrl = "http://localhost:8181/"
         private fun requireEnv(name: String): String =
             System.getenv(name)
                 ?: throw IllegalStateException("Missing required env var: $name")
@@ -33,18 +32,26 @@ class PersistenceTest {
             driver.quit()
         }
     }
+    private fun baseUrlFromProperties(): String {
+        val props = java.util.Properties()
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("ngafid.properties")
+            .use { props.load(it) }
+
+        val port = props.getProperty("ngafid.port")
+            ?: error("ngafid.port not found in ngafid.properties")
+
+        return "http://localhost:$port/"
+    }
     @Test
     fun userStaysLoggedInAfterRefresh() {
-        val options = EdgeOptions()
-        options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox")
-
-        val driver = EdgeDriver(options)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
-
         try {
+            val baseurl = baseUrlFromProperties()
             val email = requireEnv("NGAFID_TEST_EMAIL")
             val password = requireEnv("NGAFID_TEST_PASSWORD")
-            driver.get("http://localhost:8181")
+            driver.get(baseurl)
             wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
             val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))
             modal.findElement(By.id("loginEmail")).sendKeys(email)

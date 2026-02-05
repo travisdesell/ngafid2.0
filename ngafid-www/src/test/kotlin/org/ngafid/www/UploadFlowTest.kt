@@ -19,7 +19,6 @@ import org.openqa.selenium.WebElement
 class UploadFlowTest {
     companion object {
         private lateinit var driver: WebDriver
-        private const val baseUrl = "http://localhost:8181/"
         private fun requireEnv(name: String): String =
             System.getenv(name)
                 ?: throw IllegalStateException("Missing required env var: $name")
@@ -36,8 +35,21 @@ class UploadFlowTest {
             driver.quit()
         }
     }
+    private fun baseUrlFromProperties(): String {
+        val props = java.util.Properties()
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("ngafid.properties")
+            .use { props.load(it) }
+
+        val port = props.getProperty("ngafid.port")
+            ?: error("ngafid.port not found in ngafid.properties")
+
+        return "http://localhost:$port/"
+    }
     @Test
     fun uploadSmallFlightFileSucceeds() {
+        val baseUrl = baseUrlFromProperties()
         val email = requireEnv("NGAFID_TEST_EMAIL")
         val password = requireEnv("NGAFID_TEST_PASSWORD")
         val wait = WebDriverWait(driver, Duration.ofSeconds(15))

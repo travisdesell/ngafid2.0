@@ -13,8 +13,6 @@ import java.time.Duration
 class UnauthorizedAccessTest {
     companion object {
         private lateinit var driver: WebDriver
-        private const val baseUrl = "http://localhost:8181/"
-
         @BeforeAll
         @JvmStatic
         fun setup() {
@@ -28,19 +26,26 @@ class UnauthorizedAccessTest {
             driver.quit()
         }
     }
+    private fun baseUrlFromProperties(): String {
+        val props = java.util.Properties()
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("ngafid.properties")
+            .use { props.load(it) }
+
+        val port = props.getProperty("ngafid.port")
+            ?: error("ngafid.port not found in ngafid.properties")
+
+        return "http://localhost:$port/"
+    }
     @Test
     fun unauthenticatedUserRedirectedToLogin() {
-        val options = EdgeOptions()
-        options.addArguments("--headless=new")
-        val driver = EdgeDriver(options)
+        val baseurl = baseUrlFromProperties()
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
         try {
-            driver.get("http://localhost:8181/protected/uploads")
-            driver.get(baseUrl)
-            println(driver.currentUrl)
-
+            driver.get("${baseurl}protected/uploads")
             wait.until {
-                driver.currentUrl.contains("login") || driver.pageSource.contains("Login")
+                driver.currentUrl.contains("access_denied") || driver.pageSource.contains("Login")
             }
             assertTrue(driver.pageSource.contains("Login"), "Expected unauthenticated user to be redirected to login")
         } finally {
