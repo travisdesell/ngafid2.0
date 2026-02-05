@@ -17,7 +17,6 @@ import java.time.Duration
 class LoginFlowTest {
     companion object {
         private lateinit var driver: WebDriver
-        private const val baseUrl = "http://localhost:8181/"
         private fun requireEnv(name: String): String =
             System.getenv(name)
                 ?: throw IllegalStateException("Missing required env var: $name")
@@ -34,11 +33,25 @@ class LoginFlowTest {
             driver.quit()
         }
     }
+    private fun baseUrlFromProperties(): String {
+        val props = java.util.Properties()
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("ngafid.properties")
+            .use { props.load(it) }
+
+        val port = props.getProperty("ngafid.port")
+            ?: error("ngafid.port not found in ngafid.properties")
+
+        return "http://localhost:$port/"
+    }
     @Test
     fun loginViaModalSucceeds() {
+        val baseurl = baseUrlFromProperties()
         val email = requireEnv("NGAFID_TEST_EMAIL")
         val password = requireEnv("NGAFID_TEST_PASSWORD")
-        driver.get(baseUrl)
+        driver.get(baseurl)
+        println(baseurl)
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
         wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
         val modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")))
