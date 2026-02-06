@@ -1,8 +1,15 @@
 package org.ngafid.airsync;
 
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
-
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.Fleet;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.uploads.Upload;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,14 +19,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
-import javax.net.ssl.HttpsURLConnection;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.Fleet;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.uploads.Upload;
+
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 
 /**
  * This is a representation of an AirSync enabled fleet in the NGAFID
@@ -385,13 +386,16 @@ public class AirSyncFleet extends Fleet {
             LOG.info("airsync fleet name is uhhhh " + airsyncFleetName);
 
             List<AirSyncAccount> accounts = AirSyncAccount.getAirSyncAccounts(this);
-            AirSyncAccount account = accounts.stream().filter(ac -> ac.name.equals(airsyncFleetName)).findFirst().orElse(null);
+            AirSyncAccount account = accounts.stream()
+                    .filter(airSyncAccount -> airSyncAccount.getName().equals(airsyncFleetName))
+                    .findFirst()
+                    .orElse(null);
 
             if (account == null) {
                 this.aircraft = List.of();
             } else {
                 this.aircraft = aircrafts.stream()
-                        .filter(aircraft -> aircraft.accountToken.equals(account.accountToken))
+                        .filter(airSyncAircraft -> airSyncAircraft.accountToken.equals(account.getAccountToken()))
                         .toList();
             }
         }
