@@ -45,9 +45,7 @@ public class ComputeLaggedAltMSL extends ComputeStep {
     }
 
     public boolean airframeIsValid(String airframe) {
-        for (String blacklisted : AIRFRAME_BLACKLIST)
-            if (airframe.contains(blacklisted))
-                return false;
+        for (String blacklisted : AIRFRAME_BLACKLIST) if (airframe.contains(blacklisted)) return false;
 
         return true;
     }
@@ -56,12 +54,9 @@ public class ComputeLaggedAltMSL extends ComputeStep {
         DoubleTimeSeries altMSL = builder.getDoubleTimeSeries(ALT_MSL);
         DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(ALT_MSL_LAG_DIFF, Parameters.Unit.FT_AGL, altMSL.size());
 
-        for (int i = 0; i < LAG; i++)
-            laggedAltMSL.add(0.0);
-        for (int i = LAG; i < altMSL.size(); i++)
-            laggedAltMSL.add(altMSL.get(i) - altMSL.get(i - LAG));
+        for (int i = 0; i < LAG; i++) laggedAltMSL.add(0.0);
+        for (int i = LAG; i < altMSL.size(); i++) laggedAltMSL.add(altMSL.get(i) - altMSL.get(i - LAG));
 
         builder.addTimeSeries(laggedAltMSL);
     }
-
 }

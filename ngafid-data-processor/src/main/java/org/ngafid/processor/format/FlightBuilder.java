@@ -27,7 +27,7 @@ import org.ngafid.processor.steps.*;
 public class FlightBuilder {
     private static Logger LOG = Logger.getLogger(FlightBuilder.class.getName());
 
-    //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
     // Note that event steps will be added at a separate time as they are a bit more dynamic.
     private static final List<ComputeStep.Factory> PROCESS_STEPS = List.of(
             required(ComputeStartEndTime::new),
@@ -39,8 +39,7 @@ public class FlightBuilder {
             ComputeLOCI::new,
             ComputeItinerary::new,
             ComputeAltAGL::new,
-            ComputeTurnToFinal::new
-    );
+            ComputeTurnToFinal::new);
 
     // Flight metadata - see FlightMeta definition for details.
     public final FlightMeta meta;
@@ -56,7 +55,7 @@ public class FlightBuilder {
      * Same as `doubleTimeSeries`, but for String series.
      */
     private final ConcurrentHashMap<String, StringTimeSeries> stringTimeSeries;
-    //CHECKSTYLE:ON
+    // CHECKSTYLE:ON
     // A list of airports this aircraft visited.
     private ArrayList<Itinerary> itinerary = new ArrayList<>();
 
@@ -87,8 +86,10 @@ public class FlightBuilder {
      * @param doubleTimeSeries The double time series for the flight
      * @param stringTimeSeries The string time series for the flight
      */
-    public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String,
-            StringTimeSeries> stringTimeSeries) {
+    public FlightBuilder(
+            FlightMeta meta,
+            Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         this.doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
         this.stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
         this.meta = meta;
@@ -104,16 +105,19 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
-        ArrayList<ComputeStep> steps =
-                Stream.concat(PROCESS_STEPS.stream()
+        ArrayList<ComputeStep> steps = Stream.concat(
+                        PROCESS_STEPS.stream()
                                 .map(factory -> factory.create(connection, this))
                                 .filter(step -> step.getOutputColumns().stream()
-                                        .noneMatch(x -> doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
-                        ComputeEvent.getAllApplicable(connection, this).stream()
-                ).collect(Collectors.toCollection(ArrayList::new));
+                                        .noneMatch(x ->
+                                                doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
+                        ComputeEvent.getAllApplicable(connection, this).stream())
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        // Some file processors will compute this, others will not. If we don't have UTC_DATE_TIME, add it as a required step.
-        if (!doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS) || !stringTimeSeries.containsKey(Parameters.UTC_DATE_TIME)) {
+        // Some file processors will compute this, others will not. If we don't have UTC_DATE_TIME, add it as a required
+        // step.
+        if (!doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS)
+                || !stringTimeSeries.containsKey(Parameters.UTC_DATE_TIME)) {
             steps.add(required(ComputeUTCTime::new).create(connection, this));
         }
 
@@ -262,7 +266,7 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder setStartDateTime(OffsetDateTime startDateTime) {
-        this.meta.startDateTime = startDateTime;
+        this.meta.setStartDateTime(startDateTime);
         return this;
     }
 
@@ -274,7 +278,7 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder setEndDateTime(OffsetDateTime odt) {
-        this.meta.endDateTime = odt;
+        this.meta.setEndDateTime(odt);
         return this;
     }
 
@@ -301,7 +305,7 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder updateProcessingStatus(int processingStatus) {
-        this.meta.processingStatus |= processingStatus;
+        this.meta.setProcessingStatus(this.meta.getProcessingStatus() | processingStatus);
         return this;
     }
 

@@ -23,7 +23,6 @@ import org.ngafid.core.flights.Flight;
  *
  * @author <a href = apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
-
 public abstract class XPlaneExport {
 
     protected String aircraftPath;
@@ -119,7 +118,6 @@ public abstract class XPlaneExport {
         String date = month + "/" + day + "/" + year;
 
         return date;
-
     }
 
     /**

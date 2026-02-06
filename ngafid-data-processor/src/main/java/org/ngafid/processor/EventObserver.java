@@ -16,15 +16,19 @@ import org.ngafid.core.kafka.Events;
 import org.ngafid.core.kafka.Topic;
 
 /**
- * Scans the database for flights with missing rows from the `flight_processed` table and adds the appropriate events
- * to the event topic.
+ * Scans the database for flights with missing rows from the `flight_processed` table
+ * and adds the appropriate events to the event topic.
  * <p>
- * The event definitions in this program are automatically refreshed periodically, so in the event that event definitions
- * are modified in the database this program does not need to be restarted to detect it.
+ * The event definitions in this program are automatically refreshed periodically, so
+ * in the event that event definitions are modified in the database this program does
+ * not need to be restarted to detect it.
  */
 public class EventObserver {
 
-    private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event) throws SQLException {
+    private EventObserver() {}
+
+    private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event)
+            throws SQLException {
         StringBuilder condition = new StringBuilder();
         if (event.getFleetId() != 0) {
             condition.append(" fleet_id = ").append(event.getFleetId()).append(" ");
@@ -32,7 +36,10 @@ public class EventObserver {
 
         if (event.getAirframeNameId() != 0) {
             if (!condition.isEmpty()) condition.append("AND ");
-            condition.append(" airframe_id = ").append(event.getAirframeNameId()).append(" ");
+            condition
+                    .append(" airframe_id = ")
+                    .append(event.getAirframeNameId())
+                    .append(" ");
         }
 
         if (!condition.isEmpty()) condition.append(" AND ");
@@ -50,7 +57,7 @@ public class EventObserver {
         return Flight.getFlights(connection, extraCondition);
     }
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static void main(String[] args) throws UnknownHostException {
 
@@ -66,8 +73,11 @@ public class EventObserver {
                     for (EventDefinition event : events) {
                         List<Flight> flights = getApplicableFlightsWithoutEvent(connection, event);
                         for (Flight flight : flights) {
-                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), objectMapper.writeValueAsString(new Events.EventToCompute(flight.getId(), event.getId()))));
-                            // Removed premature flight.insertComputedEvents() call - EventConsumer will handle this after successful processing
+                            String eventJson = OBJECT_MAPPER.writeValueAsString(
+                                    new Events.EventToCompute(flight.getId(), event.getId()));
+                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), eventJson));
+                            // Removed premature flight.insertComputedEvents() call
+                            // EventConsumer will handle this after successful processing
                         }
                     }
                 } catch (JsonProcessingException e) {

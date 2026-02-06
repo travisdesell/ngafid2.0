@@ -1,7 +1,11 @@
 package org.ngafid.core.flights;
 
-import static org.ngafid.core.flights.Parameters.COMP_CONV;
-import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.util.filters.Filter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,12 +13,9 @@ import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.filters.Filter;
+
+import static org.ngafid.core.flights.Parameters.COMP_CONV;
+import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods
@@ -25,7 +26,6 @@ import org.ngafid.core.util.filters.Filter;
  * @author <a href = fa3019@rit.edu>Farhad Akhbardeh @ RIT SE</a>
  * @author <a href = apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
-
 public class Flight {
 
     public enum FlightStatus {
@@ -36,10 +36,10 @@ public class Flight {
     }
 
     private static final Logger LOG = Logger.getLogger(Flight.class.getName());
-    private static final String FLIGHT_COLUMNS = "id, fleet_id, uploader_id, upload_id, system_id, airframe_id, " +
-            " start_time, end_time, filename, md5_hash, number_rows, status ";
-    private static final String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, " +
-            "airframe_id, start_time, end_time, filename, md5_hash, number_rows, status";
+    private static final String FLIGHT_COLUMNS = "id, fleet_id, uploader_id, upload_id, system_id, airframe_id, "
+            + " start_time, end_time, filename, md5_hash, number_rows, status ";
+    private static final String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, "
+            + "airframe_id, start_time, end_time, filename, md5_hash, number_rows, status";
 
     private final String filename;
     private final String systemId;
@@ -68,22 +68,26 @@ public class Flight {
     private List<Event> events = new ArrayList<>();
     private transient List<MalformedFlightFileException> exceptions = new ArrayList<>();
 
-    public Flight(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-                  Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary,
-                  List<MalformedFlightFileException> exceptions, List<Event> events) {
-        fleetId = meta.fleetId;
-        uploaderId = meta.uploaderId;
-        uploadId = meta.uploadId;
+    public Flight(
+            FlightMeta meta,
+            Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries,
+            List<Itinerary> itinerary,
+            List<MalformedFlightFileException> exceptions,
+            List<Event> events) {
+        fleetId = meta.getFleetId();
+        uploaderId = meta.getUploaderId();
+        uploadId = meta.getUploadId();
 
-        filename = meta.filename;
+        filename = meta.getFilename();
         status = exceptions.isEmpty() ? FlightStatus.SUCCESS : FlightStatus.WARNING;
-        airframe = meta.airframe;
+        airframe = meta.getAirframe();
 
-        systemId = meta.systemId;
-        suggestedTailNumber = meta.suggestedTailNumber;
-        md5Hash = meta.md5Hash;
-        startDateTime = TimeUtils.UTCtoSQL(meta.startDateTime);
-        endDateTime = TimeUtils.UTCtoSQL(meta.endDateTime);
+        systemId = meta.getSystemId();
+        suggestedTailNumber = meta.getSuggestedTailNumber();
+        md5Hash = meta.getMd5Hash();
+        startDateTime = TimeUtils.utcToSql(meta.getStartDateTime());
+        endDateTime = TimeUtils.utcToSql(meta.getEndDateTime());
 
         this.itinerary = itinerary;
         this.exceptions = exceptions;
@@ -96,10 +100,8 @@ public class Flight {
             numberRows = doubleTimeSeries.values().iterator().next().size();
         }
 
-        for (var series : doubleTimeSeries.values())
-            assert series.size() == numberRows;
-        for (var series : stringTimeSeries.values())
-            assert series.size() == numberRows;
+        for (var series : doubleTimeSeries.values()) assert series.size() == numberRows;
+        for (var series : stringTimeSeries.values()) assert series.size() == numberRows;
     }
 
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
@@ -158,26 +160,26 @@ public class Flight {
      *                      the date range is large so it may be smart to not give the users full
      *                      control over this parameter on the frontend? We'll see.
      */
-    public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate,
-                                                                    String endDate, String airportIataCode, int limit) throws SQLException {
-        //CHECKSTYLE:OFF
-        String extraCondition = "    (                " +
-                "    EXISTS(          " +
-                "        SELECT       " +
-                "          id         " +
-                "        FROM         " +
-                "          itinerary  " +
-                "        WHERE        " +
-                "          itinerary.flight_id = flights.id AND " +
-                "          airport = '" + airportIataCode + "' " +
-                "    ) " +
-                "AND   " +
-                "    ( " +
-                "           (start_time BETWEEN '" + startDate + "' AND '" + endDate + "') " +
-                "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
-                "    )" +
-                " ) ";
-        //CHECKSTYLE:ON
+    public static List<Flight> getFlightsWithinDateRangeFromAirport(
+            Connection connection, String startDate, String endDate, String airportIataCode, int limit)
+            throws SQLException {
+        // CHECKSTYLE:OFF
+        String extraCondition = "    (                " + "    EXISTS(          "
+                + "        SELECT       "
+                + "          id         "
+                + "        FROM         "
+                + "          itinerary  "
+                + "        WHERE        "
+                + "          itinerary.flight_id = flights.id AND "
+                + "          airport = '"
+                + airportIataCode + "' " + "    ) "
+                + "AND   "
+                + "    ( "
+                + "           (start_time BETWEEN '"
+                + startDate + "' AND '" + endDate + "') " + "        OR (end_time   BETWEEN '"
+                + startDate + "' AND '" + endDate + "')  " + "    )"
+                + " ) ";
+        // CHECKSTYLE:ON
         return getFlights(connection, extraCondition, limit);
     }
 
@@ -189,8 +191,8 @@ public class Flight {
     }
 
     private static ArrayList<Flight> getFlightsFromDb(Connection connection, String queryString) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
 
             ArrayList<Flight> flights = new ArrayList<>();
             while (resultSet.next()) {
@@ -231,8 +233,8 @@ public class Flight {
             }
         } else {
             if (filter != null) {
-                queryStr = "SELECT count(id) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId,
-                        parameters) + ")";
+                queryStr = "SELECT count(id) FROM flights WHERE fleet_id = ? AND ("
+                        + filter.toQueryString(fleetId, parameters) + ")";
             } else {
                 queryStr = "SELECT count(id) FROM flights WHERE fleet_id = ?";
             }
@@ -248,8 +250,8 @@ public class Flight {
         }
     }
 
-    private static void prepareFilterQuery(int fleetId, Filter filter, ArrayList<Object> parameters,
-                                           PreparedStatement query) throws SQLException {
+    private static void prepareFilterQuery(
+            int fleetId, Filter filter, ArrayList<Object> parameters, PreparedStatement query) throws SQLException {
         if (fleetId > 0) query.setInt(1, fleetId);
 
         if (filter != null) {
@@ -257,29 +259,41 @@ public class Flight {
         }
     }
 
-    public static ArrayList<Flight> getFlightsSorted(Connection connection, int fleetId, Filter filter,
-                                                     int currentPage, int pageSize, String orderingParameter,
-                                                     boolean isAscending) throws SQLException {
+    public static ArrayList<Flight> getFlightsSorted(
+            Connection connection,
+            int fleetId,
+            Filter filter,
+            int currentPage,
+            int pageSize,
+            String orderingParameter,
+            boolean isAscending)
+            throws SQLException {
         return switch (orderingParameter) {
             case "tail_number" ->
-                    getFlightsSortedByTails(connection, fleetId, filter, currentPage, pageSize, isAscending);
-            case "itinerary" -> getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
-                    "itinerary", isAscending);
+                getFlightsSortedByTails(connection, fleetId, filter, currentPage, pageSize, isAscending);
+            case "itinerary" ->
+                getFlightsSortedByOccurrencesInTable(
+                        connection, fleetId, filter, currentPage, pageSize, "itinerary", isAscending);
             case "flight_tags" ->
-                    getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
-                            "flight_tag_map", isAscending);
-            case "events" -> getFlightsSortedByOccurrencesInTable(connection, fleetId, filter, currentPage, pageSize,
-                    "events", isAscending);
+                getFlightsSortedByOccurrencesInTable(
+                        connection, fleetId, filter, currentPage, pageSize, "flight_tag_map", isAscending);
+            case "events" ->
+                getFlightsSortedByOccurrencesInTable(
+                        connection, fleetId, filter, currentPage, pageSize, "events", isAscending);
             case "airports_visited" ->
-                    getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
-            default -> Flight.getFlights(connection, fleetId, filter,
-                    " ORDER BY " + orderingParameter + " " + (isAscending ? "ASC" : "DESC") + " LIMIT " +
-                            (currentPage * pageSize) + "," + pageSize);
+                getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
+            default ->
+                Flight.getFlights(
+                        connection,
+                        fleetId,
+                        filter,
+                        " ORDER BY " + orderingParameter + " " + (isAscending ? "ASC" : "DESC") + " LIMIT "
+                                + (currentPage * pageSize) + "," + pageSize);
         };
     }
 
-    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int currentPage,
-                                               int pageSize) throws SQLException {
+    public static ArrayList<Flight> getFlights(
+            Connection connection, int fleetId, Filter filter, int currentPage, int pageSize) throws SQLException {
         return Flight.getFlights(connection, fleetId, filter, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
     }
 
@@ -299,16 +313,22 @@ public class Flight {
      * @throws SQLException if there is an issue with the query
      * @pre target table MUST have a flight_id foreign key to the flights table
      */
-    private static ArrayList<Flight> getFlightsSortedByOccurrencesInTable(Connection connection, int fleetId,
-                                                                          Filter filter, int currentPage,
-                                                                          int pageSize, String tableName,
-                                                                          boolean isAscending) throws SQLException {
+    private static ArrayList<Flight> getFlightsSortedByOccurrencesInTable(
+            Connection connection,
+            int fleetId,
+            Filter filter,
+            int currentPage,
+            int pageSize,
+            String tableName,
+            boolean isAscending)
+            throws SQLException {
         ArrayList<Object> parameters = new ArrayList<>();
 
-        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM(SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE " +
-                "fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ") f LEFT OUTER JOIN(SELECT " +
-                "flight_id FROM " + tableName + ") AS i ON f.id = i.flight_id" + " GROUP BY f.id ORDER BY COUNT(i" +
-                ".flight_id) " + (isAscending ? "" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
+        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM(SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE "
+                + "fleet_id = ? AND "
+                + filter.toQueryString(fleetId, parameters) + ") f LEFT OUTER JOIN(SELECT " + "flight_id FROM "
+                + tableName + ") AS i ON f.id = i.flight_id" + " GROUP BY f.id ORDER BY COUNT(i" + ".flight_id) "
+                + (isAscending ? "" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
 
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
@@ -334,28 +354,31 @@ public class Flight {
         }
     }
 
-    private static ArrayList<Flight> getFlightsSortedByTails(Connection connection, int fleetId, Filter filter,
-                                                             int currentPage, int pageSize, boolean isAscending)
+    private static ArrayList<Flight> getFlightsSortedByTails(
+            Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, boolean isAscending)
             throws SQLException {
         ArrayList<Object> parameters = new ArrayList<>();
 
-        String queryString = " SELECT " + FLIGHT_COLUMNS_TAILS + " FROM(SELECT " + FLIGHT_COLUMNS + " FROM flights " +
-                "WHERE fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT " +
-                "system_id, tail FROM tails) AS t ON f.system_id = t.system_id ORDER BY t.tail " + (isAscending ?
-                "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
+        String queryString = " SELECT " + FLIGHT_COLUMNS_TAILS + " FROM(SELECT " + FLIGHT_COLUMNS + " FROM flights "
+                + "WHERE fleet_id = ? AND "
+                + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT "
+                + "system_id, tail FROM tails) AS t ON f.system_id = t.system_id ORDER BY t.tail "
+                + (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
 
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
 
-    private static ArrayList<Flight> getFlightsSortedByAirportsVisited(Connection connection, int fleetId,
-                                                                       Filter filter, int currentPage, int pageSize,
-                                                                       boolean isAscending) throws SQLException {
+    private static ArrayList<Flight> getFlightsSortedByAirportsVisited(
+            Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, boolean isAscending)
+            throws SQLException {
         ArrayList<Object> parameters = new ArrayList<>();
 
-        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM (SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE " +
-                "fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT DISTINCT" +
-                " airport, flight_id FROM itinerary)a ON id = a.flight_id GROUP BY f.id ORDER BY COUNT(a.flight_id) " +
-                (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
+        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM (SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE "
+                + "fleet_id = ? AND "
+                + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT DISTINCT"
+                + " airport, flight_id FROM itinerary)a ON id = a.flight_id GROUP BY f.id ORDER BY COUNT(a.flight_id) "
+                + (isAscending ? "ASC" : "DESC")
+                + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
 
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
@@ -370,21 +393,20 @@ public class Flight {
      * @param constraints the additional query constraints appended to the query
      * @return an {@link ArrayList} of flights
      */
-    private static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter,
-                                                String constraints) throws SQLException {
+    private static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String constraints)
+            throws SQLException {
         ArrayList<Object> parameters = new ArrayList<>();
 
-        String queryString =
-                "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId,
-                        parameters) + ")";
+        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = ? AND ("
+                + filter.toQueryString(fleetId, parameters) + ")";
 
         queryString = (constraints != null && !constraints.isEmpty()) ? (queryString + constraints) : queryString;
 
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
 
-    private static ArrayList<Flight> getFlightsFromQueryString(Connection connection, int fleetId,
-                                                               ArrayList<Object> parameters, String queryString) throws SQLException {
+    private static ArrayList<Flight> getFlightsFromQueryString(
+            Connection connection, int fleetId, ArrayList<Object> parameters, String queryString) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.setInt(1, fleetId);
             setQueryParameters(parameters, query);
@@ -421,22 +443,20 @@ public class Flight {
         return getFlights(connection, fleetId, filter, lim);
     }
 
-    public static List<Flight> getFlightsByRange(Connection connection, Filter filter, int fleetId, int lowerId,
-                                                 int upperId) throws SQLException {
+    public static List<Flight> getFlightsByRange(
+            Connection connection, Filter filter, int fleetId, int lowerId, int upperId) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<>();
 
-        String queryString =
-                "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = ?" + " AND (" +
-                        filter.toQueryString(fleetId, parameters) + ") LIMIT " + lowerId + ", " + (upperId - lowerId);
+        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = ?" + " AND ("
+                + filter.toQueryString(fleetId, parameters) + ") LIMIT " + lowerId + ", " + (upperId - lowerId);
 
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
 
     public static List<Flight> getFlightsByRange(Connection connection, int fleetId, int lowerId, int upperId)
             throws SQLException {
-        String queryString =
-                "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " +
-                        fleetId + " LIMIT " + lowerId + ", " + (upperId - lowerId);
+        String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " + fleetId + " LIMIT "
+                + lowerId + ", " + (upperId - lowerId);
 
         return getFlightsFromDb(connection, queryString);
     }
@@ -451,8 +471,8 @@ public class Flight {
 
         if (limit > 0) queryString += " LIMIT " + limit;
 
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
 
             ArrayList<Flight> flights = new ArrayList<>();
             while (resultSet.next()) {
@@ -465,8 +485,8 @@ public class Flight {
 
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE id = " + flightId;
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             if (resultSet.next()) {
                 return new Flight(connection, resultSet);
             } else {
@@ -485,8 +505,8 @@ public class Flight {
      */
     public static String getFilename(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT filename FROM flights WHERE id = " + flightId;
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             String filename = "";
             if (resultSet.next()) {
                 filename = resultSet.getString(1);
@@ -507,8 +527,8 @@ public class Flight {
      */
     private static Set<Integer> getTagIds(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT tag_id FROM flight_tag_map WHERE flight_id = " + flightId;
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             Set<Integer> ids = new HashSet<>();
 
             while (resultSet.next()) {
@@ -580,10 +600,10 @@ public class Flight {
         if (tagIds.isEmpty()) {
             return null;
         }
-        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds,
-                false);
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        String queryString =
+                "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, false);
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             List<FlightTag> tags = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -604,8 +624,8 @@ public class Flight {
     public static List<FlightTag> getAllTags(Connection connection, int fleetId) throws SQLException {
         String queryString =
                 "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE fleet_id = " + fleetId;
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             List<FlightTag> tags = new ArrayList<>();
             while (resultSet.next()) {
                 tags.add(new FlightTag(resultSet));
@@ -623,8 +643,8 @@ public class Flight {
      */
     public static List<String> getAllTagNames(Connection connection) throws SQLException {
         String queryString = "SELECT name FROM flight_tags ";
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             List<String> tagNames = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -645,8 +665,8 @@ public class Flight {
      */
     public static List<String> getAllFleetTagNames(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT name FROM flight_tags WHERE fleet_id =" + fleetId;
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             List<String> tagNames = new ArrayList<>();
             while (resultSet.next()) {
                 tagNames.add(resultSet.getString(1));
@@ -666,8 +686,8 @@ public class Flight {
      */
     public static FlightTag getTag(Connection connection, int tagId) throws SQLException {
         String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = " + tagId;
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             return resultSet.next() ? new FlightTag(resultSet) : null;
         }
     }
@@ -681,17 +701,16 @@ public class Flight {
      * @return a List of FlightTags
      * @throws SQLException if there is an error with the database query
      */
-    public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId,
-                                                      int fleetId) throws SQLException {
+    public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId, int fleetId)
+            throws SQLException {
         Set<Integer> tagIds = getTagIds(connection, flightId);
         if (tagIds.isEmpty()) {
             return getAllTags(connection, fleetId);
         }
 
-        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags "
-                + idLimStr(tagIds, true);
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, true);
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             List<FlightTag> tags = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -714,8 +733,8 @@ public class Flight {
     public static boolean tagExists(Connection connection, int fleetId, String name) throws SQLException {
         String queryString =
                 "SELECT EXISTS (SELECT * FROM flight_tags WHERE name = '" + name + "' AND fleet_id = " + fleetId + ")";
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             return resultSet.next() && resultSet.getBoolean(1);
         }
     }
@@ -748,8 +767,8 @@ public class Flight {
      * @throws SQLException if there is an error with the database query
      */
     public static void disassociateTags(int tagId, Connection connection, int... flightId) throws SQLException {
-        String queryString = "DELETE FROM flight_tag_map " +
-                idLimStr(flightId, "flight_id", false) + " AND tag_id = " + tagId;
+        String queryString =
+                "DELETE FROM flight_tag_map " + idLimStr(flightId, "flight_id", false) + " AND tag_id = " + tagId;
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.executeUpdate();
         }
@@ -849,8 +868,9 @@ public class Flight {
      * @return the new FlightTag instance
      * @throws SQLException if there is an error with the database query
      */
-    public static FlightTag createTag(int fleetId, int flightId, String name, String description, String color,
-                                      Connection connection) throws SQLException {
+    public static FlightTag createTag(
+            int fleetId, int flightId, String name, String description, String color, Connection connection)
+            throws SQLException {
         String queryString = "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS)) {
@@ -901,8 +921,8 @@ public class Flight {
     public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT path FROM sim_aircraft WHERE fleet_id = " + fleetId;
 
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet =
-                query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
             List<String> paths = new ArrayList<>();
             while (resultSet.next()) {
                 paths.add(resultSet.getString(1));
@@ -912,10 +932,9 @@ public class Flight {
         }
     }
 
-    public static double calculateLOCI(DoubleTimeSeries hdg, int index, DoubleTimeSeries roll, DoubleTimeSeries tas,
-                                       double laggedHdg) {
-        double yawRate = Double.isNaN(laggedHdg) ? 0 :
-                180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
+    public static double calculateLOCI(
+            DoubleTimeSeries hdg, int index, DoubleTimeSeries roll, DoubleTimeSeries tas, double laggedHdg) {
+        double yawRate = Double.isNaN(laggedHdg) ? 0 : 180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
 
         double yawComp = yawRate * COMP_CONV;
         double vrComp = ((tas.get(index) / 60) * yawComp);
@@ -924,24 +943,27 @@ public class Flight {
         return Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
     }
 
-    public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights) throws IOException, SQLException {
+    public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights)
+            throws IOException, SQLException {
 
-        //Create a list of flights to batch insert from the iterable
+        // Create a list of flights to batch insert from the iterable
         List<Flight> flightList = new ArrayList<>();
         for (Flight flight : flights) {
             flightList.add(flight);
         }
 
         String sql = """
-            INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time,
+                                 end_time, filename, md5_hash, number_rows, status)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             for (Flight flight : flightList) {
 
-                flight.airframe = new Airframes.Airframe(connection, flight.airframe.getName(), flight.airframe.getType());
+                flight.airframe =
+                        new Airframes.Airframe(connection, flight.airframe.getName(), flight.airframe.getType());
                 Airframes.setAirframeFleet(connection, flight.airframe.getId(), flight.fleetId);
                 Tails.setSuggestedTail(connection, flight.fleetId, flight.systemId, flight.suggestedTailNumber);
                 flight.tailNumber = Tails.getTail(connection, flight.fleetId, flight.systemId);
@@ -950,21 +972,16 @@ public class Flight {
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
 
-                    //Got a generated key, set the flight id
-                    if (rs.next())
-                        flight.id = rs.getInt(1);
+                    // Got a generated key, set the flight id
+                    if (rs.next()) flight.id = rs.getInt(1);
 
-                    //Otherwise, throw an exception
-                    else
-                        throw new SQLException("Failed to retrieve generated id for flight " + flight.systemId);
-
+                    // Otherwise, throw an exception
+                    else throw new SQLException("Failed to retrieve generated id for flight " + flight.systemId);
                 }
-
             }
-
         }
 
-        //Set the flight ID for each event in the flight
+        // Set the flight ID for each event in the flight
         for (Flight flight : flightList) {
             for (Event event : flight.events) {
                 event.setFlightId(flight.id);
@@ -975,78 +992,70 @@ public class Flight {
         for (Flight flight : flightList) {
 
             // Flight has no events, skip it
-            if (flight.events == null || flight.events.isEmpty())
-                continue;
+            if (flight.events == null || flight.events.isEmpty()) continue;
 
             Event.batchInsertion(connection, flight, flight.events);
-
         }
 
         try (PreparedStatement doubleTSPreparedStatement = DoubleTimeSeries.createPreparedStatement(connection)) {
 
-            //Insert all double time series for each flight
+            // Insert all double time series for each flight
             for (Flight flight : flightList)
                 for (var doubleTS : flight.doubleTimeSeries.values())
                     doubleTS.addBatch(connection, doubleTSPreparedStatement, flight.id);
 
             doubleTSPreparedStatement.executeBatch();
-
         }
 
         try (PreparedStatement stringTSPreparedStatement = StringTimeSeries.createPreparedStatement(connection)) {
 
-            //Insert all string time series for each flight
+            // Insert all string time series for each flight
             for (Flight flight : flightList)
                 for (var stringTS : flight.stringTimeSeries.values())
                     stringTS.addBatch(connection, stringTSPreparedStatement, flight.id);
 
             stringTSPreparedStatement.executeBatch();
-
         }
 
         try (PreparedStatement itineraryPreparedStatement = Itinerary.createPreparedStatement(connection);
-             PreparedStatement airportPreparedStatement = Itinerary.createAirportPreparedStatement(connection);
-             PreparedStatement runwayPreparedStatement = Itinerary.createRunwayPreparedStatement(connection)) {
+                PreparedStatement airportPreparedStatement = Itinerary.createAirportPreparedStatement(connection);
+                PreparedStatement runwayPreparedStatement = Itinerary.createRunwayPreparedStatement(connection)) {
 
             for (Flight flight : flightList) {
 
-                //Flight has no itinerary, skip it
-                if (flight.itinerary == null)
-                    continue;
+                // Flight has no itinerary, skip it
+                if (flight.itinerary == null) continue;
 
-                //Add itinerary, airport, and runway data for each flight
+                // Add itinerary, airport, and runway data for each flight
                 for (int i = 0; i < flight.itinerary.size(); i++)
-                    flight.itinerary.get(i).addBatch(
-                        itineraryPreparedStatement,
-                        airportPreparedStatement,
-                        runwayPreparedStatement,
-                        flight.fleetId,
-                        flight.id,
-                        i
-                    );
-
+                    flight.itinerary
+                            .get(i)
+                            .addBatch(
+                                    itineraryPreparedStatement,
+                                    airportPreparedStatement,
+                                    runwayPreparedStatement,
+                                    flight.fleetId,
+                                    flight.id,
+                                    i);
             }
 
             itineraryPreparedStatement.executeBatch();
             airportPreparedStatement.executeBatch();
             runwayPreparedStatement.executeBatch();
-
         }
 
         try (PreparedStatement warningPreparedStatement = FlightWarning.createPreparedStatement(connection)) {
 
-            //Insert all flight warnings for each flight
+            // Insert all flight warnings for each flight
             for (Flight flight : flightList)
                 for (var e : flight.exceptions)
                     new FlightWarning(e.getMessage()).addBatch(connection, warningPreparedStatement, flight.id);
 
             warningPreparedStatement.executeBatch();
-
         }
 
-
-        try (PreparedStatement processingStatusStatement = connection.prepareStatement("UPDATE flights SET " +
-                "status = ? WHERE id = ?")) {
+        try (PreparedStatement processingStatusStatement =
+                connection.prepareStatement("UPDATE flights SET " + "status = ? WHERE id = ?")) {
 
             for (Flight flight : flightList) {
                 processingStatusStatement.setString(1, flight.status.toString());
@@ -1065,6 +1074,8 @@ public class Flight {
     /**
      * Updates the v_aggregate_flight_hours_by_airframe table for a given flight.
      * Only updates if the flight status is SUCCESS or WARNING. Do we need to add failed as well?
+     * @param connection Connection to the database
+     * @param flight the flight to update the aggregate hours for
      */
     public static void updateAggregateFlightHoursByAirframe(Connection connection, Flight flight) throws SQLException {
         // Clarify if we need this
@@ -1075,9 +1086,11 @@ public class Flight {
             java.sql.Timestamp end = java.sql.Timestamp.valueOf(flight.endDateTime);
             double hours = (end.getTime() - start.getTime()) / 1000.0 / 3600.0;
             if (hours <= 0) return;
-            String sql = "INSERT INTO v_aggregate_flight_hours_by_airframe (airframe_id, num_flights, total_flight_hours) " +
-                         "VALUES (?, 1, ?) " +
-                         "ON DUPLICATE KEY UPDATE num_flights = num_flights + 1, total_flight_hours = total_flight_hours + VALUES(total_flight_hours)";
+            String sql =
+                    "INSERT INTO v_aggregate_flight_hours_by_airframe (airframe_id, num_flights, total_flight_hours) "
+                            + "VALUES (?, 1, ?) "
+                            + "ON DUPLICATE KEY UPDATE num_flights = num_flights + 1, "
+                            + "total_flight_hours = total_flight_hours + VALUES(total_flight_hours)";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setInt(1, flight.airframe.getId());
                 stmt.setDouble(2, hours);
@@ -1103,11 +1116,11 @@ public class Flight {
                                 number_rows,
                                 status
                             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                Statement.RETURN_GENERATED_KEYS);
+                        """, Statement.RETURN_GENERATED_KEYS);
     }
 
-    public void insertComputedEvents(Connection connection, List<EventDefinition> eventDefinitions) throws SQLException {
+    public void insertComputedEvents(Connection connection, List<EventDefinition> eventDefinitions)
+            throws SQLException {
         String query = """
                     INSERT IGNORE INTO `flight_processed` SET
                         fleet_id = ?,
@@ -1142,8 +1155,8 @@ public class Flight {
      * @throws SQLException                 if there is an issue with the database
      * @throws MalformedFlightFileException if a required column is missing
      */
-    public void checkCalculationParameters(String calculationName, String... seriesNames) throws IOException,
-            MalformedFlightFileException, SQLException {
+    public void checkCalculationParameters(String calculationName, String... seriesNames)
+            throws IOException, MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
             if (!this.doubleTimeSeries.containsKey(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
@@ -1366,9 +1379,9 @@ public class Flight {
             afterFirst = false;
             for (DoubleTimeSeries timeSeries : series) {
                 String name = timeSeries.getName();
-                if (name.equals("AirportDistance") || name.equals("RunwayDistance") ||
-                        timeSeries.getMin() == timeSeries.getMax())
-                    continue;
+                if (name.equals("AirportDistance")
+                        || name.equals("RunwayDistance")
+                        || timeSeries.getMin() == timeSeries.getMax()) continue;
                 if (afterFirst) printWriter.print(",");
                 printWriter.print(timeSeries.get(i));
                 afterFirst = true;

@@ -53,7 +53,9 @@ public class AircraftFleetTailsJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             List<String> names = new ArrayList<String>();
 
-            try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name"); ResultSet resultSet = query.executeQuery()) {
+            try (PreparedStatement query =
+                            connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
+                    ResultSet resultSet = query.executeQuery()) {
                 while (resultSet.next()) {
                     names.add(resultSet.getString(1));
                 }

@@ -66,16 +66,14 @@ public class ComputeLOCI extends ComputeStep {
 
         int length = roll.size();
 
-        DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", length,
-                (int index) -> {
-                    double laggedHdg = hdgLagged.get(index);
-                    return calculateLOCI(hdg, index, roll, tas, laggedHdg);
-                });
-        DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", length,
-                index -> {
-                    double prob = stallIndex.get(index) * coordIndex.get(index);
-                    return prob / 100;
-                });
+        DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", length, (int index) -> {
+            double laggedHdg = hdgLagged.get(index);
+            return calculateLOCI(hdg, index, roll, tas, laggedHdg);
+        });
+        DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", length, index -> {
+            double prob = stallIndex.get(index) * coordIndex.get(index);
+            return prob / 100;
+        });
 
         builder.addTimeSeries(coordIndex);
         builder.addTimeSeries(loci);

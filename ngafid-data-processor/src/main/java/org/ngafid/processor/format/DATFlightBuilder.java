@@ -7,8 +7,10 @@ import org.ngafid.core.flights.StringTimeSeries;
 
 public class DATFlightBuilder extends FlightBuilder {
 
-    public DATFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-                            Map<String, StringTimeSeries> stringTimeSeries) {
+    public DATFlightBuilder(
+            FlightMeta meta,
+            Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         super(meta, doubleTimeSeries, stringTimeSeries);
     }
 }

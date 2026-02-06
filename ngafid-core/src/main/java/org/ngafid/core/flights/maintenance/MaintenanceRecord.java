@@ -49,7 +49,6 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     private final ArrayList<MaintenanceRecord> combinedRecords = new ArrayList<MaintenanceRecord>();
 
-
     public MaintenanceRecord(String line) {
         String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
 
@@ -83,8 +82,8 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         if (!originalAction.equals(other.originalAction)) mismatches.add("originalAction");
 
         if (mismatches.contains("workorderNumber")) {
-            System.err.println("Cannot combine two records with different workorder numbers: "
-                    + workorderNumber + " vs " + other.workorderNumber);
+            System.err.println("Cannot combine two records with different workorder numbers: " + workorderNumber
+                    + " vs " + other.workorderNumber);
             System.exit(1);
         }
 

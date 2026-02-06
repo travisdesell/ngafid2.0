@@ -55,60 +55,53 @@ public class ComputeStallIndex extends ComputeStep {
         DoubleTimeSeries ias = builder.getDoubleTimeSeries(IAS);
         int length = ias.size();
 
-        if (builder.meta.airframe.getName().equals(AIRFRAME_CESSNA_172S)) {
-            DoubleTimeSeries cas = DoubleTimeSeries.computed(CAS, Unit.KNOTS, length,
-                    index -> {
-                        double iasValue = ias.get(index);
+        if (builder.meta.getAirframe().getName().equals(AIRFRAME_CESSNA_172S)) {
+            DoubleTimeSeries cas = DoubleTimeSeries.computed(CAS, Unit.KNOTS, length, index -> {
+                double iasValue = ias.get(index);
 
-                        if (iasValue < 70.d)
-                            iasValue = (0.7d * iasValue) + 20.667;
+                if (iasValue < 70.d) iasValue = (0.7d * iasValue) + 20.667;
 
-                        return iasValue;
-                    });
+                return iasValue;
+            });
             cas.setTemporary(true);
             builder.addTimeSeries(cas);
         }
 
-        DoubleTimeSeries vspdCalculated = DoubleTimeSeries.computed(VSPD_CALCULATED, Unit.FT_PER_MINUTE, length,
-                new VSPDRegression(builder.getDoubleTimeSeries(ALT_B)));
+        DoubleTimeSeries vspdCalculated = DoubleTimeSeries.computed(
+                VSPD_CALCULATED, Unit.FT_PER_MINUTE, length, new VSPDRegression(builder.getDoubleTimeSeries(ALT_B)));
         vspdCalculated.setTemporary(true);
         builder.addTimeSeries(vspdCalculated);
 
         DoubleTimeSeries baroA = builder.getDoubleTimeSeries(BARO_A);
         DoubleTimeSeries oat = builder.getDoubleTimeSeries(OAT);
-        DoubleTimeSeries densityRatio = DoubleTimeSeries.computed(DENSITY_RATIO, Unit.RATIO, length,
-                index -> {
-                    double pressRatio = baroA.get(index) / STD_PRESS_INHG;
-                    double tempRatio = (273 + oat.get(index)) / 288;
+        DoubleTimeSeries densityRatio = DoubleTimeSeries.computed(DENSITY_RATIO, Unit.RATIO, length, index -> {
+            double pressRatio = baroA.get(index) / STD_PRESS_INHG;
+            double tempRatio = (273 + oat.get(index)) / 288;
 
-                    return pressRatio / tempRatio;
-                });
+            return pressRatio / tempRatio;
+        });
 
-        DoubleTimeSeries airspeed = builder.meta.airframe.getName().equals(AIRFRAME_CESSNA_172S)
+        DoubleTimeSeries airspeed = builder.meta.getAirframe().getName().equals(AIRFRAME_CESSNA_172S)
                 ? builder.getDoubleTimeSeries(CAS)
                 : builder.getDoubleTimeSeries(IAS);
-        DoubleTimeSeries tasFtMin = DoubleTimeSeries.computed(TAS_FTMIN, Unit.FT_PER_MINUTE, length,
-                index -> {
-                    return (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
-                });
+        DoubleTimeSeries tasFtMin = DoubleTimeSeries.computed(TAS_FTMIN, Unit.FT_PER_MINUTE, length, index -> {
+            return (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
+        });
         tasFtMin.setTemporary(true);
 
         DoubleTimeSeries pitch = builder.getDoubleTimeSeries(PITCH);
-        DoubleTimeSeries aoaSimple = DoubleTimeSeries.computed(AOA_SIMPLE, Unit.DEGREES, length,
-                index -> {
+        DoubleTimeSeries aoaSimple = DoubleTimeSeries.computed(AOA_SIMPLE, Unit.DEGREES, length, index -> {
+            double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
+            double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
+            fltPthAngle = fltPthAngle * (180 / Math.PI);
+            double value = pitch.get(index) - fltPthAngle;
 
-                    double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
-                    double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
-                    fltPthAngle = fltPthAngle * (180 / Math.PI);
-                    double value = pitch.get(index) - fltPthAngle;
+            return value;
+        });
 
-                    return value;
-                });
-
-        DoubleTimeSeries stallIndex = DoubleTimeSeries.computed(STALL_PROB, Unit.INDEX, length,
-                index -> {
-                    return (Math.min(((Math.abs(aoaSimple.get(index) / AOA_CRIT)) * 100), 100)) / 100;
-                });
+        DoubleTimeSeries stallIndex = DoubleTimeSeries.computed(STALL_PROB, Unit.INDEX, length, index -> {
+            return (Math.min(((Math.abs(aoaSimple.get(index) / AOA_CRIT)) * 100), 100)) / 100;
+        });
 
         builder.addTimeSeries(stallIndex);
         builder.addTimeSeries(tasFtMin);
@@ -119,7 +112,6 @@ public class ComputeStallIndex extends ComputeStep {
      *
      * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
      */
-
     public static class VSPDRegression implements DoubleTimeSeries.TimeStepCalculation {
         static final double FPM_CONV = 60.d;
         private final DoubleTimeSeries altB;

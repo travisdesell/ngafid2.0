@@ -19,26 +19,23 @@ public enum TerrainCache {
     private static final LoadingCache<TileKey, SRTMTile> TILE_CACHE;
 
     static {
-
         LOG.log(Level.INFO, "Initializing TerrainCache with max size: {0}", Config.MAX_TERRAIN_CACHE_SIZE);
 
         TILE_CACHE = CacheBuilder.newBuilder()
                 .maximumSize(Config.MAX_TERRAIN_CACHE_SIZE)
-                .build(
-                        new CacheLoader<>() {
-                            @NotNull
-                            @Override
-                            public SRTMTile load(@NotNull TileKey key) throws TerrainUnavailableException {
+                .build(new CacheLoader<>() {
+                    @NotNull
+                    @Override
+                    public SRTMTile load(@NotNull TileKey key) throws TerrainUnavailableException {
 
-                                try {
-                                    return new SRTMTile(90 - key.latIndex, key.lonIndex - 180);
-                                } catch (NoSuchFileException e) {
-                                    LOG.log(Level.SEVERE, "Terrain tile not found: {0}", key);
-                                    throw new TerrainUnavailableException("Terrain tile not found: " + key);
-                                }
-                            }
+                        try {
+                            return new SRTMTile(90 - key.latIndex, key.lonIndex - 180);
+                        } catch (NoSuchFileException e) {
+                            LOG.log(Level.SEVERE, "Terrain tile not found: {0}", key);
+                            throw new TerrainUnavailableException("Terrain tile not found: " + key);
                         }
-                );
+                    }
+                });
     }
 
     // each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
@@ -58,7 +55,7 @@ public enum TerrainCache {
 
         // LOG.info("iLatitude: " + ilatitude + ", iLongitude: " + ilongitude);
 
-        //note that ascii 65 == 'A'
+        // note that ascii 65 == 'A'
         directory += Character.toString((char) (65 + ilatitude)) + ilongitude;
 
         return directory;
@@ -81,17 +78,21 @@ public enum TerrainCache {
     }
 
     public static int getAltitudeFt(double msl, double latitude, double longitude) throws TerrainUnavailableException {
-        //cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
+        // cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
         TileCoordinate coordinate = TileCoordinate.fromLatLon(latitude, longitude);
 
-        //LOG.info("lat_index: " + latIndex + ", lon_index: " + lonIndex);
+        // LOG.info("lat_index: " + latIndex + ", lon_index: " + lonIndex);
 
-        if (coordinate.latIndex < 0 || coordinate.lonIndex < 0 || coordinate.latIndex >= 180 || coordinate.lonIndex >= 360) {
+        if (coordinate.latIndex < 0
+                || coordinate.lonIndex < 0
+                || coordinate.latIndex >= 180
+                || coordinate.lonIndex >= 360) {
             LOG.severe("ERROR: getting tile for latitude: " + latitude + " and longitude: " + longitude);
             LOG.severe("tile[" + coordinate.latIndex + "][" + coordinate.lonIndex + "] does not exist!");
             LOG.severe("latitude should be >= -90 and <= 90");
             LOG.severe("longitude should be >= -180 and <= 180");
-            throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
+            throw new TerrainUnavailableException(
+                    "There is no tile latitude: " + latitude + " and longitude: " + longitude);
         }
 
         TileKey key = new TileKey(coordinate.latIndex, coordinate.lonIndex);
@@ -114,21 +115,25 @@ public enum TerrainCache {
 
         final int latIndex;
         final int lonIndex;
+
         TileKey(int latIndex, int lonIndex) {
             this.latIndex = latIndex;
             this.lonIndex = lonIndex;
         }
 
-        @Override public int hashCode() { return Objects.hash(latIndex, lonIndex); }
-        @Override public boolean equals(Object objectTarget) {
+        @Override
+        public int hashCode() {
+            return Objects.hash(latIndex, lonIndex);
+        }
 
-            //Target isn't a TileKey -> False
-            if (!(objectTarget instanceof TileKey k))
-                return false;
+        @Override
+        public boolean equals(Object objectTarget) {
+
+            // Target isn't a TileKey -> False
+            if (!(objectTarget instanceof TileKey k)) return false;
 
             return (k.latIndex == latIndex && k.lonIndex == lonIndex);
         }
-
     }
 
     private record TileCoordinate(double lat, double lon, int latIndex, int lonIndex) {
@@ -158,9 +163,9 @@ public enum TerrainCache {
             try {
                 return new SRTMTile(90 - latIndex, lonIndex - 180);
             } catch (NoSuchFileException e) {
-                throw new TerrainUnavailableException("There is no tile for latitude: " + lat + " and longitude: " + lon);
+                throw new TerrainUnavailableException(
+                        "There is no tile for latitude: " + lat + " and longitude: " + lon);
             }
         }
     }
-
 }

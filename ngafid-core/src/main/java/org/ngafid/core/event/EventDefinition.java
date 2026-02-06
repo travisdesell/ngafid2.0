@@ -20,11 +20,12 @@ import org.ngafid.core.util.filters.Filter;
 
 public class EventDefinition {
     // TODO: Replace with Jackson
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    public static final Gson GSON =
+            new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
-    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, " +
-            "condition_json, column_names, severity_column_names, severity_type";
+    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, "
+            + "condition_json, column_names, severity_column_names, severity_type";
 
     /*
      * Caches event definitions by name. Events are rarely added anyways...
@@ -33,7 +34,9 @@ public class EventDefinition {
 
     static {
         String query = "SELECT id, name FROM event_definitions";
-        try (Connection connection = Database.getConnection(); PreparedStatement ps = connection.prepareStatement(query); ResultSet resultSet = ps.executeQuery()) {
+        try (Connection connection = Database.getConnection();
+                PreparedStatement ps = connection.prepareStatement(query);
+                ResultSet resultSet = ps.executeQuery()) {
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
                 String name = resultSet.getString("name");
@@ -91,8 +94,15 @@ public class EventDefinition {
      * @param severityColumnNames a list of column names (unique) which are used to calculate the severity
      * @param severityType        a string representation of the severity type, can be 'min', 'abs' or 'max'
      */
-    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeNameId,
-                           Filter filter, TreeSet<String> severityColumnNames, SeverityType severityType) {
+    public EventDefinition(
+            int fleetId,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            int airframeNameId,
+            Filter filter,
+            TreeSet<String> severityColumnNames,
+            SeverityType severityType) {
         this.fleetId = fleetId;
         this.startBuffer = startBuffer;
         this.stopBuffer = stopBuffer;
@@ -136,10 +146,8 @@ public class EventDefinition {
             }
         }
 
-        this.columnNames = GSON.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>() {
-        }.getType());
-        this.severityColumnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {
-        }.getType());
+        this.columnNames = GSON.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>() {}.getType());
+        this.severityColumnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {}.getType());
 
         String severityTypeStr = resultSet.getString(10);
         severityTypeStr = severityTypeStr.toUpperCase();
@@ -201,8 +209,8 @@ public class EventDefinition {
      * @return Event Definition result from DB
      */
     private static EventDefinition getEventDefinitionFromDB(Connection connection, String query) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query); ResultSet resultSet =
-                preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
             LOG.info(preparedStatement.toString());
 
             if (resultSet.next()) {
@@ -228,17 +236,35 @@ public class EventDefinition {
      * @param severityType            the severity type
      * @throws SQLException if there is an error with the SQL query
      */
-    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
-                              int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson,
-                              SeverityType severityType) throws SQLException {
+    public static void update(
+            Connection connection,
+            int fleetId,
+            int eventId,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            String airframe,
+            String filterJson,
+            String severityColumnNamesJson,
+            SeverityType severityType)
+            throws SQLException {
         int airframeNameID = 0;
 
         if (!airframe.equals("All Airframes")) {
             airframeNameID = new Airframes.Airframe(connection, airframe, null).getId();
         }
 
-        update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson,
-                severityColumnNamesJson, severityType.toString());
+        update(
+                connection,
+                fleetId,
+                eventId,
+                name,
+                startBuffer,
+                stopBuffer,
+                airframeNameID,
+                filterJson,
+                severityColumnNamesJson,
+                severityType.toString());
     }
 
     /**
@@ -256,9 +282,18 @@ public class EventDefinition {
      * @param severityType            the severity type
      * @throws SQLException if there is an error with the SQL query
      */
-    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
-                              int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson,
-                              String severityType) throws SQLException {
+    public static void update(
+            Connection connection,
+            int fleetId,
+            int eventId,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            int airframeNameID,
+            String filterJson,
+            String severityColumnNamesJson,
+            String severityType)
+            throws SQLException {
         Filter filter = GSON.fromJson(filterJson, Filter.class);
         String columnNamesJson;
 
@@ -268,8 +303,8 @@ public class EventDefinition {
             columnNamesJson = severityColumnNamesJson;
         }
 
-        String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, " +
-                "airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? "
+        String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, "
+                + "airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? "
                 + "WHERE id = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -303,15 +338,23 @@ public class EventDefinition {
      * @param severityType            is the severity type
      * @throws SQLException if there is an error with the SQL query
      */
-    public static void insert(Connection connection, int fleetId, String name, int startBuffer, int stopBuffer,
-                              String airframe, String filterJson, String severityColumnNamesJson,
-                              String severityType) throws SQLException {
+    public static void insert(
+            Connection connection,
+            int fleetId,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            String airframe,
+            String filterJson,
+            String severityColumnNamesJson,
+            String severityType)
+            throws SQLException {
         Filter filter = GSON.fromJson(filterJson, Filter.class);
         TreeSet<String> columnNames = filter.getColumnNames();
 
         if (airframe.equals("All Airframes")) {
-            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, " +
-                    "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
+            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, "
+                    + "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
                     + "?," + " severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -330,8 +373,8 @@ public class EventDefinition {
             }
         } else {
             int airframeNameId = new Airframes.Airframe(connection, airframe, null).getId();
-            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, " +
-                    "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
+            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, "
+                    + "stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
                     + "?," + " severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -363,8 +406,9 @@ public class EventDefinition {
      * @param airframeId  the airframe id
      * @throws SQLException if there is an error with the SQL query
      */
-    public static void insert(Connection connection, int id, String name, int startBuffer, int stopBuffer,
-                              int airframeId) throws SQLException {
+    public static void insert(
+            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId)
+            throws SQLException {
         if (id > 0) {
             LOG.info("Passed a positive ID to special event insertion.");
             System.exit(0);
@@ -399,10 +443,10 @@ public class EventDefinition {
      * @param extraParameters are the parameters to that query
      * @return the event definitions from the database.
      */
-    public static ArrayList<EventDefinition> getAll(Connection connection, String extraQuery,
-                                                    Object[] extraParameters) throws SQLException {
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json," + " " +
-                "column_names, severity_column_names, severity_type FROM event_definitions WHERE " + extraQuery;
+    public static ArrayList<EventDefinition> getAll(Connection connection, String extraQuery, Object[] extraParameters)
+            throws SQLException {
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json," + " "
+                + "column_names, severity_column_names, severity_type FROM event_definitions WHERE " + extraQuery;
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             for (int i = 0; i < extraParameters.length; i++) {
@@ -437,11 +481,11 @@ public class EventDefinition {
      * @return an array list of all event definitions in the database.
      */
     public static ArrayList<EventDefinition> getAll(Connection connection) throws SQLException {
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, " +
-                "column_names, severity_column_names, severity_type FROM event_definitions";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, "
+                + "column_names, severity_column_names, severity_type FROM event_definitions";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query); ResultSet resultSet =
-                preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
             LOG.info(preparedStatement.toString());
 
             ArrayList<EventDefinition> allEvents = new ArrayList<EventDefinition>();
@@ -462,8 +506,8 @@ public class EventDefinition {
      */
     public static ArrayList<String> getUniqueNames(Connection connection, int fleetId) throws SQLException {
         // add all the generic event names
-        String query = "SELECT DISTINCT(name) FROM event_definitions WHERE (event_definitions.fleet_id = 0 " + "OR " +
-                "event_definitions.fleet_id = ?)";
+        String query = "SELECT DISTINCT(name) FROM event_definitions WHERE (event_definitions.fleet_id = 0 " + "OR "
+                + "event_definitions.fleet_id = ?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
@@ -490,8 +534,8 @@ public class EventDefinition {
         // add all the generic event names
         String query = "SELECT DISTINCT(name) FROM event_definitions";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query); ResultSet resultSet =
-                preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
             LOG.info(preparedStatement.toString());
 
             ArrayList<String> uniqueNames = new ArrayList<>();
@@ -514,8 +558,8 @@ public class EventDefinition {
         // add all the generic event names
         ArrayList<String> allNames = new ArrayList<>();
 
-        String query = "SELECT name FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR " +
-                "event_definitions.fleet_id = ?) AND event_definitions.airframe_id = 0";
+        String query = "SELECT name FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR "
+                + "event_definitions.fleet_id = ?) AND event_definitions.airframe_id = 0";
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
 
@@ -528,9 +572,8 @@ public class EventDefinition {
         }
 
         // add all the event names with the airframe they are for
-        query = "SELECT name, airframe FROM event_definitions, airframes " +
-                "WHERE (event_definitions.fleet_id = 0 OR " + "event_definitions.fleet_id = ?) " +
-                "AND airframes.id = event_definitions.airframe_id";
+        query = "SELECT name, airframe FROM event_definitions, airframes " + "WHERE (event_definitions.fleet_id = 0 OR "
+                + "event_definitions.fleet_id = ?) " + "AND airframes.id = event_definitions.airframe_id";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
@@ -636,7 +679,6 @@ public class EventDefinition {
      * @param time    is the time step the severity is being calculated for
      * @return the severity value from the given columns at time
      */
-
     public double getSeverity(Map<String, DoubleTimeSeries> columns, int time) {
         return getSeverity(columns, severityType.defaultValue(), time);
     }
@@ -659,12 +701,23 @@ public class EventDefinition {
      */
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
-        update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, GSON.toJson(filter),
-                GSON.toJson(severityColumnNames), severityType.toString());
+        update(
+                connection,
+                fleetId,
+                id,
+                name,
+                startBuffer,
+                stopBuffer,
+                airframeNameId,
+                GSON.toJson(filter),
+                GSON.toJson(severityColumnNames),
+                severityType.toString());
     }
 
     /**
      * Deletes an event definition from database
+     *
+     * @param connection is the connection to the database
      */
     public void delete(Connection connection) throws SQLException {
         String query = "DELETE FROM event_definitions WHERE id=?";
@@ -707,10 +760,9 @@ public class EventDefinition {
      */
     public String toString() {
         return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer
-                + ", airframeNameId: " + airframeNameId +
-                ", condition: " + GSON.toJson(filter) + ", column_names : " + GSON.toJson(columnNames)
+                + ", airframeNameId: " + airframeNameId + ", condition: "
+                + GSON.toJson(filter) + ", column_names : " + GSON.toJson(columnNames)
                 + ", severity_column_names: " + GSON.toJson(severityColumnNames) + ", severity_type: " + severityType
                 + "]";
     }
-
 }

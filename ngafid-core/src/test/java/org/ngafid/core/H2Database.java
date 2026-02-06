@@ -36,7 +36,8 @@ public class H2Database {
 
     private static void createConnectionPool() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MYSQL;NON_KEYWORDS=USER,VALUE,YEAR,MONTH;DATABASE_TO_UPPER=FALSE");
+        config.setJdbcUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MYSQL;"
+                + "NON_KEYWORDS=USER,VALUE,YEAR,MONTH;DATABASE_TO_UPPER=FALSE");
         config.setUsername("sa");
         config.setPassword("");
         config.setPoolName("H2Pool");
@@ -46,11 +47,11 @@ public class H2Database {
 
     private static void populateDatabase() throws SQLException {
         try (Connection connection = CONNECTION_POOL.getConnection()) {
-            Database database = DatabaseFactory.getInstance()
-                    .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+            Database database =
+                    DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
 
-            Liquibase liquibase = new Liquibase("ngafid-db/src/test-changelog-root.xml",
-                    new DirectoryResourceAccessor(Path.of("../")), database);
+            Liquibase liquibase = new Liquibase(
+                    "ngafid-db/src/test-changelog-root.xml", new DirectoryResourceAccessor(Path.of("../")), database);
 
             liquibase.update(new Contexts());
         } catch (LiquibaseException | FileNotFoundException e) {

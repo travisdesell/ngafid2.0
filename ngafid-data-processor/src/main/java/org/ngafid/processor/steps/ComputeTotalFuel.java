@@ -58,15 +58,12 @@ public class ComputeTotalFuel extends ComputeStep {
 
         for (var columnName : REQUIRED_DOUBLE_COLUMNS) {
             DoubleTimeSeries fuelTS = builder.getDoubleTimeSeries(columnName);
-            if (totalFuel == null)
-                totalFuel = new double[fuelTS.size()];
+            if (totalFuel == null) totalFuel = new double[fuelTS.size()];
 
-            for (int i = 0; i < fuelTS.size(); i++)
-                totalFuel[i] += fuelTS.get(i);
+            for (int i = 0; i < fuelTS.size(); i++) totalFuel[i] += fuelTS.get(i);
         }
 
         DoubleTimeSeries totalFuelTS = new DoubleTimeSeries(TOTAL_FUEL, Unit.GALLONS, totalFuel);
         builder.addTimeSeries(totalFuelTS);
     }
-
 }

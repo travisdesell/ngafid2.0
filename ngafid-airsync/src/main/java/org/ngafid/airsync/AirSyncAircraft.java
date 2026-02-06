@@ -1,11 +1,11 @@
 package org.ngafid.airsync;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-
-import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -16,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Represents an Aircraft that is AirSync compatibile
@@ -93,8 +92,13 @@ public final class AirSyncAircraft {
      * @return a URL to the logfile
      */
     private URL getAircraftLogURL(int page, LocalDateTime lastImportTime) throws MalformedURLException {
-        return new URL(String.format(AirSyncEndpoints.ALL_LOGS_BY_TIME, this.id, page, AirSyncEndpoints.PAGE_SIZE,
-                lastImportTime.toString(), MAX_LCL_DATE_TIME));
+        return new URL(String.format(
+                AirSyncEndpoints.ALL_LOGS_BY_TIME,
+                this.id,
+                page,
+                AirSyncEndpoints.PAGE_SIZE,
+                lastImportTime.toString(),
+                MAX_LCL_DATE_TIME));
     }
 
     /**
@@ -147,12 +151,10 @@ public final class AirSyncAircraft {
         resp = resp.replaceAll("file_url", "fileUrl");
         resp = resp.replaceAll("timestamp_uploaded", "timestampUploaded");
 
-        List<AirSyncImport> page = OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncImport>>() {
-        });
+        List<AirSyncImport> page = OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncImport>>() {});
 
         // initialize the imports
-        for (AirSyncImport i : page)
-            i.init(fleet, this);
+        for (AirSyncImport i : page) i.init(fleet, this);
 
         return page;
     }
@@ -172,7 +174,8 @@ public final class AirSyncAircraft {
 
         int nPage = 0;
         while (continueIteration) {
-            HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++).openConnection();
+            HttpsURLConnection netConnection =
+                    (HttpsURLConnection) getAircraftLogURL(nPage++).openConnection();
             List<AirSyncImport> page = getImportsHTTPS(netConnection, airSyncFleet.getAuth());
 
             continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
@@ -190,8 +193,8 @@ public final class AirSyncAircraft {
      * @param lastImportTime the last import time recorded in the database
      * @return a {@link List} of AirSyncImports
      */
-    public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet airSyncFleet,
-                                                   LocalDateTime lastImportTime) throws IOException {
+    public List<AirSyncImport> getImportsAfterDate(
+            Connection connection, AirSyncFleet airSyncFleet, LocalDateTime lastImportTime) throws IOException {
         AirSyncAuth authentication = airSyncFleet.getAuth();
         List<AirSyncImport> imports = new LinkedList<>();
 
@@ -200,8 +203,8 @@ public final class AirSyncAircraft {
         int nPage = 0;
 
         while (continueIteration) {
-            HttpsURLConnection netConnection =
-                    (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
+            HttpsURLConnection netConnection = (HttpsURLConnection)
+                    getAircraftLogURL(nPage++, lastImportTime).openConnection();
             List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
             continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
             imports.addAll(page);

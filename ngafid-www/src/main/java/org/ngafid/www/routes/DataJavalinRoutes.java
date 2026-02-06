@@ -85,7 +85,8 @@ public class DataJavalinRoutes {
             CSVWriter csvWriter;
 
             if (generated) {
-                csvWriter = new GeneratedCSVWriter(flight, Optional.empty(), DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
+                csvWriter = new GeneratedCSVWriter(
+                        flight, Optional.empty(), DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
             } else {
                 csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.empty(), isAirSync);
             }
@@ -124,16 +125,24 @@ public class DataJavalinRoutes {
                 return;
             }
 
-            final DoubleTimeSeries altMSL = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL"));
-            final DoubleTimeSeries latitude = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
-            final DoubleTimeSeries longitude = Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
+            final DoubleTimeSeries altMSL =
+                    Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL"));
+            final DoubleTimeSeries latitude =
+                    Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
+            final DoubleTimeSeries longitude =
+                    Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 
             // LOG.info(gson.toJson(flights));
 
             StringBuilder sb = new StringBuilder();
 
             for (int i = 0; i < altMSL.size(); i++) {
-                sb.append(longitude.get(i)).append(",").append(latitude.get(i)).append(",").append(altMSL.get(i)).append("\n");
+                sb.append(longitude.get(i))
+                        .append(",")
+                        .append(latitude.get(i))
+                        .append(",")
+                        .append(altMSL.get(i))
+                        .append("\n");
             }
 
             final String templateFile = "template.kml";
@@ -154,14 +163,15 @@ public class DataJavalinRoutes {
         boolean useMSL = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("use_msl")));
 
         LOG.info("MSL will be used: " + useMSL);
-        LOG.info("Generating an X-Plane " + version + " FDR file for flight #" + flightIdStr + " with path for .acf: " + aircraftPath);
+        LOG.info("Generating an X-Plane " + version + " FDR file for flight #" + flightIdStr + " with path for .acf: "
+                + aircraftPath);
 
         int flightId = Integer.parseInt(flightIdStr);
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
             ctx.status(401);
@@ -169,10 +179,14 @@ public class DataJavalinRoutes {
             return;
         }
 
-        XPlaneExport export = (version == 10) ? new XPlane10Export(flightId, aircraftPath, useMSL) : new XPlane11Export(flightId, aircraftPath, useMSL);
+        XPlaneExport export = (version == 10)
+                ? new XPlane10Export(flightId, aircraftPath, useMSL)
+                : new XPlane11Export(flightId, aircraftPath, useMSL);
 
         ctx.contentType("application/force-download");
-        ctx.header("Content-Disposition", "attachment; filename=flight_" + flightId + "_xp" + version + FDR_FILE_EXTENSION);
+        ctx.header(
+                "Content-Disposition",
+                "attachment; filename=flight_" + flightId + "_xp" + version + FDR_FILE_EXTENSION);
         ctx.result(export.toFdrFile());
     }
 

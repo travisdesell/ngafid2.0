@@ -72,8 +72,9 @@ public final class ExtractMaintenanceFlights {
                         // this is a record we have not yet seen before
                         RECORDS_BY_WORKORDER.put(record.getWorkorderNumber(), record);
 
-                        if ((record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") ||
-                                record.getAirframe().equals("SEMI"))) {
+                        if ((record.getAirframe().equals("C172")
+                                || record.getAirframe().equals("ARCH")
+                                || record.getAirframe().equals("SEMI"))) {
                             // only add tail numbers from C172, PA28 or PA44
                             TAIL_NUMBERS.add(record.getTailNumber());
                         }
@@ -128,8 +129,8 @@ public final class ExtractMaintenanceFlights {
      * @param targetRecords the list of all records
      * @return the set of tails for the target cluster and label
      */
-    private static Set<String> getRecordForClusterAndLabel(String targetCluster, String targetLabel,
-                                                           List<MaintenanceRecord> targetRecords) {
+    private static Set<String> getRecordForClusterAndLabel(
+            String targetCluster, String targetLabel, List<MaintenanceRecord> targetRecords) {
         System.out.println("\n\n\n");
         System.out.println("Getting records for cluster: '" + targetCluster + "' and label: '" + targetLabel + "'");
 
@@ -138,9 +139,9 @@ public final class ExtractMaintenanceFlights {
             // C172 is Cessna 172
             // ARCH is PA28 (Piper Archer)
             // SEMI IS PA44 (Piper Seminole)
-            if (!(record.getAirframe().equals("C172") ||
-                    record.getAirframe().equals("ARCH") ||
-                    record.getAirframe().equals("SEMI"))) {
+            if (!(record.getAirframe().equals("C172")
+                    || record.getAirframe().equals("ARCH")
+                    || record.getAirframe().equals("SEMI"))) {
                 // skip the others
                 continue;
             }
@@ -162,17 +163,19 @@ public final class ExtractMaintenanceFlights {
      * @return the list of aircraft timelines
      * @throws SQLException if there is an error with the SQL query
      */
-    private static List<AircraftTimeline> buildTimeline(Connection connection, ResultSet tailSet, LocalDate startDate,
-                                                        LocalDate endDate) throws SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
+    private static List<AircraftTimeline> buildTimeline(
+            Connection connection, ResultSet tailSet, LocalDate startDate, LocalDate endDate)
+            throws SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
         List<AircraftTimeline> timeline = new ArrayList<>();
 
         while (tailSet.next()) {
             String systemId = tailSet.getString(1);
             System.out.println("\tsystem id '" + systemId + "' flights:");
 
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, start_time, end_time, airframe_id FROM flights " +
-                            "WHERE system_id = ? AND start_time > ? AND end_time < ? ORDER BY start_time");
+            PreparedStatement stmt =
+                    connection.prepareStatement("SELECT id, start_time, end_time, airframe_id FROM flights "
+                            + "WHERE system_id = ? AND start_time > ? AND end_time < ? "
+                            + "ORDER BY start_time");
             stmt.setString(1, systemId);
             stmt.setString(2, startDate.toString());
             stmt.setString(3, endDate.toString());
@@ -288,8 +291,9 @@ public final class ExtractMaintenanceFlights {
      * @throws IOException  if there is an error writing the file
      * @throws SQLException if there is an error with the SQL query
      */
-    private static void writeFiles(String outputDirectory, String eventCluster, MaintenanceRecord event,
-                                   Flight flight, String when) throws IOException, SQLException {
+    private static void writeFiles(
+            String outputDirectory, String eventCluster, MaintenanceRecord event, Flight flight, String when)
+            throws IOException, SQLException {
         assert flight != null;
         String airframeType = getAirframeType(flight);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy_MM_dd");
@@ -304,14 +308,16 @@ public final class ExtractMaintenanceFlights {
             }
         }
 
-        String recordFile = outputDirectory + "/" + eventCluster + "/open_" + event.getOpenDate().format(fmt)
-                + "_close_" + event.getCloseDate().format(fmt) + "_record.txt";
+        String recordFile = outputDirectory + "/" + eventCluster + "/open_"
+                + event.getOpenDate().format(fmt) + "_close_"
+                + event.getCloseDate().format(fmt) + "_record.txt";
         BufferedWriter bw = new BufferedWriter(new FileWriter(new File(recordFile).getAbsoluteFile()));
         bw.write(event.toJSON());
         bw.close();
 
-        outfile += "/open_" + event.getOpenDate().format(fmt) + "_close_" + event.getCloseDate().format(fmt)
-                + "_flight_" + airframeType + "_" + flight.getTailNumber() + when + "_" + flight.getId() + ".csv";
+        outfile += "/open_" + event.getOpenDate().format(fmt) + "_close_"
+                + event.getCloseDate().format(fmt) + "_flight_" + airframeType + "_" + flight.getTailNumber() + when
+                + "_" + flight.getId() + ".csv";
         System.out.println(outfile);
 
         String zipRoot = NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" + flight.getUploaderId() + "/";
@@ -330,16 +336,19 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      * @throws IOException  if there is an error writing the file
      */
-    private static void exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetCluster,
-                                    String outputDirectory) throws SQLException, IOException {
+    private static void exportFiles(
+            Connection connection, List<AircraftTimeline> timeline, String targetCluster, String outputDirectory)
+            throws SQLException, IOException {
         System.err.println("\n\nflightsToNext, flightsSincePrev set, now exporting files:");
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
             AircraftTimeline ac = timeline.get(currentAircraft);
             // System.out.println(ac + " -- NEXT " + ac.getNextEvent() + " -- PREV " +
             // ac.getPreviousEvent());
 
-            if (ac.getDaysSincePrevious() == 0 || ac.getDaysToNext() == 0 ||
-                    ac.getFlightsSincePrevious() != -1 || ac.getFlightsToNext() != -1) {
+            if (ac.getDaysSincePrevious() == 0
+                    || ac.getDaysToNext() == 0
+                    || ac.getFlightsSincePrevious() != -1
+                    || ac.getFlightsToNext() != -1) {
 
                 Flight flight = Flight.getFlight(connection, ac.getFlightId());
 
@@ -361,8 +370,8 @@ public final class ExtractMaintenanceFlights {
                 }
 
                 if (event == null) {
-                    System.err.println("ERROR: event is null! currentAircraft: " + currentAircraft +
-                            ", timeline.size(): " + timeline.size());
+                    System.err.println("ERROR: event is null! currentAircraft: " + currentAircraft
+                            + ", timeline.size(): " + timeline.size());
                 }
 
                 String eventCluster = LABEL_TO_CLUSTER.get(event.getLabel());
@@ -403,8 +412,8 @@ public final class ExtractMaintenanceFlights {
 
         System.out.println("cluster to label:");
         for (Map.Entry<String, String> kvPair : CLUSTER_TO_LABEL.entrySet()) {
-            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue()
-                    + "' -- count: " + CLUSTER_COUNTS.get(kvPair.getKey()));
+            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue() + "' -- count: "
+                    + CLUSTER_COUNTS.get(kvPair.getKey()));
         }
 
         // System.out.println("\t" + clusterToLabel);
@@ -423,7 +432,8 @@ public final class ExtractMaintenanceFlights {
             HashMap<String, Integer> tailSystemIdCounts = new HashMap<>();
 
             LocalDate startDate = targetRecords.get(0).getOpenDate().minusDays(10);
-            LocalDate endDate = targetRecords.get(targetRecords.size() - 1).getCloseDate().plusDays(10);
+            LocalDate endDate =
+                    targetRecords.get(targetRecords.size() - 1).getCloseDate().plusDays(10);
             Set<String> targetTails = getRecordForClusterAndLabel(targetCluster, targetLabel, targetRecords);
 
             System.out.println("earliest date for label: " + startDate);
@@ -437,8 +447,8 @@ public final class ExtractMaintenanceFlights {
                 Collections.sort(tailRecords);
 
                 for (MaintenanceRecord record : tailRecords) {
-                    System.out.println("\t" + record.getOpenDate() + " to " + record.getCloseDate() +
-                            " for " + record.getLabel() + ", airframe: " + record.getAirframe());
+                    System.out.println("\t" + record.getOpenDate() + " to " + record.getCloseDate() + " for "
+                            + record.getLabel() + ", airframe: " + record.getAirframe());
                 }
                 System.out.println("tail: '" + tailNumber + "' had " + tailRecords.size() + " events.");
                 System.out.println();
@@ -453,7 +463,6 @@ public final class ExtractMaintenanceFlights {
 
                 ResultSet tailSet = tailStmt.executeQuery();
                 List<AircraftTimeline> timeline = buildTimeline(connection, tailSet, startDate, endDate);
-
 
                 int currentRecord = 0;
                 Collections.sort(timeline);
@@ -489,8 +498,8 @@ public final class ExtractMaintenanceFlights {
 
                         long daysSincePrev = -1;
                         if (previousRecord != null)
-                            daysSincePrev = Math.max(0,
-                                    ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
+                            daysSincePrev = Math.max(
+                                    0, ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
 
                         if (previousRecord != null) {
                             // System.out.print("previous record close " + previousRecord.getCloseDate() + "
@@ -545,8 +554,8 @@ public final class ExtractMaintenanceFlights {
 
             System.out.println("flight counts per tail:");
             for (Map.Entry<String, Integer> kvPair : tailFlightCounts.entrySet()) {
-                System.out.println("\t'" + kvPair.getKey() + "' -> " + kvPair.getValue()
-                        + " (" + tailSystemIdCounts.get(kvPair.getKey()) + ")");
+                System.out.println("\t'" + kvPair.getKey() + "' -> " + kvPair.getValue() + " ("
+                        + tailSystemIdCounts.get(kvPair.getKey()) + ")");
             }
 
         } catch (SQLException e) {

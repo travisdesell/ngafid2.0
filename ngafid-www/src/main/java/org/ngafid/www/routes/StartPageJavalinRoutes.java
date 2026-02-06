@@ -35,7 +35,7 @@ public class StartPageJavalinRoutes {
         Map<String, Object> scopes = new HashMap<>();
 
         if (message != null) {
-            scopes.put("messages", new Message[]{message});
+            scopes.put("messages", new Message[] {message});
         }
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
@@ -71,16 +71,24 @@ public class StartPageJavalinRoutes {
         }
     }
 
-
     public static void bindRoutes(Javalin app) {
         app.get("/", ctx -> getHome(ctx, null));
-        app.get("/logout_success", ctx -> getHome(ctx, new Message("success", "You have been successfully logged out.")));
-        app.get("/access_denied", ctx -> getHome(ctx, new Message("danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
-//        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
+        app.get(
+                "/logout_success",
+                ctx -> getHome(ctx, new Message("success", "You have been successfully logged out.")));
+        app.get(
+                "/access_denied",
+                ctx -> getHome(
+                        ctx,
+                        new Message(
+                                "danger",
+                                "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
+        //        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not
+        // exist.")));
 
         app.get("/protected/waiting", StartPageJavalinRoutes::getWaiting);
         app.get("/protected/welcome", ctx -> getWelcome(ctx, new ArrayList<>()));
-//        app.get("/protected/*", ctx -> getWelcome(ctx, List.of(new Message("danger", "The page you attempted to access does not exist."))));
+        //        app.get("/protected/*", ctx -> getWelcome(ctx, List.of(new Message("danger", "The page you attempted
+        // to access does not exist."))));
     }
-
 }

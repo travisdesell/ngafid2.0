@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
-public class FleetAccessNamed extends FleetAccess implements Serializable {
+public final class FleetAccessNamed extends FleetAccess implements Serializable {
 
     private String fleetName;
 
@@ -19,7 +19,6 @@ public class FleetAccessNamed extends FleetAccess implements Serializable {
     public void updateFleetName(Connection connection) throws SQLException, AccountException {
 
         fleetName = Fleet.get(connection, fleetId).getName();
-
     }
 
     private FleetAccessNamed(int fleetId, int userId, String fleetAccess) throws SQLException, AccountException {
@@ -35,7 +34,6 @@ public class FleetAccessNamed extends FleetAccess implements Serializable {
         super(resultSet);
     }
 
-
     /**
      * Gets all entries of a user's fleet access from the database given a user id.
      *
@@ -45,8 +43,8 @@ public class FleetAccessNamed extends FleetAccess implements Serializable {
      * empty if there are none.
      * @throws SQLException If there was a query/database problem.
      */
-
-    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId) throws SQLException {
+    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId)
+            throws SQLException {
 
         String sql = "SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
@@ -66,15 +64,9 @@ public class FleetAccessNamed extends FleetAccess implements Serializable {
                         LOG.log(Level.WARNING, "Account Exception -- Skipping row: {0}", ex.getMessage());
                     }
                 }
-
             }
 
             return allAccess;
-
         }
-
     }
-
-
-
 }

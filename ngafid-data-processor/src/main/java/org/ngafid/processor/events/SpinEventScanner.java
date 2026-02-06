@@ -33,7 +33,8 @@ public class SpinEventScanner extends AbstractEventScanner {
     }
 
     @Override
-    public List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+    public List<Event> scan(
+            Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         ArrayList<Event> events = new ArrayList<>();
 
         DoubleTimeSeries ias = doubleTimeSeries.get(IAS);
@@ -85,7 +86,13 @@ public class SpinEventScanner extends AbstractEventScanner {
 
                     if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
                         if (!spinStartFound) {
-                            currentEvent = new CustomEvent(utcSeries.get(lowAirspeedIndex), utcSeries.get(i), lowAirspeedIndex, i, maxNormAc, null);
+                            currentEvent = new CustomEvent(
+                                    utcSeries.get(lowAirspeedIndex),
+                                    utcSeries.get(i),
+                                    lowAirspeedIndex,
+                                    i,
+                                    maxNormAc,
+                                    null);
                             spinStartFound = true;
                         }
                     }

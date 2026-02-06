@@ -40,7 +40,8 @@ public class ComputeUnitConversion extends ComputeStep {
     private final String outSeriesName;
     private final UnitConversion unitConversion;
 
-    public ComputeUnitConversion(Connection connection, FlightBuilder builder, String inParam, String outSeries, UnitConversion conversion) {
+    public ComputeUnitConversion(
+            Connection connection, FlightBuilder builder, String inParam, String outSeries, UnitConversion conversion) {
         super(connection, builder);
         inSeriesName = inParam;
         outSeriesName = outSeries;
@@ -67,15 +68,14 @@ public class ComputeUnitConversion extends ComputeStep {
         return Set.of(outSeriesName);
     }
 
-    private record UnitConverter(UnitConversion conversion,
-                                 DoubleTimeSeries series) implements DoubleTimeSeries.TimeStepCalculation {
+    private record UnitConverter(UnitConversion conversion, DoubleTimeSeries series)
+            implements DoubleTimeSeries.TimeStepCalculation {
 
         @Override
         public double compute(int i) {
             double value = series.get(i);
 
-            if (Double.isNaN(value))
-                return Double.NaN;
+            if (Double.isNaN(value)) return Double.NaN;
 
             return value * conversion.getConversionFactor();
         }
@@ -84,7 +84,11 @@ public class ComputeUnitConversion extends ComputeStep {
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries inputSeries = builder.getDoubleTimeSeries(inSeriesName);
-        DoubleTimeSeries convertedSeries = DoubleTimeSeries.computed(outSeriesName, unitConversion.getOutputUnit(), inputSeries.size(), new UnitConverter(unitConversion, inputSeries));
+        DoubleTimeSeries convertedSeries = DoubleTimeSeries.computed(
+                outSeriesName,
+                unitConversion.getOutputUnit(),
+                inputSeries.size(),
+                new UnitConverter(unitConversion, inputSeries));
         builder.addTimeSeries(convertedSeries);
     }
 }

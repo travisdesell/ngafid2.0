@@ -119,7 +119,7 @@ object EventRoutes : RouteProvider() {
                 val definitionStmt = connection.prepareStatement(definitionQuery)
                 definitionStmt.setInt(1, fleetId)
                 definitionStmt.setString(2, eventName)
-                
+
                 val definitionIds = mutableListOf<Int>()
                 val rs = definitionStmt.executeQuery()
                 while (rs.next()) {
@@ -145,7 +145,7 @@ object EventRoutes : RouteProvider() {
                         "AND events.end_time <= ? " +
                         "AND flight_tags.name = ?"
                     }
-                    
+
                     val countStmt = connection.prepareStatement(countQuery)
                     countStmt.setInt(1, defId)
                     countStmt.setInt(2, fleetId)
@@ -154,7 +154,7 @@ object EventRoutes : RouteProvider() {
                     if (tagName != "All Tags") {
                         countStmt.setString(5, tagName)
                     }
-                    
+
                     val countRs = countStmt.executeQuery()
                     if (countRs.next()) {
                         totalCount += countRs.getInt(1)
@@ -162,7 +162,7 @@ object EventRoutes : RouteProvider() {
                     countRs.close()
                     countStmt.close()
                 }
-                
+
                 availabilityMap[eventName] = totalCount
             }
 

@@ -22,8 +22,8 @@ public class FleetAccessNamedTest {
         connection = H2Database.getConnection();
 
         // Clean up any existing test data
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id IN (999, 998, 997)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id IN (999, 998, 997)")) {
             stmt.executeUpdate();
         }
 
@@ -55,16 +55,15 @@ public class FleetAccessNamedTest {
     public void tearDown() throws SQLException {
         // Clean up test data
         if (connection != null) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM fleet_access WHERE user_id IN (999, 998, 997)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("DELETE FROM fleet_access WHERE user_id IN (999, 998, 997)")) {
                 stmt.executeUpdate();
             }
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM user WHERE id IN (999, 998, 997)")) {
+            try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM user WHERE id IN (999, 998, 997)")) {
                 stmt.executeUpdate();
             }
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM fleet WHERE id IN (999, 998, 997)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("DELETE FROM fleet WHERE id IN (999, 998, 997)")) {
                 stmt.executeUpdate();
             }
             // Close the connection to prevent connection pool exhaustion
@@ -97,8 +96,7 @@ public class FleetAccessNamedTest {
         assertNotNull(originalFleetName);
 
         // Update the fleet name in the database to test the updateFleetName method
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE fleet SET fleet_name = ? WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("UPDATE fleet SET fleet_name = ? WHERE id = ?")) {
             stmt.setString(1, "Updated Test Fleet Name");
             stmt.setInt(2, 999);
             stmt.executeUpdate();
@@ -112,8 +110,7 @@ public class FleetAccessNamedTest {
         assertEquals("Updated Test Fleet Name", fleetAccessNamed.getFleetName());
 
         // Restore the original fleet name
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE fleet SET fleet_name = ? WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("UPDATE fleet SET fleet_name = ? WHERE id = ?")) {
             stmt.setString(1, originalFleetName);
             stmt.setInt(2, 999);
             stmt.executeUpdate();
@@ -275,7 +272,4 @@ public class FleetAccessNamedTest {
             assertTrue(namedAccess.getFleetName().contains("Test Fleet"));
         }
     }
-
-
-
 }

@@ -21,9 +21,10 @@ import org.ngafid.core.util.filters.Pair;
  */
 public class EmailConsumer extends DisjointConsumer<String, String> {
     private static final Logger LOG = Logger.getLogger(EmailConsumer.class.getName());
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    protected EmailConsumer(Thread mainThread, KafkaConsumer<String, String> consumer, KafkaProducer<String, String> producer) {
+    protected EmailConsumer(
+            Thread mainThread, KafkaConsumer<String, String> consumer, KafkaProducer<String, String> producer) {
         super(mainThread, consumer, producer);
     }
 
@@ -80,7 +81,7 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
         SendEmail.Email email;
 
         try {
-            email = objectMapper.readValue(record.value(), SendEmail.Email.class);
+            email = OBJECT_MAPPER.readValue(record.value(), SendEmail.Email.class);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return new Pair<>(record, true);

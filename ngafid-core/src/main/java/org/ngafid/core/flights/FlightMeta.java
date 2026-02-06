@@ -6,23 +6,22 @@ import java.time.OffsetDateTime;
  * Utility class used by FlightBuilder to call the Flight constructor, contains all metadata required for a flight.
  */
 public final class FlightMeta {
-    public int fleetId = -1;
-    public int uploaderId = -1;
-    public int uploadId = -1;
-    public int processingStatus = 0;
+    private int fleetId = -1;
+    private int uploaderId = -1;
+    private int uploadId = -1;
+    private int processingStatus = 0;
 
-    public OffsetDateTime startDateTime;
-    public OffsetDateTime endDateTime;
-    public String md5Hash;
-    public String systemId;
-    public String filename;
-    public String calculated;
-    public String suggestedTailNumber;
+    private OffsetDateTime startDateTime;
+    private OffsetDateTime endDateTime;
+    private String md5Hash;
+    private String systemId;
+    private String filename;
+    private String calculated;
+    private String suggestedTailNumber;
 
-    public Airframes.Airframe airframe = null;
+    private Airframes.Airframe airframe = null;
 
-    public FlightMeta() {
-    }
+    public FlightMeta() {}
 
     public FlightMeta(FlightMeta other) {
         this.fleetId = other.fleetId;
@@ -65,6 +64,14 @@ public final class FlightMeta {
         this.uploadId = uploadId;
     }
 
+    public int getProcessingStatus() {
+        return processingStatus;
+    }
+
+    public void setProcessingStatus(int processingStatus) {
+        this.processingStatus = processingStatus;
+    }
+
     public OffsetDateTime getStartDateTime() {
         return startDateTime;
     }
@@ -97,12 +104,16 @@ public final class FlightMeta {
         return airframe;
     }
 
-    public void setAirframe(String airframe, String airframeType) {
-        this.airframe = new Airframes.Airframe(airframe, new Airframes.Type(airframeType));
+    public void setAirframe(String newAirframe, String newAirframeType) {
+        this.airframe = new Airframes.Airframe(newAirframe, new Airframes.Type(newAirframeType));
     }
 
-    public void setAirframe(Airframes.Airframe airframe, Airframes.Type airframeType) {
+    public void setAirframe(Airframes.Airframe airframe) {
         this.airframe = airframe;
+    }
+
+    public void setAirframe(Airframes.Airframe newAirframe, Airframes.Type airframeType) {
+        this.airframe = newAirframe;
     }
 
     public String getSystemId() {

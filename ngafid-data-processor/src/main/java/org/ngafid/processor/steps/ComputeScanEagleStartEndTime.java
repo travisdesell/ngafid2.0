@@ -51,7 +51,7 @@ public class ComputeScanEagleStartEndTime extends ComputeStep {
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         StringTimeSeries times = builder.getStringTimeSeries(Parameters.SCAN_EAGLE_GPS_TIME);
 
-        String[] filenameParts = builder.meta.filename.split("_");
+        String[] filenameParts = builder.meta.getFilename().split("_");
         String startDateTime = filenameParts[0];
         String endDateTime = startDateTime;
 
@@ -84,8 +84,6 @@ public class ComputeScanEagleStartEndTime extends ComputeStep {
             endODT = endODT.plusDays(1);
         }
 
-        builder
-                .setStartDateTime(startODT)
-                .setEndDateTime(endODT);
+        builder.setStartDateTime(startODT).setEndDateTime(endODT);
     }
 }

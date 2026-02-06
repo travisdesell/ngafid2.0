@@ -1,4 +1,5 @@
 package org.ngafid.core.kafka;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,8 +26,7 @@ public enum Topic {
     EVENT_RETRY("event-retry"),
     EVENT_DLQ("event-dlq"),
 
-    STATUS_HEARTBEAT("docker-status-heartbeat")
-    ;
+    STATUS_HEARTBEAT("docker-status-heartbeat");
 
     private final String name;
 

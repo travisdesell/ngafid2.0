@@ -35,7 +35,7 @@ public class SRTMTile {
         // LOG.info("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
 
         Path path = Paths.get(Config.NGAFID_TERRAIN_DIR + "/" + directory + "/" + filename);
-        //Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + filename);
+        // Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + filename);
 
         bytes = null;
         try {
@@ -48,7 +48,7 @@ public class SRTMTile {
             System.exit(1);
         }
 
-        //file currents in the northwest corner
+        // file currents in the northwest corner
         int altitudeM;
 
         int offset = 0;
@@ -64,15 +64,15 @@ public class SRTMTile {
                 altitudeM = ((bytes[offset] & 0xff) << 8) | (bytes[offset + 1] & 0xff);
 
                 altititudeFt = (int) ((double) altitudeM * 3.2808399);
-                //altitudesFt[x][y] = altititudeFt;
-                //altitudesFt[1200 - x][y] = altititudeFt;
-                //altitudesFt[x][1200 - y] = altititudeFt; //close-ish
-                //altitudesFt[1200 - x][1200 - y] = altititudeFt;
+                // altitudesFt[x][y] = altititudeFt;
+                // altitudesFt[1200 - x][y] = altititudeFt;
+                // altitudesFt[x][1200 - y] = altititudeFt; //close-ish
+                // altitudesFt[1200 - x][1200 - y] = altititudeFt;
 
                 altitudesFt[y][x] = altititudeFt;
-                //altitudesFt[1200 - y][x] = altititudeFt;
-                //altitudesFt[y][1200 - x] = altititudeFt;
-                //altitudesFt[1200 - y][1200 - x] = altititudeFt;
+                // altitudesFt[1200 - y][x] = altititudeFt;
+                // altitudesFt[y][1200 - x] = altititudeFt;
+                // altitudesFt[1200 - y][1200 - x] = altititudeFt;
 
                 if (altititudeFt > max) max = altititudeFt;
                 if (altititudeFt < min) min = altititudeFt;
@@ -91,22 +91,22 @@ public class SRTMTile {
     public double getAltitudeFt(double latitude, double longitude) {
         double latDiff = Math.ceil(latitude) - latitude;
         double lonDiff = longitude - Math.floor(longitude);
-        //cout << "latitude: " << latitude << ", latDiff: " << latDiff << endl;
-        //cout << "longitude: " << longitude << ", lonDiff: " << lonDiff << endl;
+        // cout << "latitude: " << latitude << ", latDiff: " << latDiff << endl;
+        // cout << "longitude: " << longitude << ", lonDiff: " << lonDiff << endl;
 
-        //tiles store the terrain height values starting in the NW corner
-        //even though the file name is for the SW corner
+        // tiles store the terrain height values starting in the NW corner
+        // even though the file name is for the SW corner
 
-        //int latIndex0 = (int)(latDiff / (srtmGridSize - 1));
+        // int latIndex0 = (int)(latDiff / (srtmGridSize - 1));
         int latIndex0 = (int) (latDiff / SRTM_GRID_SIZE);
         int latIndex1 = latIndex0 + 1;
-        //int lonIndex0 = (int)(lonDiff / (srtmGridSize - 1));
+        // int lonIndex0 = (int)(lonDiff / (srtmGridSize - 1));
         int lonIndex0 = (int) (lonDiff / SRTM_GRID_SIZE);
         int lonIndex1 = lonIndex0 + 1;
 
-        //cout << "srtmGridSize: " << srtmGridSize << endl;
-        //cout << "latIndex0: " << latIndex0 << ", latIndex1: " << latIndex1 << endl;
-        //cout << "lonIndex0: " << lonIndex0 << ", lonIndex1: " << lonIndex1 << endl;
+        // cout << "srtmGridSize: " << srtmGridSize << endl;
+        // cout << "latIndex0: " << latIndex0 << ", latIndex1: " << latIndex1 << endl;
+        // cout << "lonIndex0: " << lonIndex0 << ", lonIndex1: " << lonIndex1 << endl;
 
         /*
         System.out.println("altitudesFt[" + latIndex0 + "][" + lonIndex0 + "]: " + altitudesFt[latIndex0][lonIndex0]);
@@ -118,10 +118,10 @@ public class SRTMTile {
         double x = lonDiff - (lonIndex0 * SRTM_GRID_SIZE);
         double y = latDiff - (latIndex0 * SRTM_GRID_SIZE);
 
-        return (altitudesFt[latIndex0][lonIndex0] * (1 - x) * (1 - y)) +
-                (altitudesFt[latIndex1][lonIndex0] * x * (1 - y)) +
-                (altitudesFt[latIndex0][lonIndex1] * (1 - x) * y) +
-                (altitudesFt[latIndex1][lonIndex1] * x * y);
+        return (altitudesFt[latIndex0][lonIndex0] * (1 - x) * (1 - y))
+                + (altitudesFt[latIndex1][lonIndex0] * x * (1 - y))
+                + (altitudesFt[latIndex0][lonIndex1] * (1 - x) * y)
+                + (altitudesFt[latIndex1][lonIndex1] * x * y);
 
         /*
         int y = (int)Math.floor((1.0 - (latitude % 1.0)) * srtmTileSize);

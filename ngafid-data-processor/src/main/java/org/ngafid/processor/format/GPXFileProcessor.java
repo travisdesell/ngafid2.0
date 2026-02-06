@@ -29,11 +29,11 @@ import org.xml.sax.SAXException;
  *
  * @author Josh Karns
  */
-
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
-    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
+    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
+            throws IOException {
         super(connection, stream, filename, pipeline);
     }
 
@@ -48,8 +48,8 @@ public class GPXFileProcessor extends FlightFileProcessor {
         }
     }
 
-    public List<FlightBuilder> parseFlights(String entry, InputStream stream) throws SQLException,
-            MalformedFlightFileException, IOException, FatalFlightFileException {
+    public List<FlightBuilder> parseFlights(String entry, InputStream stream)
+            throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException {
         List<FlightBuilder> flights = new ArrayList<>();
         // BE-GPS-2200
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -90,17 +90,17 @@ public class GPXFileProcessor extends FlightFileProcessor {
             NodeList elenodes = doc.getElementsByTagName("ele");
             NodeList spdnodes = doc.getElementsByTagName("badelf:speed");
 
-            if (spdnodes.item(0) == null)
-                throw new FatalFlightFileException("GPX file is missing GndSpd.");
+            if (spdnodes.item(0) == null) throw new FatalFlightFileException("GPX file is missing GndSpd.");
 
-            if (!(dates.getLength() == datanodes.getLength() &&
-                    dates.getLength() == elenodes.getLength() &&
-                    dates.getLength() == spdnodes.getLength())) {
+            if (!(dates.getLength() == datanodes.getLength()
+                    && dates.getLength() == elenodes.getLength()
+                    && dates.getLength() == spdnodes.getLength())) {
                 throw new FatalFlightFileException("Mismatching number of data tags in GPX file");
             }
 
             for (int i = 0; i < dates.getLength(); i++) {
-                OffsetDateTime date = OffsetDateTime.parse(dates.item(i).getTextContent(), DateTimeFormatter.ISO_DATE_TIME);
+                OffsetDateTime date =
+                        OffsetDateTime.parse(dates.item(i).getTextContent(), DateTimeFormatter.ISO_DATE_TIME);
                 unix.add(date.toEpochSecond());
                 utc.add(date.format(TimeUtils.ISO_8601_FORMAT));
 
@@ -125,8 +125,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
             int start = 0;
             for (int end = 1; end < utc.size(); end++) {
                 // 1 minute delay -> new flight.
-                if (unix.get(end) - unix.get(end - 1) > 60000
-                        || end == utc.size() - 1) {
+                if (unix.get(end) - unix.get(end - 1) > 60000 || end == utc.size() - 1) {
                     if (end == utc.size() - 1) {
                         end += 1;
                     }
@@ -138,14 +137,15 @@ public class GPXFileProcessor extends FlightFileProcessor {
 
                     final int lo = start, hi = end;
                     HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
-                    List.of(spd, lon, lat, msl, unix).forEach(series -> doubleSeries.put(series.getName(), series.subSeries(lo, hi)));
+                    List.of(spd, lon, lat, msl, unix)
+                            .forEach(series -> doubleSeries.put(series.getName(), series.subSeries(lo, hi)));
 
                     HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
                     stringSeries.put(utc.getName(), utc.subSeries(start, end));
 
                     FlightMeta meta = new FlightMeta();
                     meta.setFilename(this.filename + ":" + start + "-" + end);
-                    meta.airframe = new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing"));
+                    meta.setAirframe(new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing")));
                     meta.setSuggestedTailNumber(nickname);
                     meta.setSystemId(nickname);
 

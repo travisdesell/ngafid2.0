@@ -45,7 +45,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
     @Override
     protected List<String> getRequiredDoubleColumns() {
-        return List.of(Parameters.ALT_MSL, Parameters.ALT_AGL, Parameters.LATITUDE, Parameters.LONGITUDE, Parameters.IAS);
+        return List.of(
+                Parameters.ALT_MSL, Parameters.ALT_AGL, Parameters.LATITUDE, Parameters.LONGITUDE, Parameters.IAS);
     }
 
     public List<Event> scanFlightPair(
@@ -53,7 +54,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
             Flight flight,
             FlightTimeLocation flightInfo,
             Flight otherFlight,
-            FlightTimeLocation otherFlightInfo) throws SQLException, NullPointerException {
+            FlightTimeLocation otherFlightInfo)
+            throws SQLException, NullPointerException {
         ArrayList<Event> eventList = new ArrayList<>();
         String startTime = null;
         String endTime = null;
@@ -75,8 +77,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
         final int stopBuffer = 30;
         final double DEGREE_BUFFER = 0.003; // 1000 ft
 
-        if (!flightInfo.hasRegionOverlap(otherFlightInfo, DEGREE_BUFFER) ||
-                !otherFlightInfo.getSeriesData(connection)) {
+        if (!flightInfo.hasRegionOverlap(otherFlightInfo, DEGREE_BUFFER)
+                || !otherFlightInfo.getSeriesData(connection)) {
             return List.of();
         }
 
@@ -110,13 +112,20 @@ public class ProximityEventScanner extends AbstractEventScanner {
                 continue;
             }
 
-            double distanceFt = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i],
-                    flightInfo.altitudeMSL[i], otherFlightInfo.latitude[j], otherFlightInfo.longitude[j],
+            double distanceFt = calculateDistance(
+                    flightInfo.latitude[i],
+                    flightInfo.longitude[i],
+                    flightInfo.altitudeMSL[i],
+                    otherFlightInfo.latitude[j],
+                    otherFlightInfo.longitude[j],
                     otherFlightInfo.altitudeMSL[j]);
-            double lateralDistanceFt = calculateLateralDistance(flightInfo.latitude[i],
-                    flightInfo.longitude[i], otherFlightInfo.latitude[j], otherFlightInfo.longitude[j]);
-            double verticalDistanceFt = calculateVerticalDistance(flightInfo.altitudeMSL[i],
-                    otherFlightInfo.altitudeMSL[j]);
+            double lateralDistanceFt = calculateLateralDistance(
+                    flightInfo.latitude[i],
+                    flightInfo.longitude[i],
+                    otherFlightInfo.latitude[j],
+                    otherFlightInfo.longitude[j]);
+            double verticalDistanceFt =
+                    calculateVerticalDistance(flightInfo.altitudeMSL[i], otherFlightInfo.altitudeMSL[j]);
 
             final double maxDistanceFt = 1000.0;
             final double minAltitudeAgl = 50.0;
@@ -160,13 +169,17 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
             } else if (startTime != null && ++stopCount == stopBuffer) {
                 if (startCount < startBuffer) {
-                    LOG.info("CalculateProximity.java -- Not enough triggers, will not create " +
-                            "Proximity event: " + endTime + " - " + startTime + " = " +
-                            (Duration.between(Instant.parse(startTime),
-                                    Instant.parse(endTime)).toMillis() / 1000.0) + " seconds");
+                    LOG.info("CalculateProximity.java -- Not enough triggers, will not create " + "Proximity event: "
+                            + endTime + " - " + startTime + " = "
+                            + (Duration.between(Instant.parse(startTime), Instant.parse(endTime))
+                                            .toMillis()
+                                    / 1000.0)
+                            + " seconds");
                 } else {
-                    LOG.info("(A) Creating events for flights with IDs : " + flight.getId() + " and " + otherFlight.getId());
-                    emitProximityEventPair(flight,
+                    LOG.info("(A) Creating events for flights with IDs : " + flight.getId() + " and "
+                            + otherFlight.getId());
+                    emitProximityEventPair(
+                            flight,
                             flightInfo,
                             otherFlight,
                             otherFlightInfo,
@@ -175,15 +188,15 @@ public class ProximityEventScanner extends AbstractEventScanner {
                             TimeUtils.parseUTC(endTime),
                             TimeUtils.parseUTC(otherStartTime),
                             TimeUtils.parseUTC(otherEndTime),
-                            startLine, endLine,
+                            startLine,
+                            endLine,
                             otherStartLine,
                             otherEndLine,
                             severity,
                             lateralDistance,
                             verticalDistance,
                             currentPointsMain,
-                            currentPointsOther
-                    );
+                            currentPointsOther);
                 }
 
                 startTime = null;
@@ -203,14 +216,12 @@ public class ProximityEventScanner extends AbstractEventScanner {
                         flightInfo.latitude[i],
                         flightInfo.longitude[i],
                         TimeUtils.parseUTC(flightInfo.utc.get(i)),
-                        flightInfo.altitudeAGL[i]
-                ));
+                        flightInfo.altitudeAGL[i]));
                 currentPointsOther.add(new ProximityPointData(
                         otherFlightInfo.latitude[j],
                         otherFlightInfo.longitude[j],
                         TimeUtils.parseUTC(otherFlightInfo.utc.get(j)),
-                        otherFlightInfo.altitudeAGL[j]
-                ));
+                        otherFlightInfo.altitudeAGL[j]));
             }
 
             i += 1;
@@ -220,7 +231,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
         if (startTime != null) {
             LOG.info("(B) Creating events for flights with IDs : " + flight.getId() + " and " + otherFlight.getId());
             emitProximityEventPair(
-                    flight, flightInfo,
+                    flight,
+                    flightInfo,
                     otherFlight,
                     otherFlightInfo,
                     eventList,
@@ -228,51 +240,67 @@ public class ProximityEventScanner extends AbstractEventScanner {
                     TimeUtils.parseUTC(endTime),
                     TimeUtils.parseUTC(otherStartTime),
                     TimeUtils.parseUTC(otherEndTime),
-                    startLine, endLine,
+                    startLine,
+                    endLine,
                     otherStartLine,
                     otherEndLine,
                     severity,
                     lateralDistance,
                     verticalDistance,
                     currentPointsMain,
-                    currentPointsOther
-            );
+                    currentPointsOther);
         }
 
         return eventList;
     }
 
-    private void emitProximityEventPair(Flight flight,
-                                        FlightTimeLocation flightInfo,
-                                        Flight otherFlight,
-                                        FlightTimeLocation otherFlightInfo,
-                                        ArrayList<Event> eventList,
-                                        OffsetDateTime startTime,
-                                        OffsetDateTime endTime,
-                                        OffsetDateTime otherStartTime,
-                                        OffsetDateTime otherEndTime,
-                                        int startLine, int endLine,
-                                        int otherStartLine,
-                                        int otherEndLine,
-                                        double severity,
-                                        double lateralDistance,
-                                        double verticalDistance,
-                                        List<ProximityPointData> currentPointsMain,
-                                        List<ProximityPointData> currentPointsOther) {
+    private void emitProximityEventPair(
+            Flight flight,
+            FlightTimeLocation flightInfo,
+            Flight otherFlight,
+            FlightTimeLocation otherFlightInfo,
+            ArrayList<Event> eventList,
+            OffsetDateTime startTime,
+            OffsetDateTime endTime,
+            OffsetDateTime otherStartTime,
+            OffsetDateTime otherEndTime,
+            int startLine,
+            int endLine,
+            int otherStartLine,
+            int otherEndLine,
+            double severity,
+            double lateralDistance,
+            double verticalDistance,
+            List<ProximityPointData> currentPointsMain,
+            List<ProximityPointData> currentPointsOther) {
         if (flight.getId() == otherFlight.getId()) {
             LOG.warning("emitProximityEventPair: Skipping self-event creation for flight ID " + flight.getId());
             return;
         }
 
-        Event event = new Event(startTime, endTime, startLine, endLine, super.definition.getId(), severity,
-                flight.getId(), otherFlight.getId());
-        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine,
-                otherEndLine, super.definition.getId(), severity, otherFlight.getId(), flight.getId());
+        Event event = new Event(
+                startTime,
+                endTime,
+                startLine,
+                endLine,
+                super.definition.getId(),
+                severity,
+                flight.getId(),
+                otherFlight.getId());
+        Event otherEvent = new Event(
+                otherStartTime,
+                otherEndTime,
+                otherStartLine,
+                otherEndLine,
+                super.definition.getId(),
+                severity,
+                otherFlight.getId(),
+                flight.getId());
 
-        EventMetaData lateralDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE,
-                lateralDistance);
-        EventMetaData verticalDistanceMetaData = new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE,
-                verticalDistance);
+        EventMetaData lateralDistanceMetaData =
+                new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, lateralDistance);
+        EventMetaData verticalDistanceMetaData =
+                new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, verticalDistance);
 
         event.addMetaData(lateralDistanceMetaData);
         event.addMetaData(verticalDistanceMetaData);
@@ -280,8 +308,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
         otherEvent.addMetaData(verticalDistanceMetaData);
 
         if (severity > 0) {
-            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo,
-                    otherFlightInfo, startLine, endLine, otherStartLine, otherEndLine);
+            double[] rateOfClosureArray = calculateRateOfClosure(
+                    flightInfo, otherFlightInfo, startLine, endLine, otherStartLine, otherEndLine);
             RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
             event.setRateOfClosure(rateOfClosure);
             otherEvent.setRateOfClosure(rateOfClosure);
@@ -328,25 +356,28 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         // Get enough information about the flight to determine if we can calculate adjacencies with it
         FlightTimeLocation flightInfo = new FlightTimeLocation(connection, flight);
-        boolean hasSeriesData = flightInfo.getSeriesData(connection), gotSeriesData = flightInfo.hasSeriesData(), isValid = flightInfo.isValid();
+        boolean hasSeriesData = flightInfo.getSeriesData(connection),
+                gotSeriesData = flightInfo.hasSeriesData(),
+                isValid = flightInfo.isValid();
         if (!hasSeriesData || !gotSeriesData || !isValid) {
             LOG.info("Flight is invalid for some reason " + hasSeriesData + ", " + gotSeriesData + ", " + isValid);
             return List.of();
         }
 
-        ArrayList<Flight> potentialFlights = Flight.getFlights(connection, "(id != " + flightId + " AND " +
-                "start_time <= '" + flightInfo.endDateTime + "' AND end_time >= " +
-                "'" + flightInfo.startDateTime + "')");
+        ArrayList<Flight> potentialFlights = Flight.getFlights(
+                connection,
+                "(id != " + flightId + " AND " + "start_time <= '"
+                        + flightInfo.endDateTime + "' AND end_time >= " + "'"
+                        + flightInfo.startDateTime + "')");
 
         List<Event> allEvents = new ArrayList<>();
 
         for (Flight otherFlight : potentialFlights) {
 
-            if (otherFlight.getId() == flight.getId()){
+            if (otherFlight.getId() == flight.getId()) {
                 LOG.info("Skipping  flight pair: " + otherFlight.getId() + ", " + otherFlight.getFilename());
                 continue;
             }
-
 
             FlightTimeLocation otherFlightInfo = new FlightTimeLocation(connection, otherFlight);
             allEvents.addAll(scanFlightPair(connection, flight, flightInfo, otherFlight, otherFlightInfo));
@@ -355,8 +386,9 @@ public class ProximityEventScanner extends AbstractEventScanner {
     }
 
     @Override
-
-    public List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) throws SQLException {
+    public List<Event> scan(
+            Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries)
+            throws SQLException {
         try (Connection connection = Database.getConnection()) {
             List<Event> events = processFlight(connection, flight);
             return events;
@@ -366,8 +398,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
     public Map<Event, List<ProximityPointData>> getMainFlightPointsMap() {
         return mainFlightPointsMap;
     }
+
     public Map<Event, List<ProximityPointData>> getOtherFlightPointsMap() {
         return otherFlightPointsMap;
     }
-
 }

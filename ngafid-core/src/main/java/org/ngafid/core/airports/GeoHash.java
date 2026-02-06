@@ -25,7 +25,6 @@ public final class GeoHash {
         return DECIMAL_FORMAT.format(latitude) + DECIMAL_FORMAT.format(longitude);
     }
 
-
     public static String[] getNearbyGeoHashes(double latitude, double longitude) {
         String latHash = DECIMAL_FORMAT.format(latitude);
         String lonHash = DECIMAL_FORMAT.format(longitude);
@@ -36,34 +35,33 @@ public final class GeoHash {
 
         String[] hashes = new String[9];
 
-        //NW tile
+        // NW tile
         hashes[0] = DECIMAL_FORMAT.format(trimmedLat + modifier) + DECIMAL_FORMAT.format(trimmedLon - modifier);
 
-        //N tile
+        // N tile
         hashes[1] = DECIMAL_FORMAT.format(trimmedLat + modifier) + lonHash;
 
-        //NE tile
+        // NE tile
         hashes[2] = DECIMAL_FORMAT.format(trimmedLat + modifier) + DECIMAL_FORMAT.format(trimmedLon + modifier);
 
-        //W tile
+        // W tile
         hashes[3] = latHash + DECIMAL_FORMAT.format(trimmedLon - modifier);
 
-        //center tile
+        // center tile
         hashes[4] = latHash + lonHash;
 
-        //E tile
+        // E tile
         hashes[5] = latHash + DECIMAL_FORMAT.format(trimmedLon + modifier);
 
-        //SW tile
+        // SW tile
         hashes[6] = DECIMAL_FORMAT.format(trimmedLat - modifier) + DECIMAL_FORMAT.format(trimmedLon - modifier);
 
-        //S tile
+        // S tile
         hashes[7] = DECIMAL_FORMAT.format(trimmedLat - modifier) + lonHash;
 
-        //SE tile
+        // SE tile
         hashes[8] = DECIMAL_FORMAT.format(trimmedLat - modifier) + DECIMAL_FORMAT.format(trimmedLon + modifier);
 
         return hashes;
     }
-
 }

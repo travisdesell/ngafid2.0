@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.util.SendEmail;
 
-
 public class UploadProcessedEmail {
 
     private static final Logger LOG = Logger.getLogger(UploadProcessedEmail.class.getName());
@@ -57,8 +56,8 @@ public class UploadProcessedEmail {
         this.exceedencesElapsedTime = exceedencesElapsedTime;
     }
 
-    public void setProximityElapsedTime(double newProxElapsedTime, double avgTime, double avgTimeMatchTime,
-                                        double avgLocationMatchTime) {
+    public void setProximityElapsedTime(
+            double newProxElapsedTime, double avgTime, double avgTimeMatchTime, double avgLocationMatchTime) {
         this.proximityElapsedTime = newProxElapsedTime;
         this.proximityAvgTime = avgTime;
         this.proximityAvgTimeMatchTime = avgTimeMatchTime;
@@ -134,8 +133,8 @@ public class UploadProcessedEmail {
         StringBuilder body = new StringBuilder();
 
         body.append("<body><html><br>");
-        body.append("importing " + flightInfoMap.size() + " flight files to the database took "
-                + importElapsedTime + "<br>");
+        body.append("importing " + flightInfoMap.size() + " flight files to the database took " + importElapsedTime
+                + "<br>");
 
         int numberOkFlights = 0;
         int numberWarningFlights = 0;
@@ -163,19 +162,20 @@ public class UploadProcessedEmail {
         body.append("&emsp; " + numberEventErrors + " events could not be calculated due to data issues.<br>");
         body.append("<br>");
 
-        body.append("calculating proximity events for " + numberImportedFlights + " took " + proximityElapsedTime +
-                " seconds, averaging " + proximityAvgTime + " seconds per flight, time bound matching averaged " +
-                proximityAvgTimeMatchTime + " seconds and location bound matching took " + proximityAvgLocationMatchTime
+        body.append("calculating proximity events for " + numberImportedFlights + " took " + proximityElapsedTime
+                + " seconds, averaging "
+                + proximityAvgTime + " seconds per flight, time bound matching averaged " + proximityAvgTimeMatchTime
+                + " seconds and location bound matching took " + proximityAvgLocationMatchTime
                 + " seconds on average.<br>");
         body.append("&emsp; " + numberProximityEvents + " proximity events were found.<br>");
-        body.append("&emsp; " + numberProximityErrors + " flights could not be processed for proximity due to data " +
-                "issues.<br>");
+        body.append("&emsp; " + numberProximityErrors + " flights could not be processed for proximity due to data "
+                + "issues.<br>");
         body.append("<br>");
 
-        body.append("calculating turn to final information for " + numberImportedFlights + " took " + ttfElapsedTime +
-                " seconds.");
-        body.append("&emsp; " + numberTTFErrors + " flights could not be processed for turn-to-final due to data " +
-                "issues.<br>");
+        body.append("calculating turn to final information for " + numberImportedFlights + " took " + ttfElapsedTime
+                + " seconds.");
+        body.append("&emsp; " + numberTTFErrors + " flights could not be processed for turn-to-final due to data "
+                + "issues.<br>");
         body.append("<br>");
 
         body.append("flight details:<br>");
@@ -189,15 +189,17 @@ public class UploadProcessedEmail {
     }
 
     private enum FlightStatus {
-        OK, ERROR, WARNING
+        OK,
+        ERROR,
+        WARNING
     }
 
     private static class FlightInfo {
         /**
          * This is a helper class so we don't keep all loaded flights in memory.
          */
-
         private int id;
+
         private int length;
         private final String filename;
 
@@ -273,7 +275,10 @@ public class UploadProcessedEmail {
         public void getDetails(StringBuilder body) {
             if (status == FlightStatus.ERROR) {
                 body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=")
-                        .append(id).append("'>flight ").append(id).append("</a> imported with errors:");
+                        .append(id)
+                        .append("'>flight ")
+                        .append(id)
+                        .append("</a> imported with errors:");
                 body.append("<br>");
                 if (errorMessages.size() > 1) {
                     body.append("<br>");
@@ -289,13 +294,19 @@ public class UploadProcessedEmail {
 
             } else if (status == FlightStatus.WARNING) {
                 body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=")
-                        .append(id).append("'>flight ").append(id).append("</a> imported with warnings:<br>");
+                        .append(id)
+                        .append("'>flight ")
+                        .append(id)
+                        .append("</a> imported with warnings:<br>");
                 for (String message : warningMessages) {
                     body.append("&emsp; &emsp; ").append(message).append("<br>");
                 }
             } else {
                 body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=")
-                        .append(id).append("'>flight ").append(id).append("</a> imported OK:<br>");
+                        .append(id)
+                        .append("'>flight ")
+                        .append(id)
+                        .append("</a> imported OK:<br>");
             }
 
             for (String message : exceedenceMessages) {
@@ -303,19 +314,27 @@ public class UploadProcessedEmail {
             }
 
             for (String message : exceedenceErrorMessages) {
-                body.append("&emsp; &emsp; event calculation warning: ").append(message).append("<br>");
+                body.append("&emsp; &emsp; event calculation warning: ")
+                        .append(message)
+                        .append("<br>");
             }
 
             for (String message : proximityMessages) {
-                body.append("&emsp; &emsp; proximity event found: ").append(message).append("<br>");
+                body.append("&emsp; &emsp; proximity event found: ")
+                        .append(message)
+                        .append("<br>");
             }
 
             for (String message : proximityErrorMessages) {
-                body.append("&emsp; &emsp; proximity calculation warning: ").append(message).append("<br>");
+                body.append("&emsp; &emsp; proximity calculation warning: ")
+                        .append(message)
+                        .append("<br>");
             }
 
             for (String message : ttfErrorMessages) {
-                body.append("&emsp; &emsp; turn-to-final calculation warning: ").append(message).append("<br>");
+                body.append("&emsp; &emsp; turn-to-final calculation warning: ")
+                        .append(message)
+                        .append("<br>");
             }
         }
     }

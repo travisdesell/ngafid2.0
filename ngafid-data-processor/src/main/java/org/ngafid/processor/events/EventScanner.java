@@ -58,8 +58,7 @@ public class EventScanner extends AbstractEventScanner {
     }
 
     @Override
-    public List<Event> scan(Map<String, DoubleTimeSeries> doubleSeries,
-                            Map<String, StringTimeSeries> stringSeries) {
+    public List<Event> scan(Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
         StringTimeSeries utcSeries = stringSeries.get(Parameters.UTC_DATE_TIME);
 
         reset();
@@ -85,7 +84,8 @@ public class EventScanner extends AbstractEventScanner {
 
                         if (startCount >= startBuffer) {
                             // we had enough triggers to reach the start count so create the event
-                            Event event = new Event(startTime, endTime, startLine, endLine, definition.getId(), severity);
+                            Event event =
+                                    new Event(startTime, endTime, startLine, endLine, definition.getId(), severity);
                             event.setEventDefinitionId(definition.getId());
                             eventList.add(event);
                         }

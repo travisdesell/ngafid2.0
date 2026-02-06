@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class Config {
-    private static final Properties properties = new Properties();
+public final class Config {
+    private static final Properties PROPERTIES = new Properties();
     private static final String PROPERTIES_FILE = "ngafid.properties";
     private static final boolean IS_DOCKER_ENVIRONMENT;
     private static boolean environmentLogged = false;
@@ -38,14 +38,16 @@ public class Config {
         loadProperties();
 
         // Initialize configuration values from properties file
-        PARALLELISM = getIntPropertyWithDefault("ngafid.parallelism", Runtime.getRuntime().availableProcessors());
+        PARALLELISM = getIntPropertyWithDefault(
+                "ngafid.parallelism", Runtime.getRuntime().availableProcessors());
         NGAFID_PORT = getIntPropertyWithDefault("ngafid.port", 8181);
         MAX_TERRAIN_CACHE_SIZE = getIntPropertyWithDefault("ngafid.max.terrain.cache.size", 384);
 
         NGAFID_USE_MARIA_DB = getBooleanPropertyWithDefault("ngafid.use.maria.db", false);
         NGAFID_EMAIL_ENABLED = getBooleanPropertyWithDefault("ngafid.email.enabled", false);
         DISABLE_PERSISTENT_SESSIONS = getBooleanPropertyWithDefault("ngafid.disable.persistent.sessions", false);
-        MEMORY_EFFICIENT_UPLOAD_PROCESSOR = getBooleanPropertyWithDefault("ngafid.memory.efficient.upload.processor", true);
+        MEMORY_EFFICIENT_UPLOAD_PROCESSOR =
+                getBooleanPropertyWithDefault("ngafid.memory.efficient.upload.processor", true);
 
         AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
         RUNWAYS_FILE = getStringProperty("ngafid.runways.file");
@@ -61,25 +63,28 @@ public class Config {
         LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file");
     }
 
+    private Config() {}
+
     private static void loadProperties() {
         // Check for custom properties file first
         String customPropertiesFile = System.getProperty("ngafid.config.file");
         if (customPropertiesFile != null) {
             try (InputStream input = Config.class.getClassLoader().getResourceAsStream(customPropertiesFile)) {
                 if (input != null) {
-                    properties.load(input);
+                    PROPERTIES.load(input);
                     System.out.println("Loaded configuration from " + customPropertiesFile);
                     return;
                 }
             } catch (IOException e) {
-                System.err.println("Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
+                System.err.println(
+                        "Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
             }
         }
 
         // Load the unified properties file
         try (InputStream input = Config.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
             if (input != null) {
-                properties.load(input);
+                PROPERTIES.load(input);
                 System.out.println("Loaded unified configuration from " + PROPERTIES_FILE);
 
                 resolveVariableSubstitutions();
@@ -107,12 +112,12 @@ public class Config {
         String propertyValue = null;
         if (isDocker) {
             String dockerPropertyKey = propertyKey.replace("ngafid.", "ngafid.docker.");
-            propertyValue = properties.getProperty(dockerPropertyKey);
+            propertyValue = PROPERTIES.getProperty(dockerPropertyKey);
         }
 
         // If no Docker-specific property found, try the general property
         if (propertyValue == null) {
-            propertyValue = properties.getProperty(propertyKey);
+            propertyValue = PROPERTIES.getProperty(propertyKey);
         }
 
         if (propertyValue != null) {
@@ -126,7 +131,6 @@ public class Config {
         System.err.println("2. Set the system property: -D" + propertyKey + "=<value>");
         throw new RuntimeException("Configuration value not found for '" + propertyKey + "'");
     }
-
 
     // Public methods for property-based configuration
     public static String getProperty(String key) {
@@ -173,26 +177,29 @@ public class Config {
      */
     private static void resolveVariableSubstitutions() {
         // First pass: resolve basic variables
-        for (String key : properties.stringPropertyNames()) {
-            String value = properties.getProperty(key);
+        for (String key : PROPERTIES.stringPropertyNames()) {
+            String value = PROPERTIES.getProperty(key);
             if (value != null && value.contains("${")) {
                 String resolved = resolveVariables(value);
-                properties.setProperty(key, resolved);
+                PROPERTIES.setProperty(key, resolved);
             }
         }
 
         // Second pass: resolve nested variables
-        for (String key : properties.stringPropertyNames()) {
-            String value = properties.getProperty(key);
+        for (String key : PROPERTIES.stringPropertyNames()) {
+            String value = PROPERTIES.getProperty(key);
             if (value != null && value.contains("${")) {
                 String resolved = resolveVariables(value);
-                properties.setProperty(key, resolved);
+                PROPERTIES.setProperty(key, resolved);
             }
         }
     }
 
     /**
-     * Resolves variables in a string value
+     * Resolves variables in a string value.
+     *
+     * @param value the input value to resolve
+     * @return the resolved value
      */
     private static String resolveVariables(String value) {
         if (value == null || !value.contains("${")) {
@@ -205,7 +212,7 @@ public class Config {
             int end = result.indexOf("}", start);
             if (end != -1) {
                 String varName = result.substring(start + 2, end);
-                String varValue = properties.getProperty(varName);
+                String varValue = PROPERTIES.getProperty(varName);
                 if (varValue != null) {
                     result = result.substring(0, start) + varValue + result.substring(end + 1);
                 } else {
@@ -222,7 +229,9 @@ public class Config {
     }
 
     /**
-     * Public method to check if running in Docker environment
+     * Public method to check if running in Docker environment.
+     *
+     * @return true when running in Docker, false otherwise
      */
     public static boolean isDockerEnvironment() {
         return IS_DOCKER_ENVIRONMENT;
@@ -230,7 +239,9 @@ public class Config {
 
     /**
      * Detects if the application is running inside a Docker container
-     * by checking for the presence of /.dockerenv file
+     * by checking for the presence of /.dockerenv file.
+     *
+     * @return true when running in Docker, false otherwise
      */
     private static boolean isRunningInDocker() {
         try {

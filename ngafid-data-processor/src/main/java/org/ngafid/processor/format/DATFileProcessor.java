@@ -32,7 +32,6 @@ import org.ngafid.processor.Pipeline;
  *
  * @author Aaron Chan
  */
-
 public class DATFileProcessor extends FlightFileProcessor {
     static final Map<String, String> DATA_TYPE_MAP = Map.ofEntries(
             Map.entry("accel", "m/s^2"),
@@ -147,9 +146,12 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @throws IOException            - If there is an issue reading the file
      * @throws CsvValidationException - If there is an issue validating the CSV
      */
-    private static void readData(CSVReader reader, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String,
-            StringTimeSeries> stringTimeSeriesMap, ArrayList<String> columnNames) throws IOException,
-            CsvValidationException {
+    private static void readData(
+            CSVReader reader,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap,
+            ArrayList<String> columnNames)
+            throws IOException, CsvValidationException {
         String[] line;
 
         while ((line = reader.readNext()) != null) {
@@ -219,8 +221,11 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param stringTimeSeriesMap - Map of string time series data
      * @throws ParseException - If there is an issue parsing the date and time
      */
-    private static void calculateDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String,
-            StringTimeSeries> stringTimeSeriesMap, Date startDate) throws ParseException {
+    private static void calculateDateTime(
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap,
+            Date startDate)
+            throws ParseException {
         LOG.info("Calculating date time for DAT file");
         StringTimeSeries utc = new StringTimeSeries(UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME);
         DoubleTimeSeries unix = new DoubleTimeSeries(UNIX_TIME_SECONDS, Parameters.Unit.SECONDS);
@@ -244,7 +249,8 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @return The start date and time
      */
-    private static Date findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws FatalFlightFileException {
+    private static Date findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap)
+            throws FatalFlightFileException {
         DoubleTimeSeries dateSeries = doubleTimeSeriesMap.get("GPS(0):Date");
         DoubleTimeSeries timeSeries = doubleTimeSeriesMap.get("GPS(0):Time");
         DoubleTimeSeries offsetTime = doubleTimeSeriesMap.get("offsetTime");
@@ -263,12 +269,10 @@ public class DATFileProcessor extends FlightFileProcessor {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
                 String datestr = String.valueOf(date);
-                if (datestr.length() < 8)
-                    continue;
+                if (datestr.length() < 8) continue;
 
                 String timestr = String.valueOf(time);
-                if (timestr.length() < 6)
-                    continue;
+                if (timestr.length() < 6) continue;
 
                 String year = String.valueOf(date).substring(0, 4);
                 String month = String.valueOf(date).substring(4, 6);
@@ -283,7 +287,7 @@ public class DATFileProcessor extends FlightFileProcessor {
                     int currentOffset = (int) (offsetTime.get(colCount) * 1000);
                     return addMilliseconds(parsedDate, -currentOffset);
                 } catch (ParseException e) {
-                    LOG.log(Level.WARNING, "Could not parse date {0} and time {1} as date", new Object[]{date, time});
+                    LOG.log(Level.WARNING, "Could not parse date {0} and time {1} as date", new Object[] {date, time});
                     throw new FatalFlightFileException("Unrecognized date format: '" + date + " " + time + "'");
                 }
             }
@@ -331,8 +335,8 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void dropBlankCols(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String,
-            StringTimeSeries> stringTimeSeriesMap) {
+    private static void dropBlankCols(
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         for (String key : doubleTimeSeriesMap.keySet()) {
             if (doubleTimeSeriesMap.get(key).size() == 0) {
                 doubleTimeSeriesMap.remove(key);
@@ -354,8 +358,10 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param stringTimeSeriesMap - Map of string time series data
      * @return A list of column names
      */
-    private static ArrayList<String> processCols(String[] cols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
-                                                 Map<String, StringTimeSeries> stringTimeSeriesMap) {
+    private static ArrayList<String> processCols(
+            String[] cols,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap) {
         ArrayList<String> columnNames = new ArrayList<>(cols.length);
         for (String col : cols) {
             columnNames.add(col);
@@ -408,7 +414,6 @@ public class DATFileProcessor extends FlightFileProcessor {
                 default:
                     handleMiscDataType(col, doubleTimeSeriesMap, stringTimeSeriesMap);
             }
-
         }
 
         return columnNames;
@@ -422,9 +427,11 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void handleIMUDataType(String col, String dataType,
-                                          Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String,
-                    StringTimeSeries> stringTimeSeriesMap) {
+    private static void handleIMUDataType(
+            String col,
+            String dataType,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String unit = getBestUnitMatch(col);
 
         if (unit == null) {
@@ -447,8 +454,7 @@ public class DATFileProcessor extends FlightFileProcessor {
                 DATA_TYPE_MAP.keySet().stream().filter(key -> col.contains(key)).collect(Collectors.toSet());
         String unit = null;
         if (units.size() == 1) {
-            for (String u : units)
-                unit = u;
+            for (String u : units) unit = u;
         } else if (units.size() > 1) {
             unit = units.stream().max(Comparator.comparingInt(String::length)).get();
         }
@@ -463,8 +469,10 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void handleGPSDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
-                                          Map<String, StringTimeSeries> stringTimeSeriesMap) {
+    private static void handleGPSDataType(
+            String colName,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap) {
         if (colName.contains("dateTimeStamp")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "yyyy-mm-ddThh:mm:ssZ"));
             return;
@@ -522,8 +530,10 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void handleMotorDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
-                                            Map<String, StringTimeSeries> stringTimeSeriesMap) {
+    private static void handleMotorDataType(
+            String colName,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap) {
         if (colName.contains("lowVoltage")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "Low Voltage"));
             return;
@@ -564,8 +574,10 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void handleRCDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
-                                         Map<String, StringTimeSeries> stringTimeSeriesMap) {
+    private static void handleRCDataType(
+            String colName,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType = "number";
 
         if (colName.contains("Aileron")) {
@@ -618,8 +630,10 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void handleMiscDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
-                                           Map<String, StringTimeSeries> stringTimeSeriesMap) {
+    private static void handleMiscDataType(
+            String colName,
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+            Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType;
         boolean isDouble = true;
         switch (colName) {
@@ -703,13 +717,13 @@ public class DATFileProcessor extends FlightFileProcessor {
 
             if (!attributeMap.containsKey("mcID(SN)")) {
                 LOG.info("No DJI Serial number provided in binary.");
-                throw new FlightProcessingException(new FatalFlightFileException(filename + ": No DJI serial number provided in " +
-                        "binary."));
+                throw new FlightProcessingException(
+                        new FatalFlightFileException(filename + ": No DJI serial number provided in " + "binary."));
             }
 
             try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)))) {
-                ArrayList<String> columnNames = processCols(reader.readNext(), doubleTimeSeriesMap,
-                        stringTimeSeriesMap);
+                ArrayList<String> columnNames =
+                        processCols(reader.readNext(), doubleTimeSeriesMap, stringTimeSeriesMap);
 
                 readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, columnNames);
                 calculateLatLonGPS(doubleTimeSeriesMap);
@@ -726,7 +740,8 @@ public class DATFileProcessor extends FlightFileProcessor {
                 throw new FlightProcessingException(e);
             } catch (ParseException e) {
                 e.printStackTrace();
-                throw new FlightProcessingException(new FatalFlightFileException("Unable to parse dates in converted CSV file."));
+                throw new FlightProcessingException(
+                        new FatalFlightFileException("Unable to parse dates in converted CSV file."));
             }
 
             dropBlankCols(doubleTimeSeriesMap, stringTimeSeriesMap);
@@ -739,8 +754,7 @@ public class DATFileProcessor extends FlightFileProcessor {
 
             LOG.info("Flight builder DA");
             return Stream.of(
-                    new FlightBuilder[]{new DATFlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap)}
-            );
+                    new FlightBuilder[] {new DATFlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap)});
         } catch (IOException | SQLException | NotDatFile | FileEnd e) {
             throw new FlightProcessingException(e);
         }

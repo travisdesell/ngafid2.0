@@ -30,15 +30,13 @@ public class FlightProcessingException extends Exception {
         if (exceptions.size() == 1) {
 
             message = exceptions.get(0).getMessage();
-            if (message == null)
-                return DEFAULT_MESSAGE;
+            if (message == null) return DEFAULT_MESSAGE;
 
         } else {
             message = "Encountered the following " + exceptions.size() + " errors when processing a flight:\n";
             for (var e : exceptions) {
                 String eMessage = e.getMessage();
-                if (eMessage == null)
-                    eMessage = DEFAULT_MESSAGE;
+                if (eMessage == null) eMessage = DEFAULT_MESSAGE;
                 message += eMessage + "\n\n";
             }
         }

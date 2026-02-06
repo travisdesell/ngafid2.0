@@ -1,6 +1,5 @@
 package org.ngafid.www;
 
-
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.UnauthorizedResponse;
@@ -75,7 +74,6 @@ public class JavalinWebServer extends WebServer {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
 
-
             config.jsonMapper(new JavalinGson(WebServer.gson, false));
 
             config.bundledPlugins.enableRouteOverview("/api");
@@ -94,7 +92,6 @@ public class JavalinWebServer extends WebServer {
 
             configureSwagger(config);
         });
-
     }
 
     private void configureSwagger(JavalinConfig config) {
@@ -102,16 +99,12 @@ public class JavalinWebServer extends WebServer {
         config.registerPlugin(new OpenApiPlugin(openApiConfig -> {
             openApiConfig
                     .withDocumentationPath("/openapi.json")
-                    .withDefinitionConfiguration((version, openApiDefinition) ->
-                            openApiDefinition
-                                    .withServer(openApiServer ->
-                                            openApiServer
-                                                    .description("Server description goes here")
-                                                    .url("http://localhost:{port}/{basePath}")
-                                                    .variable("port", "Server's port", "8111", "8112", "7070")
-                                                    .variable("/swagger", "Base path of the server", "", "", "v1")
-                                    )
-                    );
+                    .withDefinitionConfiguration(
+                            (version, openApiDefinition) -> openApiDefinition.withServer(openApiServer -> openApiServer
+                                    .description("Server description goes here")
+                                    .url("http://localhost:{port}/{basePath}")
+                                    .variable("port", "Server's port", "8111", "8112", "7070")
+                                    .variable("/swagger", "Base path of the server", "", "", "v1")));
         }));
 
         config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
@@ -143,8 +136,7 @@ public class JavalinWebServer extends WebServer {
     }
 
     @Override
-    protected void configureHttps() {
-    }
+    protected void configureHttps() {}
 
     @Override
     protected void configureRoutes() {
@@ -216,8 +208,7 @@ public class JavalinWebServer extends WebServer {
                 }
 
                 if (roles.contains(Role.ADMIN_ONLY)) {
-                    if (!user.isAdmin())
-                        throw new UnauthorizedResponse("Admin access is required.");
+                    if (!user.isAdmin()) throw new UnauthorizedResponse("Admin access is required.");
                 }
             }
         });
@@ -273,16 +264,17 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configurePersistentSessions() {
-        app.unsafeConfig().jetty.modifyServletContextHandler(
-                handler -> handler.setSessionHandler(createSessionHandler())
-        );
+        app.unsafeConfig()
+                .jetty
+                .modifyServletContextHandler(handler -> handler.setSessionHandler(createSessionHandler()));
     }
 
     private static SessionHandler createSessionHandler() {
         SessionHandler sessionHandler = new SessionHandler();
         SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
-//        sessionCache.setSessionDataStore(createFileSessionDataStore());
-        sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
+        //        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionCache.setSessionDataStore(
+                Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
         sessionHandler.setSessionCache(sessionCache);
         sessionHandler.setHttpOnly(true);
         return sessionHandler;

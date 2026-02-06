@@ -28,18 +28,24 @@ public class AccountJavalinRoutes {
     public static class LoginResponse {
         @JsonProperty
         public final boolean loggedOut;
+
         @JsonProperty
         public final boolean waiting;
+
         @JsonProperty
         public final boolean denied;
+
         @JsonProperty
         public final boolean loggedIn;
+
         @JsonProperty
         public final String message;
+
         @JsonProperty
         public final User user;
 
-        public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
+        public LoginResponse(
+                boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
             this.loggedIn = loggedIn;
@@ -52,12 +58,16 @@ public class AccountJavalinRoutes {
     public static class LogoutResponse {
         @JsonProperty
         public final boolean loggedOut;
+
         @JsonProperty
         public final boolean waiting;
+
         @JsonProperty
         public final boolean loggedIn;
+
         @JsonProperty
         public final String message;
+
         @JsonProperty
         public final User user;
 
@@ -73,19 +83,20 @@ public class AccountJavalinRoutes {
     public static class ForgotPasswordResponse {
         @JsonProperty
         String message;
+
         @JsonProperty
         boolean registeredEmail;
 
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;
             this.registeredEmail = registeredEmail;
-
         }
     }
 
     public static class CreatedAccount {
         @JsonProperty
         public final String accountType;
+
         @JsonProperty
         public final User user;
 
@@ -98,18 +109,24 @@ public class AccountJavalinRoutes {
     public static class ResetSuccessResponse {
         @JsonProperty
         public final boolean loggedOut;
+
         @JsonProperty
         public final boolean waiting;
+
         @JsonProperty
         public final boolean denied;
+
         @JsonProperty
         public final boolean loggedIn;
+
         @JsonProperty
         public final String message;
+
         @JsonProperty
         public final User user;
 
-        public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
+        public ResetSuccessResponse(
+                boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
             this.loggedIn = loggedIn;
@@ -139,7 +156,9 @@ public class AccountJavalinRoutes {
             try (Connection connection = Database.getConnection()) {
                 List<String> names = new ArrayList<String>();
 
-                try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name"); ResultSet resultSet = query.executeQuery()) {
+                try (PreparedStatement query =
+                                connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
+                        ResultSet resultSet = query.executeQuery()) {
                     boolean first = true;
                     while (resultSet.next()) {
                         if (first) {
@@ -245,9 +264,12 @@ public class AccountJavalinRoutes {
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
-            scopes.put("user_fleet_selected", "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
+            scopes.put(
+                    "user_fleet_selected",
+                    "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
             scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
-            scopes.put("user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+            scopes.put(
+                    "user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
             if (fleet.hasAirsync(connection)) {
                 String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
@@ -269,12 +291,14 @@ public class AccountJavalinRoutes {
 
         // Check if the token is valid
         try (Connection connection = Database.getConnection()) {
-            try (PreparedStatement query = connection.prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
+            try (PreparedStatement query =
+                    connection.prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
                 query.setString(1, token);
                 query.setInt(2, id);
                 try (ResultSet resultSet = query.executeQuery()) {
                     if (!resultSet.next()) {
-                        String exceptionMessage = "Provided token/id pairing was not found: (" + token + ", " + id + "), may have already expired or been used";
+                        String exceptionMessage = "Provided token/id pairing was not found: (" + token + ", " + id
+                                + "), may have already expired or been used";
                         LOG.severe(exceptionMessage);
                         throw new Exception(exceptionMessage);
                     }
@@ -282,14 +306,16 @@ public class AccountJavalinRoutes {
             }
 
             // Remove the token from the database
-            try (PreparedStatement queryTokenRemoval = connection.prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
+            try (PreparedStatement queryTokenRemoval =
+                    connection.prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
                 queryTokenRemoval.setString(1, token);
                 queryTokenRemoval.setInt(2, id);
                 queryTokenRemoval.executeUpdate();
             }
 
             // Set all non-forced email preferences to 0 in the database
-            try (PreparedStatement queryClearPreferences = connection.prepareStatement("SELECT * FROM email_preferences WHERE user_id=?")) {
+            try (PreparedStatement queryClearPreferences =
+                    connection.prepareStatement("SELECT * FROM email_preferences WHERE user_id=?")) {
                 queryClearPreferences.setInt(1, id);
                 try (ResultSet resultSet = queryClearPreferences.executeQuery()) {
                     while (resultSet.next()) {
@@ -298,7 +324,8 @@ public class AccountJavalinRoutes {
                             continue;
                         }
 
-                        try (PreparedStatement update = connection.prepareStatement("UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?")) {
+                        try (PreparedStatement update = connection.prepareStatement(
+                                "UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?")) {
                             update.setInt(1, id);
                             update.setString(2, emailType);
                             update.executeUpdate();

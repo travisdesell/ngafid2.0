@@ -42,8 +42,8 @@ public class RateOfClosure {
         byte[] blobBytes = Compression.compressDoubleArray(this.rateOfClosureArray);
         Blob rateOfClosureBlob = new SerialBlob(blobBytes);
 
-        try (PreparedStatement preparedStatement = connection
-                .prepareStatement("INSERT INTO rate_of_closure (event_id, size, data) VALUES (?,?,?)")) {
+        try (PreparedStatement preparedStatement =
+                connection.prepareStatement("INSERT INTO rate_of_closure (event_id, size, data) VALUES (?,?,?)")) {
             preparedStatement.setInt(1, eventId);
             preparedStatement.setInt(2, this.size);
             preparedStatement.setBlob(3, rateOfClosureBlob);
@@ -55,8 +55,8 @@ public class RateOfClosure {
 
     public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId)
             throws IOException, SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement("select data, size from rate_of_closure where event_id = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("select data, size from rate_of_closure where event_id = ?")) {
             query.setInt(1, eventId);
 
             LOG.info(query.toString());

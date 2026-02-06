@@ -1,6 +1,5 @@
 package org.ngafid.processor.format;
 
-
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import java.io.IOException;
 import java.sql.Connection;
@@ -37,7 +36,8 @@ public class ParquetFileProcessor {
         LOG.info("Parsing Parquet file: " + filename);
         List<FlightBuilder> flightBuilders = new ArrayList<>();
 
-        try (ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
+        try (ParquetReader<GenericRecord> reader =
+                AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
             GenericRecord record;
 
             int flightCounter = 0;
@@ -52,16 +52,16 @@ public class ParquetFileProcessor {
 
                 populateTimeSeries(record, doubleTimeSeries, stringTimeSeries);
 
-                int numberRows = doubleTimeSeries.get(Parameters.UNIX_TIME_SECONDS).size();
+                int numberRows =
+                        doubleTimeSeries.get(Parameters.UNIX_TIME_SECONDS).size();
                 LOG.info("Number of rows for flight " + flightCounter + ": " + numberRows);
-
 
                 flightBuilders.add(new ParquetFlightBuilder(flightMeta, doubleTimeSeries, stringTimeSeries));
                 flightCounter++;
 
                 // How many flights we are processing (testing). Each record is a flight
-               // Log.info("Breaking statement set to 20");
-               // if (flightCounter > 1000) break;
+                // Log.info("Breaking statement set to 20");
+                // if (flightCounter > 1000) break;
 
             }
         } catch (IOException | FatalFlightFileException e) {
@@ -71,8 +71,10 @@ public class ParquetFileProcessor {
         return flightBuilders.stream();
     }
 
-
-    private void populateTimeSeries(GenericRecord record, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+    private void populateTimeSeries(
+            GenericRecord record,
+            Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         DoubleTimeSeries timeValues = new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, "second");
         DoubleTimeSeries latitudeValues = new DoubleTimeSeries(Parameters.LATITUDE, "degree");
         DoubleTimeSeries longitudeValues = new DoubleTimeSeries(Parameters.LONGITUDE, "degree");
@@ -82,7 +84,6 @@ public class ParquetFileProcessor {
         DoubleTimeSeries accelerationLat = new DoubleTimeSeries(Parameters.LAT_AC, "kt");
 
         DoubleTimeSeries altitudeMSL = new DoubleTimeSeries(Parameters.ALT_MSL, "m");
-
 
         List<String> utcDateTimes = new ArrayList<>();
 
@@ -130,8 +131,9 @@ public class ParquetFileProcessor {
         doubleTimeSeries.put(Parameters.LAT_AC, accelerationLat); // reused
         doubleTimeSeries.put(Parameters.ALT_MSL, altitudeMSL);
 
-
-        stringTimeSeries.put(Parameters.UTC_DATE_TIME, new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", (ArrayList<String>) utcDateTimes));
+        stringTimeSeries.put(
+                Parameters.UTC_DATE_TIME,
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", (ArrayList<String>) utcDateTimes));
     }
 
     /**
@@ -142,23 +144,22 @@ public class ParquetFileProcessor {
             throw new FatalFlightFileException("Metadata record is missing in the Parquet file.");
         }
 
-        flightMeta.filename = filename;
+        flightMeta.setFilename(filename);
 
         String aircraftType = getString(metadataRecord, "aircraft_type");
         String modeSCode = getString(metadataRecord, "mode_s_code");
         String primaryKey = getString(metadataRecord, "primary_key"); // Get primary key
 
-        flightMeta.systemId = (modeSCode != null && !modeSCode.isEmpty()) ? modeSCode : "Unknown";
-        flightMeta.airframe = new Airframes.Airframe(
+        flightMeta.setSystemId((modeSCode != null && !modeSCode.isEmpty()) ? modeSCode : "Unknown");
+        flightMeta.setAirframe(new Airframes.Airframe(
                 (aircraftType != null && !aircraftType.isEmpty()) ? aircraftType : "Unknown",
-                new Airframes.Type("Fixed Wing")
-        );
+                new Airframes.Type("Fixed Wing")));
 
-        flightMeta.md5Hash = computeMD5Hash(primaryKey);
+        flightMeta.setMd5Hash(computeMD5Hash(primaryKey));
 
-        LOG.info("Processed metadata: airframe=" + flightMeta.airframe.getName() +
-                ", system_id=" + flightMeta.systemId +
-                ", primary_key=" + primaryKey);
+        LOG.info("Processed metadata: airframe=" + flightMeta.getAirframe().getName() + ", system_id="
+                + flightMeta.getSystemId() + ", primary_key="
+                + primaryKey);
     }
 
     /**
@@ -183,10 +184,10 @@ public class ParquetFileProcessor {
 
     /**
      * Computes an MD5 hash using systemId and Airframe name.
-
+     *
      * @return MD5 hash string
      */
-    private String computeMD5Hash( String primaryKey) {
+    private String computeMD5Hash(String primaryKey) {
         return MD5.computeHexHash(primaryKey);
     }
 }

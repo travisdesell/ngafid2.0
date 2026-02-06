@@ -20,7 +20,6 @@ import org.ngafid.www.Navbar;
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
 
-
     public static void getUploads(Context ctx) {
         final String templateFile = "uploads.html";
 
@@ -39,22 +38,28 @@ public class ImportUploadJavalinRoutes {
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalUploads / pageSize;
 
-            List<Upload> pendingUploads = Upload.getUploads(connection, fleetId, new Upload.Status[]{Upload.Status.UPLOADING});
+            List<Upload> pendingUploads =
+                    Upload.getUploads(connection, fleetId, new Upload.Status[] {Upload.Status.UPLOADING});
 
             // update the status of all the uploads currently uploading to incomplete so the
             // webpage knows they
             // need to be restarted and aren't currently being uploaded.
-            // TODO: This will cause a problem if a user is uploading something while another user views the uploads page.
+            // TODO: This will cause a problem if a user is uploading something while another user views the uploads
+            // page.
             for (Upload upload : pendingUploads) {
                 upload.setStatus(Upload.Status.UPLOADING_FAILED);
             }
 
-            List<Upload> other_uploads = Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> other_uploads =
+                    Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pendingUploads = JSON.parse('" + gson.toJson(pendingUploads) + "');");
+            scopes.put(
+                    "uploads_js",
+                    "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pendingUploads = JSON.parse('"
+                            + gson.toJson(pendingUploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -78,7 +83,8 @@ public class ImportUploadJavalinRoutes {
             final int startPage = 0;
             final int pageSize = 10;
             final int numberPages = totalImports / pageSize;
-            final List<Upload> imports = Upload.getUploads(connection, fleetId, Upload.Status.IMPORTED_SET, " LIMIT " + startPage + "," + pageSize);
+            final List<Upload> imports = Upload.getUploads(
+                    connection, fleetId, Upload.Status.getImportedSet(), " LIMIT " + startPage + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
@@ -104,7 +110,8 @@ public class ImportUploadJavalinRoutes {
         // app.post("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
         // app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
         // app.post("/protected/new_upload", ImportUploadJavalinRoutes::postNewUpload);
-        // app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
+        // app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a
+        // "multipart/form-data" in args
         // app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
 
         app.get("/protected/uploads", ImportUploadJavalinRoutes::getUploads);

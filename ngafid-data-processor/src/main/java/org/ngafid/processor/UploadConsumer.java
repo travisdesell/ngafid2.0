@@ -56,7 +56,6 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
             LOG.severe(e.getMessage());
             e.printStackTrace();
         }
-
     }
 
     protected UploadConsumer(KafkaConsumer<String, Integer> consumer, KafkaProducer<String, Integer> producer) {
@@ -100,5 +99,4 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
             return new Pair<>(record, false);
         }
     }
-
 }

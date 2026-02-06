@@ -37,15 +37,13 @@ public final class Compression {
     public static byte[] compress(byte[] data) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Deflater deflater = new Deflater(Compression.COMPRESSION_LEVEL, NOWRAP);
-        DeflaterOutputStream deflaterOutputStream =
-                new DeflaterOutputStream(baos, deflater);
+        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(baos, deflater);
         deflaterOutputStream.write(data);
         deflaterOutputStream.finish();
 
         byte[] out = baos.toByteArray();
 
         deflaterOutputStream.close();
-
 
         return out;
     }
@@ -82,7 +80,6 @@ public final class Compression {
 
         return o;
     }
-
 
     public static Object inflateObject(byte[] bytes) throws IOException, ClassNotFoundException {
         byte[] inflated = inflate(bytes);

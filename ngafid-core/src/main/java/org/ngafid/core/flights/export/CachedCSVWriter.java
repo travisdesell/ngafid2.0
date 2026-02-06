@@ -37,9 +37,9 @@ public class CachedCSVWriter extends CSVWriter {
         int uploadId = flight.getUploadId();
         System.out.println("target upload id is: " + uploadId);
 
-        //CHECKSTYLE:OFF
+        // CHECKSTYLE:OFF
         // TODO: Probably better to pass the connection in as an argument to the
-        //CHECKSTYLE:ON
+        // CHECKSTYLE:ON
         // constructor
         Upload upload;
         try (Connection connection = Database.getConnection()) {
@@ -60,9 +60,9 @@ public class CachedCSVWriter extends CSVWriter {
         this.zipFile = new File(archiveFilename);
 
         if (!this.zipFile.exists()) {
-            //CHECKSTYLE:OFF
+            // CHECKSTYLE:OFF
             // TODO: reconstruct from database instead of existing on error
-            //CHECKSTYLE:ON
+            // CHECKSTYLE:ON
 
             System.err.println("ERROR: archive file did not exist!");
             System.exit(1);

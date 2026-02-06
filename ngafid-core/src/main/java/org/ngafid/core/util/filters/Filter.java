@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
 
@@ -133,7 +132,6 @@ public class Filter {
         else return value;
     }
 
-
     /**
      * Converts a datetime and long form time zone offset (from the filter select) to
      * a time in GMT.
@@ -144,11 +142,10 @@ public class Filter {
      */
     public static String getOffsetDateTime(String datetime, String longOffset) {
         String offset = longOffset.substring(4, 10);
-        OffsetDateTime odt =
-                LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        .atOffset(ZoneOffset.of(offset));
-        String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("yyyy" +
-                "-MM-dd HH:mm:ss"));
+        OffsetDateTime odt = LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                .atOffset(ZoneOffset.of(offset));
+        String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00"))
+                .format(DateTimeFormatter.ofPattern("yyyy" + "-MM-dd HH:mm:ss"));
 
         return gmtTime;
     }
@@ -164,12 +161,11 @@ public class Filter {
     public static String getOffsetTime(String time, String longOffset) {
         String offset = longOffset.substring(4, 10);
         OffsetTime ot = OffsetTime.parse(time + offset);
-        String gmtTime = ot.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("HH:mm" +
-                ":ss"));
+        String gmtTime =
+                ot.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("HH:mm" + ":ss"));
 
         return gmtTime;
     }
-
 
     /**
      * Recursively returns a mysql query represented by this rule, updates the parameters
@@ -212,7 +208,6 @@ public class Filter {
                 parameters.add(inputs.get(2));
                 return "flights.fleet_id = ? AND flights.id " + cond + " ?";
             }
-
 
             case "Tail Number" -> {
                 parameters.add(fleetId);
@@ -257,9 +252,10 @@ public class Filter {
             case "Parameter" -> {
                 parameters.add(inputs.get(2));
                 parameters.add(inputs.get(4));
-                return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND " +
-                        "double_series.name_id = (SELECT id FROM double_series_names WHERE name = ?) AND " +
-                        "double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
+                return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND "
+                        + "double_series.name_id = (SELECT id FROM double_series_names WHERE name = ?) AND "
+                        + "double_series."
+                        + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
             }
 
             case "Airport" -> {
@@ -267,11 +263,11 @@ public class Filter {
                 parameters.add(iataCode1);
 
                 if (inputs.get(2).equals("visited")) {
-                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
-                            ".airport = ?)";
+                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary"
+                            + ".airport = ?)";
                 } else {
-                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
-                            ".airport = ?)";
+                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary"
+                            + ".airport = ?)";
                 }
             }
 
@@ -283,11 +279,11 @@ public class Filter {
                 parameters.add(runway);
 
                 if (inputs.get(2).equals("visited")) {
-                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
-                            ".airport = ? AND itinerary.runway = ?)";
+                    return "EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary"
+                            + ".airport = ? AND itinerary.runway = ?)";
                 } else {
-                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary" +
-                            ".airport = ? AND itinerary.runway = ?)";
+                    return "NOT EXISTS (SELECT id FROM itinerary WHERE flights.id = itinerary.flight_id AND itinerary"
+                            + ".airport = ? AND itinerary.runway = ?)";
                 }
             }
 
@@ -304,34 +300,31 @@ public class Filter {
                     parameters.add(eventName);
                     parameters.add(countTarget);
 
-                    return
-                        " (SELECT COUNT(*) FROM events e "
-                        + " WHERE e.flight_id = flights.id "
-                        + " AND e.event_definition_id = ( "
-                        + "     SELECT id FROM event_definitions "
-                        + "     WHERE name = ? and airframe_id = 0 "
-                        + " )) " + cond + " ? ";
-                    
+                    return " (SELECT COUNT(*) FROM events e "
+                            + " WHERE e.flight_id = flights.id "
+                            + " AND e.event_definition_id = ( "
+                            + "     SELECT id FROM event_definitions "
+                            + "     WHERE name = ? and airframe_id = 0 "
+                            + " )) " + cond + " ? ";
                 }
 
                 // Otherwise, use specified airframe
-                final int AIRFRAME_NAME_START_OFFSET = 3;
-                final String airframeName = eventName.substring(separatorIndex + AIRFRAME_NAME_START_OFFSET);
+                final int airframeNameStartOffset = 3;
+                final String airframeName = eventName.substring(separatorIndex + airframeNameStartOffset);
                 eventName = eventName.substring(0, separatorIndex);
 
                 parameters.add(eventName);
                 parameters.add(airframeName);
                 parameters.add(countTarget);
 
-                return
-                    " (SELECT COUNT(*) FROM events e "
-                    + " WHERE e.flight_id = flights.id "
-                    + " AND e.event_definition_id = ( "
-                    + "     SELECT id FROM event_definitions "
-                    + "     WHERE name = ? AND airframe_id = ( "
-                    + "         SELECT id FROM airframes WHERE airframe = ? "
-                    + "     ) "
-                    + " )) " + cond + " ? ";
+                return " (SELECT COUNT(*) FROM events e "
+                        + " WHERE e.flight_id = flights.id "
+                        + " AND e.event_definition_id = ( "
+                        + "     SELECT id FROM event_definitions "
+                        + "     WHERE name = ? AND airframe_id = ( "
+                        + "         SELECT id FROM airframes WHERE airframe = ? "
+                        + "     ) "
+                        + " )) " + cond + " ? ";
             }
 
             case "Event Severity" -> {
@@ -343,9 +336,10 @@ public class Filter {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
-                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
-                            "? AND event_definitions.airframe_id = 0) AND events.severity " + cond + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
+                            + ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = "
+                            + "? AND event_definitions.airframe_id = 0) AND events.severity "
+                            + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(separatorIndex + 3);
                     eventName = eventName.substring(0, separatorIndex);
@@ -354,10 +348,11 @@ public class Filter {
                     parameters.add(airframeName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
-                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
-                            "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
-                            " events.severity " + cond + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
+                            + ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = "
+                            + "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND"
+                            + " events.severity "
+                            + cond + " ?)";
                 }
             }
 
@@ -370,10 +365,11 @@ public class Filter {
                     parameters.add(eventName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
-                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
-                            "? AND event_definitions.airframe_id = 0) AND ((events.end_line - events.start_line) + 1)" +
-                            " " + cond + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
+                            + ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = "
+                            + "? AND event_definitions.airframe_id = 0) AND ((events.end_line - events.start_line) + 1)"
+                            + " "
+                            + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(separatorIndex + 3);
                     eventName = eventName.substring(0, separatorIndex);
@@ -382,23 +378,24 @@ public class Filter {
                     parameters.add(airframeName);
                     parameters.add(inputs.get(3));
 
-                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events" +
-                            ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = " +
-                            "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND" +
-                            " ((events.end_line - events.start_line) + 1) " + cond + " ?)";
+                    return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
+                            + ".event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = "
+                            + "? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND"
+                            + " ((events.end_line - events.start_line) + 1) "
+                            + cond + " ?)";
                 }
             }
 
             case "Tag" -> {
                 parameters.add(fleetId);
-                parameters.add(inputs.get(1)); //we can ignore index 0, it is for the UI only
+                parameters.add(inputs.get(1)); // we can ignore index 0, it is for the UI only
                 String det = inputs.get(2);
                 if (det.startsWith("Is Not")) {
-                    return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM " +
-                            "flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+                    return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM "
+                            + "flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
                 } else {
-                    return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags " +
-                            "WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+                    return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags "
+                            + "WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
                 }
             }
 
@@ -419,7 +416,7 @@ public class Filter {
     public String toQueryString(int fleetId, ArrayList<Object> parameters) {
 
         if (type != null) {
-        
+
             String queryStringOut;
 
             switch (type) {
@@ -429,7 +426,8 @@ public class Filter {
                     for (int i = 0; i < filters.size(); i++) {
                         if (i > 0) string.append(" ").append(condition).append(" ");
                         string.append(filters.get(i).toQueryString(fleetId, parameters));
-                    }   queryStringOut = "(" + string + ")";
+                    }
+                    queryStringOut = "(" + string + ")";
                 }
                 default -> {
                     LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
@@ -439,14 +437,11 @@ public class Filter {
 
             LOG.info(() -> "Generated Filter query string: " + queryStringOut);
             return queryStringOut;
-            
-        } 
+        }
 
         LOG.severe("Attempted to convert a filter to a String with a 'null' type");
         return "";
-
     }
-
 
     /**
      * Recursively returns a human-readable representation of this filter (for display on webpages)

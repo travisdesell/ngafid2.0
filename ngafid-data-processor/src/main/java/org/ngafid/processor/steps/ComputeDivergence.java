@@ -17,8 +17,7 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public class ComputeDivergence extends ComputeStep {
 
-    private record DivergenceConfig(List<String> parameters, String output) {
-    }
+    private record DivergenceConfig(List<String> parameters, String output) {}
 
     private static final Set<String> AIRFRAME_BLACKLIST = Set.of(AIRFRAME_SCAN_EAGLE, AIRFRAME_DJI);
 
@@ -26,18 +25,18 @@ public class ComputeDivergence extends ComputeStep {
             new DivergenceConfig(List.of("E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"), "E1 CHT Divergence"),
             new DivergenceConfig(List.of("E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"), "E1 EGT Divergence"));
 
-    private static final List<DivergenceConfig> PA_28_CONFIG = List.of(
-            new DivergenceConfig(List.of("E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"), "E1 EGT Divergence"));
+    private static final List<DivergenceConfig> PA_28_CONFIG =
+            List.of(new DivergenceConfig(List.of("E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"), "E1 EGT Divergence"));
 
     private static final List<DivergenceConfig> PA_44_CONFIG = List.of(
             new DivergenceConfig(List.of("E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"), "E1 EGT Divergence"),
             new DivergenceConfig(List.of("E2 EGT1", "E2 EGT2", "E2 EGT3", "E2 EGT4"), "E2 EGT Divergence"));
 
     private static final List<DivergenceConfig> SIX_CYLINDER_CIRRUS = List.of(
-            new DivergenceConfig(List.of("E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"),
-                    "E1 CHT Divergence"),
-            new DivergenceConfig(List.of("E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", "E1 EGT5", "E1 EGT6"),
-                    "E1 EGT Divergence"));
+            new DivergenceConfig(
+                    List.of("E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"), "E1 CHT Divergence"),
+            new DivergenceConfig(
+                    List.of("E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", "E1 EGT5", "E1 EGT6"), "E1 EGT Divergence"));
 
     private static final List<DivergenceConfig> DIAMOND_CONFIG = List.of(
             new DivergenceConfig(List.of("E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"), "E1 CHT Divergence"),
@@ -68,12 +67,11 @@ public class ComputeDivergence extends ComputeStep {
     public Set<String> getRequiredDoubleColumns() {
         if (requiredDoubleColumns == null) {
 
-            var configs = CONFIG_MAP.get(builder.meta.airframe.getName());
+            var configs = CONFIG_MAP.get(builder.meta.getAirframe().getName());
             if (configs != null) {
 
                 requiredDoubleColumns = new HashSet<>(32);
-                for (var config : configs)
-                    requiredDoubleColumns.addAll(config.parameters);
+                for (var config : configs) requiredDoubleColumns.addAll(config.parameters);
 
             } else {
                 requiredDoubleColumns = Collections.emptySet();
@@ -99,12 +97,11 @@ public class ComputeDivergence extends ComputeStep {
     public Set<String> getOutputColumns() {
         if (outputColumns == null) {
 
-            var configs = CONFIG_MAP.get(builder.meta.airframe.getName());
+            var configs = CONFIG_MAP.get(builder.meta.getAirframe().getName());
             if (configs != null) {
 
                 outputColumns = new HashSet<>();
-                for (var config : configs)
-                    outputColumns.add(config.output);
+                for (var config : configs) outputColumns.add(config.output);
 
             } else {
                 outputColumns = Collections.emptySet();
@@ -115,9 +112,7 @@ public class ComputeDivergence extends ComputeStep {
     }
 
     public boolean airframeIsValid(String airframe) {
-        for (String blacklisted : AIRFRAME_BLACKLIST)
-            if (airframe.contains(blacklisted))
-                return false;
+        for (String blacklisted : AIRFRAME_BLACKLIST) if (airframe.contains(blacklisted)) return false;
 
         return true;
     }
@@ -142,10 +137,8 @@ public class ComputeDivergence extends ComputeStep {
 
             for (DoubleTimeSeries column : columns) {
                 double current = column.get(i);
-                if (!Double.isNaN(current) && current > max)
-                    max = column.get(i);
-                if (!Double.isNaN(current) && current < min)
-                    min = column.get(i);
+                if (!Double.isNaN(current) && current > max) max = column.get(i);
+                if (!Double.isNaN(current) && current < min) min = column.get(i);
             }
 
             double v = 0;
@@ -161,12 +154,11 @@ public class ComputeDivergence extends ComputeStep {
 
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        List<DivergenceConfig> configs = CONFIG_MAP.get(builder.meta.airframe.getName());
+        List<DivergenceConfig> configs =
+                CONFIG_MAP.get(builder.meta.getAirframe().getName());
 
-        if (configs == null)
-            return;
+        if (configs == null) return;
 
-        for (var config : configs)
-            calculateDivergence(config.parameters, config.output);
+        for (var config : configs) calculateDivergence(config.parameters, config.output);
     }
 }
