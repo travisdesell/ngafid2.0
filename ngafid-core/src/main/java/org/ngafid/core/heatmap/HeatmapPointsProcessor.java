@@ -1,12 +1,5 @@
 package org.ngafid.core.heatmap;
 
-import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
 import org.ngafid.core.event.Event;
@@ -16,6 +9,14 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.TimeUtils;
+
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.logging.Logger;
 
 public class HeatmapPointsProcessor {
     private static final Logger LOG = Logger.getLogger(HeatmapPointsProcessor.class.getName());
@@ -58,6 +59,8 @@ public class HeatmapPointsProcessor {
                     break;
                 case "error":
                     error++;
+                    break;
+                default:
                     break;
             }
         }

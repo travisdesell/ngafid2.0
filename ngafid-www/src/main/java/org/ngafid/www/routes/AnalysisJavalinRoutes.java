@@ -1,15 +1,9 @@
 package org.ngafid.www.routes;
 
-import static java.util.Map.of;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
@@ -23,6 +17,13 @@ import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
+
+import static java.util.Map.of;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
@@ -237,7 +238,7 @@ public class AnalysisJavalinRoutes {
                     var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         _ttfs.add(jsonElement);
-                        iataCodes.add(ttf.airportIataCode);
+                        iataCodes.add(ttf.getAirportIataCode());
                     }
                 }
             }

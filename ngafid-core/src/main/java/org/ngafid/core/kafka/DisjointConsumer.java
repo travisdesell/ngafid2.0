@@ -1,11 +1,5 @@
 package org.ngafid.core.kafka;
 
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -15,6 +9,13 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
 import org.ngafid.core.util.filters.Pair;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 /**
  * Utility base class for kafka consumer main classes.
@@ -93,7 +94,8 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
             while (!done.get()) {
                 LOG.info("Polling topics: [" + String.join(", ", consumer.subscription()) + "]");
 
-                long consumerWaitTimeMS, resultQueueWaitTimeMS;
+                long consumerWaitTimeMS;
+                long resultQueueWaitTimeMS;
                 if (workerProcessing.get()) {
                     consumerWaitTimeMS = 1000;
                     resultQueueWaitTimeMS = (long) (getMaxPollIntervalMS() * 0.75);
@@ -163,7 +165,8 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
 
                     preProcess(records);
                     for (var record : records) {
-                        LOG.info("Record: " + record.topic() + ": " + record.partition() + ": " + record.offset() + ": " + record.value());
+                        LOG.info("Record: " + record.topic() + ": " + record.partition() + ": "
+                                + record.offset() + ": " + record.value());
                         var result = process(record);
                         recordList.add(result.first());
                         retry[i++] = result.second();

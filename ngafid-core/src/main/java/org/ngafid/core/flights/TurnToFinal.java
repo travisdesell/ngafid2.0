@@ -1,6 +1,13 @@
 package org.ngafid.core.flights;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ngafid.core.airports.Airport;
+import org.ngafid.core.airports.Airports;
+import org.ngafid.core.airports.Runway;
+import org.ngafid.core.util.Compression;
+import org.ngafid.core.util.TimeUtils;
+
+import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.*;
@@ -9,12 +16,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.sql.rowset.serial.SerialBlob;
-import org.ngafid.core.airports.Airport;
-import org.ngafid.core.airports.Airports;
-import org.ngafid.core.airports.Runway;
-import org.ngafid.core.util.Compression;
-import org.ngafid.core.util.TimeUtils;
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
@@ -28,14 +29,21 @@ public class TurnToFinal implements Serializable {
     private static final double CENTER_LINE_DEVIATION_TOLERANCE_IN_MILES = 0.1;
 
     // List of (lat, long) coords (in that order) representing a turn to final
-    private final double[] latitude, longitude, altitude, roll, stallProbability, locProbability, altMSL, distanceFromRunway;
+    private final double[] latitude;
+    private final double[] longitude;
+    private final double[] altitude;
+    private final double[] roll;
+    private final double[] stallProbability;
+    private final double[] locProbability;
+    private final double[] altMSL;
+    private final double[] distanceFromRunway;
     private double runwayAltitude;
     private double maxRoll;
     private final Runway runway;
     private String flightId;
 
-    public final String airportIataCode;
-    public final OffsetDateTime flightStartDate;
+    private final String airportIataCode;
+    private final OffsetDateTime flightStartDate;
 
     private int nTimesteps;
 
@@ -46,16 +54,27 @@ public class TurnToFinal implements Serializable {
     private double selfDefinedGlideAngle;
 
     /**
-     * The timeseries arrays passed here should start from the 400 ft above the runway point, and end when the aircraft
-     * touches the runway.
+     * The timeseries arrays passed here should start from the 400 ft above the runway point,
+     * and end when the aircraft touches the runway.
      *
-     * @param altitude
-     * @param roll
-     * @param lat
-     * @param lon
+     * @param flightId the flight ID
+     * @param airframe the airframe name
+     * @param runway the runway
+     * @param airportIataCode the airport IATA code
+     * @param flightStartDate the flight start date
+     * @param runwayAltitude the runway altitude
+     * @param altitude the altitude array
+     * @param altMSL the altitude MSL array
+     * @param roll the roll array
+     * @param lat the latitude array
+     * @param lon the longitude array
+     * @param stallProbability the stall probability array
+     * @param locProbability the loss of control probability array
      */
-    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, OffsetDateTime flightStartDate, double runwayAltitude, double[] altitude, double[] altMSL, double[] roll,
-                       double[] lat, double[] lon, double[] stallProbability, double[] locProbability) {
+    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode,
+                       OffsetDateTime flightStartDate, double runwayAltitude, double[] altitude,
+                       double[] altMSL, double[] roll, double[] lat, double[] lon,
+                       double[] stallProbability, double[] locProbability) {
         this.flightId = flightId;
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
@@ -106,8 +125,26 @@ public class TurnToFinal implements Serializable {
         flightId = Integer.toString(id);
     }
 
+    /**
+     * Gets the airport IATA code.
+     *
+     * @return the airport IATA code
+     */
+    public String getAirportIataCode() {
+        return airportIataCode;
+    }
+
+    /**
+     * Gets the flight start date.
+     *
+     * @return the flight start date
+     */
+    public OffsetDateTime getFlightStartDate() {
+        return flightStartDate;
+    }
+
     private double[] getExtendedRunwayCenterLine() {
-        final double LEN = 2.0;
+        final double len = 2.0;
         double lat1 = runway.getLat1();
         double lon1 = runway.getLon1();
         double lat2 = runway.getLat2();
@@ -116,10 +153,10 @@ public class TurnToFinal implements Serializable {
         double dlat = lat1 - lat2;
         double dlon = lon1 - lon2;
 
-        lat1 = lat1 + LEN * dlat;
-        lon1 = lon1 + LEN * dlon;
-        lat2 = lat2 - LEN * dlat;
-        lon2 = lon2 - LEN * dlon;
+        lat1 = lat1 + len * dlat;
+        lon1 = lon1 + len * dlon;
+        lat2 = lat2 - len * dlat;
+        lon2 = lon2 - len * dlon;
         return new double[]{lat1, lon1, lat2, lon2};
     }
 
@@ -181,17 +218,18 @@ public class TurnToFinal implements Serializable {
         final double altB = altC;
 
         // This is all in terms of feet
-        final double BC = Airports.calculateDistanceInFeet(latitude[0], longitude[0], latitude[last], longitude[last]);
-        final double AB = altA - altB;
-        selfDefinedGlideAngle = Math.toDegrees(Math.tanh(AB / BC));
+        final double bc = Airports.calculateDistanceInFeet(
+                latitude[0], longitude[0], latitude[last], longitude[last]);
+        final double ab = altA - altB;
+        selfDefinedGlideAngle = Math.toDegrees(Math.tanh(ab / bc));
 
         // Feet of descent per foot traveled towards the runway.
-        final double expDescent = AB / BC;
+        final double expDescent = ab / bc;
         for (int i = 0; i < altMSL.length; i++) {
             double lat = latitude[i];
             double lon = longitude[i];
-            double EC = Airports.calculateDistanceInFeet(lat, lon, latitude[last], longitude[last]);
-            double expAlt = altB + expDescent * EC;
+            double ec = Airports.calculateDistanceInFeet(lat, lon, latitude[last], longitude[last]);
+            double expAlt = altB + expDescent * ec;
             double actualAlt = altMSL[i];
             double deviation = expAlt - actualAlt;
             selfDefinedGlidePathDeviations.add(deviation);
@@ -319,7 +357,7 @@ public class TurnToFinal implements Serializable {
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[to];
 
-            for (; ; ) {
+            for (;;) {
                 if (to < 0) {
                     to = 0;
                     break;
@@ -332,7 +370,7 @@ public class TurnToFinal implements Serializable {
             }
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
-            for (; ; ) {
+            for (;;) {
                 if (from < 0) {
                     // We never found a point in time where there is a turn to final
                     // We assume all aircraft that perform a turn to final will reach 400 feet above the runway
@@ -361,7 +399,8 @@ public class TurnToFinal implements Serializable {
             if (min > 100 || Double.isNaN(min))
                 continue;
 
-            double[] stallProbabilityArray = null, locProbabilityArray = null;
+            double[] stallProbabilityArray = null;
+            double[] locProbabilityArray = null;
             if (stallProbability != null)
                 stallProbabilityArray = stallProbability.sliceCopy(from, to);
             if (locProbability != null)
@@ -397,7 +436,7 @@ public class TurnToFinal implements Serializable {
             return new ArrayList<>();
 
         return turnToFinals.stream()
-                .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
+                .filter(ttf -> airportIataCode == null || ttf.getAirportIataCode().equals(airportIataCode))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 

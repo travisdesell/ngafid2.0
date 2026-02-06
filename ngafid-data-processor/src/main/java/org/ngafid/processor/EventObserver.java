@@ -2,10 +2,6 @@ package org.ngafid.processor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Database;
@@ -15,14 +11,23 @@ import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Events;
 import org.ngafid.core.kafka.Topic;
 
+import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+
 /**
- * Scans the database for flights with missing rows from the `flight_processed` table and adds the appropriate events
- * to the event topic.
+ * Scans the database for flights with missing rows from the `flight_processed` table
+ * and adds the appropriate events to the event topic.
  * <p>
- * The event definitions in this program are automatically refreshed periodically, so in the event that event definitions
- * are modified in the database this program does not need to be restarted to detect it.
+ * The event definitions in this program are automatically refreshed periodically, so
+ * in the event that event definitions are modified in the database this program does
+ * not need to be restarted to detect it.
  */
 public class EventObserver {
+
+    private EventObserver() {
+    }
 
     private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event) throws SQLException {
         StringBuilder condition = new StringBuilder();
@@ -50,7 +55,7 @@ public class EventObserver {
         return Flight.getFlights(connection, extraCondition);
     }
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static void main(String[] args) throws UnknownHostException {
 
@@ -66,8 +71,11 @@ public class EventObserver {
                     for (EventDefinition event : events) {
                         List<Flight> flights = getApplicableFlightsWithoutEvent(connection, event);
                         for (Flight flight : flights) {
-                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), objectMapper.writeValueAsString(new Events.EventToCompute(flight.getId(), event.getId()))));
-                            // Removed premature flight.insertComputedEvents() call - EventConsumer will handle this after successful processing
+                            String eventJson = OBJECT_MAPPER.writeValueAsString(
+                                    new Events.EventToCompute(flight.getId(), event.getId()));
+                            producer.send(new ProducerRecord<>(Topic.EVENT.toString(), eventJson));
+                            // Removed premature flight.insertComputedEvents() call
+                            // EventConsumer will handle this after successful processing
                         }
                     }
                 } catch (JsonProcessingException e) {

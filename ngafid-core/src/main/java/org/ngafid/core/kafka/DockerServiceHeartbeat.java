@@ -1,5 +1,11 @@
 package org.ngafid.core.kafka;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.ngafid.core.Config;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -10,11 +16,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.ngafid.core.Config;
 
 public class DockerServiceHeartbeat {
 
@@ -40,7 +41,8 @@ public class DockerServiceHeartbeat {
     private static final String SERVICE_NAME_UNKNOWN = "unknown-service";
 
 
-    private static void start(KafkaProducer<String,String> producer, String serviceName, String instanceId, long periodMs) {
+    private static void start(
+            KafkaProducer<String, String> producer, String serviceName, String instanceId, long periodMs) {
 
         final Runnable beat = () -> {
             String payload = "%d|%s|%s".formatted(System.currentTimeMillis(), serviceName, instanceId);
@@ -77,7 +79,8 @@ public class DockerServiceHeartbeat {
 
         // Not running in Docker, do not start heartbeat
         if (!USING_DOCKER) {
-            LOG.log(Level.WARNING, "Detected running outside of Docker, heartbeat not started for service: {0}", service);
+            LOG.log(Level.WARNING,
+                    "Detected running outside of Docker, heartbeat not started for service: {0}", service);
             return;
         }
 
@@ -101,7 +104,9 @@ public class DockerServiceHeartbeat {
     }
 
     /**
-     * Detects the service name from the calling context
+     * Detects the service name from the calling context.
+     *
+     * @return the detected service name or SERVICE_NAME_UNKNOWN if not detected
      */
     private static String detectServiceName() {
         try {

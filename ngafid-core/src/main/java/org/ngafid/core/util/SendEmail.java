@@ -2,29 +2,6 @@ package org.ngafid.core.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.logging.Logger;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Config;
@@ -32,6 +9,16 @@ import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
+
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 
 public enum SendEmail {
     ;
@@ -86,7 +73,8 @@ public enum SendEmail {
                     String fileUsername = bufferedReader.readLine();
 
                     if (fileUsername != null && fileUsername.startsWith("#")) {
-                        LOG.severe(() -> "Email not being used with the NGAFID for uploads. To change this, add the email login" + " information to " + Config.EMAIL_INFO_FILE);
+                        LOG.severe(() -> "Email not being used with the NGAFID for uploads. To change this, "
+                                + "add the email login information to " + Config.EMAIL_INFO_FILE);
                     } else {
                         username = fileUsername;
                         password = bufferedReader.readLine();
@@ -150,10 +138,12 @@ public enum SendEmail {
             preparedStatement.execute();
 
         } catch (SQLException e) {
-            LOG.severe(() -> "(SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": " + e.getMessage());
+            LOG.severe(() -> "(SQL Exception) Failed to generate token for email recipient: "
+                    + recipientEmail + ": " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.severe(() -> "(Non-SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": " + e.getMessage());
+            LOG.severe(() -> "(Non-SQL Exception) Failed to generate token for email recipient: "
+                    + recipientEmail + ": " + e.getMessage());
         }
 
         // Log the token's expiration date
@@ -203,7 +193,7 @@ public enum SendEmail {
     }
 
     private static KafkaProducer<String, String> producer = null;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static void enqueueEmail(Email email) {
         if (producer == null) {
@@ -211,7 +201,7 @@ public enum SendEmail {
         }
 
         try {
-            producer.send(new ProducerRecord<>(Topic.EMAIL.toString(), objectMapper.writeValueAsString(email)));
+            producer.send(new ProducerRecord<>(Topic.EMAIL.toString(), OBJECT_MAPPER.writeValueAsString(email)));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -392,7 +382,8 @@ public enum SendEmail {
         }
 
         public boolean isValid() {
-            LOG.info(() -> "Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
+            LOG.info(() -> "Checking if valid with username: '" + this.username
+                    + "' and password: '" + this.password + "'");
             return !(this.username == null || this.password == null);
         }
 

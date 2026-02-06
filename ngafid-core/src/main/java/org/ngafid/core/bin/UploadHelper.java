@@ -1,6 +1,10 @@
 package org.ngafid.core.bin;
 
-import static org.ngafid.core.kafka.Configuration.getUploadProperties;
+import org.apache.commons.cli.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Database;
+import org.ngafid.core.uploads.UploadDoesNotExistException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,11 +17,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import org.apache.commons.cli.*;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.UploadDoesNotExistException;
+
+import static org.ngafid.core.kafka.Configuration.getUploadProperties;
 
 public enum UploadHelper {
     ;
@@ -134,7 +135,8 @@ public enum UploadHelper {
                 // Step through the fleets uploads in pages of 1K, adding them to the upload topic as we do.
                 int idCursor = 0;
                 while (true) {
-                    try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM uploads WHERE fleet_id = ?  AND id > ? LIMIT 1000")) {
+                    try (PreparedStatement statement = connection.prepareStatement(
+                            "SELECT id FROM uploads WHERE fleet_id = ?  AND id > ? LIMIT 1000")) {
                         statement.setInt(1, fleetId);
                         statement.setInt(2, idCursor);
 

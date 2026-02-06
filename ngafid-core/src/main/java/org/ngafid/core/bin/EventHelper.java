@@ -1,20 +1,21 @@
 package org.ngafid.core.bin;
 
+import org.apache.commons.cli.*;
+import org.ngafid.core.Database;
+import org.ngafid.core.uploads.UploadDoesNotExistException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.cli.*;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.UploadDoesNotExistException;
 
 /**
  * Things this program should allow you to do:
  * - Delete computed events, potentially restricting this to a particular flight, upload, or fleet.
- * A flag shall be made available to potentially mark the events as already having been computed therefore preventing the
- * EventObserver from queueing up their re-computation.
+ * A flag shall be made available to potentially mark the events as already having been computed
+ * therefore preventing the EventObserver from queueing up their re-computation.
  * - Delete an event definition and all related entries.
  * -
  */
@@ -100,7 +101,8 @@ public class EventHelper {
 
         if (cmd.hasOption("flight")) {
             if (eventsTable) {
-                constraints.add("(flight_id = " + cmd.getOptionValue("flight") + " OR other_flight_id = " + cmd.getOptionValue("flight") + ")");
+                constraints.add("(flight_id = " + cmd.getOptionValue("flight")
+                        + " OR other_flight_id = " + cmd.getOptionValue("flight") + ")");
             } else {
                 constraints.add("flight_id = " + cmd.getOptionValue("flight"));
             }
