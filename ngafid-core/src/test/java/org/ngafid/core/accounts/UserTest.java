@@ -1,21 +1,18 @@
 package org.ngafid.core.accounts;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ngafid.core.TestWithConnection;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UserTest extends TestWithConnection {
 
@@ -44,47 +41,108 @@ public class UserTest extends TestWithConnection {
 
         // Set up additional test users for equals method testing (new range)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, password_token, last_login_time, fleet_selected, two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete) VALUES "
-                        + "(1999, 'test1999@example.com', 'Test', 'User1999', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'nnnnnnnnnnnnnnnnnnnn', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1998, 'test1998@example.com', 'Test', 'User1998', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'oooooooooooooooooooo', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1997, 'test1997@example.com', 'Test', 'User1997', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'pppppppppppppppppppp', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1996, 'test1996@example.com', 'Test', 'User1996', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'qqqqqqqqqqqqqqqqqqqq', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1995, 'test1995@example.com', 'Test', 'User1995', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'rrrrrrrrrrrrrrrrrrrr', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1994, 'test1994@example.com', 'Test', 'User1994', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'ssssssssssssssssssss', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1993, 'test1993@example.com', 'Test', 'User1993', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'tttttttttttttttttttt', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1992, 'test1992@example.com', 'Test', 'User1992', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'uuuuuuuuuuuuuuuuuuuu', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1991, 'test1991@example.com', 'Test', 'User1991', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'vvvvvvvvvvvvvvvvvvvv', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1990, 'test1990@example.com', 'Test', 'User1990', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'wwwwwwwwwwwwwwwwwwww', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1989, 'test1989@example.com', 'Test', 'User1989', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'xxxxxxxxxxxxxxxxxxxx', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1988, 'test1988@example.com', 'Test', 'User1988', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'yyyyyyyyyyyyyyyyyyyy', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(1987, 'test1987@example.com', 'Test', 'User1987', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'zzzzzzzzzzzzzzzzzzzz', NOW(), 0, 0, 'secret', 'codes', 0) "
+                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, "
+                        + "zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, "
+                        + "password_token, last_login_time, fleet_selected, two_factor_enabled, "
+                        + "two_factor_secret, backup_codes, two_factor_setup_complete) VALUES "
+                        + "(1999, 'test1999@example.com', 'Test', 'User1999', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'nnnnnnnnnnnnnnnnnnnn', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1998, 'test1998@example.com', 'Test', 'User1998', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'oooooooooooooooooooo', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1997, 'test1997@example.com', 'Test', 'User1997', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'pppppppppppppppppppp', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1996, 'test1996@example.com', 'Test', 'User1996', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'qqqqqqqqqqqqqqqqqqqq', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1995, 'test1995@example.com', 'Test', 'User1995', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'rrrrrrrrrrrrrrrrrrrr', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1994, 'test1994@example.com', 'Test', 'User1994', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'ssssssssssssssssssss', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1993, 'test1993@example.com', 'Test', 'User1993', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'tttttttttttttttttttt', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1992, 'test1992@example.com', 'Test', 'User1992', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'uuuuuuuuuuuuuuuuuuuu', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1991, 'test1991@example.com', 'Test', 'User1991', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'vvvvvvvvvvvvvvvvvvvv', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1990, 'test1990@example.com', 'Test', 'User1990', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'wwwwwwwwwwwwwwwwwwww', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1989, 'test1989@example.com', 'Test', 'User1989', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'xxxxxxxxxxxxxxxxxxxx', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1988, 'test1988@example.com', 'Test', 'User1988', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'yyyyyyyyyyyyyyyyyyyy', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1987, 'test1987@example.com', 'Test', 'User1987', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'zzzzzzzzzzzzzzzzzzzz', NOW(), 0, 0, 'secret', 'codes', 0) "
                         + "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
             stmt.executeUpdate();
         }
 
         // Set up additional test users for equals method testing (3000+ range)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, password_token, last_login_time, fleet_selected, two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete) VALUES "
-                        + "(2999, 'test2999@example.com', 'Test', 'User2999', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'aaaaaaaaaaaaaaaaaaaa', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2998, 'test2998@example.com', 'Test', 'User2998', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'bbbbbbbbbbbbbbbbbbbb', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2997, 'test2997@example.com', 'Test', 'User2997', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'cccccccccccccccccccc', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2996, 'test2996@example.com', 'Test', 'User2996', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'dddddddddddddddddddd', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2995, 'test2995@example.com', 'Test', 'User2995', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'eeeeeeeeeeeeeeeeeeee', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2994, 'test2994@example.com', 'Test', 'User2994', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'ffffffffffffffffffff', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2993, 'test2993@example.com', 'Test', 'User2993', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'gggggggggggggggggggg', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2992, 'test2992@example.com', 'Test', 'User2992', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'hhhhhhhhhhhhhhhhhhhh', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2991, 'test2991@example.com', 'Test', 'User2991', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'iiiiiiiiiiiiiiiiiiii', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2990, 'test2990@example.com', 'Test', 'User2990', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'jjjjjjjjjjjjjjjjjjjj', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2989, 'test2989@example.com', 'Test', 'User2989', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'kkkkkkkkkkkkkkkkkkkk', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2988, 'test2988@example.com', 'Test', 'User2988', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'llllllllllllllllllll', NOW(), 0, 0, 'secret', 'codes', 0), "
-                        + "(2987, 'test2987@example.com', 'Test', 'User2987', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'mmmmmmmmmmmmmmmmmmmm', NOW(), 0, 0, 'secret', 'codes', 0) "
+                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, "
+                        + "zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, "
+                        + "password_token, last_login_time, fleet_selected, two_factor_enabled, "
+                        + "two_factor_secret, backup_codes, two_factor_setup_complete) VALUES "
+                        + "(2999, 'test2999@example.com', 'Test', 'User2999', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'aaaaaaaaaaaaaaaaaaaa', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2998, 'test2998@example.com', 'Test', 'User2998', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'bbbbbbbbbbbbbbbbbbbb', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2997, 'test2997@example.com', 'Test', 'User2997', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'cccccccccccccccccccc', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2996, 'test2996@example.com', 'Test', 'User2996', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'dddddddddddddddddddd', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2995, 'test2995@example.com', 'Test', 'User2995', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'eeeeeeeeeeeeeeeeeeee', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2994, 'test2994@example.com', 'Test', 'User2994', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'ffffffffffffffffffff', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2993, 'test2993@example.com', 'Test', 'User2993', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'gggggggggggggggggggg', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2992, 'test2992@example.com', 'Test', 'User2992', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'hhhhhhhhhhhhhhhhhhhh', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2991, 'test2991@example.com', 'Test', 'User2991', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'iiiiiiiiiiiiiiiiiiii', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2990, 'test2990@example.com', 'Test', 'User2990', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'jjjjjjjjjjjjjjjjjjjj', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2989, 'test2989@example.com', 'Test', 'User2989', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'kkkkkkkkkkkkkkkkkkkk', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2988, 'test2988@example.com', 'Test', 'User2988', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'llllllllllllllllllll', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2987, 'test2987@example.com', 'Test', 'User2987', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'mmmmmmmmmmmmmmmmmmmm', NOW(), 0, 0, 'secret', 'codes', 0) "
                         + "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
             stmt.executeUpdate();
         }
 
         // Set up fleet_access records for main test users
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED') ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
+                        + "(1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), "
+                        + "(2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED') "
+                        + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
             stmt.executeUpdate();
         }
 
@@ -1401,7 +1459,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 999); // Different ID
             stmt.setString(2, "test999@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1434,7 +1494,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 998); // Different ID
             stmt.setString(2, "different@email.com"); // Different email
             stmt.setString(3, "John");
@@ -1467,7 +1529,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 997); // Different ID
             stmt.setString(2, "test997@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "Jane"); // Different first name
@@ -1500,7 +1564,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 996); // Different ID
             stmt.setString(2, "test996@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1533,7 +1599,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 995); // Different ID
             stmt.setString(2, "test995@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1566,7 +1634,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 994); // Different ID
             stmt.setString(2, "test994@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1599,7 +1669,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 993); // Different ID
             stmt.setString(2, "test993@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1632,7 +1704,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 992); // Different ID
             stmt.setString(2, "test992@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1665,7 +1739,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 991); // Different ID
             stmt.setString(2, "test991@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1698,7 +1774,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 990); // Different ID
             stmt.setString(2, "test990@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1731,7 +1809,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 989); // Different ID
             stmt.setString(2, "test989@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1764,7 +1844,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 988); // Different ID
             stmt.setString(2, "test988@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -2393,7 +2475,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 999); // Different ID
                 stmt.setString(2, "test999@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2428,7 +2512,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 998); // Different ID
                 stmt.setString(2, "different@email.com"); // Different email
                 stmt.setString(3, "John");
@@ -2463,7 +2549,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 997); // Different ID
                 stmt.setString(2, "test997@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "Jane"); // Different first name
@@ -2498,7 +2586,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 996); // Different ID
                 stmt.setString(2, "test996@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2533,7 +2623,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 995); // Different ID
                 stmt.setString(2, "test995@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2569,7 +2661,9 @@ public class UserTest extends TestWithConnection {
         try {
             // Create a user with different state
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 994); // Different ID
                 stmt.setString(2, "test994@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2604,7 +2698,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 993); // Different ID
                 stmt.setString(2, "test993@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2639,7 +2735,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 992); // Different ID
                 stmt.setString(2, "test992@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2674,7 +2772,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 991); // Different ID
                 stmt.setString(2, "test991@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2709,7 +2809,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 990); // Different ID
                 stmt.setString(2, "test990@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2744,7 +2846,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 989); // Different ID
                 stmt.setString(2, "test989@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2779,7 +2883,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 988); // Different ID
                 stmt.setString(2, "test988@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2814,7 +2920,9 @@ public class UserTest extends TestWithConnection {
 
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 987); // Different ID
                 stmt.setString(2, "test987@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");

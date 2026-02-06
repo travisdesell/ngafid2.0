@@ -5,11 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.uploads.Upload;
-
-import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -19,6 +14,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.net.ssl.HttpsURLConnection;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.uploads.Upload;
 
 /**
  * This class represents an Import from the airsync servers in the NGAFID
