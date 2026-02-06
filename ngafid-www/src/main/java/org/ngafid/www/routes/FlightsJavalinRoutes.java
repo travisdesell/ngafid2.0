@@ -213,8 +213,8 @@ public class FlightsJavalinRoutes {
             final int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             final int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
 
-            LOG.info("Ordered by: " + orderingColumnn);
-            LOG.info("Filter: " + filter.toString());
+            LOG.info(() -> "Ordered by: " + orderingColumnn);
+            LOG.info(() -> "Filter: " + filter.toString());
 
             /**
              * Valid Column Names:

@@ -94,7 +94,6 @@ public abstract class FlightFileProcessor implements Callable<Void> {
             Flight.batchUpdateDatabase(connection, flights);
             for (FlightBuilder builder : builders) {
                 pipeline.finalize(builder);
-                Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
                 TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
                 builder.getFlight().insertComputedEvents(connection, builder.getEventDefinitions());
             }

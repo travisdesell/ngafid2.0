@@ -76,7 +76,7 @@ export function SeveritiesPage() {
     }, []);
 
 
-    const iniitalEventFlags = useMemo(() => {
+    const initialEventFlags = useMemo(() => {
         const checked: Record<string, boolean> = {};
         const empty:   Record<string, boolean> = {};
         for (const name of eventNames) {
@@ -97,8 +97,8 @@ export function SeveritiesPage() {
     const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
     const [datesChanged, setDatesChanged] = useState(false);
     const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
-    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(iniitalEventFlags.checked);
-    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(iniitalEventFlags.empty);
+    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(initialEventFlags.checked);
+    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventFlags.empty);
     const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
     const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
 

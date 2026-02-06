@@ -26,7 +26,17 @@ class SeleniumSmokeTest {
                 ?: "http://localhost:8181/"
             if (url.endsWith("/")) url else "$url/"
         }
-
+        @BeforeAll
+        @JvmStatic
+        fun verifyServerIsUp() {
+            try {
+                java.net.URL(baseUrl).openConnection().connect()
+            } catch (e: Exception) {
+                throw IllegalStateException(
+                    "NGAFID server is not reachable at $baseUrl, check if the server is up first"
+                )
+            }
+        }
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
@@ -34,7 +44,6 @@ class SeleniumSmokeTest {
             val options = ChromeOptions()
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
             driver = ChromeDriver(options)
-            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5))
         }
 
         @JvmStatic
@@ -46,3 +55,4 @@ class SeleniumSmokeTest {
         }
     }
 }
+

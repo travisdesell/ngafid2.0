@@ -971,6 +971,17 @@ public class Flight {
             }
         }
 
+        // Insert all events for each flight
+        for (Flight flight : flightList) {
+
+            // Flight has no events, skip it
+            if (flight.events == null || flight.events.isEmpty())
+                continue;
+
+            Event.batchInsertion(connection, flight, flight.events);
+
+        }
+
         try (PreparedStatement doubleTSPreparedStatement = DoubleTimeSeries.createPreparedStatement(connection)) {
 
             //Insert all double time series for each flight
