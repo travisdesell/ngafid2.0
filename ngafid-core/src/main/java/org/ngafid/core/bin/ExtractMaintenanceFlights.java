@@ -1,6 +1,12 @@
 package org.ngafid.core.bin;
 
-import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.export.CSVWriter;
+import org.ngafid.core.flights.export.CachedCSVWriter;
+import org.ngafid.core.flights.maintenance.AircraftTimeline;
+import org.ngafid.core.flights.maintenance.MaintenanceRecord;
+import org.ngafid.core.util.TimeUtils;
 
 import java.io.*;
 import java.sql.Connection;
@@ -11,13 +17,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.export.CSVWriter;
-import org.ngafid.core.flights.export.CachedCSVWriter;
-import org.ngafid.core.flights.maintenance.AircraftTimeline;
-import org.ngafid.core.flights.maintenance.MaintenanceRecord;
-import org.ngafid.core.util.TimeUtils;
+
+import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 public final class ExtractMaintenanceFlights {
     private static final HashMap<Integer, MaintenanceRecord> RECORDS_BY_WORKORDER = new HashMap<>();
@@ -163,7 +164,8 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      */
     private static List<AircraftTimeline> buildTimeline(Connection connection, ResultSet tailSet, LocalDate startDate,
-                                                        LocalDate endDate) throws SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
+                                                        LocalDate endDate)
+            throws SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
         List<AircraftTimeline> timeline = new ArrayList<>();
 
         while (tailSet.next()) {
@@ -171,8 +173,9 @@ public final class ExtractMaintenanceFlights {
             System.out.println("\tsystem id '" + systemId + "' flights:");
 
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, start_time, end_time, airframe_id FROM flights " +
-                            "WHERE system_id = ? AND start_time > ? AND end_time < ? ORDER BY start_time");
+                    "SELECT id, start_time, end_time, airframe_id FROM flights "
+                            + "WHERE system_id = ? AND start_time > ? AND end_time < ? "
+                            + "ORDER BY start_time");
             stmt.setString(1, systemId);
             stmt.setString(2, startDate.toString());
             stmt.setString(3, endDate.toString());

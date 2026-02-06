@@ -1,5 +1,7 @@
 package org.ngafid.core.agl_converter;
 
+import org.ngafid.core.Config;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -7,13 +9,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import org.ngafid.core.Config;
 
 /**
  * Lightweight MSL to AGL converter that works on-demand per point.
  * Uses SRTM terrain data files directly without caching to minimize memory usage.
  */
-public class MSLtoAGLConverter {
+public final class MSLtoAGLConverter {
     private static final Logger LOG = Logger.getLogger(MSLtoAGLConverter.class.getName());
 
     // SRTM tile configuration
@@ -25,6 +26,9 @@ public class MSLtoAGLConverter {
 
     // Simple cache for file existence checks to avoid repeated file system calls
     private static final ConcurrentHashMap<String, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
+
+    private MSLtoAGLConverter() {
+    }
 
     /**
      * Converts MSL altitude to AGL altitude using terrain data.
