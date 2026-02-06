@@ -19,7 +19,7 @@ public final class FlightMeta {
     private String calculated;
     private String suggestedTailNumber;
 
-    private Airframes.Airframe airframe = null;
+    Airframes.Airframe airframe = null;
 
     public FlightMeta() {
     }

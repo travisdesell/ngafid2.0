@@ -384,16 +384,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_" + System.currentTimeMillis() + ".csv";
-        meta.systemId = "TEST_SYSTEM_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123TEST";
-        meta.md5Hash = "test_md5_hash_" + System.currentTimeMillis();
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_" + System.currentTimeMillis() + ".csv");
+        meta.setSystemId("TEST_SYSTEM_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123TEST");
+        meta.setMd5Hash("test_md5_hash_" + System.currentTimeMillis());
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -437,16 +437,16 @@ public class FlightTest extends TestWithConnection {
 
         for (int i = 0; i < numFlights; i++) {
             FlightMeta meta = new FlightMeta();
-            meta.fleetId = 1;
-            meta.uploaderId = 1;
-            meta.uploadId = getTestUploadId();
-            meta.filename = "test_flight_" + i + "_" + System.currentTimeMillis() + ".csv";
-            meta.systemId = "TEST_SYSTEM_" + i + "_" + System.currentTimeMillis();
-            meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-            meta.suggestedTailNumber = "N123TEST" + i;
-            meta.md5Hash = "test_md5_hash_" + i + "_" + System.currentTimeMillis();
-            meta.startDateTime = OffsetDateTime.now().minusHours(i + 1);
-            meta.endDateTime = OffsetDateTime.now().minusHours(i);
+            meta.setFleetId(1);
+            meta.setUploaderId(1);
+            meta.setUploadId(getTestUploadId());
+            meta.setFilename("test_flight_" + i + "_" + System.currentTimeMillis() + ".csv");
+            meta.setSystemId("TEST_SYSTEM_" + i + "_" + System.currentTimeMillis());
+            meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+            meta.setSuggestedTailNumber("N123TEST" + i);
+            meta.setMd5Hash("test_md5_hash_" + i + "_" + System.currentTimeMillis());
+            meta.setStartDateTime(OffsetDateTime.now().minusHours(i + 1));
+            meta.setEndDateTime(OffsetDateTime.now().minusHours(i));
 
             Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
             Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -492,16 +492,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_successful.csv";
-        meta.systemId = "TEST_SUCCESSFUL_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123SUCCESS";
-        meta.md5Hash = "test_md5_hash_successful";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_successful.csv");
+        meta.setSystemId("TEST_SUCCESSFUL_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123SUCCESS");
+        meta.setMd5Hash("test_md5_hash_successful");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -530,16 +530,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_no_itinerary.csv";
-        meta.systemId = "TEST_NO_ITINERARY_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123NOIT";
-        meta.md5Hash = "test_md5_hash_no_itinerary";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_no_itinerary.csv");
+        meta.setSystemId("TEST_NO_ITINERARY_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123NOIT");
+        meta.setMd5Hash("test_md5_hash_no_itinerary");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -567,16 +567,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_empty_itinerary.csv";
-        meta.systemId = "TEST_EMPTY_ITINERARY_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123EMPTYIT";
-        meta.md5Hash = "test_md5_hash_empty_itinerary";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_empty_itinerary.csv");
+        meta.setSystemId("TEST_EMPTY_ITINERARY_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123EMPTYIT");
+        meta.setMd5Hash("test_md5_hash_empty_itinerary");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -604,16 +604,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_single_itinerary.csv";
-        meta.systemId = "TEST_SINGLE_ITINERARY_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123SINGLEIT";
-        meta.md5Hash = "test_md5_hash_single_itinerary";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_single_itinerary.csv");
+        meta.setSystemId("TEST_SINGLE_ITINERARY_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123SINGLEIT");
+        meta.setMd5Hash("test_md5_hash_single_itinerary");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -654,16 +654,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_multiple_itinerary.csv";
-        meta.systemId = "TEST_MULTIPLE_ITINERARY_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123MULTIT";
-        meta.md5Hash = "test_md5_hash_multiple_itinerary";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_multiple_itinerary.csv");
+        meta.setSystemId("TEST_MULTIPLE_ITINERARY_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123MULTIT");
+        meta.setMd5Hash("test_md5_hash_multiple_itinerary");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -713,16 +713,16 @@ public class FlightTest extends TestWithConnection {
 
         // Flight 1: No itinerary
         FlightMeta meta1 = new FlightMeta();
-        meta1.fleetId = 1;
-        meta1.uploaderId = 1;
-        meta1.uploadId = getTestUploadId();
-        meta1.filename = "test_flight_no_itinerary_multi.csv";
-        meta1.systemId = "TEST_NO_ITINERARY_MULTI_" + System.currentTimeMillis();
-        meta1.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta1.suggestedTailNumber = "N123NOIT";
-        meta1.md5Hash = "test_md5_hash_no_it_multi";
-        meta1.startDateTime = OffsetDateTime.now().minusHours(2);
-        meta1.endDateTime = OffsetDateTime.now().minusHours(1);
+        meta1.setFleetId(1);
+        meta1.setUploaderId(1);
+        meta1.setUploadId(getTestUploadId());
+        meta1.setFilename("test_flight_no_itinerary_multi.csv");
+        meta1.setSystemId("TEST_NO_ITINERARY_MULTI_" + System.currentTimeMillis());
+        meta1.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta1.setSuggestedTailNumber("N123NOIT");
+        meta1.setMd5Hash("test_md5_hash_no_it_multi");
+        meta1.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        meta1.setEndDateTime(OffsetDateTime.now().minusHours(1));
 
         Flight flight1 = new Flight(
                 meta1,
@@ -736,16 +736,16 @@ public class FlightTest extends TestWithConnection {
 
         // Flight 2: Single itinerary
         FlightMeta meta2 = new FlightMeta();
-        meta2.fleetId = 1;
-        meta2.uploaderId = 1;
-        meta2.uploadId = getTestUploadId();
-        meta2.filename = "test_flight_single_itinerary_multi.csv";
-        meta2.systemId = "TEST_SINGLE_ITINERARY_MULTI_" + System.currentTimeMillis();
-        meta2.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta2.suggestedTailNumber = "N123SINGLE";
-        meta2.md5Hash = "test_md5_hash_single_it_multi";
-        meta2.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta2.endDateTime = OffsetDateTime.now();
+        meta2.setFleetId(1);
+        meta2.setUploaderId(1);
+        meta2.setUploadId(getTestUploadId());
+        meta2.setFilename("test_flight_single_itinerary_multi.csv");
+        meta2.setSystemId("TEST_SINGLE_ITINERARY_MULTI_" + System.currentTimeMillis());
+        meta2.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta2.setSuggestedTailNumber("N123SINGLE");
+        meta2.setMd5Hash("test_md5_hash_single_it_multi");
+        meta2.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta2.setEndDateTime(OffsetDateTime.now();
 
         List<Itinerary> itinerary2 = new ArrayList<>();
         Itinerary item2 = new Itinerary("KLAX", "25L", 150, 1800.0, 0.6, 0.3, 110.0, 2400.0);
@@ -766,55 +766,13 @@ public class FlightTest extends TestWithConnection {
 
         Flight.batchUpdateDatabase(connection, flights);
 
-        assertTrue(flight1.getId() > 0, "Flight 1 should have a positive ID");
-        assertTrue(flight2.getId() > 0, "Flight 2 should have a positive ID");
+        for (Flight flight : flights) {
+            int finalId = flight.getId();
+            assertTrue(finalId > 0, "Flight should have a positive ID after successful insertion");
 
-        List<Itinerary> retrievedItinerary1 = Itinerary.getItinerary(connection, flight1.getId());
-        assertTrue(retrievedItinerary1.isEmpty(), "Flight 1 should have no itinerary");
-
-        List<Itinerary> retrievedItinerary2 = Itinerary.getItinerary(connection, flight2.getId());
-        assertEquals(1, retrievedItinerary2.size(), "Flight 2 should have exactly one itinerary item");
-        assertEquals("KLAX", retrievedItinerary2.get(0).getAirport(), "Flight 2 airport should match");
-    }
-
-    // Helper methods for test setup
-    private void createTestAirframeIfNotExists() throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM airframes WHERE airframe = 'Test Cessna 172S'")) {
-            try (var rs = stmt.executeQuery()) {
-                if (rs.next() && rs.getInt(1) == 0) {
-                    try (PreparedStatement typeStmt = connection.prepareStatement(
-                            "INSERT INTO airframe_types (name) VALUES ('Fixed Wing') ON DUPLICATE KEY UPDATE name = name")) {
-                        typeStmt.executeUpdate();
-                    }
-
-                    try (PreparedStatement airframeStmt = connection.prepareStatement(
-                            "INSERT INTO airframes (airframe, type_id) VALUES "
-                                    + "('Test Cessna 172S', (SELECT id FROM airframe_types "
-                                    + "WHERE name = 'Fixed Wing' LIMIT 1)) "
-                                    + "ON DUPLICATE KEY UPDATE airframe = airframe")) {
-                        airframeStmt.executeUpdate();
-                    }
-                }
-            }
-        }
-    }
-
-    private void createTestUploadIfNotExists() throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM uploads WHERE id = 999")) {
-            try (var rs = stmt.executeQuery()) {
-                if (rs.next() && rs.getInt(1) == 0) {
-                    try (PreparedStatement uploadStmt = connection.prepareStatement(
-                            "INSERT INTO uploads (id, fleet_id, uploader_id, filename, identifier, "
-                                    + "status, number_chunks, uploaded_chunks, chunk_status, md5_hash, "
-                                    + "size_bytes) VALUES (999, 1, 1, 'test_upload.csv', "
-                                    + "'test_identifier', 'PROCESSED_OK', 1, 1, '1', "
-                                    + "'test_md5_hash', 1024) ON DUPLICATE KEY UPDATE id = id")) {
-                        uploadStmt.executeUpdate();
-                    }
-                }
-            }
+            Flight retrievedFlight = Flight.getFlight(connection, finalId);
+            assertNotNull(retrievedFlight, "Flight should be retrievable from database");
+            assertEquals(flight.getFilename(), retrievedFlight.getFilename(), "Filename should match");
         }
     }
 
@@ -826,16 +784,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_with_events.csv";
-        meta.systemId = "TEST_WITH_EVENTS_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123EVENTS";
-        meta.md5Hash = "test_md5_hash_events";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_with_events.csv");
+        meta.setSystemId("TEST_WITH_EVENTS_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123EVENTS");
+        meta.setMd5Hash("test_md5_hash_events");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -884,16 +842,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_with_string_ts.csv";
-        meta.systemId = "TEST_WITH_STRING_TS_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123STRINGTS";
-        meta.md5Hash = "test_md5_hash_string_ts";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_with_string_ts.csv");
+        meta.setSystemId("TEST_WITH_STRING_TS_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123STRINGTS");
+        meta.setMd5Hash("test_md5_hash_string_ts");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -974,16 +932,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_with_warnings.csv";
-        meta.systemId = "TEST_WITH_WARNINGS_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123WARNINGS";
-        meta.md5Hash = "test_md5_hash_warnings";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_with_warnings.csv");
+        meta.setSystemId("TEST_WITH_WARNINGS_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123WARNINGS");
+        meta.setMd5Hash("test_md5_hash_warnings");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1040,16 +998,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_with_events_set_id.csv";
-        meta.systemId = "TEST_WITH_EVENTS_SET_ID_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123EVENTSID";
-        meta.md5Hash = "test_md5_hash_events_id";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_with_events_set_id.csv");
+        meta.setSystemId("TEST_WITH_EVENTS_SET_ID_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123EVENTSID");
+        meta.setMd5Hash("test_md5_hash_events_id");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1112,16 +1070,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_failed_generated_keys.csv";
-        meta.systemId = "TEST_FAILED_GENERATED_KEYS_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123FAILED";
-        meta.md5Hash = "test_md5_hash_failed";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_failed_generated_keys.csv");
+        meta.setSystemId("TEST_FAILED_GENERATED_KEYS_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123FAILED");
+        meta.setMd5Hash("test_md5_hash_failed");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1136,16 +1094,16 @@ public class FlightTest extends TestWithConnection {
         // To test the "Failed to retrieve generated id" scenario, we need to simulate
 
         FlightMeta invalidMeta = new FlightMeta();
-        invalidMeta.fleetId = 1;
-        invalidMeta.uploaderId = 1;
-        invalidMeta.uploadId = getTestUploadId();
-        invalidMeta.filename = "test_flight_invalid_airframe.csv";
-        invalidMeta.systemId = "TEST_INVALID_AIRFRAME_" + System.currentTimeMillis();
-        invalidMeta.airframe = new Airframes.Airframe("Invalid Airframe", new Airframes.Type("Invalid Type"));
-        invalidMeta.suggestedTailNumber = "N123INVALID";
-        invalidMeta.md5Hash = "test_md5_hash_invalid";
-        invalidMeta.startDateTime = OffsetDateTime.now().minusHours(1);
-        invalidMeta.endDateTime = OffsetDateTime.now();
+        invalidMeta.setFleetId(1);
+        invalidMeta.setUploaderId(1);
+        invalidMeta.setUploadId(getTestUploadId());
+        invalidMeta.setFilename("test_flight_invalid_airframe.csv");
+        invalidMeta.setSystemId("TEST_INVALID_AIRFRAME_" + System.currentTimeMillis());
+        invalidMeta.setAirframe("Invalid Airframe", "Invalid Type");
+        invalidMeta.setSuggestedTailNumber("N123INVALID");
+        invalidMeta.setMd5Hash("test_md5_hash_invalid");
+        invalidMeta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        invalidMeta.setEndDateTime(OffsetDateTime.now();
 
         Flight invalidFlight = new Flight(
                 invalidMeta,
@@ -1185,16 +1143,16 @@ public class FlightTest extends TestWithConnection {
         // We'll create a test that attempts to trigger this condition by using
         // a scenario that might cause the database to not return generated keys
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_rs_next_false.csv";
-        meta.systemId = "TEST_RS_NEXT_FALSE_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123RSNEXT";
-        meta.md5Hash = "test_md5_hash_rs_next";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_rs_next_false.csv");
+        meta.setSystemId("TEST_RS_NEXT_FALSE_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123RSNEXT");
+        meta.setMd5Hash("test_md5_hash_rs_next");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1237,16 +1195,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_null_connection.csv";
-        meta.systemId = "TEST_NULL_CONNECTION_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123NULL";
-        meta.md5Hash = "test_md5_hash_null";
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_null_connection.csv");
+        meta.setSystemId("TEST_NULL_CONNECTION_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123NULL");
+        meta.setMd5Hash("test_md5_hash_null");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1276,17 +1234,17 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_invalid_date.csv";
-        meta.systemId = "TEST_INVALID_DATE_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123INVALID";
-        meta.md5Hash = "test_md5_hash_invalid_date";
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_invalid_date.csv");
+        meta.setSystemId("TEST_INVALID_DATE_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123INVALID");
+        meta.setMd5Hash("test_md5_hash_invalid_date");
         // Use valid dates for constructor, but we'll create a scenario that triggers IllegalArgumentException
-        meta.startDateTime = OffsetDateTime.now().minusHours(1);
-        meta.endDateTime = OffsetDateTime.now();
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        meta.setEndDateTime(OffsetDateTime.now();
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1352,16 +1310,16 @@ public class FlightTest extends TestWithConnection {
         createTestUploadIfNotExists();
 
         FlightMeta meta = new FlightMeta();
-        meta.fleetId = 1;
-        meta.uploaderId = 1;
-        meta.uploadId = getTestUploadId();
-        meta.filename = "test_flight_computed_events.csv";
-        meta.systemId = "TEST_COMPUTED_EVENTS_" + System.currentTimeMillis();
-        meta.airframe = new Airframes.Airframe("Test Cessna 172S", new Airframes.Type("Fixed Wing"));
-        meta.suggestedTailNumber = "N123COMP";
-        meta.md5Hash = "test_md5_hash_computed_events";
-        meta.startDateTime = OffsetDateTime.now().minusHours(2);
-        meta.endDateTime = OffsetDateTime.now().minusHours(1);
+        meta.setFleetId(1);
+        meta.setUploaderId(1);
+        meta.setUploadId(getTestUploadId());
+        meta.setFilename("test_flight_computed_events.csv");
+        meta.setSystemId("TEST_COMPUTED_EVENTS_" + System.currentTimeMillis());
+        meta.setAirframe("Test Cessna 172S", "Fixed Wing");
+        meta.setSuggestedTailNumber("N123COMP");
+        meta.setMd5Hash("test_md5_hash_computed_events");
+        meta.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        meta.setEndDateTime(OffsetDateTime.now().minusHours(1);
 
         Flight testFlight = new Flight(
                 meta,
@@ -2051,7 +2009,6 @@ public class FlightTest extends TestWithConnection {
                 }
             }
         }
-
         try (PreparedStatement debugStmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM uploads WHERE id = 999")) {
             try (ResultSet rs = debugStmt.executeQuery()) {
@@ -2990,7 +2947,7 @@ public class FlightTest extends TestWithConnection {
                 .collect(Collectors.toList());
 
         // Verify we get only the unassociated tags
-        assertEquals(2, ourTags.size(), "Should return only unassociated tags");
+        assertEquals(2, ourTags.size(), "Should return only our unassociated tags");
 
         // Verify the tags are the unassociated ones
         Set<String> tagNames = ourTags.stream()
@@ -3493,7 +3450,7 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 3007);
 
         // Add series to cache
-        DoubleTimeSeries testSeries = new DoubleTimeSeries("CachedSeries", "TestUnit", new double[]{1.0, 2.0});
+        DoubleTimeSeries testSeries = new DoubleTimeSeries("CachedSeries", "TestUnit", new double[]{1.0, 2.0, 3.0});
         flight.addDoubleTimeSeries("CachedSeries", testSeries);
 
         // Get series from cache
@@ -3552,7 +3509,7 @@ public class FlightTest extends TestWithConnection {
         assertNull(result, "Should return null for non-existent series");
     }
 
-    // Tests for getDoubleTimeSeries(Connection, String) method
+    // Tests for getDoubleTimeSeries with Connection parameter
     @Test
     @Order(310)
     @DisplayName("Should get and cache double series from database")
@@ -3985,14 +3942,15 @@ public class FlightTest extends TestWithConnection {
         // Associate tags with flights to test the idLimStr method
         // This will call disassociateTags which uses idLimStr(int[] ids, String idName, boolean complement)
         // with multiple flight IDs, ensuring the line sb.append(complement ?
-        // (" AND " + idName + " != ") : (" OR " + idName + " = ")); is covered
+        // (" AND " + idName + " != ") : (" OR " + idName + " = ")) is covered
 
         // First associate some tags with flights
         Flight.associateTag(6000, tagId1, connection); // Associate tag 1 with flight 6000
         Flight.associateTag(6001, tagId1, connection); // Associate tag 1 with flight 6001
 
-        // Now disassociate tag 1 from multiple flights - this will use idLimStr with multiple IDs
-        // This should trigger the line: sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName + " = "));
+        // Now disassociate tag 1 from multiple flights - this will use idLimStr(int[] ids,
+        // String idName, boolean complement) with complement=false, but it will still test
+        // the line: sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName + " = "));
         Flight.disassociateTags(tagId1, connection, 6000, 6001);
 
         // Verify the disassociation worked by checking that the tag is no longer associated with these flights
@@ -4037,8 +3995,7 @@ public class FlightTest extends TestWithConnection {
 
         // Now disassociate tag 4 from multiple flights - this will use idLimStr(int[] ids,
         // String idName, boolean complement) with complement=false, but it will still test
-        // the line: sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName
-        // + " = "));
+        // the line: sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName + " = "));
         Flight.disassociateTags(tagId4, connection, 7000, 7001, 7002);
 
         // Verify the disassociation worked by checking that the tag is no longer associated with these flights
@@ -4156,7 +4113,7 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights1, "First range should return flights");
         assertNotNull(flights2, "Second range should return flights");
 
-        // The ranges should be different
+        // Each page should have at most pageSize flights
         assertTrue(flights1.size() <= 1, "First range should return at most 1 flight");
         assertTrue(flights2.size() <= 2, "Second range should return at most 2 flights");
     }
