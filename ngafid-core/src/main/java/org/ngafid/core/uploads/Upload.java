@@ -189,14 +189,17 @@ public final class Upload {
         public void reset() throws SQLException {
             this.clearUpload();
 
-            if (status != Status.ENQUEUED) {
-                String query = "UPDATE uploads SET status = '" + Status.UPLOADED + "' WHERE id = ?";
-                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                    preparedStatement.setInt(1, id);
-                    LOG.info(preparedStatement.toString());
-                    preparedStatement.executeUpdate();
-                }
+            // Already enqueued, exit
+            if (status == Status.ENQUEUED)
+                return;
+
+            final String query = "UPDATE uploads SET status = '" + Status.ENQUEUED + "' WHERE id = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setInt(1, id);
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
             }
+            
         }
 
         private static KafkaProducer<String, Integer> producer = null;
