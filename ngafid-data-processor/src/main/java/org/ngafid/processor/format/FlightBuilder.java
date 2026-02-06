@@ -301,7 +301,7 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder updateProcessingStatus(int processingStatus) {
-        this.meta.processingStatus |= processingStatus;
+        this.meta.setProcessingStatus(this.meta.getProcessingStatus() | processingStatus);
         return this;
     }
 

@@ -1,17 +1,18 @@
 package org.ngafid.processor.steps;
 
-import static org.ngafid.core.flights.Airframes.AIRFRAME_CESSNA_172S;
-import static org.ngafid.core.flights.Parameters.*;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.processor.format.FlightBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.processor.format.FlightBuilder;
+
+import static org.ngafid.core.flights.Airframes.AIRFRAME_CESSNA_172S;
+import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Computes the stall index -- see the paper references in {@link ComputeLOCI} for details.
@@ -84,7 +85,7 @@ public class ComputeStallIndex extends ComputeStep {
                     return pressRatio / tempRatio;
                 });
 
-        DoubleTimeSeries airspeed = builder.meta.airframe.getName().equals(AIRFRAME_CESSNA_172S)
+        DoubleTimeSeries airspeed = builder.meta.getAirframe().getName().equals(AIRFRAME_CESSNA_172S)
                 ? builder.getDoubleTimeSeries(CAS)
                 : builder.getDoubleTimeSeries(IAS);
         DoubleTimeSeries tasFtMin = DoubleTimeSeries.computed(TAS_FTMIN, Unit.FT_PER_MINUTE, length,

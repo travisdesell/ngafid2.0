@@ -1,9 +1,5 @@
 package org.ngafid.processor.steps;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
@@ -15,6 +11,11 @@ import org.ngafid.processor.events.EventScanner;
 import org.ngafid.processor.events.LowEndingFuelScanner;
 import org.ngafid.processor.events.SpinEventScanner;
 import org.ngafid.processor.format.FlightBuilder;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of {@link EventScanner}.
@@ -123,7 +124,7 @@ public class ComputeEvent extends ComputeStep {
             return new EventScanner(definition);
         } else {
             return switch (definition.getId()) {
-                case -6, -5, -4 -> new LowEndingFuelScanner(builder.meta.airframe, definition);
+                case -6, -5, -4 -> new LowEndingFuelScanner(builder.meta.getAirframe(), definition);
                 case -3, -2 -> new SpinEventScanner(definition);
                 // For events with either (1) no scanner or (2)
                 default -> null;
@@ -172,7 +173,7 @@ public class ComputeEvent extends ComputeStep {
     @Override
     public boolean airframeIsValid(Airframes.Airframe airframe) {
         // While we could technically create events for non-fixed wing aircraft, we haven't yet!
-        return builder.meta.airframe.getType().getName().equals("Fixed Wing");
+        return builder.meta.getAirframe().getType().getName().equals("Fixed Wing");
     }
 
     /**

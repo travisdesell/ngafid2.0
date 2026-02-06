@@ -109,6 +109,10 @@ public final class FlightMeta {
         this.airframe = new Airframes.Airframe(airframe, new Airframes.Type(airframeType));
     }
 
+    public void setAirframe(Airframes.Airframe airframe) {
+        this.airframe = airframe;
+    }
+
     public void setAirframe(Airframes.Airframe airframe, Airframes.Type airframeType) {
         this.airframe = airframe;
     }

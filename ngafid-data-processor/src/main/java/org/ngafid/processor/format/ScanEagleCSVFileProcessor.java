@@ -1,5 +1,11 @@
 package org.ngafid.processor.format;
 
+import org.ngafid.core.flights.*;
+import org.ngafid.processor.Pipeline;
+import org.ngafid.processor.steps.ComputeScanEagleStartEndTime;
+import org.ngafid.processor.steps.ComputeStep;
+import org.ngafid.processor.steps.ComputeUnitConversion;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,11 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.ngafid.core.flights.*;
-import org.ngafid.processor.Pipeline;
-import org.ngafid.processor.steps.ComputeScanEagleStartEndTime;
-import org.ngafid.processor.steps.ComputeStep;
-import org.ngafid.processor.steps.ComputeUnitConversion;
 
 /**
  * Flight file processor and flight builder for Scan Eagle data. We can't do a lot with the scan eagle data, so
@@ -47,7 +48,7 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
     public ScanEagleCSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
         super(connection, stream, filename, pipeline);
 
-        meta.airframe = new Airframes.Airframe("ScanEagle", new Airframes.Type("UAS Fixed Wing"));
+        meta.setAirframe(new Airframes.Airframe("ScanEagle", new Airframes.Type("UAS Fixed Wing")));
     }
 
     @Override
@@ -81,8 +82,8 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
         meta.setSuggestedTailNumber("N" + filenameParts[1] + "ND");
         meta.setSystemId(meta.getSuggestedTailNumber());
 
-        LOG.log(Level.INFO, "suggested tail number: '{0}'", meta.suggestedTailNumber);
-        LOG.log(Level.INFO, "system id: '{0}'", meta.systemId);
+        LOG.log(Level.INFO, "suggested tail number: '{0}'", meta.getSuggestedTailNumber());
+        LOG.log(Level.INFO, "system id: '{0}'", meta.getSystemId());
     }
 
     // TODO: Figure out ScanEagle data

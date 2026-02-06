@@ -2,6 +2,14 @@ package org.ngafid.processor.format;
 
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.parquet.avro.AvroParquetReader;
+import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.io.InputFile;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.util.MD5;
+import org.ngafid.core.util.TimeUtils;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -10,13 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.parquet.avro.AvroParquetReader;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.io.InputFile;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.util.MD5;
-import org.ngafid.core.util.TimeUtils;
 
 /**
  * Processes a Parquet file and extracts flights.
@@ -142,22 +143,22 @@ public class ParquetFileProcessor {
             throw new FatalFlightFileException("Metadata record is missing in the Parquet file.");
         }
 
-        flightMeta.filename = filename;
+        flightMeta.setFilename(filename);
 
         String aircraftType = getString(metadataRecord, "aircraft_type");
         String modeSCode = getString(metadataRecord, "mode_s_code");
         String primaryKey = getString(metadataRecord, "primary_key"); // Get primary key
 
-        flightMeta.systemId = (modeSCode != null && !modeSCode.isEmpty()) ? modeSCode : "Unknown";
-        flightMeta.airframe = new Airframes.Airframe(
+        flightMeta.setSystemId((modeSCode != null && !modeSCode.isEmpty()) ? modeSCode : "Unknown");
+        flightMeta.setAirframe(new Airframes.Airframe(
                 (aircraftType != null && !aircraftType.isEmpty()) ? aircraftType : "Unknown",
                 new Airframes.Type("Fixed Wing")
-        );
+        ));
 
-        flightMeta.md5Hash = computeMD5Hash(primaryKey);
+        flightMeta.setMd5Hash(computeMD5Hash(primaryKey));
 
-        LOG.info("Processed metadata: airframe=" + flightMeta.airframe.getName() +
-                ", system_id=" + flightMeta.systemId +
+        LOG.info("Processed metadata: airframe=" + flightMeta.getAirframe().getName() +
+                ", system_id=" + flightMeta.getSystemId() +
                 ", primary_key=" + primaryKey);
     }
 

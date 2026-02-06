@@ -379,10 +379,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             LOG.severe("Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }
-
-        Airframes.Airframe newAirframe = new Airframes.Airframe(airframeName, new Airframes.Type(airframeType));
-        meta.setAirframe(newAirframe, airframeType);
+        meta.setAirframe(new Airframes.Airframe(airframeName, new Airframes.Type(airframeType)));
     }
-
-
 }

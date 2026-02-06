@@ -145,7 +145,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
 
                     FlightMeta meta = new FlightMeta();
                     meta.setFilename(this.filename + ":" + start + "-" + end);
-                    meta.airframe = new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing"));
+                    meta.setAirframe(new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing")));
                     meta.setSuggestedTailNumber(nickname);
                     meta.setSystemId(nickname);
 
