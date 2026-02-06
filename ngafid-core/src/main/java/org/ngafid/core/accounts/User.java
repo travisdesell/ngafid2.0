@@ -1,14 +1,15 @@
 package org.ngafid.core.accounts;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.ngafid.core.flights.Tails;
+import org.ngafid.core.util.SendEmail;
+
 import java.io.Serializable;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.ngafid.core.flights.Tails;
-import org.ngafid.core.util.SendEmail;
 
 public final class User implements Serializable {
 
@@ -206,6 +207,8 @@ public final class User implements Serializable {
     }
 
     /**
+     * Get the number of users waiting for access to user fleet
+     * @param connection A connection to the database.
      * @return the number of users waiting for access to this user's fleet
      */
     public int getWaitingUserCount(Connection connection) throws SQLException {

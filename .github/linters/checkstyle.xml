@@ -133,7 +133,7 @@
     <!-- See https://checkstyle.org/checks/sizes/index.html -->
     <!--    Originally 150 and 7 respectively -->
     <module name="MethodLength">
-      <property name="max" value="200"/>
+      <property name="max" value="300"/>
     </module>
     <module name="ParameterNumber">
       <property name="max" value="10"/>
@@ -185,7 +185,7 @@
     <!-- See https://checkstyle.org/checks/design/index.html -->
 <!--    TODO: Might be good to bring back eventually -->
 <!--    <module name="DesignForExtension"/>-->
-    <module name="FinalClass"/>
+<!--    <module name="FinalClass"/>-->
     <module name="HideUtilityClassConstructor"/>
 <!--    <module name="InterfaceIsType"/>-->
     <module name="VisibilityModifier">

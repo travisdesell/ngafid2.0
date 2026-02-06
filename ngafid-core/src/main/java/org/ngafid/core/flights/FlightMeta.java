@@ -104,16 +104,16 @@ public final class FlightMeta {
         return airframe;
     }
 
-    public void setAirframe(String airframe, String airframeType) {
-        this.airframe = new Airframes.Airframe(airframe, new Airframes.Type(airframeType));
+    public void setAirframe(String newAirframe, String newAirframeType) {
+        this.airframe = new Airframes.Airframe(newAirframe, new Airframes.Type(newAirframeType));
     }
 
     public void setAirframe(Airframes.Airframe airframe) {
         this.airframe = airframe;
     }
 
-    public void setAirframe(Airframes.Airframe airframe, Airframes.Type airframeType) {
-        this.airframe = airframe;
+    public void setAirframe(Airframes.Airframe newAirframe, Airframes.Type airframeType) {
+        this.airframe = newAirframe;
     }
 
     public String getSystemId() {

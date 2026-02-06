@@ -1,14 +1,15 @@
 package org.ngafid.core.bin;
 
+import org.apache.commons.cli.*;
+import org.ngafid.core.Database;
+import org.ngafid.core.uploads.UploadDoesNotExistException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.cli.*;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.UploadDoesNotExistException;
 
 /**
  * Things this program should allow you to do:
