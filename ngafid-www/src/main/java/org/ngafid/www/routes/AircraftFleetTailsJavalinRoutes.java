@@ -1,23 +1,20 @@
 package org.ngafid.www.routes;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.flights.Tail;
-import org.ngafid.core.flights.Tails;
-import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.Navbar;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
-
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.flights.Tail;
+import org.ngafid.core.flights.Tails;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
 public class AircraftFleetTailsJavalinRoutes {

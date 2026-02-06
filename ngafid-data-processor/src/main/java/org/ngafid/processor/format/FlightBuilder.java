@@ -1,10 +1,6 @@
 package org.ngafid.processor.format;
 
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.flights.*;
-import org.ngafid.processor.DependencyGraph;
-import org.ngafid.processor.steps.*;
+import static org.ngafid.processor.steps.ComputeStep.required;
 
 import java.sql.Connection;
 import java.time.OffsetDateTime;
@@ -13,8 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.ngafid.processor.steps.ComputeStep.required;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.flights.*;
+import org.ngafid.processor.DependencyGraph;
+import org.ngafid.processor.steps.*;
 
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic

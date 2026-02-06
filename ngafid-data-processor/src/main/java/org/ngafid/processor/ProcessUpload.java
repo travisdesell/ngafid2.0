@@ -1,14 +1,7 @@
 package org.ngafid.processor;
 
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.flights.FlightError;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.core.uploads.*;
-import org.ngafid.core.util.MD5;
-import org.ngafid.core.util.SendEmail;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.ngafid.core.Config.NGAFID_UPLOAD_DIR;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -27,9 +20,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.ngafid.core.Config.NGAFID_UPLOAD_DIR;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.flights.FlightError;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.core.uploads.*;
+import org.ngafid.core.util.MD5;
+import org.ngafid.core.util.SendEmail;
 
 /**
  * Contains a static method processUpload which will process an upload with the supplied uploadId. This upload should

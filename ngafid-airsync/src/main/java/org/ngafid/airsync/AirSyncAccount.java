@@ -1,16 +1,15 @@
 package org.ngafid.airsync;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-
-import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
-
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+import javax.net.ssl.HttpsURLConnection;
 
 public class AirSyncAccount {
 

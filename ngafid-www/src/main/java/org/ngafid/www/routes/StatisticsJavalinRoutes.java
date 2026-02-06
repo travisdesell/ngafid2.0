@@ -1,5 +1,9 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.gson;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -7,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.Fleet;
 import org.ngafid.core.accounts.User;
@@ -18,12 +21,8 @@ import org.ngafid.core.flights.Tails;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.EventStatistics;
 import org.ngafid.www.Navbar;
-import static org.ngafid.www.WebServer.gson;
 import org.ngafid.www.flights.FlightStatistics;
 import org.ngafid.www.uploads.UploadStatistics;
-
-import io.javalin.Javalin;
-import io.javalin.http.Context;
 
 public class StatisticsJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
@@ -67,12 +66,12 @@ public class StatisticsJavalinRoutes {
 
             final String airframeIDParam = context.queryParam("airframeID");
             final int airframeID = airframeIDParam != null ? Integer.parseInt(airframeIDParam) : -1;
-            
+
             if (aggregate())
                 return FlightStatistics.getAggregateTotalFlightTimeDated(connection, startDate, endDate, airframeID);
             else
                 return FlightStatistics.getTotalFlightTimeDated(connection, fleetId, startDate, endDate, airframeID);
-            
+
         }
 
         public Double yearFlightTime() throws SQLException {
@@ -129,7 +128,7 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer totalEvents() throws SQLException {
-        
+
             final String startDateIn = context.queryParam("startDate");
             final String endDateIn = context.queryParam("endDate");
 
@@ -228,7 +227,7 @@ public class StatisticsJavalinRoutes {
     }
 
     public static String buildDateClause(LocalDate startDate, LocalDate endDate) {
-        
+
         final int startYear = startDate.getYear();
         final int startMonth = startDate.getMonthValue();
         final int endYear = endDate.getYear();
@@ -236,7 +235,7 @@ public class StatisticsJavalinRoutes {
 
         //Same year -> simple range
         if (startYear == endYear) {
-            
+
             return String.format(
                 "(year = %d AND month >= %d AND month <= %d)",
                 startYear, startMonth, endMonth
@@ -244,7 +243,7 @@ public class StatisticsJavalinRoutes {
 
         //Different years -> Resolve problems with month ranges
         } else {
-            
+
             return String.format(
                 "((year = %d AND month >= %d) " +
                 "OR (year = %d AND month <= %d) " +

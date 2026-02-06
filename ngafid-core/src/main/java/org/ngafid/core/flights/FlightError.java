@@ -1,14 +1,13 @@
 package org.ngafid.core.flights;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.ngafid.core.util.ErrorMessage;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import org.ngafid.core.util.ErrorMessage;
 
 public class FlightError {
     private static final Logger LOG = Logger.getLogger(FlightError.class.getName());

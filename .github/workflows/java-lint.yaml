@@ -2,7 +2,7 @@ name: Lint
 
 on:
   pull_request:
-    branches: [ main, josh/refactor ]
+    branches: [ main, aidan_cu/main_july2025 ]
 
 jobs:
   lint:

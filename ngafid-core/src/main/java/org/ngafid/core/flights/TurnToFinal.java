@@ -1,13 +1,6 @@
 package org.ngafid.core.flights;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ngafid.core.airports.Airport;
-import org.ngafid.core.airports.Airports;
-import org.ngafid.core.airports.Runway;
-import org.ngafid.core.util.Compression;
-import org.ngafid.core.util.TimeUtils;
-
-import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.*;
@@ -16,6 +9,12 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.core.airports.Airport;
+import org.ngafid.core.airports.Airports;
+import org.ngafid.core.airports.Runway;
+import org.ngafid.core.util.Compression;
+import org.ngafid.core.util.TimeUtils;
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L

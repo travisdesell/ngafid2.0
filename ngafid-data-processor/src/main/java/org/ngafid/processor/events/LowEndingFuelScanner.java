@@ -1,17 +1,16 @@
 package org.ngafid.processor.events;
 
+import static org.ngafid.core.event.CustomEvent.LOW_FUEL_EVENT_THRESHOLDS;
+import static org.ngafid.core.flights.Parameters.*;
+
+import java.util.List;
+import java.util.Map;
 import org.ngafid.core.event.CustomEvent;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.StringTimeSeries;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.ngafid.core.event.CustomEvent.LOW_FUEL_EVENT_THRESHOLDS;
-import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Scans the end of a flight for low fuel. Will create a max of one event.

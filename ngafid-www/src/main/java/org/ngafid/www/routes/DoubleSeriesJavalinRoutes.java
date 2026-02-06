@@ -2,11 +2,6 @@ package org.ngafid.www.routes;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.www.ErrorResponse;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.www.ErrorResponse;
 
 public class DoubleSeriesJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());

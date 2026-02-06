@@ -1,15 +1,14 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
+import java.util.logging.Logger;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.TurnToFinal;
 import org.ngafid.processor.format.FlightBuilder;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Performs turn to final analysis on the flight. Relies on the itinerary calculation which outputs a "dummy" column.

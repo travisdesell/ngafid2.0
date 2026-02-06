@@ -1,19 +1,12 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.gson;
+
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.core.Config;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.www.ErrorResponse;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -22,8 +15,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import static org.ngafid.www.WebServer.gson;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.www.ErrorResponse;
 
 public class CesiumDataJavalinRoutes {
 

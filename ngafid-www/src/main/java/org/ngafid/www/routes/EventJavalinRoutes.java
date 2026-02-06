@@ -1,27 +1,21 @@
 package org.ngafid.www.routes;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.EventStatistics;
-import org.ngafid.www.Navbar;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
-
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
 public class EventJavalinRoutes {

@@ -1,8 +1,8 @@
 package org.ngafid.core.accounts;
 
-import java.util.List;
-
 import static org.ngafid.core.flights.Parameters.DEFAULT_METRICS;
+
+import java.util.List;
 
 public class UserPreferences {
     private final List<String> flightMetrics;

@@ -1,21 +1,20 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.ngafid.core.H2Database;
 
 public class EmailTypeTest {
@@ -46,7 +45,7 @@ public class EmailTypeTest {
         assertTrue(EmailType.isForced(EmailType.ACCOUNT_CREATION_INVITE));
         assertTrue(EmailType.isForced(EmailType.PASSWORD_RESET));
         assertTrue(EmailType.isForced(EmailType.BUG_REPORT));
-        
+
         // Test non-FORCED email types
         assertFalse(EmailType.isForced(EmailType.UPLOAD_PROCESS_START));
         assertFalse(EmailType.isForced(EmailType.IMPORT_PROCESSED_RECEIPT));
@@ -65,7 +64,7 @@ public class EmailTypeTest {
         assertTrue(EmailType.isForced("FORCED_bug_report"));
         assertTrue(EmailType.isForced("some_FORCED_type"));
         assertTrue(EmailType.isForced("FORCED"));
-        
+
         // Test non-FORCED email types
         assertFalse(EmailType.isForced("upload_process_start"));
         assertFalse(EmailType.isForced("import_processed_receipt"));
@@ -107,7 +106,7 @@ public class EmailTypeTest {
     public void testGetAllTypes() {
         EmailType[] allTypes = EmailType.getAllTypes();
         assertEquals(9, allTypes.length);
-        
+
         // Verify all expected types are present
         List<EmailType> typesList = Arrays.asList(allTypes);
         assertTrue(typesList.contains(EmailType.UPLOAD_PROCESS_START));
@@ -148,11 +147,11 @@ public class EmailTypeTest {
     @DisplayName("Should test insertEmailTypesIntoDatabase method exists and is accessible")
     public void testInsertEmailTypesIntoDatabaseMethodExists() throws Exception {
         // Test that the method exists and can be accessed
-        java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("insertEmailTypesIntoDatabase", 
+        java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("insertEmailTypesIntoDatabase",
             java.sql.Connection.class, int.class);
         assertNotNull(method);
         assertTrue(java.lang.reflect.Modifier.isPublic(method.getModifiers()));
-        
+
         // Make it accessible
         method.setAccessible(true);
         assertTrue(method.isAccessible());
@@ -165,7 +164,7 @@ public class EmailTypeTest {
         for (EmailType emailType : EmailType.values()) {
             assertNotNull(emailType.getType());
             assertFalse(emailType.getType().isEmpty());
-            
+
             // Test the isForced logic
             boolean isForced = emailType.getType().contains("FORCED");
             assertEquals(isForced, EmailType.isForced(emailType));
@@ -179,15 +178,15 @@ public class EmailTypeTest {
         assertThrows(NullPointerException.class, () -> {
             EmailType.isForced((EmailType) null);
         });
-        
+
         // Test with empty string
         assertFalse(EmailType.isForced(""));
-        
+
         // Test with string that contains FORCED but not at the expected position
         assertTrue(EmailType.isForced("my_FORCED_email_type"));
         assertTrue(EmailType.isForced("FORCED_"));
         assertTrue(EmailType.isForced("_FORCED"));
-        
+
         // Test case sensitivity
         assertFalse(EmailType.isForced("forced")); // lowercase
         assertFalse(EmailType.isForced("Forced")); // mixed case
@@ -200,7 +199,7 @@ public class EmailTypeTest {
         // Count FORCED types manually
         int forcedCount = 0;
         int nonForcedCount = 0;
-        
+
         for (EmailType emailType : EmailType.values()) {
             if (EmailType.isForced(emailType)) {
                 forcedCount++;
@@ -208,7 +207,7 @@ public class EmailTypeTest {
                 nonForcedCount++;
             }
         }
-        
+
         assertEquals(3, forcedCount); // ACCOUNT_CREATION_INVITE, PASSWORD_RESET, BUG_REPORT
         assertEquals(6, nonForcedCount); // All others
         assertEquals(9, forcedCount + nonForcedCount); // Total
@@ -243,7 +242,7 @@ public class EmailTypeTest {
             // If it fails, that's also acceptable for coverage purposes
             assertNotNull(e);
         }
-        
+
         try {
             EmailType.main(new String[]{"true"});
             // Method should execute successfully
@@ -252,7 +251,7 @@ public class EmailTypeTest {
             // If it fails, that's also acceptable for coverage purposes
             assertNotNull(e);
         }
-        
+
         try {
             EmailType.main(new String[]{});
             // Method should execute successfully
@@ -269,7 +268,7 @@ public class EmailTypeTest {
         // Test the method signature using reflection
         assertDoesNotThrow(() -> {
             java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", java.util.Set.class);
-            
+
             // Verify method signature
             assertEquals(1, method.getParameterCount());
             assertEquals(java.util.Set.class, method.getParameterTypes()[0]);
@@ -297,10 +296,10 @@ public class EmailTypeTest {
         assertDoesNotThrow(() -> {
             java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", java.util.Set.class);
             method.setAccessible(true);
-            
+
             // Create an empty set
             java.util.Set<String> emptySet = new java.util.HashSet<>();
-            
+
             // This should not throw an exception, even though it will fail due to missing database
             // We're just testing that the method can be called with an empty set
             try {
@@ -321,13 +320,13 @@ public class EmailTypeTest {
         assertDoesNotThrow(() -> {
             java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", java.util.Set.class);
             method.setAccessible(true);
-            
+
             // Create a set with current email types
             java.util.Set<String> currentTypes = new java.util.HashSet<>();
             for (EmailType emailType : EmailType.values()) {
                 currentTypes.add(emailType.getType());
             }
-            
+
             // This should not throw an exception, even though it will fail due to missing database
             try {
                 method.invoke(null, currentTypes);
@@ -346,13 +345,13 @@ public class EmailTypeTest {
         // Test the method logic by examining its implementation
         assertDoesNotThrow(() -> {
             java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", java.util.Set.class);
-            
+
             // Verify the method exists and has the correct signature
             assertNotNull(method);
             assertEquals(1, method.getParameterCount());
             assertEquals(java.util.Set.class, method.getParameterTypes()[0]);
             assertEquals(void.class, method.getReturnType());
-            
+
             // Verify it's private and static
             assertTrue(java.lang.reflect.Modifier.isPrivate(method.getModifiers()));
             assertTrue(java.lang.reflect.Modifier.isStatic(method.getModifiers()));
@@ -395,7 +394,7 @@ public class EmailTypeTest {
         // Test the method structure using reflection
         assertDoesNotThrow(() -> {
             java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("insertEmailTypesIntoDatabase");
-            
+
             // Verify method signature
             assertNotNull(method);
             assertEquals(0, method.getParameterCount());
@@ -410,9 +409,9 @@ public class EmailTypeTest {
     public void testInsertEmailTypesIntoDatabaseWithConnection() {
         // Test the overloaded method that takes a Connection parameter
         assertDoesNotThrow(() -> {
-            java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("insertEmailTypesIntoDatabase", 
+            java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("insertEmailTypesIntoDatabase",
                 java.sql.Connection.class, int.class);
-            
+
             // Verify method signature
             assertNotNull(method);
             assertEquals(2, method.getParameterCount());
@@ -457,33 +456,33 @@ public class EmailTypeTest {
         java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", Set.class);
         assertNotNull(method);
         assertTrue(java.lang.reflect.Modifier.isPrivate(method.getModifiers()));
-        
+
         // Make it accessible
         method.setAccessible(true);
         assertTrue(method.isAccessible());
     }
-    
+
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase logic simulation")
     public void testRemoveOldEmailTypesFromDatabaseLogicSimulation() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Simulate the exact logic from removeOldEmailTypesFromDatabase method
         String selectQuery = "SELECT DISTINCT email_type FROM email_preferences";
         String deleteQuery = "DELETE FROM email_preferences WHERE email_type = ?";
-        
+
         // Create a set with current email types (simulating the method parameter)
         Set<String> currentEmailTypes = new HashSet<>();
         currentEmailTypes.add(EmailType.UPLOAD_PROCESS_START.getType());
         currentEmailTypes.add(EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-        
+
         // Add some test data - mix of current and old types
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -492,30 +491,30 @@ public class EmailTypeTest {
             stmt.setString(2, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 1);
             stmt.setString(2, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
-            
+
             // Old types - should be removed
             stmt.setInt(1, 1);
             stmt.setString(2, "test_old_email_type_1");
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 2);
             stmt.setString(2, "test_old_email_type_2");
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
         }
-        
+
         // Simulate the method logic exactly
         List<String> emailTypesForDeletion = new ArrayList<>();
-        
+
         try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery);
              ResultSet queryResult = selectStatement.executeQuery()) {
-            
+
             // Mark email types for deletion (exact logic from the method)
             while (queryResult.next()) {
                 String emailType = queryResult.getString("email_type");
@@ -524,12 +523,12 @@ public class EmailTypeTest {
                 }
             }
         }
-        
+
         // Verify we found the old types for deletion
         assertEquals(2, emailTypesForDeletion.size());
         assertTrue(emailTypesForDeletion.contains("test_old_email_type_1"));
         assertTrue(emailTypesForDeletion.contains("test_old_email_type_2"));
-        
+
         // Perform deletion query on marked emails (exact logic from the method)
         try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
             for (String emailType : emailTypesForDeletion) {
@@ -538,32 +537,32 @@ public class EmailTypeTest {
                 assertTrue(rowsAffected > 0, "Should have deleted email type: " + emailType);
             }
         }
-        
+
         // Verify that only current types remain
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?)")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setString(2, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(2, rs.getInt(1)); // Only current types should remain
             }
         }
-        
+
         // Verify old types were removed
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?)")) {
             stmt.setString(1, "test_old_email_type_1");
             stmt.setString(2, "test_old_email_type_2");
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(0, rs.getInt(1)); // Old types should be removed
             }
         }
     }
-    
+
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method call for coverage")
     public void testRemoveOldEmailTypesFromDatabaseMethodCall() throws Exception {
@@ -571,12 +570,12 @@ public class EmailTypeTest {
         // It will fail due to missing ngafid.properties, but will execute some code
         java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", Set.class);
         method.setAccessible(true);
-        
+
         // Create a set with current email types
         Set<String> currentTypes = new HashSet<>();
         currentTypes.add(EmailType.UPLOAD_PROCESS_START.getType());
         currentTypes.add(EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-        
+
         // Call the method - this will fail but will execute some code paths
         try {
             method.invoke(null, currentTypes);
@@ -589,19 +588,19 @@ public class EmailTypeTest {
             assertNotNull(e);
         }
     }
-    
+
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase with real database connection")
     public void testRemoveOldEmailTypesFromDatabaseWithRealConnection() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Add some test data - mix of current and old types
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -610,35 +609,35 @@ public class EmailTypeTest {
             stmt.setString(2, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 1);
             stmt.setString(2, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
-            
+
             // Old types - should be removed
             stmt.setInt(1, 1);
             stmt.setString(2, "test_old_email_type_1");
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 2);
             stmt.setString(2, "test_old_email_type_2");
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
         }
-        
+
         // Create a set with current email types (simulating the method parameter)
         Set<String> currentEmailTypes = new HashSet<>();
         currentEmailTypes.add(EmailType.UPLOAD_PROCESS_START.getType());
         currentEmailTypes.add(EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-        
+
         // Test the method without calling it directly to avoid System.exit()
         // Just verify the test data was set up correctly
         assertTrue(currentEmailTypes.contains(EmailType.UPLOAD_PROCESS_START.getType()));
         assertTrue(currentEmailTypes.contains(EmailType.IMPORT_PROCESSED_RECEIPT.getType()));
     }
-    
+
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method execution for coverage")
     public void testRemoveOldEmailTypesFromDatabaseMethodExecution() throws Exception {
@@ -646,12 +645,12 @@ public class EmailTypeTest {
         // It will fail due to missing ngafid.properties, but will execute some code
         java.lang.reflect.Method method = EmailType.class.getDeclaredMethod("removeOldEmailTypesFromDatabase", Set.class);
         method.setAccessible(true);
-        
+
         // Create a set with current email types
         Set<String> currentTypes = new HashSet<>();
         currentTypes.add(EmailType.UPLOAD_PROCESS_START.getType());
         currentTypes.add(EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-        
+
         // Call the method - this will fail but will execute some code paths
         try {
             method.invoke(null, currentTypes);
@@ -664,7 +663,7 @@ public class EmailTypeTest {
             assertNotNull(e);
         }
     }
-    
+
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase with removeOldEmailTypes enabled")
     public void testInsertEmailTypesIntoDatabaseWithRemoveOldEmailTypesEnabled() throws Exception {
@@ -672,46 +671,46 @@ public class EmailTypeTest {
         java.lang.reflect.Field field = EmailType.class.getDeclaredField("removeOldEmailTypes");
         field.setAccessible(true);
         boolean originalValue = field.getBoolean(null);
-        
+
         try {
             // Set removeOldEmailTypes to true
             field.setBoolean(null, true);
-            
+
             // Test the method without calling it directly to avoid System.exit()
             // Just verify the field was set correctly
             assertTrue(field.getBoolean(null));
-            
+
         } finally {
             // Restore the original value
             field.setBoolean(null, originalValue);
         }
     }
-    
+
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase with connection and removeOldEmailTypes enabled")
     public void testInsertEmailTypesIntoDatabaseWithConnectionAndRemoveOldEmailTypesEnabled() throws Exception {
         // Get connection for this test
         connection = H2Database.getConnection();
-        
+
         // Use reflection to set the removeOldEmailTypes flag to true
         java.lang.reflect.Field field = EmailType.class.getDeclaredField("removeOldEmailTypes");
         field.setAccessible(true);
         boolean originalValue = field.getBoolean(null);
-        
+
         try {
             // Set removeOldEmailTypes to true
             field.setBoolean(null, true);
-            
+
             // Test the method without calling it directly to avoid System.exit()
             // Just verify the field was set correctly
             assertTrue(field.getBoolean(null));
-            
+
         } finally {
             // Restore the original value
             field.setBoolean(null, originalValue);
         }
     }
-    
+
     @Test
     @DisplayName("Should test refreshEmailTypeKeysRecent with removeOldEmailTypes enabled")
     public void testRefreshEmailTypeKeysRecentWithRemoveOldEmailTypesEnabled() throws Exception {
@@ -719,33 +718,33 @@ public class EmailTypeTest {
         java.lang.reflect.Field field = EmailType.class.getDeclaredField("removeOldEmailTypes");
         field.setAccessible(true);
         boolean originalValue = field.getBoolean(null);
-        
+
         try {
             // Set removeOldEmailTypes to true
             field.setBoolean(null, true);
-            
+
             // Test the method without calling it directly to avoid System.exit()
             // Just verify the field was set correctly
             assertTrue(field.getBoolean(null));
-            
+
         } finally {
             // Restore the original value
             field.setBoolean(null, originalValue);
         }
     }
-    
+
     @Test
     @DisplayName("Should test database operations for email preferences")
     public void testDatabaseOperationsForEmailPreferences() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Test inserting email preferences
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -755,18 +754,18 @@ public class EmailTypeTest {
             int rowsAffected = stmt.executeUpdate();
             assertEquals(1, rowsAffected);
         }
-        
+
         // Test querying email preferences
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type = ?")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(1, rs.getInt(1));
             }
         }
-        
+
         // Test deleting email preferences
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE email_type = ?")) {
@@ -774,12 +773,12 @@ public class EmailTypeTest {
             int rowsAffected = stmt.executeUpdate();
             assertEquals(1, rowsAffected);
         }
-        
+
         // Verify deletion
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type = ?")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(0, rs.getInt(1));
@@ -792,13 +791,13 @@ public class EmailTypeTest {
     public void testEmailPreferencesCrudOperations() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Test inserting multiple email preferences
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -807,24 +806,24 @@ public class EmailTypeTest {
             stmt.setString(2, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 1);
             stmt.setString(2, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
-            
+
             // Insert old types
             stmt.setInt(1, 1);
             stmt.setString(2, "test_old_email_type_1");
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 2);
             stmt.setString(2, "test_old_email_type_2");
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
         }
-        
+
         // Verify all types exist
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences")) {
@@ -833,19 +832,19 @@ public class EmailTypeTest {
                 assertEquals(4, rs.getInt(1)); // All 4 types should exist
             }
         }
-        
+
         // Test querying specific types
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?)")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setString(2, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(2, rs.getInt(1)); // Current types should exist
             }
         }
-        
+
         // Test deleting old types
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE email_type IN (?, ?)")) {
@@ -854,7 +853,7 @@ public class EmailTypeTest {
             int rowsAffected = stmt.executeUpdate();
             assertEquals(2, rowsAffected);
         }
-        
+
         // Verify only current types remain
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences")) {
@@ -870,13 +869,13 @@ public class EmailTypeTest {
     public void testEmailPreferencesWithEmptyDatabase() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Verify database is empty
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences")) {
@@ -885,7 +884,7 @@ public class EmailTypeTest {
                 assertEquals(0, rs.getInt(1)); // Should be empty
             }
         }
-        
+
         // Test inserting into empty database
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -895,7 +894,7 @@ public class EmailTypeTest {
             int rowsAffected = stmt.executeUpdate();
             assertEquals(1, rowsAffected);
         }
-        
+
         // Verify insertion worked
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences")) {
@@ -911,13 +910,13 @@ public class EmailTypeTest {
     public void testEmailPreferencesWithMixedTypes() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Add test email preferences - mix of current and old types
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -926,30 +925,30 @@ public class EmailTypeTest {
             stmt.setString(2, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 1);
             stmt.setString(2, EmailType.ADMIN_SHUTDOWN_NOTIFICATION.getType());
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
-            
+
             // Old types
             stmt.setInt(1, 1);
             stmt.setString(2, "test_obsolete_type_1");
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, 2);
             stmt.setString(2, "test_obsolete_type_2");
             stmt.setBoolean(3, false);
             stmt.executeUpdate();
-            
+
             // Another current type
             stmt.setInt(1, 1);
             stmt.setString(2, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
         }
-        
+
         // Verify all types exist
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences")) {
@@ -958,26 +957,26 @@ public class EmailTypeTest {
                 assertEquals(5, rs.getInt(1)); // All 5 types should exist
             }
         }
-        
+
         // Test querying current types only
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?, ?)")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setString(2, EmailType.ADMIN_SHUTDOWN_NOTIFICATION.getType());
             stmt.setString(3, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(3, rs.getInt(1)); // Current types should exist
             }
         }
-        
+
         // Test querying old types only
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?)")) {
             stmt.setString(1, "test_obsolete_type_1");
             stmt.setString(2, "test_obsolete_type_2");
-            
+
             try (var rs = stmt.executeQuery()) {
                 rs.next();
                 assertEquals(2, rs.getInt(1)); // Old types should exist
@@ -990,13 +989,13 @@ public class EmailTypeTest {
     public void testEmailPreferencesWithEmptyCurrentTypesSet() throws Exception {
         // Get connection only for this test
         connection = H2Database.getConnection();
-        
+
         // Clean up any existing data first
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Add some test data
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)")) {
@@ -1005,7 +1004,7 @@ public class EmailTypeTest {
             stmt.setBoolean(3, true);
             stmt.executeUpdate();
         }
-        
+
         // Verify test data exists
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type = ?")) {
@@ -1015,7 +1014,7 @@ public class EmailTypeTest {
                 assertEquals(1, rs.getInt(1)); // Should exist
             }
         }
-        
+
         // Test manual deletion (simulating what the method would do)
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM email_preferences WHERE email_type = ?")) {
@@ -1023,7 +1022,7 @@ public class EmailTypeTest {
             int rowsAffected = stmt.executeUpdate();
             assertEquals(1, rowsAffected);
         }
-        
+
         // Verify deletion worked
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM email_preferences WHERE email_type = ?")) {

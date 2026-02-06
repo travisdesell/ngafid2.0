@@ -1,14 +1,13 @@
 package org.ngafid.www;
 
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.FleetAccess;
-import org.ngafid.core.accounts.User;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.FleetAccess;
+import org.ngafid.core.accounts.User;
 
 public class Navbar {
 

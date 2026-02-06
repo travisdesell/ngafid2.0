@@ -1,13 +1,10 @@
 package org.ngafid.core.flights.export;
 
+import static org.ngafid.core.flights.export.XPlaneParameters.*;
+
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -16,8 +13,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.ngafid.core.flights.export.XPlaneParameters.*;
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
 
 /**
  * A Class that creates X-Plane FDR files for X-Plane

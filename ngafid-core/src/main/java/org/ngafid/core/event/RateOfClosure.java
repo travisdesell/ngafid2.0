@@ -1,11 +1,10 @@
 package org.ngafid.core.event;
 
-import org.ngafid.core.util.Compression;
-
-import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.sql.*;
 import java.util.logging.Logger;
+import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.core.util.Compression;
 
 public class RateOfClosure {
 

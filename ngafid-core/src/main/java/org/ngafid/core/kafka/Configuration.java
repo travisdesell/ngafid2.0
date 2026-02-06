@@ -1,10 +1,9 @@
 package org.ngafid.core.kafka;
 
-import org.ngafid.core.Config;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import org.ngafid.core.Config;
 
 /**
  * Contains static methods to generate properties used for instantiating Kafka producers / consumers.

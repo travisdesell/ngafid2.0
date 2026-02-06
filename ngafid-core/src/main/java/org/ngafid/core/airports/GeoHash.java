@@ -1,7 +1,6 @@
 package org.ngafid.core.airports;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 

@@ -1,11 +1,5 @@
 package org.ngafid.processor.format;
 
-import org.jetbrains.annotations.NotNull;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.util.MD5;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.processor.Pipeline;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +18,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.util.MD5;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.processor.Pipeline;
 
 /**
  * File processor for Garmin G5 G3X. These flight data recorders are a bit different from the G1000, and require a bit of

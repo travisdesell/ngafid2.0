@@ -1,12 +1,11 @@
 package proximity;
 
-import org.junit.Test;
-import org.ngafid.processor.events.proximity.FlightTimeLocation;
-
-import java.sql.SQLException;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.sql.SQLException;
+import org.junit.Test;
+import org.ngafid.processor.events.proximity.FlightTimeLocation;
 
 public class ProximityTest {
 

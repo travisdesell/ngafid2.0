@@ -103,4 +103,3 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
                 + "]";
     }
 }
-

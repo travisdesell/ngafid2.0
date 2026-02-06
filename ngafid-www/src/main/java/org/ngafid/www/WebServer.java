@@ -1,15 +1,13 @@
 package org.ngafid.www;
 
+import static org.ngafid.core.util.SendEmail.sendAdminEmails;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import org.ngafid.core.Config;
-import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.util.ConvertToHTML;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
@@ -20,10 +18,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-
+import org.ngafid.core.Config;
+import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.util.ConvertToHTML;
 import org.ngafid.www.routes.DockerServiceHeartbeatMonitor;
-
-import static org.ngafid.core.util.SendEmail.sendAdminEmails;
 
 
 

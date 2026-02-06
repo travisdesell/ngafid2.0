@@ -1,10 +1,9 @@
 package org.ngafid.core.kafka;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-
 import java.util.List;
 import java.util.Properties;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
 
 /**
  * Utility class for {@link EventObserver} and {@link EventConsumer}.

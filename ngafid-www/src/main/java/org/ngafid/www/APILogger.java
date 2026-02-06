@@ -1,12 +1,11 @@
 package org.ngafid.www;
 
-import org.ngafid.core.Database;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import org.ngafid.core.Database;
 
 public class APILogger {
     public static void logRequest(String method, String path, int statusCode, String ipString, String referer) {

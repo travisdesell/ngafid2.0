@@ -34,9 +34,9 @@ public class Config {
     static {
         // Check Docker environment once and cache the result
         IS_DOCKER_ENVIRONMENT = isRunningInDocker();
-        
+
         loadProperties();
-        
+
         // Initialize configuration values from properties file
         PARALLELISM = getIntPropertyWithDefault("ngafid.parallelism", Runtime.getRuntime().availableProcessors());
         NGAFID_PORT = getIntPropertyWithDefault("ngafid.port", 8181);
@@ -60,7 +60,7 @@ public class Config {
         NGAFID_ADMIN_EMAILS = getStringProperty("ngafid.admin.emails");
         LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file");
     }
-    
+
     private static void loadProperties() {
         // Check for custom properties file first
         String customPropertiesFile = System.getProperty("ngafid.config.file");
@@ -75,13 +75,13 @@ public class Config {
                 System.err.println("Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
             }
         }
-        
+
         // Load the unified properties file
         try (InputStream input = Config.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
             if (input != null) {
                 properties.load(input);
                 System.out.println("Loaded unified configuration from " + PROPERTIES_FILE);
-                
+
                 resolveVariableSubstitutions();
             } else {
                 System.err.println("Properties file " + PROPERTIES_FILE + " not found!");
@@ -92,33 +92,33 @@ public class Config {
             throw new RuntimeException("Failed to load configuration file: " + PROPERTIES_FILE, e);
         }
     }
-    
+
     private static String getStringProperty(String propertyKey) {
         // First try system property (can be set via -D)
         String systemProperty = System.getProperty(propertyKey);
         if (systemProperty != null) {
             return systemProperty;
         }
-        
+
         // Use cached Docker environment check
         boolean isDocker = IS_DOCKER_ENVIRONMENT;
-        
+
         // Try Docker-specific property first, then fallback to general property
         String propertyValue = null;
         if (isDocker) {
             String dockerPropertyKey = propertyKey.replace("ngafid.", "ngafid.docker.");
             propertyValue = properties.getProperty(dockerPropertyKey);
         }
-        
+
         // If no Docker-specific property found, try the general property
         if (propertyValue == null) {
             propertyValue = properties.getProperty(propertyKey);
         }
-        
+
         if (propertyValue != null) {
             return propertyValue;
         }
-        
+
         // If no value found, throw exception
         System.err.println("ERROR: Configuration value not found for property '" + propertyKey + "'");
         System.err.println("Please either:");
@@ -126,13 +126,13 @@ public class Config {
         System.err.println("2. Set the system property: -D" + propertyKey + "=<value>");
         throw new RuntimeException("Configuration value not found for '" + propertyKey + "'");
     }
-    
+
 
     // Public methods for property-based configuration
     public static String getProperty(String key) {
         return getStringProperty(key);
     }
-    
+
     public static int getIntProperty(String key) {
         String value = getStringProperty(key);
         try {
@@ -142,32 +142,32 @@ public class Config {
             throw new RuntimeException("Invalid integer value for '" + key + "': " + value);
         }
     }
-    
+
     private static int getIntPropertyWithDefault(String key, int defaultValue) {
         try {
             String value = getStringProperty(key);
             return Integer.parseInt(value);
         } catch (RuntimeException e) {
-            
+
             return defaultValue;
         }
     }
-    
+
     public static boolean getBooleanProperty(String key) {
         String value = getStringProperty(key);
         return Boolean.parseBoolean(value);
     }
-    
+
     private static boolean getBooleanPropertyWithDefault(String key, boolean defaultValue) {
         try {
             String value = getStringProperty(key);
             return Boolean.parseBoolean(value);
         } catch (RuntimeException e) {
-    
+
             return defaultValue;
         }
     }
-    
+
     /**
      * Resolves variable substitutions in properties (e.g., ${ngafid.repo.path})
      */
@@ -180,7 +180,7 @@ public class Config {
                 properties.setProperty(key, resolved);
             }
         }
-        
+
         // Second pass: resolve nested variables
         for (String key : properties.stringPropertyNames()) {
             String value = properties.getProperty(key);
@@ -190,7 +190,7 @@ public class Config {
             }
         }
     }
-    
+
     /**
      * Resolves variables in a string value
      */
@@ -198,7 +198,7 @@ public class Config {
         if (value == null || !value.contains("${")) {
             return value;
         }
-        
+
         String result = value;
         int start = result.indexOf("${");
         while (start != -1) {
@@ -217,17 +217,17 @@ public class Config {
             }
             start = result.indexOf("${");
         }
-        
+
         return result;
     }
-    
+
     /**
      * Public method to check if running in Docker environment
      */
     public static boolean isDockerEnvironment() {
         return IS_DOCKER_ENVIRONMENT;
     }
-    
+
     /**
      * Detects if the application is running inside a Docker container
      * by checking for the presence of /.dockerenv file
@@ -236,7 +236,7 @@ public class Config {
         try {
             java.io.File dockerEnv = new java.io.File("/.dockerenv");
             boolean exists = dockerEnv.exists();
-            
+
             if (!environmentLogged) {
                 System.out.println("Checking /.dockerenv: " + exists);
                 if (exists) {
@@ -246,7 +246,7 @@ public class Config {
                 }
                 environmentLogged = true;
             }
-            
+
             return exists;
         } catch (Exception e) {
             if (!environmentLogged) {

@@ -1,17 +1,16 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.processor.format.FlightBuilder;
+import static java.util.Map.entry;
+import static org.ngafid.core.flights.Airframes.*;
+import static org.ngafid.core.flights.Parameters.Unit;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
-
-import static java.util.Map.entry;
-import static org.ngafid.core.flights.Airframes.*;
-import static org.ngafid.core.flights.Parameters.Unit;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Computes engine divergence values, based on the engine type.

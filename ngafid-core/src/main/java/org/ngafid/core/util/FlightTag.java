@@ -118,4 +118,3 @@ public class FlightTag {
                 " color: " + this.color;
     }
 }
-

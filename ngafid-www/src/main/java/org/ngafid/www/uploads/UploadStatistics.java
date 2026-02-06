@@ -1,12 +1,12 @@
 package org.ngafid.www.uploads;
 
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-
-import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
 
 public enum UploadStatistics {
     ;
@@ -35,7 +35,7 @@ public enum UploadStatistics {
     public static UploadCounts getUploadCountsDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
 
         String clause = buildDateClause(startDate, endDate);
-            
+
         //Append the fleet ID condition
         clause += " AND fleet_id = " + fleetId;
 

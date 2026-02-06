@@ -1,15 +1,15 @@
 package org.ngafid.www.flights;
 
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateAirframeClause;
+import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.logging.Logger;
-
 import org.ngafid.core.util.TimeUtils;
-import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateAirframeClause;
-import static org.ngafid.www.routes.StatisticsJavalinRoutes.buildDateClause;
 
 public enum FlightStatistics {
     ;
@@ -60,7 +60,7 @@ public enum FlightStatistics {
         return getFlightTime(connection, fleetId, airframeId, "v_fleet_flight_time");
     }
     public static double getTotalFlightTimeDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeID) throws SQLException {
-        
+
         String clause;
         if (airframeID < 0)
             clause = buildDateClause(startDate, endDate);

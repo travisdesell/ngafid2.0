@@ -101,7 +101,7 @@ object UserRoutes : RouteProvider() {
                 ctx.status(200)
                 ctx.json(user)
             }
-            
+
         }
 
     }
@@ -257,7 +257,7 @@ object UserRoutes : RouteProvider() {
 
                 val inviteEmail = resultSet.getString("invited_by")
                 val fleetId = resultSet.getInt("fleet_id")
-                
+
                 val fleet = Fleet.get(connection, fleetId)
                 val fleetName = fleet.getName();
 
@@ -268,7 +268,7 @@ object UserRoutes : RouteProvider() {
                         fleetId = fleetId
                     )
                 )
-                
+
             }
 
             ctx.json(invites)
@@ -325,7 +325,7 @@ object UserRoutes : RouteProvider() {
 
     @Throws (SQLException::class)
     fun acceptMultifleetInvite(ctx: Context) {
-        
+
         val user = SessionUtility.getUser(ctx)
         val fleetName = ctx.formParam("fleetName")!!
         val fleet = Fleet.get(Database.getConnection(), fleetName)

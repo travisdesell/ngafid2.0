@@ -1,13 +1,9 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.gson;
+
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.Navbar;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -15,8 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import static org.ngafid.www.WebServer.gson;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.Navbar;
 
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());

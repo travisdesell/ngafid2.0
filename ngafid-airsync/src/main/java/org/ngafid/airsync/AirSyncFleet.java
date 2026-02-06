@@ -1,15 +1,8 @@
 package org.ngafid.airsync;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.Fleet;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.uploads.Upload;
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 
-import javax.net.ssl.HttpsURLConnection;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,8 +12,14 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
-
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+import javax.net.ssl.HttpsURLConnection;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.Fleet;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.uploads.Upload;
 
 /**
  * This is a representation of an AirSync enabled fleet in the NGAFID

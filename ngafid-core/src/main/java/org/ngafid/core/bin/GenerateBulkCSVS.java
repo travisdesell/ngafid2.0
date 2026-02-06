@@ -6,10 +6,7 @@
 
 package org.ngafid.core.bin;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.export.CachedCSVWriter;
-import org.ngafid.core.util.filters.Filter;
+import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -23,8 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.export.CachedCSVWriter;
+import org.ngafid.core.util.filters.Filter;
 
 public class GenerateBulkCSVS {
     private final String outDirectoryRoot;

@@ -1,9 +1,8 @@
 package org.ngafid.core.airports;
 
-import org.apache.commons.lang3.mutable.MutableDouble;
-
 import java.util.Collection;
 import java.util.HashMap;
+import org.apache.commons.lang3.mutable.MutableDouble;
 
 public class Airport {
     public final String iataCode;

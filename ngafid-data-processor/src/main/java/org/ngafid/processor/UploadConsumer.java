@@ -1,21 +1,18 @@
 package org.ngafid.processor;
 
 import java.net.UnknownHostException;
-
+import java.sql.SQLException;
+import java.util.Properties;
+import java.util.logging.Logger;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.ngafid.core.kafka.Configuration;
 import org.ngafid.core.kafka.DisjointConsumer;
+import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Topic;
 import org.ngafid.core.uploads.UploadDoesNotExistException;
 import org.ngafid.core.util.filters.Pair;
-
-import java.sql.SQLException;
-import java.util.Properties;
-import java.util.logging.Logger;
-
-import org.ngafid.core.kafka.DockerServiceHeartbeat;
 
 /**
  * Kafka consumer that reads messages from the `upload` and `upload-retry` topics.

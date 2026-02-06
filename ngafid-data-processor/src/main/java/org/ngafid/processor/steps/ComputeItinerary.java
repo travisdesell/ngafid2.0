@@ -1,15 +1,14 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.*;
-import org.ngafid.processor.format.FlightBuilder;
+import static org.ngafid.core.flights.Parameters.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Parameters.*;
+import org.ngafid.core.flights.*;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Computes the itinerary for the flight. We represent the itinerary as a list of {@link Itinerary} objects,

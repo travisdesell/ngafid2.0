@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 
 public enum EmailType {
@@ -54,7 +53,7 @@ public enum EmailType {
     ACCOUNT_CREATION_INVITE("FORCED_account_creation_invite"),
     PASSWORD_RESET("FORCED_password_reset"),
     BUG_REPORT("FORCED_bug_report"),
-    
+
     ;
 
     // -------------------------------------------------------------------------------------------------------------
@@ -328,13 +327,13 @@ public enum EmailType {
         }
 
         insertEmailTypesIntoDatabase();
-        
+
         // Only exit if not running in a test environment
         if (!isRunningInTestEnvironment()) {
             System.exit(0);
         }
     }
-    
+
     /**
      * Detects if the code is running in a test environment
      * @return true if running in tests, false otherwise
@@ -344,8 +343,8 @@ public enum EmailType {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (StackTraceElement element : stackTrace) {
             String className = element.getClassName();
-            if (className.contains("junit") || 
-                className.contains("test") || 
+            if (className.contains("junit") ||
+                className.contains("test") ||
                 className.contains("Test") ||
                 className.contains("surefire") ||
                 className.contains("maven")) {

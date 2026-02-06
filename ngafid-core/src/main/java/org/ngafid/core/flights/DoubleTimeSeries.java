@@ -1,18 +1,17 @@
 package org.ngafid.core.flights;
 
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import org.ngafid.core.util.Compression;
-import org.ngafid.core.util.NormalizedColumn;
-import org.ngafid.core.util.filters.Pair;
+import static org.ngafid.core.flights.Parameters.*;
 
-import javax.sql.rowset.serial.SerialBlob;
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Parameters.*;
+import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.core.util.Compression;
+import org.ngafid.core.util.NormalizedColumn;
+import org.ngafid.core.util.filters.Pair;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());

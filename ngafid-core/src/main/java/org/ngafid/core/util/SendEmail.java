@@ -1,5 +1,7 @@
 package org.ngafid.core.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -16,7 +18,6 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Logger;
-
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -24,7 +25,6 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Config;
@@ -32,9 +32,6 @@ import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public enum SendEmail {
     ;
@@ -48,7 +45,7 @@ public enum SendEmail {
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
     private static final int MS_PER_DAY = 86_400_000;
     private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY); // Minimum number of milliseconds needed before trying to free old tokens
-    
+
     private static String password;
     private static String username = null;
 
@@ -400,5 +397,5 @@ public enum SendEmail {
         }
 
     }
-    
+
 }

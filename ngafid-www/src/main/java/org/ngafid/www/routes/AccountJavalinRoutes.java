@@ -1,8 +1,17 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.gson;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.airsync.AirSyncFleet;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.EmailType;
@@ -12,18 +21,6 @@ import org.ngafid.core.accounts.UserPreferences;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.MustacheHandler;
 import org.ngafid.www.Navbar;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-
-import org.apache.kafka.streams.processor.ConnectedStoreProvider;
-
-import static org.ngafid.www.WebServer.gson;
 
 public class AccountJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
