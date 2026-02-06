@@ -55,7 +55,7 @@ public class ComputeStallIndex extends ComputeStep {
         DoubleTimeSeries ias = builder.getDoubleTimeSeries(IAS);
         int length = ias.size();
 
-        if (builder.meta.airframe.getName().equals(AIRFRAME_CESSNA_172S)) {
+        if (builder.meta.getAirframe().getName().equals(AIRFRAME_CESSNA_172S)) {
             DoubleTimeSeries cas = DoubleTimeSeries.computed(CAS, Unit.KNOTS, length,
                     index -> {
                         double iasValue = ias.get(index);

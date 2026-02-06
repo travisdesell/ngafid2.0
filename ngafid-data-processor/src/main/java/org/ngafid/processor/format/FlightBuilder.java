@@ -262,7 +262,7 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder setStartDateTime(OffsetDateTime startDateTime) {
-        this.meta.startDateTime = startDateTime;
+        this.meta.setStartDateTime(startDateTime);
         return this;
     }
 
@@ -274,7 +274,7 @@ public class FlightBuilder {
      * @return this flight builder
      */
     public synchronized FlightBuilder setEndDateTime(OffsetDateTime odt) {
-        this.meta.endDateTime = odt;
+        this.meta.setEndDateTime(odt);
         return this;
     }
 

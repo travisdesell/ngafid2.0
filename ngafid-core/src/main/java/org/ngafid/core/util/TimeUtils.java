@@ -17,8 +17,8 @@ import java.util.logging.Logger;
 public final class TimeUtils {
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
 
-    private static final DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    private static final DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    public static final DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private TimeUtils() {
     }

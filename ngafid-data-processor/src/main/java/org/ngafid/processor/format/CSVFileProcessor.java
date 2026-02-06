@@ -3,33 +3,21 @@ package org.ngafid.processor.format;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.flights.Airframes.AliasKey;
+import org.ngafid.core.util.MD5;
+import org.ngafid.processor.Pipeline;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.Airframes.AliasKey;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.FlightMeta;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.util.MD5;
-import org.ngafid.processor.Pipeline;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -165,7 +153,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throws IOException {
         super(connection, stream, filename, pipeline);
 
-        meta.filename = filename;
+        meta.setFilename(filename);
     }
 
     /**
@@ -332,7 +320,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     setAirframeName(entry.getValue());
                     break;
                 case "system_id":
-                    meta.systemId = entry.getValue();
+                    meta.setSystemId(entry.getValue());
                     break;
                 default:
             }
@@ -392,7 +380,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }
 
-        meta.airframe = new Airframes.Airframe(airframeName, new Airframes.Type(airframeType));
+        Airframes.Airframe newAirframe = new Airframes.Airframe(airframeName, new Airframes.Type(airframeType));
+        meta.setAirframe(newAirframe, airframeType);
     }
 
 

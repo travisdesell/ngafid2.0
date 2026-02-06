@@ -22,7 +22,7 @@ public class ComputeTurnToFinal extends ComputeStep {
 
     @Override
     public boolean applicable() {
-        return airframeIsValid(builder.meta.airframe)
+        return airframeIsValid(builder.meta.getAirframe())
                 && builder
                 .getDoubleTimeSeriesKeySet()
                 .containsAll(getRequiredDoubleColumns().stream().filter(c -> !c.equals("_itinerary")).toList());

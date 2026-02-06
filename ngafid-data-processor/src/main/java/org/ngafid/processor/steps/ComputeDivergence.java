@@ -99,7 +99,7 @@ public class ComputeDivergence extends ComputeStep {
     public Set<String> getOutputColumns() {
         if (outputColumns == null) {
 
-            var configs = CONFIG_MAP.get(builder.meta.airframe.getName());
+            var configs = CONFIG_MAP.get(builder.meta.getAirframe().getName());
             if (configs != null) {
 
                 outputColumns = new HashSet<>();

@@ -1,12 +1,13 @@
 package org.ngafid.processor.steps;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * The processing of flights is broken up into small, discrete steps -- a ComputeStep object computes one of these steps.
@@ -72,7 +73,7 @@ public abstract class ComputeStep {
     }
 
     public boolean applicable() {
-        return airframeIsValid(builder.meta.airframe)
+        return airframeIsValid(builder.meta.getAirframe())
                 && builder
                 .getStringTimeSeriesKeySet()
                 .containsAll(getRequiredStringColumns())
@@ -90,8 +91,8 @@ public abstract class ComputeStep {
         StringBuilder sb = new StringBuilder(
                 "Step '" + className + "' cannot be applied for the following reason(s):\n");
 
-        if (!airframeIsValid(builder.meta.airframe)) {
-            sb.append("  - airframeName '" + builder.meta.airframe.getName() + "' is invalid ("
+        if (!airframeIsValid(builder.meta.getAirframe())) {
+            sb.append("  - airframeName '" + builder.meta.getAirframe().getName() + "' is invalid ("
                     + className + "::airframeIsValid returned false for airframeName '" + className + "')\n");
         }
 

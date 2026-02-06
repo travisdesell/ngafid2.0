@@ -313,7 +313,7 @@ public class Pipeline implements AutoCloseable {
      */
     public FlightBuilder build(Connection connection, FlightBuilder fb) {
         try {
-            LOG.info(() -> "Building flight file '" + fb.meta.filename + "'");
+            LOG.info(() -> "Building flight file '" + fb.meta.getFilename() + "'");
             fb.meta.setFleetId(this.upload.fleetId);
             fb.meta.setUploaderId(this.upload.uploaderId);
             fb.meta.setUploadId(this.upload.id);
@@ -321,7 +321,7 @@ public class Pipeline implements AutoCloseable {
             return fb.build(connection);
         } catch (FlightProcessingException | SQLException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
-            fail(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
+            fail(fb.meta.getFilename(), new UploadException(e.getMessage(), e, fb.meta.getFilename()));
             return null;
         }
     }

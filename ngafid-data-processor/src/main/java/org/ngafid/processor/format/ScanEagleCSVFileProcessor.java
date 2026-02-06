@@ -78,8 +78,8 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
         String[] filenameParts = filename.split("_");
 
         // UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
-        meta.suggestedTailNumber = "N" + filenameParts[1] + "ND";
-        meta.systemId = meta.suggestedTailNumber;
+        meta.setSuggestedTailNumber("N" + filenameParts[1] + "ND");
+        meta.setSystemId(meta.getSuggestedTailNumber());
 
         LOG.log(Level.INFO, "suggested tail number: '{0}'", meta.suggestedTailNumber);
         LOG.log(Level.INFO, "system id: '{0}'", meta.systemId);

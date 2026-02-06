@@ -96,12 +96,12 @@ public class ParquetPipeline {
                             fb.meta.setFleetId(upload.fleetId);
                             fb.meta.setUploaderId(upload.uploaderId);
                             fb.meta.setUploadId(upload.id);
-                            fb.meta.airframe = new Airframes.Airframe(threadConn, fb.meta.airframe.getName(), fb.meta.airframe.getType());
+                            fb.meta.setAirframe(fb.meta.getAirframe(), fb.meta.getAirframe().getType());
                             fb.build(threadConn);
                             return fb;
                         } catch (Exception e) {
-                            LOG.severe("Error building flight " + fb.meta.filename + ": " + e.getMessage());
-                            flightErrors.put(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
+                            LOG.severe("Error building flight " + fb.meta.getFilename() + ": " + e.getMessage());
+                            flightErrors.put(fb.meta.getFilename(), new UploadException(e.getMessage(), e, fb.meta.getFilename()));
                             errorFlights++;
                             return null;
                         }
@@ -210,12 +210,12 @@ public class ParquetPipeline {
             fb.meta.setFleetId(this.upload.fleetId);
             fb.meta.setUploaderId(this.upload.uploaderId);
             fb.meta.setUploadId(this.upload.id);
-            fb.meta.airframe = new Airframes.Airframe(connection, fb.meta.airframe.getName(), fb.meta.airframe.getType());
+            fb.meta.getAirframe() = new Airframes.Airframe(connection, fb.meta.getAirframe().getName(), fb.meta.getAirframe().getType());
 
             return fb.build(connection).getFlight();
         } catch (SQLException | FlightProcessingException e) {
-            LOG.severe("Error building flight '" + fb.meta.filename + "': " + e.getMessage());
-            flightErrors.put(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
+            LOG.severe("Error building flight '" + fb.meta.getFilename() + "': " + e.getMessage());
+            flightErrors.put(fb.meta.getFilename(), new UploadException(e.getMessage(), e, fb.meta.getFilename()));
             errorFlights++;
             return null;
         }
