@@ -501,7 +501,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123SUCCESS");
         meta.setMd5Hash("test_md5_hash_successful");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -539,7 +539,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123NOIT");
         meta.setMd5Hash("test_md5_hash_no_itinerary");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -576,7 +576,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123EMPTYIT");
         meta.setMd5Hash("test_md5_hash_empty_itinerary");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -613,7 +613,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123SINGLEIT");
         meta.setMd5Hash("test_md5_hash_single_itinerary");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -663,7 +663,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123MULTIT");
         meta.setMd5Hash("test_md5_hash_multiple_itinerary");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -745,7 +745,7 @@ public class FlightTest extends TestWithConnection {
         meta2.setSuggestedTailNumber("N123SINGLE");
         meta2.setMd5Hash("test_md5_hash_single_it_multi");
         meta2.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta2.setEndDateTime(OffsetDateTime.now();
+        meta2.setEndDateTime(OffsetDateTime.now());
 
         List<Itinerary> itinerary2 = new ArrayList<>();
         Itinerary item2 = new Itinerary("KLAX", "25L", 150, 1800.0, 0.6, 0.3, 110.0, 2400.0);
@@ -793,7 +793,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123EVENTS");
         meta.setMd5Hash("test_md5_hash_events");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -851,7 +851,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123STRINGTS");
         meta.setMd5Hash("test_md5_hash_string_ts");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -941,7 +941,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123WARNINGS");
         meta.setMd5Hash("test_md5_hash_warnings");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1007,7 +1007,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123EVENTSID");
         meta.setMd5Hash("test_md5_hash_events_id");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1079,7 +1079,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123FAILED");
         meta.setMd5Hash("test_md5_hash_failed");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1103,7 +1103,7 @@ public class FlightTest extends TestWithConnection {
         invalidMeta.setSuggestedTailNumber("N123INVALID");
         invalidMeta.setMd5Hash("test_md5_hash_invalid");
         invalidMeta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        invalidMeta.setEndDateTime(OffsetDateTime.now();
+        invalidMeta.setEndDateTime(OffsetDateTime.now());
 
         Flight invalidFlight = new Flight(
                 invalidMeta,
@@ -1152,7 +1152,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123RSNEXT");
         meta.setMd5Hash("test_md5_hash_rs_next");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1204,7 +1204,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123NULL");
         meta.setMd5Hash("test_md5_hash_null");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1244,7 +1244,7 @@ public class FlightTest extends TestWithConnection {
         meta.setMd5Hash("test_md5_hash_invalid_date");
         // Use valid dates for constructor, but we'll create a scenario that triggers IllegalArgumentException
         meta.setStartDateTime(OffsetDateTime.now().minusHours(1));
-        meta.setEndDateTime(OffsetDateTime.now();
+        meta.setEndDateTime(OffsetDateTime.now());
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -1319,7 +1319,7 @@ public class FlightTest extends TestWithConnection {
         meta.setSuggestedTailNumber("N123COMP");
         meta.setMd5Hash("test_md5_hash_computed_events");
         meta.setStartDateTime(OffsetDateTime.now().minusHours(2));
-        meta.setEndDateTime(OffsetDateTime.now().minusHours(1);
+        meta.setEndDateTime(OffsetDateTime.now().minusHours(1));
 
         Flight testFlight = new Flight(
                 meta,
