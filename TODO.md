@@ -23,11 +23,6 @@ This is also a good opportunity to normalize all rouates and parameters. API rou
 In pursuing this `ngafid-www` will need to largely be rewritten, I suggest doing so in Kotlin as Javalin was developed with Kotlin in mind. It should save some significant number of lines of code.
 
 
-## Replace Environment Variables with Configuration File
-
-The NGAFID uses environment variables for all sorts of things. This ends up being a big pain in the ass, though, mainly because it can't be version controlled effectively.
-A simple java `properties` file would suffice (this is also what is used by liquibase etc., better to not introduce too many formats).
-
 ## Extensive Unit Tests
 
 The NGAFID has a pitiful number of unit tests. Introducing unit tests with a high degree of branch coverage would alleviate the all-too-common regressions that happen, particularly on the backend.

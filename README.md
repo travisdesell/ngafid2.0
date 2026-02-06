@@ -112,23 +112,23 @@ $NGAFID_DATA_FOLDER
 
 ## 4. Configure the environment
 
-We need to set up two configuration files -- one for docker, the other for locally running services.
+All configuration is now handled through a single properties file that works for both local development and Docker environments.
 
-Copy `template.env` to `.env.host` and modify it to fit your setup, then modify your shell profile to source, e.g.
+Copy the template properties file and customize it for your environment:
 
 ```shell
-source ~/ngafid2.0/.env.host
+cp ngafid-core/src/main/resources/ngafid.template.properties ngafid-core/src/main/resources/ngafid.properties
 ```
 
-Similarly, copy `template.docker.env` to `.env` and modify it to fit your setup. The `docker-compose.yml` file
-is configured to automatically load all environmental variables from this file.
+Edit `ngafid.properties` and configure the following values (look for ⚠️ markers in the file):
 
-Note that the variables specified in the `.env` file are read by docker compose and available in the docker-compose file
-for substitution. Within Dockerfiles, however, variables will have to be manually passed as arguments.
+- `ngafid.repo.path`: Path to your NGAFID repository
+- `ngafid.azure.maps.key`: Your Azure Maps API key
+- `ngafid.db.username` and `ngafid.db.password`: Database credentials
+- `ngafid.admin.emails`: Admin email addresses
+- `ngafid.smtp.*`: Email server configuration (if using email features)
 
-We also pass `.env` as an `env_file` in `docker-compose.yml`, which provides the variables for use within the container.
-The `.env` file format used by docker doesn't support any scripting (e.g. source) so rather than splitting the compose
-env and container env into two separate files, a single common file is used.
+The application automatically detects whether it's running in Docker (by checking for `/.dockerenv`) and uses the appropriate settings. Docker-specific configurations use the `ngafid.docker.*` prefix in the properties file.
 
 ## 5. Build Node Modules
 
@@ -279,6 +279,7 @@ UPDATE user SET two_factor_enabled = 0,     two_factor_setup_complete = 0,     t
 ## 13. AirSync Setup
 NGAFID integrates with AirSync to automatically import flight data. AirSync utilizes Partner API for accessing flight logs. See [Partner API Documentation](documentation/partner-api-documentation.pdf) for  API specifications.
 
+
 ### Architecture overview 
 NGAFID uses a pull-based approach: the AirSync daemon periodically(every 24 hs) polls the AirSync API for new flight logs, downloads them, packages them into ZIP files, and processes them through the standard upload pipeline. 
 We can trigger upload by pressing Sync upload button in the AirSync Uploads page. This will set the override flag in the airsync database to 1 and force an upload. 
@@ -356,3 +357,21 @@ Re-enqueue  uploads from a file
 ``` 
 run/upload_helper -F <file_path>
 ``` 
+
+
+### Clinent's steps to setup AirSync (provide new clients with the instructions below)
+
+1. Log into their AirSync user account
+2. Go to Accounts (top)
+3. Choose their account in the list
+4. Go to Services (menu) > NGAFID  (See screenshot below)
+5. Choose to Enable Service
+6. Option: "Enable New Aircraft by Default"  (this will set it for any new aircraft added to AirSync)
+7. Option: "Default Log Start"  (Select "Full Log History" to give access to log history)
+8. Option: "Enable all aircraft within this account" (Easiest option to enable all aircraft immediately)
+
+See client's airsync menu:
+
+![AirSync Account Menu](documentation/airsync-account.png)
+
+
