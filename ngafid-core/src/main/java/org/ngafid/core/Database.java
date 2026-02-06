@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-public class Database {
+public final class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
     private static String dbUser = null;

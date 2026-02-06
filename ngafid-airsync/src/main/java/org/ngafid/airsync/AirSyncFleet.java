@@ -179,6 +179,12 @@ public class AirSyncFleet extends Fleet {
         return fleets;
     }
 
+    /**
+     * Get the override status for this fleet
+     * @param connection the DBMS connection
+     * @return true if override is set, false otherwise
+     * @throws SQLException if there is a DBMS issue
+     */
     public boolean getOverride(Connection connection) throws SQLException {
         String query = """
                     SELECT override from airsync_fleet_info WHERE

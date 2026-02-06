@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class Config {
+public final class Config {
     private static final Properties PROPERTIES = new Properties();
     private static final String PROPERTIES_FILE = "ngafid.properties";
     private static final boolean IS_DOCKER_ENVIRONMENT;

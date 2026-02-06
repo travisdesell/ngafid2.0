@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
-public class FleetAccessNamed extends FleetAccess implements Serializable {
+public final class FleetAccessNamed extends FleetAccess implements Serializable {
 
     private String fleetName;
 

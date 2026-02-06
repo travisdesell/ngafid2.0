@@ -187,6 +187,8 @@ public class Fleet implements Serializable {
     }
 
     /**
+     * Gets the number of users waiting for access to this fleet.
+     * @param connection is a connection to the mysql database.
      * @return the number of users waiting for access to this fleet.
      */
     public int getWaitingUserCount(Connection connection) throws SQLException {
@@ -222,7 +224,8 @@ public class Fleet implements Serializable {
                         users.add(User.get(connection, userId, this.id));
                     } catch (AccountException e) {
                         // These user IDs are known to be valid since they were pulled from DB.
-                        // Safe to ignore. Even if someone deletes a user while this is running, it will be a transient issue.
+                        // Safe to ignore. Even if someone deletes a user while this is running,
+                        // it will be a transient issue.
                     }
                 }
             }
@@ -261,11 +264,17 @@ public class Fleet implements Serializable {
         return Collections.unmodifiableList(users);
     }
 
+    @Override
     public boolean equals(Object other) {
         if (other == null || !(other instanceof Fleet otherFleet)) {
             return false;
         }
 
         return id == otherFleet.getId() && name.equals(otherFleet.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id) + name.hashCode();
     }
 }
