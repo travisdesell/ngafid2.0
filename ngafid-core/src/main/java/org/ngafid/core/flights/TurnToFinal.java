@@ -1,6 +1,13 @@
 package org.ngafid.core.flights;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ngafid.core.airports.Airport;
+import org.ngafid.core.airports.Airports;
+import org.ngafid.core.airports.Runway;
+import org.ngafid.core.util.Compression;
+import org.ngafid.core.util.TimeUtils;
+
+import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.*;
@@ -9,12 +16,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.sql.rowset.serial.SerialBlob;
-import org.ngafid.core.airports.Airport;
-import org.ngafid.core.airports.Airports;
-import org.ngafid.core.airports.Runway;
-import org.ngafid.core.util.Compression;
-import org.ngafid.core.util.TimeUtils;
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
@@ -108,12 +109,18 @@ public class TurnToFinal implements Serializable {
 
     private double[] getExtendedRunwayCenterLine() {
         final double LEN = 2.0;
-        double dlat = runway.lat1 - runway.lat2;
-        double dlon = runway.lon1 - runway.lon2;
-        double lat1 = runway.lat1 + LEN * dlat;
-        double lon1 = runway.lon1 + LEN * dlon;
-        double lat2 = runway.lat2 - LEN * dlat;
-        double lon2 = runway.lon2 - LEN * dlon;
+        double lat1 = runway.getLat1();
+        double lon1 = runway.getLon1();
+        double lat2 = runway.getLat2();
+        double lon2 = runway.getLon2();
+
+        double dlat = lat1 - lat2;
+        double dlon = lon1 - lon2;
+
+        lat1 = lat1 + LEN * dlat;
+        lon1 = lon1 + LEN * dlon;
+        lat2 = lat2 - LEN * dlat;
+        lon2 = lon2 - LEN * dlon;
         return new double[]{lat1, lon1, lat2, lon2};
     }
 
@@ -362,7 +369,7 @@ public class TurnToFinal implements Serializable {
                 locProbabilityArray = locProbability.sliceCopy(from, to);
 
             TurnToFinal ttf = new TurnToFinal("",
-                    airframe.getName(), runway, airport.iataCode, startTime, runwayAltitude,
+                    airframe.getName(), runway, airport.getIataCode(), startTime, runwayAltitude,
                     altTimeSeries.sliceCopy(from, to),
                     altMSLTimeSeries.sliceCopy(from, to),
                     rollTimeSeries.sliceCopy(from, to),
