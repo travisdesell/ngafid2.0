@@ -20,7 +20,8 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public class ComputeSpinEvents extends ComputeEvent {
 
-    public ComputeSpinEvents(Connection connection, FlightBuilder fb, EventDefinition def, AbstractEventScanner scanner) {
+    public ComputeSpinEvents(
+            Connection connection, FlightBuilder fb, EventDefinition def, AbstractEventScanner scanner) {
         super(connection, fb, def, scanner);
         if (!(scanner instanceof SpinEventScanner))
             throw new IllegalArgumentException("scanner must be a SpinEventScanner");
@@ -28,15 +29,16 @@ public class ComputeSpinEvents extends ComputeEvent {
 
     @Override
     public boolean applicable() {
-        return super.applicable() && (builder.getStringTimeSeries(VSPD_CALCULATED) != null || builder.getStringTimeSeries(VSPD) != null);
+        return super.applicable()
+                && (builder.getStringTimeSeries(VSPD_CALCULATED) != null || builder.getStringTimeSeries(VSPD) != null);
     }
 
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        // High and Low are computed simultaneously, only run the computation once. We choose to only do it if the event definition is High (arbitrarily)
+        // High and Low are computed simultaneously, only run the computation once. We choose to only do it if the event
+        // definition is High (arbitrarily)
         if (this.definition.getId() == CustomEvent.getHighAltitudeSpin().getId()) {
             super.compute();
         }
     }
-
 }

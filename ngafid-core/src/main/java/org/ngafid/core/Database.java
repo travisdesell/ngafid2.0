@@ -24,8 +24,7 @@ public final class Database {
         initializeConnectionPool();
     }
 
-    private Database() {
-    }
+    private Database() {}
 
     public static Connection getConnection() throws SQLException {
         var info = CONNECTION_POOL.getHikariPoolMXBean();
@@ -43,10 +42,8 @@ public final class Database {
     }
 
     public static String getDatabaseImplementation() {
-        if (Config.NGAFID_USE_MARIA_DB)
-            return "mariadb";
-        else
-            return "mysql";
+        if (Config.NGAFID_USE_MARIA_DB) return "mariadb";
+        else return "mysql";
     }
 
     private static void readDatabaseCredentials(String path) throws IOException {

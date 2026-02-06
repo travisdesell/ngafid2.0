@@ -14,6 +14,7 @@ public class Fleet implements Serializable {
      * A list of all users who have access (or are requesting access) to this fleet.
      */
     private ArrayList<User> users;
+
     private int id = -1;
 
     public Fleet(int id, String name) {
@@ -30,7 +31,7 @@ public class Fleet implements Serializable {
      */
     public static int getNumberFleets(Connection connection) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM fleet");
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             if (resultSet.next()) {
@@ -51,11 +52,10 @@ public class Fleet implements Serializable {
      */
     public static Fleet get(Connection connection, int id) throws SQLException, AccountException {
         try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet WHERE id = " + id);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
-            if (!resultSet.next())
-                throw new AccountException("Fleet error", "No such fleet with id " + id);
+            if (!resultSet.next()) throw new AccountException("Fleet error", "No such fleet with id " + id);
 
             return new Fleet(id, resultSet.getString(1));
         }
@@ -76,8 +76,7 @@ public class Fleet implements Serializable {
             LOG.info(query.toString());
             try (ResultSet resultSet = query.executeQuery()) {
 
-                if (!resultSet.next())
-                    throw new AccountException("Fleet error", "No such fleet with name " + name);
+                if (!resultSet.next()) throw new AccountException("Fleet error", "No such fleet with name " + name);
 
                 return new Fleet(resultSet.getInt(1), name);
             }
@@ -93,7 +92,8 @@ public class Fleet implements Serializable {
     public static List<Fleet> getAllFleets(Connection connection) throws SQLException {
         String queryString = "SELECT id FROM fleet";
 
-        try (PreparedStatement ps = connection.prepareStatement(queryString); ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = connection.prepareStatement(queryString);
+                ResultSet rs = ps.executeQuery()) {
             List<Fleet> fleets = new ArrayList<>();
 
             while (rs.next()) {
@@ -143,9 +143,8 @@ public class Fleet implements Serializable {
     public static Fleet create(Connection connection, String name) throws SQLException, AccountException {
         // check and see if the fleet already exists in the database, if it does then
         // throw an exception
-        try (
-                PreparedStatement query = connection.prepareStatement("INSERT INTO fleet SET fleet_name = ?",
-                        Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement query =
+                connection.prepareStatement("INSERT INTO fleet SET fleet_name = ?", Statement.RETURN_GENERATED_KEYS)) {
             query.setString(1, name);
             query.executeUpdate();
 
@@ -158,8 +157,8 @@ public class Fleet implements Serializable {
                     fleet = new Fleet(resultSet.getInt(1), name);
                 } else {
                     LOG.severe("Database Error: Could not get id of new fleet from database after insert.");
-                    throw new AccountException("Database Error",
-                            "Could not get id of new fleet from database after insert.");
+                    throw new AccountException(
+                            "Database Error", "Could not get id of new fleet from database after insert.");
                 }
 
                 fleet.users = new ArrayList<>();
@@ -211,8 +210,8 @@ public class Fleet implements Serializable {
         users = new ArrayList<User>();
 
         // get all the users waiting in this fleet's queue
-        try (PreparedStatement query = connection
-                .prepareStatement("SELECT user_id FROM fleet_access WHERE fleet_id = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("SELECT user_id FROM fleet_access WHERE fleet_id = ?")) {
             query.setInt(1, this.id);
 
             try (ResultSet resultSet = query.executeQuery()) {
@@ -249,7 +248,6 @@ public class Fleet implements Serializable {
                 return rs.next();
             }
         }
-
     }
 
     public String toString() {

@@ -192,7 +192,7 @@ public final class Tails {
 
         String queryString = "SELECT * FROM tails WHERE fleet_id = " + fleetId + " ORDER BY tail";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             while (resultSet.next()) {
                 // tail existed in the database, return the id
                 tails.add(new Tail(resultSet));
@@ -239,7 +239,7 @@ public final class Tails {
 
         String queryString = "SELECT tail FROM tails WHERE fleet_id = " + fleetId + " ORDER BY tail";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
 
             while (resultSet.next()) {
                 // tail existed in the database, return the id
@@ -263,7 +263,7 @@ public final class Tails {
 
         String queryString = "SELECT system_id FROM tails WHERE fleet_id = " + fleetId + " ORDER BY system_id";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
 
             while (resultSet.next()) {
                 // systemId existed in the database, return the id
@@ -283,7 +283,7 @@ public final class Tails {
     public static int getUnconfirmedTailsCount(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT COALESCE(COUNT(*)) FROM tails WHERE fleet_id = " + fleetId + " AND confirmed = 0";
         try (PreparedStatement query = connection.prepareStatement(queryString);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             resultSet.next();
             return resultSet.getInt(1);
         }
@@ -309,7 +309,7 @@ public final class Tails {
         LOG.fine(queryString);
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             LOG.fine(query.toString());
 
             resultSet.next();
@@ -318,12 +318,11 @@ public final class Tails {
     }
 
     public static void removeUnused(Connection connection) throws SQLException {
-        String queryString = "DELETE FROM tails WHERE NOT EXISTS " +
-                "(SELECT id FROM flights WHERE flights.system_id = tails.system_id " +
-                "AND flights.fleet_id = tails.fleet_id);";
+        String queryString = "DELETE FROM tails WHERE NOT EXISTS "
+                + "(SELECT id FROM flights WHERE flights.system_id = tails.system_id "
+                + "AND flights.fleet_id = tails.fleet_id);";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
             query.executeUpdate();
         }
     }
-
 }

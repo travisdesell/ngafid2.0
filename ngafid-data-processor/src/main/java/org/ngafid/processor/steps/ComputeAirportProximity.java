@@ -22,8 +22,8 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public class ComputeAirportProximity extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LATITUDE, LONGITUDE, ALT_AGL);
-    private static final Set<String> OUTPUT_COLUMNS = Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE,
-            NEAREST_AIRPORT);
+    private static final Set<String> OUTPUT_COLUMNS =
+            Set.of(NEAREST_RUNWAY, AIRPORT_DISTANCE, RUNWAY_DISTANCE, NEAREST_AIRPORT);
     private static final double MAX_AIRPORT_DISTANCE_FT = 10000;
     private static final double MAX_RUNWAY_DISTANCE_FT = 100;
 
@@ -76,7 +76,8 @@ public class ComputeAirportProximity extends ComputeStep {
             MutableDouble airportDistance = new MutableDouble();
             Airport airport = null;
             if (altitudeAGL <= 2000) {
-                airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
+                airport =
+                        Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
             }
 
             if (airport == null) {
@@ -89,8 +90,8 @@ public class ComputeAirportProximity extends ComputeStep {
                 airportDistanceTS.add(airportDistance.getValue());
 
                 MutableDouble runwayDistance = new MutableDouble();
-                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, MAX_RUNWAY_DISTANCE_FT,
-                        runwayDistance);
+                Runway runway =
+                        airport.getNearestRunwayWithin(latitude, longitude, MAX_RUNWAY_DISTANCE_FT, runwayDistance);
 
                 if (runway == null) {
                     nearestRunwayTS.add("");

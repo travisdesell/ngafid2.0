@@ -2,6 +2,10 @@ package org.ngafid.processor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Database;
@@ -10,11 +14,6 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Events;
 import org.ngafid.core.kafka.Topic;
-
-import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
 
 /**
  * Scans the database for flights with missing rows from the `flight_processed` table
@@ -26,10 +25,10 @@ import java.util.List;
  */
 public class EventObserver {
 
-    private EventObserver() {
-    }
+    private EventObserver() {}
 
-    private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event) throws SQLException {
+    private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event)
+            throws SQLException {
         StringBuilder condition = new StringBuilder();
         if (event.getFleetId() != 0) {
             condition.append(" fleet_id = ").append(event.getFleetId()).append(" ");
@@ -37,7 +36,10 @@ public class EventObserver {
 
         if (event.getAirframeNameId() != 0) {
             if (!condition.isEmpty()) condition.append("AND ");
-            condition.append(" airframe_id = ").append(event.getAirframeNameId()).append(" ");
+            condition
+                    .append(" airframe_id = ")
+                    .append(event.getAirframeNameId())
+                    .append(" ");
         }
 
         if (!condition.isEmpty()) condition.append(" AND ");

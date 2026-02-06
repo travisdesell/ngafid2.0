@@ -14,16 +14,19 @@ public class UploadError {
 
     @JsonProperty
     private int id;
+
     @JsonProperty
     private int uploadId;
+
     @JsonProperty
     private String message;
+
     @JsonProperty
     private String stackTrace;
 
     public static void insertError(Connection connection, int uploadId, String message) throws SQLException {
-        try (PreparedStatement exceptionPreparedStatement = connection
-                .prepareStatement("INSERT INTO upload_errors (upload_id, message_id) VALUES (?, ?)")) {
+        try (PreparedStatement exceptionPreparedStatement =
+                connection.prepareStatement("INSERT INTO upload_errors (upload_id, message_id) VALUES (?, ?)")) {
             exceptionPreparedStatement.setInt(1, uploadId);
             exceptionPreparedStatement.setInt(2, ErrorMessage.getMessageId(connection, message));
 
@@ -34,9 +37,9 @@ public class UploadError {
     }
 
     public static ArrayList<UploadError> getUploadErrors(Connection connection, int uploadId) throws SQLException {
-        try (PreparedStatement uploadQuery = connection
-                .prepareStatement("SELECT id, upload_id, message_id FROM upload_errors WHERE upload_id = " + uploadId);
-             ResultSet resultSet = uploadQuery.executeQuery()) {
+        try (PreparedStatement uploadQuery = connection.prepareStatement(
+                        "SELECT id, upload_id, message_id FROM upload_errors WHERE upload_id = " + uploadId);
+                ResultSet resultSet = uploadQuery.executeQuery()) {
             ArrayList<UploadError> uploads = new ArrayList<UploadError>();
 
             while (resultSet.next()) {

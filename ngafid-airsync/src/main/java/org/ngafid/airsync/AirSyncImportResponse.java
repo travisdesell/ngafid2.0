@@ -33,5 +33,4 @@ public class AirSyncImportResponse {
             this.warnings = FlightWarning.getWarningsByFlight(Database.getConnection(), flightId);
         }
     }
-
 }

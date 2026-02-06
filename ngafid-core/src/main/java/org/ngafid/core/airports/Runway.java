@@ -77,5 +77,4 @@ public class Runway implements Serializable {
             return "[RUNWAY " + siteNumber + ", " + name + "]";
         }
     }
-
 }

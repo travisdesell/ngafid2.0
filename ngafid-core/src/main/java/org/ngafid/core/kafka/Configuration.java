@@ -35,6 +35,4 @@ public enum Configuration {
         props.put("value.deserializer", "org.apache.kafka.common.serialization.IntegerDeserializer");
         return props;
     }
-
-
 }

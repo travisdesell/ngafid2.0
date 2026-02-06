@@ -20,8 +20,7 @@ public final class TimeUtils {
     public static final DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     public static final DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private TimeUtils() {
-    }
+    private TimeUtils() {}
 
     public static DateTimeFormatter getIso8601Format() {
         return ISO_8601_FORMAT;
@@ -60,8 +59,7 @@ public final class TimeUtils {
             case "-19:00", "-22:00", "-23:00", "-21:00", "-20:00" -> {
                 offset = "-18:00";
             }
-            default -> {
-            }
+            default -> {}
         }
         return offset;
     }
@@ -74,8 +72,8 @@ public final class TimeUtils {
 
     public static long toEpochSecond(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(date.trim() + " " + time.trim(),
-                DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
+        LocalDateTime ldt =
+                LocalDateTime.parse(date.trim() + " " + time.trim(), DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
         offset = updateBadOffset(offset);
@@ -122,11 +120,11 @@ public final class TimeUtils {
         ZonedDateTime utcZdt = odt.atZoneSameInstant(ZoneOffset.UTC);
 
         return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
-
     }
 
-    public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
-                                                 String newOffset) throws UnrecognizedDateTimeFormatException {
+    public static OffsetDateTime convertToOffset(
+            String originalDate, String originalTime, String originalOffset, String newOffset)
+            throws UnrecognizedDateTimeFormatException {
         return convertToOffset(originalDate + " " + originalTime, originalOffset, newOffset);
     }
 
@@ -136,8 +134,8 @@ public final class TimeUtils {
         return convertToOffset(dateTimeFormat, originalDateTime, originalOffset, newOffset);
     }
 
-    public static OffsetDateTime convertToOffset(DateTimeFormatter formatter, String originalDateTime,
-                                                 String originalOffset, String newOffset) {
+    public static OffsetDateTime convertToOffset(
+            DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
         LOG.info("Date is " + originalDateTime);
         LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
@@ -162,8 +160,7 @@ public final class TimeUtils {
             DateTimeFormatter.ofPattern("M/d/yyyy H:m:s"),
             DateTimeFormatter.ofPattern("M-d-yyyy H:m:s"));
 
-    public static LocalDateTime parseLocalDateTime(String dateTimeString)
-            throws UnrecognizedDateTimeFormatException {
+    public static LocalDateTime parseLocalDateTime(String dateTimeString) throws UnrecognizedDateTimeFormatException {
         var formatter = findCorrectFormatter(dateTimeString);
         return LocalDateTime.parse(dateTimeString, formatter);
     }
@@ -238,8 +235,7 @@ public final class TimeUtils {
         return LocalDateTime.parse(sqlDateTime, MYSQL_FORMAT).atOffset(ZoneOffset.UTC);
     }
 
-    public static class UnrecognizedDateTimeFormatException extends Exception {
-    }
+    public static class UnrecognizedDateTimeFormatException extends Exception {}
 
     /**
      * Finds the correct DateTimeFormatter by trying to parse a date/time string.
@@ -257,8 +253,7 @@ public final class TimeUtils {
                 // Continue trying other formatters
             }
         }
-        throw new DateTimeException(
-                "Could not deduce date-time formatter for the following: " + dateTimeString);
+        throw new DateTimeException("Could not deduce date-time formatter for the following: " + dateTimeString);
     }
 
     /**
@@ -269,8 +264,8 @@ public final class TimeUtils {
         private final ArrayList<String> localTimes;
         private final ArrayList<String> utcOffsets;
 
-        public LocalDateTimeResult(ArrayList<String> localDates, ArrayList<String> localTimes,
-                                   ArrayList<String> utcOffsets) {
+        public LocalDateTimeResult(
+                ArrayList<String> localDates, ArrayList<String> localTimes, ArrayList<String> utcOffsets) {
             this.localDates = localDates;
             this.localTimes = localTimes;
             this.utcOffsets = utcOffsets;

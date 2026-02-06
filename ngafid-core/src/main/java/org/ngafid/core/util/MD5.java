@@ -16,8 +16,7 @@ import org.apache.commons.codec.binary.Hex;
 public final class MD5 {
     private static final Logger LOG = Logger.getLogger(MD5.class.getName());
 
-    private MD5() {
-    }
+    private MD5() {}
 
     /**
      * Walks through an input stream and computes the hash over all the bytes. Some of the files we read are larger

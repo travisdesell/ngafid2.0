@@ -29,5 +29,4 @@ public final class TypeName extends NormalizedColumn<TypeName> {
     protected String getTableName() {
         return "data_type_names";
     }
-
 }

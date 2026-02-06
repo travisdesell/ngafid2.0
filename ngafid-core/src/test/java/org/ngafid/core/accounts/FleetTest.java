@@ -89,7 +89,6 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
-
     @Test
     @DisplayName("Should get fleet id")
     public void testGetId() {
@@ -108,7 +107,6 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
-
     @Test
     @DisplayName("Should return string representation")
     public void testToString() {
@@ -121,8 +119,6 @@ public class FleetTest {
         assertTrue(toString.contains("Fleet id:"), "toString should contain 'Fleet id:'");
         assertTrue(toString.contains("name:"), "toString should contain 'name:'");
     }
-
-
 
     @Test
     @DisplayName("Should test fleet equality")
@@ -224,7 +220,8 @@ public class FleetTest {
     @Test
     @DisplayName("Should handle fleet with very long name in equality")
     public void testFleetEqualsWithLongName() {
-        String longName = "Very Long Fleet Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
+        String longName =
+                "Very Long Fleet Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
         Fleet fleet1 = new Fleet(1, longName);
         Fleet fleet2 = new Fleet(1, longName);
         Fleet fleet3 = new Fleet(1, "Short Name");

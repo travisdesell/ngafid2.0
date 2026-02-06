@@ -14,6 +14,5 @@ public final class Utility {
             .registerModule(new JavaTimeModule())
             .registerModule(KOTLIN_MODULE);
 
-    private Utility() {
-    }
+    private Utility() {}
 }

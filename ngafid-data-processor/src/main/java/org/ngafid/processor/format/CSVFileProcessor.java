@@ -77,8 +77,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     private static boolean airframeIsScanEagle(String metainfo) throws FatalFlightFileException {
 
-        if (metainfo == null || metainfo.trim().isEmpty())
-            return false;
+        if (metainfo == null || metainfo.trim().isEmpty()) return false;
 
         if (metainfo.charAt(0) != '#' && metainfo.charAt(0) != '{') {
             if (metainfo.startsWith("DID_")) {
@@ -121,7 +120,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param pipeline
      * @return
      */
-    public static FlightFileProcessor factory(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException, FatalFlightFileException, SQLException {
+    public static FlightFileProcessor factory(
+            Connection connection, InputStream stream, String filename, Pipeline pipeline)
+            throws IOException, FatalFlightFileException, SQLException {
         byte[] bytes = stream.readAllBytes();
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 
@@ -130,8 +131,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8))) {
             List<String> headerLines = extractHeaderLines(reader);
             String firstLine = reader.readLine();
-            if (firstLine == null)
-                throw new IOException("Encountered end of stream prematurely in file " + filename);
+            if (firstLine == null) throw new IOException("Encountered end of stream prematurely in file " + filename);
 
             String[] values = firstLine.split(",");
 
@@ -183,12 +183,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
-        return Stream.of(
-                makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries)
-        );
+        return Stream.of(makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
     }
 
-    FlightBuilder makeFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
+    FlightBuilder makeFlightBuilder(
+            FlightMeta meta, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
         return new FlightBuilder(meta, doubleSeries, stringSeries);
     }
 
@@ -200,7 +199,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     List<String[]> extractFlightData() throws FlightProcessingException {
         // Extract headers and rows
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8))) {
+        try (BufferedReader bufferedReader =
+                new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8))) {
             processMetaData(bufferedReader);
             dataTypes = processDataTypes(bufferedReader);
             headers = processHeaders(bufferedReader);
@@ -222,30 +222,28 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param stringTimeSeries map to place the string columns into
      * @throws FlightProcessingException if there are not enough valid rows
      */
-    void readTimeSeries(List<String[]> rows, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) throws FlightProcessingException {
+    void readTimeSeries(
+            List<String[]> rows,
+            Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries)
+            throws FlightProcessingException {
         ArrayList<ArrayList<String>> columns = new ArrayList<>();
-        for (int j = 0; j < headers.size(); j++)
-            columns.add(new ArrayList<>());
+        for (int j = 0; j < headers.size(); j++) columns.add(new ArrayList<>());
 
         int validRows = 0;
 
         // Populate columns with data from rows
         for (String[] row : rows) {
-            if (row.length != headers.size())
-                break;
-            for (int i = 0; i < row.length; i++)
-                columns.get(i).add(row[i]);
+            if (row.length != headers.size()) break;
+            for (int i = 0; i < row.length; i++) columns.get(i).add(row[i]);
 
             validRows += 1;
         }
 
         if (validRows <= Math.max(rows.size() - 2, 0)) {
             throw new FlightProcessingException(
-                    new FatalFlightFileException(
-                            "Flight has 0 rows, or consecutive malformed rows -- " +
-                                    "there is a serious problem with the file format."
-                    )
-            );
+                    new FatalFlightFileException("Flight has 0 rows, or consecutive malformed rows -- "
+                            + "there is a serious problem with the file format."));
         }
 
         // Populate Time Series
@@ -255,7 +253,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             var dataType = dataTypes.get(j);
 
             try {
-                JavaDoubleParser.parseDouble(columnData.get(columnData.size() / 2).trim());  // Check if the column is numeric
+                JavaDoubleParser.parseDouble(
+                        columnData.get(columnData.size() / 2).trim()); // Check if the column is numeric
                 doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, columnData));
             } catch (NumberFormatException e) {
                 stringTimeSeries.put(name, new StringTimeSeries(name, dataType, columnData));
@@ -286,15 +285,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
         try {
             for (int i = 1; i < infoParts.length; i++) {
                 // process everything else (G1000 data)
-                if (infoParts[i].trim().isEmpty())
-                    continue;
+                if (infoParts[i].trim().isEmpty()) continue;
 
                 String[] subParts = infoParts[i].trim().split("=");
                 // May throw index out of bounds.
                 values.put(subParts[0].trim(), subParts[1].trim());
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.", e);
+            throw new FatalFlightFileException(
+                    "Flight information line was not properly formed with key value pairs.", e);
         }
 
         // This is where we can integrate airframe name input from user.
@@ -307,9 +306,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
         if (!values.containsKey("system_id")) {
             if (values.containsKey("serial_number")) {
                 values.put("system_id", values.get("serial_number"));
-                LOG.severe("Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
+                LOG.severe("Log: serial_number is missing, replacing serial_number with system_id: "
+                        + values.get("system_id"));
             } else {
-                throw new FatalFlightFileException("Flight file contained no system_id -- this file format is likely unsupported at this time.");
+                throw new FatalFlightFileException(
+                        "Flight file contained no system_id -- this file format is likely unsupported at this time.");
             }
         }
 
@@ -344,9 +345,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private static List<String> splitCommaSeparated(String line) {
-        return Arrays.stream(line.split(",", -1))
-                .map(String::strip)
-                .collect(Collectors.toList());
+        return Arrays.stream(line.split(",", -1)).map(String::strip).collect(Collectors.toList());
     }
 
     private void setAirframeName(String name) throws FatalFlightFileException {
@@ -362,19 +361,22 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         String airframeType = null;
 
-        LOG.log(Level.INFO, "Setting airframe name ''{0}'' for incoming name ''{1}''", new Object[]{airframeName, name});
+        LOG.log(Level.INFO, "Setting airframe name ''{0}'' for incoming name ''{1}''", new Object[] {airframeName, name
+        });
 
-        //Fixed Wing Airframe
+        // Fixed Wing Airframe
         if (Airframes.FIXED_WING_AIRFRAMES.contains(airframeName) || airframeName.contains("Garmin")) {
             airframeType = "Fixed Wing";
 
-        //Rotorcraft
+            // Rotorcraft
         } else if (Airframes.ROTORCRAFT.contains(airframeName)) {
             airframeType = "Rotorcraft";
 
-        //Unknown Airframe
+            // Unknown Airframe
         } else {
-            LOG.severe("Could not import flight because the aircraft type was unknown for the following airframe name: '" + airframeName + "'");
+            LOG.severe(
+                    "Could not import flight because the aircraft type was unknown for the following airframe name: '"
+                            + airframeName + "'");
             LOG.severe("Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }

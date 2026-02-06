@@ -23,7 +23,8 @@ public class DoubleSeriesJavalinRoutes {
         List<String> names = new ArrayList<String>();
 
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("SELECT name FROM double_series_names ORDER BY name")) {
+            try (PreparedStatement query =
+                    connection.prepareStatement("SELECT name FROM double_series_names ORDER BY name")) {
                 try (ResultSet resultSet = query.executeQuery()) {
                     while (resultSet.next()) {
                         names.add(resultSet.getString(1));
@@ -39,7 +40,8 @@ public class DoubleSeriesJavalinRoutes {
 
         public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
-            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name + "'");
+            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name
+                    + "'");
 
             int size = 0;
             if (doubleTimeSeries != null) {
@@ -60,7 +62,8 @@ public class DoubleSeriesJavalinRoutes {
         List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
                 query.setInt(1, flightId);
 
                 try (ResultSet resultSet = query.executeQuery()) {
@@ -71,7 +74,6 @@ public class DoubleSeriesJavalinRoutes {
             }
         }
     }
-
 
     public static void getAllDoubleSeriesNames(Context ctx) {
         try (Connection connection = Database.getConnection()) {

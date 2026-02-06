@@ -16,7 +16,8 @@ public abstract class NormalizedColumn<T> {
             new ConcurrentHashMap<>();
 
     private String getCachedName(int columnId) {
-        return NAME_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
+        return NAME_CACHE
+                .computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
                 .getOrDefault(columnId, null);
     }
 
@@ -28,7 +29,8 @@ public abstract class NormalizedColumn<T> {
     private void addToCache(int columnId, String columnName) {
         ID_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
                 .putIfAbsent(columnName, columnId);
-        NAME_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
+        NAME_CACHE
+                .computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
                 .putIfAbsent(columnId, columnName);
     }
 

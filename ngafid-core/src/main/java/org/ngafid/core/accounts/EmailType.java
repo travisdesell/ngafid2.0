@@ -80,7 +80,6 @@ public enum EmailType {
     private static final Logger LOG = Logger.getLogger(EmailType.class.getName());
 
     static {
-
         int emailTypeNonForcedCounter = 0;
         for (EmailType emailType : EmailType.values()) {
             if (!isForced(emailType)) {
@@ -117,8 +116,7 @@ public enum EmailType {
     public static String[] getEmailTypeKeysRecent(boolean doRefresh) {
 
         // Force a refresh of the keys
-        if (doRefresh)
-            refreshEmailTypeKeysRecent();
+        if (doRefresh) refreshEmailTypeKeysRecent();
 
         String[] keysOut = new String[EMAIL_TYPE_KEYS_RECENT.size()];
         return EMAIL_TYPE_KEYS_RECENT.toArray(keysOut);
@@ -181,8 +179,7 @@ public enum EmailType {
                 + String.join(" UNION ALL ", emailTypeQueries)
                 + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)";
 
-        try (
-                Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection();
                 PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.executeUpdate();
@@ -192,7 +189,6 @@ public enum EmailType {
             e.printStackTrace();
             LOG.severe("Error executing Email Type generation query: " + e.getMessage());
         }
-
     }
 
     public static void insertEmailTypesIntoDatabase(Connection connection, int userIDTarget) throws SQLException {
@@ -243,14 +239,11 @@ public enum EmailType {
                 + String.join(" UNION ALL ", emailTypeQueries)
                 + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)";
 
-        try (
-                PreparedStatement statement = connection.prepareStatement(query)) {
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.executeUpdate();
             LOG.info("Email Type generation query executed successfully");
-
         }
-
     }
 
     private static void removeOldEmailTypesFromDatabase(Set<String> currentEmailTypes) {
@@ -260,8 +253,7 @@ public enum EmailType {
 
         List<String> emailTypesForDeletion = new ArrayList<>();
 
-        try (
-                Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection();
                 PreparedStatement selectStatement = connection.prepareStatement(selectQuery);
                 ResultSet queryResult = selectStatement.executeQuery()) {
 
@@ -281,16 +273,13 @@ public enum EmailType {
                     deleteStatement.executeUpdate();
                     LOG.info("Removed old Email Type: " + emailType);
                 }
-
             }
 
         } catch (SQLException e) {
 
             e.printStackTrace();
             LOG.severe("Error removing old Email Types: " + e.getMessage());
-
         }
-
     }
 
     private static void refreshEmailTypeKeysRecent() {
@@ -313,7 +302,6 @@ public enum EmailType {
         for (EmailType emailType : EmailType.values()) {
             EMAIL_TYPE_KEYS_RECENT.add(emailType.getType());
         }
-
     }
 
     // Main
@@ -341,15 +329,14 @@ public enum EmailType {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (StackTraceElement element : stackTrace) {
             String className = element.getClassName();
-            if (className.contains("junit") ||
-                className.contains("test") ||
-                className.contains("Test") ||
-                className.contains("surefire") ||
-                className.contains("maven")) {
+            if (className.contains("junit")
+                    || className.contains("test")
+                    || className.contains("Test")
+                    || className.contains("surefire")
+                    || className.contains("maven")) {
                 return true;
             }
         }
         return false;
     }
-
 }

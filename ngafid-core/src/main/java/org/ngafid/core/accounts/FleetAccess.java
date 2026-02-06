@@ -92,8 +92,7 @@ public class FleetAccess implements Serializable {
     /**
      * Black constructor so static methods can create a new object
      */
-    private FleetAccess() {
-    }
+    private FleetAccess() {}
 
     protected FleetAccess(int fleetId, int userId, String accessType) {
         this.fleetId = fleetId;
@@ -121,13 +120,11 @@ public class FleetAccess implements Serializable {
      * empty if there are none.
      * @throws SQLException If there was a query/database problem.
      */
-
     public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId)
             throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement(
+        try (PreparedStatement query = connection.prepareStatement(
                         "SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = " + userId);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             ArrayList<FleetAccess> allAccess = new ArrayList<FleetAccess>();
@@ -150,14 +147,12 @@ public class FleetAccess implements Serializable {
      * @throws SQLException If there was a query/database problem.
      */
     public static FleetAccess get(Connection connection, int userId, int fleetId) throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement(
+        try (PreparedStatement query = connection.prepareStatement(
                         "SELECT type FROM fleet_access WHERE user_id = " + userId + " AND fleet_id = " + fleetId);
-             ResultSet resultSet = query.executeQuery()) {
+                ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
-            if (!resultSet.next())
-                return null;
+            if (!resultSet.next()) return null;
 
             return new FleetAccess(fleetId, userId, resultSet.getString(1));
         }
@@ -179,13 +174,14 @@ public class FleetAccess implements Serializable {
     public static FleetAccess create(Connection connection, int userId, int fleetId, String accessType)
             throws SQLException, AccountException {
         if (FleetAccess.get(connection, userId, fleetId) != null) {
-            throw new AccountException("Fleet Access Creation Error",
+            throw new AccountException(
+                    "Fleet Access Creation Error",
                     "Could not create fleet access '" + accessType + "' for user " + userId + " on fleet " + fleetId
                             + ", beacuse user already has access to that fleet in the database.");
         }
 
-        try (PreparedStatement query = connection
-                .prepareStatement("INSERT INTO fleet_access SET user_id = ?, fleet_id = ?, type = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("INSERT INTO fleet_access SET user_id = ?, fleet_id = ?, type = ?")) {
             query.setInt(1, userId);
             query.setInt(2, fleetId);
             query.setString(3, accessType);
@@ -206,8 +202,8 @@ public class FleetAccess implements Serializable {
      * @param accessType is the new access type
      */
     public static void update(Connection connection, int userId, int fleetId, String accessType) throws SQLException {
-        try (PreparedStatement query = connection
-                .prepareStatement("UPDATE fleet_access SET type = ? WHERE user_id = ? AND fleet_id = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("UPDATE fleet_access SET type = ? WHERE user_id = ? AND fleet_id = ?")) {
             query.setString(1, accessType);
             query.setInt(2, userId);
             query.setInt(3, fleetId);

@@ -56,8 +56,14 @@ public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
     private final Flight flight;
 
-    public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight,
-                       EventDefinition eventDefinition) {
+    public CustomEvent(
+            String startTime,
+            String endTime,
+            int startLine,
+            int endLine,
+            double severity,
+            Flight flight,
+            EventDefinition eventDefinition) {
         super(startTime, endTime, startLine, endLine, eventDefinition.getId(), severity);
 
         this.flight = flight;

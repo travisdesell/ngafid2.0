@@ -26,8 +26,7 @@ public final class MSLtoAGLConverter {
     // Simple cache for file existence checks to avoid repeated file system calls
     private static final ConcurrentHashMap<String, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
 
-    private MSLtoAGLConverter() {
-    }
+    private MSLtoAGLConverter() {}
 
     /**
      * Converts MSL altitude to AGL altitude using terrain data.
@@ -39,9 +38,12 @@ public final class MSLtoAGLConverter {
      */
     public static double convertMSLToAGL(double altitudeMSL, double latitude, double longitude) {
 
-        if (Double.isNaN(altitudeMSL) || Double.isInfinite(altitudeMSL) ||
-            Double.isNaN(latitude) || Double.isInfinite(latitude) ||
-            Double.isNaN(longitude) || Double.isInfinite(longitude)) {
+        if (Double.isNaN(altitudeMSL)
+                || Double.isInfinite(altitudeMSL)
+                || Double.isNaN(latitude)
+                || Double.isInfinite(latitude)
+                || Double.isNaN(longitude)
+                || Double.isInfinite(longitude)) {
             LOG.warning("Invalid input parameters: MSL=" + altitudeMSL + ", lat=" + latitude + ", lon=" + longitude);
             return Double.NaN;
         }
@@ -57,7 +59,6 @@ public final class MSLtoAGLConverter {
             return Double.NaN;
         }
 
-
         try {
             // Get terrain elevation at the given coordinates
             double terrainElevationFt = getTerrainElevation(latitude, longitude);
@@ -69,8 +70,8 @@ public final class MSLtoAGLConverter {
             return finalAgl;
 
         } catch (Exception e) {
-            LOG.warning("Failed to convert MSL to AGL for lat=" + latitude +
-                       ", lon=" + longitude + ", MSL=" + altitudeMSL + ": " + e.getMessage());
+            LOG.warning("Failed to convert MSL to AGL for lat=" + latitude + ", lon=" + longitude + ", MSL="
+                    + altitudeMSL + ": " + e.getMessage());
             e.printStackTrace();
             return Double.NaN;
         }
@@ -149,10 +150,7 @@ public final class MSLtoAGLConverter {
             double x = lonDiff - (lonIndex0 * SRTM_GRID_SIZE);
             double y = latDiff - (latIndex0 * SRTM_GRID_SIZE);
 
-            return (alt00 * (1 - x) * (1 - y)) +
-                   (alt10 * x * (1 - y)) +
-                   (alt01 * (1 - x) * y) +
-                   (alt11 * x * y);
+            return (alt00 * (1 - x) * (1 - y)) + (alt10 * x * (1 - y)) + (alt01 * (1 - x) * y) + (alt11 * x * y);
         }
     }
 
@@ -224,5 +222,4 @@ public final class MSLtoAGLConverter {
 
         return ns + ilatitude + ew + strLongitude + ".hgt";
     }
-
 }

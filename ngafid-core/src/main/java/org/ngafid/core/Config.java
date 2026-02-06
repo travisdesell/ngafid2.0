@@ -38,16 +38,16 @@ public final class Config {
         loadProperties();
 
         // Initialize configuration values from properties file
-        PARALLELISM = getIntPropertyWithDefault("ngafid.parallelism", Runtime.getRuntime().availableProcessors());
+        PARALLELISM = getIntPropertyWithDefault(
+                "ngafid.parallelism", Runtime.getRuntime().availableProcessors());
         NGAFID_PORT = getIntPropertyWithDefault("ngafid.port", 8181);
         MAX_TERRAIN_CACHE_SIZE = getIntPropertyWithDefault("ngafid.max.terrain.cache.size", 384);
 
         NGAFID_USE_MARIA_DB = getBooleanPropertyWithDefault("ngafid.use.maria.db", false);
         NGAFID_EMAIL_ENABLED = getBooleanPropertyWithDefault("ngafid.email.enabled", false);
         DISABLE_PERSISTENT_SESSIONS = getBooleanPropertyWithDefault("ngafid.disable.persistent.sessions", false);
-        MEMORY_EFFICIENT_UPLOAD_PROCESSOR = getBooleanPropertyWithDefault(
-                "ngafid.memory.efficient.upload.processor",
-                true);
+        MEMORY_EFFICIENT_UPLOAD_PROCESSOR =
+                getBooleanPropertyWithDefault("ngafid.memory.efficient.upload.processor", true);
 
         AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
         RUNWAYS_FILE = getStringProperty("ngafid.runways.file");
@@ -63,29 +63,26 @@ public final class Config {
         LOG_PROPERTIES_FILE = getStringProperty("ngafid.log.properties.file");
     }
 
-    private Config() {
-    }
+    private Config() {}
 
     private static void loadProperties() {
         // Check for custom properties file first
         String customPropertiesFile = System.getProperty("ngafid.config.file");
         if (customPropertiesFile != null) {
-            try (InputStream input = Config.class.getClassLoader()
-                    .getResourceAsStream(customPropertiesFile)) {
+            try (InputStream input = Config.class.getClassLoader().getResourceAsStream(customPropertiesFile)) {
                 if (input != null) {
                     PROPERTIES.load(input);
                     System.out.println("Loaded configuration from " + customPropertiesFile);
                     return;
                 }
             } catch (IOException e) {
-                System.err.println("Error loading custom properties file " + customPropertiesFile
-                        + ": " + e.getMessage());
+                System.err.println(
+                        "Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
             }
         }
 
         // Load the unified properties file
-        try (InputStream input = Config.class.getClassLoader()
-                .getResourceAsStream(PROPERTIES_FILE)) {
+        try (InputStream input = Config.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
             if (input != null) {
                 PROPERTIES.load(input);
                 System.out.println("Loaded unified configuration from " + PROPERTIES_FILE);
@@ -134,7 +131,6 @@ public final class Config {
         System.err.println("2. Set the system property: -D" + propertyKey + "=<value>");
         throw new RuntimeException("Configuration value not found for '" + propertyKey + "'");
     }
-
 
     // Public methods for property-based configuration
     public static String getProperty(String key) {

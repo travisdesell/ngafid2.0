@@ -1,5 +1,11 @@
 package org.ngafid.core.kafka;
 
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -9,13 +15,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
 import org.ngafid.core.util.filters.Pair;
-
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * Utility base class for kafka consumer main classes.
@@ -71,9 +70,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
             var retry = result.retry[i];
 
             offsets.put(
-                    new TopicPartition(record.topic(), record.partition()),
-                    new OffsetAndMetadata(record.offset() + 1)
-            );
+                    new TopicPartition(record.topic(), record.partition()), new OffsetAndMetadata(record.offset() + 1));
 
             if (retry) {
                 if (record.topic().equals(getTopicName())) {
@@ -111,8 +108,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
                 }
 
                 var result = resultQueue.poll(resultQueueWaitTimeMS, TimeUnit.MILLISECONDS);
-                if (result == null)
-                    continue;
+                if (result == null) continue;
 
                 commit(result);
             }
@@ -124,8 +120,7 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
         }
     }
 
-    protected void preProcess(ConsumerRecords<K, V> records) {
-    }
+    protected void preProcess(ConsumerRecords<K, V> records) {}
 
     protected abstract String getTopicName();
 
@@ -145,12 +140,10 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
      */
     protected abstract Pair<ConsumerRecord<K, V>, Boolean> process(ConsumerRecord<K, V> record);
 
-    protected record RecordsResult<K, V>(@NotNull List<ConsumerRecord<K, V>> records, boolean[] retry) {
-    }
+    protected record RecordsResult<K, V>(@NotNull List<ConsumerRecord<K, V>> records, boolean[] retry) {}
 
     protected final class Worker implements Runnable {
-        private Worker() {
-        }
+        private Worker() {}
 
         @Override
         public void run() {
@@ -165,8 +158,8 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
 
                     preProcess(records);
                     for (var record : records) {
-                        LOG.info("Record: " + record.topic() + ": " + record.partition() + ": "
-                                + record.offset() + ": " + record.value());
+                        LOG.info("Record: " + record.topic() + ": " + record.partition() + ": " + record.offset() + ": "
+                                + record.value());
                         var result = process(record);
                         recordList.add(result.first());
                         retry[i++] = result.second();

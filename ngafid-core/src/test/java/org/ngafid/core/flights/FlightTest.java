@@ -1,10 +1,6 @@
 package org.ngafid.core.flights;
 
-import org.junit.jupiter.api.*;
-import org.ngafid.core.TestWithConnection;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.filters.Filter;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -19,8 +15,11 @@ import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import org.ngafid.core.TestWithConnection;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.filters.Filter;
 
 /**
  * Test class for Flight class
@@ -29,20 +28,20 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FlightTest extends TestWithConnection {
     // Helper methods for test setup
     private void createTestAirframeIfNotExists() throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM airframes WHERE airframe = 'Test Cessna 172S'")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT COUNT(*) FROM airframes WHERE airframe = 'Test Cessna 172S'")) {
             try (var rs = stmt.executeQuery()) {
                 if (rs.next() && rs.getInt(1) == 0) {
-                    try (PreparedStatement typeStmt = connection.prepareStatement(
-                            "INSERT INTO airframe_types (name) VALUES ('Fixed Wing') " +
-                                    "ON DUPLICATE KEY UPDATE name = name")) {
+                    try (PreparedStatement typeStmt =
+                            connection.prepareStatement("INSERT INTO airframe_types (name) VALUES ('Fixed Wing') "
+                                    + "ON DUPLICATE KEY UPDATE name = name")) {
                         typeStmt.executeUpdate();
                     }
 
                     try (PreparedStatement airframeStmt = connection.prepareStatement(
-                            "INSERT INTO airframes (airframe, type_id) VALUES ('Test Cessna 172S', " +
-                                    "(SELECT id FROM airframe_types WHERE name = 'Fixed Wing' LIMIT 1)) " +
-                                    "ON DUPLICATE KEY UPDATE airframe = airframe")) {
+                            "INSERT INTO airframes (airframe, type_id) VALUES ('Test Cessna 172S', "
+                                    + "(SELECT id FROM airframe_types WHERE name = 'Fixed Wing' LIMIT 1)) "
+                                    + "ON DUPLICATE KEY UPDATE airframe = airframe")) {
                         airframeStmt.executeUpdate();
                     }
                 }
@@ -51,22 +50,20 @@ public class FlightTest extends TestWithConnection {
     }
 
     private void createTestUploadIfNotExists() throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM uploads WHERE id = 999")) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM uploads WHERE id = 999")) {
             try (var rs = stmt.executeQuery()) {
                 if (rs.next() && rs.getInt(1) == 0) {
                     try (PreparedStatement uploadStmt = connection.prepareStatement(
-                            "INSERT INTO uploads (id, fleet_id, uploader_id, filename, identifier, status," +
-                                    " number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes)" +
-                                    " VALUES (999, 1, 1, 'test_upload.csv', 'test_identifier', 'PROCESSED_OK', 1, 1," +
-                                    " '1', 'test_md5_hash', 1024) ON DUPLICATE KEY UPDATE id = id")) {
+                            "INSERT INTO uploads (id, fleet_id, uploader_id, filename, identifier, status,"
+                                    + " number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes)"
+                                    + " VALUES (999, 1, 1, 'test_upload.csv', 'test_identifier', 'PROCESSED_OK', 1, 1,"
+                                    + " '1', 'test_md5_hash', 1024) ON DUPLICATE KEY UPDATE id = id")) {
                         uploadStmt.executeUpdate();
                     }
                 }
             }
         }
     }
-
 
     @Test
     @Order(1)
@@ -121,13 +118,8 @@ public class FlightTest extends TestWithConnection {
     @Order(6)
     @DisplayName("Should get flights within date range from airport")
     public void testGetFlightsWithinDateRangeFromAirport() throws SQLException {
-        List<Flight> flights = Flight.getFlightsWithinDateRangeFromAirport(
-                connection,
-                "2023-01-01",
-                "2023-01-31",
-                "KJFK",
-                10
-        );
+        List<Flight> flights =
+                Flight.getFlightsWithinDateRangeFromAirport(connection, "2023-01-01", "2023-01-31", "KJFK", 10);
 
         assertNotNull(flights);
         assertTrue(flights.size() >= 0);
@@ -355,7 +347,6 @@ public class FlightTest extends TestWithConnection {
     @DisplayName("Should handle batch update database with flight that has generated keys")
     public void testBatchUpdateDatabaseWithGeneratedKeys() throws SQLException, IOException {
 
-
         ArrayList<Flight> flights = new ArrayList<>();
 
         Flight.batchUpdateDatabase(connection, flights);
@@ -378,10 +369,11 @@ public class FlightTest extends TestWithConnection {
 
             assertTrue(true, "Batch update completed successfully");
         } catch (SQLException e) {
-            assertTrue(e.getMessage().contains("Unique index") ||
-                      e.getMessage().contains("duplicate") ||
-                      e.getMessage().contains("constraint"),
-                "Expected constraint violation error: " + e.getMessage());
+            assertTrue(
+                    e.getMessage().contains("Unique index")
+                            || e.getMessage().contains("duplicate")
+                            || e.getMessage().contains("constraint"),
+                    "Expected constraint violation error: " + e.getMessage());
         }
     }
 
@@ -394,18 +386,17 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(existingFlights);
         assertTrue(existingFlights.size() > 0, "Should have at least one flight in test data");
 
-
         try {
 
             Flight.batchUpdateDatabase(connection, existingFlights);
 
-
             assertTrue(true, "Batch update completed successfully");
         } catch (SQLException e) {
-            assertTrue(e.getMessage().contains("Unique index") ||
-                      e.getMessage().contains("duplicate") ||
-                      e.getMessage().contains("constraint"),
-                "Expected constraint violation error: " + e.getMessage());
+            assertTrue(
+                    e.getMessage().contains("Unique index")
+                            || e.getMessage().contains("duplicate")
+                            || e.getMessage().contains("constraint"),
+                    "Expected constraint violation error: " + e.getMessage());
         }
     }
 
@@ -653,7 +644,6 @@ public class FlightTest extends TestWithConnection {
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
         List<Itinerary> itinerary = new ArrayList<>();
 
-
         Itinerary itineraryItem = new Itinerary("KORD", "09L", 100, 1500.0, 0.5, 0.2, 120.0, 2500.0);
         itineraryItem.selectBestRunway(); // This sets the runway field from runwayCounts
         itineraryItem.setType("landing");
@@ -666,9 +656,7 @@ public class FlightTest extends TestWithConnection {
         List<Flight> flights = new ArrayList<>();
         flights.add(testFlight);
 
-
         Flight.batchUpdateDatabase(connection, flights);
-
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
 
@@ -758,14 +746,8 @@ public class FlightTest extends TestWithConnection {
         meta1.setStartDateTime(OffsetDateTime.now().minusHours(2));
         meta1.setEndDateTime(OffsetDateTime.now().minusHours(1));
 
-        Flight flight1 = new Flight(
-                meta1,
-                new HashMap<>(),
-                new HashMap<>(),
-                null,
-                new ArrayList<>(),
-                new ArrayList<>()
-        );
+        Flight flight1 =
+                new Flight(meta1, new HashMap<>(), new HashMap<>(), null, new ArrayList<>(), new ArrayList<>());
         flights.add(flight1);
 
         // Flight 2: Single itinerary
@@ -787,16 +769,9 @@ public class FlightTest extends TestWithConnection {
         item2.setType("landing");
         itinerary2.add(item2);
 
-        Flight flight2 = new Flight(
-                meta2,
-                new HashMap<>(),
-                new HashMap<>(),
-                itinerary2,
-                new ArrayList<>(),
-                new ArrayList<>()
-        );
+        Flight flight2 =
+                new Flight(meta2, new HashMap<>(), new HashMap<>(), itinerary2, new ArrayList<>(), new ArrayList<>());
         flights.add(flight2);
-
 
         Flight.batchUpdateDatabase(connection, flights);
 
@@ -836,17 +811,11 @@ public class FlightTest extends TestWithConnection {
         List<org.ngafid.core.event.Event> events = new ArrayList<>();
 
         org.ngafid.core.event.Event event1 = new org.ngafid.core.event.Event(
-            OffsetDateTime.now().minusMinutes(30),
-            OffsetDateTime.now().minusMinutes(25),
-            100, 150, 1, 0.8
-        );
+                OffsetDateTime.now().minusMinutes(30), OffsetDateTime.now().minusMinutes(25), 100, 150, 1, 0.8);
         events.add(event1);
 
         org.ngafid.core.event.Event event2 = new org.ngafid.core.event.Event(
-            OffsetDateTime.now().minusMinutes(20),
-            OffsetDateTime.now().minusMinutes(15),
-            200, 250, 2, 0.6
-        );
+                OffsetDateTime.now().minusMinutes(20), OffsetDateTime.now().minusMinutes(15), 200, 250, 2, 0.6);
         events.add(event2);
 
         Flight testFlight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
@@ -857,8 +826,7 @@ public class FlightTest extends TestWithConnection {
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM events WHERE flight_id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM events WHERE flight_id = ?")) {
             stmt.setInt(1, testFlight.getId());
             try (var rs = stmt.executeQuery()) {
                 assertTrue(rs.next(), "Should have at least one event record");
@@ -893,11 +861,9 @@ public class FlightTest extends TestWithConnection {
         List<MalformedFlightFileException> exceptions = new ArrayList<>();
         List<org.ngafid.core.event.Event> events = new ArrayList<>();
 
-
         double[] values = {1.0, 2.0, 3.0, 4.0, 5.0};
         DoubleTimeSeries dts = new DoubleTimeSeries("TestDoubleParam", "DOUBLE", values, values.length);
         doubleTimeSeries.put("TestDoubleParam", dts);
-
 
         StringTimeSeries stringTS = new StringTimeSeries("TestStringParam", "STRING");
         stringTS.add("Value1");
@@ -923,19 +889,15 @@ public class FlightTest extends TestWithConnection {
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
 
-        StringTimeSeries retrievedStringTS = StringTimeSeries.getStringTimeSeries(
-                connection,
-                testFlight.getId(),
-                "TestStringParam"
-        );
+        StringTimeSeries retrievedStringTS =
+                StringTimeSeries.getStringTimeSeries(connection, testFlight.getId(), "TestStringParam");
         assertNotNull(retrievedStringTS, "String time series should be retrievable from database");
         assertEquals("TestStringParam", retrievedStringTS.getName(), "String time series name should match");
         assertEquals(5, retrievedStringTS.size(), "String time series should have 5 values");
         assertEquals(
                 4,
                 retrievedStringTS.validCount(),
-                "String time series should have 4 valid values (excluding empty string)"
-        );
+                "String time series should have 4 valid values (excluding empty string)");
 
         assertEquals("Value1", retrievedStringTS.get(0), "First value should match");
         assertEquals("Value2", retrievedStringTS.get(1), "Second value should match");
@@ -943,19 +905,15 @@ public class FlightTest extends TestWithConnection {
         assertEquals("", retrievedStringTS.get(3), "Fourth value should be empty");
         assertEquals("Value5", retrievedStringTS.get(4), "Fifth value should match");
 
-        StringTimeSeries retrievedStringTS2 = StringTimeSeries.getStringTimeSeries(
-                connection,
-                testFlight.getId(),
-                "TestStringParam2"
-        );
+        StringTimeSeries retrievedStringTS2 =
+                StringTimeSeries.getStringTimeSeries(connection, testFlight.getId(), "TestStringParam2");
         assertNotNull(retrievedStringTS2, "Second string time series should be retrievable from database");
         assertEquals("TestStringParam2", retrievedStringTS2.getName(), "Second string time series name should match");
         assertEquals(5, retrievedStringTS2.size(), "Second string time series should have 5 values");
         assertEquals(
                 4,
                 retrievedStringTS2.validCount(),
-                "Second string time series should have 4 valid values (excluding empty string)"
-        );
+                "Second string time series should have 4 valid values (excluding empty string)");
     }
 
     @Test
@@ -997,8 +955,8 @@ public class FlightTest extends TestWithConnection {
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM flight_warnings WHERE flight_id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT COUNT(*) FROM flight_warnings WHERE flight_id = ?")) {
             stmt.setInt(1, testFlight.getId());
             try (var rs = stmt.executeQuery()) {
                 assertTrue(rs.next(), "Should have at least one warning record");
@@ -1007,10 +965,9 @@ public class FlightTest extends TestWithConnection {
             }
         }
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT fm.message FROM flight_warnings fw "
-                        + "JOIN flight_messages fm ON fw.message_id = fm.id "
-                        + "WHERE fw.flight_id = ? ORDER BY fm.message")) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT fm.message FROM flight_warnings fw "
+                + "JOIN flight_messages fm ON fw.message_id = fm.id "
+                + "WHERE fw.flight_id = ? ORDER BY fm.message")) {
             stmt.setInt(1, testFlight.getId());
             try (var rs = stmt.executeQuery()) {
                 List<String> messages = new ArrayList<>();
@@ -1051,29 +1008,23 @@ public class FlightTest extends TestWithConnection {
 
         OffsetDateTime startTime1 = OffsetDateTime.now().minusMinutes(10);
         OffsetDateTime endTime1 = OffsetDateTime.now().minusMinutes(9);
-        org.ngafid.core.event.Event event1 = new org.ngafid.core.event.Event(
-            startTime1, endTime1, 100, 200, 1, 0.5
-        );
+        org.ngafid.core.event.Event event1 = new org.ngafid.core.event.Event(startTime1, endTime1, 100, 200, 1, 0.5);
         events.add(event1);
 
         OffsetDateTime startTime2 = OffsetDateTime.now().minusMinutes(5);
         OffsetDateTime endTime2 = OffsetDateTime.now().minusMinutes(4);
-        org.ngafid.core.event.Event event2 = new org.ngafid.core.event.Event(
-            startTime2, endTime2, 300, 400, 2, 0.8
-        );
+        org.ngafid.core.event.Event event2 = new org.ngafid.core.event.Event(startTime2, endTime2, 300, 400, 2, 0.8);
         events.add(event2);
 
         Flight testFlight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
         List<Flight> flights = new ArrayList<>();
         flights.add(testFlight);
 
-
         Flight.batchUpdateDatabase(connection, flights);
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM events WHERE flight_id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM events WHERE flight_id = ?")) {
             stmt.setInt(1, testFlight.getId());
             try (var rs = stmt.executeQuery()) {
                 assertTrue(rs.next(), "Should have at least one event record");
@@ -1082,8 +1033,8 @@ public class FlightTest extends TestWithConnection {
             }
         }
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM events WHERE flight_id = ? ORDER BY flight_id")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT flight_id FROM events WHERE flight_id = ? ORDER BY flight_id")) {
             stmt.setInt(1, testFlight.getId());
             try (var rs = stmt.executeQuery()) {
                 int count = 0;
@@ -1139,14 +1090,8 @@ public class FlightTest extends TestWithConnection {
         invalidMeta.setStartDateTime(OffsetDateTime.now().minusHours(1));
         invalidMeta.setEndDateTime(OffsetDateTime.now());
 
-        Flight invalidFlight = new Flight(
-                invalidMeta,
-                doubleTimeSeries,
-                stringTimeSeries,
-                itinerary,
-                exceptions,
-                events
-        );
+        Flight invalidFlight =
+                new Flight(invalidMeta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
         List<Flight> invalidFlights = new ArrayList<>();
         invalidFlights.add(invalidFlight);
 
@@ -1158,11 +1103,12 @@ public class FlightTest extends TestWithConnection {
             System.out.println("Test completed: Invalid airframe was handled gracefully by the database");
         } catch (SQLException e) {
             // If an exception is thrown, verify it's a reasonable database error
-            assertTrue(e.getMessage().contains("Failed to retrieve generated id") ||
-                      e.getMessage().contains("foreign key") ||
-                      e.getMessage().contains("constraint") ||
-                      e.getMessage().contains("airframe"),
-                      "Exception should contain expected message pattern: " + e.getMessage());
+            assertTrue(
+                    e.getMessage().contains("Failed to retrieve generated id")
+                            || e.getMessage().contains("foreign key")
+                            || e.getMessage().contains("constraint")
+                            || e.getMessage().contains("airframe"),
+                    "Exception should contain expected message pattern: " + e.getMessage());
         }
     }
 
@@ -1172,7 +1118,6 @@ public class FlightTest extends TestWithConnection {
     public void testBatchUpdateDatabaseWithFailedGeneratedKeysRsNextFalse() throws SQLException, IOException {
         createTestAirframeIfNotExists();
         createTestUploadIfNotExists();
-
 
         // We'll create a test that attempts to trigger this condition by using
         // a scenario that might cause the database to not return generated keys
@@ -1198,21 +1143,17 @@ public class FlightTest extends TestWithConnection {
         List<Flight> flights = new ArrayList<>();
         flights.add(testFlight);
 
-
         try {
             Flight.batchUpdateDatabase(connection, flights);
             System.out.println(
-                    "Test completed without triggering the specific 'Failed to retrieve generated id' "
-                            + "exception"
-            );
-            System.out.println(
-                    "This is expected since the rs.next() == false scenario is very difficult to reproduce"
-            );
+                    "Test completed without triggering the specific 'Failed to retrieve generated id' " + "exception");
+            System.out.println("This is expected since the rs.next() == false scenario is very difficult to reproduce");
         } catch (SQLException e) {
             // If we do get an exception, verify it contains the expected message
             if (e.getMessage().contains("Failed to retrieve generated id")) {
-                assertTrue(e.getMessage().contains("Failed to retrieve generated id for flight"),
-                          "Exception should contain the exact expected message: " + e.getMessage());
+                assertTrue(
+                        e.getMessage().contains("Failed to retrieve generated id for flight"),
+                        "Exception should contain the exact expected message: " + e.getMessage());
                 System.out.println("Successfully triggered the 'Failed to retrieve generated id' exception!");
             } else {
 
@@ -1254,8 +1195,10 @@ public class FlightTest extends TestWithConnection {
             Flight.batchUpdateDatabase(null, flights);
             fail("Expected SQLException or NullPointerException to be thrown");
         } catch (Exception e) {
-            assertTrue(e instanceof SQLException || e instanceof NullPointerException,
-                      "Expected SQLException or NullPointerException, got: " + e.getClass().getSimpleName());
+            assertTrue(
+                    e instanceof SQLException || e instanceof NullPointerException,
+                    "Expected SQLException or NullPointerException, got: "
+                            + e.getClass().getSimpleName());
         }
     }
 
@@ -1288,7 +1231,6 @@ public class FlightTest extends TestWithConnection {
 
         Flight testFlight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
 
-
         try {
             java.lang.reflect.Field startDateTimeField = Flight.class.getDeclaredField("startDateTime");
             startDateTimeField.setAccessible(true);
@@ -1304,13 +1246,11 @@ public class FlightTest extends TestWithConnection {
         List<Flight> flights = new ArrayList<>();
         flights.add(testFlight);
 
-
         Flight.batchUpdateDatabase(connection, flights);
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM flights WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM flights WHERE id = ?")) {
             stmt.setInt(1, testFlight.getId());
             try (var rs = stmt.executeQuery()) {
                 assertTrue(rs.next(), "Should have at least one flight record");
@@ -1323,8 +1263,11 @@ public class FlightTest extends TestWithConnection {
     @Test
     @Order(39)
     @DisplayName("Should test createPreparedStatement method to cover the private method")
-    public void testCreatePreparedStatement() throws SQLException, NoSuchMethodException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
-        java.lang.reflect.Method createPreparedStatementMethod = Flight.class.getDeclaredMethod("createPreparedStatement", java.sql.Connection.class);
+    public void testCreatePreparedStatement()
+            throws SQLException, NoSuchMethodException, IllegalAccessException,
+                    java.lang.reflect.InvocationTargetException {
+        java.lang.reflect.Method createPreparedStatementMethod =
+                Flight.class.getDeclaredMethod("createPreparedStatement", java.sql.Connection.class);
         createPreparedStatementMethod.setAccessible(true);
 
         PreparedStatement stmt = (PreparedStatement) createPreparedStatementMethod.invoke(null, connection);
@@ -1356,13 +1299,7 @@ public class FlightTest extends TestWithConnection {
         meta.setEndDateTime(OffsetDateTime.now().minusHours(1));
 
         Flight testFlight = new Flight(
-                meta,
-                new HashMap<>(),
-                new HashMap<>(),
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new ArrayList<>()
-        );
+                meta, new HashMap<>(), new HashMap<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 
         Flight.batchUpdateDatabase(connection, List.of(testFlight));
 
@@ -1385,10 +1322,10 @@ public class FlightTest extends TestWithConnection {
             insertStmt.executeUpdate();
         }
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT id FROM event_definitions WHERE name LIKE 'Test Event%' "
-                        + "ORDER BY id DESC LIMIT 2");
-             ResultSet rs = stmt.executeQuery()) {
+        try (PreparedStatement stmt =
+                        connection.prepareStatement("SELECT id FROM event_definitions WHERE name LIKE 'Test Event%' "
+                                + "ORDER BY id DESC LIMIT 2");
+                ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 eventDefIds.add(rs.getInt(1));
@@ -1403,28 +1340,21 @@ public class FlightTest extends TestWithConnection {
             filterInputs.add("0");
             Filter mockFilter = new Filter(filterInputs);
 
-            EventDefinition eventDef = new EventDefinition(
-                    1,
-                    "Test Event",
-                    0,
-                    0,
-                    1,
-                    mockFilter,
-                    new TreeSet<>(),
-                    EventDefinition.SeverityType.MAX
-            ) {
-                @Override
-                public int getId() {
-                    return id;
-                }
-            };
+            EventDefinition eventDef =
+                    new EventDefinition(
+                            1, "Test Event", 0, 0, 1, mockFilter, new TreeSet<>(), EventDefinition.SeverityType.MAX) {
+                        @Override
+                        public int getId() {
+                            return id;
+                        }
+                    };
             eventDefinitions.add(eventDef);
         }
 
         testFlight.insertComputedEvents(connection, eventDefinitions);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM flight_processed WHERE flight_id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT COUNT(*) FROM flight_processed WHERE flight_id = ?")) {
             stmt.setInt(1, testFlight.getId());
             try (ResultSet rs = stmt.executeQuery()) {
                 assertTrue(rs.next(), "Should have at least one result");
@@ -1433,8 +1363,8 @@ public class FlightTest extends TestWithConnection {
             }
         }
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT fleet_id, flight_id, event_definition_id FROM flight_processed "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT fleet_id, flight_id, event_definition_id FROM flight_processed "
                         + "WHERE flight_id = ? ORDER BY event_definition_id")) {
             stmt.setInt(1, testFlight.getId());
             try (ResultSet rs = stmt.executeQuery()) {
@@ -1450,13 +1380,13 @@ public class FlightTest extends TestWithConnection {
                 assertEquals(eventDefinitions.size(), index, "Should have processed all event definitions");
 
                 for (EventDefinition eventDef : eventDefinitions) {
-                    assertTrue(foundEventDefIds.contains(eventDef.getId()),
-                        "Event definition ID " + eventDef.getId() + " should be found in the database");
+                    assertTrue(
+                            foundEventDefIds.contains(eventDef.getId()),
+                            "Event definition ID " + eventDef.getId() + " should be found in the database");
                 }
             }
         }
     }
-
 
     @Test
     @Order(41)
@@ -1489,7 +1419,6 @@ public class FlightTest extends TestWithConnection {
             Flight.getFlightsFromUpload(null, 999);
         });
     }
-
 
     @Test
     @Order(45)
@@ -2019,8 +1948,7 @@ public class FlightTest extends TestWithConnection {
         createTestTailIfNotExists(flightId);
 
         // First, check if the flight already exists
-        try (PreparedStatement checkStmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM flights WHERE id = ?")) {
+        try (PreparedStatement checkStmt = connection.prepareStatement("SELECT COUNT(*) FROM flights WHERE id = ?")) {
             checkStmt.setInt(1, flightId);
             try (ResultSet rs = checkStmt.executeQuery()) {
                 if (rs.next() && rs.getInt(1) > 0) {
@@ -2032,8 +1960,7 @@ public class FlightTest extends TestWithConnection {
         }
 
         // Debug: Check if dependencies exist
-        try (PreparedStatement debugStmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM airframes")) {
+        try (PreparedStatement debugStmt = connection.prepareStatement("SELECT COUNT(*) FROM airframes")) {
             try (ResultSet rs = debugStmt.executeQuery()) {
                 if (rs.next()) {
                     int airframeCount = rs.getInt(1);
@@ -2043,8 +1970,7 @@ public class FlightTest extends TestWithConnection {
                 }
             }
         }
-        try (PreparedStatement debugStmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM uploads WHERE id = 999")) {
+        try (PreparedStatement debugStmt = connection.prepareStatement("SELECT COUNT(*) FROM uploads WHERE id = 999")) {
             try (ResultSet rs = debugStmt.executeQuery()) {
                 if (rs.next()) {
                     int uploadCount = rs.getInt(1);
@@ -2057,8 +1983,7 @@ public class FlightTest extends TestWithConnection {
 
         // Get the airframe ID
         int airframeId = 1; // Default to 1
-        try (PreparedStatement airframeStmt = connection.prepareStatement(
-                "SELECT id FROM airframes LIMIT 1")) {
+        try (PreparedStatement airframeStmt = connection.prepareStatement("SELECT id FROM airframes LIMIT 1")) {
             try (ResultSet rs = airframeStmt.executeQuery()) {
                 if (rs.next()) {
                     airframeId = rs.getInt(1);
@@ -2103,8 +2028,8 @@ public class FlightTest extends TestWithConnection {
         String systemId = "TEST_SYSTEM_" + flightId;
 
         // Check if tail already exists
-        try (PreparedStatement checkStmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM tails WHERE fleet_id = ? AND system_id = ?")) {
+        try (PreparedStatement checkStmt =
+                connection.prepareStatement("SELECT COUNT(*) FROM tails WHERE fleet_id = ? AND system_id = ?")) {
             checkStmt.setInt(1, 1);
             checkStmt.setString(2, systemId);
             try (ResultSet rs = checkStmt.executeQuery()) {
@@ -2160,19 +2085,27 @@ public class FlightTest extends TestWithConnection {
 
         insertDataTypeNames(connection);
 
-
         insertTimeSeriesDataWithSameMinMax(connection, flightId);
     }
 
     private void insertSeriesNames(Connection connection) throws SQLException {
         String[] seriesNames = {
-            "Altitude", "Airspeed", "VerticalSpeed", "Heading", "Bank", "Pitch",
-            "AirportDistance", "RunwayDistance", "EngineRPM", "FuelFlow", "ConstantValue"
+            "Altitude",
+            "Airspeed",
+            "VerticalSpeed",
+            "Heading",
+            "Bank",
+            "Pitch",
+            "AirportDistance",
+            "RunwayDistance",
+            "EngineRPM",
+            "FuelFlow",
+            "ConstantValue"
         };
 
         for (String name : seriesNames) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO double_series_names (name) VALUES (?)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("INSERT INTO double_series_names (name) VALUES (?)")) {
                 stmt.setString(1, name);
                 try {
                     stmt.executeUpdate();
@@ -2187,8 +2120,8 @@ public class FlightTest extends TestWithConnection {
         String[] dataTypes = {"double", "float", "int"};
 
         for (String type : dataTypes) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO data_type_names (name) VALUES (?)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("INSERT INTO data_type_names (name) VALUES (?)")) {
                 stmt.setString(1, type);
                 try {
                     stmt.executeUpdate();
@@ -2203,7 +2136,6 @@ public class FlightTest extends TestWithConnection {
         // Get name and type IDs
         Map<String, Integer> nameIds = getSeriesNameIds(connection);
         Map<String, Integer> typeIds = getDataTypeIds(connection);
-
 
         // The writeToFile method skips the first 2 minutes (119 seconds), so we need at least 200 data points
         int dataPoints = 200;
@@ -2231,7 +2163,6 @@ public class FlightTest extends TestWithConnection {
 
         int dataPoints = 200;
 
-
         String[][] testSeries = {
             {"Altitude", "double", generateDataPoints(dataPoints, 1000, 5000)},
             {"Airspeed", "double", generateDataPoints(dataPoints, 120, 160)},
@@ -2250,9 +2181,7 @@ public class FlightTest extends TestWithConnection {
         Map<String, Integer> nameIds = getSeriesNameIds(connection);
         Map<String, Integer> typeIds = getDataTypeIds(connection);
 
-
         int dataPoints = 200;
-
 
         String[][] testSeries = {
             {"Altitude", "double", generateDataPoints(dataPoints, 1000, 5000)},
@@ -2291,8 +2220,8 @@ public class FlightTest extends TestWithConnection {
             String dataType,
             String dataValues,
             Map<String, Integer> nameIds,
-            Map<String, Integer> typeIds
-    ) throws SQLException {
+            Map<String, Integer> typeIds)
+            throws SQLException {
         Integer nameId = nameIds.get(name);
         Integer typeId = typeIds.get(dataType);
 
@@ -2314,8 +2243,8 @@ public class FlightTest extends TestWithConnection {
             double avg = sum / data.length;
 
             // Insert into double_series table
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO double_series (flight_id, name_id, data_type_id, length, "
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, "
                             + "valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, flightId);
                 stmt.setInt(2, nameId);
@@ -2339,7 +2268,7 @@ public class FlightTest extends TestWithConnection {
     private Map<String, Integer> getSeriesNameIds(Connection connection) throws SQLException {
         Map<String, Integer> nameIds = new HashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM double_series_names");
-             ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 nameIds.put(rs.getString("name"), rs.getInt("id"));
             }
@@ -2350,7 +2279,7 @@ public class FlightTest extends TestWithConnection {
     private Map<String, Integer> getDataTypeIds(Connection connection) throws SQLException {
         Map<String, Integer> typeIds = new HashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM data_type_names");
-             ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 typeIds.put(rs.getString("name"), rs.getInt("id"));
             }
@@ -2366,10 +2295,8 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
-
     private int getTestUploadId() throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT id FROM uploads WHERE id = 999")) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT id FROM uploads WHERE id = 999")) {
             try (var rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1);
@@ -2488,7 +2415,6 @@ public class FlightTest extends TestWithConnection {
         // Create a tag with identical values (no changes)
         FlightTag unchangedTag = new FlightTag(tagId, 1, uniqueName, "TestDescription", "green");
 
-
         FlightTag result = Flight.editTag(connection, unchangedTag);
 
         assertNull(result, "Result should be null when no changes are made");
@@ -2525,7 +2451,6 @@ public class FlightTest extends TestWithConnection {
         assertEquals("OriginalDescription", dbTag.getDescription(), "Database should remain unchanged for description");
         assertEquals("blue", dbTag.getColor(), "Database should reflect color change");
     }
-
 
     @Test
     @Order(77)
@@ -2875,7 +2800,9 @@ public class FlightTest extends TestWithConnection {
         String tagName3 = "TestTag3_" + System.currentTimeMillis();
 
         // Insert tags directly into database
-        try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)", java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, 1);
             stmt.setString(2, tagName1);
             stmt.setString(3, "Description1");
@@ -2898,18 +2825,16 @@ public class FlightTest extends TestWithConnection {
 
         // Filter for only the tags we created in this test
         List<FlightTag> ourTags = unassociatedTags.stream()
-                .filter(tag -> tag.getName().equals(tagName1) ||
-                             tag.getName().equals(tagName2) ||
-                             tag.getName().equals(tagName3))
+                .filter(tag -> tag.getName().equals(tagName1)
+                        || tag.getName().equals(tagName2)
+                        || tag.getName().equals(tagName3))
                 .collect(Collectors.toList());
 
         // Verify we get our 3 tags
         assertEquals(3, ourTags.size(), "Should return our 3 tags when flight has no associated tags");
 
         // Verify the tags are the ones we created
-        Set<String> tagNames = ourTags.stream()
-                .map(FlightTag::getName)
-                .collect(Collectors.toSet());
+        Set<String> tagNames = ourTags.stream().map(FlightTag::getName).collect(Collectors.toSet());
         assertTrue(tagNames.contains(tagName1), "Should contain tag1");
         assertTrue(tagNames.contains(tagName2), "Should contain tag2");
         assertTrue(tagNames.contains(tagName3), "Should contain tag3");
@@ -2924,22 +2849,10 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 998);
 
         // Create test tags - these will be automatically associated with the flight
-        FlightTag tag1 = Flight.createTag(
-                1,
-                998,
-                "TestTag1_" + System.currentTimeMillis(),
-                "Description1",
-                "red",
-                connection
-        );
-        FlightTag tag2 = Flight.createTag(
-                1,
-                998,
-                "TestTag2_" + System.currentTimeMillis(),
-                "Description2",
-                "blue",
-                connection
-        );
+        FlightTag tag1 =
+                Flight.createTag(1, 998, "TestTag1_" + System.currentTimeMillis(), "Description1", "red", connection);
+        FlightTag tag2 =
+                Flight.createTag(1, 998, "TestTag2_" + System.currentTimeMillis(), "Description2", "blue", connection);
 
         // Create additional tags that are NOT associated with the flight
         // We need to create these manually to avoid automatic association
@@ -2948,25 +2861,23 @@ public class FlightTest extends TestWithConnection {
 
         // Insert tags manually without association
         try (java.sql.Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate(
-                    "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES (1, '"
-                            + tag3Name + "', 'Description3', 'green')"
-            );
-            stmt.executeUpdate(
-                    "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES (1, '"
-                            + tag4Name + "', 'Description4', 'yellow')"
-            );
+            stmt.executeUpdate("INSERT INTO flight_tags (fleet_id, name, description, color) VALUES (1, '" + tag3Name
+                    + "', 'Description3', 'green')");
+            stmt.executeUpdate("INSERT INTO flight_tags (fleet_id, name, description, color) VALUES (1, '" + tag4Name
+                    + "', 'Description4', 'yellow')");
         }
 
         // Get the tag IDs for the manually created tags
         int tag3Id, tag4Id;
         try (java.sql.Statement stmt = connection.createStatement();
-             java.sql.ResultSet rs = stmt.executeQuery("SELECT id FROM flight_tags WHERE name = '" + tag3Name + "'")) {
+                java.sql.ResultSet rs =
+                        stmt.executeQuery("SELECT id FROM flight_tags WHERE name = '" + tag3Name + "'")) {
             rs.next();
             tag3Id = rs.getInt(1);
         }
         try (java.sql.Statement stmt = connection.createStatement();
-             java.sql.ResultSet rs = stmt.executeQuery("SELECT id FROM flight_tags WHERE name = '" + tag4Name + "'")) {
+                java.sql.ResultSet rs =
+                        stmt.executeQuery("SELECT id FROM flight_tags WHERE name = '" + tag4Name + "'")) {
             rs.next();
             tag4Id = rs.getInt(1);
         }
@@ -2976,17 +2887,14 @@ public class FlightTest extends TestWithConnection {
 
         // Filter for only the tags we created in this test
         List<FlightTag> ourTags = unassociatedTags.stream()
-                .filter(tag -> tag.getName().equals(tag3Name) ||
-                             tag.getName().equals(tag4Name))
+                .filter(tag -> tag.getName().equals(tag3Name) || tag.getName().equals(tag4Name))
                 .collect(Collectors.toList());
 
         // Verify we get only the unassociated tags
         assertEquals(2, ourTags.size(), "Should return only our unassociated tags");
 
         // Verify the tags are the unassociated ones
-        Set<String> tagNames = ourTags.stream()
-                .map(FlightTag::getName)
-                .collect(Collectors.toSet());
+        Set<String> tagNames = ourTags.stream().map(FlightTag::getName).collect(Collectors.toSet());
         assertTrue(tagNames.contains(tag3Name), "Should contain tag3");
         assertTrue(tagNames.contains(tag4Name), "Should contain tag4");
         assertFalse(tagNames.contains(tag1.getName()), "Should not contain tag1");
@@ -2998,22 +2906,10 @@ public class FlightTest extends TestWithConnection {
     @DisplayName("Should return empty list when all tags are associated")
     public void testGetUnassociatedTagsWithAllTagsAssociated() throws SQLException {
         // Create test tags
-        FlightTag tag1 = Flight.createTag(
-                1,
-                999,
-                "TestTag1_" + System.currentTimeMillis(),
-                "Description1",
-                "red",
-                connection
-        );
-        FlightTag tag2 = Flight.createTag(
-                1,
-                999,
-                "TestTag2_" + System.currentTimeMillis(),
-                "Description2",
-                "blue",
-                connection
-        );
+        FlightTag tag1 =
+                Flight.createTag(1, 999, "TestTag1_" + System.currentTimeMillis(), "Description1", "red", connection);
+        FlightTag tag2 =
+                Flight.createTag(1, 999, "TestTag2_" + System.currentTimeMillis(), "Description2", "blue", connection);
 
         createTestFlight(997);
         Flight flight = Flight.getFlight(connection, 997);
@@ -3027,8 +2923,8 @@ public class FlightTest extends TestWithConnection {
 
         // Filter for only the tags we created in this test
         List<FlightTag> ourTags = unassociatedTags.stream()
-                .filter(tag -> tag.getName().equals(tag1.getName()) ||
-                             tag.getName().equals(tag2.getName()))
+                .filter(tag ->
+                        tag.getName().equals(tag1.getName()) || tag.getName().equals(tag2.getName()))
                 .collect(Collectors.toList());
 
         // Verify we get empty list for our tags
@@ -3056,59 +2952,33 @@ public class FlightTest extends TestWithConnection {
     @DisplayName("Should handle different fleet IDs correctly")
     public void testGetUnassociatedTagsWithDifferentFleetIds() throws SQLException {
         // Create tags for fleet 1
-        FlightTag tag1 = Flight.createTag(
-                1,
-                999,
-                "TestTag1_" + System.currentTimeMillis(),
-                "Description1",
-                "red",
-                connection
-        );
-        FlightTag tag2 = Flight.createTag(
-                1,
-                999,
-                "TestTag2_" + System.currentTimeMillis(),
-                "Description2",
-                "blue",
-                connection
-        );
-
+        FlightTag tag1 =
+                Flight.createTag(1, 999, "TestTag1_" + System.currentTimeMillis(), "Description1", "red", connection);
+        FlightTag tag2 =
+                Flight.createTag(1, 999, "TestTag2_" + System.currentTimeMillis(), "Description2", "blue", connection);
 
         createTestFlight(997);
         Flight flight = Flight.getFlight(connection, 997);
 
         // Create tags for fleet 2
-        FlightTag tag3 = Flight.createTag(
-                2,
-                998,
-                "TestTag3_" + System.currentTimeMillis(),
-                "Description3",
-                "green",
-                connection
-        );
+        FlightTag tag3 =
+                Flight.createTag(2, 998, "TestTag3_" + System.currentTimeMillis(), "Description3", "green", connection);
         FlightTag tag4 = Flight.createTag(
-                2,
-                998,
-                "TestTag4_" + System.currentTimeMillis(),
-                "Description4",
-                "yellow",
-                connection
-        );
+                2, 998, "TestTag4_" + System.currentTimeMillis(), "Description4", "yellow", connection);
 
         // Get unassociated tags for fleet 1 (should return fleet 1 tags only)
         List<FlightTag> unassociatedTagsFleet1 = Flight.getUnassociatedTags(connection, flight.getId(), 1);
 
         // Filter for only the tags we created in this test
         List<FlightTag> ourFleet1Tags = unassociatedTagsFleet1.stream()
-                .filter(tag -> tag.getName().equals(tag1.getName()) ||
-                             tag.getName().equals(tag2.getName()))
+                .filter(tag ->
+                        tag.getName().equals(tag1.getName()) || tag.getName().equals(tag2.getName()))
                 .collect(Collectors.toList());
 
         // Verify we get only our fleet 1 tags
         assertEquals(2, ourFleet1Tags.size(), "Should return only our fleet 1 tags");
-        Set<String> fleet1TagNames = ourFleet1Tags.stream()
-                .map(FlightTag::getName)
-                .collect(Collectors.toSet());
+        Set<String> fleet1TagNames =
+                ourFleet1Tags.stream().map(FlightTag::getName).collect(Collectors.toSet());
         assertTrue(fleet1TagNames.contains(tag1.getName()), "Should contain fleet 1 tag1");
         assertTrue(fleet1TagNames.contains(tag2.getName()), "Should contain fleet 1 tag2");
         assertFalse(fleet1TagNames.contains(tag3.getName()), "Should not contain fleet 2 tag3");
@@ -3120,46 +2990,16 @@ public class FlightTest extends TestWithConnection {
     @DisplayName("Should handle mixed associated and unassociated tags correctly")
     public void testGetUnassociatedTagsWithMixedTags() throws SQLException {
         // Create test tags
-        FlightTag tag1 = Flight.createTag(
-                1,
-                999,
-                "TestTag1_" + System.currentTimeMillis(),
-                "Description1",
-                "red",
-                connection
-        );
-        FlightTag tag2 = Flight.createTag(
-                1,
-                999,
-                "TestTag2_" + System.currentTimeMillis(),
-                "Description2",
-                "blue",
-                connection
-        );
-        FlightTag tag3 = Flight.createTag(
-                1,
-                999,
-                "TestTag3_" + System.currentTimeMillis(),
-                "Description3",
-                "green",
-                connection
-        );
+        FlightTag tag1 =
+                Flight.createTag(1, 999, "TestTag1_" + System.currentTimeMillis(), "Description1", "red", connection);
+        FlightTag tag2 =
+                Flight.createTag(1, 999, "TestTag2_" + System.currentTimeMillis(), "Description2", "blue", connection);
+        FlightTag tag3 =
+                Flight.createTag(1, 999, "TestTag3_" + System.currentTimeMillis(), "Description3", "green", connection);
         FlightTag tag4 = Flight.createTag(
-                1,
-                999,
-                "TestTag4_" + System.currentTimeMillis(),
-                "Description4",
-                "yellow",
-                connection
-        );
+                1, 999, "TestTag4_" + System.currentTimeMillis(), "Description4", "yellow", connection);
         FlightTag tag5 = Flight.createTag(
-                1,
-                999,
-                "TestTag5_" + System.currentTimeMillis(),
-                "Description5",
-                "purple",
-                connection
-        );
+                1, 999, "TestTag5_" + System.currentTimeMillis(), "Description5", "purple", connection);
 
         createTestFlight(997);
         Flight flight = Flight.getFlight(connection, 997);
@@ -3174,17 +3014,15 @@ public class FlightTest extends TestWithConnection {
 
         // Filter for only the tags we created in this test
         List<FlightTag> ourTags = unassociatedTags.stream()
-                .filter(tag -> tag.getName().equals(tag2.getName()) ||
-                             tag.getName().equals(tag4.getName()))
+                .filter(tag ->
+                        tag.getName().equals(tag2.getName()) || tag.getName().equals(tag4.getName()))
                 .collect(Collectors.toList());
 
         // Verify we get only the unassociated tags
         assertEquals(2, ourTags.size(), "Should return only unassociated tags");
 
         // Verify the tags are the unassociated ones
-        Set<String> tagNames = ourTags.stream()
-                .map(FlightTag::getName)
-                .collect(Collectors.toSet());
+        Set<String> tagNames = ourTags.stream().map(FlightTag::getName).collect(Collectors.toSet());
         assertTrue(tagNames.contains(tag2.getName()), "Should contain tag2");
         assertTrue(tagNames.contains(tag4.getName()), "Should contain tag4");
         assertFalse(tagNames.contains(tag1.getName()), "Should not contain tag1");
@@ -3197,9 +3035,12 @@ public class FlightTest extends TestWithConnection {
     @DisplayName("Should handle null connection gracefully")
     public void testGetUnassociatedTagsWithNullConnection() {
 
-        assertThrows(NullPointerException.class, () -> {
-            Flight.getUnassociatedTags(null, 1, 1);
-        }, "Should throw NullPointerException for null connection");
+        assertThrows(
+                NullPointerException.class,
+                () -> {
+                    Flight.getUnassociatedTags(null, 1, 1);
+                },
+                "Should throw NullPointerException for null connection");
     }
 
     @Test
@@ -3207,44 +3048,27 @@ public class FlightTest extends TestWithConnection {
     @DisplayName("Should handle non-existent flight ID")
     public void testGetUnassociatedTagsWithNonExistentFlight() throws SQLException {
         // Create test tags
-        FlightTag tag1 = Flight.createTag(
-                1,
-                999,
-                "TestTag1_" + System.currentTimeMillis(),
-                "Description1",
-                "red",
-                connection
-        );
-        FlightTag tag2 = Flight.createTag(
-                1,
-                999,
-                "TestTag2_" + System.currentTimeMillis(),
-                "Description2",
-                "blue",
-                connection
-        );
-
+        FlightTag tag1 =
+                Flight.createTag(1, 999, "TestTag1_" + System.currentTimeMillis(), "Description1", "red", connection);
+        FlightTag tag2 =
+                Flight.createTag(1, 999, "TestTag2_" + System.currentTimeMillis(), "Description2", "blue", connection);
 
         List<FlightTag> unassociatedTags = Flight.getUnassociatedTags(connection, 99999, 1);
 
         // Filter for only the tags we created in this test
         List<FlightTag> ourTags = unassociatedTags.stream()
-                .filter(tag -> tag.getName().equals(tag1.getName()) ||
-                             tag.getName().equals(tag2.getName()))
+                .filter(tag ->
+                        tag.getName().equals(tag1.getName()) || tag.getName().equals(tag2.getName()))
                 .collect(Collectors.toList());
 
         // Should return our 2 tags since non-existent flight has no associated tags
         assertEquals(2, ourTags.size(), "Should return our 2 tags for non-existent flight");
 
         // Verify our specific tags are returned
-        Set<String> tagNames = ourTags.stream()
-                .map(FlightTag::getName)
-                .collect(Collectors.toSet());
+        Set<String> tagNames = ourTags.stream().map(FlightTag::getName).collect(Collectors.toSet());
         assertTrue(tagNames.contains(tag1.getName()), "Should contain tag1");
         assertTrue(tagNames.contains(tag2.getName()), "Should contain tag2");
     }
-
-
 
     // Tests for getExceptions method
     @Test
@@ -3280,8 +3104,6 @@ public class FlightTest extends TestWithConnection {
         assertTrue(exceptions.isEmpty(), "Should return empty list by default");
     }
 
-
-
     @Test
     @Order(100)
     @DisplayName("Should throw MalformedFlightFileException when multiple parameters are missing")
@@ -3292,26 +3114,34 @@ public class FlightTest extends TestWithConnection {
         setupTimeSeriesData(connection, flight.getId());
 
         // This should throw an exception since both parameters don't exist
-        MalformedFlightFileException exception = assertThrows(MalformedFlightFileException.class, () -> {
-            flight.checkCalculationParameters("Test Calculation", "NonExistent1", "NonExistent2");
-        }, "Should throw MalformedFlightFileException when parameters are missing");
+        MalformedFlightFileException exception = assertThrows(
+                MalformedFlightFileException.class,
+                () -> {
+                    flight.checkCalculationParameters("Test Calculation", "NonExistent1", "NonExistent2");
+                },
+                "Should throw MalformedFlightFileException when parameters are missing");
 
-        assertTrue(exception.getMessage().contains("Cannot calculate 'Test Calculation' as parameter 'NonExistent1' was missing."),
+        assertTrue(
+                exception
+                        .getMessage()
+                        .contains("Cannot calculate 'Test Calculation' as parameter 'NonExistent1' was missing."),
                 "Exception message should indicate first missing parameter");
     }
 
     @Test
     @Order(101)
     @DisplayName("Should handle empty parameter list")
-    public void testCheckCalculationParametersEmptyList() throws SQLException, IOException,
-            MalformedFlightFileException {
+    public void testCheckCalculationParametersEmptyList()
+            throws SQLException, IOException, MalformedFlightFileException {
         createTestFlight(2006);
         Flight flight = Flight.getFlight(connection, 2006);
 
         // This should not throw an exception since no parameters are checked
-        assertDoesNotThrow(() -> {
-            flight.checkCalculationParameters("Test Calculation");
-        }, "Should not throw exception when no parameters are provided");
+        assertDoesNotThrow(
+                () -> {
+                    flight.checkCalculationParameters("Test Calculation");
+                },
+                "Should not throw exception when no parameters are provided");
     }
 
     @Test
@@ -3322,14 +3152,19 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 2007);
 
         // This should throw an exception since "NonExistentParameter" doesn't exist
-        MalformedFlightFileException exception = assertThrows(MalformedFlightFileException.class, () -> {
-            flight.checkCalculationParameters(null, "NonExistentParameter");
-        }, "Should throw MalformedFlightFileException when parameter is missing");
+        MalformedFlightFileException exception = assertThrows(
+                MalformedFlightFileException.class,
+                () -> {
+                    flight.checkCalculationParameters(null, "NonExistentParameter");
+                },
+                "Should throw MalformedFlightFileException when parameter is missing");
 
-        assertTrue(exception.getMessage().contains("Cannot calculate 'null' as parameter 'NonExistentParameter' was missing."),
+        assertTrue(
+                exception
+                        .getMessage()
+                        .contains("Cannot calculate 'null' as parameter 'NonExistentParameter' was missing."),
                 "Exception message should handle null calculation name");
     }
-
 
     @Test
     @Order(209)
@@ -3372,11 +3207,13 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 2012);
 
         // This will throw a NullPointerException since the method doesn't handle null arrays
-        assertThrows(NullPointerException.class, () -> {
-            flight.checkCalculationParameters((String[]) null);
-        }, "Should throw NullPointerException when array is null");
+        assertThrows(
+                NullPointerException.class,
+                () -> {
+                    flight.checkCalculationParameters((String[]) null);
+                },
+                "Should throw NullPointerException when array is null");
     }
-
 
     // Tests for addDoubleTimeSeries method
     @Test
@@ -3387,7 +3224,7 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 3001);
 
         // Create a test DoubleTimeSeries
-        DoubleTimeSeries testSeries = new DoubleTimeSeries("TestSeries", "TestUnit", new double[]{1.0, 2.0, 3.0});
+        DoubleTimeSeries testSeries = new DoubleTimeSeries("TestSeries", "TestUnit", new double[] {1.0, 2.0, 3.0});
 
         // Add the series
         flight.addDoubleTimeSeries("TestSeries", testSeries);
@@ -3405,20 +3242,18 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 3002);
 
         // Create initial series
-        DoubleTimeSeries initialSeries = new DoubleTimeSeries("TestSeries", "TestUnit", new double[]{1.0, 2.0});
+        DoubleTimeSeries initialSeries = new DoubleTimeSeries("TestSeries", "TestUnit", new double[] {1.0, 2.0});
         flight.addDoubleTimeSeries("TestSeries", initialSeries);
 
         // Create replacement series
-        DoubleTimeSeries replacementSeries = new DoubleTimeSeries("TestSeries", "NewUnit", new double[]{3.0, 4.0, 5.0});
+        DoubleTimeSeries replacementSeries =
+                new DoubleTimeSeries("TestSeries", "NewUnit", new double[] {3.0, 4.0, 5.0});
         flight.addDoubleTimeSeries("TestSeries", replacementSeries);
 
         // Verify it was replaced
         assertEquals(replacementSeries, flight.getDoubleTimeSeriesMap().get("TestSeries"), "Series should be replaced");
         assertNotEquals(
-                initialSeries,
-                flight.getDoubleTimeSeriesMap().get("TestSeries"),
-                "Original series should be replaced"
-        );
+                initialSeries, flight.getDoubleTimeSeriesMap().get("TestSeries"), "Original series should be replaced");
     }
 
     // Tests for getDoubleTimeSeriesMap method
@@ -3484,7 +3319,7 @@ public class FlightTest extends TestWithConnection {
         Flight flight = Flight.getFlight(connection, 3007);
 
         // Add series to cache
-        DoubleTimeSeries testSeries = new DoubleTimeSeries("CachedSeries", "TestUnit", new double[]{1.0, 2.0, 3.0});
+        DoubleTimeSeries testSeries = new DoubleTimeSeries("CachedSeries", "TestUnit", new double[] {1.0, 2.0, 3.0});
         flight.addDoubleTimeSeries("CachedSeries", testSeries);
 
         // Get series from cache
@@ -3517,10 +3352,7 @@ public class FlightTest extends TestWithConnection {
 
         // Add series to cache
         StringTimeSeries testSeries = new StringTimeSeries(
-                "CachedStringSeries",
-                "String",
-                new ArrayList<>(Arrays.asList("value1", "value2"))
-        );
+                "CachedStringSeries", "String", new ArrayList<>(Arrays.asList("value1", "value2")));
         flight.getStringTimeSeriesMap().put("CachedStringSeries", testSeries);
 
         // Get series from cache
@@ -3562,7 +3394,6 @@ public class FlightTest extends TestWithConnection {
         // Verify it was cached
         assertNotNull(flight.getDoubleTimeSeriesMap().get("Altitude"), "Series should be cached");
     }
-
 
     // Tests for getNumberRows method
     @Test
@@ -3667,15 +3498,15 @@ public class FlightTest extends TestWithConnection {
 
         // Create a non-Cessna airframe manually
         int nonCessnaAirframeId = 1; // Default
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO airframes (airframe, type_id) VALUES (?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO airframes (airframe, type_id) VALUES (?, ?)")) {
             stmt.setString(1, "Boeing 737");
             stmt.setInt(2, 1); // Use existing type
             try {
                 stmt.executeUpdate();
                 // Get the ID of the newly created airframe
-                try (PreparedStatement getIdStmt = connection.prepareStatement(
-                        "SELECT id FROM airframes WHERE airframe = 'Boeing 737'")) {
+                try (PreparedStatement getIdStmt =
+                        connection.prepareStatement("SELECT id FROM airframes WHERE airframe = 'Boeing 737'")) {
                     try (ResultSet rs = getIdStmt.executeQuery()) {
                         if (rs.next()) {
                             nonCessnaAirframeId = rs.getInt(1);
@@ -3684,8 +3515,8 @@ public class FlightTest extends TestWithConnection {
                 }
             } catch (SQLException e) {
                 // Airframe might already exist, get its ID
-                try (PreparedStatement getIdStmt = connection.prepareStatement(
-                        "SELECT id FROM airframes WHERE airframe = 'Boeing 737'")) {
+                try (PreparedStatement getIdStmt =
+                        connection.prepareStatement("SELECT id FROM airframes WHERE airframe = 'Boeing 737'")) {
                     try (ResultSet rs = getIdStmt.executeQuery()) {
                         if (rs.next()) {
                             nonCessnaAirframeId = rs.getInt(1);
@@ -3766,8 +3597,7 @@ public class FlightTest extends TestWithConnection {
         // Insert series name and get the generated ID
         int nameId;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO string_series_names (name) VALUES (?)",
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO string_series_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "TestStringSeries_" + flightId);
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -3780,8 +3610,8 @@ public class FlightTest extends TestWithConnection {
         } catch (SQLException e) {
             // If it already exists, get the existing ID
             if (e.getMessage().contains("Unique index or primary key violation")) {
-                try (PreparedStatement stmt = connection.prepareStatement(
-                        "SELECT id FROM string_series_names WHERE name = ?")) {
+                try (PreparedStatement stmt =
+                        connection.prepareStatement("SELECT id FROM string_series_names WHERE name = ?")) {
                     stmt.setString(1, "TestStringSeries_" + flightId);
                     try (ResultSet rs = stmt.executeQuery()) {
                         if (rs.next()) {
@@ -3799,8 +3629,7 @@ public class FlightTest extends TestWithConnection {
         // Insert data type name and get the generated ID
         int typeId;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO data_type_names (name) VALUES (?)",
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO data_type_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "String");
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -3813,8 +3642,8 @@ public class FlightTest extends TestWithConnection {
         } catch (SQLException e) {
             // If it already exists, get the existing ID
             if (e.getMessage().contains("Unique index or primary key violation")) {
-                try (PreparedStatement stmt = connection.prepareStatement(
-                        "SELECT id FROM data_type_names WHERE name = ?")) {
+                try (PreparedStatement stmt =
+                        connection.prepareStatement("SELECT id FROM data_type_names WHERE name = ?")) {
                     stmt.setString(1, "String");
                     try (ResultSet rs = stmt.executeQuery()) {
                         if (rs.next()) {
@@ -3849,8 +3678,8 @@ public class FlightTest extends TestWithConnection {
 
     // Helper method to get tag ID by name
     private int getTagIdByName(Connection connection, String tagName) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT id FROM flight_tags WHERE name = ? AND fleet_id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT id FROM flight_tags WHERE name = ? AND fleet_id = ?")) {
             stmt.setString(1, tagName);
             stmt.setInt(2, 1);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -3918,8 +3747,6 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flight.getStringTimeSeriesMap().containsKey("TestStringSeries1"), "Series should be cached");
     }
 
-
-
     // Test for getNumFlights with fleetId <= 0 and filter != null
     @Test
     @Order(330)
@@ -3928,7 +3755,6 @@ public class FlightTest extends TestWithConnection {
         // Create test flights first
         createTestFlight(5000);
         createTestFlight(5001);
-
 
         // This should trigger the path: if (fleetId <= 0) { if (filter != null) { ... } }
         // The query should be: "SELECT count(id) FROM flights WHERE ()"
@@ -3944,9 +3770,10 @@ public class FlightTest extends TestWithConnection {
             assertTrue(count >= 0, "Should return a non-negative count");
         } catch (Exception e) {
             // Expected: H2 database doesn't support empty conditions like "WHERE ()"
-            assertTrue(e.getMessage().contains("Data conversion error") ||
-                      e.getMessage().contains("ROW to BOOLEAN"),
-                      "Expected SQL syntax error from empty condition");
+            assertTrue(
+                    e.getMessage().contains("Data conversion error")
+                            || e.getMessage().contains("ROW to BOOLEAN"),
+                    "Expected SQL syntax error from empty condition");
         }
     }
 
@@ -3994,12 +3821,10 @@ public class FlightTest extends TestWithConnection {
         // The flights should have no tags now
         assertTrue(
                 tagsForFlight6000 == null || tagsForFlight6000.isEmpty(),
-                "Flight 6000 should have no tags after disassociation"
-        );
+                "Flight 6000 should have no tags after disassociation");
         assertTrue(
                 tagsForFlight6001 == null || tagsForFlight6001.isEmpty(),
-                "Flight 6001 should have no tags after disassociation"
-        );
+                "Flight 6001 should have no tags after disassociation");
     }
 
     @Test
@@ -4040,16 +3865,13 @@ public class FlightTest extends TestWithConnection {
         // The flights should have no tags now
         assertTrue(
                 tagsForFlight7000 == null || tagsForFlight7000.isEmpty(),
-                "Flight 7000 should have no tags after disassociation"
-        );
+                "Flight 7000 should have no tags after disassociation");
         assertTrue(
                 tagsForFlight7001 == null || tagsForFlight7001.isEmpty(),
-                "Flight 7001 should have no tags after disassociation"
-        );
+                "Flight 7001 should have no tags after disassociation");
         assertTrue(
                 tagsForFlight7002 == null || tagsForFlight7002.isEmpty(),
-                "Flight 7002 should have no tags after disassociation"
-        );
+                "Flight 7002 should have no tags after disassociation");
     }
 
     @Test
@@ -4061,7 +3883,6 @@ public class FlightTest extends TestWithConnection {
         createTestFlight(8001);
         createTestFlight(8002);
 
-
         String extraCondition = "id IN (8000, 8001)";
         ArrayList<Flight> flights = Flight.getFlights(connection, extraCondition);
 
@@ -4069,9 +3890,7 @@ public class FlightTest extends TestWithConnection {
         assertEquals(2, flights.size(), "Should return 2 flights with the specified IDs");
 
         // Verify the returned flights have the correct IDs
-        Set<Integer> returnedIds = flights.stream()
-                .map(Flight::getId)
-                .collect(Collectors.toSet());
+        Set<Integer> returnedIds = flights.stream().map(Flight::getId).collect(Collectors.toSet());
 
         assertTrue(returnedIds.contains(8000), "Should contain flight 8000");
         assertTrue(returnedIds.contains(8001), "Should contain flight 8001");
@@ -4087,7 +3906,6 @@ public class FlightTest extends TestWithConnection {
         createTestFlight(8004);
         createTestFlight(8005);
 
-
         String extraCondition = "id >= 8003";
         ArrayList<Flight> flights = Flight.getFlights(connection, extraCondition, 2);
 
@@ -4095,8 +3913,7 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() <= 2, "Should return at most 2 flights due to limit parameter");
 
         // Verify the returned flights are ordered by ID
-        assertTrue(flights.get(0).getId() <= flights.get(1).getId(),
-                "Flights should be ordered by ID");
+        assertTrue(flights.get(0).getId() <= flights.get(1).getId(), "Flights should be ordered by ID");
     }
 
     @Test
@@ -4192,9 +4009,7 @@ public class FlightTest extends TestWithConnection {
         filterInputs.add("0");
         Filter filter = new Filter(filterInputs);
 
-
         ArrayList<Flight> flightsPage1 = Flight.getFlights(connection, 1, filter, 0, 2);
-
 
         ArrayList<Flight> flightsPage2 = Flight.getFlights(connection, 1, filter, 1, 2);
 
@@ -4238,22 +4053,18 @@ public class FlightTest extends TestWithConnection {
         filterInputs.add("0");
         Filter filter = new Filter(filterInputs);
 
-
         ArrayList<Flight> flightsZeroSize = Flight.getFlights(connection, 1, filter, 0, 0);
         assertNotNull(flightsZeroSize, "Should return empty list for pageSize=0");
         assertEquals(0, flightsZeroSize.size(), "Should return empty list for pageSize=0");
-
 
         ArrayList<Flight> flightsLargeSize = Flight.getFlights(connection, 1, filter, 0, 100);
         assertNotNull(flightsLargeSize, "Should return flights for large pageSize");
         assertTrue(flightsLargeSize.size() <= 100, "Should return at most 100 flights");
 
-
         ArrayList<Flight> flightsFirstOnly = Flight.getFlights(connection, 1, filter, 0, 1);
         assertNotNull(flightsFirstOnly, "Should return first flight");
         assertTrue(flightsFirstOnly.size() <= 1, "Should return at most 1 flight");
     }
-
 
     @Test
     @Order(409)
@@ -4297,10 +4108,6 @@ public class FlightTest extends TestWithConnection {
         assertNull(result, "Should return null for null series name");
     }
 
-
-
-
-
     @Test
     @Order(412)
     @DisplayName("Should handle series with special characters in name")
@@ -4318,8 +4125,6 @@ public class FlightTest extends TestWithConnection {
             assertEquals("Test_Series-1", result.getName(), "Series name with special characters should match");
         }
     }
-
-
 
     @Test
     @Order(413)
@@ -4372,11 +4177,12 @@ public class FlightTest extends TestWithConnection {
         Map<String, Integer> typeIds = getDataTypeIds(connection);
 
         // Insert time series record with special name
-        insertTimeSeriesRecord(connection, flightId, "Test_Series-1", "double",
-                generateDataPoints(10, 0.0, 100.0), nameIds, typeIds);
+        insertTimeSeriesRecord(
+                connection, flightId, "Test_Series-1", "double", generateDataPoints(10, 0.0, 100.0), nameIds, typeIds);
     }
 
-    private void setupTimeSeriesDataWithLongName(Connection connection, int flightId, String longName) throws SQLException {
+    private void setupTimeSeriesDataWithLongName(Connection connection, int flightId, String longName)
+            throws SQLException {
         // Insert series name with long name
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?) ON DUPLICATE KEY UPDATE name = name")) {
@@ -4387,13 +4193,14 @@ public class FlightTest extends TestWithConnection {
         insertTimeSeriesDataWithLongName(connection, flightId, longName);
     }
 
-    private void insertTimeSeriesDataWithLongName(Connection connection, int flightId, String longName) throws SQLException {
+    private void insertTimeSeriesDataWithLongName(Connection connection, int flightId, String longName)
+            throws SQLException {
         Map<String, Integer> nameIds = getSeriesNameIds(connection);
         Map<String, Integer> typeIds = getDataTypeIds(connection);
 
         // Insert time series record with long name
-        insertTimeSeriesRecord(connection, flightId, longName, "double",
-                generateDataPoints(10, 0.0, 100.0), nameIds, typeIds);
+        insertTimeSeriesRecord(
+                connection, flightId, longName, "double", generateDataPoints(10, 0.0, 100.0), nameIds, typeIds);
     }
 
     @Test
@@ -4493,8 +4300,8 @@ public class FlightTest extends TestWithConnection {
         }
 
         // Verify flights were created
-        try (PreparedStatement checkStmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM flights WHERE id IN (?, ?, ?)")) {
+        try (PreparedStatement checkStmt =
+                connection.prepareStatement("SELECT COUNT(*) FROM flights WHERE id IN (?, ?, ?)")) {
             checkStmt.setInt(1, flightId1);
             checkStmt.setInt(2, flightId2);
             checkStmt.setInt(3, flightId3);
@@ -4513,10 +4320,8 @@ public class FlightTest extends TestWithConnection {
                                 while (debugRs.next()) {
                                     existing.append(debugRs.getInt(1)).append(", ");
                                 }
-                                throw new SQLException(
-                                        "Failed to create test flights for sorting. Expected 3, got "
-                                                + count + ". " + existing
-                                );
+                                throw new SQLException("Failed to create test flights for sorting. Expected 3, got "
+                                        + count + ". " + existing);
                             }
                         }
                     }
@@ -4611,8 +4416,8 @@ public class FlightTest extends TestWithConnection {
         }
 
         // Get the tag IDs
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setString(2, uniqueTag1);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -4724,17 +4529,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() <= 100);
     }
 
-
-
-
-
     @Test
     @Order(425)
     public void testGetFlightsSortedByOccurrencesInTableIntegerParameterCoverage() throws SQLException {
         Connection connection = org.ngafid.core.Database.getConnection();
 
         Filter filter = createFilterWithIntegerParameter();
-
 
         ArrayList<Flight> flightsEvents = Flight.getFlightsSorted(connection, 1, filter, 0, 10, "events", true);
         ArrayList<Flight> flightsItinerary = Flight.getFlightsSorted(connection, 1, filter, 0, 10, "itinerary", true);
@@ -4747,5 +4547,4 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flightsItinerary.size() >= 0);
         assertTrue(flightsTags.size() >= 0);
     }
-
 }

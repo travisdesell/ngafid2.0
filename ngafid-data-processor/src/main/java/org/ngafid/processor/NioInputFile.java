@@ -1,6 +1,5 @@
 package org.ngafid.processor;
 
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
@@ -21,6 +20,7 @@ public class NioInputFile implements InputFile {
     public NioInputFile(Path file) {
         path = file;
     }
+
     @Override
     public long getLength() throws IOException {
         if (length == -1) {
@@ -43,7 +43,7 @@ public class NioInputFile implements InputFile {
                 singleByteBuffer.clear();
                 final int numRead = read(singleByteBuffer);
                 if (numRead >= 0) {
-                    int value = (int)singleByteBuffer.get(0) & 0xFF;
+                    int value = (int) singleByteBuffer.get(0) & 0xFF;
                     return value;
                 } else {
                     return -1;

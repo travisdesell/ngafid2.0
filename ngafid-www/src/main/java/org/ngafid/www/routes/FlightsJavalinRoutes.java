@@ -25,6 +25,7 @@ public class FlightsJavalinRoutes {
     private static class FlightsResponse {
         @JsonProperty
         public List<Flight> flights;
+
         @JsonProperty
         public int numberPages;
 
@@ -48,7 +49,9 @@ public class FlightsJavalinRoutes {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
                 if (flight != null && flight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
+                            + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: "
+                            + fleetId);
                     ctx.status(401);
                     ctx.json("User did not have access to this flight.");
                 }
@@ -159,7 +162,6 @@ public class FlightsJavalinRoutes {
 
             scopes.put("flights_js", sb.toString());
 
-
             StringWriter stringOut = new StringWriter();
             startTime = System.currentTimeMillis();
 
@@ -232,7 +234,8 @@ public class FlightsJavalinRoutes {
              * Number Takeoffs/Landings
              * Flight ID
              **/
-            List<Flight> flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
+            List<Flight> flights = Flight.getFlightsSorted(
+                    connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
             if (flights.isEmpty()) {
                 ctx.status(204);

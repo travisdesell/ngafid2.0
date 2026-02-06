@@ -29,7 +29,6 @@ public class UserPreferences {
         this.flightMetrics = List.of(metrics);
     }
 
-
     public static UserPreferences defaultPreferences(int userId) {
         return new UserPreferences(userId, 1, DEFAULT_METRICS);
     }

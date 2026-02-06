@@ -29,10 +29,13 @@ public class LowEndingFuelScanner extends AbstractEventScanner {
     }
 
     @Override
-    public List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) throws NullPointerException {
+    public List<Event> scan(
+            Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries)
+            throws NullPointerException {
         Double threshold = LOW_FUEL_EVENT_THRESHOLDS.get(definition.getAirframeNameId());
         if (threshold == null) {
-            throw new NullPointerException("No low fuel event threshold defined for airframe name id " + definition.getAirframeNameId());
+            throw new NullPointerException(
+                    "No low fuel event threshold defined for airframe name id " + definition.getAirframeNameId());
         }
 
         DoubleTimeSeries fuel = doubleTimeSeries.get(TOTAL_FUEL);
@@ -58,11 +61,9 @@ public class LowEndingFuelScanner extends AbstractEventScanner {
 
         double average = (fuelSum / fuelValues);
         if (duration >= 15 && average < threshold) {
-            return List.of(new CustomEvent(utc.get(i), endUTC, i, i + fuelValues, average, null, definition
-            ));
+            return List.of(new CustomEvent(utc.get(i), endUTC, i, i + fuelValues, average, null, definition));
         } else {
             return List.of();
         }
     }
-
 }

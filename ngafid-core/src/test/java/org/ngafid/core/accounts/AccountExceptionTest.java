@@ -170,7 +170,8 @@ public class AccountExceptionTest {
     @DisplayName("Should handle long title and message")
     public void testConstructorWithLongTitleAndMessage() {
         String title = "Very Long Error Title That Exceeds Normal Length";
-        String message = "This is a very long error message that contains detailed information about what went wrong and how to fix it. It includes multiple sentences and provides comprehensive context for the error.";
+        String message =
+                "This is a very long error message that contains detailed information about what went wrong and how to fix it. It includes multiple sentences and provides comprehensive context for the error.";
 
         AccountException exception = new AccountException(title, message);
 

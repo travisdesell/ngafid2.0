@@ -2,19 +2,18 @@ package org.ngafid.core.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.ngafid.core.Database;
-import org.ngafid.core.util.SendEmail;
-import org.ngafid.core.util.filters.Pair;
-
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.ngafid.core.Database;
+import org.ngafid.core.util.SendEmail;
+import org.ngafid.core.util.filters.Pair;
 
 /**
  * The email consumer monitors the email topic and sends batches of emails found in the topic. This consumer will attempt

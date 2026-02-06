@@ -48,8 +48,7 @@ public class Airport {
         runways.put(runway.getName(), runway);
     }
 
-    public Runway getNearestRunwayWithin(double lat, double lon, double maxDistanceFt,
-                                         MutableDouble runwayDistance) {
+    public Runway getNearestRunwayWithin(double lat, double lon, double maxDistanceFt, MutableDouble runwayDistance) {
         Runway nearestRunway = null;
 
         double minDistance = maxDistanceFt;

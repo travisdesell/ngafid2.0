@@ -305,6 +305,7 @@
                         </indent>
                         <removeUnusedImports/>
                         <importOrder/>
+                        <palantirJavaFormat/>
                     </java>
                     <kotlin>
                         <includes>

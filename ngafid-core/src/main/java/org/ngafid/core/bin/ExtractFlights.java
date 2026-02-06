@@ -8,8 +8,7 @@ import org.ngafid.core.Database;
 import org.ngafid.core.flights.Flight;
 
 public final class ExtractFlights {
-    private ExtractFlights() {
-    }
+    private ExtractFlights() {}
 
     public static void main(String[] arguments) throws Exception {
         Connection connection = Database.getConnection();

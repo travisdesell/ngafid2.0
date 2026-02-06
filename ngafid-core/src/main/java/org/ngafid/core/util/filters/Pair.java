@@ -21,5 +21,4 @@ public class Pair<K, V> {
     public V second() {
         return second;
     }
-
 }

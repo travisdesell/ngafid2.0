@@ -34,27 +34,31 @@ public class AirframesTest extends TestWithConnection {
 
     private void clearTestData() throws SQLException {
         // Use higher IDs to avoid conflicts with existing data
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM fleet_airframes WHERE airframe_id IN (1001, 1002, 1003)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_airframes WHERE airframe_id IN (1001, 1002, 1003)")) {
             stmt.executeUpdate();
         }
         // Delete flights that reference airframes first
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM flights WHERE airframe_id IN (1001, 1002, 1003)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM flights WHERE airframe_id IN (1001, 1002, 1003)")) {
             stmt.executeUpdate();
         }
         // Delete airframes that reference airframe_types
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM airframes WHERE id IN (1001, 1002, 1003)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM airframes WHERE id IN (1001, 1002, 1003)")) {
             stmt.executeUpdate();
         }
         // Finally delete airframe_types
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM airframe_types WHERE id IN (1001, 1002)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM airframe_types WHERE id IN (1001, 1002)")) {
             stmt.executeUpdate();
         }
     }
 
     private void insertTestData() throws SQLException {
         // Insert airframe types
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO airframe_types (id, name) VALUES (?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO airframe_types (id, name) VALUES (?, ?)")) {
             stmt.setInt(1, 1001);
             stmt.setString(2, "Test Fixed Wing");
             try {
@@ -73,8 +77,8 @@ public class AirframesTest extends TestWithConnection {
         }
 
         // Insert test airframes
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO airframes (id, airframe, type_id) VALUES (?, ?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO airframes (id, airframe, type_id) VALUES (?, ?, ?)")) {
             stmt.setInt(1, 1001);
             stmt.setString(2, "Test Cessna 172S");
             stmt.setInt(3, 1001);
@@ -104,8 +108,8 @@ public class AirframesTest extends TestWithConnection {
         }
 
         // Insert fleet-airframe relationships
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_airframes (fleet_id, airframe_id) VALUES (?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO fleet_airframes (fleet_id, airframe_id) VALUES (?, ?)")) {
             stmt.setInt(1, 1);
             stmt.setInt(2, 1001);
             try {
@@ -454,7 +458,8 @@ public class AirframesTest extends TestWithConnection {
     @Test
     @DisplayName("Should handle Type with very long name")
     public void testTypeWithLongName() {
-        String longName = "Very Long Type Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
+        String longName =
+                "Very Long Type Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
         Airframes.Type type = new Airframes.Type(longName);
         assertNotNull(type);
     }
@@ -596,7 +601,6 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-
     @Test
     @DisplayName("Should handle getAirframeByName with empty name")
     public void testGetAirframeByNameWithEmptyName() throws SQLException {
@@ -628,7 +632,8 @@ public class AirframesTest extends TestWithConnection {
     @Test
     @DisplayName("Should handle getAirframeByName with very long name")
     public void testGetAirframeByNameWithLongName() throws SQLException {
-        String longName = "Very Long Aircraft Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
+        String longName =
+                "Very Long Aircraft Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
 
         assertThrows(SQLException.class, () -> {
             Airframes.Airframe.getAirframeByName(connection, longName);
@@ -699,7 +704,6 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-
     // ========== STATIC METHODS TESTS ==========
 
     @Test
@@ -749,8 +753,6 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
-
-
     @Test
     @DisplayName("Should get all airframes for fleet with no airframes")
     public void testGetAllForFleetWithNoAirframes() throws SQLException {
@@ -772,8 +774,6 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(airframes);
         assertTrue(airframes.isEmpty());
     }
-
-
 
     @Test
     @DisplayName("Should get all airframes for fleet with very large ID")
@@ -805,8 +805,6 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-
-
     @Test
     @DisplayName("Should get all airframes regardless of fleet")
     public void testGetAllAirframes() throws SQLException {
@@ -832,8 +830,6 @@ public class AirframesTest extends TestWithConnection {
             Airframes.getAll(null);
         });
     }
-
-
 
     @Test
     @DisplayName("Should get all airframes with IDs regardless of fleet")
@@ -869,7 +865,6 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
-
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with negative ID")
     public void testGetAllWithIdsForFleetWithNegativeId() throws SQLException {
@@ -891,8 +886,6 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(airframes);
         assertTrue(airframes.length == 0);
     }
-
-
 
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with very small ID")
@@ -920,10 +913,6 @@ public class AirframesTest extends TestWithConnection {
             Airframes.getAllWithIds(null, 1);
         });
     }
-
-
-
-
 
     @Test
     @DisplayName("Should get ID to name map")
@@ -972,7 +961,6 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(idToNameMap.isEmpty());
     }
 
-
     @Test
     @DisplayName("Should get ID to name map for fleet with very small ID")
     public void testGetIdToNameMapForFleetWithVerySmallId() throws SQLException {
@@ -999,6 +987,4 @@ public class AirframesTest extends TestWithConnection {
             Airframes.getIdToNameMap(null, 1);
         });
     }
-
-
 }

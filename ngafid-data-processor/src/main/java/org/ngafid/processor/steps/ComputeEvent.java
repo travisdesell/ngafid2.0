@@ -49,7 +49,9 @@ public class ComputeEvent extends ComputeStep {
                 if (def.getFleetId() == 0) {
                     ALL_FLEET_EVENT_DEFS.add(def);
                 } else {
-                    FLEET_EVENT_DEFS.computeIfAbsent(def.getFleetId(), k -> new ArrayList<>()).add(def);
+                    FLEET_EVENT_DEFS
+                            .computeIfAbsent(def.getFleetId(), k -> new ArrayList<>())
+                            .add(def);
                 }
             }
 
@@ -74,7 +76,8 @@ public class ComputeEvent extends ComputeStep {
         // We will mark these event definitions as having been computed (or attempted) in the
         var applicableEvents = ALL_EVENT_DEFS.stream()
                 .filter(def -> def.getFleetId() == 0 || def.getFleetId() == fb.meta.getFleetId())
-                .filter(def -> def.getAirframeNameId() == 0 || def.getAirframeNameId() == fb.meta.getAirframe().getId())
+                .filter(def -> def.getAirframeNameId() == 0
+                        || def.getAirframeNameId() == fb.meta.getAirframe().getId())
                 .toList();
         return applicableEvents.stream()
                 .map(def -> factory(connection, fb, def))
@@ -93,10 +96,8 @@ public class ComputeEvent extends ComputeStep {
      */
     private static ComputeEvent factory(Connection connection, FlightBuilder fb, EventDefinition def) {
         var scanner = scannerFactory(fb, def);
-        if (scanner != null)
-            fb.addComputedEvent(def);
-        else
-            return null;
+        if (scanner != null) fb.addComputedEvent(def);
+        else return null;
 
         if (def.getId() > 0) {
             return new ComputeEvent(connection, fb, def, scanner);

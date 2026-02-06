@@ -2,6 +2,15 @@ package org.ngafid.core.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Config;
@@ -9,16 +18,6 @@ import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
-
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
 
 public enum SendEmail {
     ;
@@ -31,7 +30,8 @@ public enum SendEmail {
     private static final java.sql.Date LAST_TOKEN_FREE = new java.sql.Date(0);
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
     private static final int MS_PER_DAY = 86_400_000;
-    private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY); // Minimum number of milliseconds needed before trying to free old tokens
+    private static final int EXPIRATION_POLL_THRESHOLD_MS =
+            (MS_PER_DAY); // Minimum number of milliseconds needed before trying to free old tokens
 
     private static String password;
     private static String username = null;
@@ -59,12 +59,14 @@ public enum SendEmail {
                     pw.write("# To change this, replace these lines with the email login info\n");
 
                 } catch (IOException ie) {
-                    LOG.severe(() -> "ERROR: Could not write default information to email file: " + Config.EMAIL_INFO_FILE);
+                    LOG.severe(() ->
+                            "ERROR: Could not write default information to email file: " + Config.EMAIL_INFO_FILE);
                 }
 
-                LOG.severe(() -> "Email not being used with the NGAFID for uploads, to change this edit " + Config.EMAIL_INFO_FILE + ".");
+                LOG.severe(() -> "Email not being used with the NGAFID for uploads, to change this edit "
+                        + Config.EMAIL_INFO_FILE + ".");
 
-             // Otherwise...
+                // Otherwise...
             } else {
 
                 // ...Read the file
@@ -87,10 +89,10 @@ public enum SendEmail {
             }
 
         } catch (IOException e) {
-            LOG.severe(() -> "Error reading from NGAFID_EMAIL_INFO: '" + Config.EMAIL_INFO_FILE + "': " + e.getMessage());
+            LOG.severe(
+                    () -> "Error reading from NGAFID_EMAIL_INFO: '" + Config.EMAIL_INFO_FILE + "': " + e.getMessage());
             System.exit(1);
         }
-
     }
 
     public static ArrayList<String> getAdminEmails() {
@@ -103,10 +105,12 @@ public enum SendEmail {
 
         // Wait at least 24 hours before trying to free tokens again
         long tokenDeltaTime = (currentDate.getTime() - LAST_TOKEN_FREE.getTime());
-        LOG.info(() -> "Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " + currentDate.getTime() + " " + LAST_TOKEN_FREE.getTime());
+        LOG.info(() -> "Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " + currentDate.getTime() + " "
+                + LAST_TOKEN_FREE.getTime());
 
         if (tokenDeltaTime < EXPIRATION_POLL_THRESHOLD_MS) {
-            LOG.info(() -> "Not attempting to free expired tokens (only " + tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
+            LOG.info(() -> "Not attempting to free expired tokens (only " + tokenDeltaTime + " / "
+                    + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
             return;
         }
         LAST_TOKEN_FREE.setTime(currentDate.getTime());
@@ -120,8 +124,8 @@ public enum SendEmail {
         LOG.info("Freed expired email unsubscribe tokens");
     }
 
-    private static String generateUnsubscribeToken(String recipientEmail,
-                                                   int userID, Connection connection) throws SQLException {
+    private static String generateUnsubscribeToken(String recipientEmail, int userID, Connection connection)
+            throws SQLException {
 
         // Generate a random string
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -138,26 +142,26 @@ public enum SendEmail {
             preparedStatement.execute();
 
         } catch (SQLException e) {
-            LOG.severe(() -> "(SQL Exception) Failed to generate token for email recipient: "
-                    + recipientEmail + ": " + e.getMessage());
+            LOG.severe(() -> "(SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": "
+                    + e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.severe(() -> "(Non-SQL Exception) Failed to generate token for email recipient: "
-                    + recipientEmail + ": " + e.getMessage());
+            LOG.severe(() -> "(Non-SQL Exception) Failed to generate token for email recipient: " + recipientEmail
+                    + ": " + e.getMessage());
         }
 
         // Log the token's expiration date
         Calendar expirationCalendar = Calendar.getInstance();
         expirationCalendar.setTime(expirationDate);
-        String expirationDateString = expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) +
-                " " + expirationCalendar.get(Calendar.DAY_OF_MONTH) + ", " + expirationCalendar.get(Calendar.YEAR) +
-                " " + expirationCalendar.get(Calendar.HOUR_OF_DAY) + ":" + expirationCalendar.get(Calendar.MINUTE) +
-                ":" + expirationCalendar.get(Calendar.SECOND);
+        String expirationDateString = expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) + " "
+                + expirationCalendar.get(Calendar.DAY_OF_MONTH) + ", " + expirationCalendar.get(Calendar.YEAR) + " "
+                + expirationCalendar.get(Calendar.HOUR_OF_DAY) + ":" + expirationCalendar.get(Calendar.MINUTE) + ":"
+                + expirationCalendar.get(Calendar.SECOND);
 
-        LOG.info(() -> "Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at " + expirationDateString + ")");
+        LOG.info(() -> "Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at "
+                + expirationDateString + ")");
 
         return token;
-
     }
 
     /**
@@ -176,21 +180,16 @@ public enum SendEmail {
         }
     }
 
-    public static void sendEmail(List<String> toRecipients, List<String> bccRecipients, String subject,
-                                 String body, EmailType emailType) throws SQLException {
+    public static void sendEmail(
+            List<String> toRecipients, List<String> bccRecipients, String subject, String body, EmailType emailType)
+            throws SQLException {
 
         LOG.info(() -> "Sending an email with a fresh SQL connection");
         enqueueEmail(new Email(toRecipients, bccRecipients, subject, body, emailType));
     }
 
     public record Email(
-            List<String> recipients,
-            List<String> bccRecipients,
-            String subject,
-            String body,
-            EmailType emailType
-    ) {
-    }
+            List<String> recipients, List<String> bccRecipients, String subject, String body, EmailType emailType) {}
 
     private static KafkaProducer<String, String> producer = null;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -214,8 +213,7 @@ public enum SendEmail {
             LOG.info("Emailing has been disabled, not sending email");
             LOG.info("But we would have sent the following emails:");
 
-            for (Email email : emails)
-                LOG.info(email.body);
+            for (Email email : emails) LOG.info(email.body);
 
             return;
         }
@@ -275,7 +273,8 @@ public enum SendEmail {
                             embedUnsubscribeURL = false;
                         } else {
                             User user = User.get(connection, toRecipient);
-                            if (user != null && !user.getUserEmailPreferences(connection).getPreference(email.emailType)) {
+                            if (user != null
+                                    && !user.getUserEmailPreferences(connection).getPreference(email.emailType)) {
                                 // Check if this email type is enabled for this user.
                                 continue;
                             }
@@ -288,15 +287,17 @@ public enum SendEmail {
 
                                 // Generate a token for the user to unsubscribe
                                 String token = generateUnsubscribeToken(toRecipient, userID, connection);
-                                String unsubscribeURL = UNSUB_URL_TEMPLATE.replace("__ID__",
-                                        Integer.toString(userID)).replace("__TOKEN__", token);
+                                String unsubscribeURL = UNSUB_URL_TEMPLATE
+                                        .replace("__ID__", Integer.toString(userID))
+                                        .replace("__TOKEN__", token);
 
                                 // Embed the Unsubscribe URL at the top of the email body
-                                bodyPersonalized = ("<a href=\"" + unsubscribeURL + "\">Unsubscribe from non-critical " +
-                                        "NGAFID emails</a><br><br>" + email.body);
+                                bodyPersonalized = ("<a href=\"" + unsubscribeURL + "\">Unsubscribe from non-critical "
+                                        + "NGAFID emails</a><br><br>" + email.body);
 
                             } catch (SQLException e) {
-                                LOG.severe(() -> "Recipient email " + toRecipient + " is not mapped in UserEmailPreferences, " + "skipping unsubscribe URL");
+                                LOG.severe(() -> "Recipient email " + toRecipient
+                                        + " is not mapped in UserEmailPreferences, " + "skipping unsubscribe URL");
                             }
                         }
 
@@ -357,11 +358,15 @@ public enum SendEmail {
         // so this won't work unless a test Email Type is added.
 
         try {
-            sendEmail(recipients, bccRecipients, "test NGAFID email", "testing testing 123", EmailType.UPLOAD_PROCESS_START);
+            sendEmail(
+                    recipients,
+                    bccRecipients,
+                    "test NGAFID email",
+                    "testing testing 123",
+                    EmailType.UPLOAD_PROCESS_START);
         } catch (SQLException e) {
             LOG.severe(() -> "(SQL Exception) Failed to send test email: " + e.getMessage());
         }
-
     }
 
     private static class SMTPAuthenticator extends javax.mail.Authenticator {
@@ -372,21 +377,21 @@ public enum SendEmail {
         SMTPAuthenticator(String username, String password) {
             this.username = username;
             this.password = password;
-            LOG.info(() -> "Created authenticator with username: '" + this.username + "' and password: '" + this.password + "'");
+            LOG.info(() -> "Created authenticator with username: '" + this.username + "' and password: '"
+                    + this.password + "'");
         }
 
         @Override
         public PasswordAuthentication getPasswordAuthentication() {
-            LOG.info(() -> "Attempting to authenticate with username: '" + this.username + "' and password: '" + this.password + "'");
+            LOG.info(() -> "Attempting to authenticate with username: '" + this.username + "' and password: '"
+                    + this.password + "'");
             return new PasswordAuthentication(this.username, this.password);
         }
 
         public boolean isValid() {
-            LOG.info(() -> "Checking if valid with username: '" + this.username
-                    + "' and password: '" + this.password + "'");
+            LOG.info(() ->
+                    "Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
             return !(this.username == null || this.password == null);
         }
-
     }
-
 }

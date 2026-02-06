@@ -59,8 +59,8 @@ public class ComputeAltAGL extends ComputeStep {
         DoubleTimeSeries latitudeTS = builder.getDoubleTimeSeries(LATITUDE);
         DoubleTimeSeries longitudeTS = builder.getDoubleTimeSeries(LONGITUDE);
 
-        DoubleTimeSeries altitudeAGLTS = withConnection(
-                connection -> new DoubleTimeSeries(connection, ALT_AGL, Unit.FT_AGL));
+        DoubleTimeSeries altitudeAGLTS =
+                withConnection(connection -> new DoubleTimeSeries(connection, ALT_AGL, Unit.FT_AGL));
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
             double altitudeMSL = altitudeMSLTS.get(i);
@@ -78,10 +78,8 @@ public class ComputeAltAGL extends ComputeStep {
             } catch (TerrainUnavailableException e) {
                 altitudeAGLTS.add(Double.NaN);
             }
-
         }
 
         builder.addTimeSeries(altitudeAGLTS);
     }
-
 }

@@ -73,12 +73,8 @@ public abstract class ComputeStep {
 
     public boolean applicable() {
         return airframeIsValid(builder.meta.getAirframe())
-                && builder
-                .getStringTimeSeriesKeySet()
-                .containsAll(getRequiredStringColumns())
-                && builder
-                .getDoubleTimeSeriesKeySet()
-                .containsAll(getRequiredDoubleColumns());
+                && builder.getStringTimeSeriesKeySet().containsAll(getRequiredStringColumns())
+                && builder.getDoubleTimeSeriesKeySet().containsAll(getRequiredDoubleColumns());
     }
 
     public final String explainApplicability() {
@@ -87,12 +83,12 @@ public abstract class ComputeStep {
         }
 
         String className = this.getClass().getSimpleName();
-        StringBuilder sb = new StringBuilder(
-                "Step '" + className + "' cannot be applied for the following reason(s):\n");
+        StringBuilder sb =
+                new StringBuilder("Step '" + className + "' cannot be applied for the following reason(s):\n");
 
         if (!airframeIsValid(builder.meta.getAirframe())) {
-            sb.append("  - airframeName '" + builder.meta.getAirframe().getName() + "' is invalid ("
-                    + className + "::airframeIsValid returned false for airframeName '" + className + "')\n");
+            sb.append("  - airframeName '" + builder.meta.getAirframe().getName() + "' is invalid (" + className
+                    + "::airframeIsValid returned false for airframeName '" + className + "')\n");
         }
 
         for (String key : getRequiredStringColumns()) {

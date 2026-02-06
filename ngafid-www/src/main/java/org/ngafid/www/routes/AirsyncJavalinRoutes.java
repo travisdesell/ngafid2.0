@@ -44,7 +44,8 @@ public class AirsyncJavalinRoutes {
             int pageSize = 10;
             int totalUploads = getNumImports(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
-            List<AirSyncImportResponse> imports = getImports(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<AirSyncImportResponse> imports =
+                    getImports(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
@@ -82,7 +83,8 @@ public class AirsyncJavalinRoutes {
             if (fleet.getOverride(connection)) timestamp = "Pending";
             int totalUploads = AirSyncImport.getNumUploads(connection, fleet.getId(), null);
             int numberPages = totalUploads / pageSize;
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleet.getId(), " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            List<Upload> uploads = AirSyncImport.getUploads(
+                    connection, fleet.getId(), " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");

@@ -1,11 +1,5 @@
 package org.ngafid.core.kafka;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.ngafid.core.Config;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -16,6 +10,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.ngafid.core.Config;
 
 public class DockerServiceHeartbeat {
 
@@ -24,22 +23,15 @@ public class DockerServiceHeartbeat {
      * containing the Docker service's name to the
      * 'ngafid.heartbeat' Kafka topic.
      */
-
     public static final boolean USING_DOCKER =
-            Files.exists(Path.of("/.dockerenv"))
-        ||  Files.exists(Path.of("/run/.containerenv"))
-    ;
-
+            Files.exists(Path.of("/.dockerenv")) || Files.exists(Path.of("/run/.containerenv"));
 
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeat.class.getName());
-
 
     private static final String TOPIC = Topic.STATUS_HEARTBEAT.toString();
     private static final ScheduledExecutorService SCHED = Executors.newSingleThreadScheduledExecutor();
 
-
     private static final String SERVICE_NAME_UNKNOWN = "unknown-service";
-
 
     private static void start(
             KafkaProducer<String, String> producer, String serviceName, String instanceId, long periodMs) {
@@ -50,7 +42,6 @@ public class DockerServiceHeartbeat {
         };
 
         SCHED.scheduleAtFixedRate(beat, 0, periodMs, TimeUnit.MILLISECONDS);
-
     }
 
     public static void autostart() throws UnknownHostException {
@@ -64,7 +55,10 @@ public class DockerServiceHeartbeat {
         String service = Config.getProperty("ngafid.service.name");
 
         // Still unknown, try to detect from main class or stack trace
-        if (service == null || service.isBlank() || service.equals(SERVICE_NAME_UNKNOWN) || service.equals("ngafid-service")) {
+        if (service == null
+                || service.isBlank()
+                || service.equals(SERVICE_NAME_UNKNOWN)
+                || service.equals("ngafid-service")) {
             LOG.info("No service name configured, attempting to detect from context...");
             service = detectServiceName();
         }
@@ -79,12 +73,14 @@ public class DockerServiceHeartbeat {
 
         // Not running in Docker, do not start heartbeat
         if (!USING_DOCKER) {
-            LOG.log(Level.WARNING,
-                    "Detected running outside of Docker, heartbeat not started for service: {0}", service);
+            LOG.log(
+                    Level.WARNING,
+                    "Detected running outside of Docker, heartbeat not started for service: {0}",
+                    service);
             return;
         }
 
-        //Get properties for the heartbeat producer
+        // Get properties for the heartbeat producer
         final Properties heartbeatProps = new Properties();
         String bootstrap = Config.getProperty("ngafid.kafka.bootstrap.servers");
         heartbeatProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
@@ -100,7 +96,6 @@ public class DockerServiceHeartbeat {
 
         // Start the heartbeat
         DockerServiceHeartbeat.start(heartbeatProducer, service, instance, heartbeatIntervalMS);
-
     }
 
     /**
@@ -130,5 +125,4 @@ public class DockerServiceHeartbeat {
         }
         return SERVICE_NAME_UNKNOWN;
     }
-
 }

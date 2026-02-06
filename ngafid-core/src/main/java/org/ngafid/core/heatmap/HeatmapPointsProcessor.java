@@ -1,5 +1,12 @@
 package org.ngafid.core.heatmap;
 
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
 import org.ngafid.core.event.Event;
@@ -9,14 +16,6 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.TimeUtils;
-
-import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.logging.Logger;
 
 public class HeatmapPointsProcessor {
     private static final Logger LOG = Logger.getLogger(HeatmapPointsProcessor.class.getName());
@@ -31,8 +30,7 @@ public class HeatmapPointsProcessor {
         System.out.println("Starting heatmap points backfill process...");
 
         try (Connection connection = Database.getConnection()) {
-            List<Map<String, Object>> results = backfillAllMissingHeatmapPoints(
-                connection, batchSize, limit);
+            List<Map<String, Object>> results = backfillAllMissingHeatmapPoints(connection, batchSize, limit);
 
             printResults(results);
         } catch (Exception e) {
@@ -91,19 +89,20 @@ public class HeatmapPointsProcessor {
      * @return AGL altitude in feet, or NaN if conversion not possible
      */
     private static double convertMSLToAGL(double altitudeMSL, double latitude, double longitude) {
-        return  MSLtoAGLConverter.convertMSLToAGL(altitudeMSL, latitude, longitude);
+        return MSLtoAGLConverter.convertMSLToAGL(altitudeMSL, latitude, longitude);
     }
 
     /**
      * Get AGL by fetching MSL from database and converting it
      */
-    private static double getAGLFromMSL(Connection connection, int flightId, double latitude, double longitude, OffsetDateTime timestamp) {
+    private static double getAGLFromMSL(
+            Connection connection, int flightId, double latitude, double longitude, OffsetDateTime timestamp) {
         try {
             // Get MSL value from the flight's time series at the given timestamp
             // Use approximate matching for coordinates and timestamp
-            String sql = "SELECT altitude_msl FROM flight_data WHERE flight_id = ? " +
-                        "AND ABS(latitude - ?) < 0.001 AND ABS(longitude - ?) < 0.001 " +
-                        "AND utc_date_time = ? LIMIT 1";
+            String sql = "SELECT altitude_msl FROM flight_data WHERE flight_id = ? "
+                    + "AND ABS(latitude - ?) < 0.001 AND ABS(longitude - ?) < 0.001 "
+                    + "AND utc_date_time = ? LIMIT 1";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setInt(1, flightId);
                 stmt.setDouble(2, latitude);
@@ -118,7 +117,8 @@ public class HeatmapPointsProcessor {
                             return convertedAGL;
                         }
                     } else {
-                        LOG.info("No MSL data found for flight " + flightId + " at " + timestamp + " with coordinates " + latitude + ", " + longitude);
+                        LOG.info("No MSL data found for flight " + flightId + " at " + timestamp + " with coordinates "
+                                + latitude + ", " + longitude);
                     }
                 }
             }
@@ -128,12 +128,15 @@ public class HeatmapPointsProcessor {
         return Double.NaN;
     }
 
+    public static void insertCoordinatesForProximityEvents(
+            Connection connection,
+            List<Event> events,
+            Map<Event, List<ProximityPointData>> mainFlightPointsMap,
+            Map<Event, List<ProximityPointData>> otherFlightPointsMap)
+            throws SQLException {
 
-
-    public static void insertCoordinatesForProximityEvents(Connection connection, List<Event> events, Map<Event, List<ProximityPointData>> mainFlightPointsMap, Map<Event, List<ProximityPointData>> otherFlightPointsMap) throws SQLException {
-
-        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int inserted = 0;
@@ -153,7 +156,12 @@ public class HeatmapPointsProcessor {
                         double altitudeAGL = point.getAltitudeAGL();
                         if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL <= 0.0) {
                             // AGL is invalid, try to get MSL from database and convert
-                            double convertedAGL = getAGLFromMSL(connection, event.getFlightId(), point.getLatitude(), point.getLongitude(), point.getTimestamp());
+                            double convertedAGL = getAGLFromMSL(
+                                    connection,
+                                    event.getFlightId(),
+                                    point.getLatitude(),
+                                    point.getLongitude(),
+                                    point.getTimestamp());
                             if (!Double.isNaN(convertedAGL)) {
                                 stmt.setDouble(6, convertedAGL);
                             } else {
@@ -169,7 +177,6 @@ public class HeatmapPointsProcessor {
                 }
 
                 List<ProximityPointData> otherPoints = otherFlightPointsMap.get(event);
-
 
                 if (otherPoints != null) {
                     for (ProximityPointData point : otherPoints) {
@@ -188,7 +195,12 @@ public class HeatmapPointsProcessor {
                         double altitudeAGL = point.getAltitudeAGL();
                         if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL <= 0.0) {
                             // AGL is invalid, try to get MSL from database and convert
-                            double convertedAGL = getAGLFromMSL(connection, otherFlightId, point.getLatitude(), point.getLongitude(), point.getTimestamp());
+                            double convertedAGL = getAGLFromMSL(
+                                    connection,
+                                    otherFlightId,
+                                    point.getLatitude(),
+                                    point.getLongitude(),
+                                    point.getTimestamp());
                             if (!Double.isNaN(convertedAGL)) {
                                 stmt.setDouble(6, convertedAGL);
                             } else {
@@ -207,7 +219,6 @@ public class HeatmapPointsProcessor {
         }
     }
 
-
     /**
      * Insert coordinates for regular (non-proximity) events by extracting flight data points
      * during the event's time window.
@@ -217,10 +228,11 @@ public class HeatmapPointsProcessor {
      * @param flight The flight containing the time series data
      * @throws SQLException if database operation fails
      */
-    public static void insertCoordinatesForNonProximityEvents(Connection connection, List<Event> events, Flight flight) throws SQLException {
+    public static void insertCoordinatesForNonProximityEvents(Connection connection, List<Event> events, Flight flight)
+            throws SQLException {
 
-        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO heatmap_points (event_id, flight_id, latitude, longitude, timestamp, altitude_agl) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int inserted = 0;
@@ -242,15 +254,21 @@ public class HeatmapPointsProcessor {
 
             for (Event event : events) {
                 // Extract points from startLine to endLine
-                for (int i = event.getStartLine(); i <= event.getEndLine() && i < latitudeSeries.size() && i < longitudeSeries.size() && i < timestampSeries.size(); i++) {
+                for (int i = event.getStartLine();
+                        i <= event.getEndLine()
+                                && i < latitudeSeries.size()
+                                && i < longitudeSeries.size()
+                                && i < timestampSeries.size();
+                        i++) {
                     double latitude = latitudeSeries.get(i);
                     double longitude = longitudeSeries.get(i);
 
-
                     // Skip invalid coordinates (0,0, NaN, or infinite values)
-                    if (latitude == 0.0 && longitude == 0.0 ||
-                        Double.isNaN(latitude) || Double.isNaN(longitude) ||
-                        Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
+                    if (latitude == 0.0 && longitude == 0.0
+                            || Double.isNaN(latitude)
+                            || Double.isNaN(longitude)
+                            || Double.isInfinite(latitude)
+                            || Double.isInfinite(longitude)) {
                         continue;
                     }
 
@@ -323,18 +341,18 @@ public class HeatmapPointsProcessor {
         }
     }
 
-
     // Fetches proximity points for a given event_id and flight_id
     public static Map<String, Object> getCoordinates(int eventId, int flightId) {
         Map<String, Object> eventMap = new HashMap<>();
         List<Map<String, Object>> points = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
-            String query = "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe " +
-                           "FROM heatmap_points pp " +
-                           "JOIN flights f ON pp.flight_id = f.id " +
-                           "JOIN airframes a ON f.airframe_id = a.id " +
-                           "WHERE pp.event_id = ? AND pp.flight_id = ? " +
-                           "ORDER BY pp.timestamp";
+            String query =
+                    "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe "
+                            + "FROM heatmap_points pp "
+                            + "JOIN flights f ON pp.flight_id = f.id "
+                            + "JOIN airframes a ON f.airframe_id = a.id "
+                            + "WHERE pp.event_id = ? AND pp.flight_id = ? "
+                            + "ORDER BY pp.timestamp";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, eventId);
                 stmt.setInt(2, flightId);
@@ -357,13 +375,13 @@ public class HeatmapPointsProcessor {
                 }
             }
         } catch (SQLException e) {
-            LOG.severe("SQL error in getCoordinates for event_id=" + eventId + ", flight_id=" + flightId + ": " + e.getMessage());
+            LOG.severe("SQL error in getCoordinates for event_id=" + eventId + ", flight_id=" + flightId + ": "
+                    + e.getMessage());
             e.printStackTrace();
         }
         eventMap.put("points", points);
         return eventMap;
     }
-
 
     /**
      * Gets the relevant column names for a given event ID and flight ID.
@@ -379,10 +397,10 @@ public class HeatmapPointsProcessor {
 
         try (Connection connection = Database.getConnection()) {
             // First, get the event definition ID from the events table
-            String eventQuery = "SELECT e.event_definition_id, e.start_line, e.end_line, ed.column_names " +
-                               "FROM events e " +
-                               "JOIN event_definitions ed ON e.event_definition_id = ed.id " +
-                               "WHERE e.id = ? AND e.flight_id = ?";
+            String eventQuery =
+                    "SELECT e.event_definition_id, e.start_line, e.end_line, ed.column_names " + "FROM events e "
+                            + "JOIN event_definitions ed ON e.event_definition_id = ed.id "
+                            + "WHERE e.id = ? AND e.flight_id = ?";
 
             try (PreparedStatement stmt = connection.prepareStatement(eventQuery)) {
                 stmt.setInt(1, eventId);
@@ -426,7 +444,8 @@ public class HeatmapPointsProcessor {
                 }
             }
         } catch (SQLException e) {
-            LOG.severe("SQL error in getEventDefinitionColumns for event_id=" + eventId + ", flight_id=" + flightId + ": " + e.getMessage());
+            LOG.severe("SQL error in getEventDefinitionColumns for event_id=" + eventId + ", flight_id=" + flightId
+                    + ": " + e.getMessage());
             e.printStackTrace();
             result.put("error", "Database error: " + e.getMessage());
         }
@@ -521,7 +540,8 @@ public class HeatmapPointsProcessor {
             return result;
 
         } catch (SQLException e) {
-            LOG.severe("SQL error in getEventColumnsValues for event_id=" + eventId + ", flight_id=" + flightId + ": " + e.getMessage());
+            LOG.severe("SQL error in getEventColumnsValues for event_id=" + eventId + ", flight_id=" + flightId + ": "
+                    + e.getMessage());
             e.printStackTrace();
             result.put("error", "Database error: " + e.getMessage());
         }
@@ -540,10 +560,12 @@ public class HeatmapPointsProcessor {
      * @param endLine The end line of the event in the flight's data
      * @return Time index, or -1 if not found
      */
-    private static int getTimeIndexInRange(Connection connection, int flightId, String timestamp, int startLine, int endLine) {
+    private static int getTimeIndexInRange(
+            Connection connection, int flightId, String timestamp, int startLine, int endLine) {
         try {
             // Get UTC_DATE_TIME series
-            StringTimeSeries timestampSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, Parameters.UTC_DATE_TIME);
+            StringTimeSeries timestampSeries =
+                    StringTimeSeries.getStringTimeSeries(connection, flightId, Parameters.UTC_DATE_TIME);
             if (timestampSeries == null) {
                 return -1;
             }
@@ -557,8 +579,8 @@ public class HeatmapPointsProcessor {
                 try {
                     // Try MySQL format (yyyy-MM-dd HH:mm:ss.S) and convert to ISO 8601
                     String cleanedTimestamp = timestamp.replaceAll("\\.0$", ""); // Remove .0 suffix
-                    LocalDateTime localDateTime = LocalDateTime.parse(cleanedTimestamp,
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    LocalDateTime localDateTime =
+                            LocalDateTime.parse(cleanedTimestamp, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                     targetTime = localDateTime.atOffset(ZoneOffset.UTC);
                 } catch (Exception e2) {
                     return -1;
@@ -585,25 +607,30 @@ public class HeatmapPointsProcessor {
         }
     }
 
-
     public static List<Map<String, Object>> getEvents(
-        String airframe, List<Integer> eventDefinitionIds, java.sql.Date startDate, java.sql.Date endDate,
-        double areaMinLat, double areaMaxLat, double areaMinLon, double areaMaxLon,
-        Double minSeverity, Double maxSeverity
-    ) throws SQLException {
+            String airframe,
+            List<Integer> eventDefinitionIds,
+            java.sql.Date startDate,
+            java.sql.Date endDate,
+            double areaMinLat,
+            double areaMaxLat,
+            double areaMinLon,
+            double areaMaxLon,
+            Double minSeverity,
+            Double maxSeverity)
+            throws SQLException {
         List<Map<String, Object>> events = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
             StringBuilder sql = new StringBuilder(
-                "SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, e.other_flight_id, e.start_line, e.end_line, e.start_time, e.end_time, e.severity, e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, a.airframe as airframe_name, oa.airframe as other_airframe_name " +
-                "FROM events e " +
-                "JOIN flights f ON e.flight_id = f.id " +
-                "JOIN airframes a ON f.airframe_id = a.id " +
-                "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id " +
-                "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id " +
-                "WHERE DATE(e.start_time) BETWEEN ? AND ? " +
-                "AND e.min_latitude <= ? AND e.max_latitude >= ? " +
-                "AND e.min_longitude <= ? AND e.max_longitude >= ?"
-            );
+                    "SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, e.other_flight_id, e.start_line, e.end_line, e.start_time, e.end_time, e.severity, e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, a.airframe as airframe_name, oa.airframe as other_airframe_name "
+                            + "FROM events e "
+                            + "JOIN flights f ON e.flight_id = f.id "
+                            + "JOIN airframes a ON f.airframe_id = a.id "
+                            + "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id "
+                            + "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id "
+                            + "WHERE DATE(e.start_time) BETWEEN ? AND ? "
+                            + "AND e.min_latitude <= ? AND e.max_latitude >= ? "
+                            + "AND e.min_longitude <= ? AND e.max_longitude >= ?");
             if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
                 sql.append(" AND a.airframe = ?");
             }
@@ -672,8 +699,6 @@ public class HeatmapPointsProcessor {
         return events;
     }
 
-
-
     /**
      * Backfills heatmap points for all events that don't have heatmap points.
      * This method is designed for migrating existing events that don't have heatmap points.
@@ -684,14 +709,14 @@ public class HeatmapPointsProcessor {
      * @return List of results for each event
      * @throws SQLException if database operation fails
      */
-    public static List<Map<String, Object>> backfillAllMissingHeatmapPoints(Connection connection, int batchSize, Integer limit) throws SQLException {
+    public static List<Map<String, Object>> backfillAllMissingHeatmapPoints(
+            Connection connection, int batchSize, Integer limit) throws SQLException {
         List<Map<String, Object>> results = new ArrayList<>();
 
         // Get all events that don't have heatmap points
-        String sql = "SELECT e.id FROM events e " +
-                     "LEFT JOIN heatmap_points hp ON e.id = hp.event_id " +
-                     "WHERE hp.event_id IS NULL " +
-                     "ORDER BY e.id";
+        String sql = "SELECT e.id FROM events e " + "LEFT JOIN heatmap_points hp ON e.id = hp.event_id "
+                + "WHERE hp.event_id IS NULL "
+                + "ORDER BY e.id";
 
         if (limit != null) {
             sql += " LIMIT " + limit;
@@ -778,15 +803,17 @@ public class HeatmapPointsProcessor {
             if (existingPoints > 0) {
                 result.put("event_id", eventId);
                 result.put("status", "skipped");
-                result.put("message", "Heatmap points already exist for event " + eventId + " (" + existingPoints + " points)");
+                result.put(
+                        "message",
+                        "Heatmap points already exist for event " + eventId + " (" + existingPoints + " points)");
                 result.put("existing_points", existingPoints);
                 return result;
             }
 
             // Get event details
-            String eventSql = "SELECT e.*, ed.id as event_def_id FROM events e " +
-                             "LEFT JOIN event_definitions ed ON e.event_definition_id = ed.id " +
-                             "WHERE e.id = ?";
+            String eventSql = "SELECT e.*, ed.id as event_def_id FROM events e "
+                    + "LEFT JOIN event_definitions ed ON e.event_definition_id = ed.id "
+                    + "WHERE e.id = ?";
 
             Event event = null;
             Flight flight = null;
@@ -815,19 +842,32 @@ public class HeatmapPointsProcessor {
                         String startTime = rs.getString("start_time");
                         String endTime = rs.getString("end_time");
                         double severity = rs.getDouble("severity");
-                        Integer otherFlightId = rs.getObject("other_flight_id") != null ? rs.getInt("other_flight_id") : null;
+                        Integer otherFlightId =
+                                rs.getObject("other_flight_id") != null ? rs.getInt("other_flight_id") : null;
 
                         // Convert MySQL datetime format to ISO 8601 format
                         String isoStartTime = convertToISO8601(startTime);
                         String isoEndTime = convertToISO8601(endTime);
 
-                        LOG.info("Creating Event with: eventId=" + eventId + ", fleetId=" + fleetId + ", flightId=" + flightId +
-                                ", eventDefinitionId=" + eventDefinitionId + ", startLine=" + startLine + ", endLine=" + endLine +
-                                ", isoStartTime=" + isoStartTime + ", isoEndTime=" + isoEndTime + ", severity=" + severity +
-                                ", otherFlightId=" + otherFlightId);
+                        LOG.info("Creating Event with: eventId=" + eventId + ", fleetId=" + fleetId + ", flightId="
+                                + flightId + ", eventDefinitionId="
+                                + eventDefinitionId + ", startLine=" + startLine + ", endLine=" + endLine
+                                + ", isoStartTime="
+                                + isoStartTime + ", isoEndTime=" + isoEndTime + ", severity=" + severity
+                                + ", otherFlightId="
+                                + otherFlightId);
 
-                        event = new Event(eventId, fleetId, flightId, eventDefinitionId, startLine, endLine,
-                                        isoStartTime, isoEndTime, severity, otherFlightId);
+                        event = new Event(
+                                eventId,
+                                fleetId,
+                                flightId,
+                                eventDefinitionId,
+                                startLine,
+                                endLine,
+                                isoStartTime,
+                                isoEndTime,
+                                severity,
+                                otherFlightId);
 
                         LOG.info("Event created successfully");
                     } else {
@@ -865,7 +905,6 @@ public class HeatmapPointsProcessor {
                     return result;
                 }
 
-
                 insertCoordinatesForNonProximityEvents(connection, events, flight);
 
                 // Count and print the inserted points
@@ -884,7 +923,9 @@ public class HeatmapPointsProcessor {
 
                 result.put("event_id", eventId);
                 result.put("status", "success");
-                result.put("message", "Successfully backfilled " + insertedPoints + " heatmap points for event " + eventId);
+                result.put(
+                        "message",
+                        "Successfully backfilled " + insertedPoints + " heatmap points for event " + eventId);
                 result.put("inserted_points", insertedPoints);
                 result.put("event_type", "regular");
             }
@@ -915,10 +956,9 @@ public class HeatmapPointsProcessor {
 
         try {
             // Parse MySQL datetime format and convert to ISO 8601
-            LocalDateTime localDateTime = LocalDateTime.parse(mysqlDateTime,
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            String result = localDateTime.atOffset(ZoneOffset.UTC)
-                    .format(TimeUtils.getIso8601Format());
+            LocalDateTime localDateTime =
+                    LocalDateTime.parse(mysqlDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            String result = localDateTime.atOffset(ZoneOffset.UTC).format(TimeUtils.getIso8601Format());
             return result;
         } catch (Exception e) {
             LOG.warning("Failed to convert datetime: " + mysqlDateTime + ", error: " + e.getMessage());
@@ -937,7 +977,8 @@ public class HeatmapPointsProcessor {
      * @return Map containing the result of the backfill operation
      * @throws SQLException if database operation fails
      */
-    private static Map<String, Object> backfillProximityEvent(Connection connection, Event event, Flight mainFlight) throws SQLException {
+    private static Map<String, Object> backfillProximityEvent(Connection connection, Event event, Flight mainFlight)
+            throws SQLException {
         Map<String, Object> result = new HashMap<>();
         int eventId = event.getId();
 
@@ -990,11 +1031,15 @@ public class HeatmapPointsProcessor {
             DoubleTimeSeries otherLongitudeSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.LONGITUDE);
             DoubleTimeSeries otherAltitudeAGLSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
             DoubleTimeSeries otherAltitudeMSLSeries = otherFlight.getDoubleTimeSeries(connection, Parameters.ALT_MSL);
-            StringTimeSeries otherTimestampSeries = otherFlight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
+            StringTimeSeries otherTimestampSeries =
+                    otherFlight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
 
-
-            if (mainLatitudeSeries == null || mainLongitudeSeries == null || mainTimestampSeries == null ||
-                otherLatitudeSeries == null || otherLongitudeSeries == null || otherTimestampSeries == null) {
+            if (mainLatitudeSeries == null
+                    || mainLongitudeSeries == null
+                    || mainTimestampSeries == null
+                    || otherLatitudeSeries == null
+                    || otherLongitudeSeries == null
+                    || otherTimestampSeries == null) {
                 result.put("event_id", eventId);
                 result.put("status", "error");
                 result.put("message", "Missing required flight data for proximity event " + eventId);
@@ -1006,14 +1051,21 @@ public class HeatmapPointsProcessor {
             List<ProximityPointData> otherFlightPoints = new ArrayList<>();
 
             // Extract main flight points
-            for (int i = event.getStartLine(); i <= event.getEndLine() && i < mainLatitudeSeries.size() && i < mainLongitudeSeries.size() && i < mainTimestampSeries.size(); i++) {
+            for (int i = event.getStartLine();
+                    i <= event.getEndLine()
+                            && i < mainLatitudeSeries.size()
+                            && i < mainLongitudeSeries.size()
+                            && i < mainTimestampSeries.size();
+                    i++) {
                 double latitude = mainLatitudeSeries.get(i);
                 double longitude = mainLongitudeSeries.get(i);
 
                 // Skip invalid coordinates
-                if (latitude == 0.0 && longitude == 0.0 ||
-                    Double.isNaN(latitude) || Double.isNaN(longitude) ||
-                    Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
+                if (latitude == 0.0 && longitude == 0.0
+                        || Double.isNaN(latitude)
+                        || Double.isNaN(longitude)
+                        || Double.isInfinite(latitude)
+                        || Double.isInfinite(longitude)) {
                     continue;
                 }
 
@@ -1023,45 +1075,41 @@ public class HeatmapPointsProcessor {
                 try {
                     OffsetDateTime timestamp = OffsetDateTime.parse(timestampStr);
 
-                                         // Try to get AGL altitude first
-                     double altitudeAGL = Double.NaN;
-                     if (mainAltitudeAGLSeries != null && i < mainAltitudeAGLSeries.size()) {
-                         altitudeAGL = mainAltitudeAGLSeries.get(i);
-                         if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL == 0.0) {
-                             altitudeAGL = Double.NaN;
-                             LOG.info("Point " + i + ": AGL is invalid (NaN, Infinite, or 0.0), setting to NaN");
-                         }
-                     } else {
-                         LOG.info("Point " + i + ": AGL series not available");
-                     }
+                    // Try to get AGL altitude first
+                    double altitudeAGL = Double.NaN;
+                    if (mainAltitudeAGLSeries != null && i < mainAltitudeAGLSeries.size()) {
+                        altitudeAGL = mainAltitudeAGLSeries.get(i);
+                        if (Double.isNaN(altitudeAGL) || Double.isInfinite(altitudeAGL) || altitudeAGL == 0.0) {
+                            altitudeAGL = Double.NaN;
+                            LOG.info("Point " + i + ": AGL is invalid (NaN, Infinite, or 0.0), setting to NaN");
+                        }
+                    } else {
+                        LOG.info("Point " + i + ": AGL series not available");
+                    }
 
-                     // If AGL is not available, try MSL conversion
-                     if (Double.isNaN(altitudeAGL)) {
-                         if (mainAltitudeMSLSeries != null && i < mainAltitudeMSLSeries.size()) {
-                             double altitudeMSL = mainAltitudeMSLSeries.get(i);
-                             if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL) && altitudeMSL > 0) {
-                                 altitudeAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
-                                 LOG.info("Converted MSL " + altitudeMSL + " to AGL " + altitudeAGL + " for point " + i);
-                             } else {
-                                 LOG.info("Point " + i + ": MSL is invalid (NaN, Infinite, or <= 0)");
-                             }
-                         } else {
-                             LOG.info("Point " + i + ": MSL series not available");
-                         }
-                     }
+                    // If AGL is not available, try MSL conversion
+                    if (Double.isNaN(altitudeAGL)) {
+                        if (mainAltitudeMSLSeries != null && i < mainAltitudeMSLSeries.size()) {
+                            double altitudeMSL = mainAltitudeMSLSeries.get(i);
+                            if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL) && altitudeMSL > 0) {
+                                altitudeAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
+                                LOG.info("Converted MSL " + altitudeMSL + " to AGL " + altitudeAGL + " for point " + i);
+                            } else {
+                                LOG.info("Point " + i + ": MSL is invalid (NaN, Infinite, or <= 0)");
+                            }
+                        } else {
+                            LOG.info("Point " + i + ": MSL series not available");
+                        }
+                    }
 
+                    if (mainAltitudeAGLSeries != null && i < mainAltitudeAGLSeries.size()) {
+                        double rawAGL = mainAltitudeAGLSeries.get(i);
+                    }
+                    if (mainAltitudeMSLSeries != null && i < mainAltitudeMSLSeries.size()) {
+                        double rawMSL = mainAltitudeMSLSeries.get(i);
+                    }
 
-                     if (mainAltitudeAGLSeries != null && i < mainAltitudeAGLSeries.size()) {
-                         double rawAGL = mainAltitudeAGLSeries.get(i);
-                     }
-                     if (mainAltitudeMSLSeries != null && i < mainAltitudeMSLSeries.size()) {
-                         double rawMSL = mainAltitudeMSLSeries.get(i);
-                     }
-
-
-
-                    ProximityPointData point = new ProximityPointData(
-                        latitude, longitude, timestamp, altitudeAGL);
+                    ProximityPointData point = new ProximityPointData(latitude, longitude, timestamp, altitudeAGL);
                     mainFlightPoints.add(point);
                 } catch (Exception e) {
                     // Skip invalid timestamps
@@ -1070,14 +1118,21 @@ public class HeatmapPointsProcessor {
             }
 
             // Extract other flight points (use same time range)
-            for (int i = event.getStartLine(); i <= event.getEndLine() && i < otherLatitudeSeries.size() && i < otherLongitudeSeries.size() && i < otherTimestampSeries.size(); i++) {
+            for (int i = event.getStartLine();
+                    i <= event.getEndLine()
+                            && i < otherLatitudeSeries.size()
+                            && i < otherLongitudeSeries.size()
+                            && i < otherTimestampSeries.size();
+                    i++) {
                 double latitude = otherLatitudeSeries.get(i);
                 double longitude = otherLongitudeSeries.get(i);
 
                 // Skip invalid coordinates
-                if (latitude == 0.0 && longitude == 0.0 ||
-                    Double.isNaN(latitude) || Double.isNaN(longitude) ||
-                    Double.isInfinite(latitude) || Double.isInfinite(longitude)) {
+                if (latitude == 0.0 && longitude == 0.0
+                        || Double.isNaN(latitude)
+                        || Double.isNaN(longitude)
+                        || Double.isInfinite(latitude)
+                        || Double.isInfinite(longitude)) {
                     continue;
                 }
 
@@ -1096,22 +1151,21 @@ public class HeatmapPointsProcessor {
                         }
                     }
 
-                                         // If AGL is not available, try MSL conversion
-                     if (Double.isNaN(altitudeAGL)) {
-                         if (otherAltitudeMSLSeries != null && i < otherAltitudeMSLSeries.size()) {
-                             double altitudeMSL = otherAltitudeMSLSeries.get(i);
-                             if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL) && altitudeMSL > 0) {
-                                 altitudeAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
-                             } else {
-                                 LOG.info("Other flight point " + i + ": MSL is invalid (NaN, Infinite, or <= 0)");
-                             }
-                         } else {
-                             LOG.info("Other flight point " + i + ": MSL series not available");
-                         }
-                     }
+                    // If AGL is not available, try MSL conversion
+                    if (Double.isNaN(altitudeAGL)) {
+                        if (otherAltitudeMSLSeries != null && i < otherAltitudeMSLSeries.size()) {
+                            double altitudeMSL = otherAltitudeMSLSeries.get(i);
+                            if (!Double.isNaN(altitudeMSL) && !Double.isInfinite(altitudeMSL) && altitudeMSL > 0) {
+                                altitudeAGL = convertMSLToAGL(altitudeMSL, latitude, longitude);
+                            } else {
+                                LOG.info("Other flight point " + i + ": MSL is invalid (NaN, Infinite, or <= 0)");
+                            }
+                        } else {
+                            LOG.info("Other flight point " + i + ": MSL series not available");
+                        }
+                    }
 
-                    ProximityPointData point = new ProximityPointData(
-                        latitude, longitude, timestamp, altitudeAGL);
+                    ProximityPointData point = new ProximityPointData(latitude, longitude, timestamp, altitudeAGL);
                     otherFlightPoints.add(point);
                 } catch (Exception e) {
                     // Skip invalid timestamps
@@ -1146,7 +1200,9 @@ public class HeatmapPointsProcessor {
 
             result.put("event_id", eventId);
             result.put("status", "success");
-            result.put("message", "Successfully backfilled " + insertedPoints + " proximity heatmap points for event " + eventId);
+            result.put(
+                    "message",
+                    "Successfully backfilled " + insertedPoints + " proximity heatmap points for event " + eventId);
             result.put("inserted_points", insertedPoints);
             result.put("event_type", "proximity");
             result.put("main_flight_points", mainFlightPoints.size());

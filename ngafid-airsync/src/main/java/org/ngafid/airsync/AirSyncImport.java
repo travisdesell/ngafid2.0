@@ -25,7 +25,8 @@ import org.ngafid.core.uploads.Upload;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class AirSyncImport {
     private static final Logger LOG = Logger.getLogger(AirSyncImport.class.getName());
-    public static final Gson GSON = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    public static final Gson GSON =
+            new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     @JsonCreator
     public static AirSyncImport create(
@@ -54,8 +55,7 @@ public final class AirSyncImport {
         return imp;
     }
 
-    private AirSyncImport() {
-    }
+    private AirSyncImport() {}
 
     /*
      * The airsync uploader should be the same across all fleets!
@@ -89,8 +89,8 @@ public final class AirSyncImport {
     public static int getUploaderId() throws SQLException {
         if (AIRSYNC_UPLOADER_ID <= 0) {
             String sql = "SELECT id FROM user WHERE id = -1";
-            try (Connection connection = Database.getConnection(); PreparedStatement query =
-                    connection.prepareStatement(sql)) {
+            try (Connection connection = Database.getConnection();
+                    PreparedStatement query = connection.prepareStatement(sql)) {
                 ResultSet resultSet = query.executeQuery();
 
                 if (resultSet.next()) {
@@ -108,8 +108,8 @@ public final class AirSyncImport {
         return connection.prepareStatement(sql);
     }
 
-    public static void batchCreateImport(Connection connection,
-                                         List<AirSyncImport> imports, Flight flight) throws SQLException {
+    public static void batchCreateImport(Connection connection, List<AirSyncImport> imports, Flight flight)
+            throws SQLException {
         for (var imp : imports)
             try (PreparedStatement query = createPreparedStatement(connection)) {
                 imp.addBatch(query, flight);
@@ -165,7 +165,6 @@ public final class AirSyncImport {
 
                 return uploads;
             }
-
         }
     }
 
@@ -193,7 +192,6 @@ public final class AirSyncImport {
                     return -1;
                 }
             }
-
         }
     }
 
@@ -207,8 +205,8 @@ public final class AirSyncImport {
      * @return a list of AirSyncImportResponses
      * @throws SQLException if there is an issue with the DBMS
      */
-    public static List<AirSyncImportResponse> getImports(Connection connection,
-                                                         int fleetId, String condition) throws SQLException {
+    public static List<AirSyncImportResponse> getImports(Connection connection, int fleetId, String condition)
+            throws SQLException {
         String sql = "SELECT a.id, a.time_received, a.upload_id, u.status, a.flight_id, a.tail FROM airsync_imports "
                 + "AS a INNER JOIN uploads AS u ON u.id = a.upload_id "
                 + "WHERE u.status LIKE 'PROCESSED%' ORDER BY a.time_received";
@@ -274,12 +272,12 @@ public final class AirSyncImport {
 
         // This does not include timezones yet
         // TODO: Add time zone support!
-        this.localDateTimeUpload = LocalDateTime.parse(this.timestampUploaded.split("\\+")[0],
-                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        this.localDateTimeStart = LocalDateTime.parse(this.timeStart.split("\\+")[0],
-                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        this.localDateTimeEnd = LocalDateTime.parse(this.timeEnd.split("\\+")[0],
-                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        this.localDateTimeUpload =
+                LocalDateTime.parse(this.timestampUploaded.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        this.localDateTimeStart =
+                LocalDateTime.parse(this.timeStart.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        this.localDateTimeEnd =
+                LocalDateTime.parse(this.timeEnd.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
     public LocalDateTime getUploadTime() {
@@ -300,9 +298,14 @@ public final class AirSyncImport {
     }
 
     public String getFilename() {
-        return String.format("%d_%d_%d_%d_%d_%d.csv", this.aircraftId, this.localDateTimeStart.getYear(),
-                this.localDateTimeStart.getMonthValue(), this.localDateTimeStart.getDayOfMonth(),
-                this.localDateTimeStart.getHour(), this.localDateTimeStart.getMinute());
+        return String.format(
+                "%d_%d_%d_%d_%d_%d.csv",
+                this.aircraftId,
+                this.localDateTimeStart.getYear(),
+                this.localDateTimeStart.getMonthValue(),
+                this.localDateTimeStart.getDayOfMonth(),
+                this.localDateTimeStart.getHour(),
+                this.localDateTimeStart.getMinute());
     }
 
     /**
@@ -311,8 +314,8 @@ public final class AirSyncImport {
      * @return a {@link Flight} object that was created from this import
      */
     public byte[] download() throws IOException {
-        HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format(AirSyncEndpoints.SINGLE_LOG,
-                this.id)).openConnection();
+        HttpsURLConnection connection =
+                (HttpsURLConnection) new URL(String.format(AirSyncEndpoints.SINGLE_LOG, this.id)).openConnection();
 
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Authorization", this.fleet.getAuth().getBearerString());
@@ -334,8 +337,8 @@ public final class AirSyncImport {
 
     public boolean exists(Connection connection) throws SQLException {
         try (PreparedStatement query =
-                     connection.prepareStatement("SELECT 1 FROM airsync_imports WHERE id = " + id + " LIMIT 1");
-             ResultSet resultSet = query.executeQuery()) {
+                        connection.prepareStatement("SELECT 1 FROM airsync_imports WHERE id = " + id + " LIMIT 1");
+                ResultSet resultSet = query.executeQuery()) {
             return resultSet.next();
         }
     }
@@ -375,9 +378,10 @@ public final class AirSyncImport {
      * {@inheritDoc}
      */
     public String toString() {
-        return "AirSyncImport: " + this.uploadId + ", for aircraftId: " + aircraftId + ", origin: " + origin + ", " +
-                "destination: " + destination + ",\n" + "url: " + fileUrl + ", start time: " + timeStart + ", end " +
-                "time: " + timeEnd + ";";
+        return "AirSyncImport: " + this.uploadId + ", for aircraftId: " + aircraftId + ", origin: " + origin + ", "
+                + "destination: "
+                + destination + ",\n" + "url: " + fileUrl + ", start time: " + timeStart + ", end " + "time: "
+                + timeEnd + ";";
     }
 
     /**

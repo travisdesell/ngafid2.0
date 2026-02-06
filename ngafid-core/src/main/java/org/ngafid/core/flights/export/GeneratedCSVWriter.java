@@ -95,10 +95,8 @@ public class GeneratedCSVWriter extends CSVWriter {
         int startLine = event.getStartLine() - padding;
         int stopLine = event.getEndLine() + padding;
 
-        if (startLine < 0)
-            startLine = 0;
-        if (stopLine > flightLength)
-            stopLine = flightLength;
+        if (startLine < 0) startLine = 0;
+        if (stopLine > flightLength) stopLine = flightLength;
 
         writeToFile(startLine, stopLine);
     }

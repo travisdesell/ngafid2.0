@@ -7,7 +7,7 @@
 package org.ngafid.core.flights.export;
 
 public interface XPlaneParameters {
-    //the file extension
+    // the file extension
     String FDR_FILE_EXTENSION = ".fdr";
 
     /**
@@ -17,9 +17,10 @@ public interface XPlaneParameters {
      * @param I is MS DOS/NT endlines
      */
     String POSIX_ENDL = "A";
+
     String NT_ENDL = "I";
 
-    //String constants
+    // String constants
 
     String ENDL = "endl_type";
     String COMM = "comm";
@@ -37,8 +38,8 @@ public interface XPlaneParameters {
     String EVNT = "evnt";
     String DATA = "data";
 
-    //Data segment parameters
-    //generic altitude col
+    // Data segment parameters
+    // generic altitude col
     String ALT = "altitude";
     String ALT_MSL = "altMSL";
     String LATITUDE = "latitude";

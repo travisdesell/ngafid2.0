@@ -84,8 +84,6 @@ public class ComputeScanEagleStartEndTime extends ComputeStep {
             endODT = endODT.plusDays(1);
         }
 
-        builder
-                .setStartDateTime(startODT)
-                .setEndDateTime(endODT);
+        builder.setStartDateTime(startODT).setEndDateTime(endODT);
     }
 }

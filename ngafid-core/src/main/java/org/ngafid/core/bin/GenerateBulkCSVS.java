@@ -3,7 +3,6 @@
  *
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella</a>
  */
-
 package org.ngafid.core.bin;
 
 import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
@@ -66,8 +65,13 @@ public class GenerateBulkCSVS {
      * @param flightLower      the lower bound of the flightid
      * @param flightUpper      the upper bound of the flightid
      */
-    public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames, int fleetId,
-                            boolean useZip, int flightLower, int flightUpper) {
+    public GenerateBulkCSVS(
+            String outDirectoryRoot,
+            Optional<List<String>> aircraftNames,
+            int fleetId,
+            boolean useZip,
+            int flightLower,
+            int flightUpper) {
         this.outDirectoryRoot = outDirectoryRoot;
         this.aircraftNames = aircraftNames;
         this.fleetId = fleetId;
@@ -102,8 +106,13 @@ public class GenerateBulkCSVS {
      * @param startDate        the start date to use
      * @param endDate          the end tdate to use
      */
-    public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames,
-                            int fleetId, boolean useZip, String startDate, String endDate) {
+    public GenerateBulkCSVS(
+            String outDirectoryRoot,
+            Optional<List<String>> aircraftNames,
+            int fleetId,
+            boolean useZip,
+            String startDate,
+            String endDate) {
 
         this.outDirectoryRoot = outDirectoryRoot;
         this.fleetId = fleetId;
@@ -147,9 +156,9 @@ public class GenerateBulkCSVS {
      * Info function for command line usage
      */
     public static void usage() {
-        System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) " +
-                "[-d date range YYYY-MM-DD to YYYY-MM-DD]\n" + "[-z (enable zip archiving)] " +
-                "[-r range lwr upr (flight numbers)] [-a Aircraft Name]");
+        System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) "
+                + "[-d date range YYYY-MM-DD to YYYY-MM-DD]\n"
+                + "[-z (enable zip archiving)] " + "[-r range lwr upr (flight numbers)] [-a Aircraft Name]");
     }
 
     /**
@@ -241,8 +250,9 @@ public class GenerateBulkCSVS {
                     boolean isNextAircraftPresent = false;
 
                     List<String> names = new ArrayList<>();
-                    while (j < args.length && ((notEnd = !args[j].startsWith("-")) | (isNextAircraftPresent =
-                            args[j].startsWith(",")))) {
+                    while (j < args.length
+                            && ((notEnd = !args[j].startsWith("-"))
+                                    | (isNextAircraftPresent = args[j].startsWith(",")))) {
                         if (isNextAircraftPresent) {
                             String acftStr = sb.toString();
                             int strLen = acftStr.length();
@@ -374,16 +384,14 @@ public class GenerateBulkCSVS {
         ZipOutputStream zipOut = null;
         if (this.useZip) {
             try {
-                FileOutputStream fos =
-                        new FileOutputStream(this.outDirectoryRoot + "/flights_" +
-                                this.flights.get(0).getId() + "_" +
-                                this.flights.get(this.flights.size() - 1).getId());
+                FileOutputStream fos = new FileOutputStream(this.outDirectoryRoot + "/flights_"
+                        + this.flights.get(0).getId()
+                        + "_" + this.flights.get(this.flights.size() - 1).getId());
                 zipOut = new ZipOutputStream(fos);
             } catch (IOException ie) {
                 ie.printStackTrace();
                 System.exit(1);
             }
-
         }
         for (Flight flight : flights) {
             try {
@@ -391,8 +399,8 @@ public class GenerateBulkCSVS {
                 this.uploadDirectoryRoot = NGAFID_ARCHIVE_DIR + "/" + this.fleetId + "/" + uploaderId + "/";
 
                 File file = new File(this.outDirectoryRoot + "flight_" + flight.getId() + ".csv");
-                CachedCSVWriter csvWriter = new CachedCSVWriter(this.uploadDirectoryRoot, flight, Optional.of(file),
-                        false);
+                CachedCSVWriter csvWriter =
+                        new CachedCSVWriter(this.uploadDirectoryRoot, flight, Optional.of(file), false);
 
                 if (!this.useZip) {
                     csvWriter.writeToFile();
@@ -415,9 +423,8 @@ public class GenerateBulkCSVS {
             System.exit(1);
         }
 
-        File file =
-                new File(this.outDirectoryRoot + "flights_" + flights.get(0).getId() +
-                        "_" + flights.get(flights.size() - 1).getId() + ".zip");
+        File file = new File(this.outDirectoryRoot + "flights_" + flights.get(0).getId() + "_"
+                + flights.get(flights.size() - 1).getId() + ".zip");
 
         try {
             if (!file.exists()) {
@@ -431,11 +438,10 @@ public class GenerateBulkCSVS {
             for (Flight flight : flights) {
                 try {
                     int uploaderId = flight.getUploaderId();
-                    this.uploadDirectoryRoot = NGAFID_ARCHIVE_DIR
-                            + "/" + flight.getFleetId() + "/" + uploaderId + "/";
+                    this.uploadDirectoryRoot = NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" + uploaderId + "/";
 
-                    CachedCSVWriter csvWriter = new CachedCSVWriter(this.uploadDirectoryRoot, flight,
-                            Optional.empty(), false);
+                    CachedCSVWriter csvWriter =
+                            new CachedCSVWriter(this.uploadDirectoryRoot, flight, Optional.empty(), false);
                     ZipEntry zipEntry = csvWriter.getFlightEntry();
 
                     zipOut.putNextEntry(zipEntry);

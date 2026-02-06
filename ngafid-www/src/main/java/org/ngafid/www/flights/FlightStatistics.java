@@ -16,38 +16,38 @@ public enum FlightStatistics {
 
     private static final Logger LOG = Logger.getLogger(FlightStatistics.class.getName());
 
-    private static double getFlightTime(Connection connection, int fleetId, int airframeId, String tableName) throws SQLException {
+    private static double getFlightTime(Connection connection, int fleetId, int airframeId, String tableName)
+            throws SQLException {
         return getFlightTime(connection, fleetId, airframeId, tableName, null);
     }
 
-    private static double getFlightTime(Connection connection, int fleetId, int airframeId, String tableName, String condition) throws SQLException {
+    private static double getFlightTime(
+            Connection connection, int fleetId, int airframeId, String tableName, String condition)
+            throws SQLException {
         String c = "fleet_id = " + fleetId;
-        if (airframeId > 0)
-            c += " AND airframe_id = " + airframeId;
-        if (condition != null)
-            c += " AND " + condition;
+        if (airframeId > 0) c += " AND airframe_id = " + airframeId;
+        if (condition != null) c += " AND " + condition;
         return getFlightTimeImpl(connection, tableName, c);
     }
 
-    private static double getAggregateFlightTime(Connection connection, int airframeId, String tableName, String condition) throws SQLException {
+    private static double getAggregateFlightTime(
+            Connection connection, int airframeId, String tableName, String condition) throws SQLException {
         String c = airframeId > 0 ? " airframe_id = " + airframeId : null;
         if (condition != null) {
-            if (c == null)
-                c = condition;
-            else
-                c += " AND " + condition;
+            if (c == null) c = condition;
+            else c += " AND " + condition;
         }
         return getFlightTimeImpl(connection, tableName, c);
     }
 
-    private static double getFlightTimeImpl(Connection connection, String tableName, String condition) throws SQLException {
+    private static double getFlightTimeImpl(Connection connection, String tableName, String condition)
+            throws SQLException {
         String query = "SELECT SUM(flight_time_seconds) FROM " + tableName;
 
-        if (condition != null)
-            query += " WHERE " + condition;
+        if (condition != null) query += " WHERE " + condition;
 
         try (PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet resultSet = statement.executeQuery()) {
+                ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return (double) resultSet.getLong(1);
             } else {
@@ -59,13 +59,14 @@ public enum FlightStatistics {
     public static double getTotalFlightTime(Connection connection, int fleetId, int airframeId) throws SQLException {
         return getFlightTime(connection, fleetId, airframeId, "v_fleet_flight_time");
     }
-    public static double getTotalFlightTimeDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeID) throws SQLException {
+
+    public static double getTotalFlightTimeDated(
+            Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeID)
+            throws SQLException {
 
         String clause;
-        if (airframeID < 0)
-            clause = buildDateClause(startDate, endDate);
-        else
-            clause = buildDateAirframeClause(startDate, endDate, airframeID);
+        if (airframeID < 0) clause = buildDateClause(startDate, endDate);
+        else clause = buildDateAirframeClause(startDate, endDate, airframeID);
 
         return getFlightTime(connection, fleetId, airframeID, "v_fleet_flight_time_dated", clause);
     }
@@ -73,13 +74,13 @@ public enum FlightStatistics {
     public static double getAggregateTotalFlightTime(Connection connection, int airframeId) throws SQLException {
         return getAggregateFlightTime(connection, airframeId, "v_aggregate_flight_time", null);
     }
-    public static double getAggregateTotalFlightTimeDated(Connection connection, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
+
+    public static double getAggregateTotalFlightTimeDated(
+            Connection connection, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
 
         String clause;
-        if (airframeId < 0)
-            clause = buildDateClause(startDate, endDate);
-        else
-            clause = buildDateAirframeClause(startDate, endDate, airframeId);
+        if (airframeId < 0) clause = buildDateClause(startDate, endDate);
+        else clause = buildDateAirframeClause(startDate, endDate, airframeId);
 
         return getAggregateFlightTime(connection, airframeId, "v_aggregate_flight_time_dated", clause);
     }
@@ -92,56 +93,73 @@ public enum FlightStatistics {
         return getAggregateFlightTime(connection, airframeId, "v_aggregate_30_day_flight_time", null);
     }
 
-    public static double getCurrentYearFlightTime(Connection connection, int fleetId, int airframeId) throws SQLException {
-        return getFlightTime(connection, fleetId, airframeId, "v_fleet_yearly_flight_time", " year = " + TimeUtils.getCurrentYearUTC());
+    public static double getCurrentYearFlightTime(Connection connection, int fleetId, int airframeId)
+            throws SQLException {
+        return getFlightTime(
+                connection,
+                fleetId,
+                airframeId,
+                "v_fleet_yearly_flight_time",
+                " year = " + TimeUtils.getCurrentYearUTC());
     }
 
     public static double getAggregateCurrentYearFlightTime(Connection connection, int airframeId) throws SQLException {
-        return getAggregateFlightTime(connection, airframeId, "v_aggregate_yearly_flight_time", "year = " + TimeUtils.getCurrentYearUTC());
+        return getAggregateFlightTime(
+                connection, airframeId, "v_aggregate_yearly_flight_time", "year = " + TimeUtils.getCurrentYearUTC());
     }
 
-    public static double getCurrentMonthFlightTime(Connection connection, int fleetId, int airframeId) throws SQLException {
+    public static double getCurrentMonthFlightTime(Connection connection, int fleetId, int airframeId)
+            throws SQLException {
         // The 'm' here is very important. It refers to the cached version of this table.
-        return getMonthFlightTime(connection, fleetId, airframeId, TimeUtils.getCurrentYearUTC(), TimeUtils.getCurrentMonthUTC());
+        return getMonthFlightTime(
+                connection, fleetId, airframeId, TimeUtils.getCurrentYearUTC(), TimeUtils.getCurrentMonthUTC());
     }
 
-
-    public static double getMonthFlightTime(Connection connection, int fleetId, int airframeId, int year, int month) throws SQLException {
-        return getFlightTime(connection, fleetId, airframeId, "m_fleet_monthly_flight_time", " year = " + year + " AND month = " + month);
+    public static double getMonthFlightTime(Connection connection, int fleetId, int airframeId, int year, int month)
+            throws SQLException {
+        return getFlightTime(
+                connection,
+                fleetId,
+                airframeId,
+                "m_fleet_monthly_flight_time",
+                " year = " + year + " AND month = " + month);
     }
 
     public static double getAggregateCurrentMonthFlightTime(Connection connection, int airframeId) throws SQLException {
-        return getAggregateFlightTime(connection, airframeId, "v_aggregate_monthly_flight_time", "year = " + TimeUtils.getCurrentYearUTC() + " AND month = " + TimeUtils.getCurrentMonthUTC());
+        return getAggregateFlightTime(
+                connection,
+                airframeId,
+                "v_aggregate_monthly_flight_time",
+                "year = " + TimeUtils.getCurrentYearUTC() + " AND month = " + TimeUtils.getCurrentMonthUTC());
     }
 
-    private static int getFlightCount(Connection connection, int fleetId, int airframeId, String tableName, String condition) throws SQLException {
+    private static int getFlightCount(
+            Connection connection, int fleetId, int airframeId, String tableName, String condition)
+            throws SQLException {
         String c = "fleet_id = " + fleetId;
-        if (airframeId > 0)
-            c += " AND airframe_id = " + airframeId;
+        if (airframeId > 0) c += " AND airframe_id = " + airframeId;
 
-        if (condition != null)
-            c += " AND " + condition;
+        if (condition != null) c += " AND " + condition;
         return getFlightCountImpl(connection, tableName, c);
     }
 
-    private static int getAggregateFlightCount(Connection connection, int airframeId, String tableName, String condition) throws SQLException {
+    private static int getAggregateFlightCount(
+            Connection connection, int airframeId, String tableName, String condition) throws SQLException {
         String c = airframeId > 0 ? " airframe_id = " + airframeId : null;
         if (condition != null) {
-            if (c == null)
-                c = condition;
-            else
-                c += " AND " + condition;
+            if (c == null) c = condition;
+            else c += " AND " + condition;
         }
         return getFlightCountImpl(connection, tableName, c);
     }
 
-    private static int getFlightCountImpl(Connection connection, String tableName, String condition) throws SQLException {
+    private static int getFlightCountImpl(Connection connection, String tableName, String condition)
+            throws SQLException {
         String query = "SELECT SUM(count) FROM " + tableName;
-        if (condition != null)
-            query += " WHERE " + condition;
+        if (condition != null) query += " WHERE " + condition;
 
         try (PreparedStatement statement = connection.prepareStatement(query);
-            ResultSet resultSet = statement.executeQuery()) {
+                ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return resultSet.getInt(1);
             } else {
@@ -153,13 +171,14 @@ public enum FlightStatistics {
     public static int getTotalFlightCount(Connection connection, int fleetId, int airframeId) throws SQLException {
         return getFlightCount(connection, fleetId, airframeId, "v_fleet_flight_counts", null);
     }
-    public static int getTotalFlightCountDated(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
+
+    public static int getTotalFlightCountDated(
+            Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeId)
+            throws SQLException {
 
         String clause;
-        if (airframeId < 0)
-            clause = buildDateClause(startDate, endDate);
-        else
-            clause = buildDateAirframeClause(startDate, endDate, airframeId);
+        if (airframeId < 0) clause = buildDateClause(startDate, endDate);
+        else clause = buildDateAirframeClause(startDate, endDate, airframeId);
 
         return getFlightCount(connection, fleetId, airframeId, "v_fleet_flight_counts_dated", clause);
     }
@@ -167,23 +186,24 @@ public enum FlightStatistics {
     public static int getAggregateTotalFlightCount(Connection connection, int airframeId) throws SQLException {
         return getAggregateFlightCount(connection, airframeId, "v_aggregate_flight_counts", null);
     }
-    public static int getAggregateTotalFlightCountDated(Connection connection, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
+
+    public static int getAggregateTotalFlightCountDated(
+            Connection connection, LocalDate startDate, LocalDate endDate, int airframeId) throws SQLException {
 
         String clause;
-        if (airframeId < 0)
-            clause = buildDateClause(startDate, endDate);
-        else
-            clause = buildDateAirframeClause(startDate, endDate, airframeId);
+        if (airframeId < 0) clause = buildDateClause(startDate, endDate);
+        else clause = buildDateAirframeClause(startDate, endDate, airframeId);
 
         return getAggregateFlightCount(connection, airframeId, "v_aggregate_flight_counts_dated", clause);
-
     }
 
-    public static int getCurrentYearFlightCount(Connection connection, int fleetId, int airframeId) throws SQLException {
+    public static int getCurrentYearFlightCount(Connection connection, int fleetId, int airframeId)
+            throws SQLException {
         return getYearFlightCount(connection, fleetId, airframeId, TimeUtils.getCurrentYearUTC());
     }
 
-    public static int getYearFlightCount(Connection connection, int fleetId, int airframeId, int year) throws SQLException {
+    public static int getYearFlightCount(Connection connection, int fleetId, int airframeId, int year)
+            throws SQLException {
         return getFlightCount(connection, fleetId, airframeId, "v_fleet_yearly_flight_counts", "year = " + year);
     }
 
@@ -195,12 +215,20 @@ public enum FlightStatistics {
         return getAggregateFlightCount(connection, airframeId, "v_aggregate_yearly_flight_counts", "year = " + year);
     }
 
-    public static int getMonthFlightCount(Connection connection, int fleetId, int airframeId, int year, int month) throws SQLException {
-        return getFlightCount(connection, fleetId, airframeId, "v_fleet_monthly_flight_counts", "year = " + year + " AND month = " + month);
+    public static int getMonthFlightCount(Connection connection, int fleetId, int airframeId, int year, int month)
+            throws SQLException {
+        return getFlightCount(
+                connection,
+                fleetId,
+                airframeId,
+                "v_fleet_monthly_flight_counts",
+                "year = " + year + " AND month = " + month);
     }
 
-    public static int getAggregateMonthFlightCount(Connection connection, int airframeId, int year, int month) throws SQLException {
-        return getAggregateFlightCount(connection, airframeId, "v_fleet_monthly_flight_counts", "year = " + year + " AND month = " + month);
+    public static int getAggregateMonthFlightCount(Connection connection, int airframeId, int year, int month)
+            throws SQLException {
+        return getAggregateFlightCount(
+                connection, airframeId, "v_fleet_monthly_flight_counts", "year = " + year + " AND month = " + month);
     }
 
     public static int get30DayFlightCount(Connection connection, int fleetId, int airframeId) throws SQLException {
@@ -210,5 +238,4 @@ public enum FlightStatistics {
     public static int getAggregate30DayFlightCount(Connection connection, int airframeId) throws SQLException {
         return getAggregateFlightCount(connection, airframeId, "v_aggregate_30_day_flight_counts", null);
     }
-
 }

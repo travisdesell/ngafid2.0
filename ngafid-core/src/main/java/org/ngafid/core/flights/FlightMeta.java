@@ -21,8 +21,7 @@ public final class FlightMeta {
 
     private Airframes.Airframe airframe = null;
 
-    public FlightMeta() {
-    }
+    public FlightMeta() {}
 
     public FlightMeta(FlightMeta other) {
         this.fleetId = other.fleetId;

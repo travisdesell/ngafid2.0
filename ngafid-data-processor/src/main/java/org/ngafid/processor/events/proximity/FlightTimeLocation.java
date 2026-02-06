@@ -11,7 +11,7 @@ import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Pair;
 
 public final class FlightTimeLocation {
-    //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
     // set to true if the flight has the required time series values and a start and
     // end date time
     boolean valid = false;
@@ -43,7 +43,7 @@ public final class FlightTimeLocation {
 
     StringTimeSeries utc;
     DoubleTimeSeries epochTime;
-    //CHECKSTYLE:ON
+    // CHECKSTYLE:ON
     private static final Logger LOG = Logger.getLogger(FlightTimeLocation.class.getName());
 
     public FlightTimeLocation(Connection connection, Flight flight) throws SQLException {
@@ -52,8 +52,6 @@ public final class FlightTimeLocation {
         this.airframeNameId = flight.getAirframeNameId();
         this.startDateTime = flight.getStartDateTime();
         this.endDateTime = flight.getEndDateTime();
-
-
 
         // first check and see if the flight had a start and end time, if not we cannot process it
         // System.out.println("Getting info for flight with start date time: " + startDateTime + " and end date time: "
@@ -64,7 +62,6 @@ public final class FlightTimeLocation {
             valid = false;
             return;
         }
-
 
         // then check and see if this flight had a latitude and longitude, if not we cannot calculate adjacency
         Pair<Double, Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
@@ -106,7 +103,6 @@ public final class FlightTimeLocation {
         this.valid = true;
     }
 
-
     /**
      * Get the time series data for altitude, latitude, longitude, and indicated airspeed
      *
@@ -119,14 +115,19 @@ public final class FlightTimeLocation {
         // get the time series data for altitude, latitude and longitude
         DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
         DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
-        DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
-        DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
-        DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.IAS);
+        DoubleTimeSeries latitudeSeries =
+                DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
+        DoubleTimeSeries longitudeSeries =
+                DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
+        DoubleTimeSeries indicatedAirspeedSeries =
+                DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.IAS);
 
         // check to see if we could get these columns
-        if (altMSLSeries == null || altAGLSeries == null || latitudeSeries == null || longitudeSeries == null
-                || indicatedAirspeedSeries == null)
-            return false;
+        if (altMSLSeries == null
+                || altAGLSeries == null
+                || latitudeSeries == null
+                || longitudeSeries == null
+                || indicatedAirspeedSeries == null) return false;
 
         altitudeMSL = altMSLSeries.innerArray();
         altitudeAGL = altAGLSeries.innerArray();
@@ -157,25 +158,22 @@ public final class FlightTimeLocation {
      * @param degreeBuffer represent the desired proximity threshold (e.g. 0.003 degrees = 1000 feet)
      * @return
      */
-
     public boolean hasRegionOverlap(FlightTimeLocation other, double degreeBuffer) {
-        boolean thisToOther = other.maxLatitude >= (this.minLatitude - degreeBuffer) &&
-                other.minLatitude <= (this.maxLatitude + degreeBuffer) &&
-                other.maxLongitude >= (this.minLongitude - degreeBuffer) &&
-                other.minLongitude <= (this.maxLongitude + degreeBuffer);
+        boolean thisToOther = other.maxLatitude >= (this.minLatitude - degreeBuffer)
+                && other.minLatitude <= (this.maxLatitude + degreeBuffer)
+                && other.maxLongitude >= (this.minLongitude - degreeBuffer)
+                && other.minLongitude <= (this.maxLongitude + degreeBuffer);
 
-        boolean otherToThis = this.maxLatitude >= (other.minLatitude - degreeBuffer) &&
-                this.minLatitude <= (other.maxLatitude + degreeBuffer) &&
-                this.maxLongitude >= (other.minLongitude - degreeBuffer) &&
-                this.minLongitude <= (other.maxLongitude + degreeBuffer);
+        boolean otherToThis = this.maxLatitude >= (other.minLatitude - degreeBuffer)
+                && this.minLatitude <= (other.maxLatitude + degreeBuffer)
+                && this.maxLongitude >= (other.minLongitude - degreeBuffer)
+                && this.minLongitude <= (other.maxLongitude + degreeBuffer);
 
         boolean overlap = thisToOther || otherToThis;
 
         LOG.info("Overlap check: " + overlap);
         return overlap;
     }
-
-
 
     public boolean isValid() {
         return valid;

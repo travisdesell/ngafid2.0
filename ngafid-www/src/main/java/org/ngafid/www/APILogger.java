@@ -12,7 +12,7 @@ public class APILogger {
         String sql = "INSERT INTO api_logs (method, path, status_code, ip, referer) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, method);
             ps.setString(2, path);

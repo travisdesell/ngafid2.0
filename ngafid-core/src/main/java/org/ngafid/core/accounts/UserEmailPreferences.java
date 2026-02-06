@@ -11,7 +11,6 @@ public class UserEmailPreferences implements Serializable {
     private final HashMap<String, Boolean> emailTypesUser;
     private final String[] emailTypesKeys;
 
-
     public UserEmailPreferences(int userId, HashMap<String, Boolean> emailTypesUser) {
         this.userId = userId;
         this.emailTypesUser = emailTypesUser;

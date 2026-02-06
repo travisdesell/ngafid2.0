@@ -105,6 +105,5 @@ public class ComputeUTCTime extends ComputeStep {
 
         builder.addTimeSeries(timestampSeries);
         builder.addTimeSeries(unixtime);
-
     }
 }
