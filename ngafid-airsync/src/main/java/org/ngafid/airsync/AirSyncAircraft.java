@@ -132,7 +132,6 @@ public final class AirSyncAircraft {
     private List<AirSyncImport> getImportsHTTPS(HttpsURLConnection netConnection, AirSyncAuth authentication)
             throws IOException {
         netConnection.setRequestMethod("GET");
-        netConnection.setDoOutput(true);
         netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
         byte[] respRaw;
@@ -212,7 +211,7 @@ public final class AirSyncAircraft {
 
     public List<AirSyncImport> getImportsForUpdate(Connection connection, AirSyncFleet airSyncFleet)
             throws IOException, SQLException {
-        var lastImportTime = getLastImportTime(connection);
+        Optional<LocalDateTime> lastImportTime = getLastImportTime(connection);
         if (lastImportTime.isPresent()) {
             LocalDateTime importTime = lastImportTime.get().plusSeconds(1);
             return getImportsAfterDate(connection, airSyncFleet, importTime);

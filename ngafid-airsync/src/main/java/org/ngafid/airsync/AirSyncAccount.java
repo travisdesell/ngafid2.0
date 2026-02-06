@@ -43,7 +43,6 @@ public class AirSyncAccount {
         HttpsURLConnection netConnection = (HttpsURLConnection) new URL(
                 AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" + "/accounts").openConnection();
         netConnection.setRequestMethod("GET");
-        netConnection.setDoOutput(true);
         netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
         byte[] respRaw;
