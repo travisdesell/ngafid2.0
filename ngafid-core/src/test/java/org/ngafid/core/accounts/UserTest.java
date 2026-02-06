@@ -2038,7 +2038,8 @@ public class UserTest extends TestWithConnection {
         int userId = 3; // Use different user ID to avoid conflicts
         int customPrecision = 5;
 
-        int metricId1, metricId2;
+        int metricId1;
+        int metricId2;
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "test_metric_for_store_1");

@@ -1,7 +1,11 @@
 package org.ngafid.core.flights;
 
-import static org.ngafid.core.flights.Parameters.COMP_CONV;
-import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.util.filters.Filter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,12 +13,9 @@ import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.filters.Filter;
+
+import static org.ngafid.core.flights.Parameters.COMP_CONV;
+import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods
@@ -952,8 +953,9 @@ public class Flight {
         }
 
         String sql = """
-            INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time,
+                                 end_time, filename, md5_hash, number_rows, status)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -1072,6 +1074,8 @@ public class Flight {
     /**
      * Updates the v_aggregate_flight_hours_by_airframe table for a given flight.
      * Only updates if the flight status is SUCCESS or WARNING. Do we need to add failed as well?
+     * @param connection Connection to the database
+     * @param flight the flight to update the aggregate hours for
      */
     public static void updateAggregateFlightHoursByAirframe(Connection connection, Flight flight) throws SQLException {
         // Clarify if we need this
@@ -1085,7 +1089,8 @@ public class Flight {
             String sql =
                     "INSERT INTO v_aggregate_flight_hours_by_airframe (airframe_id, num_flights, total_flight_hours) "
                             + "VALUES (?, 1, ?) "
-                            + "ON DUPLICATE KEY UPDATE num_flights = num_flights + 1, total_flight_hours = total_flight_hours + VALUES(total_flight_hours)";
+                            + "ON DUPLICATE KEY UPDATE num_flights = num_flights + 1, "
+                            + "total_flight_hours = total_flight_hours + VALUES(total_flight_hours)";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setInt(1, flight.airframe.getId());
                 stmt.setDouble(2, hours);

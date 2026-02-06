@@ -20,8 +20,6 @@ import org.ngafid.core.Database;
 import org.ngafid.core.uploads.UploadDoesNotExistException;
 
 public enum UploadHelper {
-    ;
-
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
 
     private static KafkaProducer<String, Integer> getUploadProducer() {

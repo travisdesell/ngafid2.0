@@ -1,14 +1,15 @@
 package org.ngafid.core.accounts;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.ngafid.core.flights.Tails;
+import org.ngafid.core.util.SendEmail;
+
 import java.io.Serializable;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.ngafid.core.flights.Tails;
-import org.ngafid.core.util.SendEmail;
 
 public final class User implements Serializable {
 
@@ -884,7 +885,8 @@ public final class User implements Serializable {
 
             LOG.log(
                     Level.INFO,
-                    "Found fallback fleet with ID ({0}) and access level ({1}) to switch to after leaving current fleet.",
+                    "Found fallback fleet with ID ({0}) and access level ({1}) " +
+                            "to switch to after leaving current fleet.",
                     new Object[] {nextFleetId, nextFleetType});
 
             // First, attempt to switch to the chosen next fleet...
