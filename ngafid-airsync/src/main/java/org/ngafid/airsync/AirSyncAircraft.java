@@ -1,11 +1,11 @@
 package org.ngafid.airsync;
 
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -16,7 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-import javax.net.ssl.HttpsURLConnection;
+
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 
 /**
  * Represents an Aircraft that is AirSync compatibile
@@ -35,15 +36,19 @@ public final class AirSyncAircraft {
     private AirSyncFleet fleet;
 
     @JsonCreator
-    public static AirSyncAircraft create(@JsonProperty("id") int id, @JsonProperty("tailNumber") String tailNumber, @JsonProperty("account_token") String accountToken) {
+    public static AirSyncAircraft create(
+            @JsonProperty("id") int id,
+            @JsonProperty("tailNumber") String tailNumber,
+            @JsonProperty("account_token") String accountToken) {
         return new AirSyncAircraft(id, tailNumber, accountToken);
     }
 
     /**
      * Private constructor, for instantiation within this class.
      *
-     * @param id         the Aircraft's id
-     * @param tailNumber the Aircraft's tail number
+     * @param id           the Aircraft's id
+     * @param tailNumber   the Aircraft's tail number
+     * @param accountToken the AirSync account token
      */
     private AirSyncAircraft(int id, String tailNumber, String accountToken) {
         this.id = id;

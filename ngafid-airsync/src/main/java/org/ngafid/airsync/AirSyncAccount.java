@@ -1,25 +1,36 @@
 package org.ngafid.airsync;
 
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
-import javax.net.ssl.HttpsURLConnection;
+
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 
 public class AirSyncAccount {
 
-    public final String name;
-    public final String accountToken;
+    private final String name;
+    private final String accountToken;
 
     @JsonCreator
-    public AirSyncAccount(@JsonProperty("name") String name, @JsonProperty("account_token") String accountToken) {
+    public AirSyncAccount(
+            @JsonProperty("name") String name,
+            @JsonProperty("account_token") String accountToken) {
         this.name = name;
         this.accountToken = accountToken;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getAccountToken() {
+        return accountToken;
     }
 
     public static List<AirSyncAccount> getAirSyncAccounts(AirSyncFleet fleet) throws IOException {
@@ -30,7 +41,8 @@ public class AirSyncAccount {
 
     private static byte[] getBytes(AirSyncFleet fleet) throws IOException {
         AirSyncAuth authentication = fleet.getAuth();
-        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" + "/accounts").openConnection();
+        HttpsURLConnection netConnection = (HttpsURLConnection) new URL(
+                AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" + "/accounts").openConnection();
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
         netConnection.setRequestProperty("Authorization", authentication.getBearerString());
