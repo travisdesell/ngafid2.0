@@ -5,16 +5,16 @@ import java.util.HashMap;
 import org.apache.commons.lang3.mutable.MutableDouble;
 
 public class Airport {
-    public final String iataCode;
-    public final String siteNumber;
-    public final String type;
+    private final String iataCode;
+    private final String siteNumber;
+    private final String type;
 
-    public final double latitude;
-    public final double longitude;
+    private final double latitude;
+    private final double longitude;
 
-    public final String geoHash;
+    private final String geoHash;
 
-    private HashMap<String, Runway> runways;
+    private final HashMap<String, Runway> runways;
 
     public Airport(String iataCode, String siteNumber, String type, double latitude, double longitude) {
         this.iataCode = iataCode;
@@ -54,7 +54,9 @@ public class Airport {
 
         double minDistance = maxDistanceFt;
         for (Runway runway : runways.values()) {
-            if (!runway.hasCoordinates) continue;
+            if (!runway.hasCoordinates()) {
+                continue;
+            }
 
             double distanceFt = runway.getDistanceFt(lat, lon);
 
@@ -72,4 +74,27 @@ public class Airport {
         return !runways.isEmpty();
     }
 
+    public String getIataCode() {
+        return iataCode;
+    }
+
+    public String getSiteNumber() {
+        return siteNumber;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public String getGeoHash() {
+        return geoHash;
+    }
 }

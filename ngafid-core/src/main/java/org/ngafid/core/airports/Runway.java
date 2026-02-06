@@ -4,14 +4,14 @@ import java.io.Serializable;
 
 public class Runway implements Serializable {
 
-    public final String siteNumber;
-    public final String name;
-    public final boolean hasCoordinates;
+    private final String siteNumber;
+    private final String name;
+    private final boolean hasCoordinates;
 
-    public final double lat1;
-    public final double lon1;
-    public final double lat2;
-    public final double lon2;
+    private final double lat1;
+    private final double lon1;
+    private final double lat2;
+    private final double lon2;
 
     public Runway(String siteNumber, String name) {
         this.siteNumber = siteNumber;
@@ -35,6 +35,30 @@ public class Runway implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public String getSiteNumber() {
+        return siteNumber;
+    }
+
+    public boolean hasCoordinates() {
+        return hasCoordinates;
+    }
+
+    public double getLat1() {
+        return lat1;
+    }
+
+    public double getLon1() {
+        return lon1;
+    }
+
+    public double getLat2() {
+        return lat2;
+    }
+
+    public double getLon2() {
+        return lon2;
     }
 
     /**
