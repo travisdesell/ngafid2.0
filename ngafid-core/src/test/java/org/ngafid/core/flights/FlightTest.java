@@ -1,6 +1,10 @@
 package org.ngafid.core.flights;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import org.ngafid.core.TestWithConnection;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.filters.Filter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -13,26 +17,56 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.*;
-import org.ngafid.core.TestWithConnection;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.filters.Filter;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class for Flight class
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class FlightTest extends TestWithConnection {
+    // Helper methods for test setup
+    private void createTestAirframeIfNotExists() throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT COUNT(*) FROM airframes WHERE airframe = 'Test Cessna 172S'")) {
+            try (var rs = stmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    try (PreparedStatement typeStmt = connection.prepareStatement(
+                            "INSERT INTO airframe_types (name) VALUES ('Fixed Wing') " +
+                                    "ON DUPLICATE KEY UPDATE name = name")) {
+                        typeStmt.executeUpdate();
+                    }
+
+                    try (PreparedStatement airframeStmt = connection.prepareStatement(
+                            "INSERT INTO airframes (airframe, type_id) VALUES ('Test Cessna 172S', " +
+                                    "(SELECT id FROM airframe_types WHERE name = 'Fixed Wing' LIMIT 1)) " +
+                                    "ON DUPLICATE KEY UPDATE airframe = airframe")) {
+                        airframeStmt.executeUpdate();
+                    }
+                }
+            }
+        }
+    }
+
+    private void createTestUploadIfNotExists() throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT COUNT(*) FROM uploads WHERE id = 999")) {
+            try (var rs = stmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    try (PreparedStatement uploadStmt = connection.prepareStatement(
+                            "INSERT INTO uploads (id, fleet_id, uploader_id, filename, identifier, status," +
+                                    " number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes)" +
+                                    " VALUES (999, 1, 1, 'test_upload.csv', 'test_identifier', 'PROCESSED_OK', 1, 1," +
+                                    " '1', 'test_md5_hash', 1024) ON DUPLICATE KEY UPDATE id = id")) {
+                        uploadStmt.executeUpdate();
+                    }
+                }
+            }
+        }
+    }
+
 
     @Test
     @Order(1)

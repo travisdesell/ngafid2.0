@@ -1,10 +1,13 @@
 package org.ngafid.core.airports;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class RunwayTest {
     @BeforeAll
@@ -23,7 +26,7 @@ class RunwayTest {
             Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
             iata.put(iataCode, airport);
             site.put(siteNumber, airport);
-            geo.computeIfAbsent(airport.geoHash, k -> new ArrayList<>()).add(airport);
+            geo.computeIfAbsent(airport.getGeoHash(), k -> new ArrayList<>()).add(airport);
         }
         Airports.injectTestData(iata, site, geo);
     }
@@ -31,26 +34,26 @@ class RunwayTest {
     @Test
     void testConstructorNoCoordinates() {
         Runway runway = new Runway("123", "RWY1");
-        assertEquals("123", runway.siteNumber);
-        assertEquals("RWY1", runway.name);
-        assertFalse(runway.hasCoordinates);
-        assertTrue(Double.isNaN(runway.lat1));
-        assertTrue(Double.isNaN(runway.lon1));
-        assertTrue(Double.isNaN(runway.lat2));
-        assertTrue(Double.isNaN(runway.lon2));
+        assertEquals("123", runway.getSiteNumber());
+        assertEquals("RWY1", runway.getName());
+        assertFalse(runway.hasCoordinates());
+        assertTrue(Double.isNaN(runway.getLat1()));
+        assertTrue(Double.isNaN(runway.getLon1()));
+        assertTrue(Double.isNaN(runway.getLat2()));
+        assertTrue(Double.isNaN(runway.getLon2()));
         assertTrue(runway.toString().contains("RWY1"));
     }
 
     @Test
     void testConstructorWithCoordinates() {
         Runway runway = new Runway("456", "RWY2", 10.0, 20.0, 11.0, 21.0);
-        assertEquals("456", runway.siteNumber);
-        assertEquals("RWY2", runway.name);
-        assertTrue(runway.hasCoordinates);
-        assertEquals(10.0, runway.lat1);
-        assertEquals(20.0, runway.lon1);
-        assertEquals(11.0, runway.lat2);
-        assertEquals(21.0, runway.lon2);
+        assertEquals("456", runway.getSiteNumber());
+        assertEquals("RWY2", runway.getName());
+        assertTrue(runway.hasCoordinates());
+        assertEquals(10.0, runway.getLat1());
+        assertEquals(20.0, runway.getLon1());
+        assertEquals(11.0, runway.getLat2());
+        assertEquals(21.0, runway.getLon2());
         assertTrue(runway.toString().contains("RWY2"));
     }
 

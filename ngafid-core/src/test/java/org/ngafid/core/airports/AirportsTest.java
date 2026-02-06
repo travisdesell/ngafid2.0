@@ -1,11 +1,15 @@
 package org.ngafid.core.airports;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.*;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class AirportsTest {
     @BeforeAll
@@ -26,7 +30,7 @@ class AirportsTest {
             Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
             iata.put(iataCode, airport);
             site.put(siteNumber, airport);
-            geo.computeIfAbsent(airport.geoHash, k -> new ArrayList<>()).add(airport);
+            geo.computeIfAbsent(airport.getGeoHash(), k -> new ArrayList<>()).add(airport);
         }
         Airports.injectTestData(iata, site, geo);
     }
@@ -84,7 +88,7 @@ class AirportsTest {
         // Use coordinates that match the first airport in the test data (0.0, 0.0)
         Airport nearest = Airports.getNearestAirportWithin(0.0, 0.0, 10000.0, dist);
         assertNotNull(nearest);
-        assertEquals("AAA", nearest.iataCode);
+        assertEquals("AAA", nearest.getIataCode());
         assertTrue(dist.doubleValue() < 10000.0);
     }
 }
