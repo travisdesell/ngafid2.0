@@ -1,6 +1,9 @@
 package org.ngafid.core.airports;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import org.apache.commons.lang3.mutable.MutableDouble;
+import org.ngafid.core.Config;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -10,8 +13,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.mutable.MutableDouble;
-import org.ngafid.core.Config;
 
 public final class Airports {
     private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
@@ -53,20 +54,24 @@ public final class Airports {
 
                     Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
 
-                    ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.computeIfAbsent(airport.geoHash,
+                    ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.computeIfAbsent(
+                            airport.getGeoHash(),
                             k -> new ArrayList<>());
                     hashedAirports.add(airport);
 
                     if (SITE_NUMBER_TO_AIRPORT.get(siteNumber) != null) {
-                        System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as"
-                                + " " + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
+                        System.err.println(
+                                "ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as"
+                                        + " " + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
                         System.exit(1);
 
                     }
-                    SITE_NUMBER_TO_AIRPORT.put(airport.siteNumber, airport);
-                    IATA_TO_AIRPORT.put(airport.iataCode, airport);
+                    SITE_NUMBER_TO_AIRPORT.put(airport.getSiteNumber(), airport);
+                    IATA_TO_AIRPORT.put(airport.getIataCode(), airport);
 
-                    if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
+                    if (hashedAirports.size() > maxHashSize) {
+                        maxHashSize = hashedAirports.size();
+                    }
                     // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
                     numberAirports++;
                 }
@@ -212,8 +217,8 @@ public final class Airports {
             if (hashedAirports != null) {
                 // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
                 for (Airport airport : hashedAirports) {
-                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude,
-                            airport.longitude);
+                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.getLatitude(),
+                            airport.getLongitude());
                     // LOG.info("\t\t" + airport + ", distanceFt: " + distanceFt);
 
                     if (distanceFt < minDistance) {

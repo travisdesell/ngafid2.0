@@ -122,9 +122,11 @@ public class FleetAccess implements Serializable {
      * @throws SQLException If there was a query/database problem.
      */
 
-    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId) throws SQLException {
+    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId)
+            throws SQLException {
         try (PreparedStatement query = connection
-                .prepareStatement("SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = " + userId);
+                .prepareStatement(
+                        "SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = " + userId);
              ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
@@ -220,5 +222,10 @@ public class FleetAccess implements Serializable {
         if (!(o instanceof FleetAccess fa)) return false;
 
         return this.userId == fa.userId && this.fleetId == fa.fleetId && this.accessType.equals(fa.accessType);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(userId, fleetId, accessType);
     }
 }

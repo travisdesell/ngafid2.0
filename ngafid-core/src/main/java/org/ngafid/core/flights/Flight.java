@@ -1,7 +1,11 @@
 package org.ngafid.core.flights;
 
-import static org.ngafid.core.flights.Parameters.COMP_CONV;
-import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.util.filters.Filter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,12 +13,9 @@ import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.filters.Filter;
+
+import static org.ngafid.core.flights.Parameters.COMP_CONV;
+import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods
@@ -71,19 +72,19 @@ public class Flight {
     public Flight(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
                   Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary,
                   List<MalformedFlightFileException> exceptions, List<Event> events) {
-        fleetId = meta.fleetId;
-        uploaderId = meta.uploaderId;
-        uploadId = meta.uploadId;
+        fleetId = meta.getFleetId();
+        uploaderId = meta.getUploaderId();
+        uploadId = meta.getUploadId();
 
-        filename = meta.filename;
+        filename = meta.getFilename();
         status = exceptions.isEmpty() ? FlightStatus.SUCCESS : FlightStatus.WARNING;
-        airframe = meta.airframe;
+        airframe = meta.getAirframe();
 
-        systemId = meta.systemId;
-        suggestedTailNumber = meta.suggestedTailNumber;
-        md5Hash = meta.md5Hash;
-        startDateTime = TimeUtils.UTCtoSQL(meta.startDateTime);
-        endDateTime = TimeUtils.UTCtoSQL(meta.endDateTime);
+        systemId = meta.getSystemId();
+        suggestedTailNumber = meta.getSuggestedTailNumber();
+        md5Hash = meta.getMd5Hash();
+        startDateTime = TimeUtils.utcToSql(meta.getStartDateTime());
+        endDateTime = TimeUtils.utcToSql(meta.getEndDateTime());
 
         this.itinerary = itinerary;
         this.exceptions = exceptions;

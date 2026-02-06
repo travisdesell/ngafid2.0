@@ -46,7 +46,8 @@ public final class FleetAccessNamed extends FleetAccess implements Serializable 
      * @throws SQLException If there was a query/database problem.
      */
 
-    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId) throws SQLException {
+    public static ArrayList<FleetAccess> getAllFleetAccessEntries(Connection connection, int userId)
+            throws SQLException {
 
         String sql = "SELECT user_id, fleet_id, type FROM fleet_access WHERE user_id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {

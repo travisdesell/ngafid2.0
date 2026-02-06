@@ -86,14 +86,14 @@ public abstract class NormalizedColumn<T> {
 
     public NormalizedColumn(Connection connection, String columnName) throws SQLException {
         this.name = columnName;
-        int id = getCachedId(columnName);
+        int cachedId = getCachedId(columnName);
 
-        if (id == -1) {
-            id = generateNewId(connection);
-            addToCache(id, columnName);
+        if (cachedId == -1) {
+            cachedId = generateNewId(connection);
+            addToCache(cachedId, columnName);
         }
 
-        this.id = id;
+        this.id = cachedId;
     }
 
     private String getName(Connection connection) throws SQLException {

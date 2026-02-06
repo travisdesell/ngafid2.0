@@ -6,20 +6,20 @@ import java.time.OffsetDateTime;
  * Utility class used by FlightBuilder to call the Flight constructor, contains all metadata required for a flight.
  */
 public final class FlightMeta {
-    public int fleetId = -1;
-    public int uploaderId = -1;
-    public int uploadId = -1;
-    public int processingStatus = 0;
+    private int fleetId = -1;
+    private int uploaderId = -1;
+    private int uploadId = -1;
+    private int processingStatus = 0;
 
-    public OffsetDateTime startDateTime;
-    public OffsetDateTime endDateTime;
-    public String md5Hash;
-    public String systemId;
-    public String filename;
-    public String calculated;
-    public String suggestedTailNumber;
+    private OffsetDateTime startDateTime;
+    private OffsetDateTime endDateTime;
+    private String md5Hash;
+    private String systemId;
+    private String filename;
+    private String calculated;
+    private String suggestedTailNumber;
 
-    public Airframes.Airframe airframe = null;
+    private Airframes.Airframe airframe = null;
 
     public FlightMeta() {
     }
@@ -63,6 +63,14 @@ public final class FlightMeta {
 
     public void setUploadId(int uploadId) {
         this.uploadId = uploadId;
+    }
+
+    public int getProcessingStatus() {
+        return processingStatus;
+    }
+
+    public void setProcessingStatus(int processingStatus) {
+        this.processingStatus = processingStatus;
     }
 
     public OffsetDateTime getStartDateTime() {

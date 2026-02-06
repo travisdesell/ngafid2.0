@@ -1,5 +1,8 @@
 package org.ngafid.core.flights;
 
+import org.ngafid.core.util.NormalizedColumn;
+import org.ngafid.core.util.filters.Pair;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,11 +11,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.ngafid.core.util.NormalizedColumn;
-import org.ngafid.core.util.filters.Pair;
 
-public enum Airframes {
-    ;
+public final class Airframes {
+    private Airframes() {
+    }
+
     private static final Logger LOG = Logger.getLogger(Airframes.class.getName());
 
     /*
@@ -141,8 +144,10 @@ public enum Airframes {
     }
 
     public static class Airframe {
-        private static final ConcurrentHashMap<String, Pair<Type, Integer>> NAME_TO_TYPE_AND_ID = new ConcurrentHashMap<>();
-        private static final ConcurrentHashMap<Integer, Pair<Type, String>> ID_TO_TYPE_AND_NAME = new ConcurrentHashMap<>();
+        private static final ConcurrentHashMap<String, Pair<Type, Integer>> NAME_TO_TYPE_AND_ID =
+                new ConcurrentHashMap<>();
+        private static final ConcurrentHashMap<Integer, Pair<Type, String>> ID_TO_TYPE_AND_NAME =
+                new ConcurrentHashMap<>();
 
         private int id;
         private String name;
@@ -201,7 +206,8 @@ public enum Airframes {
         }
 
         private void getIdAndType(Connection connection) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("SELECT id, type_id FROM airframes WHERE airframe = ?")) {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT id, type_id FROM airframes WHERE airframe = ?")) {
                 query.setString(1, name);
 
                 try (ResultSet rs = query.executeQuery()) {
@@ -219,7 +225,8 @@ public enum Airframes {
         }
 
         void generateNewId(Connection connection) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("INSERT IGNORE INTO airframes (airframe, type_id) VALUES (?, ?)")) {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "INSERT IGNORE INTO airframes (airframe, type_id) VALUES (?, ?)")) {
                 this.type = new Type(connection, this.type.getName());
                 query.setString(1, name);
                 query.setInt(2, type.getId());
@@ -230,7 +237,8 @@ public enum Airframes {
         }
 
         private void getNameAndType(Connection connection) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("SELECT airframe, type_id FROM airframes WHERE id = ?")) {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT airframe, type_id FROM airframes WHERE id = ?")) {
                 query.setInt(1, id);
 
                 try (ResultSet rs = query.executeQuery()) {
