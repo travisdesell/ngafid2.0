@@ -10,20 +10,26 @@ import java.util.logging.Logger;
 public abstract class NormalizedColumn<T> {
     private static final Logger LOG = Logger.getLogger(NormalizedColumn.class.getName());
 
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<String, Integer>> ID_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, String>> NAME_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<String, Integer>> ID_CACHE =
+            new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, String>> NAME_CACHE =
+            new ConcurrentHashMap<>();
 
-    private String getCachedName(int id) {
-        return NAME_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>()).getOrDefault(id, null);
+    private String getCachedName(int columnId) {
+        return NAME_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
+                .getOrDefault(columnId, null);
     }
 
-    private int getCachedId(String name) {
-        return ID_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>()).getOrDefault(name, -1);
+    private int getCachedId(String columnName) {
+        return ID_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
+                .getOrDefault(columnName, -1);
     }
 
-    private void addToCache(int id, String name) {
-        ID_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>()).putIfAbsent(name, id);
-        NAME_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>()).putIfAbsent(id, name);
+    private void addToCache(int columnId, String columnName) {
+        ID_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
+                .putIfAbsent(columnName, columnId);
+        NAME_CACHE.computeIfAbsent(getTableName(), (k) -> new ConcurrentHashMap<>())
+                .putIfAbsent(columnId, columnName);
     }
 
     protected abstract String getTableName();
@@ -51,40 +57,40 @@ public abstract class NormalizedColumn<T> {
     private final int id;
     private final String name;
 
-    public NormalizedColumn(int id, String name) {
-        this.id = id;
-        this.name = name;
+    public NormalizedColumn(int columnId, String columnName) {
+        this.id = columnId;
+        this.name = columnName;
     }
 
-    public NormalizedColumn(int id) {
-        this.id = id;
-        this.name = getCachedName(id);
+    public NormalizedColumn(int columnId) {
+        this.id = columnId;
+        this.name = getCachedName(columnId);
     }
 
-    public NormalizedColumn(String name) {
-        this.name = name;
-        this.id = getCachedId(name);
+    public NormalizedColumn(String columnName) {
+        this.name = columnName;
+        this.id = getCachedId(columnName);
     }
 
-    public NormalizedColumn(Connection connection, int id) throws SQLException {
-        this.id = id;
-        String cachedName = getCachedName(id);
+    public NormalizedColumn(Connection connection, int columnId) throws SQLException {
+        this.id = columnId;
+        String cachedName = getCachedName(columnId);
 
         if (cachedName == null) {
             cachedName = getName(connection);
-            addToCache(id, cachedName);
+            addToCache(columnId, cachedName);
         }
 
         this.name = cachedName;
     }
 
-    public NormalizedColumn(Connection connection, String name) throws SQLException {
-        this.name = name;
-        int id = getCachedId(name);
+    public NormalizedColumn(Connection connection, String columnName) throws SQLException {
+        this.name = columnName;
+        int id = getCachedId(columnName);
 
         if (id == -1) {
             id = generateNewId(connection);
-            addToCache(id, name);
+            addToCache(id, columnName);
         }
 
         this.id = id;

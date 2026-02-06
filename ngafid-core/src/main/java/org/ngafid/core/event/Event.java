@@ -1,23 +1,20 @@
 package org.ngafid.core.event;
 
-import static org.ngafid.core.flights.Parameters.LATITUDE;
-import static org.ngafid.core.flights.Parameters.LONGITUDE;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.util.TimeUtils;
 
 import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Logger;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.util.TimeUtils;
+
+import static org.ngafid.core.flights.Parameters.LATITUDE;
+import static org.ngafid.core.flights.Parameters.LONGITUDE;
 
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
@@ -57,7 +54,9 @@ public class Event {
      * @param severity
      */
     public Event(String startTime, String endTime, int startLine, int endLine, int defId, double severity) {
-        this(OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT), OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT), startLine, endLine, defId, severity);
+        this(OffsetDateTime.parse(startTime, TimeUtils.getIso8601Format()),
+                OffsetDateTime.parse(endTime, TimeUtils.getIso8601Format()),
+                startLine, endLine, defId, severity);
     }
 
     public Event(OffsetDateTime startTime, OffsetDateTime endTime, int startLine, int endLine, int defId, double severity) {
@@ -93,8 +92,8 @@ public class Event {
         this.eventDefinitionId = resultSet.getInt(4);
         this.startLine = resultSet.getInt(5);
         this.endLine = resultSet.getInt(6);
-        this.startTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString(7));
-        this.endTime = TimeUtils.SQLtoOffsetDateTime(resultSet.getString(8));
+        this.startTime = TimeUtils.sqlToOffsetDateTime(resultSet.getString(7));
+        this.endTime = TimeUtils.sqlToOffsetDateTime(resultSet.getString(8));
         this.severity = resultSet.getDouble(9);
         this.otherFlightId = resultSet.getInt(10);
         if (resultSet.wasNull()) {
@@ -124,8 +123,8 @@ public class Event {
         this.eventDefinitionId = eventDefId;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.startTime = OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT);
-        this.endTime = OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT);
+        this.startTime = OffsetDateTime.parse(startTime, TimeUtils.getIso8601Format());
+        this.endTime = OffsetDateTime.parse(endTime, TimeUtils.getIso8601Format());
         this.severity = severity;
         this.otherFlightId = otherFlightId;
     }
@@ -133,7 +132,10 @@ public class Event {
     public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine,
                  String startTime, String endTime, double severity, Integer otherFlightId, String systemId,
                  String tail, String tagName) {
-        this(id, fleetId, flightId, eventDefinitionId, startLine, endLine, OffsetDateTime.parse(startTime, TimeUtils.ISO_8601_FORMAT), OffsetDateTime.parse(endTime, TimeUtils.ISO_8601_FORMAT), severity, otherFlightId, systemId, tail, tagName);
+        this(id, fleetId, flightId, eventDefinitionId, startLine, endLine,
+                OffsetDateTime.parse(startTime, TimeUtils.getIso8601Format()),
+                OffsetDateTime.parse(endTime, TimeUtils.getIso8601Format()),
+                severity, otherFlightId, systemId, tail, tagName);
     }
 
     public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, OffsetDateTime startTime, OffsetDateTime endTime, double severity, Integer otherFlightId, String systemId, String tail, String tagName) {
@@ -301,7 +303,8 @@ public class Event {
                     }
 
                     Event event = new Event(eventId, fleetId, flightId, definitionId, startLine,
-                            endLine, TimeUtils.SQLtoOffsetDateTime(eventStartTime), TimeUtils.SQLtoOffsetDateTime(eventEndTime), severity, otherFlightId, systemId, tail, tag);
+                            endLine, TimeUtils.sqlToOffsetDateTime(eventStartTime),
+                            TimeUtils.sqlToOffsetDateTime(eventEndTime), severity, otherFlightId, systemId, tail, tag);
 
                     int airframeId = eventSet.getInt(9);
                     String airframe = airframeIds.get(airframeId);
@@ -329,7 +332,7 @@ public class Event {
     }
 
     public void updateEnd(String newEndTime, int newEndLine) {
-        updateEnd(OffsetDateTime.parse(newEndTime, TimeUtils.ISO_8601_FORMAT), newEndLine);
+        updateEnd(OffsetDateTime.parse(newEndTime, TimeUtils.getIso8601Format()), newEndLine);
     }
 
     public void updateEnd(OffsetDateTime newEndDate, int newEndLine) {
@@ -528,9 +531,9 @@ public class Event {
         preparedStatement.setInt(4, startLine);
         preparedStatement.setInt(5, endLine);
 
-        preparedStatement.setString(6, TimeUtils.UTCtoSQL(startTime));
+        preparedStatement.setString(6, TimeUtils.utcToSql(startTime));
 
-        preparedStatement.setString(7, TimeUtils.UTCtoSQL(endTime));
+        preparedStatement.setString(7, TimeUtils.utcToSql(endTime));
 
         preparedStatement.setDouble(8, severity);
 

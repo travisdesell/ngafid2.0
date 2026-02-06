@@ -1,20 +1,24 @@
 package org.ngafid.core.util;
 
+import org.apache.commons.codec.binary.Hex;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
-import org.apache.commons.codec.binary.Hex;
 
 /**
  * Utility class for computing MD5 hashes.
  *
  * @author Joshua Karns
  */
-public class MD5 {
+public final class MD5 {
     private static final Logger LOG = Logger.getLogger(MD5.class.getName());
+
+    private MD5() {
+    }
 
     /**
      * Walks through an input stream and computes the hash over all the bytes. Some of the files we read are larger
