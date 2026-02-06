@@ -149,11 +149,15 @@ public class UserTest extends TestWithConnection {
         // Set up fleet_access records for test users (all with VIEW access to fleet 1)
         try (PreparedStatement stmt =
                 connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
-                        + "(1999, 1, 'VIEW'), (1998, 1, 'VIEW'), (1997, 1, 'VIEW'), (1996, 1, 'VIEW'), (1995, 1, 'VIEW'), "
-                        + "(1994, 1, 'VIEW'), (1993, 1, 'VIEW'), (1992, 1, 'VIEW'), (1991, 1, 'VIEW'), (1990, 1, 'VIEW'), "
+                        + "(1999, 1, 'VIEW'), (1998, 1, 'VIEW'), (1997, 1, 'VIEW'), (1996, 1, 'VIEW')," +
+                        " (1995, 1, 'VIEW'), "
+                        + "(1994, 1, 'VIEW'), (1993, 1, 'VIEW'), (1992, 1, 'VIEW'), (1991, 1, 'VIEW')," +
+                        " (1990, 1, 'VIEW'), "
                         + "(1989, 1, 'VIEW'), (1988, 1, 'VIEW'), (1987, 1, 'VIEW'), "
-                        + "(2999, 1, 'VIEW'), (2998, 1, 'VIEW'), (2997, 1, 'VIEW'), (2996, 1, 'VIEW'), (2995, 1, 'VIEW'), "
-                        + "(2994, 1, 'VIEW'), (2993, 1, 'VIEW'), (2992, 1, 'VIEW'), (2991, 1, 'VIEW'), (2990, 1, 'VIEW'), "
+                        + "(2999, 1, 'VIEW'), (2998, 1, 'VIEW'), (2997, 1, 'VIEW'), (2996, 1, 'VIEW')," +
+                        " (2995, 1, 'VIEW'), "
+                        + "(2994, 1, 'VIEW'), (2993, 1, 'VIEW'), (2992, 1, 'VIEW'), (2991, 1, 'VIEW')," +
+                        " (2990, 1, 'VIEW'), "
                         + "(2989, 1, 'VIEW'), (2988, 1, 'VIEW'), (2987, 1, 'VIEW') "
                         + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
             stmt.executeUpdate();
@@ -171,7 +175,8 @@ public class UserTest extends TestWithConnection {
 
         // Restore the original test data
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), " +
+                        "(1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
             stmt.executeUpdate();
         }
     }
@@ -620,7 +625,8 @@ public class UserTest extends TestWithConnection {
         String password = "password123";
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code," +
+                        " admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setString(1, email);
             stmt.setString(2, "No");
             stmt.setString(3, "Fleet");
@@ -659,7 +665,8 @@ public class UserTest extends TestWithConnection {
 
         int userId;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code," +
+                        " admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, email);
             stmt.setString(2, "Single");
@@ -2978,7 +2985,8 @@ public class UserTest extends TestWithConnection {
             assertEquals(newFleetId, user.getFleetId());
 
             // Verify database was updated
-            try (PreparedStatement stmt = connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
+            try (PreparedStatement stmt =
+                         connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
                 stmt.setInt(1, user.getId());
                 try (ResultSet rs = stmt.executeQuery()) {
                     assertTrue(rs.next());
@@ -3017,7 +3025,8 @@ public class UserTest extends TestWithConnection {
 
             // Ensure user has access to fleet 2 as well
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "VIEW");
@@ -3116,7 +3125,8 @@ public class UserTest extends TestWithConnection {
 
             // Add access to fleet 2 but with DENIED status
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "DENIED");
@@ -3142,7 +3152,8 @@ public class UserTest extends TestWithConnection {
 
             // Set up user with access to fleet 2
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "VIEW");
