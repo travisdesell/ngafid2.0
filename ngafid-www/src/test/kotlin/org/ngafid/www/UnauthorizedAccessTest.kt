@@ -5,8 +5,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.edge.EdgeOptions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 
@@ -16,9 +17,9 @@ class UnauthorizedAccessTest {
         @BeforeAll
         @JvmStatic
         fun setup() {
-            val options = EdgeOptions()
+            val options = ChromeOptions()
             options.addArguments("--headless=new")
-            driver = EdgeDriver(options)
+            driver = ChromeDriver(options)
         }
         @AfterAll
         @JvmStatic

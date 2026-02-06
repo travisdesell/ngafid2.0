@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeAll
 import org.openqa.selenium.By
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.edge.EdgeOptions
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
@@ -22,9 +22,9 @@ class PersistenceTest {
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
-            val options = EdgeOptions()
+            val options = ChromeOptions()
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
-            PersistenceTest.Companion.driver = EdgeDriver(options)
+            PersistenceTest.Companion.driver = ChromeDriver(options)
         }
         @JvmStatic
         @AfterAll
