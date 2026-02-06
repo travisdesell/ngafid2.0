@@ -3,6 +3,11 @@ package org.ngafid.core.event;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.util.filters.Filter;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,10 +18,6 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.util.filters.Filter;
 
 public class EventDefinition {
     // TODO: Replace with Jackson
@@ -33,7 +34,9 @@ public class EventDefinition {
 
     static {
         String query = "SELECT id, name FROM event_definitions";
-        try (Connection connection = Database.getConnection(); PreparedStatement ps = connection.prepareStatement(query); ResultSet resultSet = ps.executeQuery()) {
+        try (Connection connection = Database.getConnection();
+             PreparedStatement ps = connection.prepareStatement(query);
+             ResultSet resultSet = ps.executeQuery()) {
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
                 String name = resultSet.getString("name");
@@ -665,6 +668,8 @@ public class EventDefinition {
 
     /**
      * Deletes an event definition from database
+     *
+     * @param connection is the connection to the database
      */
     public void delete(Connection connection) throws SQLException {
         String query = "DELETE FROM event_definitions WHERE id=?";

@@ -417,6 +417,21 @@ public class TurnToFinal implements Serializable {
 
     public TurnToFinalJSON jsonify() {
         return new TurnToFinalJSON(
-                locExceedences, centerLineExceedences, selfDefinedGlideAngle, latitude, longitude, altMSL, altitude, distanceFromRunway, flightId, runway, airportIataCode, flightStartDate.format(TimeUtils.ISO_8601_FORMAT), maxRoll, selfDefinedGlidePathDeviations, locProbability, stallProbability);
+                locExceedences,
+                centerLineExceedences,
+                selfDefinedGlideAngle,
+                latitude,
+                longitude,
+                altMSL,
+                altitude,
+                distanceFromRunway,
+                flightId,
+                runway,
+                airportIataCode,
+                flightStartDate.format(TimeUtils.getIso8601Format()),
+                maxRoll,
+                selfDefinedGlidePathDeviations,
+                locProbability,
+                stallProbability);
     }
 }

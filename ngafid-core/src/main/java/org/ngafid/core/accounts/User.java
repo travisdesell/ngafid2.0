@@ -1,14 +1,15 @@
 package org.ngafid.core.accounts;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.ngafid.core.flights.Tails;
+import org.ngafid.core.util.SendEmail;
+
 import java.io.Serializable;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.ngafid.core.flights.Tails;
-import org.ngafid.core.util.SendEmail;
 
 public final class User implements Serializable {
 
@@ -53,8 +54,22 @@ public final class User implements Serializable {
     private User() {
     }
 
-    public User(Connection connection, int id, String email, String firstName, String lastName, String address, String city, String country, String state, String zipCode, String phoneNumber,
-            boolean admin, boolean aggregateView, int fleetId, int fleetSelected) throws SQLException, AccountException {
+    public User(
+            Connection connection,
+            int id,
+            String email,
+            String firstName,
+            String lastName,
+            String address,
+            String city,
+            String country,
+            String state,
+            String zipCode,
+            String phoneNumber,
+            boolean admin,
+            boolean aggregateView,
+            int fleetId,
+            int fleetSelected) throws SQLException, AccountException {
         this.id = id;
         this.email = email;
         this.firstName = firstName;
@@ -73,7 +88,14 @@ public final class User implements Serializable {
         this.fleetAccess = FleetAccess.get(connection, id, fleetId);
         this.fleetSelected = fleetSelected;
 
-        LOG.log(Level.INFO, "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}, Fleet Selected: {3}", new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType(), this.fleetSelected});
+        LOG.log(Level.INFO,
+                "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}, Fleet Selected: {3}",
+                new Object[]{
+                        this.id,
+                        this.fleet.getId(),
+                        this.fleetAccess.getAccessType(),
+                        this.fleetSelected
+                });
 
     }
 
@@ -85,9 +107,14 @@ public final class User implements Serializable {
         fleet = Fleet.get(connection, fleetId);
 
         if (fleetAccess != null) {
-            LOG.log(Level.INFO, "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}", new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType()});
+            LOG.log(Level.INFO,
+                    "Instantiated user with ID: {0}, Fleet ID: {1}, Fleet Access: {2}",
+                    new Object[]{this.id, this.fleet.getId(), this.fleetAccess.getAccessType()});
         } else {
-            LOG.log(Level.WARNING, "Instantiated user with ID: {0}, Fleet ID: {1}, but no fleet access found. Fleet access methods will throw NullPointerException.", new Object[]{this.id, this.fleet.getId()});
+            LOG.log(Level.WARNING,
+                    "Instantiated user with ID: {0}, Fleet ID: {1}, but no fleet access found. Fleet access methods "
+                            + "will throw NullPointerException.",
+                    new Object[]{this.id, this.fleet.getId()});
             // Note: fleetAccess remains null - this will cause NullPointerException if fleetAccess methods are called
         }
     }
@@ -210,8 +237,9 @@ public final class User implements Serializable {
             return false;
         }
 
-        try (PreparedStatement query = connection
-                .prepareStatement("SELECT id FROM flights WHERE fleet_id = " + getFleetId() + " and id = " + flightId); ResultSet resultSet = query.executeQuery()) {
+        String sql = "SELECT id FROM flights WHERE fleet_id = " + getFleetId() + " and id = " + flightId;
+        try (PreparedStatement query = connection.prepareStatement(sql);
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             // if there was a flight in the result set then the user had access (i.e., the
@@ -268,7 +296,8 @@ public final class User implements Serializable {
                     + fleetId;
         }
 
-        try (PreparedStatement query = connection.prepareStatement(queryString); ResultSet resultSet = query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             if (resultSet.next()) {
@@ -301,7 +330,9 @@ public final class User implements Serializable {
      * @throws SQLException if there was a problem with the SQL query.
      */
     public static User get(Connection connection, int userId, int fleetId) throws SQLException, AccountException {
-        try (PreparedStatement query = connection.prepareStatement(USER_ROW_QUERY + " WHERE id = " + userId); ResultSet resultSet = query.executeQuery()) {
+        String sql = USER_ROW_QUERY + " WHERE id = " + userId;
+        try (PreparedStatement query = connection.prepareStatement(sql);
+             ResultSet resultSet = query.executeQuery()) {
             LOG.info(query.toString());
 
             if (!resultSet.next()) {
@@ -337,8 +368,9 @@ public final class User implements Serializable {
 
         try (PreparedStatement query = connection.prepareStatement(
                 "SELECT dsn.name FROM user_preferences_metrics AS upm "
-                + "INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = "
-                + userId + " ORDER BY dsn.name"); ResultSet resultSet = query.executeQuery()) {
+                        + "INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = "
+                        + userId + " ORDER BY dsn.name");
+             ResultSet resultSet = query.executeQuery()) {
             List<String> metricNames = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -454,8 +486,9 @@ public final class User implements Serializable {
     public static UserEmailPreferences getUserEmailPreferences(Connection connection, int userId) throws SQLException {
 
         // Check if the user has any email preferences first...
-        try (PreparedStatement queryInitial = connection
-                .prepareStatement("SELECT COUNT(*) FROM email_preferences WHERE user_id = " + userId); ResultSet resultSetInitial = queryInitial.executeQuery()) {
+        String countSql = "SELECT COUNT(*) FROM email_preferences WHERE user_id = " + userId;
+        try (PreparedStatement queryInitial = connection.prepareStatement(countSql);
+             ResultSet resultSetInitial = queryInitial.executeQuery()) {
             int emailPreferencesCount = 0;
 
             if (resultSetInitial.next()) {
@@ -478,8 +511,9 @@ public final class User implements Serializable {
         }
 
         // Get the user's email preferences...
-        try (PreparedStatement query = connection
-                .prepareStatement("SELECT email_type, enabled FROM email_preferences WHERE user_id = " + userId); ResultSet resultSet = query.executeQuery()) {
+        String emailPreferencesSql = "SELECT email_type, enabled FROM email_preferences WHERE user_id = " + userId;
+        try (PreparedStatement query = connection.prepareStatement(emailPreferencesSql);
+             ResultSet resultSet = query.executeQuery()) {
             HashMap<String, Boolean> emailPreferences = new HashMap<>();
 
             while (resultSet.next()) {
@@ -503,7 +537,9 @@ public final class User implements Serializable {
      * @return an instance of {@link UserEmailPreferences} with all the user's
      * email
      */
-    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
+    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId,
+                                                                  Map<String, Boolean> emailPreferences)
+            throws SQLException {
 
         final String queryString
                 = "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
@@ -562,7 +598,8 @@ public final class User implements Serializable {
      */
     public boolean validate(Connection connection, String password) throws SQLException {
         try (PreparedStatement query = connection
-                .prepareStatement("SELECT password_token FROM user WHERE id = " + id); ResultSet resultSet = query.executeQuery()) {
+                .prepareStatement("SELECT password_token FROM user WHERE id = " + id);
+             ResultSet resultSet = query.executeQuery()) {
             if (!resultSet.next()) {
                 return false;
             }
@@ -607,10 +644,10 @@ public final class User implements Serializable {
             return null;
         }
 
-        final int USER_FLEET_SELECTED_NONE = -1;
+        final int userFleetSelectedNone = -1;
 
         //Select this user's currently-selected fleet from the database [user -> fleet_selected]
-        int selectedFleetId = USER_FLEET_SELECTED_NONE;
+        int selectedFleetId = userFleetSelectedNone;
         final String selectedSql = "SELECT fleet_selected FROM user WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(selectedSql)) {
             statement.setInt(1, user.getId());
@@ -624,12 +661,14 @@ public final class User implements Serializable {
             }
         }
 
-        LOG.log(Level.INFO, "Attempting to resolve Fleet Access for user with ID ({0}). Selected Fleet ID: {1}", new Object[]{user.getId(), selectedFleetId});
+        LOG.log(Level.INFO,
+                "Attempting to resolve Fleet Access for user with ID ({0}). Selected Fleet ID: {1}",
+                new Object[]{user.getId(), selectedFleetId});
 
         FleetAccess fleetAccessResolved = null;
 
         //User has a selected fleet, see if they have access to it
-        if (selectedFleetId != USER_FLEET_SELECTED_NONE) {
+        if (selectedFleetId != userFleetSelectedNone) {
 
             for (FleetAccess fleetAccess : allFleets) {
 
@@ -643,7 +682,9 @@ public final class User implements Serializable {
 
             //Failed to find the user's selected fleet in their fleet access list
             if (fleetAccessResolved == null) {
-                LOG.log(Level.WARNING, "User's selected fleet ({0}) was not found in their fleet access list.", selectedFleetId);
+                LOG.log(Level.WARNING,
+                        "User's selected fleet ({0}) was not found in their fleet access list.",
+                        selectedFleetId);
             }
 
         }
@@ -653,7 +694,9 @@ public final class User implements Serializable {
 
             fleetAccessResolved = allFleets.get(0);
 
-            LOG.log(Level.INFO, "Defaulting to first fleet in user's fleet access list with ID: {0}", fleetAccessResolved.getFleetId());
+            LOG.log(Level.INFO,
+                    "Defaulting to first fleet in user's fleet access list with ID: {0}",
+                    fleetAccessResolved.getFleetId());
 
             //Update the user's selected fleet in the database
             final String updateSql = "UPDATE user SET fleet_selected = ? WHERE id = ?";
@@ -716,7 +759,9 @@ public final class User implements Serializable {
      */
     public void setSelectedFleetId(Connection connection, int fleetId) throws SQLException, AccountException {
 
-        LOG.log(Level.INFO, "Attempting to set selected fleet to fleet with ID: {0} for user with ID: {1}", new Object[]{fleetId, this.id});
+        LOG.log(Level.INFO,
+                "Attempting to set selected fleet to fleet with ID: {0} for user with ID: {1}",
+                new Object[]{fleetId, this.id});
 
         final String sql = "UPDATE user SET fleet_selected = ? WHERE id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
@@ -734,7 +779,9 @@ public final class User implements Serializable {
         this.fleet = Fleet.get(connection, fleetId);
         this.fleetAccess = FleetAccess.get(connection, this.id, fleetId);
 
-        LOG.log(Level.INFO, "Updated user's fleet access to fleet with ID: {0} / Access Type: {1}", new Object[]{this.fleet.getId(), this.fleetAccess.getAccessType()});
+        LOG.log(Level.INFO,
+                "Updated user's fleet access to fleet with ID: {0} / Access Type: {1}",
+                new Object[]{this.fleet.getId(), this.fleetAccess.getAccessType()});
 
     }
 
@@ -790,7 +837,8 @@ public final class User implements Serializable {
 
                     //No other managers, disallow leaving
                     if (managerCount == 0) {
-                        LOG.severe("User attempted to leave their selected fleet, but they were the last manager of that fleet. Disallowed.");
+                        LOG.severe("User attempted to leave their selected fleet, but they were the last manager of that "
+                                + "fleet. Disallowed.");
                         throw new SQLException("Unable to leave the current fleet: no other managers would remain.");
                     }
 
@@ -834,13 +882,15 @@ public final class User implements Serializable {
 
             //Failed to find a next fleet, disallow leaving
             if (nextFleetId == null) {
-                LOG.severe("User attempted to leave their selected fleet, but no other fleets were available to switch to. Disallowed.");
+                LOG.severe("User attempted to leave their selected fleet, but no other fleets were available to switch "
+                        + "to. Disallowed.");
                 throw new SQLException("Unable to leave the current fleet: no other fleets are available to switch to.");
             }
 
             //Next fleet found, but it is not an allowed access level to switch to, disallow leaving
             if (!fallbackAllowed.contains(nextFleetType)) {
-                LOG.severe("User attempted to leave their selected fleet, but the only other fleets available were not allowed. Disallowed.");
+                LOG.severe("User attempted to leave their selected fleet, but the only other fleets available were not "
+                        + "allowed. Disallowed.");
                 throw new SQLException("Unable to leave the current fleet: no allowed fallback fleets are available.");
             }
 
@@ -875,7 +925,9 @@ public final class User implements Serializable {
             //Attempt to rollback the transaction
             try {
                 connection.rollback();
-            } catch (SQLException ignore) { /* ... */}
+            } catch (SQLException ignore) {
+                // ignore
+            }
 
             throw e;
 
@@ -884,7 +936,9 @@ public final class User implements Serializable {
             //Restore the previous auto-commit state
             try {
                 connection.setAutoCommit(prevAutoCommit);
-            } catch (SQLException ignore) { /* ... */ }
+            } catch (SQLException ignore) {
+                // ignore
+            }
 
         }
 
@@ -1007,10 +1061,11 @@ public final class User implements Serializable {
      * user already exists in the database.
      */
     public void updatePassword(Connection connection, String newPassword) throws SQLException {
-        String passwordToken = new PasswordAuthentication().hash(newPassword.toCharArray());
+        String newPasswordToken = new PasswordAuthentication().hash(newPassword.toCharArray());
 
-        try (PreparedStatement qry = connection.prepareStatement("UPDATE user SET password_token = ? WHERE id = ?")) {
-            qry.setString(1, passwordToken);
+        try (PreparedStatement qry = connection.prepareStatement(
+                "UPDATE user SET password_token = ? WHERE id = ?")) {
+            qry.setString(1, newPasswordToken);
             qry.setInt(2, this.id);
 
             LOG.info(qry.toString());
@@ -1289,8 +1344,25 @@ public final class User implements Serializable {
             return false;
         }
 
-        return this.id == u.id && this.email.equals(u.email) && this.firstName.equals(u.firstName) && this.lastName.equals(u.lastName) && this.country.equals(u.country) && this.state.equals(u.state)
-                && this.city.equals(u.city) && this.address.equals(u.address) & this.phoneNumber.equals(u.phoneNumber) && this.zipCode.equals(u.zipCode) && this.admin == u.admin && this.aggregateView == u.aggregateView
-                && Objects.equals(this.fleetAccess, u.fleetAccess) && Objects.equals(this.fleet, u.fleet);
+        return this.id == u.id
+                && this.email.equals(u.email)
+                && this.firstName.equals(u.firstName)
+                && this.lastName.equals(u.lastName)
+                && this.country.equals(u.country)
+                && this.state.equals(u.state)
+                && this.city.equals(u.city)
+                && this.address.equals(u.address)
+                & this.phoneNumber.equals(u.phoneNumber)
+                && this.zipCode.equals(u.zipCode)
+                && this.admin == u.admin
+                && this.aggregateView == u.aggregateView
+                && Objects.equals(this.fleetAccess, u.fleetAccess)
+                && Objects.equals(this.fleet, u.fleet);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, email, firstName, lastName, country, state, city, address,
+                phoneNumber, zipCode, admin, aggregateView, fleetAccess, fleet);
     }
 }

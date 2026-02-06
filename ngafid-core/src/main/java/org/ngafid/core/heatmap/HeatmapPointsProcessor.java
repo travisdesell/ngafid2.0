@@ -1,12 +1,5 @@
 package org.ngafid.core.heatmap;
 
-import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
 import org.ngafid.core.event.Event;
@@ -16,6 +9,14 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.TimeUtils;
+
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.logging.Logger;
 
 public class HeatmapPointsProcessor {
     private static final Logger LOG = Logger.getLogger(HeatmapPointsProcessor.class.getName());
@@ -563,7 +564,7 @@ public class HeatmapPointsProcessor {
             }
 
             // Convert target time to ISO 8601 string format for comparison
-            String targetTimeString = targetTime.format(TimeUtils.ISO_8601_FORMAT);
+            String targetTimeString = targetTime.format(TimeUtils.getIso8601Format());
 
             // Find exact timestamp match within the event range
             for (int i = startLine; i <= endLine; i++) {
@@ -914,7 +915,8 @@ public class HeatmapPointsProcessor {
             // Parse MySQL datetime format and convert to ISO 8601
             LocalDateTime localDateTime = LocalDateTime.parse(mysqlDateTime,
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            String result = localDateTime.atOffset(ZoneOffset.UTC).format(TimeUtils.ISO_8601_FORMAT);
+            String result = localDateTime.atOffset(ZoneOffset.UTC)
+                    .format(TimeUtils.getIso8601Format());
             return result;
         } catch (Exception e) {
             LOG.warning("Failed to convert datetime: " + mysqlDateTime + ", error: " + e.getMessage());
