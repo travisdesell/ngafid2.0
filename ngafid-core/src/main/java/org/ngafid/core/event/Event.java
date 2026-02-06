@@ -1,9 +1,7 @@
 package org.ngafid.core.event;
 
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.util.TimeUtils;
+import static org.ngafid.core.flights.Parameters.LATITUDE;
+import static org.ngafid.core.flights.Parameters.LONGITUDE;
 
 import java.io.IOException;
 import java.sql.*;
@@ -12,9 +10,10 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Parameters.LATITUDE;
-import static org.ngafid.core.flights.Parameters.LONGITUDE;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.util.TimeUtils;
 
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());

@@ -12,7 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.FlightProcessingException;

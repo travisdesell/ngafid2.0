@@ -1,9 +1,5 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.airports.Airport;
-import org.ngafid.core.airports.Airports;
-import org.ngafid.core.airports.Runway;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import org.ngafid.core.airports.Airport;
+import org.ngafid.core.airports.Airports;
+import org.ngafid.core.airports.Runway;
 
 public class Itinerary {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());

@@ -1,9 +1,6 @@
 package org.ngafid.core.airports;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import org.apache.commons.lang3.mutable.MutableDouble;
-import org.ngafid.core.Config;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -13,6 +10,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.mutable.MutableDouble;
+import org.ngafid.core.Config;
 
 public final class Airports {
     private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;

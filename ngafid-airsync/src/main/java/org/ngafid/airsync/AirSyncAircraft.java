@@ -1,11 +1,11 @@
 package org.ngafid.airsync;
 
+import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-
-import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -16,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Represents an Aircraft that is AirSync compatibile

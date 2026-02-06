@@ -1,7 +1,5 @@
 package org.ngafid.core.accounts;
 
-import org.ngafid.core.Database;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import org.ngafid.core.Database;
 
 public enum EmailType {
 

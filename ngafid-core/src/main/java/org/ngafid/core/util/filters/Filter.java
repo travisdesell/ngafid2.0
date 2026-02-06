@@ -311,7 +311,7 @@ public class Filter {
                         + "     SELECT id FROM event_definitions "
                         + "     WHERE name = ? and airframe_id = 0 "
                         + " )) " + cond + " ? ";
-                    
+
                 }
 
                 // Otherwise, use specified airframe
@@ -419,7 +419,7 @@ public class Filter {
     public String toQueryString(int fleetId, ArrayList<Object> parameters) {
 
         if (type != null) {
-        
+
             String queryStringOut;
 
             switch (type) {
@@ -439,8 +439,8 @@ public class Filter {
 
             LOG.info(() -> "Generated Filter query string: " + queryStringOut);
             return queryStringOut;
-            
-        } 
+
+        }
 
         LOG.severe("Attempted to convert a filter to a String with a 'null' type");
         return "";

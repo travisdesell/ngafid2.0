@@ -1,15 +1,14 @@
 package org.ngafid.core.accounts;
 
-import org.apache.commons.lang3.RandomStringUtils;
-import org.ngafid.core.flights.Tails;
-import org.ngafid.core.util.SendEmail;
-
 import java.io.Serializable;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.ngafid.core.flights.Tails;
+import org.ngafid.core.util.SendEmail;
 
 public final class User implements Serializable {
 

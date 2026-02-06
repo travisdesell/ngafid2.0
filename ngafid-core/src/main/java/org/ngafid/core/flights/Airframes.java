@@ -1,8 +1,5 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.util.NormalizedColumn;
-import org.ngafid.core.util.filters.Pair;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.ngafid.core.util.NormalizedColumn;
+import org.ngafid.core.util.filters.Pair;
 
 public final class Airframes {
     private Airframes() {

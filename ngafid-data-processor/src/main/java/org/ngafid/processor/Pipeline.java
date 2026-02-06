@@ -1,18 +1,5 @@
 package org.ngafid.processor;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Config;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.uploads.UploadException;
-import org.ngafid.processor.format.*;
-import org.ngafid.processor.steps.ComputeStep;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +17,18 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Config;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.core.uploads.UploadException;
+import org.ngafid.processor.format.*;
+import org.ngafid.processor.steps.ComputeStep;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.

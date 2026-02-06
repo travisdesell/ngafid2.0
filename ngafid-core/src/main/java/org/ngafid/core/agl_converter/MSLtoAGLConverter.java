@@ -1,7 +1,5 @@
 package org.ngafid.core.agl_converter;
 
-import org.ngafid.core.Config;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -9,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import org.ngafid.core.Config;
 
 /**
  * Lightweight MSL to AGL converter that works on-demand per point.

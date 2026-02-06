@@ -198,7 +198,7 @@ public final class Upload {
                 LOG.info(preparedStatement.toString());
                 preparedStatement.executeUpdate();
             }
-            
+
         }
 
         private static KafkaProducer<String, Integer> producer = null;

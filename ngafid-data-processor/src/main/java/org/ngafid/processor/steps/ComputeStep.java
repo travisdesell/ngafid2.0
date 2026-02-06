@@ -1,13 +1,12 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
 
 /**
  * The processing of flights is broken up into small, discrete steps -- a ComputeStep object computes one of these steps.
