@@ -1,15 +1,25 @@
 package org.ngafid.core.flights;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.*;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.sql.rowset.serial.SerialBlob;
+
 import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.Runway;
@@ -18,7 +28,7 @@ import org.ngafid.core.util.TimeUtils;
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
-    public static final long serialVersionUID = 0x46AF1D77F0001L;
+    public static final long serialVersionUID = 0x46AF1D77F0002L;   // <-- Bumped 2/6/26
 
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
@@ -36,19 +46,19 @@ public class TurnToFinal implements Serializable {
     private final double[] locProbability;
     private final double[] altMSL;
     private final double[] distanceFromRunway;
-    private double runwayAltitude;
-    private double maxRoll;
+    private final double runwayAltitude;
+    private final double maxRoll;
     private final Runway runway;
     private String flightId;
 
     private final String airportIataCode;
     private final OffsetDateTime flightStartDate;
 
-    private int nTimesteps;
+    private final int nTimesteps;
 
-    private ArrayList<Integer> locExceedences;
-    private ArrayList<Integer> centerLineExceedences;
-    private ArrayList<Double> selfDefinedGlidePathDeviations;
+    private final ArrayList<Integer> locExceedences;
+    private final ArrayList<Integer> centerLineExceedences;
+    private final ArrayList<Double> selfDefinedGlidePathDeviations;
 
     private double selfDefinedGlideAngle;
 
@@ -295,13 +305,16 @@ public class TurnToFinal implements Serializable {
         query.close();
         resultSet.close();
 
+        final String DELETE_QUERY_STR = "DELETE FROM turn_to_final WHERE flight_id = ?";
+
         if (version != TurnToFinal.serialVersionUID) {
+
             LOG.info("TTF VERSION OUTDATED");
-            PreparedStatement deleteQuery =
-                    connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
-            query.setInt(1, flight.getId());
-            deleteQuery.executeUpdate();
-            deleteQuery.close();
+
+            try (PreparedStatement deleteQuery = connection.prepareStatement(DELETE_QUERY_STR)) {
+                deleteQuery.setInt(1, flight.getId());
+                deleteQuery.executeUpdate();
+            }
 
             return null;
         }
@@ -313,13 +326,11 @@ public class TurnToFinal implements Serializable {
             @SuppressWarnings("unchecked")
             ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
             return ttfs;
-        } catch (ClassNotFoundException ce) {
-            LOG.info("Serialization error: ");
-            ce.printStackTrace();
-
+        } catch (IOException | ClassNotFoundException e) {
+            LOG.info(() -> "Failed to deserialize TTF data for flight " + flight.getId() + ": " + e.getMessage());
             LOG.info("Deleting problematic ttf row.");
 
-            query = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
+            query = connection.prepareStatement(DELETE_QUERY_STR);
             query.setInt(1, flight.getId());
             LOG.info(query.toString());
             query.execute();
@@ -359,7 +370,8 @@ public class TurnToFinal implements Serializable {
 
         for (Itinerary it : itineraries) {
             int to = it.getMinAltitudeIndex();
-            if (!it.wasApproach()) continue;
+            if (!it.wasApproach())
+                continue;
 
             int from = to;
 
@@ -374,7 +386,7 @@ public class TurnToFinal implements Serializable {
                 }
 
                 if (altitude[to] > 15) // - runwayAltitude > 30)
-                break;
+                    break;
 
                 to -= 1;
             }
@@ -389,12 +401,13 @@ public class TurnToFinal implements Serializable {
                 }
 
                 if (altitude[from] > 300) // - runwayAltitude > 400)
-                break;
+                    break;
 
                 from -= 1;
             }
 
-            if (to == from) continue;
+            if (to == from)
+                continue;
 
             double min = Double.POSITIVE_INFINITY;
             double max = Double.NEGATIVE_INFINITY;
@@ -403,8 +416,10 @@ public class TurnToFinal implements Serializable {
                 max = Math.max(max, altitude[i]);
             }
 
-            if (max - min < 60 || Double.isNaN(max - min)) continue;
-            if (min > 100 || Double.isNaN(min)) continue;
+            if (max - min < 60 || Double.isNaN(max - min))
+                continue;
+            if (min > 100 || Double.isNaN(min))
+                continue;
 
             double[] stallProbabilityArray = null;
             double[] locProbabilityArray = null;
@@ -447,7 +462,13 @@ public class TurnToFinal implements Serializable {
             throws SQLException, IOException, ClassNotFoundException {
         ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
 
-        if (turnToFinals == null) return new ArrayList<>();
+        // No cached TTFs found, compute and cache them
+        if (turnToFinals == null)
+            turnToFinals = computeAndCacheTurnToFinals(connection, flight);
+
+        // Still no TTFs found -> Empty list
+        if (turnToFinals == null)
+            return new ArrayList<>();
 
         return turnToFinals.stream()
                 .filter(ttf ->
@@ -463,6 +484,60 @@ public class TurnToFinal implements Serializable {
         assert flight != null;
 
         return getTurnToFinal(connection, flight, airportIataCode);
+    }
+
+    private static ArrayList<TurnToFinal> computeAndCacheTurnToFinals(Connection connection, Flight flight) {
+
+        try {
+            String[] required = {
+                Parameters.LAT,
+                Parameters.LON,
+                Parameters.ALT_AGL,
+                Parameters.ALT_MSL,
+                Parameters.ROLL,
+                Parameters.GND_SPD
+            };
+            List<String> missing = flight.checkCalculationParameters(required);
+
+            // Required parameters are missing, cannot compute TTFs
+            if (!missing.isEmpty()) {
+                LOG.info(() -> "Skipping TTF recompute, missing parameters: " + String.join(", ", missing));
+                return new ArrayList<>();
+            }
+
+            Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
+            for (String param : required) {
+                DoubleTimeSeries series = flight.getDoubleTimeSeries(connection, param);
+                if (series != null)
+                    doubleTimeSeries.put(param, series);
+            }
+
+            DoubleTimeSeries stallProb = flight.getDoubleTimeSeries(connection, Parameters.STALL_PROBABILITY);
+            if (stallProb != null)
+                doubleTimeSeries.put(Parameters.STALL_PROBABILITY, stallProb);
+
+            DoubleTimeSeries locProb = flight.getDoubleTimeSeries(connection, Parameters.LOSS_OF_CONTROL_PROBABILITY);
+            if (locProb != null)
+                doubleTimeSeries.put(Parameters.LOSS_OF_CONTROL_PROBABILITY, locProb);
+
+            List<Itinerary> itinerary = Itinerary.getItinerary(connection, flight.getId());
+            OffsetDateTime startTime = TimeUtils.sqlToOffsetDateTime(flight.getStartDateTime());
+
+            ArrayList<TurnToFinal> ttfs = calculateFlightTurnToFinals( doubleTimeSeries, itinerary, flight.getAirframe(), startTime);
+
+            LOG.info(() -> "Recomputed TTFs for flight " + flight.getId() + ": " + ttfs.size());
+
+            // Got some TTFs, cache them
+            if (!ttfs.isEmpty())
+                cacheTurnToFinal(connection, flight.getId(), ttfs);
+
+            return ttfs;
+
+        } catch (IOException | SQLException e) {
+            LOG.info(() -> "Failed to recompute TTF data for flight " + flight.getId() + ": " + e.getMessage());
+            return new ArrayList<>();
+        }
+
     }
 
     public record TurnToFinalJSON(
@@ -483,9 +558,12 @@ public class TurnToFinal implements Serializable {
             double[] PLOCI,
             double[] PStall) {}
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     public TurnToFinalJSON jsonify() {
+
+        String startDate = (flightStartDate == null)
+            ? null
+            : flightStartDate.format(TimeUtils.getIso8601Format());
+
         return new TurnToFinalJSON(
                 locExceedences,
                 centerLineExceedences,
@@ -498,7 +576,7 @@ public class TurnToFinal implements Serializable {
                 flightId,
                 runway,
                 airportIataCode,
-                flightStartDate.format(TimeUtils.getIso8601Format()),
+                startDate,
                 maxRoll,
                 selfDefinedGlidePathDeviations,
                 locProbability,
