@@ -57,7 +57,7 @@ public enum TimeUtils {
         return offset;
     }
 
-    private static DateTimeFormatter STANDARD_FORMAT = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s");
+    private static DateTimeFormatter STANDARD_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static String toString(OffsetDateTime offsetDateTime) {
         return offsetDateTime.format(STANDARD_FORMAT);

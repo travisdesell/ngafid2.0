@@ -20,9 +20,19 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private final LocalDate actionDate;
     private final int actionATACode;
     private final String originalAction;
+    private final String clusterName;
+    private final String clusterId;
 
     public int getWorkorderNumber() {
         return workorderNumber;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getClusterId() {
+        return clusterId;
     }
 
     public String getTailNumber() {
@@ -35,6 +45,10 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     public String getLabel() {
         return label;
+    }
+
+    public String getOriginalAction() {
+        return originalAction;
     }
 
     public LocalDate getOpenDate() {
@@ -65,6 +79,8 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         actionDate = LocalDate.parse(parts[9], formatter);
         actionATACode = Integer.parseInt(parts[10]);
         originalAction = parts[11];
+        clusterName = parts[12];
+        clusterId = parts[13];
     }
 
     public void combine(MaintenanceRecord other) {
@@ -81,6 +97,8 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         if (!actionDate.equals(other.actionDate)) mismatches.add("actionDate");
         if (actionATACode != other.actionATACode) mismatches.add("actionATACode");
         if (!originalAction.equals(other.originalAction)) mismatches.add("originalAction");
+        if (!clusterName.equals(other.clusterName)) mismatches.add("clusterName");
+        if (!clusterId.equals(other.clusterId)) mismatches.add("clusterId");
 
         if (mismatches.contains("workorderNumber")) {
             System.err.println("Cannot combine two records with different workorder numbers: "
