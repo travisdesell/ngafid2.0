@@ -2105,9 +2105,8 @@ public class UserTest extends TestWithConnection {
         Fleet fleet = Fleet.get(connection, 1);
         assertNotNull(fleet);
 
-        boolean hasAirsync = fleet.hasAirsync(connection);
-
-        assertTrue(hasAirsync || !hasAirsync, "hasAirsync should return boolean");
+        // Test that hasAirsync returns successfully without throwing an exception
+        fleet.hasAirsync(connection);
     }
 
     @Test
