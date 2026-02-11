@@ -1,0 +1,146 @@
+<div id="run-data-tools">
+    <div class="row">
+        <button class="btn" data-script="setup_dat_importing">Setup DAT Importing</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="generate_csvs" placeholder="generate_csvs args" />
+        <button class="btn" data-script="generate_csvs">Generate CSVs</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="generate_email_types" placeholder="generate_email_types args" />
+        <button class="btn" data-script="generate_email_types">Generate Email Types</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="extract_flights" placeholder="extract_flights args" />
+        <button class="btn" data-script="extract_flights">Extract Flights</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="extract_maintenance_flights" placeholder="extract_maintenance_flights args" />
+        <button class="btn" data-script="extract_maintenance_flights">Extract Maintenance Flights</button>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="row">
+                <strong>Event Helper</strong>
+            </div>
+            <div class="row">
+                <input id="event-fleet" placeholder="Fleet ID (-f)" />
+                <input id="event-upload" placeholder="Upload ID (-u)" />
+                <input id="event-flight" placeholder="Flight ID (-l)" />
+                <input id="event-definition" placeholder="Definition ID (-d)" />
+            </div>
+            <div class="row">
+                <label class="row muted"><input id="event-no-recompute" type="checkbox" /> no recompute (-nr)</label>
+                <label class="row muted"><input id="event-delete-definition" type="checkbox" /> delete definition (-x)</label>
+                <button class="btn" data-script="event_helper">Run Event Helper</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="row">
+                <strong>Upload Helper</strong>
+            </div>
+            <div class="row">
+                <select id="upload-mode">
+                    <option value="fleet">Fleet IDs (-f)</option>
+                    <option value="upload">Upload IDs (-u)</option>
+                    <option value="file">File Path (-F)</option>
+                    <option value="query">SQL Query (-q)</option>
+                </select>
+                <input id="upload-value" placeholder="e.g. 12 14 22" />
+                <button class="btn" data-script="upload_helper">Run Upload Helper</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    (function () {
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        function getArgs(script) {
+            const input = document.querySelector(`.run-args[data-script="${script}"]`);
+            return input ? input.value : '';
+        }
+
+        function buildEventArgs() {
+            const args = [];
+            const fleet = document.getElementById('event-fleet')?.value.trim();
+            const upload = document.getElementById('event-upload')?.value.trim();
+            const flight = document.getElementById('event-flight')?.value.trim();
+            const definition = document.getElementById('event-definition')?.value.trim();
+
+            if (fleet)
+                args.push('-f', fleet);
+            if (upload)
+                args.push('-u', upload);
+            if (flight)
+                args.push('-l', flight);
+            if (definition)
+                args.push('-d', definition);
+
+            if (document.getElementById('event-no-recompute')?.checked)
+                args.push('-nr');
+            if (document.getElementById('event-delete-definition')?.checked)
+                args.push('-x');
+
+            return args.join(' ');
+        }
+
+        function buildUploadArgs() {
+            const mode = document.getElementById('upload-mode')?.value || 'fleet';
+            const value = document.getElementById('upload-value')?.value.trim();
+            if (!value)
+                return '';
+            if (mode === 'fleet')
+                return `-f ${value}`;
+            if (mode === 'upload')
+                return `-u ${value}`;
+            if (mode === 'file')
+                return `-F ${value}`;
+            if (mode === 'query')
+                return `-q ${value}`;
+            return value;
+        }
+
+        async function runScript(script) {
+            let args = getArgs(script);
+            if (script === 'event_helper')
+                args = buildEventArgs();
+            if (script === 'upload_helper')
+                args = buildUploadArgs();
+            show(`$ run ${script} ${args}`.trim());
+            const response = await fetch('/api/run/data-tools', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script, args })
+            });
+            const json = await response.json();
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+            show(json.out || '(done)');
+        }
+
+        document.getElementById('run-data-tools')?.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-script]');
+            if (!button)
+                return;
+            runScript(button.dataset.script);
+        });
+
+    })();
+
+</script>

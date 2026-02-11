@@ -1,0 +1,56 @@
+<div id="gui-server-controls">
+    <div class="col" style="margin-top:.5rem">
+        <span id="gui-stop-note" class="muted">(Enabled by NGAFID_GUI_ALLOW_STOP=1)</span>
+        <button id="gui-stop" class="btn danger" disabled >Stop GUI Server</button>
+    </div>
+</div>
+
+<script>
+
+    (function () {
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        async function loadConfig() {
+            const response = await fetch('/api/config');
+            const json = await response.json();
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            if (json.data.allowStop) {
+                const btn = document.getElementById('gui-stop');
+                const note = document.getElementById('gui-stop-note');
+
+                // Toggle disabled state based on allowStop
+                if (btn)
+                    btn.disabled = false;
+                if (note)
+                    note.textContent = 'Warning: This will stop the GUI server. You will need to restart it manually to use the GUI again.';
+
+            }
+        }
+
+        async function stopGui() {
+            show('$ stop gui');
+            const response = await fetch('/api/server/stop', { method: 'POST' });
+            const json = await response.json().catch(() => ({ ok: false, error: 'invalid response' }));
+
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            show(json.out || '(stopping)');
+        }
+
+        document.getElementById('gui-stop')?.addEventListener('click', stopGui);
+
+        (async function init() {
+            await loadConfig();
+        })();
+
+    })();
+
+</script>

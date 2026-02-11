@@ -1,0 +1,101 @@
+<div id="run-liquibase">
+    <div class="row">
+        <button class="btn" data-script="liquibase/update">Update</button>
+        <button class="btn" data-script="liquibase/clear-checksums">Clear Checksums</button>
+        <button class="btn" data-script="liquibase/hourly-materialized-views">Hourly Views</button>
+        <button class="btn" data-script="liquibase/daily-materialized-views">Daily Views</button>
+    </div>
+    <div class="row muted">
+        <strong>Hourly Views:</strong>
+        <span id="liquibase-hourly-time">never</span>
+        <span id="liquibase-hourly-elapsed"></span>
+    </div>
+    <div class="row muted">
+        <strong>Daily Views:</strong>
+        <span id="liquibase-daily-time">never</span>
+        <span id="liquibase-daily-elapsed"></span>
+    </div>
+</div>
+
+<script>
+
+    (function () {
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        async function runScript(script) {
+            show(`$ run ${script}`);
+            const response = await fetch('/api/run/liquibase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script })
+            });
+            const json = await response.json();
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+            show(json.out || '(done)');
+            await refreshStatus();
+        }
+
+        function formatElapsed(ms) {
+            if (ms < 0 || Number.isNaN(ms))
+                return '';
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const parts = [];
+            if (days)
+                parts.push(`${days}d`);
+            if (hours % 24 || parts.length)
+                parts.push(`${hours % 24}h`);
+            if (minutes % 60 || parts.length)
+                parts.push(`${minutes % 60}m`);
+            if (!parts.length)
+                parts.push('just now');
+            return parts.join(' ');
+        }
+
+        function renderStatus(labelId, elapsedId, iso) {
+            const label = document.getElementById(labelId);
+            const elapsed = document.getElementById(elapsedId);
+            if (!label || !elapsed)
+                return;
+            if (!iso) {
+                label.textContent = 'never';
+                elapsed.textContent = '';
+                return;
+            }
+            const date = new Date(iso);
+            label.textContent = date.toLocaleString();
+            const delta = Date.now() - date.getTime();
+            elapsed.textContent = `(${formatElapsed(delta)} ago)`;
+        }
+
+        async function refreshStatus() {
+            const response = await fetch('/api/run/liquibase/status');
+            const json = await response.json();
+            if (!json.ok)
+                return;
+            const data = json.data || {};
+            renderStatus('liquibase-hourly-time', 'liquibase-hourly-elapsed', data.hourly);
+            renderStatus('liquibase-daily-time', 'liquibase-daily-elapsed', data.daily);
+        }
+
+        document.getElementById('run-liquibase')?.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-script]');
+            if (!button)
+                return;
+            runScript(button.dataset.script);
+        });
+
+        refreshStatus();
+        setInterval(refreshStatus, 60000);
+
+    })();
+
+</script>

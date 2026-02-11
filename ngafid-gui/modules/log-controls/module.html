@@ -1,0 +1,158 @@
+<div id="log-controls">
+    <div class="row">
+        <strong>Logs:</strong>
+        <select id="log-service" aria-label="Log Service"></select>
+
+        <div class="row log-mode-select" id="log-kind-row">
+            <label id="log-lbl-log"><input type="radio" name="log-kind" value="log" checked> .log</label>
+            <label id="log-lbl-err"><input type="radio" name="log-kind" value="err"> .err</label>
+            <label id="log-lbl-journal"><input type="radio" name="log-kind" value="journal"> journal</label>
+        </div>
+
+        <div class="row">
+            <span class="muted">Lines:</span>
+            <input id="log-lines" type="number" value="200" min="10" step="50"
+                style="width:6rem;background:#2b2b2b;color:#eee;border:1px solid #666;border-radius:6px;padding:.25rem .4rem;">
+            <label class="row muted"><input id="log-auto" type="checkbox"> auto-refresh</label>
+            <label class="row muted"><input id="log-wrap" type="checkbox" checked> wrap</label>
+        </div>
+    </div>
+
+    <div class="row">
+        <button class="btn" id="log-view">View</button>
+        <button class="btn" id="log-copy">Copy</button>
+    </div>
+</div>
+
+<script>
+
+    (function () {
+
+        let autoTimer = null;
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        function resetAuto() {
+            const autoCheckbox = document.getElementById('log-auto');
+            if (autoCheckbox)
+                autoCheckbox.checked = false;
+            clearInterval(autoTimer);
+            autoTimer = null;
+        }
+
+        async function loadServices() {
+            const response = await fetch('/api/config');
+            const json = await response.json();
+
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            const services = json.data.services || [];
+            const sel = document.getElementById('log-service');
+            if (sel) {
+                sel.innerHTML = services.map((s) => `<option value="${s}">${s}</option>`).join('');
+            }
+        }
+
+        function setKindEnabled(kind, enabled) {
+            const input = document.querySelector(`input[name="log-kind"][value="${kind}"]`);
+            const label = document.getElementById(`log-lbl-${kind}`);
+            if (!input)
+                return;
+
+            input.disabled = !enabled;
+            if (!enabled && input.checked)
+                input.checked = false;
+
+            if (label) {
+                if (!enabled)
+                    label.setAttribute('disabled', '');
+                else
+                    label.removeAttribute('disabled');
+            }
+        }
+
+        async function refreshAvailability() {
+            const service = document.getElementById('log-service')?.value;
+            if (!service)
+                return;
+
+            const response = await fetch(`/api/logs/${service}/available`);
+            const json = await response.json();
+            if (!json.ok)
+                return;
+
+            const available = json.data.available || {};
+            setKindEnabled('log', !!available.log);
+            setKindEnabled('err', !!available.err);
+            setKindEnabled('journal', !!available.journal);
+
+            const current = document.querySelector('input[name="log-kind"]:checked');
+            if (current && current.disabled) {
+                const first = ['log', 'err', 'journal']
+                    .find((k) => !document.querySelector(`input[name="log-kind"][value="${k}"]`).disabled);
+                if (first)
+                    document.querySelector(`input[name="log-kind"][value="${first}"]`).checked = true;
+            }
+        }
+
+        async function fetchLogs() {
+            const service = document.getElementById('log-service')?.value;
+            if (!service)
+                return;
+
+            const kind = document.querySelector('input[name="log-kind"]:checked')?.value || 'log';
+            const n = Math.max(10, parseInt(document.getElementById('log-lines')?.value || '200', 10));
+
+            const response = await fetch(`/api/logs/${service}?n=${encodeURIComponent(n)}&kind=${encodeURIComponent(kind)}`);
+            const json = await response.json();
+
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            show(json.out || '(no output)');
+        }
+
+        function toggleAuto() {
+            const isChecked = document.getElementById('log-auto')?.checked;
+            clearInterval(autoTimer);
+            autoTimer = null;
+            if (isChecked)
+                autoTimer = setInterval(fetchLogs, 2000);
+        }
+
+        function applyWrapFromCheckbox() {
+            const pre = document.getElementById('output');
+            const checked = !!document.getElementById('log-wrap')?.checked;
+            if (pre)
+                pre.style.whiteSpace = checked ? 'pre-wrap' : 'pre';
+        }
+
+        function copyOutput() {
+            const text = document.getElementById('output')?.textContent || '';
+            navigator.clipboard.writeText(text).catch(() => { /* ignored */ });
+        }
+
+        function bindEvents() {
+            document.getElementById('log-view')?.addEventListener('click', fetchLogs);
+            document.getElementById('log-copy')?.addEventListener('click', copyOutput);
+            document.getElementById('log-auto')?.addEventListener('change', toggleAuto);
+            document.getElementById('log-wrap')?.addEventListener('change', applyWrapFromCheckbox);
+            document.getElementById('log-service')?.addEventListener('change', refreshAvailability);
+            window.addEventListener('pageshow', resetAuto);
+        }
+
+        (async function init() {
+            bindEvents();
+            await loadServices();
+            await refreshAvailability();
+            applyWrapFromCheckbox();
+        })();
+
+    })();
+
+</script>

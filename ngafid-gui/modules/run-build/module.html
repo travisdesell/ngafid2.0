@@ -1,0 +1,129 @@
+<div id="run-build">
+    <div class="row">
+        <button class="btn" data-script="build">Build (Skip Assembly)</button>
+        <button class="btn" data-script="package">Package (With Assembly)</button>
+        <button class="btn" data-script="generate_javadocs">Generate Javadocs</button>
+        <button class="btn" id="view-javadocs">View Javadocs</button>
+    </div>
+    <div class="row muted">
+        <label class="row"><input id="build-clean" type="checkbox" /> clean</label>
+        <label class="row"><input id="build-skip-tests" type="checkbox" checked /> skip tests</label>
+    </div>
+    <div class="row muted">
+        <strong>Build:</strong>
+        <span id="build-time">never</span>
+        <span id="build-elapsed"></span>
+    </div>
+    <div class="row muted">
+        <strong>Package:</strong>
+        <span id="package-time">never</span>
+        <span id="package-elapsed"></span>
+    </div>
+    <div class="row muted">
+        <strong>Javadocs:</strong>
+        <span id="javadocs-time">never</span>
+        <span id="javadocs-elapsed"></span>
+    </div>
+</div>
+
+<script>
+
+    (function () {
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        function buildArgs(script) {
+            if (script !== 'build' && script !== 'package')
+                return '';
+            const args = [];
+            if (document.getElementById('build-clean')?.checked)
+                args.push('--clean');
+            if (document.getElementById('build-skip-tests')?.checked)
+                args.push('--skip-tests');
+            else
+                args.push('--no-skip-tests');
+            return args.join(' ');
+        }
+
+        async function runScript(script) {
+            const args = buildArgs(script);
+            show(`$ run ${script} ${args}`.trim());
+            const response = await fetch('/api/run/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script, args })
+            });
+            const json = await response.json();
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+            show(json.out || '(done)');
+            await refreshStatus();
+        }
+
+        function formatElapsed(ms) {
+            if (ms < 0 || Number.isNaN(ms))
+                return '';
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const parts = [];
+            if (days)
+                parts.push(`${days}d`);
+            if (hours % 24 || parts.length)
+                parts.push(`${hours % 24}h`);
+            if (minutes % 60 || parts.length)
+                parts.push(`${minutes % 60}m`);
+            if (!parts.length)
+                parts.push('just now');
+            return parts.join(' ');
+        }
+
+        function renderStatus(labelId, elapsedId, iso) {
+            const label = document.getElementById(labelId);
+            const elapsed = document.getElementById(elapsedId);
+            if (!label || !elapsed)
+                return;
+            if (!iso) {
+                label.textContent = 'never';
+                elapsed.textContent = '';
+                return;
+            }
+            const date = new Date(iso);
+            label.textContent = date.toLocaleString();
+            const delta = Date.now() - date.getTime();
+            elapsed.textContent = `(${formatElapsed(delta)} ago)`;
+        }
+
+        async function refreshStatus() {
+            const response = await fetch('/api/run/build/status');
+            const json = await response.json();
+            if (!json.ok)
+                return;
+            const data = json.data || {};
+            renderStatus('build-time', 'build-elapsed', data.build);
+            renderStatus('package-time', 'package-elapsed', data.package);
+            renderStatus('javadocs-time', 'javadocs-elapsed', data.javadocs);
+        }
+
+        document.getElementById('run-build')?.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-script]');
+            if (!button)
+                return;
+            runScript(button.dataset.script);
+        });
+
+        document.getElementById('view-javadocs')?.addEventListener('click', () => {
+            window.open('/javadocs/', '_blank');
+        });
+
+        refreshStatus();
+        setInterval(refreshStatus, 60000);
+
+    })();
+
+</script>

@@ -1,0 +1,141 @@
+<div id="service-controls">
+    <div id="service-env" class="muted"></div>
+
+    <div class="row" id="service-all-controls">
+        <span class="pill">All Services</span>
+        <button class="btn" data-service="all" data-action="start">Start All</button>
+        <button class="btn" data-service="all" data-action="stop">Stop All</button>
+        <button class="btn" data-service="all" data-action="restart">Restart All</button>
+        <button class="btn" id="service-refresh">Refresh Status</button>
+    </div>
+
+    <div id="service-list"></div>
+</div>
+
+<script>
+
+    (function () {
+
+        let services = [];
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        function statusDot(state) {
+            const cls = (state === 'active')
+                ? 'ok'
+                : (state === 'inactive' ? 'bad' : 'unknown');
+            return `<span class="status-dot ${cls}"></span>`;
+        }
+
+        async function loadConfig() {
+            const response = await fetch('/api/config');
+            const json = await response.json();
+
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            services = json.data.services || [];
+            const env = document.getElementById('service-env');
+            if (env) {
+                env.textContent = `Mode: ${json.data.mode} | Host: ${json.data.host} | User: ${json.data.user} | LogDir: ${json.data.logDir}`;
+            }
+
+            renderServices();
+        }
+
+        function renderServices() {
+            const list = document.getElementById('service-list');
+            if (!list)
+                return;
+
+            list.innerHTML = '';
+            services.forEach((svc) => {
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.id = `row-${svc}`;
+                row.innerHTML = `
+                    <span class="pill service" id="pill-${svc}">${statusDot('unknown')}<strong>${svc}</strong><span class="spacer"></span><span class="muted" id="state-${svc}">unknown</span></span>
+                    <button class="btn" data-service="${svc}" data-action="start">Start</button>
+                    <button class="btn" data-service="${svc}" data-action="stop">Stop</button>
+                    <button class="btn" data-service="${svc}" data-action="restart">Restart</button>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function refreshStatus() {
+            const response = await fetch('/api/services/status');
+            const json = await response.json();
+
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            const statuses = json.data.statuses || {};
+            for (const [service, state] of Object.entries(statuses)) {
+                const pill = document.getElementById(`pill-${service}`);
+                const stateEl = document.getElementById(`state-${service}`);
+                if (!pill || !stateEl)
+                    continue;
+
+                const dot = pill.querySelector('.status-dot');
+                dot?.classList.remove('ok', 'bad', 'unknown');
+                dot?.classList.add(state === 'active' ? 'ok' : (state === 'inactive' ? 'bad' : 'unknown'));
+                stateEl.textContent = state;
+            }
+        }
+
+        async function doAction(service, action) {
+            show(`$ ${action} ${service}`);
+            const response = await fetch(`/api/services/${action}` , {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ service })
+            });
+
+            const json = await response.json();
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+
+            if (json.out)
+                show(json.out);
+
+            await refreshStatus();
+        }
+
+        function bindEvents() {
+            const allControls = document.getElementById('service-all-controls');
+            allControls?.addEventListener('click', (event) => {
+                const button = event.target.closest('button[data-action]');
+                if (!button)
+                    return;
+                doAction(button.dataset.service, button.dataset.action);
+            });
+
+            const list = document.getElementById('service-list');
+            list?.addEventListener('click', (event) => {
+                const button = event.target.closest('button[data-action]');
+                if (!button)
+                    return;
+                doAction(button.dataset.service, button.dataset.action);
+            });
+
+            const refresh = document.getElementById('service-refresh');
+            refresh?.addEventListener('click', refreshStatus);
+        }
+
+        window.NGAFID = window.NGAFID || {};
+        window.NGAFID.refreshServiceStatus = refreshStatus;
+
+        (async function init() {
+            bindEvents();
+            await loadConfig();
+            await refreshStatus();
+        })();
+
+    })();
+
+</script>

@@ -1,0 +1,66 @@
+<div id="run-kafka">
+    <div class="row">
+        <button class="btn" data-script="kafka/create_topics">Create Topics</button>
+        <button class="btn" data-script="kafka/purge_topics">Purge Topics</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="kafka/event_consumer" placeholder="event_consumer args" />
+        <button class="btn" data-script="kafka/event_consumer">Run Event Consumer</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="kafka/event_observer" placeholder="event_observer args" />
+        <button class="btn" data-script="kafka/event_observer">Run Event Observer</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="kafka/upload_consumer" placeholder="upload_consumer args" />
+        <button class="btn" data-script="kafka/upload_consumer">Run Upload Consumer</button>
+    </div>
+
+    <div class="row">
+        <input class="run-args" data-script="kafka/email_consumer" placeholder="email_consumer args" />
+        <button class="btn" data-script="kafka/email_consumer">Run Email Consumer</button>
+    </div>
+</div>
+
+<script>
+
+    (function () {
+
+        function show(text) {
+            if (window.NGAFID && typeof window.NGAFID.show === 'function')
+                return window.NGAFID.show(text);
+            console.log(text);
+        }
+
+        function getArgs(script) {
+            const input = document.querySelector(`.run-args[data-script="${script}"]`);
+            return input ? input.value : '';
+        }
+
+        async function runScript(script) {
+            const args = getArgs(script);
+            show(`$ run ${script} ${args}`.trim());
+            const response = await fetch('/api/run/kafka', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script, args })
+            });
+            const json = await response.json();
+            if (!json.ok)
+                return show(`[error] ${json.error}`);
+            show(json.out || '(done)');
+        }
+
+        document.getElementById('run-kafka')?.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-script]');
+            if (!button)
+                return;
+            runScript(button.dataset.script);
+        });
+
+    })();
+
+</script>

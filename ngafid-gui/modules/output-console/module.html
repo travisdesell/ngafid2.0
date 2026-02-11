@@ -1,0 +1,41 @@
+<div id="output-console">
+    <pre id="output" class="muted">No output yet.</pre>
+</div>
+
+<style>
+    #output-console {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        margin-bottom: 1rem;
+    }
+
+    #output-console #output {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+    }
+</style>
+
+<script>
+
+    (function () {
+
+        window.NGAFID = window.NGAFID || {};
+        const pre = document.getElementById('output');
+
+        window.NGAFID.show = (text) => {
+            if (!pre) {
+                console.log(text);
+                return;
+            }
+            pre.classList.remove('muted');
+            pre.textContent = text;
+        };
+
+        if (window.NGAFID._lastOutput && pre)
+            window.NGAFID.show(window.NGAFID._lastOutput);
+
+    })();
+
+</script>

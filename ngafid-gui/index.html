@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <title>NGAFID GUI Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --ok: #3fb950;
+            --warn: #d29922;
+            --err: #f85149;
+            --muted: #bbb;
+            --console-width: 64rem;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #181818;
+            color: #eee;
+            margin: 2rem 24rem;
+            padding-right: calc(var(--console-width) + 2rem);
+            position: relative;
+            overflow-y: scroll;
+        }
+
+        .layout {
+            display: block;
+        }
+
+        .main-column {
+            min-width: 0;
+        }
+
+        .side-column {
+            position: fixed;
+            top: 2rem;
+            left: calc(var(--console-width) + 6rem);
+            width: var(--console-width);
+            max-width: 42vw;
+            height: calc(100dvh - 4rem);
+            max-height: calc(100dvh - 4rem);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 980px) {
+            body {
+                padding-right: 0;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .side-column {
+                position: static;
+                width: auto;
+                max-width: none;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+
+        h2 {
+            margin: 0 0 1rem;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin: .4rem 0;
+            flex-wrap: wrap;
+        }
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+        }
+
+        .pill {
+            padding: .5rem .75rem;
+            border: 1px solid #555;
+            border-radius: 999px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .pill {
+            &.service {
+                min-width: 20rem;
+            }
+        }
+
+        .btn {
+            width: fit-content;
+            padding: .35rem .7rem;
+            border: 1px solid #666;
+            background: #2b2b2b;
+            color: #eee;
+            border-radius: 6px;
+            cursor: pointer;
+            &.danger {
+                background-color: #6b2b2b;
+            }
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #3a3a3a;
+            &.danger {
+                background-color: #8b2b2b;
+            }
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .status-dot {
+            width: .6rem;
+            height: .6rem;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            background: var(--muted);
+        }
+
+        .ok {
+            background: var(--ok);
+        }
+
+        .bad {
+            background: var(--err);
+        }
+
+        .unknown {
+            background: var(--muted);
+        }
+
+        pre {
+            background: #111;
+            padding: 1rem;
+            border-radius: 8px;
+            white-space: pre;
+            overflow: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        #console-panel,
+        #output-console {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        #module-output-console {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #module-output-console .module-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+        }
+
+        .muted {
+            color: #aaa;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        label[disabled] {
+            opacity: .5
+        }
+
+        .log-mode-select {
+            border: 1px solid #666;
+            border-radius: 6px;
+            background: #2b2b2b;
+            padding: .25rem .5rem;
+        }
+
+        .modules {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: .5rem;
+        }
+
+        .module {
+            border: 1px solid #333;
+            background: #1b1b1b;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: .5rem;
+        }
+
+        .module-header .collapse-toggle {
+            margin-left: auto;
+            width: 8em;
+        }
+
+        .module.collapsed .module-body {
+            display: none;
+        }
+
+        .module-title {
+            font-weight: 600;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="layout">
+        <div class="main-column">
+            <div id="modules" class="modules"></div>
+        </div>
+        <aside class="side-column">
+            <div id="console-panel"></div>
+        </aside>
+    </div>
+
+    <script>
+
+        window.NGAFID = window.NGAFID || {};
+        if (typeof window.NGAFID.show !== 'function') {
+            window.NGAFID.show = (text) => {
+                window.NGAFID._lastOutput = text;
+                const pre = document.getElementById('output');
+                if (!pre) {
+                    console.log(text);
+                    return;
+                }
+                pre.classList.remove('muted');
+                pre.textContent = text;
+            };
+        }
+
+        function injectHtmlWithScripts(container, html) {
+
+            const template = document.createElement('template');
+            template.innerHTML = html;
+            const fragment = template.content;
+
+            const scripts = Array.from(fragment.querySelectorAll('script'));
+            scripts.forEach(s => s.remove());
+
+            container.innerHTML = '';
+            container.appendChild(fragment);
+
+            scripts.forEach(s => {
+                const script = document.createElement('script');
+                for (const attr of s.attributes)
+                    script.setAttribute(attr.name, attr.value);
+                script.textContent = s.textContent;
+                container.appendChild(script);
+            });
+
+        }
+
+        async function loadModules() {
+
+            const container = document.getElementById('modules');
+            if (!container)
+                return;
+
+            const response = await fetch('/api/modules');
+            const json = await response.json();
+
+            if (!json.ok) {
+                container.innerHTML = '<div class="muted">Failed to load modules.</div>';
+                return;
+            }
+
+            const modules = json.data.modules || [];
+            if (!modules.length) {
+                container.innerHTML = '<div class="muted">No modules found.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            for (const mod of modules) {
+                const isConsole = mod.name === 'output-console';
+                const storageKey = `ngafid.module.collapsed.${mod.name}`;
+                const collapsed = !isConsole && localStorage.getItem(storageKey) === '1';
+                const section = document.createElement('section');
+                section.className = 'module';
+                section.id = `module-${mod.name}`;
+                if (collapsed)
+                    section.classList.add('collapsed');
+                section.innerHTML = `
+                    <div class="module-header">
+                        <span class="pill">
+                            <div class="module-title">${mod.title || mod.name}</div>
+                        </span>
+                        ${isConsole ? '' : `<button class="btn collapse-toggle" data-module="${mod.name}">${collapsed ? '+ Expand' : '− Collapse'}</button>`}
+                    </div>
+                    <div class="module-body muted">Loading...</div>
+                `;
+                container.appendChild(section);
+
+                try {
+                    const htmlRes = await fetch(mod.htmlPath);
+                    const html = await htmlRes.text();
+                    const body = section.querySelector('.module-body');
+                    if (body)
+                        injectHtmlWithScripts(body, html);
+                } catch (e) {
+                    const body = section.querySelector('.module-body');
+                    if (body)
+                        body.textContent = 'Failed to load module HTML.';
+                }
+            }
+
+            const consolePanel = document.getElementById('console-panel');
+            const consoleModule = document.getElementById('module-output-console');
+            if (consolePanel && consoleModule)
+                consolePanel.appendChild(consoleModule);
+
+            container.addEventListener('click', (event) => {
+                const button = event.target.closest('.collapse-toggle');
+                if (!button)
+                    return;
+                const moduleName = button.getAttribute('data-module');
+                const target = moduleName ? document.getElementById(`module-${moduleName}`) : null;
+                if (!target)
+                    return;
+                const nextCollapsed = !target.classList.contains('collapsed');
+                target.classList.toggle('collapsed', nextCollapsed);
+                localStorage.setItem(`ngafid.module.collapsed.${moduleName}`, nextCollapsed ? '1' : '0');
+                button.textContent = nextCollapsed ? '+ Expand' : '− Collapse';
+            });
+
+        }
+
+        (async function init() {
+            await loadModules();
+        })();
+
+    </script>
+</body>
+
+</html>
