@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 import org.ngafid.core.util.TimeUtils;
 
 public enum FlightStatistics {
-    ;
+;
 
     private static final Logger LOG = Logger.getLogger(FlightStatistics.class.getName());
 

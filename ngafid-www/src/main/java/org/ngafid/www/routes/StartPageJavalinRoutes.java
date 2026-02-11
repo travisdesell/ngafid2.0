@@ -20,6 +20,10 @@ import org.ngafid.www.Navbar;
 public class StartPageJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StartPageJavalinRoutes.class.getName());
 
+    private StartPageJavalinRoutes() {
+        // Utility class
+    }
+
     private static class Message {
         String type;
         String message;

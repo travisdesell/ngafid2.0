@@ -20,6 +20,10 @@ import org.ngafid.www.Navbar;
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
 
+    private ImportUploadJavalinRoutes() {
+        // Utility class
+    }
+
     public static void getUploads(Context ctx) {
         final String templateFile = "uploads.html";
 

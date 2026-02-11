@@ -20,6 +20,10 @@ public final class BugReportJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(BugReportJavalinRoutes.class.getName());
 
+    private BugReportJavalinRoutes() {
+        // Utility class
+    }
+
     /* Bug Report Submission (Email) */
     public static void postBugReportEmail(Context ctx) throws Exception {
 

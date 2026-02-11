@@ -18,6 +18,10 @@ import org.ngafid.www.WebServer;
 public class StatusJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StatusJavalinRoutes.class.getName());
 
+    private StatusJavalinRoutes() {
+        // Utility class
+    }
+
     public enum ServiceStatus {
         OK,
         WARNING,

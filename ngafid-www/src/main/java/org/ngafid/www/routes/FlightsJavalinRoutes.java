@@ -22,6 +22,10 @@ import org.ngafid.www.Navbar;
 public class FlightsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 
+    private FlightsJavalinRoutes() {
+        // Utility class
+    }
+
     private static class FlightsResponse {
         @JsonProperty
         public List<Flight> flights;
