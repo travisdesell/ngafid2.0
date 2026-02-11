@@ -3,6 +3,7 @@ package org.ngafid.www.routes;
 import static org.ngafid.www.HttpCodes.*;
 import static org.ngafid.www.WebServer.gson;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.http.Context;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -116,9 +117,16 @@ public final class BugReportJavalinRoutes {
     }
 
     private static class BugReportPayload {
+        @JsonProperty
         private final String title;
+        
+        @JsonProperty
         private final String body;
+        
+        @JsonProperty
         private final String senderEmail;
+        
+        @JsonProperty
         private final boolean includeEmail;
 
         public String getTitle() {

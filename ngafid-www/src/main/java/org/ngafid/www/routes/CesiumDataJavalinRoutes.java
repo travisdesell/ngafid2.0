@@ -2,6 +2,7 @@ package org.ngafid.www.routes;
 
 import static org.ngafid.www.WebServer.gson;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -449,21 +450,46 @@ public class CesiumDataJavalinRoutes {
     }
 
     private static class CesiumResponse {
+        @JsonProperty
         private final ArrayList<Double> flightGeoAglTaxiing;
+        
+        @JsonProperty
         private final ArrayList<Double> flightGeoAglTakeOff;
+        
+        @JsonProperty
         private final ArrayList<Double> flightGeoAglClimb;
+        
+        @JsonProperty
         private final ArrayList<Double> flightGeoAglCruise;
+        
+        @JsonProperty
         private final ArrayList<Double> flightGeoInfoAgl;
+        
+        @JsonProperty
         private final ArrayList<Event> events;
 
+        @JsonProperty
         private final ArrayList<String> flightTaxiingTimes;
+        
+        @JsonProperty
         private final ArrayList<String> flightTakeOffTimes;
+        
+        @JsonProperty
         private final ArrayList<String> flightClimbTimes;
+        
+        @JsonProperty
         private final ArrayList<String> flightCruiseTimes;
+        
+        @JsonProperty
         private final ArrayList<String> flightAglTimes;
 
+        @JsonProperty
         private final String startTime;
+        
+        @JsonProperty
         private final String endTime;
+        
+        @JsonProperty
         private final String airframeType;
 
         CesiumResponse(

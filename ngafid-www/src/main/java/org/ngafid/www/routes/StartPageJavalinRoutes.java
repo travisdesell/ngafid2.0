@@ -2,6 +2,7 @@ package org.ngafid.www.routes;
 
 import static org.ngafid.www.WebServer.gson;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import java.sql.Connection;
@@ -25,7 +26,10 @@ public class StartPageJavalinRoutes {
     }
 
     private static class Message {
+        @JsonProperty
         private final String type;
+        
+        @JsonProperty
         private final String message;
 
         Message(String type, String message) {

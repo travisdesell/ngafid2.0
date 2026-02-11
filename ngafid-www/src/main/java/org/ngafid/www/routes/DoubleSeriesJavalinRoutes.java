@@ -1,5 +1,6 @@
 package org.ngafid.www.routes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import java.io.IOException;
@@ -24,6 +25,7 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static class AllDoubleSeriesNames {
+        @JsonProperty
         private final List<String> names = new ArrayList<String>();
 
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
@@ -43,7 +45,10 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static class DoubleSeries {
+        @JsonProperty
         private final String[] x;
+        
+        @JsonProperty
         private final double[] y;
 
         public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
@@ -75,6 +80,7 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static class DoubleSeriesNames {
+        @JsonProperty
         private final List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
