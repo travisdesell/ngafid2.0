@@ -5,5 +5,5 @@
 
 <suppressions>
     <!-- Ignore FileLength for FlightTest.java as it's a comprehensive test suite -->
-    <suppress checks="FileLength" files="ngafid-core/src/test/java/org/ngafid/core/flights/FlightTest.java"/>
+    <suppress checks="FileLength" files=".*FlightTest\.java"/>
 </suppressions>
