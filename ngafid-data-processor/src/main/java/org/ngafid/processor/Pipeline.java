@@ -1,5 +1,18 @@
 package org.ngafid.processor;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Config;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.core.uploads.UploadException;
+import org.ngafid.processor.format.*;
+import org.ngafid.processor.steps.ComputeStep;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -17,17 +30,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Config;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.uploads.UploadException;
-import org.ngafid.processor.format.*;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
@@ -302,7 +304,7 @@ public class Pipeline implements AutoCloseable {
             if (processor == null) return Stream.of();
             return processor.parse();
         } catch (FlightProcessingException e) {
-            fail(processor.filename, e);
+            fail(processor.getFilename(), e);
             return Stream.of();
         }
     }
@@ -310,21 +312,21 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `FlightBuilder::build` on the supplied flight builder and returns the resulting flight.
      *
-     * @param connection The database connection
+     * @param dbConnection The database connection
      * @param flightBuilder The flight builder to build
      * @return a flight object if there are no exceptions, otherwise returns `null`.
      */
-    public FlightBuilder build(Connection connection, FlightBuilder flightBuilder) {
+    public FlightBuilder build(Connection dbConnection, FlightBuilder flightBuilder) {
         try {
             LOG.info(() -> "Building flight file '" + flightBuilder.meta.getFilename() + "'");
             flightBuilder.meta.setFleetId(this.upload.fleetId);
             flightBuilder.meta.setUploaderId(this.upload.uploaderId);
             flightBuilder.meta.setUploadId(this.upload.id);
             flightBuilder.meta.setAirframe(new Airframes.Airframe(
-                    connection,
+                    dbConnection,
                     flightBuilder.meta.getAirframe().getName(),
                     flightBuilder.meta.getAirframe().getType()));
-            return flightBuilder.build(connection);
+            return flightBuilder.build(dbConnection);
         } catch (FlightProcessingException | SQLException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
             fail(flightBuilder.meta.getFilename(),
@@ -336,12 +338,12 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `this::build` on each `FlightBuilder` in the supplied stream.
      *
-     * @param connection The database connection
+     * @param dbConnection The database connection
      * @param flightBuilders The stream of flight builders to build
      * @return a list of `Flight` objects, having filtered out any `null` values.
      */
-    public List<FlightBuilder> build(Connection connection, Stream<FlightBuilder> flightBuilders) {
-        return flightBuilders.map(flightBuilder -> this.build(connection, flightBuilder))
+    public List<FlightBuilder> build(Connection dbConnection, Stream<FlightBuilder> flightBuilders) {
+        return flightBuilders.map(flightBuilder -> this.build(dbConnection, flightBuilder))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
