@@ -1,4 +1,6 @@
 <?xml version="1.0"?>
+<!DOCTYPE suppressions SYSTEM "suppressions_1_3.dtd">
+
 <suppressions>
   <suppress checks="FileLength" files=".*FlightTest\.java"/>
 </suppressions>
