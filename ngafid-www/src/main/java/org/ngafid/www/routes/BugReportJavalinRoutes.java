@@ -129,6 +129,17 @@ public final class BugReportJavalinRoutes {
         @JsonProperty
         private final boolean includeEmail;
 
+        BugReportPayload(
+                @JsonProperty("title") String title,
+                @JsonProperty("body") String body,
+                @JsonProperty("senderEmail") String senderEmail,
+                @JsonProperty("includeEmail") boolean includeEmail) {
+            this.title = title;
+            this.body = body;
+            this.senderEmail = senderEmail;
+            this.includeEmail = includeEmail;
+        }
+
         public String getTitle() {
             return title;
         }
