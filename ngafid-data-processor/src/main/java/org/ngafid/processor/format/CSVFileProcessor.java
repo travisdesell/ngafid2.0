@@ -193,7 +193,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     FlightBuilder makeFlightBuilder(
-            FlightMeta metaParam, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
+            FlightMeta metaParam, Map<String, DoubleTimeSeries> doubleSeries,
+            Map<String, StringTimeSeries> stringSeries) {
         return new FlightBuilder(metaParam, doubleSeries, stringSeries);
     }
 
