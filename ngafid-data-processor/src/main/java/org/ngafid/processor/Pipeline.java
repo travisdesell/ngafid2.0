@@ -11,7 +11,6 @@ import org.ngafid.core.flights.FlightProcessingException;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.core.uploads.UploadException;
 import org.ngafid.processor.format.*;
-import org.ngafid.processor.steps.ComputeStep;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -42,13 +41,13 @@ import java.util.stream.StreamSupport;
  * <p>
  * {@link FlightFileProcessor} objects handle the task of parsing the data: obtaining metadata
  * and the actual double and string series. These are placed into a {@link FlightBuilder}, which is
- * an intermediate representation of a partially processed flight.
+ * an intermediate representation of a partially processed flight.ProximityEventScanner
  * <p>
- * {@link FlightBuilder}s can be specialized and these specializations will specify a set of
- * {@link ComputeStep}s which will be applied to compute everything we need. ComputeSteps all have
+ * FlightBuilders can be specialized and these specializations will specify a set of
+ * ComputeSteps which will be applied to compute everything we need. ComputeSteps all have
  * required input columns and output columns: these requirements can be used to form a DAG,
  * traversing it in the proper order will let us compute the steps in the proper order. This
- * process can also be parallelized, see {@link org.ngafid.uploads.process.DependencyGraph} for
+ * process can also be parallelized, see {org.ngafid.uploads.process.DependencyGraph} for
  * more on this.
  * <p>
  * This object may open resources, thus it must be created using a try-with statement to ensure

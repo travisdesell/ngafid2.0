@@ -227,7 +227,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
         }
 
         if (startTime != null) {
-            LOG.info("(B) Creating events for flights with IDs : " + flightParam.getId() + " and " + otherFlight.getId());
+            LOG.info("(B) Creating events for flights with IDs : " + flightParam.getId()
+                    + " and " + otherFlight.getId());
             emitProximityEventPair(
                     flightParam,
                     flightInfo,
