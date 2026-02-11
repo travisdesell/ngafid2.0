@@ -21,7 +21,8 @@ public class ComputeItinerary extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE,
             RUNWAY_DISTANCE, GND_SPD, E1_RPM);
     private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
-    // This is a fake column; never actually created, but for steps that rely on the itinerary they can use this dummy column.
+    // This is a fake column; never actually created, but for steps that rely on the itinerary they can use this dummy
+    // column.
     private static final Set<String> OUTPUT_COLUMNS = Set.of("_itinerary");
 
     public ComputeItinerary(Connection connection, FlightBuilder builder) {

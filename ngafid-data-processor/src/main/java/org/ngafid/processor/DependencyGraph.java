@@ -326,6 +326,8 @@ public class DependencyGraph {
 
         /**
          * Disable this node and all descendent nodes.
+         *
+         * @param e the exception that caused this node to be disabled
          */
         void disableChildren(Exception e) {
             if (enabled.get()) {

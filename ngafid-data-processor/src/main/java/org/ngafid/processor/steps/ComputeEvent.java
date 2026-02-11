@@ -18,9 +18,11 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of {@link EventScanner}.
+ * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of
+ * {@link EventScanner}.
  * <p>
- * When adding a custom event, you may have to modify the private factory methods contained within this class to properly
+ * When adding a custom event, you may have to modify the private factory methods contained within this class to
+ * properly
  * compute the event upon ingestion.
  */
 public class ComputeEvent extends ComputeStep {
@@ -61,7 +63,8 @@ public class ComputeEvent extends ComputeStep {
     }
 
     /**
-     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied flight builder,
+     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied
+     * flight builder,
      * i.e. all the required columns are available.
      * <p>
      * Some additional logic is required specifically for custom events, as custom events use subclasses of ComputeEvent
@@ -84,8 +87,9 @@ public class ComputeEvent extends ComputeStep {
     }
 
     /**
-     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed before
-     * the flight is inserted into the database (namely proximity events), and this function will return null in that case.
+     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed
+     * before the flight is inserted into the database (namely proximity events), and this function will return null in
+     * that case.
      *
      * @param connection
      * @param fb
@@ -117,7 +121,7 @@ public class ComputeEvent extends ComputeStep {
      *
      * @param builder
      * @param definition
-     * @return
+     * @return event scanner if applicable, null otherwise
      */
     private static AbstractEventScanner scannerFactory(FlightBuilder builder, EventDefinition definition) {
         if (definition.getId() > 0) {

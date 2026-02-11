@@ -77,7 +77,8 @@ public class ComputeAirportProximity extends ComputeStep {
             MutableDouble airportDistance = new MutableDouble();
             Airport airport = null;
             if (altitudeAGL <= 2000) {
-                airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
+                airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT,
+                        airportDistance);
             }
 
             if (airport == null) {

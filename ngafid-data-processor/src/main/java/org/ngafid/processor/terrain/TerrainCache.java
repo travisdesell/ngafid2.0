@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 public enum TerrainCache {
-    ;
+;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
 
     private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;
@@ -23,7 +23,8 @@ public enum TerrainCache {
                         new CacheLoader<>() {
                             @NotNull
                             @Override
-                            public SRTMTile load(@NotNull TileCoordinate coordinate) throws TerrainUnavailableException {
+                            public SRTMTile load(@NotNull TileCoordinate coordinate)
+                                    throws TerrainUnavailableException {
                                 return coordinate.getTile();
                             }
                         }
@@ -75,12 +76,14 @@ public enum TerrainCache {
 
         //LOG.info("lat_index: " + latIndex + ", lon_index: " + lonIndex);
 
-        if (coordinate.latIndex < 0 || coordinate.lonIndex < 0 || coordinate.latIndex >= 180 || coordinate.lonIndex >= 360) {
+        if (coordinate.latIndex < 0 || coordinate.lonIndex < 0
+                || coordinate.latIndex >= 180 || coordinate.lonIndex >= 360) {
             LOG.severe("ERROR: getting tile for latitude: " + latitude + " and longitude: " + longitude);
             LOG.severe("tile[" + coordinate.latIndex + "][" + coordinate.lonIndex + "] does not exist!");
             LOG.severe("latitude should be >= -90 and <= 90");
             LOG.severe("longitude should be >= -180 and <= 180");
-            throw new TerrainUnavailableException("There is no tile latitude: " + latitude + " and longitude: " + longitude);
+            throw new TerrainUnavailableException("There is no tile latitude: " + latitude
+                    + " and longitude: " + longitude);
         }
 
         SRTMTile tile = null;
@@ -126,7 +129,8 @@ public enum TerrainCache {
             try {
                 return new SRTMTile(90 - latIndex, lonIndex - 180);
             } catch (NoSuchFileException e) {
-                throw new TerrainUnavailableException("There is no tile for latitude: " + lat + " and longitude: " + lon);
+                throw new TerrainUnavailableException("There is no tile for latitude: " + lat
+                        + " and longitude: " + lon);
             }
         }
     }

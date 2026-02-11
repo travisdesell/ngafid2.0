@@ -6,7 +6,6 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Pair;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -118,11 +117,16 @@ public final class FlightTimeLocation {
      */
     public boolean getSeriesData(Connection connection) throws SQLException {
         // get the time series data for altitude, latitude and longitude
-        DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
-        DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
-        DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
-        DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
-        DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.IAS);
+        DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(
+                connection, flightId, Parameters.ALT_MSL);
+        DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(
+                connection, flightId, Parameters.ALT_AGL);
+        DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(
+                connection, flightId, Parameters.LATITUDE);
+        DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(
+                connection, flightId, Parameters.LONGITUDE);
+        DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(
+                connection, flightId, Parameters.IAS);
 
         // check to see if we could get these columns
         if (altMSLSeries == null || altAGLSeries == null || latitudeSeries == null || longitudeSeries == null
@@ -156,7 +160,7 @@ public final class FlightTimeLocation {
      *  a.hasRegionOverlap(b, buffer) == b.hasRegionOverlap(a, buffer)
      * @param other FlightTimeLocation
      * @param degreeBuffer represent the desired proximity threshold (e.g. 0.003 degrees = 1000 feet)
-     * @return
+     * @return true if the regions overlap
      */
 
     public boolean hasRegionOverlap(FlightTimeLocation other, double degreeBuffer) {

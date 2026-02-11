@@ -31,7 +31,8 @@ public class ComputeTurnToFinal extends ComputeStep {
 
     @Override
     public Set<String> getRequiredDoubleColumns() {
-        return Set.of(Parameters.LAT, Parameters.LON, Parameters.ALT_AGL, Parameters.ALT_MSL, Parameters.ROLL, Parameters.GND_SPD, "_itinerary");
+        return Set.of(Parameters.LAT, Parameters.LON, Parameters.ALT_AGL, Parameters.ALT_MSL,
+                Parameters.ROLL, Parameters.GND_SPD, "_itinerary");
     }
 
     @Override
@@ -52,9 +53,8 @@ public class ComputeTurnToFinal extends ComputeStep {
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         LOG.info("Compuiting turn to final.");
-        var x = TurnToFinal.calculateFlightTurnToFinals(
-                builder.getDoubleTimeSeriesMap(), builder.getItinerary(), builder.meta.airframe, builder.meta.getStartDateTime()
-        );
+        var x = TurnToFinal.calculateFlightTurnToFinals(builder.getDoubleTimeSeriesMap(),
+                builder.getItinerary(), builder.meta.airframe, builder.meta.getStartDateTime());
         LOG.info("Computed " + x.size() + " turns to final.");
         builder.emitTurnToFinals(x);
     }

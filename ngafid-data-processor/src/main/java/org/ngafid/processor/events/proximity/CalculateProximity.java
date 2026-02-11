@@ -12,6 +12,10 @@ public class CalculateProximity {
     // can be excluded from the regular event calculation process
     private static final Logger LOG = Logger.getLogger(CalculateProximity.class.getName());
 
+    private CalculateProximity() {
+        // Utility class
+    }
+
     public static double calculateDistance(double flightLatitude, double flightLongitude, double flightAltitude,
                                            double otherFlightLatitude, double otherFlightLongitude,
                                            double otherFlightAltitude) {
@@ -69,7 +73,8 @@ public class CalculateProximity {
                 otherInfo.longitude[otherStartLine], otherInfo.altitudeMSL[otherStartLine]);
 
         ArrayList<Double> rateOfClosure = new ArrayList<Double>();
-        int i = (startLine + 1), j = (otherStartLine + 1);
+        int i = (startLine + 1);
+        int j = (otherStartLine + 1);
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime.get(i) == 0) {
                 i++;
@@ -109,7 +114,9 @@ public class CalculateProximity {
 
         // Leave in to verify how things work in these edge cases
         if (startShift < 5 || endShift < 5) {
-            LOG.info(String.format("Insufficient data points for rate of closure calculation: startShift=%d, endShift=%d. Skipping rate of closure calculation.", startShift, endShift));
+            LOG.info(String.format("Insufficient data points for rate of closure calculation: "
+                    + "startShift=%d, endShift=%d. Skipping rate of closure calculation.",
+                    startShift, endShift));
             return new double[0];
         }
 
@@ -121,10 +128,10 @@ public class CalculateProximity {
 
         for (Event event : eventList) {
 
-            boolean hasSameFlightIDs =
-                    (event.getFlightId() == testEvent.getFlightId() && event.getOtherFlightId() == testEvent.getOtherFlightId());
-            boolean hasSameTimestamps =
-                    (event.getStartTime().equals(testEvent.getStartTime()) && event.getEndTime().equals(testEvent.getEndTime()));
+            boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId()
+                    && event.getOtherFlightId() == testEvent.getOtherFlightId());
+            boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime())
+                    && event.getEndTime().equals(testEvent.getEndTime()));
 
             // Event already in the list, don't add it again
             if (hasSameFlightIDs && hasSameTimestamps) return;

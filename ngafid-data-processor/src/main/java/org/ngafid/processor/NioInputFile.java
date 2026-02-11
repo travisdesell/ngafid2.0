@@ -44,7 +44,7 @@ public class NioInputFile implements InputFile {
                 singleByteBuffer.clear();
                 final int numRead = read(singleByteBuffer);
                 if (numRead >= 0) {
-                    int value = (int)singleByteBuffer.get(0) & 0xFF;
+                    int value = (int) singleByteBuffer.get(0) & 0xFF;
                     return value;
                 } else {
                     return -1;

@@ -41,7 +41,8 @@ public abstract class AbstractEventScanner {
     public abstract List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries,
                                      Map<String, StringTimeSeries> stringTimeSeries) throws SQLException;
 
-    public void gatherRequiredColumns(Connection connection, Flight flight) throws ColumnNotAvailableException, SQLException {
+    public void gatherRequiredColumns(Connection connection, Flight flight)
+            throws ColumnNotAvailableException, SQLException {
         for (var doubleColumnName : getRequiredDoubleColumns()) {
             var col = flight.getDoubleTimeSeries(connection, doubleColumnName);
             if (col == null)

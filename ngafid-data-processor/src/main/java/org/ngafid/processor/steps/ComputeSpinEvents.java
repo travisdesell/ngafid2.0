@@ -15,8 +15,10 @@ import static org.ngafid.core.flights.Parameters.VSPD;
 import static org.ngafid.core.flights.Parameters.VSPD_CALCULATED;
 
 /**
- * There are two event definitions for spin events, high and low altitude spins. The scanner searches for both simultaneously,
- * but two ComputeEvent objects will be created -- one for each definition. This class ensures that only one of these
+ * There are two event definitions for spin events, high and low altitude spins. The scanner searches for both
+ * simultaneously,
+ * but two ComputeEvent objects will be created -- one for each definition. This class ensures that only one of
+ * these
  * computations is actually done.
  */
 public class ComputeSpinEvents extends ComputeEvent {
@@ -29,12 +31,14 @@ public class ComputeSpinEvents extends ComputeEvent {
 
     @Override
     public boolean applicable() {
-        return super.applicable() && (builder.getStringTimeSeries(VSPD_CALCULATED) != null || builder.getStringTimeSeries(VSPD) != null);
+        return super.applicable() && (builder.getStringTimeSeries(VSPD_CALCULATED) != null
+                || builder.getStringTimeSeries(VSPD) != null);
     }
 
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        // High and Low are computed simultaneously, only run the computation once. We choose to only do it if the event definition is High (arbitrarily)
+        // High and Low are computed simultaneously, only run the computation once. We choose to only do it if the event
+        // definition is High (arbitrarily)
         if (this.definition.getId() == CustomEvent.getHighAltitudeSpin().getId()) {
             super.compute();
         }

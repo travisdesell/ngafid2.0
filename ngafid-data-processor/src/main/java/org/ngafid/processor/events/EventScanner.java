@@ -86,7 +86,8 @@ public class EventScanner extends AbstractEventScanner {
 
                         if (startCount >= startBuffer) {
                             // we had enough triggers to reach the start count so create the event
-                            Event event = new Event(startTime, endTime, startLine, endLine, definition.getId(), severity);
+                            Event event = new Event(startTime, endTime, startLine, endLine,
+                                    definition.getId(), severity);
                             event.setEventDefinitionId(definition.getId());
                             eventList.add(event);
                         }

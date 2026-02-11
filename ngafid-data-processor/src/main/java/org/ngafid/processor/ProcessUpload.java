@@ -45,7 +45,12 @@ public final class ProcessUpload {
 
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
-    public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
+    private ProcessUpload() {
+        // Utility class
+    }
+
+    public static boolean processUpload(int uploadId)
+            throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
         LOG.info("processing upload with id: " + uploadId);
         Upload upload = null;
 
@@ -60,15 +65,18 @@ public final class ProcessUpload {
                 return true; // Nothing to do for a derived upload.
             }
 
-            // If this is the first time an upload is being processed, it still exists in pieces on the disk -- combine them here.
+            // If this is the first time an upload is being processed, it still exists in pieces on
+            // the disk -- combine them here.
 
             return processUpload(connection, upload);
         }
     }
 
-    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked)
+            throws IOException {
         LOG.info("Combining pieces");
-        Path chunkDirectory = Paths.get(NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
+        Path chunkDirectory = Paths.get(
+                NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
         Path targetDirectory = Paths.get(upload.getArchiveDirectory());
 
         targetDirectory.toFile().mkdirs();
@@ -111,7 +119,8 @@ public final class ProcessUpload {
     // to reduce code duplication and simplify support for future formats.
 
 
-    private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
+    private static boolean processUpload(Connection connection, Upload upload)
+            throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
             try {
                 tryCombinePieces(connection, upload, lockedUpload);
@@ -126,7 +135,8 @@ public final class ProcessUpload {
 
                 ArrayList<String> recipients = new ArrayList<String>();
                 recipients.add(uploaderEmail);
-                ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); // always email admins to keep tabs on things
+                // always email admins to keep tabs on things
+                ArrayList<String> bccRecipients = SendEmail.getAdminEmails();
 
                 String formattedStartDateTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd " +
                         "hh:mm:ss z (O)"));
@@ -146,7 +156,8 @@ public final class ProcessUpload {
 
                 // only progress if the upload ingestion was successful
                 if (status.isProcessed()) {
-                    String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
+                    String endTime = ZonedDateTime.now().format(
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
                     uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
                 } else {
                     uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
@@ -229,7 +240,7 @@ public final class ProcessUpload {
                         "upload and re-upload.");
             }
 
-        }else if (extension.equals("parquet")) {
+        } else if (extension.equals("parquet")) {
 
             LOG.info("Processing Parquet file: " + filename);
 

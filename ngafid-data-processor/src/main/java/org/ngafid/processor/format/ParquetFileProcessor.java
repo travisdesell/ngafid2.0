@@ -73,7 +73,8 @@ public class ParquetFileProcessor {
     }
 
 
-    private void populateTimeSeries(GenericRecord record, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+    private void populateTimeSeries(GenericRecord record, Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         DoubleTimeSeries timeValues = new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, "second");
         DoubleTimeSeries latitudeValues = new DoubleTimeSeries(Parameters.LATITUDE, "degree");
         DoubleTimeSeries longitudeValues = new DoubleTimeSeries(Parameters.LONGITUDE, "degree");
@@ -132,13 +133,19 @@ public class ParquetFileProcessor {
         doubleTimeSeries.put(Parameters.ALT_MSL, altitudeMSL);
 
 
-        stringTimeSeries.put(Parameters.UTC_DATE_TIME, new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", (ArrayList<String>) utcDateTimes));
+        stringTimeSeries.put(Parameters.UTC_DATE_TIME,
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, "ISO 8601", (ArrayList<String>) utcDateTimes));
     }
 
     /**
      * Processes metadata from the first Parquet record.
+     *
+     * @param metadataRecord the metadata record to process
+     * @param flightMeta the flight metadata to populate
+     * @throws FatalFlightFileException if the metadata record is missing
      */
-    private void processMetaData(GenericRecord metadataRecord, FlightMeta flightMeta) throws FatalFlightFileException {
+    private void processMetaData(GenericRecord metadataRecord, FlightMeta flightMeta)
+            throws FatalFlightFileException {
         if (metadataRecord == null) {
             throw new FatalFlightFileException("Metadata record is missing in the Parquet file.");
         }
@@ -176,6 +183,10 @@ public class ParquetFileProcessor {
     /**
      * Extracts a numeric field from the GenericRecord as a string or returns "NaN" if missing.
      * Used for column-based storage.
+     *
+     * @param record the record to extract from
+     * @param fieldName the field name to extract
+     * @return the string value or "NaN" if missing
      */
     private String getStringOrNaN(GenericRecord record, String fieldName) {
         Object value = record.get(fieldName);
@@ -184,10 +195,11 @@ public class ParquetFileProcessor {
 
     /**
      * Computes an MD5 hash using systemId and Airframe name.
-
+     *
+     * @param primaryKey the primary key to hash
      * @return MD5 hash string
      */
-    private String computeMD5Hash( String primaryKey) {
+    private String computeMD5Hash(String primaryKey) {
         return MD5.computeHexHash(primaryKey);
     }
 }
