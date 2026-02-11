@@ -26,6 +26,10 @@ import org.ngafid.www.Navbar;
 public class AirsyncJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AirsyncJavalinRoutes.class.getName());
 
+    private AirsyncJavalinRoutes() {
+        // Utility class
+    }
+
     private static void getAirsyncImports(Context ctx) throws IOException {
         final String templateFile = "airsync_imports.html";
 

@@ -27,12 +27,15 @@ import org.ngafid.www.uploads.UploadStatistics;
 public class StatisticsJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
+    private StatisticsJavalinRoutes() {
+    }
+
     public static class StatFetcher {
-        final Connection connection;
-        final Context context;
-        final User user;
-        final int fleetId;
-        final boolean aggregate;
+        private final Connection connection;
+        private final Context context;
+        private final User user;
+        private final int fleetId;
+        private final boolean aggregate;
 
         public StatFetcher(Connection connection, Context context, boolean aggregate) {
             this(connection, context, SessionUtility.INSTANCE.getUser(context), aggregate);
@@ -50,6 +53,26 @@ public class StatisticsJavalinRoutes {
             }
 
             this.aggregate = aggregate;
+        }
+
+        public Connection getConnection() {
+            return connection;
+        }
+
+        public Context getContext() {
+            return context;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public int getFleetId() {
+            return fleetId;
+        }
+
+        public boolean isAggregate() {
+            return aggregate;
         }
 
         boolean aggregate() {

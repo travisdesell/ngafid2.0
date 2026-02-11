@@ -3,6 +3,7 @@ package org.ngafid.www.routes;
 import static org.ngafid.www.HttpCodes.*;
 import static org.ngafid.www.WebServer.gson;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.http.Context;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -19,6 +20,10 @@ import org.ngafid.www.Navbar;
 public final class BugReportJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(BugReportJavalinRoutes.class.getName());
+
+    private BugReportJavalinRoutes() {
+        // Utility class
+    }
 
     /* Bug Report Submission (Email) */
     public static void postBugReportEmail(Context ctx) throws Exception {
@@ -110,13 +115,46 @@ public final class BugReportJavalinRoutes {
         LOG.info("Sent bug report email to " + recipientEmail);
         ctx.status(OK).result("Bug report sent to " + recipientEmail).json(OK);
     }
-    ;
 
     private static class BugReportPayload {
-        public String title;
-        public String body;
-        public String senderEmail;
-        public boolean includeEmail;
+        @JsonProperty
+        private final String title;
+
+        @JsonProperty
+        private final String body;
+
+        @JsonProperty
+        private final String senderEmail;
+
+        @JsonProperty
+        private final boolean includeEmail;
+
+        BugReportPayload(
+                @JsonProperty("title") String title,
+                @JsonProperty("body") String body,
+                @JsonProperty("senderEmail") String senderEmail,
+                @JsonProperty("includeEmail") boolean includeEmail) {
+            this.title = title;
+            this.body = body;
+            this.senderEmail = senderEmail;
+            this.includeEmail = includeEmail;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        public String getSenderEmail() {
+            return senderEmail;
+        }
+
+        public boolean isIncludeEmail() {
+            return includeEmail;
+        }
     }
 
     /* Bug Report Page */
