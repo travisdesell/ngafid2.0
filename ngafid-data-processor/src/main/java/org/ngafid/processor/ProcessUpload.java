@@ -42,6 +42,10 @@ import org.ngafid.core.util.SendEmail;
  */
 public final class ProcessUpload {
 
+    private ProcessUpload() {
+        // Utility class
+    }
+
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
     public static boolean processUpload(int uploadId)

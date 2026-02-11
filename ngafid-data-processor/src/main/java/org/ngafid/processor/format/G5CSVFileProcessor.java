@@ -25,9 +25,9 @@ import org.ngafid.core.util.TimeUtils;
 import org.ngafid.processor.Pipeline;
 
 /**
- * File processor for Garmin G5 G3X. These flight data recorders are a bit different from the G1000, and require a bit of
- * additional processing. First, a single file may contain data for many separate flights. This is detected by scanning
- * for large gaps in time in the date column.
+ * File processor for Garmin G5 G3X. These flight data recorders are a bit different from the
+ * G1000, and require a bit of additional processing. First, a single file may contain data for
+ * many separate flights. This is detected by scanning for large gaps in time in the date column.
  *
  * @author Joshua Karns
  * @author Roman Kozulia
@@ -50,11 +50,11 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             super(meta, doubleTimeSeries, stringTimeSeries);
         }
 
-        private final Map<String, Set<String>> ALIASES = Map.of("AltAGL", Set.of("Altitude Above Ground Level"));
+        private final Map<String, Set<String>> aliases = Map.of("AltAGL", Set.of("Altitude Above Ground Level"));
 
         @Override
         protected final Map<String, Set<String>> getAliases() {
-            return ALIASES;
+            return aliases;
         }
     }
 
@@ -116,8 +116,8 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * This method extracts the content inside parentheses
      * If parentheses not found, returns the original input.
      *
-     * @param input
-     * @return
+     * @param input The input string to process
+     * @return The content inside parentheses or the original input if not found
      */
     public static String extractContentInsideParentheses(String input) {
         Matcher matcher = PARENTHESIS_PATTERN.matcher(input);
@@ -190,8 +190,10 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     /**
      * Splits flights based on time intervals between rows and returns flight indices.
      *
-     * @param splitIntervalInMinutes - max time difference between rows.
-     * @return
+     * @param stringTimeSeries The string time series data
+     * @param splitIntervalInMinutes max time difference between rows.
+     * @return A list of indices where flights should be split
+     * @throws TimeUtils.UnrecognizedDateTimeFormatException if date/time format is not recognized
      */
     public List<Integer> splitCSVIntoFlightIndices(
             Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes)
@@ -254,6 +256,11 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     /**
      * Computes the UTC_DATE_TIME column and UNIX_TIME_SECONDS column using the UTC Date and UTC Time found in the G5
      * logs.
+     *
+     * @param doubleTimeSeries The double time series data
+     * @param stringTimeSeries The string time series data
+     * @throws TimeUtils.UnrecognizedDateTimeFormatException if date/time format is not recognized
+     * @throws MalformedFlightFileException if the flight file is malformed
      */
     private void calculateUTCDateTime(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries)

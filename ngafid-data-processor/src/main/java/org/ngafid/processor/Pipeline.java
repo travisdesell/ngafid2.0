@@ -1,5 +1,17 @@
 package org.ngafid.processor;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Config;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.core.uploads.UploadException;
+import org.ngafid.processor.format.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -17,37 +29,29 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Config;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.uploads.UploadException;
-import org.ngafid.processor.format.*;
-import org.ngafid.processor.steps.ComputeStep;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
  * This wraps up the process of (1) recognizing file types, (2) parsing the files, and (3) processing the data.
  * <p>
- * Files are recognized by their file extensions - the extension is used to create a `FlightFileProcessor` from the list
- * of factories in `this.factories`. We may need to read some data within the file to properly determine how it should be
- * processed, which factories may do -- see the factory function in {@link CSVFileProcessor} for an example of this.
+ * Files are recognized by their file extensions - the extension is used to create a
+ * `FlightFileProcessor` from the list of factories in `this.factories`. We may need to read some
+ * data within the file to properly determine how it should be processed, which factories may do --
+ * see the factory function in {@link CSVFileProcessor} for an example of this.
  * <p>
- * {@link FlightFileProcessor} objects handle the task of parsing the data: obtaining metadata and the actual double and
- * string series. These are placed into a {@link FlightBuilder}, which is an intermediate representation of a partially
- * processed flight.
+ * {@link FlightFileProcessor} objects handle the task of parsing the data: obtaining metadata
+ * and the actual double and string series. These are placed into a {@link FlightBuilder}, which is
+ * an intermediate representation of a partially processed flight.ProximityEventScanner
  * <p>
- * {@link FlightBuilder}s can be specialized and these specializations will specify a set of {@link ComputeStep}s
- * which will be applied to compute everything we need. ComputeSteps all have required input columns and output columns: these
- * requirements can be used to form a DAG, traversing it in the proper order will let us compute the steps in the proper
- * order. This process can also be parallelized, see {@link org.ngafid.uploads.process.DependencyGraph} for more on this.
+ * FlightBuilders can be specialized and these specializations will specify a set of
+ * ComputeSteps which will be applied to compute everything we need. ComputeSteps all have
+ * required input columns and output columns: these requirements can be used to form a DAG,
+ * traversing it in the proper order will let us compute the steps in the proper order. This
+ * process can also be parallelized, see {org.ngafid.uploads.process.DependencyGraph} for
+ * more on this.
  * <p>
- * This object may open resources, thus it must be created using a try-with statement to ensure they are closed properly.
+ * This object may open resources, thus it must be created using a try-with statement to ensure
+ * they are closed properly.
  *
  * @author Joshua Karns (josh@karns.dev)
  */
@@ -291,14 +295,15 @@ public class Pipeline implements AutoCloseable {
      * Calls the `parse` method on `processor`, returning the resulting stream of FlightBuilder objects. In the event of
      * an error, the error is logged using `this::fail` and an empty stream is returned.
      *
-     * @returns A stream of flight builders on success, an empty stream if there is an error.
+     * @param processor The flight file processor to parse
+     * @return A stream of flight builders on success, an empty stream if there is an error.
      */
     public Stream<FlightBuilder> parse(FlightFileProcessor processor) {
         try {
             if (processor == null) return Stream.of();
             return processor.parse();
         } catch (FlightProcessingException e) {
-            fail(processor.filename, e);
+            fail(processor.getFilename(), e);
             return Stream.of();
         }
     }
@@ -306,22 +311,25 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `FlightBuilder::build` on the supplied flight builder and returns the resulting flight.
      *
-     * @returns a flight object if there are no exceptions, otherwise returns `null`.
+     * @param dbConnection The database connection
+     * @param flightBuilder The flight builder to build
+     * @return a flight object if there are no exceptions, otherwise returns `null`.
      */
-    public FlightBuilder build(Connection connection, FlightBuilder fb) {
+    public FlightBuilder build(Connection dbConnection, FlightBuilder flightBuilder) {
         try {
-            LOG.info(() -> "Building flight file '" + fb.meta.getFilename() + "'");
-            fb.meta.setFleetId(this.upload.fleetId);
-            fb.meta.setUploaderId(this.upload.uploaderId);
-            fb.meta.setUploadId(this.upload.id);
-            fb.meta.setAirframe(new Airframes.Airframe(
-                    connection,
-                    fb.meta.getAirframe().getName(),
-                    fb.meta.getAirframe().getType()));
-            return fb.build(connection);
+            LOG.info(() -> "Building flight file '" + flightBuilder.meta.getFilename() + "'");
+            flightBuilder.meta.setFleetId(this.upload.fleetId);
+            flightBuilder.meta.setUploaderId(this.upload.uploaderId);
+            flightBuilder.meta.setUploadId(this.upload.id);
+            flightBuilder.meta.setAirframe(new Airframes.Airframe(
+                    dbConnection,
+                    flightBuilder.meta.getAirframe().getName(),
+                    flightBuilder.meta.getAirframe().getType()));
+            return flightBuilder.build(dbConnection);
         } catch (FlightProcessingException | SQLException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
-            fail(fb.meta.getFilename(), new UploadException(e.getMessage(), e, fb.meta.getFilename()));
+            fail(flightBuilder.meta.getFilename(),
+                    new UploadException(e.getMessage(), e, flightBuilder.meta.getFilename()));
             return null;
         }
     }
@@ -329,16 +337,21 @@ public class Pipeline implements AutoCloseable {
     /**
      * Calls `this::build` on each `FlightBuilder` in the supplied stream.
      *
-     * @returns a list of `Flight` objects, having filtered out any `null` values.
+     * @param dbConnection The database connection
+     * @param flightBuilders The stream of flight builders to build
+     * @return a list of `Flight` objects, having filtered out any `null` values.
      */
-    public List<FlightBuilder> build(Connection connection, Stream<FlightBuilder> fbs) {
-        return fbs.map(fb -> this.build(connection, fb))
+    public List<FlightBuilder> build(Connection dbConnection, Stream<FlightBuilder> flightBuilders) {
+        return flightBuilders.map(flightBuilder -> this.build(dbConnection, flightBuilder))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     /**
      * Tabulates various flight information.
+     *
+     * @param builder The flight builder to finalize
+     * @return The finalized flight builder
      */
     public FlightBuilder finalize(FlightBuilder builder) {
         Flight flight = builder.getFlight();
@@ -360,6 +373,9 @@ public class Pipeline implements AutoCloseable {
 
     /**
      * Add an upload exception to the flightError map for the given filename.
+     *
+     * @param filename The filename of the failed flight
+     * @param e The exception that caused the failure
      */
     public void fail(String filename, Exception e) {
 
@@ -381,6 +397,12 @@ public class Pipeline implements AutoCloseable {
      * ZipFile and upload have not been created yet, create them.
      * <p>
      * This method is synchronized so there is only a single thread mutating the derivedFileSystem at once.
+     *
+     * @param convertedOnDisk The file on disk
+     * @param filename The name of the file
+     * @param data The file data
+     * @throws IOException if an I/O error occurs
+     * @throws SQLException if a database error occurs
      */
     public synchronized void addDerivedFile(File convertedOnDisk, String filename, byte[] data)
             throws IOException, SQLException {

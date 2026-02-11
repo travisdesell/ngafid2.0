@@ -219,6 +219,7 @@ public class DATFileProcessor extends FlightFileProcessor {
      *
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
+     * @param startDate - The start date of the flight
      * @throws ParseException - If there is an issue parsing the date and time
      */
     private static void calculateDateTime(

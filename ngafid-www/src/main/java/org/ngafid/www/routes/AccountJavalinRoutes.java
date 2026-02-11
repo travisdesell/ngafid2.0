@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
@@ -308,7 +308,7 @@ public class AccountJavalinRoutes {
         LOG.info("template file: '" + templateFile + "'");
 
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -321,7 +321,7 @@ public class AccountJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -336,7 +336,7 @@ public class AccountJavalinRoutes {
         // Try to get user from session, but don't require it
         final User user = ctx.sessionAttribute("user");
         if (user != null) {
-            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+            scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
         } else {
             scopes.put("user_js", "var user = null;");
         }
@@ -355,17 +355,17 @@ public class AccountJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
+            scopes.put("user_name", "var userName = JSON.parse('" + GSON.toJson(user.getFullName()) + "');\n");
             scopes.put(
                     "user_fleet_selected",
-                    "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
-            scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
+                    "var userFleetSelected = JSON.parse('" + GSON.toJson(user.getSelectedFleetId()) + "');\n");
+            scopes.put("is_admin", "var isAdmin = JSON.parse('" + GSON.toJson(user.isAdmin()) + "');\n");
             scopes.put(
-                    "user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+                    "user_prefs_json", "var userPreferences = JSON.parse('" + GSON.toJson(userPreferences) + "');\n");
 
             if (fleet.hasAirsync(connection)) {
                 String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
-                scopes.put("airsync", "var airsyncTimeout = JSON.parse('" + gson.toJson(timeout) + "');\n");
+                scopes.put("airsync", "var airsyncTimeout = JSON.parse('" + GSON.toJson(timeout) + "');\n");
             } else {
                 scopes.put("airsync", "var airsyncTimeout = -1;\n");
             }

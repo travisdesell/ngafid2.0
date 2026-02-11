@@ -26,7 +26,7 @@ import org.ngafid.www.WebServer;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
-    public static final Gson GSON = WebServer.gson;
+    public static final Gson GSON = WebServer.GSON;
 
     private AnalysisJavalinRoutes() {
         // Utility class

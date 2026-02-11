@@ -14,9 +14,9 @@ import org.ngafid.processor.events.SpinEventScanner;
 import org.ngafid.processor.format.FlightBuilder;
 
 /**
- * There are two event definitions for spin events, high and low altitude spins. The scanner searches for both simultaneously,
- * but two ComputeEvent objects will be created -- one for each definition. This class ensures that only one of these
- * computations is actually done.
+ * There are two event definitions for spin events, high and low altitude spins. The scanner searches for both
+ * simultaneously, but two ComputeEvent objects will be created -- one for each definition. This class ensures that
+ * only one of these computations is actually done.
  */
 public class ComputeSpinEvents extends ComputeEvent {
 
