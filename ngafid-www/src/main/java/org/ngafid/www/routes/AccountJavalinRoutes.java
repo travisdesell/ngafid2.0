@@ -130,27 +130,43 @@ public class AccountJavalinRoutes {
 
     public static class ForgotPasswordResponse {
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final boolean registeredEmail;
+        private final boolean registeredEmail;
 
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;
             this.registeredEmail = registeredEmail;
         }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public boolean isRegisteredEmail() {
+            return registeredEmail;
+        }
     }
 
     public static class CreatedAccount {
         @JsonProperty
-        public final String accountType;
+        private final String accountType;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
             this.user = user;
+        }
+
+        public String getAccountType() {
+            return accountType;
+        }
+
+        public User getUser() {
+            return user;
         }
     }
 

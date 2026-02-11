@@ -128,14 +128,22 @@ public class AnalysisJavalinRoutes {
 
     public static class FlightMetricResponse {
         @JsonProperty
-        public final List<FlightMetric> values;
+        private final List<FlightMetric> values;
 
         @JsonProperty
-        public final int precision;
+        private final int precision;
 
         public FlightMetricResponse(List<FlightMetric> values, int precision) {
             this.values = values;
             this.precision = precision;
+        }
+
+        public List<FlightMetric> getValues() {
+            return values;
+        }
+
+        public int getPrecision() {
+            return precision;
         }
 
         @Override
@@ -146,43 +154,43 @@ public class AnalysisJavalinRoutes {
 
     public static class CesiumResponse {
         @JsonProperty
-        public final List<Double> flightGeoAglTaxiing;
+        private final List<Double> flightGeoAglTaxiing;
 
         @JsonProperty
-        public final List<Double> flightGeoAglTakeOff;
+        private final List<Double> flightGeoAglTakeOff;
 
         @JsonProperty
-        public final List<Double> flightGeoAglClimb;
+        private final List<Double> flightGeoAglClimb;
 
         @JsonProperty
-        public final List<Double> flightGeoAglCruise;
+        private final List<Double> flightGeoAglCruise;
 
         @JsonProperty
-        public final List<Double> flightGeoInfoAgl;
+        private final List<Double> flightGeoInfoAgl;
 
         @JsonProperty
-        public final List<String> flightTaxiingTimes;
+        private final List<String> flightTaxiingTimes;
 
         @JsonProperty
-        public final List<String> flightTakeOffTimes;
+        private final List<String> flightTakeOffTimes;
 
         @JsonProperty
-        public final List<String> flightClimbTimes;
+        private final List<String> flightClimbTimes;
 
         @JsonProperty
-        public final List<String> flightCruiseTimes;
+        private final List<String> flightCruiseTimes;
 
         @JsonProperty
-        public final List<String> flightAglTimes;
+        private final List<String> flightAglTimes;
 
         @JsonProperty
-        public final String startTime;
+        private final String startTime;
 
         @JsonProperty
-        public final String endTime;
+        private final String endTime;
 
         @JsonProperty
-        public final String airframeType;
+        private final String airframeType;
 
         public CesiumResponse(
                 List<Double> flightGeoAglTaxiing,
@@ -212,6 +220,58 @@ public class AnalysisJavalinRoutes {
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
+        }
+
+        public List<Double> getFlightGeoAglTaxiing() {
+            return flightGeoAglTaxiing;
+        }
+
+        public List<Double> getFlightGeoAglTakeOff() {
+            return flightGeoAglTakeOff;
+        }
+
+        public List<Double> getFlightGeoAglClimb() {
+            return flightGeoAglClimb;
+        }
+
+        public List<Double> getFlightGeoAglCruise() {
+            return flightGeoAglCruise;
+        }
+
+        public List<Double> getFlightGeoInfoAgl() {
+            return flightGeoInfoAgl;
+        }
+
+        public List<String> getFlightTaxiingTimes() {
+            return flightTaxiingTimes;
+        }
+
+        public List<String> getFlightTakeOffTimes() {
+            return flightTakeOffTimes;
+        }
+
+        public List<String> getFlightClimbTimes() {
+            return flightClimbTimes;
+        }
+
+        public List<String> getFlightCruiseTimes() {
+            return flightCruiseTimes;
+        }
+
+        public List<String> getFlightAglTimes() {
+            return flightAglTimes;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public String getAirframeType() {
+            return airframeType;
         }
     }
 
