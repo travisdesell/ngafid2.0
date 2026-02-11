@@ -19,8 +19,12 @@ import org.ngafid.www.ErrorResponse;
 public class DoubleSeriesJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());
 
+    private DoubleSeriesJavalinRoutes() {
+        // Utility class - prevent instantiation
+    }
+
     public static class AllDoubleSeriesNames {
-        List<String> names = new ArrayList<String>();
+        public final List<String> names = new ArrayList<String>();
 
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
             try (PreparedStatement query =
@@ -35,8 +39,8 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static class DoubleSeries {
-        String[] x;
-        double[] y;
+        public final String[] x;
+        public final double[] y;
 
         public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
@@ -59,11 +63,13 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static class DoubleSeriesNames {
-        List<String> names = new ArrayList<String>();
+        public final List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
             try (PreparedStatement query = connection.prepareStatement(
-                    "SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+                    "SELECT dsn.name FROM double_series AS ds "
+                    + "INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id "
+                    + "WHERE ds.flight_id = ? ORDER BY dsn.name")) {
                 query.setInt(1, flightId);
 
                 try (ResultSet resultSet = query.executeQuery()) {

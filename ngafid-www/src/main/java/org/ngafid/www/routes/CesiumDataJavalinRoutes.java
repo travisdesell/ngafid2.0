@@ -28,6 +28,10 @@ public class CesiumDataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());
     private static final String CESIUM_DATA = "cesium_data";
 
+    private CesiumDataJavalinRoutes() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     public static void bindRoutes(Javalin app) {
         app.get("/protected/ngafid_cesium", CesiumDataJavalinRoutes::handleGetNgafidCesium);
         app.post("/protected/cesium_data", CesiumDataJavalinRoutes::handlePostCesiumData);
@@ -445,24 +449,24 @@ public class CesiumDataJavalinRoutes {
     }
 
     private static class CesiumResponse {
-        ArrayList<Double> flightGeoAglTaxiing;
-        ArrayList<Double> flightGeoAglTakeOff;
-        ArrayList<Double> flightGeoAglClimb;
-        ArrayList<Double> flightGeoAglCruise;
-        ArrayList<Double> flightGeoInfoAgl;
-        ArrayList<Event> events;
+        public final ArrayList<Double> flightGeoAglTaxiing;
+        public final ArrayList<Double> flightGeoAglTakeOff;
+        public final ArrayList<Double> flightGeoAglClimb;
+        public final ArrayList<Double> flightGeoAglCruise;
+        public final ArrayList<Double> flightGeoInfoAgl;
+        public final ArrayList<Event> events;
 
-        ArrayList<String> flightTaxiingTimes;
-        ArrayList<String> flightTakeOffTimes;
-        ArrayList<String> flightClimbTimes;
-        ArrayList<String> flightCruiseTimes;
-        ArrayList<String> flightAglTimes;
+        public final ArrayList<String> flightTaxiingTimes;
+        public final ArrayList<String> flightTakeOffTimes;
+        public final ArrayList<String> flightClimbTimes;
+        public final ArrayList<String> flightCruiseTimes;
+        public final ArrayList<String> flightAglTimes;
 
-        String startTime;
-        String endTime;
-        String airframeType;
+        public final String startTime;
+        public final String endTime;
+        public final String airframeType;
 
-        public CesiumResponse(
+        CesiumResponse(
                 ArrayList<Double> flightGeoAglTaxiing,
                 ArrayList<Double> flightGeoAglTakeOff,
                 ArrayList<Double> flightGeoAglClimb,

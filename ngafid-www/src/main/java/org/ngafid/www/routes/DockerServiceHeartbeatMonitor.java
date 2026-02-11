@@ -19,7 +19,7 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
 
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeatMonitor.class.getName());
 
-    final int TIMEOUT_DURATION_MS = 60_000;
+    private static final int TIMEOUT_DURATION_MS = 60_000;
 
     private final Map<String, Map<String, Long>> lastSeen = new ConcurrentHashMap<>();
     private final KafkaConsumer<String, String> consumer;
@@ -65,25 +65,25 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
 
         while (true) {
 
-            final int POLL_INTERVAL_S = 5;
-            final int RECORD_PARTS_LENGTH_EXPECTED = 3;
-            final int RECORD_PARTS_TIMESTAMP_INDEX = 0;
-            final int RECORD_PARTS_SERVICE_NAME_INDEX = 1;
-            final int RECORD_PARTS_INSTANCE_INDEX = 2;
+            final int pollIntervalS = 5;
+            final int recordPartsLengthExpected = 3;
+            final int recordPartsTimestampIndex = 0;
+            final int recordPartsServiceNameIndex = 1;
+            final int recordPartsInstanceIndex = 2;
 
-            consumer.poll(Duration.ofSeconds(POLL_INTERVAL_S)).forEach((ConsumerRecord<String, String> record) -> {
+            consumer.poll(Duration.ofSeconds(pollIntervalS)).forEach((ConsumerRecord<String, String> record) -> {
                 String[] parts = record.value().split("\\|");
 
                 // Unexpected number of parts in the heartbeat record, skip
-                if (parts.length != RECORD_PARTS_LENGTH_EXPECTED) {
+                if (parts.length != recordPartsLengthExpected) {
                     LOG.log(Level.WARNING, "Received malformed heartbeat: {0}", record.value());
                     return;
                 }
 
                 // Read the timestamp and service name from the heartbeat record
-                long timestamp = Long.parseLong(parts[RECORD_PARTS_TIMESTAMP_INDEX]);
-                String serviceName = parts[RECORD_PARTS_SERVICE_NAME_INDEX];
-                String instanceID = parts[RECORD_PARTS_INSTANCE_INDEX];
+                long timestamp = Long.parseLong(parts[recordPartsTimestampIndex]);
+                String serviceName = parts[recordPartsServiceNameIndex];
+                String instanceID = parts[recordPartsInstanceIndex];
 
                 // Update the last seen timestamp for this service, or create a new entry if it doesn't exist
                 lastSeen.computeIfAbsent(serviceName, key -> new ConcurrentHashMap<>())
