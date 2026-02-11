@@ -178,8 +178,9 @@ public class EventStatistics {
         final String dateClause = buildDateClause(startDate, endDate);
 
         String query =
-                "SELECT year, month, fleet_id, event_definition_id, airframe_id, SUM(event_count) as event_count, SUM(flight_count) as flight_count FROM m_fleet_airframe_monthly_event_counts "
-                        + " WHERE "
+                "SELECT year, month, fleet_id, event_definition_id, airframe_id, "
+                        + "SUM(event_count) as event_count, SUM(flight_count) as flight_count "
+                        + "FROM m_fleet_airframe_monthly_event_counts WHERE "
                         + dateClause + " GROUP BY fleet_id, event_definition_id, airframe_id, year, month";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -265,6 +266,7 @@ public class EventStatistics {
     }
 
     /**
+     * @param connection the database connection
      * @return the total number of events over all fleets, airframes, and event types so far for the current year.
      * @throws SQLException if the table is empty
      */
@@ -273,7 +275,10 @@ public class EventStatistics {
     }
 
     /**
-     * @return the total number of events for the specified fleet over all airframes and event types so far for the current year.
+     * @param connection the database connection
+     * @param fleetId the fleet identifier
+     * @return the total number of events for the specified fleet over all airframes and event types so far
+     *     for the current year.
      * @throws SQLException if the table is empty
      */
     public static int getCurrentYearEventCount(Connection connection, int fleetId) throws SQLException {
@@ -284,6 +289,7 @@ public class EventStatistics {
     }
 
     /**
+     * @param connection the database connection
      * @return the total number of events over all fleets, airframes, and event types so far for the current month.
      * @throws SQLException if the table is empty
      */
@@ -295,7 +301,10 @@ public class EventStatistics {
     }
 
     /**
-     * @return the total number of events for the specified fleet over all airframes and event types so far for the current month.
+     * @param connection the database connection
+     * @param fleetId the fleet identifier
+     * @return the total number of events for the specified fleet over all airframes and event types so far
+     *     for the current month.
      * @throws SQLException if the table is empty
      */
     public static int getCurrentMonthEventCount(Connection connection, int fleetId) throws SQLException {
@@ -307,6 +316,7 @@ public class EventStatistics {
     }
 
     /**
+     * @param connection the database connection
      * @return the total number of events over all fleets, airframes, and event types -- every event in the database.
      * @throws SQLException if the table is empty
      */
@@ -333,7 +343,10 @@ public class EventStatistics {
     }
 
     /**
-     * @return the total number of events for this fleet over all airframes and event types -- every event in the database associated with this fleet.
+     * @param connection the database connection
+     * @param fleetId the fleet identifier
+     * @return the total number of events for this fleet over all airframes and event types -- every event in
+     *     the database associated with this fleet.
      * @throws SQLException if the table is empty
      */
     public static int getTotalEventCount(Connection connection, int fleetId) throws SQLException {
@@ -405,37 +418,46 @@ public class EventStatistics {
     private static class EventRow {
         public final String rowName;
 
-        public int flightsWithoutError;
-        public int flightsWithEvent;
-        public int totalEvents;
-        public double avgEvents;
-        public double avgDuration;
-        public double minDuration;
-        public double maxDuration;
-        public double avgSeverity;
-        public double minSeverity;
-        public double maxSeverity;
+        private int flightsWithoutError;
+        private int flightsWithEvent;
+        private int totalEvents;
+        private double avgEvents;
+        private double avgDuration;
+        private double minDuration;
+        private double maxDuration;
+        private double avgSeverity;
+        private double minSeverity;
+        private double maxSeverity;
 
-        public int aggFlightsWithoutError;
-        public int aggFlightsWithEvent;
-        public int aggTotalEvents;
-        public double aggAvgEvents;
-        public double aggAvgDuration;
-        public double aggMinDuration;
-        public double aggMaxDuration;
-        public double aggAvgSeverity;
-        public double aggMinSeverity;
-        public double aggMaxSeverity;
+        private int aggFlightsWithoutError;
+        private int aggFlightsWithEvent;
+        private int aggTotalEvents;
+        private double aggAvgEvents;
+        private double aggAvgDuration;
+        private double aggMinDuration;
+        private double aggMaxDuration;
+        private double aggAvgSeverity;
+        private double aggMinSeverity;
+        private double aggMaxSeverity;
 
         private static final String COLUMNS =
-                "event_count, flight_count, min_duration, avg_duration, max_duration, min_severity, avg_severity, max_severity";
+                "event_count, flight_count, min_duration, avg_duration, max_duration, "
+                        + "min_severity, avg_severity, max_severity";
 
         /**
-         * Creates an event row for the given fleet and event id and any additional specified conditions, pulled from the supplied table names
+         * Creates an event row for the given fleet and event id and any additional specified conditions,
+         * pulled from the supplied table names
          *
-         * @param tableName    table name for the fleet event statistics.
+         * @param connection the database connection
+         * @param rowName the name for the row
+         * @param flightsWithoutError the number of flights without errors
+         * @param aggFlightsWithoutError the aggregate number of flights without errors
+         * @param fleetId the fleet identifier
+         * @param eventId the event identifier
+         * @param airframeId the airframe identifier
+         * @param tableName table name for the fleet event statistics.
          * @param aggTableName table name for the aggregate event statistics
-         * @param conditions   extra SQL conditions
+         * @param conditions extra SQL conditions
          * @throws SQLException if no row is found
          */
         EventRow(
@@ -501,9 +523,15 @@ public class EventStatistics {
         }
 
         /**
-         * @param year  full 4-digit year
+         * @param connection the database connection
+         * @param rowName the name for the row
+         * @param fleetId the fleet identifier
+         * @param eventDefinitionId the event definition identifier
+         * @param airframeId the airframe identifier
+         * @param year full 4-digit year
          * @param month month (1-12)
          * @return event row for the supplied fleet and event definition during the given month
+         * @throws SQLException if no row is found
          */
         public static EventRow eventRowMonth(
                 Connection connection,
@@ -534,8 +562,14 @@ public class EventStatistics {
         }
 
         /**
+         * @param connection the database connection
+         * @param rowName the name for the row
+         * @param fleetId the fleet identifier
+         * @param eventDefinitionId the event definition identifier
+         * @param airframeId the airframe identifier
          * @param year full 4 digit year
          * @return event row for the specified year
+         * @throws SQLException if no row is found
          */
         public static EventRow eventRowYear(
                 Connection connection, String rowName, int fleetId, int eventDefinitionId, int airframeId, int year)
@@ -559,7 +593,13 @@ public class EventStatistics {
         }
 
         /**
+         * @param connection the database connection
+         * @param rowName the name for the row
+         * @param fleetId the fleet identifier
+         * @param eventDefinitionId the event definition identifier
+         * @param airframeId the airframe identifier
          * @return all-time event row for the specified event definition and fleet
+         * @throws SQLException if no row is found
          */
         public static EventRow eventRowTotal(
                 Connection connection, String rowName, int fleetId, int eventDefinitionId, int airframeId)
@@ -579,6 +619,86 @@ public class EventStatistics {
                     tableName,
                     aggTableName,
                     null);
+        }
+
+        public int getFlightsWithoutError() {
+            return flightsWithoutError;
+        }
+
+        public int getFlightsWithEvent() {
+            return flightsWithEvent;
+        }
+
+        public int getTotalEvents() {
+            return totalEvents;
+        }
+
+        public double getAvgEvents() {
+            return avgEvents;
+        }
+
+        public double getAvgDuration() {
+            return avgDuration;
+        }
+
+        public double getMinDuration() {
+            return minDuration;
+        }
+
+        public double getMaxDuration() {
+            return maxDuration;
+        }
+
+        public double getAvgSeverity() {
+            return avgSeverity;
+        }
+
+        public double getMinSeverity() {
+            return minSeverity;
+        }
+
+        public double getMaxSeverity() {
+            return maxSeverity;
+        }
+
+        public int getAggFlightsWithoutError() {
+            return aggFlightsWithoutError;
+        }
+
+        public int getAggFlightsWithEvent() {
+            return aggFlightsWithEvent;
+        }
+
+        public int getAggTotalEvents() {
+            return aggTotalEvents;
+        }
+
+        public double getAggAvgEvents() {
+            return aggAvgEvents;
+        }
+
+        public double getAggAvgDuration() {
+            return aggAvgDuration;
+        }
+
+        public double getAggMinDuration() {
+            return aggMinDuration;
+        }
+
+        public double getAggMaxDuration() {
+            return aggMaxDuration;
+        }
+
+        public double getAggAvgSeverity() {
+            return aggAvgSeverity;
+        }
+
+        public double getAggMinSeverity() {
+            return aggMinSeverity;
+        }
+
+        public double getAggMaxSeverity() {
+            return aggMaxSeverity;
         }
     }
 
