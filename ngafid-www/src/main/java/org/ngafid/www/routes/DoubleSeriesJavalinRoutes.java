@@ -47,7 +47,7 @@ public class DoubleSeriesJavalinRoutes {
     public static class DoubleSeries {
         @JsonProperty
         private final String[] x;
-        
+
         @JsonProperty
         private final double[] y;
 

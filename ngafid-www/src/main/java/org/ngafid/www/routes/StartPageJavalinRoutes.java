@@ -28,7 +28,7 @@ public class StartPageJavalinRoutes {
     private static class Message {
         @JsonProperty
         private final String type;
-        
+
         @JsonProperty
         private final String message;
 
@@ -96,9 +96,9 @@ public class StartPageJavalinRoutes {
                 "/access_denied",
                 ctx -> getHome(
                         ctx,
-                        new Message(
-                                "danger",
-                                "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
+                        new Message("danger",
+                                "You attempted to load a page you did not have access to or "
+                                        + "attempted to access a page while not logged in.")));
         //        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not
         // exist.")));
 

@@ -119,13 +119,13 @@ public final class BugReportJavalinRoutes {
     private static class BugReportPayload {
         @JsonProperty
         private final String title;
-        
+
         @JsonProperty
         private final String body;
-        
+
         @JsonProperty
         private final String senderEmail;
-        
+
         @JsonProperty
         private final boolean includeEmail;
 

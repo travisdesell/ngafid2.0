@@ -31,11 +31,11 @@ public class StatisticsJavalinRoutes {
     }
 
     public static class StatFetcher {
-        public final Connection connection;
-        public final Context context;
-        public final User user;
-        public final int fleetId;
-        public final boolean aggregate;
+        private final Connection connection;
+        private final Context context;
+        private final User user;
+        private final int fleetId;
+        private final boolean aggregate;
 
         public StatFetcher(Connection connection, Context context, boolean aggregate) {
             this(connection, context, SessionUtility.INSTANCE.getUser(context), aggregate);
@@ -53,6 +53,26 @@ public class StatisticsJavalinRoutes {
             }
 
             this.aggregate = aggregate;
+        }
+
+        public Connection getConnection() {
+            return connection;
+        }
+
+        public Context getContext() {
+            return context;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public int getFleetId() {
+            return fleetId;
+        }
+
+        public boolean isAggregate() {
+            return aggregate;
         }
 
         boolean aggregate() {

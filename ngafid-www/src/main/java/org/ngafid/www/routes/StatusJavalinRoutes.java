@@ -53,7 +53,8 @@ public class StatusJavalinRoutes {
             Map.entry("database", List.of("mysqld.service")));
 
     /**
-     * Maps service API name to a pair of the corresponding status and a long representing the nano-time of when it was fetched.
+     * Maps service API name to a pair of the corresponding status and a long
+     * representing the nano-time of when it was fetched.
      * The time value is used for cache expiration, to prevent excessive opening of subprocesses
      */
     private static final ConcurrentHashMap<String, Pair<ServiceStatusResult, Long>> SERVICE_STATUS_CACHE =
@@ -134,7 +135,7 @@ public class StatusJavalinRoutes {
     private record ServiceStatusResult(ServiceStatus status, String message, Map<String, ServiceStatus> instances) {
 
         // Constructor for when we don't want to include instances
-        public ServiceStatusResult(ServiceStatus status, String message) {
+        ServiceStatusResult(ServiceStatus status, String message) {
             this(status, message, null);
         }
     }
@@ -253,6 +254,8 @@ public class StatusJavalinRoutes {
 
     /**
      * Fetches status page
+     *
+     * @param ctx the Javalin context
      */
     private static void getStatus(Context ctx) {
         final String templateFile = "status_page.html";
