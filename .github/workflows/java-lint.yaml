@@ -15,6 +15,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache Super-Linter tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/super-linter
+          key: super-linter-${{ runner.os }}-v6
+          restore-keys: |
+            super-linter-${{ runner.os }}-
+
       - name: Lint
         uses: github/super-linter@v6
 
@@ -26,6 +34,7 @@ jobs:
           IGNORE_GITIGNORED_FILES: true
           LINTER_RULES_PATH: .github/linters
           JAVA_FILE_NAME: checkstyle.xml
+          JAVA_JVM_COMMAND_ARGS: "-Dorg.checkstyle.sun.suppressionfilter.config=/github/workspace/.github/linters/checkstyle-suppressions.xml"
           # TODO: Remove once Javalin PR is merged
           FILTER_REGEX_EXCLUDE: "(org/ngafid/routes|cesium/Build)/*"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

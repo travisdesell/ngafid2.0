@@ -20,8 +20,13 @@ import org.ngafid.core.util.TimeUtils;
 public class HeatmapPointsProcessor {
     private static final Logger LOG = Logger.getLogger(HeatmapPointsProcessor.class.getName());
 
+    private HeatmapPointsProcessor() {
+        // Private constructor to hide the implicit public one
+    }
+
     /**
      * Main method for running the backfill process from command line.
+     * @param args command line arguments
      */
     public static void main(String[] args) {
         int batchSize = 100; // Default batch size
@@ -94,6 +99,12 @@ public class HeatmapPointsProcessor {
 
     /**
      * Get AGL by fetching MSL from database and converting it
+     * @param connection database connection
+     * @param flightId the flight ID
+     * @param latitude the latitude
+     * @param longitude the longitude
+     * @param timestamp the timestamp
+     * @return the altitude AGL value
      */
     private static double getAGLFromMSL(
             Connection connection, int flightId, double latitude, double longitude, OffsetDateTime timestamp) {
@@ -347,7 +358,8 @@ public class HeatmapPointsProcessor {
         List<Map<String, Object>> points = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
             String query =
-                    "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe "
+                    "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, "
+                            + "pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe "
                             + "FROM heatmap_points pp "
                             + "JOIN flights f ON pp.flight_id = f.id "
                             + "JOIN airframes a ON f.airframe_id = a.id "
@@ -454,8 +466,9 @@ public class HeatmapPointsProcessor {
     }
 
     /**
-     * Gets the relevant column names and their values for a given event ID, flight ID, and timestamp.
-     * This method retrieves the event definition, finds the time index, and returns the values for the relevant columns.
+     * Gets the relevant column names and their values for a given event ID,
+     * flight ID, and timestamp. This method retrieves the event definition,
+     * finds the time index, and returns the values for the relevant columns.
      *
      * @param eventId The event ID
      * @param flightId The flight ID
@@ -622,7 +635,11 @@ public class HeatmapPointsProcessor {
         List<Map<String, Object>> events = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
             StringBuilder sql = new StringBuilder(
-                    "SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, e.other_flight_id, e.start_line, e.end_line, e.start_time, e.end_time, e.severity, e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, a.airframe as airframe_name, oa.airframe as other_airframe_name "
+                    "SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, "
+                            + "e.other_flight_id, e.start_line, e.end_line, "
+                            + "e.start_time, e.end_time, e.severity, "
+                            + "e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, "
+                            + "a.airframe as airframe_name, oa.airframe as other_airframe_name "
                             + "FROM events e "
                             + "JOIN flights f ON e.flight_id = f.id "
                             + "JOIN airframes a ON f.airframe_id = a.id "

@@ -23,6 +23,10 @@ import static org.ngafid.core.kafka.Configuration.getUploadProperties;
 public class UploadHelper {
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
 
+    private UploadHelper() {
+        // Private constructor to hide the implicit public one
+    }
+
     private static KafkaProducer<String, Integer> getUploadProducer() {
         return new KafkaProducer<>(getUploadProperties());
     }

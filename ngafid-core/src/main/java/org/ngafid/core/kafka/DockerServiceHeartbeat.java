@@ -18,6 +18,10 @@ import org.ngafid.core.Config;
 
 public class DockerServiceHeartbeat {
 
+    private DockerServiceHeartbeat() {
+        // Private constructor to hide the implicit public one
+    }
+
     /**
      * Create and send periodic heartbeat messages
      * containing the Docker service's name to the
