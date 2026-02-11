@@ -3,7 +3,6 @@ package org.ngafid.www.routes;
 import static org.ngafid.airsync.AirSyncImport.getImports;
 import static org.ngafid.airsync.AirSyncImport.getNumImports;
 import static org.ngafid.www.WebServer.GSON;
-import static org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.GSON;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
