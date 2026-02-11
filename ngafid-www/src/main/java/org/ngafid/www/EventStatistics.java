@@ -76,7 +76,9 @@ public class EventStatistics {
                 "SELECT DISTINCT event_definition_id FROM m_fleet_airframe_monthly_event_counts WHERE " + dateClause;
 
         String query = """
-            SELECT fleet_id, event_definition_id, airframe_id, SUM(event_count) as event_count, SUM(flight_count) as flight_count FROM m_fleet_airframe_monthly_event_counts
+            SELECT fleet_id, event_definition_id, airframe_id,
+                SUM(event_count) as event_count, SUM(flight_count) as flight_count
+            FROM m_fleet_airframe_monthly_event_counts
             WHERE """ + dateClause + """
             GROUP BY fleet_id, event_definition_id, airframe_id
         """;
@@ -416,7 +418,7 @@ public class EventStatistics {
     }
 
     private static class EventRow {
-        public final String rowName;
+        private final String rowName;
 
         private int flightsWithoutError;
         private int flightsWithEvent;
@@ -699,6 +701,10 @@ public class EventStatistics {
 
         public double getAggMaxSeverity() {
             return aggMaxSeverity;
+        }
+
+        public String getRowName() {
+            return rowName;
         }
     }
 

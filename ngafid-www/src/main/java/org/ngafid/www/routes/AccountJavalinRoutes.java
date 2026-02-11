@@ -31,22 +31,22 @@ public class AccountJavalinRoutes {
 
     public static class LoginResponse {
         @JsonProperty
-        public final boolean loggedOut;
+        private final boolean loggedOut;
 
         @JsonProperty
-        public final boolean waiting;
+        private final boolean waiting;
 
         @JsonProperty
-        public final boolean denied;
+        private final boolean denied;
 
         @JsonProperty
-        public final boolean loggedIn;
+        private final boolean loggedIn;
 
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public LoginResponse(
                 boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
@@ -57,23 +57,47 @@ public class AccountJavalinRoutes {
             this.message = message;
             this.user = user;
         }
+
+        public boolean isLoggedOut() {
+            return loggedOut;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public boolean isDenied() {
+            return denied;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public User getUser() {
+            return user;
+        }
     }
 
     public static class LogoutResponse {
         @JsonProperty
-        public final boolean loggedOut;
+        private final boolean loggedOut;
 
         @JsonProperty
-        public final boolean waiting;
+        private final boolean waiting;
 
         @JsonProperty
-        public final boolean loggedIn;
+        private final boolean loggedIn;
 
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -81,6 +105,26 @@ public class AccountJavalinRoutes {
             this.loggedIn = loggedIn;
             this.message = message;
             this.user = user;
+        }
+
+        public boolean isLoggedOut() {
+            return loggedOut;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public User getUser() {
+            return user;
         }
     }
 
@@ -112,22 +156,22 @@ public class AccountJavalinRoutes {
 
     public static class ResetSuccessResponse {
         @JsonProperty
-        public final boolean loggedOut;
+        private final boolean loggedOut;
 
         @JsonProperty
-        public final boolean waiting;
+        private final boolean waiting;
 
         @JsonProperty
-        public final boolean denied;
+        private final boolean denied;
 
         @JsonProperty
-        public final boolean loggedIn;
+        private final boolean loggedIn;
 
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public ResetSuccessResponse(
                 boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
@@ -138,14 +182,42 @@ public class AccountJavalinRoutes {
             this.message = message;
             this.user = user;
         }
+
+        public boolean isLoggedOut() {
+            return loggedOut;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public boolean isDenied() {
+            return denied;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public User getUser() {
+            return user;
+        }
     }
 
     public static class Profile {
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public Profile(User user) {
             this.user = user;
+        }
+
+        public User getUser() {
+            return user;
         }
     }
 

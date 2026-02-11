@@ -34,10 +34,10 @@ public class AnalysisJavalinRoutes {
 
     public static class Coordinates {
         @JsonProperty
-        public final int nanOffset;
+        private final int nanOffset;
 
         @JsonProperty
-        public final List<double[]> coordinates;
+        private final List<double[]> coordinates;
 
         public Coordinates(Connection connection, int flightId) throws Exception {
             final DoubleTimeSeries latitudes =
@@ -61,14 +61,22 @@ public class AnalysisJavalinRoutes {
             this.nanOffset = tempNanOffset;
             this.coordinates = tempCoordinates;
         }
+
+        public int getNanOffset() {
+            return nanOffset;
+        }
+
+        public List<double[]> getCoordinates() {
+            return coordinates;
+        }
     }
 
     public static class RateOfClosurePlotData {
         @JsonProperty
-        public final int[] x;
+        private final int[] x;
 
         @JsonProperty
-        public final double[] y;
+        private final double[] y;
 
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
             this.x = new int[rateOfClosure.getSize()];
@@ -77,14 +85,22 @@ public class AnalysisJavalinRoutes {
                 x[i + 5] = i;
             }
         }
+
+        public int[] getX() {
+            return x;
+        }
+
+        public double[] getY() {
+            return y;
+        }
     }
 
     public static class FlightMetric {
         @JsonProperty
-        public final String value;
+        private final String value;
 
         @JsonProperty
-        public final String name;
+        private final String name;
 
         public FlightMetric(double value, String name) {
             // json does not like NaN so we must make it a null string
@@ -94,6 +110,14 @@ public class AnalysisJavalinRoutes {
 
         public FlightMetric(String name) {
             this(Double.NaN, name);
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getName() {
+            return name;
         }
 
         @Override
