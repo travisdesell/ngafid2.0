@@ -520,7 +520,7 @@ public class CesiumDataJavalinRoutes {
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
-            //            this.events = events;
+            this.events = new ArrayList<>();
         }
 
         public ArrayList<Double> getFlightGeoAglTaxiing() {
