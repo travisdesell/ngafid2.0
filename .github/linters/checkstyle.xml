@@ -50,9 +50,8 @@
   </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
-  <module name="SuppressionFilter">
-    <property name="file" value="/github/workspace/.github/linters/checkstyle-suppressions.xml"/>
-    <property name="optional" value="true"/>
+   <module name="SuppressionFilter">
+      <property name="file" value="checkstyle-suppressions.xml"/>
   </module>
 
   <!-- Checks that a package-info.java file exists for each package.     -->
