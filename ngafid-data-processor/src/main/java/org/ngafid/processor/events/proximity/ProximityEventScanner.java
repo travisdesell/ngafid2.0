@@ -1,21 +1,5 @@
 package org.ngafid.processor.events.proximity;
 
-import static org.ngafid.processor.events.proximity.CalculateProximity.addProximityIfNotInList;
-import static org.ngafid.processor.events.proximity.CalculateProximity.calculateDistance;
-import static org.ngafid.processor.events.proximity.CalculateProximity.calculateLateralDistance;
-import static org.ngafid.processor.events.proximity.CalculateProximity.calculateRateOfClosure;
-import static org.ngafid.processor.events.proximity.CalculateProximity.calculateVerticalDistance;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
@@ -28,6 +12,19 @@ import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.heatmap.ProximityPointData;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.processor.events.AbstractEventScanner;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import static org.ngafid.processor.events.proximity.CalculateProximity.*;
 
 /**
  * Refactored proximity event scanner. Still could use an overhaul, this is directly derived from the original code.
@@ -310,7 +307,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
 
         if (severity > 0) {
             double[] rateOfClosureArray = calculateRateOfClosure(
-                    flightInfo, otherFlightInfo, startLine, endLine, otherStartLine, otherEndLine);
+                    flightInfoParam, otherFlightInfoParam, startLine, endLine, otherStartLine, otherEndLine);
             RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
             event.setRateOfClosure(rateOfClosure);
             otherEvent.setRateOfClosure(rateOfClosure);
@@ -393,8 +390,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries)
             throws SQLException {
         try (Connection connection = Database.getConnection()) {
-            List<Event> events = processFlight(connection, super.flight);
-            return events;
+            return processFlight(connection, flight);
         }
     }
 

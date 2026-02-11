@@ -3,6 +3,11 @@ package org.ngafid.processor.format;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.flights.Airframes.AliasKey;
+import org.ngafid.core.util.MD5;
+import org.ngafid.processor.Pipeline;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -13,10 +18,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.flights.Airframes.AliasKey;
-import org.ngafid.core.util.MD5;
-import org.ngafid.processor.Pipeline;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -31,9 +32,9 @@ import org.ngafid.processor.Pipeline;
 public class CSVFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(CSVFileProcessor.class.getName());
 
-    private List<String> headers;
-    private List<String> dataTypes;
-    private final FlightMeta meta = new FlightMeta();
+    protected List<String> headers;
+    protected List<String> dataTypes;
+    protected final FlightMeta meta = new FlightMeta();
 
     private static final Pattern G5_PART_NUMBER_REGEX = Pattern.compile("006-B2304-\\d\\d");
 
