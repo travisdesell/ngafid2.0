@@ -2068,6 +2068,8 @@ public class FlightTest extends TestWithConnection {
 
     /**
      * Sets up time series data with columns that should be skipped
+     * @param connection the database connection
+     * @param flightId the flight ID
      */
     private void setupTimeSeriesDataWithSkippedColumns(Connection connection, int flightId) throws SQLException {
         insertSeriesNames(connection);
@@ -2079,6 +2081,8 @@ public class FlightTest extends TestWithConnection {
 
     /**
      * Sets up time series data (should be skipped)
+     * @param connection the database connection
+     * @param flightId the flight ID
      */
     private void setupTimeSeriesDataWithSameMinMax(Connection connection, int flightId) throws SQLException {
         insertSeriesNames(connection);
@@ -2868,7 +2872,8 @@ public class FlightTest extends TestWithConnection {
         }
 
         // Get the tag IDs for the manually created tags
-        int tag3Id, tag4Id;
+        int tag3Id;
+        int tag4Id;
         try (java.sql.Statement stmt = connection.createStatement();
                 java.sql.ResultSet rs =
                         stmt.executeQuery("SELECT id FROM flight_tags WHERE name = '" + tag3Name + "'")) {
@@ -4399,9 +4404,11 @@ public class FlightTest extends TestWithConnection {
         // Create flight tags first and get their IDs
         String uniqueTag1 = "TestTag1_" + System.currentTimeMillis();
         String uniqueTag2 = "TestTag2_" + System.currentTimeMillis();
-        int tagId1, tagId2;
+        int tagId1;
+        int tagId2;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = name")) {
+                "INSERT INTO flight_tags (fleet_id, name, description, color) "
+                + "VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = name")) {
             stmt.setInt(1, fleetId);
             stmt.setString(2, uniqueTag1);
             stmt.setString(3, "Test Description 1");
@@ -4440,7 +4447,8 @@ public class FlightTest extends TestWithConnection {
 
         // Now insert the flight_tag_map entries with the correct tag IDs
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE flight_id = flight_id")) {
+                "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES (?, ?) "
+                + "ON DUPLICATE KEY UPDATE flight_id = flight_id")) {
             stmt.setInt(1, flightId1);
             stmt.setInt(2, tagId1);
             stmt.executeUpdate();
@@ -4456,7 +4464,7 @@ public class FlightTest extends TestWithConnection {
     }
 
     private static class DoubleParameterFilter extends Filter {
-        public DoubleParameterFilter() {
+        DoubleParameterFilter() {
             super(new ArrayList<>());
         }
 
@@ -4468,7 +4476,7 @@ public class FlightTest extends TestWithConnection {
     }
 
     private static class IntegerParameterFilter extends Filter {
-        public IntegerParameterFilter() {
+        IntegerParameterFilter() {
             super(new ArrayList<>());
         }
 
@@ -4480,7 +4488,7 @@ public class FlightTest extends TestWithConnection {
     }
 
     private static class MixedParameterFilter extends Filter {
-        public MixedParameterFilter() {
+        MixedParameterFilter() {
             super("AND");
         }
 

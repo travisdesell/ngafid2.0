@@ -2,10 +2,10 @@
     "-//Checkstyle//DTD SuppressionFilter Configuration 1.3//EN"
     "https://checkstyle.org/dtds/suppressions_1_3.dtd">
 
-<!-- <suppressions> -->
-    <!-- Ignore the org.ngafid.routes package -->
-    <!-- <suppress checks="." files="org[\\/]nagid[\\/]routes[\\/]"/> -->
-<!-- </suppressions> -->
+<suppressions>
+    <!-- Ignore FileLength for FlightTest.java as it's a comprehensive test suite -->
+    <suppress checks="FileLength" files="FlightTest\.java"/>
+</suppressions>
 
 <fileset dir="src">
   <include name="**/*.java"/>
