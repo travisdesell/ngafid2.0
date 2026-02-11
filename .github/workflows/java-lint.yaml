@@ -15,6 +15,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache Super-Linter tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/super-linter
+          key: super-linter-${{ runner.os }}-v6
+          restore-keys: |
+            super-linter-${{ runner.os }}-
+
       - name: Lint
         uses: github/super-linter@v6
 
