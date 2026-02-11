@@ -114,13 +114,28 @@ public final class BugReportJavalinRoutes {
         LOG.info("Sent bug report email to " + recipientEmail);
         ctx.status(OK).result("Bug report sent to " + recipientEmail).json(OK);
     }
-    ;
 
     private static class BugReportPayload {
-        public String title;
-        public String body;
-        public String senderEmail;
-        public boolean includeEmail;
+        private final String title;
+        private final String body;
+        private final String senderEmail;
+        private final boolean includeEmail;
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        public String getSenderEmail() {
+            return senderEmail;
+        }
+
+        public boolean isIncludeEmail() {
+            return includeEmail;
+        }
     }
 
     /* Bug Report Page */

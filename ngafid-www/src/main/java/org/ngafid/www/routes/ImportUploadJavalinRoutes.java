@@ -54,7 +54,7 @@ public class ImportUploadJavalinRoutes {
                 upload.setStatus(Upload.Status.UPLOADING_FAILED);
             }
 
-            List<Upload> other_uploads =
+            List<Upload> otherUploads =
                     Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
@@ -62,7 +62,7 @@ public class ImportUploadJavalinRoutes {
 
             scopes.put(
                     "uploads_js",
-                    "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pendingUploads = JSON.parse('"
+                    "var uploads = JSON.parse('" + gson.toJson(otherUploads) + "'); var pendingUploads = JSON.parse('"
                             + gson.toJson(pendingUploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");

@@ -25,12 +25,20 @@ public class StartPageJavalinRoutes {
     }
 
     private static class Message {
-        String type;
-        String message;
+        private final String type;
+        private final String message;
 
         Message(String type, String message) {
             this.type = type;
             this.message = message;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 

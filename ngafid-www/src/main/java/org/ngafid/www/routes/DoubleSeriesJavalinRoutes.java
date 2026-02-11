@@ -24,7 +24,7 @@ public class DoubleSeriesJavalinRoutes {
     }
 
     public static class AllDoubleSeriesNames {
-        public final List<String> names = new ArrayList<String>();
+        private final List<String> names = new ArrayList<String>();
 
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
             try (PreparedStatement query =
@@ -36,11 +36,15 @@ public class DoubleSeriesJavalinRoutes {
                 }
             }
         }
+
+        public List<String> getNames() {
+            return names;
+        }
     }
 
     public static class DoubleSeries {
-        public final String[] x;
-        public final double[] y;
+        private final String[] x;
+        private final double[] y;
 
         public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
@@ -60,10 +64,18 @@ public class DoubleSeriesJavalinRoutes {
                 y[i] = doubleTimeSeries.get(i);
             }
         }
+
+        public String[] getX() {
+            return x;
+        }
+
+        public double[] getY() {
+            return y;
+        }
     }
 
     public static class DoubleSeriesNames {
-        public final List<String> names = new ArrayList<String>();
+        private final List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
             try (PreparedStatement query = connection.prepareStatement(
@@ -78,6 +90,10 @@ public class DoubleSeriesJavalinRoutes {
                     }
                 }
             }
+        }
+
+        public List<String> getNames() {
+            return names;
         }
     }
 

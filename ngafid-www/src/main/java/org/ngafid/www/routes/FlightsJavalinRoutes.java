@@ -28,14 +28,22 @@ public class FlightsJavalinRoutes {
 
     private static class FlightsResponse {
         @JsonProperty
-        public List<Flight> flights;
+        private final List<Flight> flights;
 
         @JsonProperty
-        public int numberPages;
+        private final int numberPages;
 
-        public FlightsResponse(List<Flight> flights, int numberPages) {
+        FlightsResponse(List<Flight> flights, int numberPages) {
             this.flights = flights;
             this.numberPages = numberPages;
+        }
+
+        public List<Flight> getFlights() {
+            return flights;
+        }
+
+        public int getNumberPages() {
+            return numberPages;
         }
     }
 
@@ -222,7 +230,7 @@ public class FlightsJavalinRoutes {
             LOG.info(() -> "Ordered by: " + orderingColumnn);
             LOG.info(() -> "Filter: " + filter.toString());
 
-            /**
+            /*
              * Valid Column Names:
              *
              * Flight Number
@@ -237,7 +245,7 @@ public class FlightsJavalinRoutes {
              * Airframe
              * Number Takeoffs/Landings
              * Flight ID
-             **/
+             */
             List<Flight> flights = Flight.getFlightsSorted(
                     connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
