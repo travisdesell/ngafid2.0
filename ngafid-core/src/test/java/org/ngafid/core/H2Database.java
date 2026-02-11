@@ -21,6 +21,10 @@ public class H2Database {
 
     private static final Logger LOG = Logger.getLogger(H2Database.class.getName());
 
+    private H2Database() {
+        // Private constructor to hide the implicit public one
+    }
+
     static {
         createConnectionPool();
         try {

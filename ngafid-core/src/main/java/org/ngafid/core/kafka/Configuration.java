@@ -10,7 +10,6 @@ import org.ngafid.core.Config;
  */
 public enum Configuration {
     ;
-
     public static Properties getProperties() {
         Properties props = new Properties();
         try {
