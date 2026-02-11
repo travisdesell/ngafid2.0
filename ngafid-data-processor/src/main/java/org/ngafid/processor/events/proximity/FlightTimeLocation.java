@@ -1,6 +1,5 @@
 package org.ngafid.processor.events.proximity;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -156,7 +155,7 @@ public final class FlightTimeLocation {
      *  a.hasRegionOverlap(b, buffer) == b.hasRegionOverlap(a, buffer)
      * @param other FlightTimeLocation
      * @param degreeBuffer represent the desired proximity threshold (e.g. 0.003 degrees = 1000 feet)
-     * @return
+     * @return true if the regions overlap, false otherwise
      */
     public boolean hasRegionOverlap(FlightTimeLocation other, double degreeBuffer) {
         boolean thisToOther = other.maxLatitude >= (this.minLatitude - degreeBuffer)

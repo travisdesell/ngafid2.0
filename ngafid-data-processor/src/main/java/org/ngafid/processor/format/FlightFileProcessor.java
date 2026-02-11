@@ -88,9 +88,9 @@ public abstract class FlightFileProcessor implements Callable<Void> {
 
         long nanostart = System.nanoTime();
         try (Connection connection = Database.getConnection()) {
-            List<Flight> flights =
+            List<Flight> flightsParam =
                     builders.stream().map(FlightBuilder::getFlight).toList();
-            Flight.batchUpdateDatabase(connection, flights);
+            Flight.batchUpdateDatabase(connection, flightsParam);
             for (FlightBuilder builder : builders) {
                 pipeline.finalize(builder);
                 TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
@@ -101,12 +101,24 @@ public abstract class FlightFileProcessor implements Callable<Void> {
         }
         long nanoend = System.nanoTime();
 
-        final double NS_TO_S = (1.0 / 1_000_000_000f);
-        double t = (nanoend - nanostart) * NS_TO_S;
+        final double nsToS = (1.0 / 1_000_000_000f);
+        double t = (nanoend - nanostart) * nsToS;
         LOG.info(() -> "Inserting took " + t + " s");
 
         return null;
     }
 
-    public Stream<Flight> flights = null;
+    private Stream<Flight> flights = null;
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public Pipeline getPipeline() {
+        return pipeline;
+    }
 }

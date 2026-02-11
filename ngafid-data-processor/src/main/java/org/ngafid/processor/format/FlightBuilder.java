@@ -309,20 +309,20 @@ public class FlightBuilder {
         return this;
     }
 
-    public synchronized void emitEvent(Event event) {
-        this.events.add(event);
+    public synchronized void emitEvent(Event eventParam) {
+        this.events.add(eventParam);
     }
 
-    public synchronized void emitEvents(List<Event> events) {
-        this.events.addAll(events);
+    public synchronized void emitEvents(List<Event> eventsParam) {
+        this.events.addAll(eventsParam);
     }
 
     public List<Event> getEvents() {
         return events;
     }
 
-    public synchronized void emitTurnToFinals(List<TurnToFinal> turnToFinals) {
-        this.turnToFinals.addAll(turnToFinals);
+    public synchronized void emitTurnToFinals(List<TurnToFinal> turnToFinalsParam) {
+        this.turnToFinals.addAll(turnToFinalsParam);
     }
 
     public ArrayList<TurnToFinal> getTurnToFinals() {

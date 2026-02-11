@@ -31,14 +31,15 @@ import org.ngafid.processor.Pipeline;
 public class CSVFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(CSVFileProcessor.class.getName());
 
-    List<String> headers;
-    List<String> dataTypes;
-    final FlightMeta meta = new FlightMeta();
+    private List<String> headers;
+    private List<String> dataTypes;
+    private final FlightMeta meta = new FlightMeta();
 
     private static final Pattern G5_PART_NUMBER_REGEX = Pattern.compile("006-B2304-\\d\\d");
 
     /**
-     * Scans for Garmin-G5 part number in header. We might in the future use part numbers to identify other file formats.
+     * Scans for Garmin-G5 part number in header. We might in the future use part numbers to identify
+     * other file formats.
      * <p>
      * According to the following document: https://static.garmin.com/pumac/190-01112-10_28.pdf?download=true
      * The part number for the G5 is 006-B2304-XX where XX represent the specific version.
@@ -61,8 +62,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     /**
      * Scans first line of file for G3X part number.
      *
-     * @param headerLines
-     * @return
+     * @param headerLines The header lines to scan
+     * @return true if the airframe is G3X, false otherwise
      */
     private static boolean airframeIsG3X(List<String> headerLines) {
         return G3X_PART_NUMBER_REGEX.asPredicate().test(headerLines.get(0));
@@ -71,9 +72,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
     /**
      * Determines if the supplied metadata string comes from a scan eagle data recorder.
      *
-     * @param metainfo
-     * @return
-     * @throws FatalFlightFileException
+     * @param metainfo The metadata information string
+     * @return true if the airframe is ScanEagle, false otherwise
+     * @throws FatalFlightFileException if the file format is invalid
      */
     private static boolean airframeIsScanEagle(String metainfo) throws FatalFlightFileException {
 
@@ -84,7 +85,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 return true;
             } else {
                 throw new FatalFlightFileException(
-                        "First line of the flight file should begin with a '#' and contain flight recorder information.");
+                        "First line of the flight file should begin with a '#' and contain "
+                                + "flight recorder information.");
             }
         }
 
@@ -114,11 +116,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
     /**
      * Determines which file processor should be used for the supplied file and creates it.
      *
-     * @param connection
-     * @param stream
-     * @param filename
-     * @param pipeline
-     * @return
+     * @param connection The database connection
+     * @param stream The input stream
+     * @param filename The filename
+     * @param pipeline The processing pipeline
+     * @return A flight file processor instance
+     * @throws IOException if an I/O error occurs
+     * @throws FatalFlightFileException if the file format is invalid
+     * @throws SQLException if a database error occurs
      */
     public static FlightFileProcessor factory(
             Connection connection, InputStream stream, String filename, Pipeline pipeline)
@@ -126,7 +131,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         byte[] bytes = stream.readAllBytes();
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 
-        Factory _factory = null;
+        Factory factory = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8))) {
             List<String> headerLines = extractHeaderLines(reader);
@@ -136,16 +141,16 @@ public class CSVFileProcessor extends FlightFileProcessor {
             String[] values = firstLine.split(",");
 
             if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
-                _factory = G5CSVFileProcessor::new;
+                factory = G5CSVFileProcessor::new;
             } else if (airframeIsScanEagle(headerLines.get(0))) {
-                _factory = ScanEagleCSVFileProcessor::new;
+                factory = ScanEagleCSVFileProcessor::new;
             } else {
-                _factory = CSVFileProcessor::new;
+                factory = CSVFileProcessor::new;
             }
         }
 
         bis.reset();
-        return _factory.create(connection, bis, filename, pipeline);
+        return factory.create(connection, bis, filename, pipeline);
     }
 
     protected CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
@@ -161,8 +166,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * For G5 flight recorders, calculates local time and time zone information.
      * Generates flight builders with corresponding time series data and returns them as a stream.
      *
-     * @throws FlightProcessingException
-     * @rreturn Stream of FlightBuilder objects representing parsed flights.
+     * @return Stream of FlightBuilder objects representing parsed flights.
+     * @throws FlightProcessingException if an error occurs during parsing
      */
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         // Ensure we read from the beginning of the stream when we compute the hash, and reset it afterward.
@@ -187,8 +192,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     FlightBuilder makeFlightBuilder(
-            FlightMeta meta, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
-        return new FlightBuilder(meta, doubleSeries, stringSeries);
+            FlightMeta metaParam, Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
+        return new FlightBuilder(metaParam, doubleSeries, stringSeries);
     }
 
     /**
@@ -268,6 +273,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * #system_id=xxx, key1=val1, key2=val2, ...
      * We gather the key:value pairs and pull out any useful information we find, storing the results in a FlightMeta
      * object.
+     *
+     * @param reader The buffered reader to read metadata from
+     * @throws FatalFlightFileException if an error occurs reading metadata
      */
     void processMetaData(BufferedReader reader) throws FatalFlightFileException {
         // Some files have random double quotes in the header for some reason? We can

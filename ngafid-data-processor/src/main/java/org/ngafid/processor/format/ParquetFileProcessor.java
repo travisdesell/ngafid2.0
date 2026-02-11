@@ -138,6 +138,10 @@ public class ParquetFileProcessor {
 
     /**
      * Processes metadata from the first Parquet record.
+     *
+     * @param metadataRecord The metadata record from the Parquet file
+     * @param flightMeta The flight metadata object to populate
+     * @throws FatalFlightFileException if metadata is missing or invalid
      */
     private void processMetaData(GenericRecord metadataRecord, FlightMeta flightMeta) throws FatalFlightFileException {
         if (metadataRecord == null) {
@@ -176,6 +180,10 @@ public class ParquetFileProcessor {
     /**
      * Extracts a numeric field from the GenericRecord as a string or returns "NaN" if missing.
      * Used for column-based storage.
+     *
+     * @param record The GenericRecord to extract from
+     * @param fieldName The name of the field to extract
+     * @return The field value as a string or "NaN" if missing
      */
     private String getStringOrNaN(GenericRecord record, String fieldName) {
         Object value = record.get(fieldName);
@@ -185,6 +193,7 @@ public class ParquetFileProcessor {
     /**
      * Computes an MD5 hash using systemId and Airframe name.
      *
+     * @param primaryKey The primary key to hash
      * @return MD5 hash string
      */
     private String computeMD5Hash(String primaryKey) {

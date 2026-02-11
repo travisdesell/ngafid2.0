@@ -117,9 +117,9 @@ public class ComputeEvent extends ComputeStep {
      * <p>
      * Normal events use a common event scanner, whereas custom events must use custom event scanners.
      *
-     * @param builder
-     * @param definition
-     * @return
+     * @param builder The flight builder
+     * @param definition The event definition
+     * @return An event scanner instance
      */
     private static AbstractEventScanner scannerFactory(FlightBuilder builder, EventDefinition definition) {
         if (definition.getId() > 0) {

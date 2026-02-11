@@ -9,8 +9,9 @@ import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
 
 /**
- * A generic step to convert units from one type to another. As of right now, this is only being done with simple
- * conversions that only require a multiplication factor, but it could be extended to support non-linear transformations.
+ * A generic step to convert units from one type to another. As of right now, this is only being
+ * done with simple conversions that only require a multiplication factor, but it could be extended
+ * to support non-linear transformations.
  */
 public class ComputeUnitConversion extends ComputeStep {
 
@@ -20,7 +21,7 @@ public class ComputeUnitConversion extends ComputeStep {
 
         private final double value;
 
-        private UnitConversion(double value) {
+        UnitConversion(double value) {
             this.value = value;
         }
 

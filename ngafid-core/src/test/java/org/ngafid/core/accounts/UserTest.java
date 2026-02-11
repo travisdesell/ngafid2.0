@@ -625,8 +625,9 @@ public class UserTest extends TestWithConnection {
         String password = "password123";
 
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code," +
-                        " admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (email, first_name, last_name, country, state, city, address, "
+                        + "phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setString(1, email);
             stmt.setString(2, "No");
             stmt.setString(3, "Fleet");
@@ -665,8 +666,9 @@ public class UserTest extends TestWithConnection {
 
         int userId;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code," +
-                        " admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO user (email, first_name, last_name, country, state, city, address, "
+                        + "phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, email);
             stmt.setString(2, "Single");
@@ -1985,7 +1987,8 @@ public class UserTest extends TestWithConnection {
         int userId = 2; // Use different user ID to avoid primary key conflicts
         int customPrecision = 4;
 
-        int metricId1, metricId2;
+        int metricId1;
+        int metricId2;
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO double_series_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "test_metric_1");
@@ -2104,7 +2107,7 @@ public class UserTest extends TestWithConnection {
 
         boolean hasAirsync = fleet.hasAirsync(connection);
 
-        assertTrue(hasAirsync == true || hasAirsync == false, "hasAirsync should return boolean");
+        assertTrue(hasAirsync || !hasAirsync, "hasAirsync should return boolean");
     }
 
     @Test

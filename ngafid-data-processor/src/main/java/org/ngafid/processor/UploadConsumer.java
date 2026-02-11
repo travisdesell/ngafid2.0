@@ -17,18 +17,22 @@ import org.ngafid.core.util.filters.Pair;
 /**
  * Kafka consumer that reads messages from the `upload` and `upload-retry` topics.
  * <p>
- * The design of this consumer is more sophisticated than the other consumers in order to handle the potentially long
- * processing time of individual messages (i.e. uploads). The consumer needs to communicate with the Kafka broker
- * every MAX_POLL_INTERVAL_MS or else risk being kicked out of the pool. However, if this value is very high it will take
- * a while for a new UploadConsumer to be admitted to the pool.
+ * The design of this consumer is more sophisticated than the other consumers in order to handle
+ * the potentially long processing time of individual messages (i.e. uploads). The consumer needs
+ * to communicate with the Kafka broker every MAX_POLL_INTERVAL_MS or else risk being kicked out
+ * of the pool. However, if this value is very high it will take a while for a new UploadConsumer
+ * to be admitted to the pool.
  * <p>
- * The consumer poll method is what sends a heartbeat message to the broker. We ensure this happens every MAX_POLL_INTERVAL_MS / 2 milliseconds
- * by using a separate processing thread to do the actual processing. While this thread is processing an upload, the main
- * thread will pause all topics / partitions thereby ensuring calls to poll return nothing. Once the processing has finished,
- * the consumer will un-pause the paused topics and partitions and obtain another task etc.
+ * The consumer poll method is what sends a heartbeat message to the broker. We ensure this happens
+ * every MAX_POLL_INTERVAL_MS / 2 milliseconds by using a separate processing thread to do the
+ * actual processing. While this thread is processing an upload, the main thread will pause all
+ * topics / partitions thereby ensuring calls to poll return nothing. Once the processing has
+ * finished, the consumer will un-pause the paused topics and partitions and obtain another task
+ * etc.
  * <p>
- * The messages are simply upload IDs. Unless the upload has been deleted from the database, the upload will be re-imported.
- * Uploads should be restricted from deletion on the front end if the upload status is PROCESSING.
+ * The messages are simply upload IDs. Unless the upload has been deleted from the database, the
+ * upload will be re-imported. Uploads should be restricted from deletion on the front end if the
+ * upload status is PROCESSING.
  */
 public class UploadConsumer extends DisjointConsumer<String, Integer> {
     private static final Logger LOG = Logger.getLogger(UploadConsumer.class.getName());

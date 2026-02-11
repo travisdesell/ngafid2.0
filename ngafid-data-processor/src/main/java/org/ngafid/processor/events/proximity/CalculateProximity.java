@@ -8,6 +8,10 @@ import org.ngafid.core.event.Event;
 
 public class CalculateProximity {
 
+    private CalculateProximity() {
+        // Utility class
+    }
+
     // Proximity events (and potentially other complicated event calculations) will have negative IDs so they
     // can be excluded from the regular event calculation process
     private static final Logger LOG = Logger.getLogger(CalculateProximity.class.getName());
@@ -80,7 +84,8 @@ public class CalculateProximity {
                 otherInfo.altitudeMSL[otherStartLine]);
 
         ArrayList<Double> rateOfClosure = new ArrayList<Double>();
-        int i = (startLine + 1), j = (otherStartLine + 1);
+        int i = (startLine + 1);
+        int j = (otherStartLine + 1);
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime.get(i) == 0) {
                 i++;
@@ -126,7 +131,8 @@ public class CalculateProximity {
         // Handle edge cases where we don't have enough data points
         if (startShift < 5 || endShift < 5) {
             LOG.info(String.format(
-                    "Insufficient data points for rate of closure calculation: startShift=%d, endShift=%d. Skipping rate of closure calculation.",
+                    "Insufficient data points for rate of closure calculation: startShift=%d, "
+                            + "endShift=%d. Skipping rate of closure calculation.",
                     startShift, endShift));
             return new double[0];
         }
