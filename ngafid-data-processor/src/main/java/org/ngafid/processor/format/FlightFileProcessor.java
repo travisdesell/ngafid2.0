@@ -110,15 +110,7 @@ public abstract class FlightFileProcessor implements Callable<Void> {
 
     private Stream<Flight> flights = null;
 
-    public Connection getConnection() {
-        return connection;
-    }
-
     public String getFilename() {
         return filename;
-    }
-
-    public Pipeline getPipeline() {
-        return pipeline;
     }
 }
