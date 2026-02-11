@@ -25,6 +25,10 @@ import org.ngafid.www.Navbar;
 public class AccountJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
+    private AccountJavalinRoutes() {
+        // Utility class
+    }
+
     public static class LoginResponse {
         @JsonProperty
         public final boolean loggedOut;
@@ -82,10 +86,10 @@ public class AccountJavalinRoutes {
 
     public static class ForgotPasswordResponse {
         @JsonProperty
-        String message;
+        public final String message;
 
         @JsonProperty
-        boolean registeredEmail;
+        public final boolean registeredEmail;
 
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;

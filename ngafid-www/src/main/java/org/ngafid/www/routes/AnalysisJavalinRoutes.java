@@ -28,12 +28,16 @@ public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.gson;
 
+    private AnalysisJavalinRoutes() {
+        // Utility class
+    }
+
     public static class Coordinates {
         @JsonProperty
-        int nanOffset = -1;
+        public final int nanOffset;
 
         @JsonProperty
-        List<double[]> coordinates = new ArrayList<>();
+        public final List<double[]> coordinates;
 
         public Coordinates(Connection connection, int flightId) throws Exception {
             final DoubleTimeSeries latitudes =
@@ -41,24 +45,30 @@ public class AnalysisJavalinRoutes {
             final DoubleTimeSeries longitudes =
                     Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 
+            List<double[]> tempCoordinates = new ArrayList<>();
+            int tempNanOffset = -1;
+
             for (int i = 0; i < latitudes.size(); i++) {
                 double longitude = longitudes.get(i);
                 double latitude = latitudes.get(i);
 
                 if (!Double.isNaN(longitude) && !Double.isNaN(latitude) && latitude != 0.0 && longitude != 0.0) {
-                    if (nanOffset < 0) nanOffset = i;
-                    coordinates.add(new double[] {longitude, latitude});
+                    if (tempNanOffset < 0) tempNanOffset = i;
+                    tempCoordinates.add(new double[] {longitude, latitude});
                 }
             }
+
+            this.nanOffset = tempNanOffset;
+            this.coordinates = tempCoordinates;
         }
     }
 
     public static class RateOfClosurePlotData {
         @JsonProperty
-        int[] x;
+        public final int[] x;
 
         @JsonProperty
-        double[] y;
+        public final double[] y;
 
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
             this.x = new int[rateOfClosure.getSize()];
@@ -71,10 +81,10 @@ public class AnalysisJavalinRoutes {
 
     public static class FlightMetric {
         @JsonProperty
-        String value;
+        public final String value;
 
         @JsonProperty
-        String name;
+        public final String name;
 
         public FlightMetric(double value, String name) {
             // json does not like NaN so we must make it a null string
@@ -94,10 +104,10 @@ public class AnalysisJavalinRoutes {
 
     public static class FlightMetricResponse {
         @JsonProperty
-        List<FlightMetric> values;
+        public final List<FlightMetric> values;
 
         @JsonProperty
-        int precision;
+        public final int precision;
 
         public FlightMetricResponse(List<FlightMetric> values, int precision) {
             this.values = values;
@@ -112,43 +122,43 @@ public class AnalysisJavalinRoutes {
 
     public static class CesiumResponse {
         @JsonProperty
-        List<Double> flightGeoAglTaxiing;
+        public final List<Double> flightGeoAglTaxiing;
 
         @JsonProperty
-        List<Double> flightGeoAglTakeOff;
+        public final List<Double> flightGeoAglTakeOff;
 
         @JsonProperty
-        List<Double> flightGeoAglClimb;
+        public final List<Double> flightGeoAglClimb;
 
         @JsonProperty
-        List<Double> flightGeoAglCruise;
+        public final List<Double> flightGeoAglCruise;
 
         @JsonProperty
-        List<Double> flightGeoInfoAgl;
+        public final List<Double> flightGeoInfoAgl;
 
         @JsonProperty
-        List<String> flightTaxiingTimes;
+        public final List<String> flightTaxiingTimes;
 
         @JsonProperty
-        List<String> flightTakeOffTimes;
+        public final List<String> flightTakeOffTimes;
 
         @JsonProperty
-        List<String> flightClimbTimes;
+        public final List<String> flightClimbTimes;
 
         @JsonProperty
-        List<String> flightCruiseTimes;
+        public final List<String> flightCruiseTimes;
 
         @JsonProperty
-        List<String> flightAglTimes;
+        public final List<String> flightAglTimes;
 
         @JsonProperty
-        String startTime;
+        public final String startTime;
 
         @JsonProperty
-        String endTime;
+        public final String endTime;
 
         @JsonProperty
-        String airframeType;
+        public final String airframeType;
 
         public CesiumResponse(
                 List<Double> flightGeoAglTaxiing,
@@ -253,7 +263,7 @@ public class AnalysisJavalinRoutes {
         System.out.println(startDate);
         System.out.println(endDate);
 
-        List<TurnToFinal.TurnToFinalJSON> _ttfs = new ArrayList<>();
+        List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         try (Connection connection = Database.getConnection()) {
 
@@ -265,7 +275,7 @@ public class AnalysisJavalinRoutes {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
                     var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
-                        _ttfs.add(jsonElement);
+                        ttfs.add(jsonElement);
                         iataCodes.add(ttf.getAirportIataCode());
                     }
                 }
@@ -281,7 +291,7 @@ public class AnalysisJavalinRoutes {
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
 
         ctx.status(200);
-        ctx.json(of("airports", airports, "ttfs", _ttfs));
+        ctx.json(of("airports", airports, "ttfs", ttfs));
     }
 
     public static void getTrends(Context ctx) {
@@ -790,6 +800,7 @@ public class AnalysisJavalinRoutes {
 
     /**
      * Test endpoint to check event definition retrieval
+     * @param ctx the request context
      */
     public static void testEventDefinition(Context ctx) {
         int eventId = Integer.parseInt(ctx.queryParam("event_id"));
