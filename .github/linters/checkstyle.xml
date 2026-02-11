@@ -52,7 +52,7 @@
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
   <module name="SuppressionFilter">
     <property name="file" value="${org.checkstyle.sun.suppressionfilter.config}"
-              default=".github/linters/checkstyle-suppressions.xml"/>
+              default="checkstyle-suppressions.xml"/>
     <property name="optional" value="true"/>
   </module>
 
