@@ -19,8 +19,8 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
 
-public enum SendEmail {
-    ;
+public enum SendEmail {;
+
     private static final ArrayList<String> ADMIN_EMAILS;
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
     private static final String BASE_URL = "https://ngafid.org";

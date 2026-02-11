@@ -580,9 +580,6 @@ public final class Upload {
     /**
      * Fetches uploads for the frontend. Airsync uploads are consequentially filtered out as they have their own page.
      *
-     * @param connection
-     * @param fleetId
-     * @param condition
      * @param connection the database connection
      * @param fleetId the fleet ID
      * @param condition the SQL condition

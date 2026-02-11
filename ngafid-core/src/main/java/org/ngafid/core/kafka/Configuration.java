@@ -8,8 +8,8 @@ import org.ngafid.core.Config;
 /**
  * Contains static methods to generate properties used for instantiating Kafka producers / consumers.
  */
-public enum Configuration {
-    ;
+public enum Configuration {;
+
     public static Properties getProperties() {
         Properties props = new Properties();
         try {
