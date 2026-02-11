@@ -1,7 +1,7 @@
 package org.ngafid.www.routes;
 
 import static org.ngafid.www.HttpCodes.*;
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.http.Context;
@@ -168,7 +168,7 @@ public final class BugReportJavalinRoutes {
 
         // Inject user information (to get their email)
         final User user = ctx.sessionAttribute("user");
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);

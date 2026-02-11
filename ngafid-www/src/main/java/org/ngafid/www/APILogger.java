@@ -8,6 +8,10 @@ import java.sql.SQLException;
 import org.ngafid.core.Database;
 
 public class APILogger {
+    private APILogger() {
+        // Utility class
+    }
+
     public static void logRequest(String method, String path, int statusCode, String ipString, String referer) {
         String sql = "INSERT INTO api_logs (method, path, status_code, ip, referer) VALUES (?, ?, ?, ?, ?)";
 

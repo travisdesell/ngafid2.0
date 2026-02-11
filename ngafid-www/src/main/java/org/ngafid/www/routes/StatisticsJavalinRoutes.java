@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -289,7 +289,7 @@ public class StatisticsJavalinRoutes {
             long startTime = System.currentTimeMillis();
 
             Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection);
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + GSON.toJson(airframes) + ";\n");
             long endTime = System.currentTimeMillis();
 
             LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
@@ -328,9 +328,9 @@ public class StatisticsJavalinRoutes {
             long startTime = System.currentTimeMillis();
 
             Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection);
-            String fleetInfo = "var airframes = " + gson.toJson(airframes) + ";\n" + "var eventNames = "
-                    + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = "
-                    + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+            String fleetInfo = "var airframes = " + GSON.toJson(airframes) + ";\n" + "var eventNames = "
+                    + GSON.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" + "var tagNames = "
+                    + GSON.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
@@ -466,10 +466,10 @@ public class StatisticsJavalinRoutes {
 
             scopes.put(
                     "events_js",
-                    // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n"
+                    // "var eventStats = JSON.parse('" + GSON.toJson(eventStatistics) + "');\n"
+                    "var eventDefinitions = JSON.parse('" + GSON.toJson(EventDefinition.getAll(connection)) + "');\n"
                             + "var airframeMap = JSON.parse('"
-                            + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
+                            + GSON.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

@@ -11,6 +11,10 @@ import org.ngafid.core.accounts.User;
 
 public class Navbar {
 
+    private Navbar() {
+        // Utility class
+    }
+
     public static String getJavascript(Context ctx) {
 
         User user = ctx.sessionAttribute("user");
@@ -31,8 +35,8 @@ public class Navbar {
                 waitingUserCount = user.getWaitingUserCount(connection);
             }
 
-            final int FLEET_ID_DEFAULT = -1;
-            int fleetId = FLEET_ID_DEFAULT;
+            final int fleetIdDefault = -1;
+            int fleetId = fleetIdDefault;
 
             // Found user Fleet ID...
             if ((user != null) && (fleetId = user.getFleetId()) > 0) {

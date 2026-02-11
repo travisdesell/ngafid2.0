@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mustachejava.DefaultMustacheFactory;
@@ -254,8 +254,8 @@ public class CesiumDataJavalinRoutes {
                 flights.put(flightIdNew, cr);
             }
 
-            scopes.put(CESIUM_DATA, gson.toJson(flights));
-            scopes.put("cesium_data_js", gson.toJson(cesiumData));
+            scopes.put(CESIUM_DATA, GSON.toJson(flights));
+            scopes.put("cesium_data_js", GSON.toJson(cesiumData));
 
             // This is for webpage section
             String resultString = "";

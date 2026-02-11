@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
@@ -78,7 +78,7 @@ public class FlightsJavalinRoutes {
             for (Flight flight : flights) {
                 if (!first) sb.append(", ");
                 first = false;
-                sb.append(gson.toJson(flight));
+                sb.append(GSON.toJson(flight));
             }
             sb.append("];");
 
@@ -107,35 +107,35 @@ public class FlightsJavalinRoutes {
 
             sb.append("var airframes = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Airframes.getAll(connection, fleetId)));
+            sb.append(GSON.toJson(Airframes.getAll(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all airframes took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var tagNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Flight.getAllFleetTagNames(connection, fleetId)));
+            sb.append(GSON.toJson(Flight.getAllFleetTagNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tag names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var tailNumbers = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Tails.getAllTails(connection, fleetId)));
+            sb.append(GSON.toJson(Tails.getAllTails(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tails names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var systemIds = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Tails.getAllSystemIds(connection, fleetId)));
+            sb.append(GSON.toJson(Tails.getAllSystemIds(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all system ids names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var doubleTimeSeriesNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)));
+            sb.append(GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all double time series names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
@@ -143,21 +143,21 @@ public class FlightsJavalinRoutes {
             sb.append("var visitedAirports = JSON.parse('");
             startTime = System.currentTimeMillis();
             List<String> airports = Itinerary.getAllAirports(connection, fleetId);
-            sb.append(gson.toJson(airports));
+            sb.append(GSON.toJson(airports));
             endTime = System.currentTimeMillis();
             LOG.info("get all airports names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var visitedRunways = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Itinerary.getAllAirportRunways(connection, fleetId)));
+            sb.append(GSON.toJson(Itinerary.getAllAirportRunways(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all runways names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var eventNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(EventDefinition.getAllNames(connection, fleetId)));
+            sb.append(GSON.toJson(EventDefinition.getAllNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all event definition names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
@@ -206,7 +206,7 @@ public class FlightsJavalinRoutes {
     public static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
-        final Filter filter = gson.fromJson(filterJSON, Filter.class);
+        final Filter filter = GSON.fromJson(filterJSON, Filter.class);
         final int fleetId = user.getFleetId();
 
         // check to see if the user has upload access for this fleet.

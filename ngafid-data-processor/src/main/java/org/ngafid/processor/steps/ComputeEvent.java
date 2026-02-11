@@ -17,10 +17,11 @@ import org.ngafid.processor.events.SpinEventScanner;
 import org.ngafid.processor.format.FlightBuilder;
 
 /**
- * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of {@link EventScanner}.
+ * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of
+ * {@link EventScanner}.
  * <p>
- * When adding a custom event, you may have to modify the private factory methods contained within this class to properly
- * compute the event upon ingestion.
+ * When adding a custom event, you may have to modify the private factory methods contained within this class to
+ * properly compute the event upon ingestion.
  */
 public class ComputeEvent extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeEvent.class.getName());
@@ -62,11 +63,11 @@ public class ComputeEvent extends ComputeStep {
     }
 
     /**
-     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied flight builder,
-     * i.e. all the required columns are available.
+     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied
+     * flight builder, i.e. all the required columns are available.
      * <p>
-     * Some additional logic is required specifically for custom events, as custom events use subclasses of ComputeEvent
-     * to perform custom compuations.
+     * Some additional logic is required specifically for custom events, as custom events use subclasses of
+     * ComputeEvent to perform custom compuations.
      *
      * @param connection database connection
      * @param fb         flight builder
@@ -86,12 +87,13 @@ public class ComputeEvent extends ComputeStep {
     }
 
     /**
-     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed before
-     * the flight is inserted into the database (namely proximity events), and this function will return null in that case.
+     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed
+     * before the flight is inserted into the database (namely proximity events), and this function will return null
+     * in that case.
      *
-     * @param connection
-     * @param fb
-     * @param def
+     * @param connection database connection
+     * @param fb flight builder
+     * @param def event definition
      * @return a ComputeEvent object if successful, or null if the event cannot be computed during initial ingestion.
      */
     private static ComputeEvent factory(Connection connection, FlightBuilder fb, EventDefinition def) {

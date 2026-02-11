@@ -74,7 +74,7 @@ public class JavalinWebServer extends WebServer {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
 
-            config.jsonMapper(new JavalinGson(WebServer.gson, false));
+            config.jsonMapper(new JavalinGson(WebServer.GSON, false));
 
             config.bundledPlugins.enableRouteOverview("/api");
 

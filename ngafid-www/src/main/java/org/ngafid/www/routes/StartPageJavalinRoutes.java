@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
@@ -74,7 +74,7 @@ public class StartPageJavalinRoutes {
             Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + GSON.toJson(airframes) + ";\n");
             LOG.info("var airframes = " + airframes + ";\n");
             if (!messages.isEmpty()) {
                 scopes.put("messages", messages);

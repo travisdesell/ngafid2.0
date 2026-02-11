@@ -2,7 +2,7 @@ package org.ngafid.www.routes;
 
 import static org.ngafid.airsync.AirSyncImport.getImports;
 import static org.ngafid.airsync.AirSyncImport.getNumImports;
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 import static org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes.GSON;
 
 import io.javalin.Javalin;
@@ -93,8 +93,8 @@ public class AirsyncJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
-            scopes.put("lastUpdateTime_js", "var lastUpdateTime = " + gson.toJson(timestamp) + ";");
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(uploads) + "');");
+            scopes.put("lastUpdateTime_js", "var lastUpdateTime = " + GSON.toJson(timestamp) + ";");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + GSON.toJson(uploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

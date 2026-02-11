@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ngafid.core.Config;
 
 public enum TerrainCache {
-    ;
+;
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
 
     // private static final LoadingCache<TileCoordinate, SRTMTile> TILE_CACHE;

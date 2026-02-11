@@ -121,7 +121,7 @@ public abstract class WebServer {
         }
     }
 
-    public static final Gson gson = new GsonBuilder()
+    public static final Gson GSON = new GsonBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
             .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
