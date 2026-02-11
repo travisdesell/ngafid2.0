@@ -26,6 +26,7 @@ jobs:
           IGNORE_GITIGNORED_FILES: true
           LINTER_RULES_PATH: .github/linters
           JAVA_FILE_NAME: checkstyle.xml
+          JAVA_JVM_COMMAND_ARGS: "-Dorg.checkstyle.sun.suppressionfilter.config=.github/linters/checkstyle-suppressions.xml"
           # TODO: Remove once Javalin PR is merged
           FILTER_REGEX_EXCLUDE: "(org/ngafid/routes|cesium/Build)/*"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
