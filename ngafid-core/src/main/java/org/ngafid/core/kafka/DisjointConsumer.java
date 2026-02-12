@@ -131,8 +131,8 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
     protected abstract long getMaxPollIntervalMS();
 
     /**
-     * Processes a record. This method should not throw exceptions without interrupting the main thread to ensure a clean
-     * shutdown of the JVM.
+     * Processes a record. This method should not throw exceptions without
+     * interrupting the main thread to ensure a clean shutdown of the JVM.
      *
      * @param record the record to process
      * @return a pair of the record that was processed and a boolean representing whether the processing was successful.

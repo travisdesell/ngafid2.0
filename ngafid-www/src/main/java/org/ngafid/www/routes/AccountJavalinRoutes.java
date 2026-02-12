@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
@@ -25,24 +25,28 @@ import org.ngafid.www.Navbar;
 public class AccountJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
+    private AccountJavalinRoutes() {
+        // Utility class
+    }
+
     public static class LoginResponse {
         @JsonProperty
-        public final boolean loggedOut;
+        private final boolean loggedOut;
 
         @JsonProperty
-        public final boolean waiting;
+        private final boolean waiting;
 
         @JsonProperty
-        public final boolean denied;
+        private final boolean denied;
 
         @JsonProperty
-        public final boolean loggedIn;
+        private final boolean loggedIn;
 
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public LoginResponse(
                 boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
@@ -53,23 +57,47 @@ public class AccountJavalinRoutes {
             this.message = message;
             this.user = user;
         }
+
+        public boolean isLoggedOut() {
+            return loggedOut;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public boolean isDenied() {
+            return denied;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public User getUser() {
+            return user;
+        }
     }
 
     public static class LogoutResponse {
         @JsonProperty
-        public final boolean loggedOut;
+        private final boolean loggedOut;
 
         @JsonProperty
-        public final boolean waiting;
+        private final boolean waiting;
 
         @JsonProperty
-        public final boolean loggedIn;
+        private final boolean loggedIn;
 
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -78,52 +106,88 @@ public class AccountJavalinRoutes {
             this.message = message;
             this.user = user;
         }
+
+        public boolean isLoggedOut() {
+            return loggedOut;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public User getUser() {
+            return user;
+        }
     }
 
     public static class ForgotPasswordResponse {
         @JsonProperty
-        String message;
+        private final String message;
 
         @JsonProperty
-        boolean registeredEmail;
+        private final boolean registeredEmail;
 
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;
             this.registeredEmail = registeredEmail;
         }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public boolean isRegisteredEmail() {
+            return registeredEmail;
+        }
     }
 
     public static class CreatedAccount {
         @JsonProperty
-        public final String accountType;
+        private final String accountType;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
             this.user = user;
         }
+
+        public String getAccountType() {
+            return accountType;
+        }
+
+        public User getUser() {
+            return user;
+        }
     }
 
     public static class ResetSuccessResponse {
         @JsonProperty
-        public final boolean loggedOut;
+        private final boolean loggedOut;
 
         @JsonProperty
-        public final boolean waiting;
+        private final boolean waiting;
 
         @JsonProperty
-        public final boolean denied;
+        private final boolean denied;
 
         @JsonProperty
-        public final boolean loggedIn;
+        private final boolean loggedIn;
 
         @JsonProperty
-        public final String message;
+        private final String message;
 
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public ResetSuccessResponse(
                 boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
@@ -134,14 +198,42 @@ public class AccountJavalinRoutes {
             this.message = message;
             this.user = user;
         }
+
+        public boolean isLoggedOut() {
+            return loggedOut;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public boolean isDenied() {
+            return denied;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public User getUser() {
+            return user;
+        }
     }
 
     public static class Profile {
         @JsonProperty
-        public final User user;
+        private final User user;
 
         public Profile(User user) {
             this.user = user;
+        }
+
+        public User getUser() {
+            return user;
         }
     }
 
@@ -216,7 +308,7 @@ public class AccountJavalinRoutes {
         LOG.info("template file: '" + templateFile + "'");
 
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -229,7 +321,7 @@ public class AccountJavalinRoutes {
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
         ctx.render(templateFile, scopes);
@@ -244,7 +336,7 @@ public class AccountJavalinRoutes {
         // Try to get user from session, but don't require it
         final User user = ctx.sessionAttribute("user");
         if (user != null) {
-            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+            scopes.put("user_js", "var user = JSON.parse('" + GSON.toJson(user) + "');");
         } else {
             scopes.put("user_js", "var user = null;");
         }
@@ -263,17 +355,17 @@ public class AccountJavalinRoutes {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
+            scopes.put("user_name", "var userName = JSON.parse('" + GSON.toJson(user.getFullName()) + "');\n");
             scopes.put(
                     "user_fleet_selected",
-                    "var userFleetSelected = JSON.parse('" + gson.toJson(user.getSelectedFleetId()) + "');\n");
-            scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
+                    "var userFleetSelected = JSON.parse('" + GSON.toJson(user.getSelectedFleetId()) + "');\n");
+            scopes.put("is_admin", "var isAdmin = JSON.parse('" + GSON.toJson(user.isAdmin()) + "');\n");
             scopes.put(
-                    "user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+                    "user_prefs_json", "var userPreferences = JSON.parse('" + GSON.toJson(userPreferences) + "');\n");
 
             if (fleet.hasAirsync(connection)) {
                 String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
-                scopes.put("airsync", "var airsyncTimeout = JSON.parse('" + gson.toJson(timeout) + "');\n");
+                scopes.put("airsync", "var airsyncTimeout = JSON.parse('" + GSON.toJson(timeout) + "');\n");
             } else {
                 scopes.put("airsync", "var airsyncTimeout = -1;\n");
             }

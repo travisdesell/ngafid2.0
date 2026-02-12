@@ -1,7 +1,8 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import java.sql.Connection;
@@ -20,13 +21,28 @@ import org.ngafid.www.Navbar;
 public class StartPageJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StartPageJavalinRoutes.class.getName());
 
+    private StartPageJavalinRoutes() {
+        // Utility class
+    }
+
     private static class Message {
-        String type;
-        String message;
+        @JsonProperty
+        private final String type;
+
+        @JsonProperty
+        private final String message;
 
         Message(String type, String message) {
             this.type = type;
             this.message = message;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 
@@ -58,7 +74,7 @@ public class StartPageJavalinRoutes {
             Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + GSON.toJson(airframes) + ";\n");
             LOG.info("var airframes = " + airframes + ";\n");
             if (!messages.isEmpty()) {
                 scopes.put("messages", messages);
@@ -80,9 +96,9 @@ public class StartPageJavalinRoutes {
                 "/access_denied",
                 ctx -> getHome(
                         ctx,
-                        new Message(
-                                "danger",
-                                "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
+                        new Message("danger",
+                                "You attempted to load a page you did not have access to or "
+                                        + "attempted to access a page while not logged in.")));
         //        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not
         // exist.")));
 

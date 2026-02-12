@@ -19,7 +19,12 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
 
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeatMonitor.class.getName());
 
-    final int TIMEOUT_DURATION_MS = 60_000;
+    private static final int TIMEOUT_DURATION_MS = 60_000;
+    private static final int POLL_INTERVAL_S = 5;
+    private static final int RECORD_PARTS_LENGTH_EXPECTED = 3;
+    private static final int RECORD_PARTS_TIMESTAMP_INDEX = 0;
+    private static final int RECORD_PARTS_SERVICE_NAME_INDEX = 1;
+    private static final int RECORD_PARTS_INSTANCE_INDEX = 2;
 
     private final Map<String, Map<String, Long>> lastSeen = new ConcurrentHashMap<>();
     private final KafkaConsumer<String, String> consumer;
@@ -64,12 +69,6 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
     public void run() {
 
         while (true) {
-
-            final int POLL_INTERVAL_S = 5;
-            final int RECORD_PARTS_LENGTH_EXPECTED = 3;
-            final int RECORD_PARTS_TIMESTAMP_INDEX = 0;
-            final int RECORD_PARTS_SERVICE_NAME_INDEX = 1;
-            final int RECORD_PARTS_INSTANCE_INDEX = 2;
 
             consumer.poll(Duration.ofSeconds(POLL_INTERVAL_S)).forEach((ConsumerRecord<String, String> record) -> {
                 String[] parts = record.value().split("\\|");

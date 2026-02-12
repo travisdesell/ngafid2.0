@@ -26,14 +26,18 @@ import org.ngafid.www.WebServer;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
-    public static final Gson GSON = WebServer.gson;
+    public static final Gson GSON = WebServer.GSON;
+
+    private AnalysisJavalinRoutes() {
+        // Utility class
+    }
 
     public static class Coordinates {
         @JsonProperty
-        int nanOffset = -1;
+        private final int nanOffset;
 
         @JsonProperty
-        List<double[]> coordinates = new ArrayList<>();
+        private final List<double[]> coordinates;
 
         public Coordinates(Connection connection, int flightId) throws Exception {
             final DoubleTimeSeries latitudes =
@@ -41,24 +45,38 @@ public class AnalysisJavalinRoutes {
             final DoubleTimeSeries longitudes =
                     Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 
+            List<double[]> tempCoordinates = new ArrayList<>();
+            int tempNanOffset = -1;
+
             for (int i = 0; i < latitudes.size(); i++) {
                 double longitude = longitudes.get(i);
                 double latitude = latitudes.get(i);
 
                 if (!Double.isNaN(longitude) && !Double.isNaN(latitude) && latitude != 0.0 && longitude != 0.0) {
-                    if (nanOffset < 0) nanOffset = i;
-                    coordinates.add(new double[] {longitude, latitude});
+                    if (tempNanOffset < 0) tempNanOffset = i;
+                    tempCoordinates.add(new double[] {longitude, latitude});
                 }
             }
+
+            this.nanOffset = tempNanOffset;
+            this.coordinates = tempCoordinates;
+        }
+
+        public int getNanOffset() {
+            return nanOffset;
+        }
+
+        public List<double[]> getCoordinates() {
+            return coordinates;
         }
     }
 
     public static class RateOfClosurePlotData {
         @JsonProperty
-        int[] x;
+        private final int[] x;
 
         @JsonProperty
-        double[] y;
+        private final double[] y;
 
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
             this.x = new int[rateOfClosure.getSize()];
@@ -67,14 +85,22 @@ public class AnalysisJavalinRoutes {
                 x[i + 5] = i;
             }
         }
+
+        public int[] getX() {
+            return x;
+        }
+
+        public double[] getY() {
+            return y;
+        }
     }
 
     public static class FlightMetric {
         @JsonProperty
-        String value;
+        private final String value;
 
         @JsonProperty
-        String name;
+        private final String name;
 
         public FlightMetric(double value, String name) {
             // json does not like NaN so we must make it a null string
@@ -86,6 +112,14 @@ public class AnalysisJavalinRoutes {
             this(Double.NaN, name);
         }
 
+        public String getValue() {
+            return value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
         @Override
         public String toString() {
             return name + ": " + value;
@@ -94,14 +128,22 @@ public class AnalysisJavalinRoutes {
 
     public static class FlightMetricResponse {
         @JsonProperty
-        List<FlightMetric> values;
+        private final List<FlightMetric> values;
 
         @JsonProperty
-        int precision;
+        private final int precision;
 
         public FlightMetricResponse(List<FlightMetric> values, int precision) {
             this.values = values;
             this.precision = precision;
+        }
+
+        public List<FlightMetric> getValues() {
+            return values;
+        }
+
+        public int getPrecision() {
+            return precision;
         }
 
         @Override
@@ -112,43 +154,43 @@ public class AnalysisJavalinRoutes {
 
     public static class CesiumResponse {
         @JsonProperty
-        List<Double> flightGeoAglTaxiing;
+        private final List<Double> flightGeoAglTaxiing;
 
         @JsonProperty
-        List<Double> flightGeoAglTakeOff;
+        private final List<Double> flightGeoAglTakeOff;
 
         @JsonProperty
-        List<Double> flightGeoAglClimb;
+        private final List<Double> flightGeoAglClimb;
 
         @JsonProperty
-        List<Double> flightGeoAglCruise;
+        private final List<Double> flightGeoAglCruise;
 
         @JsonProperty
-        List<Double> flightGeoInfoAgl;
+        private final List<Double> flightGeoInfoAgl;
 
         @JsonProperty
-        List<String> flightTaxiingTimes;
+        private final List<String> flightTaxiingTimes;
 
         @JsonProperty
-        List<String> flightTakeOffTimes;
+        private final List<String> flightTakeOffTimes;
 
         @JsonProperty
-        List<String> flightClimbTimes;
+        private final List<String> flightClimbTimes;
 
         @JsonProperty
-        List<String> flightCruiseTimes;
+        private final List<String> flightCruiseTimes;
 
         @JsonProperty
-        List<String> flightAglTimes;
+        private final List<String> flightAglTimes;
 
         @JsonProperty
-        String startTime;
+        private final String startTime;
 
         @JsonProperty
-        String endTime;
+        private final String endTime;
 
         @JsonProperty
-        String airframeType;
+        private final String airframeType;
 
         public CesiumResponse(
                 List<Double> flightGeoAglTaxiing,
@@ -178,6 +220,58 @@ public class AnalysisJavalinRoutes {
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
+        }
+
+        public List<Double> getFlightGeoAglTaxiing() {
+            return flightGeoAglTaxiing;
+        }
+
+        public List<Double> getFlightGeoAglTakeOff() {
+            return flightGeoAglTakeOff;
+        }
+
+        public List<Double> getFlightGeoAglClimb() {
+            return flightGeoAglClimb;
+        }
+
+        public List<Double> getFlightGeoAglCruise() {
+            return flightGeoAglCruise;
+        }
+
+        public List<Double> getFlightGeoInfoAgl() {
+            return flightGeoInfoAgl;
+        }
+
+        public List<String> getFlightTaxiingTimes() {
+            return flightTaxiingTimes;
+        }
+
+        public List<String> getFlightTakeOffTimes() {
+            return flightTakeOffTimes;
+        }
+
+        public List<String> getFlightClimbTimes() {
+            return flightClimbTimes;
+        }
+
+        public List<String> getFlightCruiseTimes() {
+            return flightCruiseTimes;
+        }
+
+        public List<String> getFlightAglTimes() {
+            return flightAglTimes;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public String getAirframeType() {
+            return airframeType;
         }
     }
 
@@ -253,7 +347,7 @@ public class AnalysisJavalinRoutes {
         System.out.println(startDate);
         System.out.println(endDate);
 
-        List<TurnToFinal.TurnToFinalJSON> _ttfs = new ArrayList<>();
+        List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         try (Connection connection = Database.getConnection()) {
 
@@ -265,7 +359,7 @@ public class AnalysisJavalinRoutes {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
                     var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
-                        _ttfs.add(jsonElement);
+                        ttfs.add(jsonElement);
                         iataCodes.add(ttf.getAirportIataCode());
                     }
                 }
@@ -281,7 +375,7 @@ public class AnalysisJavalinRoutes {
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
 
         ctx.status(200);
-        ctx.json(of("airports", airports, "ttfs", _ttfs));
+        ctx.json(of("airports", airports, "ttfs", ttfs));
     }
 
     public static void getTrends(Context ctx) {
@@ -790,6 +884,7 @@ public class AnalysisJavalinRoutes {
 
     /**
      * Test endpoint to check event definition retrieval
+     * @param ctx the request context
      */
     public static void testEventDefinition(Context ctx) {
         int eventId = Integer.parseInt(ctx.queryParam("event_id"));

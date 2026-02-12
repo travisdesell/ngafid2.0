@@ -34,19 +34,40 @@ public class FleetAccessNamedTest {
     private void createTestData() throws SQLException {
         // Create test fleets
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet (id, fleet_name) VALUES (999, 'Test Fleet 999'), (998, 'Test Fleet 998') ON DUPLICATE KEY UPDATE fleet_name = VALUES(fleet_name)")) {
+                "INSERT INTO fleet (id, fleet_name) VALUES "
+                + "(999, 'Test Fleet 999'), (998, 'Test Fleet 998') "
+                + "ON DUPLICATE KEY UPDATE fleet_name = VALUES(fleet_name)")) {
             stmt.executeUpdate();
         }
 
         // Create test users
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, password_token, first_name, last_name, address, city, country, state, zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, last_login_time, fleet_selected, two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete) VALUES (999, 'test999@example.com', 'aaaaaaaaaaaaaaaaaaaa', 'Test', 'User999', '123 Test St', 'Test City', 'Test Country', 'Test State', '12345', '123-456-7890', '', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, NULL, FALSE), (998, 'test998@example.com', 'aaaaaaaaaaaaaaaaaaaa', 'Test', 'User998', '123 Test St', 'Test City', 'Test Country', 'Test State', '12345', '123-456-7890', '', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, NULL, FALSE) ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
+                "INSERT INTO user (id, email, password_token, first_name, "
+                + "last_name, address, city, country, state, zip_code, "
+                + "phone_number, reset_phrase, registration_time, admin, "
+                + "aggregate_view, last_login_time, fleet_selected, "
+                + "two_factor_enabled, two_factor_secret, backup_codes, "
+                + "two_factor_setup_complete) VALUES "
+                + "(999, 'test999@example.com', 'aaaaaaaaaaaaaaaaaaaa', "
+                + "'Test', 'User999', '123 Test St', 'Test City', "
+                + "'Test Country', 'Test State', '12345', '123-456-7890', "
+                + "'', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, "
+                + "NULL, FALSE), "
+                + "(998, 'test998@example.com', 'aaaaaaaaaaaaaaaaaaaa', "
+                + "'Test', 'User998', '123 Test St', 'Test City', "
+                + "'Test Country', 'Test State', '12345', '123-456-7890', "
+                + "'', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, "
+                + "NULL, FALSE) "
+                + "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
             stmt.executeUpdate();
         }
 
         // Create test fleet access entries
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (999, 999, 'VIEW'), (999, 998, 'MANAGER'), (998, 999, 'UPLOAD') ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
+                + "(999, 999, 'VIEW'), (999, 998, 'MANAGER'), "
+                + "(998, 999, 'UPLOAD') "
+                + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
             stmt.executeUpdate();
         }
     }

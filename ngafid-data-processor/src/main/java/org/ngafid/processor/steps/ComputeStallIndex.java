@@ -108,7 +108,8 @@ public class ComputeStallIndex extends ComputeStep {
     }
 
     /**
-     * This class is an instance of a {@link DoubleTimeSeries.TimeStepCalculation} that gets a derived VSI using linear regression
+     * This class is an instance of a {@link DoubleTimeSeries.TimeStepCalculation} that gets a derived VSI
+     * using linear regression
      *
      * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
      */

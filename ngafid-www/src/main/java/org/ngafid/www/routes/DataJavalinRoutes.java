@@ -21,6 +21,10 @@ import org.ngafid.www.ErrorResponse;
 public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());
 
+    private DataJavalinRoutes() {
+        // Utility class
+    }
+
     public static void getCSV(Context ctx, boolean generated) {
         final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final int flightId = Integer.parseInt(flightIdStr);

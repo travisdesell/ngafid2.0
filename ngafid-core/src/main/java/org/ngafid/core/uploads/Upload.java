@@ -27,13 +27,15 @@ import org.ngafid.core.util.MD5;
 /**
  * Upload object, corresponding to a file uploaded by a user.
  * <p>
- * Upload objects cannot be modified in the database directly without acquiring the corresponding LockedUpload object.
- * This is backed by a MySQL lock to avoid concurrent modification which could cause database corruption.
+ * Upload objects cannot be modified in the database directly without
+ * acquiring the corresponding LockedUpload object. This is backed by a MySQL
+ * lock to avoid concurrent modification which could cause database corruption.
  * <p>
- * The process of actually processing an upload starts in ngafid-data-processor. When an upload finishes uploading, it is
- * added to the Kafka upload topic.
+ * The process of actually processing an upload starts in ngafid-data-processor.
+ * When an upload finishes uploading, it is added to the Kafka upload topic.
  * <p>
- * Uploads can also be manually added to this queue using the utility program {@link org.ngafid.core.bin.UploadHelper}.
+ * Uploads can also be manually added to this queue using the utility program
+ * {@link org.ngafid.core.bin.UploadHelper}.
  */
 public final class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
@@ -106,11 +108,14 @@ public final class Upload {
         }
 
         /**
-         * Releases or acquires the mysql lock corresponding to this upload, based on parameter acquire.
+         * Releases or acquires the mysql lock corresponding to this upload,
+         * based on parameter acquire.
          * <p>
-         * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK FUNCTIONALITY:
-         * MySQL locks are automatically released when a session is terminated, where a session is effectively a single connection.
-         * This means that the same connection MUST be used to acquire and release the connection.
+         * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK
+         * FUNCTIONALITY: MySQL locks are automatically released when a session
+         * is terminated, where a session is effectively a single connection.
+         * This means that the same connection MUST be used to acquire and
+         * release the connection.
          *
          * @param acquire whether to acquire the lock (true) or release the lock (false)
          * @return a boolean representing whether the lock was successfully released or acquired.
@@ -575,11 +580,11 @@ public final class Upload {
     /**
      * Fetches uploads for the frontend. Airsync uploads are consequentially filtered out as they have their own page.
      *
-     * @param connection
-     * @param fleetId
-     * @param condition
-     * @return
-     * @throws SQLException
+     * @param connection the database connection
+     * @param fleetId the fleet ID
+     * @param condition the SQL condition
+     * @return list of uploads
+     * @throws SQLException if a database access error occurs
      */
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
         // PreparedStatement uploadQuery = connection.prepareStatement("SELECT id,

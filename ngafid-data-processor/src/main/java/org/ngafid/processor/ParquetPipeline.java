@@ -114,13 +114,13 @@ public class ParquetPipeline {
             }
 
             //  Insert flights into DB (main thread)
-            final int BATCH_SIZE = 10;
-            List<Flight> buffer = new ArrayList<>(BATCH_SIZE);
+            final int batchSize = 10;
+            List<Flight> buffer = new ArrayList<>(batchSize);
 
             for (FlightBuilder fb : successfulBuilders) {
                 buffer.add(fb.getFlight());
 
-                if (buffer.size() == BATCH_SIZE) {
+                if (buffer.size() == batchSize) {
                     Flight.batchUpdateDatabase(connection, buffer);
                     buffer.clear();
                 }
@@ -173,13 +173,13 @@ public class ParquetPipeline {
             if (!flights.isEmpty()) {
 
                 // Insert flights into database in batches of 10
-                final int BATCH_SIZE = 10;
-                List<Flight> buffer = new ArrayList<>(BATCH_SIZE);
+                final int batchSize = 10;
+                List<Flight> buffer = new ArrayList<>(batchSize);
 
                 for (Flight flight : flights) {
                     buffer.add(flight);
 
-                    if (buffer.size() == BATCH_SIZE) {
+                    if (buffer.size() == batchSize) {
                         Flight.batchUpdateDatabase(connection, buffer);
                         buffer.clear();
                     }

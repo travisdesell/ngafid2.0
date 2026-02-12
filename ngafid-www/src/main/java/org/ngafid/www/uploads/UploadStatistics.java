@@ -8,8 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
-public enum UploadStatistics {
-    ;
+public enum UploadStatistics {;
 
     public record UploadCounts(int count, int okUploadCount, int warningUploadCount, int errorUploadCount) {}
 

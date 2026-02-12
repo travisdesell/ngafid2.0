@@ -16,8 +16,9 @@ import org.ngafid.core.util.SendEmail;
 import org.ngafid.core.util.filters.Pair;
 
 /**
- * The email consumer monitors the email topic and sends batches of emails found in the topic. This consumer will attempt
- * to send each email at most twice, after which the emails are placed into a dead letter queue.
+ * The email consumer monitors the email topic and sends batches of emails
+ * found in the topic. This consumer will attempt to send each email at most
+ * twice, after which the emails are placed into a dead letter queue.
  */
 public class EmailConsumer extends DisjointConsumer<String, String> {
     private static final Logger LOG = Logger.getLogger(EmailConsumer.class.getName());

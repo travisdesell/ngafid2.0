@@ -20,7 +20,11 @@ import org.ngafid.www.WebServer;
 
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
-    public static final Gson GSON = WebServer.gson;
+    public static final Gson GSON = WebServer.GSON;
+
+    private EventJavalinRoutes() {
+        // Utility class
+    }
 
     public static void getEventDefinition(Context ctx) {
         final String templateFile = "event_definitions_display.html";

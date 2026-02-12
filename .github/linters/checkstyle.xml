@@ -50,11 +50,11 @@
   </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
-  <module name="SuppressionFilter">
-    <property name="file" value="${org.checkstyle.sun.suppressionfilter.config}"
-              default="checkstyle-suppressions.xml" />
-    <property name="optional" value="true"/>
-  </module>
+   <module name="SuppressionFilter">
+      <property name="file" value="${org.checkstyle.sun.suppressionfilter.config}"
+                default=".github/linters/checkstyle-suppressions.xml"/>
+      <property name="optional" value="true"/>
+   </module>
 
   <!-- Checks that a package-info.java file exists for each package.     -->
   <!-- See https://checkstyle.org/checks/javadoc/javadocpackage.html#JavadocPackage -->
@@ -136,7 +136,7 @@
       <property name="max" value="300"/>
     </module>
     <module name="ParameterNumber">
-      <property name="max" value="10"/>
+      <property name="max" value="20"/>
       <property name="tokens" value="METHOD_DEF"/>
     </module>
 

@@ -2,6 +2,10 @@ package org.ngafid.www;
 
 public class HttpCodes {
 
+    private HttpCodes() {
+        // Utility class
+    }
+
     // 1XX - Informational
     public static final int CONTINUE = 100;
     public static final int SWITCHING_PROTOCOLS = 101;

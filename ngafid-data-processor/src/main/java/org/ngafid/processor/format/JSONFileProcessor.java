@@ -146,7 +146,7 @@ public class JSONFileProcessor extends FlightFileProcessor {
         stream.reset();
         flightMeta.setMd5Hash(MD5.computeHexHash(stream));
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));
-        flightMeta.setFilename(super.filename);
+        flightMeta.setFilename(super.getFilename());
         flightMeta.setAirframe(new Airframes.Airframe(
                 String.valueOf(jsonMap.get("controller_model")), new Airframes.Type("UAS Rotorcraft")));
         flightMeta.setCalculated(""); // TODO: Figure this out

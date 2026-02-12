@@ -19,7 +19,11 @@ import org.ngafid.www.WebServer;
 
 public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());
-    public static final Gson GSON = WebServer.gson;
+    public static final Gson GSON = WebServer.GSON;
+
+    private AircraftFleetTailsJavalinRoutes() {
+        // Utility class
+    }
 
     public static class UpdateTailResponse {
         private final int fleetId;

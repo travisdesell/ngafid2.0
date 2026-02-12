@@ -135,7 +135,8 @@ public class GPXFileProcessor extends FlightFileProcessor {
                         continue;
                     }
 
-                    final int lo = start, hi = end;
+                    final int lo = start;
+                    final int hi = end;
                     HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
                     List.of(spd, lon, lat, msl, unix)
                             .forEach(series -> doubleSeries.put(series.getName(), series.subSeries(lo, hi)));
@@ -144,7 +145,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
                     stringSeries.put(utc.getName(), utc.subSeries(start, end));
 
                     FlightMeta meta = new FlightMeta();
-                    meta.setFilename(this.filename + ":" + start + "-" + end);
+                    meta.setFilename(this.getFilename() + ":" + start + "-" + end);
                     meta.setAirframe(new Airframes.Airframe(airframeName, new Airframes.Type("Fixed Wing")));
                     meta.setSuggestedTailNumber(nickname);
                     meta.setSystemId(nickname);

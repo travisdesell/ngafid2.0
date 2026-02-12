@@ -1,7 +1,8 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -27,6 +28,10 @@ public class CesiumDataJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());
     private static final String CESIUM_DATA = "cesium_data";
+
+    private CesiumDataJavalinRoutes() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/ngafid_cesium", CesiumDataJavalinRoutes::handleGetNgafidCesium);
@@ -249,8 +254,8 @@ public class CesiumDataJavalinRoutes {
                 flights.put(flightIdNew, cr);
             }
 
-            scopes.put(CESIUM_DATA, gson.toJson(flights));
-            scopes.put("cesium_data_js", gson.toJson(cesiumData));
+            scopes.put(CESIUM_DATA, GSON.toJson(flights));
+            scopes.put("cesium_data_js", GSON.toJson(cesiumData));
 
             // This is for webpage section
             String resultString = "";
@@ -445,24 +450,49 @@ public class CesiumDataJavalinRoutes {
     }
 
     private static class CesiumResponse {
-        ArrayList<Double> flightGeoAglTaxiing;
-        ArrayList<Double> flightGeoAglTakeOff;
-        ArrayList<Double> flightGeoAglClimb;
-        ArrayList<Double> flightGeoAglCruise;
-        ArrayList<Double> flightGeoInfoAgl;
-        ArrayList<Event> events;
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglTaxiing;
 
-        ArrayList<String> flightTaxiingTimes;
-        ArrayList<String> flightTakeOffTimes;
-        ArrayList<String> flightClimbTimes;
-        ArrayList<String> flightCruiseTimes;
-        ArrayList<String> flightAglTimes;
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglTakeOff;
 
-        String startTime;
-        String endTime;
-        String airframeType;
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglClimb;
 
-        public CesiumResponse(
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglCruise;
+
+        @JsonProperty
+        private final ArrayList<Double> flightGeoInfoAgl;
+
+        @JsonProperty
+        private final ArrayList<Event> events;
+
+        @JsonProperty
+        private final ArrayList<String> flightTaxiingTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightTakeOffTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightClimbTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightCruiseTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightAglTimes;
+
+        @JsonProperty
+        private final String startTime;
+
+        @JsonProperty
+        private final String endTime;
+
+        @JsonProperty
+        private final String airframeType;
+
+        CesiumResponse(
                 ArrayList<Double> flightGeoAglTaxiing,
                 ArrayList<Double> flightGeoAglTakeOff,
                 ArrayList<Double> flightGeoAglClimb,
@@ -490,7 +520,63 @@ public class CesiumDataJavalinRoutes {
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
-            //            this.events = events;
+            this.events = new ArrayList<>();
+        }
+
+        public ArrayList<Double> getFlightGeoAglTaxiing() {
+            return flightGeoAglTaxiing;
+        }
+
+        public ArrayList<Double> getFlightGeoAglTakeOff() {
+            return flightGeoAglTakeOff;
+        }
+
+        public ArrayList<Double> getFlightGeoAglClimb() {
+            return flightGeoAglClimb;
+        }
+
+        public ArrayList<Double> getFlightGeoAglCruise() {
+            return flightGeoAglCruise;
+        }
+
+        public ArrayList<Double> getFlightGeoInfoAgl() {
+            return flightGeoInfoAgl;
+        }
+
+        public ArrayList<Event> getEvents() {
+            return events;
+        }
+
+        public ArrayList<String> getFlightTaxiingTimes() {
+            return flightTaxiingTimes;
+        }
+
+        public ArrayList<String> getFlightTakeOffTimes() {
+            return flightTakeOffTimes;
+        }
+
+        public ArrayList<String> getFlightClimbTimes() {
+            return flightClimbTimes;
+        }
+
+        public ArrayList<String> getFlightCruiseTimes() {
+            return flightCruiseTimes;
+        }
+
+        public ArrayList<String> getFlightAglTimes() {
+            return flightAglTimes;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public String getAirframeType() {
+            return airframeType;
         }
     }
 }

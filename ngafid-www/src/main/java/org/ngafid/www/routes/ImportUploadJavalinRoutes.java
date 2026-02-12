@@ -1,6 +1,6 @@
 package org.ngafid.www.routes;
 
-import static org.ngafid.www.WebServer.gson;
+import static org.ngafid.www.WebServer.GSON;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -19,6 +19,10 @@ import org.ngafid.www.Navbar;
 
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
+
+    private ImportUploadJavalinRoutes() {
+        // Utility class
+    }
 
     public static void getUploads(Context ctx) {
         final String templateFile = "uploads.html";
@@ -50,7 +54,7 @@ public class ImportUploadJavalinRoutes {
                 upload.setStatus(Upload.Status.UPLOADING_FAILED);
             }
 
-            List<Upload> other_uploads =
+            List<Upload> otherUploads =
                     Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
@@ -58,8 +62,8 @@ public class ImportUploadJavalinRoutes {
 
             scopes.put(
                     "uploads_js",
-                    "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pendingUploads = JSON.parse('"
-                            + gson.toJson(pendingUploads) + "');");
+                    "var uploads = JSON.parse('" + GSON.toJson(otherUploads) + "'); var pendingUploads = JSON.parse('"
+                            + GSON.toJson(pendingUploads) + "');");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -89,7 +93,7 @@ public class ImportUploadJavalinRoutes {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
+            scopes.put("imports_js", "var imports = JSON.parse('" + GSON.toJson(imports) + "');");
 
             for (String key : scopes.keySet()) {
                 if (scopes.get(key) == null) {
