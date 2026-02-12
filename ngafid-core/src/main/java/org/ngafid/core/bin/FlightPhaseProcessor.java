@@ -14,24 +14,31 @@ import java.util.List;
  * Utility class for processing and labeling flight phases.
  * 
  * ALGORITHM OVERVIEW:
- * 1. Initial Phase Detection (2-pass approach)
- *    Pass 1 - Sequential: TAXI → TAKEOFF → CLIMB
- *    Pass 2 - Consolidated: CRUISE, DESCENT, LANDING, GROUND
+ * 1. Initial Phase Detection (RPM/Speed/Altitude based)
+ *    - TAXI: From start until takeoff criteria met
+ *    - TAKEOFF: First 15 rows with RPM>=2100, 14.5<speed<80 knots
+ *    - CLIMB: After takeoff until altitude reaches 600 ft
+ *    - CRUISE: Any altitude >= 600 ft
+ *    - DESCENT: Below 600 ft and descending (100-600 ft range)
+ *    - LANDING: Below 100 ft and descending
+ *    - GROUND: Altitude <= 5 ft and speed < 5 knots
  * 
- * 2. Touch-and-Go Detection
- *    - Altitude < 5 ft for 10+ consecutive rows after climbing above 200 ft
- *    - Marks ±10 rows around split point
+ * 2. Touch-and-Go Detection (altitude pattern analysis)
+ *    - Detects when altitude stays < 5 ft for 10+ consecutive rows
+ *    - Must occur after initial climb above 200 ft
+ *    - Marks ±5 rows around split point as TOUCH_AND_GO phase
  * 
- * 3. Go-Around Detection
- *    - Valley pattern: descent below 100 ft, then climb ≥50 ft without landing
- *    - Marks ±10 rows around valley bottom
+ * 3. Go-Around Detection (valley pattern analysis)
+ *    - Detects descent below 100 ft followed by climb without landing
+ *    - Valley bottom must be > 5 ft (distinguishes from actual landing)
+ *    - Must climb back up by >= 50 ft with sustained climb (10+ rows)
+ *    - Marks ±10 rows around valley as GO_AROUND phase
  * 
- * 4. Post-Processing
- *    - Altitude smoothing (5-foot threshold for noise filtering)
- *    - Phase reclassification
- *    - Final taxi detection after landing
- * 
- * PERFORMANCE: O(n) with ~3-4 passes through data
+ * 4. Post-Processing with Altitude Smoothing
+ *    - Applies 5-foot threshold to filter sensor noise
+ *    - Reclassifies phases based on altitude and vertical trend
+ *    - Only altitude changes > 5 feet considered significant
+ *    - Eliminates all UNKNOWN phases
  */
 public final class FlightPhaseProcessor {
 
@@ -140,54 +147,32 @@ public final class FlightPhaseProcessor {
         
         final double GROUND_THRESHOLD = 10.0;     // Must exceed this to be valid flight
         final double CLIMB_THRESHOLD = 200.0;     // Must exceed this before touch-and-gos are counted
-        final double TOUCH_THRESHOLD = 0.0;       // Must be = 0ft to confirm ground contact
         final int MIN_ZERO_ROWS = 10;             // Minimum rows on ground for touch-and-go
-        
+
         double maxAltAGL = Double.NEGATIVE_INFINITY;
-        boolean hasLeftGround = false;
         boolean hasClimbedHigh = false;           // Only count touch-and-gos after climbing high
         int consecutiveZeroCount = 0;
         int zeroStartIndex = -1;
         List<Integer> splitIndices = new ArrayList<>();
-        
+
         // Single pass through the data
         for (int i = 0; i < altAGLValues.length; i++) {
             double alt = altAGLValues[i];
-            
             // Skip NaN values
-            if (Double.isNaN(alt)) {
-                continue;
-            }
-            
+            if (Double.isNaN(alt)) continue;
             // Track maximum altitude
-            if (alt > maxAltAGL) {
-                maxAltAGL = alt;
-            }
-            
-            // Check if aircraft has left the ground
-            if (alt > GROUND_THRESHOLD) {
-                hasLeftGround = true;
-            }
-            
+            if (alt > maxAltAGL) maxAltAGL = alt;
             // Check if aircraft has climbed high enough to start counting touch-and-gos
-            if (alt > CLIMB_THRESHOLD) {
-                hasClimbedHigh = true;
-            }
-            
+            if (alt > CLIMB_THRESHOLD) hasClimbedHigh = true;
             // Count consecutive LOW altitudes (< 5 feet) ONLY after climbing high
-            // This detects touch-and-go even with sensor noise (0-3 feet oscillations)
             if (hasClimbedHigh && alt < 5.0) {
-                if (consecutiveZeroCount == 0) {
-                    zeroStartIndex = i;  // Mark start of low altitude sequence
-                }
+                if (consecutiveZeroCount == 0) zeroStartIndex = i;  // Mark start of low altitude sequence
                 consecutiveZeroCount++;
             } else if (hasClimbedHigh && alt >= 5.0 && consecutiveZeroCount >= MIN_ZERO_ROWS) {
                 // Aircraft left ground after sufficient time at low altitude - this is a touch-and-go!
                 // Split point is at the MIDDLE of the low altitude sequence
-                int zeroEndIndex = i - 1;  // Last low altitude row
                 int midpoint = zeroStartIndex + consecutiveZeroCount / 2;
                 splitIndices.add(midpoint);
-                
                 // Reset counters
                 consecutiveZeroCount = 0;
                 zeroStartIndex = -1;
@@ -197,7 +182,6 @@ public final class FlightPhaseProcessor {
                 zeroStartIndex = -1;
             }
         }
-        
         // Return all detected touch-and-gos
         boolean isValid = maxAltAGL > GROUND_THRESHOLD;
         return new FlightValidationResult(isValid, splitIndices, maxAltAGL);
@@ -229,141 +213,47 @@ public final class FlightPhaseProcessor {
      */
     public static List<Integer> detectGoArounds(double[] altAglArray) {
         List<Integer> goAroundIndices = new ArrayList<>();
-        
         final double LOW_ALTITUDE_THRESHOLD = 100.0;  // Must descend below 100 ft
         final double CLIMB_RECOVERY_THRESHOLD = 50.0;  // Must climb back up by 50 ft
-        final double LANDING_THRESHOLD = 5.0;  // Valley bottom must be above 5 ft (not landing)
+        final double LANDING_THRESHOLD = 5.0;  // Valley bottom should be above 5 ft (not landing)
         final int MIN_CLIMB_WINDOW = 10;  // Must sustain climb for 10 rows to confirm go-around
-        
+
         for (int i = 1; i < altAglArray.length - MIN_CLIMB_WINDOW; i++) {
             double alt = altAglArray[i];
-            
-            // Skip NaN values
-            if (Double.isNaN(alt)) {
-                continue;
-            }
-            
-            // Look for valley pattern:
-            // 1. Current altitude is low (below 100 ft)
-            // 2. Current altitude is above landing threshold (> 5 ft, not actually landing)
-            // 3. Previous altitude was higher (descending)
-            // 4. Future altitude will be higher (climbing)
-            // 5. CRITICAL: Altitude never drops to landing level during entire valley
-            
-            if (alt < LOW_ALTITUDE_THRESHOLD && alt > LANDING_THRESHOLD) {
-                // Check if descending (previous altitude higher)
-                boolean isDescending = false;
-                if (i > 0 && !Double.isNaN(altAglArray[i-1])) {
-                    isDescending = altAglArray[i-1] > alt;
-                }
-                
-                // Check if this is a valley (altitude will climb back up)
-                boolean isClimbing = false;
-                double maxFutureAlt = alt;
-                int climbEndIndex = -1;
-                
-                // Look ahead to see if altitude climbs significantly
+            if (Double.isNaN(alt)) continue;
+            // Find local minimum (valley)
+            if (alt < LOW_ALTITUDE_THRESHOLD && alt > LANDING_THRESHOLD &&
+                !Double.isNaN(altAglArray[i-1]) && !Double.isNaN(altAglArray[i+1]) &&
+                alt < altAglArray[i-1] && alt < altAglArray[i+1]) {
+                // Check for climb of at least 50 ft after the valley
+                double minAlt = altAglArray[i];
+                int climbEnd = -1;
                 for (int j = i + 1; j < Math.min(i + 30, altAglArray.length); j++) {
-                    if (!Double.isNaN(altAglArray[j])) {
-                        maxFutureAlt = Math.max(maxFutureAlt, altAglArray[j]);
-                        
-                        // Check if we've climbed enough from the valley
-                        if (altAglArray[j] - alt >= CLIMB_RECOVERY_THRESHOLD) {
-                            // Verify sustained climb (at least 10 rows climbing)
-                            int climbRows = 0;
-                            for (int k = i + 1; k <= j; k++) {
-                                if (!Double.isNaN(altAglArray[k]) && altAglArray[k] > alt + 10) {
-                                    climbRows++;
-                                }
-                            }
-                            
-                            if (climbRows >= MIN_CLIMB_WINDOW) {
-                                isClimbing = true;
-                                climbEndIndex = j;
-                                break;
-                            }
-                        }
+                    if (!Double.isNaN(altAglArray[j]) && altAglArray[j] - minAlt >= CLIMB_RECOVERY_THRESHOLD) {
+                        climbEnd = j;
+                        break;
                     }
                 }
-                
-                // CRITICAL FIX: Verify aircraft never actually lands during the valley
-                // Scan BOTH backward AND forward from detection point to ensure altitude
-                // NEVER drops to landing level. If it does anywhere in the valley, this
-                // is a touch-and-go, not a go-around.
-                boolean actuallyLanded = false;
-                if (isClimbing && climbEndIndex > 0) {
-                    // Scan backward (last 30 rows) to check if aircraft was on ground before this point
-                    for (int k = Math.max(0, i - 30); k < i; k++) {
+                if (climbEnd != -1) {
+                    // Check ±10 rows around the valley for any ground contact (<= 5 ft)
+                    boolean touchesGround = false;
+                    int windowStart = Math.max(0, i - 10);
+                    int windowEnd = Math.min(altAglArray.length - 1, i + 10);
+                    for (int k = windowStart; k <= windowEnd; k++) {
                         if (!Double.isNaN(altAglArray[k]) && altAglArray[k] <= LANDING_THRESHOLD) {
-                            actuallyLanded = true;
+                            touchesGround = true;
                             break;
                         }
                     }
-                    
-                    // Scan forward (from current point to climb end) to check if aircraft lands
-                    if (!actuallyLanded) {
-                        for (int k = i; k <= climbEndIndex; k++) {
-                            if (!Double.isNaN(altAglArray[k]) && altAglArray[k] <= LANDING_THRESHOLD) {
-                                actuallyLanded = true;
-                                break;
-                            }
-                        }
+                    if (!touchesGround) {
+                        goAroundIndices.add(i);
+                        i = i + 11;
+                        continue;
                     }
-                }
-                
-                // If we found a valley pattern (descending, low point, then climbing)
-                // AND the aircraft never actually landed (stayed above 5 ft throughout)
-                if (isDescending && isClimbing && !actuallyLanded) {
-                    // Find the exact valley bottom (minimum altitude in local window)
-                    int valleyIndex = i;
-                    double valleyAlt = alt;
-                    
-                    // Search ±5 rows for the exact minimum
-                    for (int j = Math.max(0, i - 5); j < Math.min(i + 5, altAglArray.length); j++) {
-                        if (!Double.isNaN(altAglArray[j]) && altAglArray[j] < valleyAlt) {
-                            valleyAlt = altAglArray[j];
-                            valleyIndex = j;
-                        }
-                    }
-                    
-                    goAroundIndices.add(valleyIndex);
-                    
-                    // Skip ahead to avoid detecting multiple go-arounds in the same pattern
-                    i = valleyIndex + MIN_CLIMB_WINDOW;
                 }
             }
         }
-        
         return goAroundIndices;
-    }
-
-    /**
-     * Diagnostic method to retrieve and inspect AltAGL values from a flight.
-     * Useful for verifying altitude data before implementing ground detection logic.
-     * 
-     * @param connection the database connection
-     * @param flightId the flight ID to inspect
-     * @param maxRows maximum number of rows to retrieve (default: all rows if <= 0)
-     * @return array of AltAGL values, or null if not available
-     * @throws SQLException if there is an error with the SQL query
-     */
-    public static double[] getAltAGLValues(Connection connection, int flightId, int maxRows) 
-            throws SQLException {
-        DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
-        
-        if (altAgl == null) {
-            System.err.println("Warning: AltAGL not available for flight " + flightId);
-            return null;
-        }
-        
-        int numRows = (maxRows > 0 && maxRows < altAgl.size()) ? maxRows : altAgl.size();
-        double[] values = new double[numRows];
-        
-        for (int i = 0; i < numRows; i++) {
-            values[i] = altAgl.get(i);
-        }
-        
-        return values;
     }
 
     /**
@@ -398,11 +288,31 @@ public final class FlightPhaseProcessor {
     /**
      * Compute flight phases from already-loaded time series data.
      * 
-     * Uses 2-pass algorithm:
-     * - Pass 1: Sequential detection (TAXI → TAKEOFF → CLIMB)
-     * - Pass 2: Consolidated classification (CRUISE, DESCENT, LANDING, GROUND)
+     * INITIAL PHASE DETECTION (Sequential Assignment):
      * 
-     * Note: TOUCH_AND_GO and GO_AROUND phases are detected in post-processing.
+     * 1. TAXI: From start until takeoff criteria met
+     *    - Continues until: RPM >= 2100 AND 14.5 < groundSpeed < 80 knots
+     * 
+     * 2. TAKEOFF: First 15 consecutive rows meeting takeoff criteria
+     *    - RPM >= 2100 AND 14.5 < groundSpeed < 80 knots
+     * 
+     * 3. CLIMB: After takeoff until reaching cruise altitude
+     *    - Ends when altitude >= 600 ft AGL
+     * 
+     * 4. CRUISE: High altitude phase
+     *    - Any altitude >= 600 ft
+     * 
+     * 5. DESCENT: Descending in pattern or from cruise
+     *    - 100-600 ft range, descending
+     * 
+     * 6. LANDING: Final descent to ground
+     *    - Below 100 ft and descending
+     * 
+     * 7. GROUND: On ground with minimal movement
+     *    - Altitude <= 5 ft AND groundSpeed < 5 knots
+     * 
+     * Note: TOUCH_AND_GO and GO_AROUND are detected separately and marked in post-processing.
+     * Note: UNKNOWN phases are eliminated through altitude-smoothed reclassification.
      *
      * @param altAgl altitude AGL time series
      * @param groundSpeed ground speed time series
@@ -414,211 +324,155 @@ public final class FlightPhaseProcessor {
             DoubleTimeSeries groundSpeed,
             DoubleTimeSeries rpm) {
         
-        int numRows = altAgl.size();
-        List<FlightPhase> phases = new ArrayList<>(numRows);
-
-        // Initialize all phases to UNKNOWN
-        for (int i = 0; i < numRows; i++) {
-            phases.add(FlightPhase.UNKNOWN);
-        }
-
-        int currentIndex = 0;
-        
-        // PHASE 1: TAXI - From start until takeoff criteria is first met
-        // Criteria: All rows from beginning until RPM >= 2100 AND groundSpeed > 14.5 AND groundSpeed < 80
-        while (currentIndex < numRows) {
-            if (!Double.isNaN(altAgl.get(currentIndex)) && !Double.isNaN(groundSpeed.get(currentIndex))) {
-                // Check if takeoff criteria is met
-                if (rpm != null && !Double.isNaN(rpm.get(currentIndex)) && 
-                    rpm.get(currentIndex) >= 2100 && groundSpeed.get(currentIndex) > 14.5 && groundSpeed.get(currentIndex) < 80) {
-                    // Takeoff criteria met - taxi phase ends HERE
-                    break;
-                }
-                // Only classify as TAXI if on ground (altitude <= 5 feet)
-                if (altAgl.get(currentIndex) <= 5.0) {
-                    phases.set(currentIndex, FlightPhase.TAXI);
-                }
-            }
-            currentIndex++;
-        }
-
-        // PHASE 2: TAKEOFF - First 15 consecutive rows meeting takeoff criteria
-        // Criteria: RPM >= 2100 AND groundSpeed > 14.5 AND groundSpeed < 80
-        int takeoffCounter = 0;
-        while (currentIndex < numRows && takeoffCounter < 15) {
-            if (!Double.isNaN(altAgl.get(currentIndex)) && !Double.isNaN(groundSpeed.get(currentIndex))) {
-                if (rpm != null && !Double.isNaN(rpm.get(currentIndex)) && 
-                    rpm.get(currentIndex) >= 2100 && groundSpeed.get(currentIndex) > 14.5 && groundSpeed.get(currentIndex) < 80) {
-                    phases.set(currentIndex, FlightPhase.TAKEOFF);
-                    takeoffCounter++;
-                } else {
-                    break;  // Criteria not met - stop takeoff phase
-                }
-            }
-            currentIndex++;
-        }
-
-        // PHASE 3: CLIMB - After takeoff until reaching 600 ft AGL
-        // Begins after 15 takeoff rows, criteria: RPM >= 2100 AND groundSpeed > 14.5 AND groundSpeed <= 80
-        // Ends when AGL >= 600 feet
-        while (currentIndex < numRows) {
-            if (!Double.isNaN(altAgl.get(currentIndex)) && !Double.isNaN(groundSpeed.get(currentIndex))) {
-                // End climb when reaching 600 ft
-                if (altAgl.get(currentIndex) >= 600) {
-                    currentIndex++;
-                    break;
-                }
-                
-                // Check climb criteria
-                if (rpm != null && !Double.isNaN(rpm.get(currentIndex)) && 
-                    rpm.get(currentIndex) >= 2100 && groundSpeed.get(currentIndex) > 14.5 && groundSpeed.get(currentIndex) <= 80) {
-                    phases.set(currentIndex, FlightPhase.CLIMB);
-                } else {
-                    // Criteria not met but still climbing
-                    phases.set(currentIndex, FlightPhase.CLIMB);
-                }
-            }
-            currentIndex++;
-        }
-
-        // PHASE 4-8: CONSOLIDATED PASS - Classify remaining phases based on altitude and vertical trend
-        for (int i = 0; i < numRows; i++) {
-            if (phases.get(i) == FlightPhase.UNKNOWN) {
-                double alt = altAgl.get(i);
-                double speed = groundSpeed.get(i);
-                
-                if (!Double.isNaN(alt) && !Double.isNaN(speed)) {
-                    // Check if descending (compare with previous altitude)
-                    boolean isDescending = false;
-                    if (i > 0 && !Double.isNaN(altAgl.get(i-1))) {
-                        isDescending = alt < altAgl.get(i-1);
-                    }
-                    
-                    // Classify based on altitude thresholds and vertical trend
-                    if (alt >= 600) {
-                        phases.set(i, FlightPhase.CRUISE);
-                    } else if (alt >= 100 && alt < 600) {
-                        // Pattern altitude: classify as descent
-                        phases.set(i, FlightPhase.DESCENT);
-                    } else if (alt < 100 && alt > 5) {
-                        // Low altitude: default to landing
-                        phases.set(i, FlightPhase.LANDING);
-                    } else if (alt <= 5) {
-                        // On ground: stationary = GROUND, moving = LANDING (taxi detected in post-processing)
-                        phases.set(i, speed == 0.0 ? FlightPhase.GROUND : FlightPhase.LANDING);
-                    }
-                }
-            }
-        }
-
-        return new FlightPhaseData(phases, numRows);
+        return computeFlightPhasesFromTimeSeries(altAgl, groundSpeed, rpm, null);
     }
-
+    
     /**
-     * Compute complete flight phases with post-processing.
+     * Compute flight phases from time series data with optional airport distance.
      * 
      * @param altAgl altitude AGL time series
      * @param groundSpeed ground speed time series  
      * @param rpm RPM time series (can be null if not available)
+     * @param airportDistance distance to nearest airport (can be null)
      * @return FlightPhaseData containing phase information for each row
      */
-    private static FlightPhaseData computeFlightPhasesInternal(
+    public static FlightPhaseData computeFlightPhasesFromTimeSeries(
             DoubleTimeSeries altAgl,
             DoubleTimeSeries groundSpeed,
-            DoubleTimeSeries rpm) {
+            DoubleTimeSeries rpm,
+            DoubleTimeSeries airportDistance) {
         
+
+
         int numRows = altAgl.size();
         List<FlightPhase> phases = new ArrayList<>(numRows);
-
-        // Initialize all phases to UNKNOWN
         for (int i = 0; i < numRows; i++) {
             phases.add(FlightPhase.UNKNOWN);
         }
 
-        int currentIndex = 0;
-        
-        // PHASE 1: TAXI - From start until takeoff criteria is first met
-        // Criteria: All rows from beginning until RPM >= 2100 AND groundSpeed > 14.5 AND groundSpeed < 80
-        while (currentIndex < numRows) {
-            if (!Double.isNaN(altAgl.get(currentIndex)) && !Double.isNaN(groundSpeed.get(currentIndex))) {
-                // Check if takeoff criteria is met
-                if (rpm != null && !Double.isNaN(rpm.get(currentIndex)) && 
-                    rpm.get(currentIndex) >= 2100 && groundSpeed.get(currentIndex) > 14.5 && groundSpeed.get(currentIndex) < 80) {
-                    // Takeoff criteria met - taxi phase ends HERE
-                    break;
-                }
-                // Only classify as TAXI if on ground (altitude <= 5 feet)
-                if (altAgl.get(currentIndex) <= 5.0) {
-                    phases.set(currentIndex, FlightPhase.TAXI);
-                }
-            }
-            currentIndex++;
-        }
-
-        // PHASE 2: TAKEOFF - First 15 consecutive rows meeting takeoff criteria
-        // Criteria: RPM >= 2100 AND groundSpeed > 14.5 AND groundSpeed < 80
-        int takeoffCounter = 0;
-        while (currentIndex < numRows && takeoffCounter < 15) {
-            if (!Double.isNaN(altAgl.get(currentIndex)) && !Double.isNaN(groundSpeed.get(currentIndex))) {
-                if (rpm != null && !Double.isNaN(rpm.get(currentIndex)) && 
-                    rpm.get(currentIndex) >= 2100 && groundSpeed.get(currentIndex) > 14.5 && groundSpeed.get(currentIndex) < 80) {
-                    phases.set(currentIndex, FlightPhase.TAKEOFF);
-                    takeoffCounter++;
-                } else {
-                    break;  // Criteria not met - stop takeoff phase
-                }
-            }
-            currentIndex++;
-        }
-
-        // PHASE 3: CLIMB - After takeoff until reaching 600 ft AGL
-        // Begins after 15 takeoff rows, criteria: RPM >= 2100 AND groundSpeed > 14.5 AND groundSpeed <= 80
-        // Ends when AGL >= 600 feet
-        while (currentIndex < numRows) {
-            if (!Double.isNaN(altAgl.get(currentIndex)) && !Double.isNaN(groundSpeed.get(currentIndex))) {
-                // End climb when reaching 600 ft
-                if (altAgl.get(currentIndex) >= 600) {
-                    currentIndex++;
-                    break;
-                }
-                
-                // Check climb criteria
-                if (rpm != null && !Double.isNaN(rpm.get(currentIndex)) && 
-                    rpm.get(currentIndex) >= 2100 && groundSpeed.get(currentIndex) > 14.5 && groundSpeed.get(currentIndex) <= 80) {
-                    phases.set(currentIndex, FlightPhase.CLIMB);
-                } else {
-                    // Criteria not met but still climbing
-                    phases.set(currentIndex, FlightPhase.CLIMB);
-                }
-            }
-            currentIndex++;
-        }
-
-        // PHASE 4-8: CONSOLIDATED PASS - Classify remaining phases based on altitude and vertical trend
+        // --- Simple, systematic TAXI and TAKEOFF logic ---
+        int taxiEndIdx = -1;
         for (int i = 0; i < numRows; i++) {
-            if (phases.get(i) == FlightPhase.UNKNOWN) {
-                double alt = altAgl.get(i);
-                double speed = groundSpeed.get(i);
-                
-                if (!Double.isNaN(alt) && !Double.isNaN(speed)) {
-                    // Check if descending (compare with previous altitude)
-                    boolean isDescending = false;
-                    if (i > 0 && !Double.isNaN(altAgl.get(i-1))) {
-                        isDescending = alt < altAgl.get(i-1);
+            if (rpm != null && !Double.isNaN(rpm.get(i)) && !Double.isNaN(groundSpeed.get(i)) &&
+                rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                taxiEndIdx = i;
+                break;
+            }
+        }
+        // Mark TAXI phase
+        for (int i = 0; i < numRows && i < taxiEndIdx; i++) {
+            phases.set(i, FlightPhase.TAXI);
+        }
+        // Mark TAKEOFF phase: always mark 15 rows after taxiEndIdx as TAKEOFF
+        int takeoffStart = taxiEndIdx;
+        int takeoffEnd = Math.min(takeoffStart + 15, numRows);
+        // Only mark TAKEOFF if the first row meets criteria
+        if (takeoffStart >= 0 && takeoffStart < numRows &&
+            rpm != null && !Double.isNaN(rpm.get(takeoffStart)) && !Double.isNaN(groundSpeed.get(takeoffStart)) &&
+            rpm.get(takeoffStart) >= 2100 && groundSpeed.get(takeoffStart) > 14.5 && groundSpeed.get(takeoffStart) < 80) {
+            for (int i = takeoffStart; i < takeoffEnd; i++) {
+                phases.set(i, FlightPhase.TAKEOFF);
+            }
+        }
+
+        // PHASE 3: CLIMB - After TAKEOFF block until reaching 600 ft AGL
+        int climbIdx = takeoffEnd; // Start CLIMB assignment immediately after last TAKEOFF row
+        while (climbIdx < numRows) {
+            if (phases.get(climbIdx) != FlightPhase.UNKNOWN) {
+                climbIdx++;
+                continue;
+            }
+            // Ensure TAKEOFF rows are not overridden
+            if (phases.get(climbIdx) == FlightPhase.TAKEOFF) {
+                climbIdx++;
+                continue;
+            }
+            if (!Double.isNaN(altAgl.get(climbIdx)) && !Double.isNaN(groundSpeed.get(climbIdx))) {
+                if (altAgl.get(climbIdx) >= 600) {
+                    climbIdx++;
+                    break;
+                }
+                phases.set(climbIdx, FlightPhase.CLIMB);
+            }
+            climbIdx++;
+        }
+
+        // PHASE 4: CRUISE - After reaching 600 ft, mark high altitude phases
+        // Cruise begins immediately after climb ends (when AGL >= 600)
+        for (int j = climbIdx; j < numRows; j++) {
+            if (phases.get(j) == FlightPhase.TAKEOFF) continue;
+            if (!Double.isNaN(altAgl.get(j))) {
+                if (altAgl.get(j) >= 600 && phases.get(j) == FlightPhase.UNKNOWN) {
+                    phases.set(j, FlightPhase.CRUISE);
+                }
+            }
+        }
+
+        // PHASE 5: DESCENT - Descending from cruise to landing pattern
+        // Mark any rows below 600 ft that are descending (not yet landing)
+        for (int d1 = 1; d1 < numRows; d1++) {
+            if (phases.get(d1) == FlightPhase.TAKEOFF) continue;
+            if (!Double.isNaN(altAgl.get(d1)) && !Double.isNaN(altAgl.get(d1-1))) {
+                double alt = altAgl.get(d1);
+                double prevAlt = altAgl.get(d1-1);
+                double altChange = alt - prevAlt;
+                // Descent: below 600 ft, above 100 ft, and descending by more than 10 feet
+                if (alt < 600 && alt >= 100 && altChange < -10.0 && phases.get(d1) == FlightPhase.UNKNOWN) {
+                    phases.set(d1, FlightPhase.DESCENT);
+                }
+            }
+        }
+        // Mark all remaining rows below 600 ft as DESCENT (includes pattern flying)
+        for (int d2 = 0; d2 < numRows; d2++) {
+            if (phases.get(d2) == FlightPhase.TAKEOFF) continue;
+            if (!Double.isNaN(altAgl.get(d2))) {
+                double alt = altAgl.get(d2);
+                if (alt < 600 && alt >= 100 && phases.get(d2) == FlightPhase.UNKNOWN) {
+                    // Only mark as DESCENT if previous row was DESCENT or significant drop
+                    if (d2 > 0 && !Double.isNaN(altAgl.get(d2-1))) {
+                        double altChange = alt - altAgl.get(d2-1);
+                        if (altChange < -10.0 || phases.get(d2-1) == FlightPhase.DESCENT) {
+                            phases.set(d2, FlightPhase.DESCENT);
+                        }
                     }
-                    
-                    // Classify based on altitude thresholds and vertical trend
-                    if (alt >= 600) {
-                        phases.set(i, FlightPhase.CRUISE);
-                    } else if (alt >= 100 && alt < 600) {
-                        // Pattern altitude: default to descent unless clearly climbing
-                        phases.set(i, isDescending ? FlightPhase.DESCENT : FlightPhase.DESCENT);
-                    } else if (alt < 100 && alt > 5) {
-                        // Low altitude: default to landing
-                        phases.set(i, FlightPhase.LANDING);
-                    } else if (alt <= 5) {
-                        // On ground: stationary = GROUND, moving = LANDING (taxi detected in post-processing)
-                        phases.set(i, speed == 0.0 ? FlightPhase.GROUND : FlightPhase.LANDING);
+                }
+            }
+        }
+        // PHASE 6: LANDING - Final descent from 100 ft to 0 ft
+        // Mark rows where AGL is decreasing from ~100 to 0
+        for (int l1 = 1; l1 < numRows; l1++) {
+            if (phases.get(l1) == FlightPhase.TAKEOFF) continue;
+            if (!Double.isNaN(altAgl.get(l1)) && !Double.isNaN(altAgl.get(l1-1))) {
+                double alt = altAgl.get(l1);
+                double prevAlt = altAgl.get(l1-1);
+                // Refined Landing: below 100 ft, above 5 ft, and descending
+                if (alt < 100 && alt > 5.0 && alt < prevAlt && phases.get(l1) == FlightPhase.UNKNOWN) {
+                    phases.set(l1, FlightPhase.LANDING);
+                }
+            }
+        }
+        // PHASE 7: DESCENT - Descending but not in approach or landing yet
+        // Fill in remaining descending sections
+        for (int d3 = 1; d3 < numRows; d3++) {
+            if (phases.get(d3) == FlightPhase.TAKEOFF) continue;
+            if (!Double.isNaN(altAgl.get(d3)) && !Double.isNaN(altAgl.get(d3-1))) {
+                double alt = altAgl.get(d3);
+                double prevAlt = altAgl.get(d3-1);
+                double altChange = alt - prevAlt;
+                // Descent: decreasing altitude above 200 ft by more than 10 feet
+                if (altChange < -10.0 && alt > 200 && phases.get(d3) == FlightPhase.UNKNOWN) {
+                    phases.set(d3, FlightPhase.DESCENT);
+                }
+            }
+        }
+        // PHASE 8: GROUND - Stationary on ground (parked/stopped)
+        // Only mark as GROUND if truly stationary (speed = 0)
+        for (int g1 = 0; g1 < numRows; g1++) {
+            if (phases.get(g1) == FlightPhase.TAKEOFF) continue;
+            if (phases.get(g1) == FlightPhase.UNKNOWN) {
+                if (!Double.isNaN(altAgl.get(g1)) && !Double.isNaN(groundSpeed.get(g1))) {
+                    if (altAgl.get(g1) <= 5 && groundSpeed.get(g1) == 0.0) {
+                        phases.set(g1, FlightPhase.GROUND);
                     }
                 }
             }
@@ -687,130 +541,65 @@ public final class FlightPhaseProcessor {
         // Mark touch-and-go zones (±10 rows around split points)
         if (validation != null && validation.hasTouchAndGo()) {
             for (int splitIndex : validation.splitIndices) {
-                // Mark a wider window around the split point as TOUCH_AND_GO
-                // This covers the entire ground contact and acceleration period
                 for (int i = Math.max(0, splitIndex - 10); 
                      i <= Math.min(phaseData.getPhases().size() - 1, splitIndex + 10); i++) {
                     phaseData.getPhases().set(i, FlightPhase.TOUCH_AND_GO);
                 }
             }
         }
-        
-        // Detect and mark go-around zones (±10 rows around valleys)
+
+        // Detect and mark go-around zones (±10 rows around valleys, 20 rows total)
         List<Integer> goAroundIndices = detectGoArounds(altAglArray);
+        int lastMarkedEnd = -1;
         for (int goAroundIndex : goAroundIndices) {
-            // Mark ±10 rows around the go-around valley as GO_AROUND phase
-            // This covers the low approach and climb-out
-            for (int i = Math.max(0, goAroundIndex - 10); 
-                 i <= Math.min(phaseData.getPhases().size() - 1, goAroundIndex + 10); i++) {
-                phaseData.getPhases().set(i, FlightPhase.GO_AROUND);
+            int start = Math.max(0, goAroundIndex - 10);
+            int end = Math.min(phaseData.getPhases().size() - 1, goAroundIndex + 10);
+            if (start > lastMarkedEnd) {
+                for (int i = start; i <= end; i++) {
+                    phaseData.getPhases().set(i, FlightPhase.GO_AROUND);
+                }
+                lastMarkedEnd = end;
             }
         }
-        
-        // Apply altitude smoothing and reclassify phases
-        final double ALTITUDE_CHANGE_THRESHOLD = 5.0;
-        
-        for (int i = 0; i < phaseData.getPhases().size() && i < altAglArray.length; i++) {
-            FlightPhase currentPhase = phaseData.getPhases().get(i);
-            
-            // Skip already classified special phases
-            if (currentPhase == FlightPhase.TOUCH_AND_GO ||
-                currentPhase == FlightPhase.GO_AROUND ||
-                currentPhase == FlightPhase.TAXI ||
-                currentPhase == FlightPhase.TAKEOFF) {
-                continue;
-            }
-            
-            double alt = altAglArray[i];
-            if (!Double.isNaN(alt)) {
-                // Determine vertical trend with 5-row window for noise filtering
-                boolean isClimbing = false;
-                boolean isDescending = false;
-                
-                if (i >= 5 && i < altAglArray.length) {
-                    double startAlt = altAglArray[i - 5];
-                    if (!Double.isNaN(startAlt)) {
-                        double altChange = alt - startAlt;
-                        // 15 feet over 5 rows = 3 ft/row average
-                        if (altChange > 15.0) {
-                            isClimbing = true;
-                        } else if (altChange < -15.0) {
-                            isDescending = true;
-                        }
+
+        // FINAL PASS: Reclassify all remaining UNKNOWNs
+        List<FlightPhase> phases = phaseData.getPhases();
+        int n = phases.size();
+        for (int i = 0; i < n; i++) {
+            if (phases.get(i) == FlightPhase.UNKNOWN) {
+                double alt = (i >= 0 && i < altAglArray.length) ? altAglArray[i] : Double.NaN;
+                double prevAlt = (i > 0 && i - 1 < altAglArray.length) ? altAglArray[i - 1] : Double.NaN;
+                double nextAlt = (i < n - 1 && i + 1 < altAglArray.length) ? altAglArray[i + 1] : Double.NaN;
+                double gndSpd = (groundSpeed != null && i < groundSpeed.size()) ? groundSpeed.get(i) : Double.NaN;
+                // Taxi logic: on ground (<=5 ft) and moving
+                if (!Double.isNaN(alt) && alt <= 5.0) {
+                    if (!Double.isNaN(gndSpd) && gndSpd > 0.0) {
+                        phases.set(i, FlightPhase.TAXI);
+                    } else {
+                        phases.set(i, FlightPhase.GROUND);
                     }
-                } else if (i > 0) {
-                    double prevAlt = altAglArray[i - 1];
-                    if (!Double.isNaN(prevAlt)) {
-                        double altChange = alt - prevAlt;
-                        if (altChange > ALTITUDE_CHANGE_THRESHOLD) {
-                            isClimbing = true;
-                        } else if (altChange < -ALTITUDE_CHANGE_THRESHOLD) {
-                            isDescending = true;
-                        }
+                    continue;
+                }
+                // Use climb/descent/cruise logic for others
+                boolean climbing = !Double.isNaN(prevAlt) && !Double.isNaN(alt) && alt > prevAlt;
+                boolean descending = !Double.isNaN(prevAlt) && !Double.isNaN(alt) && alt < prevAlt;
+                if (!Double.isNaN(prevAlt) && !Double.isNaN(nextAlt)) {
+                    if (alt > prevAlt && nextAlt > alt) {
+                        climbing = true;
+                        descending = false;
+                    } else if (alt < prevAlt && nextAlt < alt) {
+                        climbing = false;
+                        descending = true;
                     }
                 }
-                
-                // Reclassify based on altitude and trend
-                if (alt >= 600) {
-                    phaseData.getPhases().set(i, FlightPhase.CRUISE);
-                } else if (alt >= 100 && alt < 600) {
-                    // Pattern altitude
-                    if (isClimbing) {
-                        phaseData.getPhases().set(i, FlightPhase.CLIMB);
-                    } else if (isDescending) {
-                        phaseData.getPhases().set(i, FlightPhase.DESCENT);
-                    } else {
-                        // Level flight: check context from previous phase
-                        FlightPhase prevPhase = (i > 0) ? phaseData.getPhases().get(i - 1) : FlightPhase.UNKNOWN;
-                        if (prevPhase == FlightPhase.TAKEOFF || 
-                            prevPhase == FlightPhase.CLIMB) {
-                            phaseData.getPhases().set(i, FlightPhase.CLIMB);
-                        } else {
-                            phaseData.getPhases().set(i, FlightPhase.DESCENT);
-                        }
-                    }
-                } else if (alt < 100) {
-                    // Low altitude
-                    if (isDescending) {
-                        phaseData.getPhases().set(i, FlightPhase.LANDING);
-                    } else if (isClimbing) {
-                        phaseData.getPhases().set(i, FlightPhase.CLIMB);
-                    } else {
-                        // Level flight: use context from previous phase
-                        FlightPhase prevPhase = (i > 0) ? phaseData.getPhases().get(i - 1) : FlightPhase.UNKNOWN;
-                        if (prevPhase == FlightPhase.TAKEOFF || 
-                            prevPhase == FlightPhase.TAXI || 
-                            prevPhase == FlightPhase.CLIMB || 
-                            prevPhase == FlightPhase.TOUCH_AND_GO) {
-                            phaseData.getPhases().set(i, FlightPhase.CLIMB);
-                        } else if (prevPhase == FlightPhase.LANDING || 
-                                   prevPhase == FlightPhase.DESCENT || 
-                                   prevPhase == FlightPhase.CRUISE) {
-                            phaseData.getPhases().set(i, FlightPhase.LANDING);
-                        } else {
-                            phaseData.getPhases().set(i, FlightPhase.LANDING);
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Final pass: Detect taxi after landing
-        if (groundSpeed != null) {
-            for (int i = 0; i < phaseData.getPhases().size() && i < altAglArray.length && i < groundSpeed.size(); i++) {
-                FlightPhase currentPhase = phaseData.getPhases().get(i);
-                
-                // Only reclassify LANDING phases
-                if (currentPhase == FlightPhase.LANDING) {
-                    double alt = altAglArray[i];
-                    double speed = groundSpeed.get(i);
-                    
-                    if (!Double.isNaN(alt) && !Double.isNaN(speed)) {
-                        // On ground and moving = taxi
-                        if (alt <= 5.0 && speed > 0.0) {
-                            phaseData.getPhases().set(i, FlightPhase.TAXI);
-                        }
-                    }
+                if (climbing) {
+                    phases.set(i, FlightPhase.CLIMB);
+                } else if (descending) {
+                    phases.set(i, FlightPhase.DESCENT);
+                } else if (!Double.isNaN(alt) && alt >= 600) {
+                    phases.set(i, FlightPhase.CRUISE);
+                } else {
+                    phases.set(i, FlightPhase.CLIMB);
                 }
             }
         }
@@ -841,5 +630,24 @@ public final class FlightPhaseProcessor {
         }
         
         return summary.toString();
+    }
+    /**
+     * Loads the AltAGL time series for a flight and returns it as a double array.
+     *
+     * @param connection the database connection
+     * @param flightId the flight ID
+     * @param maxRows maximum number of rows to return (use Integer.MAX_VALUE for all rows)
+     * @return array of AltAGL values (double[])
+     * @throws SQLException if there is an error with the SQL query
+     * @throws IOException if there is an error reading flight data
+     */
+    public static double[] getAltAGLValues(Connection connection, int flightId, int maxRows) throws SQLException, IOException {
+        DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
+        int n = Math.min(altAgl.size(), maxRows);
+        double[] values = new double[n];
+        for (int i = 0; i < n; i++) {
+            values[i] = altAgl.get(i);
+        }
+        return values;
     }
 }

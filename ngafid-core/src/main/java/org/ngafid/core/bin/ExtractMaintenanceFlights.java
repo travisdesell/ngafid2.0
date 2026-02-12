@@ -4,6 +4,7 @@ import org.ngafid.core.Database;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
+import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.flights.export.CSVWriter;
 import org.ngafid.core.flights.export.CachedCSVWriter;
 import org.ngafid.core.flights.maintenance.AircraftTimeline;
@@ -11,18 +12,14 @@ import org.ngafid.core.flights.maintenance.MaintenanceRecord;
 import org.ngafid.core.util.TimeUtils;
 
 import java.io.*;
-import java.nio.file.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.sql.*;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.ngafid.core.bin.FlightPhaseProcessor;
 
 import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
@@ -370,7 +367,8 @@ public final class ExtractMaintenanceFlights {
      */
     private static void writeFiles(Connection connection, String outputDirectory, String eventCluster, 
                                    MaintenanceRecord event, Flight flight, String when,
-                                   FlightPhaseProcessor.FlightValidationResult validation) 
+                                   FlightPhaseProcessor.FlightValidationResult validation,
+                                   boolean debugPhases) 
             throws IOException, SQLException {
         assert flight != null;
 
@@ -474,13 +472,13 @@ public final class ExtractMaintenanceFlights {
                     } else {
                         segmentFile = fullDir + "/" + flight.getId() + "-" + segmentNumber + ".csv";
                     }
-                    
+
                     try (PrintWriter writer = new PrintWriter(new FileWriter(segmentFile))) {
                         // Write all header lines
                         for (String headerLine : headerLines) {
                             writer.println(headerLine);
                         }
-                        
+
                         for (int rowIndex = startRow; rowIndex < splitIndex && rowIndex < dataLines.size(); rowIndex++) {
                             String phaseString = "UNKNOWN";
                             if (phaseData != null) {
@@ -489,9 +487,41 @@ public final class ExtractMaintenanceFlights {
                             writer.println(dataLines.get(rowIndex) + "," + phaseString);
                         }
                     }
-                    
-                    System.out.println("  Created segment " + segmentNumber + ": " + 
-                                     new File(segmentFile).getName());
+
+                    // Generate debug phases CSV for this segment if enabled
+                    if (debugPhases) {
+                        String debugFile = segmentFile.replace(".csv", "_phases.csv");
+                        try (PrintWriter writer = new PrintWriter(new FileWriter(debugFile))) {
+                            writer.println("# Flight " + flight.getId() + " Segment " + segmentNumber);
+                            writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
+                            writer.println("# ----------------------------------------");
+                            DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
+                            DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
+                            DoubleTimeSeries rpm = null;
+                            try { rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM); } catch (Exception e) {}
+                            DoubleTimeSeries airportDist = null;
+                            DoubleTimeSeries nearestAirport = null;
+                            try { airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE); } catch (Exception e) {}
+                            try { nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT); } catch (Exception e) {}
+                            StringTimeSeries timestamps = null;
+                            try { timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME); } catch (Exception e) {}
+                            for (int i = startRow; i < splitIndex && i < altAgl.size(); i++) {
+                                String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
+                                double alt = altAgl.get(i);
+                                double gs = groundSpeed.get(i);
+                                double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
+                                double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
+                                String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
+                                String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
+                                writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
+                                    i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error writing debug phases file for segment: " + e.getMessage());
+                        }
+                    }
+
+                    System.out.println("  Created segment " + segmentNumber + ": " + new File(segmentFile).getName());
                     startRow = splitIndex;
                     segmentNumber++;
                 }
@@ -503,7 +533,7 @@ public final class ExtractMaintenanceFlights {
                     for (String headerLine : headerLines) {
                         writer.println(headerLine);
                     }
-                    
+
                     for (int rowIndex = startRow; rowIndex < dataLines.size(); rowIndex++) {
                         String phaseString = "UNKNOWN";
                         if (phaseData != null) {
@@ -512,9 +542,41 @@ public final class ExtractMaintenanceFlights {
                         writer.println(dataLines.get(rowIndex) + "," + phaseString);
                     }
                 }
-                
-                System.out.println("  Created segment " + segmentNumber + ": " + 
-                                 new File(finalFile).getName());
+
+                // Generate debug phases CSV for final segment if enabled
+                if (debugPhases) {
+                    String debugFile = finalFile.replace(".csv", "_phases.csv");
+                    try (PrintWriter writer = new PrintWriter(new FileWriter(debugFile))) {
+                        writer.println("# Flight " + flight.getId() + " Segment " + segmentNumber);
+                        writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
+                        writer.println("# ----------------------------------------");
+                        DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
+                        DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
+                        DoubleTimeSeries rpm = null;
+                        try { rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM); } catch (Exception e) {}
+                        DoubleTimeSeries airportDist = null;
+                        DoubleTimeSeries nearestAirport = null;
+                        try { airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE); } catch (Exception e) {}
+                        try { nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT); } catch (Exception e) {}
+                        StringTimeSeries timestamps = null;
+                        try { timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME); } catch (Exception e) {}
+                        for (int i = startRow; i < altAgl.size(); i++) {
+                            String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
+                            double alt = altAgl.get(i);
+                            double gs = groundSpeed.get(i);
+                            double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
+                            double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
+                            String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
+                            String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
+                            writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
+                                i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error writing debug phases file for final segment: " + e.getMessage());
+                    }
+                }
+
+                System.out.println("  Created segment " + segmentNumber + ": " + new File(finalFile).getName());
             }
         } else {
             // No touch-and-go, write single file
@@ -550,19 +612,52 @@ public final class ExtractMaintenanceFlights {
 
         // Delete temporary file
         new File(outfile + ".tmp").delete();
-    }
 
-    /**
-     * Sanitize directory name by removing/replacing invalid characters
-     *
-     * @param name the directory name to sanitize
-     * @return sanitized directory name
-     */
-    private static String sanitizeDirectoryName(String name) {
-        // Replace invalid characters with underscores, limit length
-        return name.replaceAll("[^a-zA-Z0-9_\\-\\.\\s]", "_")
-                   .replaceAll("\\s+", "_")
-                   .substring(0, Math.min(name.length(), 100));
+        // DEBUG PHASES CSV OUTPUT
+        if (debugPhases) {
+            String debugFile = outfile.replace(".csv", "_phases.csv");
+            try (PrintWriter writer = new PrintWriter(new FileWriter(debugFile))) {
+                // Write header
+                writer.println("# Flight " + flight.getId());
+                writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
+                writer.println("# ----------------------------------------");
+                DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
+                DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
+                DoubleTimeSeries rpm = null;
+                try {
+                    rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
+                } catch (Exception e) {
+                    // RPM may not be available
+                }
+                DoubleTimeSeries airportDist = null;
+                DoubleTimeSeries nearestAirport = null;
+                try {
+                    airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE);
+                } catch (Exception e) {}
+                try {
+                    nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT);
+                } catch (Exception e) {}
+                // Get timestamp from StringTimeSeries
+                StringTimeSeries timestamps = null;
+                try {
+                    timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
+                } catch (Exception e) {}
+                int nRows = altAgl.size();
+                for (int i = 0; i < nRows; i++) {
+                    String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
+                    double alt = altAgl.get(i);
+                    double gs = groundSpeed.get(i);
+                    double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
+                    double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
+                    String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
+                    String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
+                    writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
+                        i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
+                }
+            } catch (Exception e) {
+                System.err.println("Error writing debug phases file: " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -604,7 +699,7 @@ public final class ExtractMaintenanceFlights {
      * @throws IOException  if there is an error writing the file
      */
     private static void exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetCluster,
-                                    String outputDirectory) throws SQLException, IOException {
+                                    String outputDirectory, boolean debugPhases) throws SQLException, IOException {
         System.err.println("\n\nflightsToNext, flightsSincePrev set, now exporting files:");
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
             AircraftTimeline ac = timeline.get(currentAircraft);
@@ -689,7 +784,7 @@ public final class ExtractMaintenanceFlights {
                     continue;
                 }
 
-                writeFiles(connection, outputDirectory, eventCluster, event, flight, when, validation);
+                writeFiles(connection, outputDirectory, eventCluster, event, flight, when, validation, debugPhases);
             }
         }
     }
@@ -873,14 +968,22 @@ public final class ExtractMaintenanceFlights {
     public static void main(String[] arguments) throws SQLException {
         Connection connection = Database.getConnection();
 
+        boolean debugPhases = false;
         String outputDirectory = arguments[0];
         String targetCluster = arguments[1];
 
-        String[] allClusters = new String[arguments.length - 2];
+        // Check for debug argument
+        int argOffset = 2;
+        if (arguments.length > 2 && arguments[2].equals("--phases")) {
+            debugPhases = true;
+            argOffset++;
+        }
+
+        String[] allClusters = new String[arguments.length - argOffset];
 
         System.out.println("allClusters are:");
         for (int i = 0; i < allClusters.length; i++) {
-            allClusters[i] = arguments[i + 2];
+            allClusters[i] = arguments[i + argOffset];
             System.out.println("\t'" + allClusters[i] + "'");
         }
 
@@ -1021,7 +1124,7 @@ public final class ExtractMaintenanceFlights {
                 setFlightsToNextFlights(connection, timeline);
 
                 // Write the files
-                exportFiles(connection, timeline, actualCluster, outputDirectory);
+                exportFiles(connection, timeline, actualCluster, outputDirectory, debugPhases);
 
                 tailSystemIdCounts.put(tailNumber, systemIdCount);
                 tailFlightCounts.put(tailNumber, count);
