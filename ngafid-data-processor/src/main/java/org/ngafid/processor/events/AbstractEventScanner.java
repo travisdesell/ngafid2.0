@@ -1,19 +1,18 @@
 package org.ngafid.processor.events;
 
+import static org.ngafid.core.flights.Parameters.UNIX_TIME_SECONDS;
+import static org.ngafid.core.flights.Parameters.UTC_DATE_TIME;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.ColumnNotAvailableException;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-
-import static org.ngafid.core.flights.Parameters.UNIX_TIME_SECONDS;
-import static org.ngafid.core.flights.Parameters.UTC_DATE_TIME;
 
 /**
  * Abstract definition of an event scanner. An event scanner is exactly what it sounds like -- it scans flight data for
@@ -38,10 +37,12 @@ public abstract class AbstractEventScanner {
         this.definition = eventDefinition;
     }
 
-    public abstract List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries,
-                                     Map<String, StringTimeSeries> stringTimeSeries) throws SQLException;
+    public abstract List<Event> scan(
+            Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries)
+            throws SQLException;
 
-    public void gatherRequiredColumns(Connection connection, Flight flight) throws ColumnNotAvailableException, SQLException {
+    public void gatherRequiredColumns(Connection connection, Flight flight)
+            throws ColumnNotAvailableException, SQLException {
         for (var doubleColumnName : getRequiredDoubleColumns()) {
             var col = flight.getDoubleTimeSeries(connection, doubleColumnName);
             if (col == null)

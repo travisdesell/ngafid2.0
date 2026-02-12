@@ -45,7 +45,7 @@ class TraceButtons extends React.Component {
                     Plotly.addTraces('plot', [trace]);
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    showErrorModal("Error Loading Flight Coordinates", errorThrown);
+                    showErrorModal(`Failed to load time series data for ${seriesName}`, errorThrown);
                 },
             });
 

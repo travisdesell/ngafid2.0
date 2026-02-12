@@ -3,7 +3,6 @@ package org.ngafid.core.util;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-
 import java.io.IOException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -15,18 +14,27 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
-public enum TimeUtils {
-    ;
+public final class TimeUtils {
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
 
-    public static DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    public static DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    public static final DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private TimeUtils() {}
+
+    public static DateTimeFormatter getIso8601Format() {
+        return ISO_8601_FORMAT;
+    }
+
+    public static DateTimeFormatter getMysqlFormat() {
+        return MYSQL_FORMAT;
+    }
 
     public static class OffsetDateTimeJSONAdapter extends TypeAdapter<OffsetDateTime> {
 
         @Override
         public void write(JsonWriter jsonWriter, OffsetDateTime offsetDateTime) throws IOException {
-            jsonWriter.value(TimeUtils.UTCtoSQL(offsetDateTime));
+            jsonWriter.value(TimeUtils.utcToSql(offsetDateTime));
         }
 
         @Override
@@ -51,8 +59,7 @@ public enum TimeUtils {
             case "-19:00", "-22:00", "-23:00", "-21:00", "-20:00" -> {
                 offset = "-18:00";
             }
-            default -> {
-            }
+            default -> {}
         }
         return offset;
     }
@@ -65,8 +72,8 @@ public enum TimeUtils {
 
     public static long toEpochSecond(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(date.trim() + " " + time.trim(),
-                DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
+        LocalDateTime ldt =
+                LocalDateTime.parse(date.trim() + " " + time.trim(), DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
 
         // fix bad offset values
         offset = updateBadOffset(offset);
@@ -113,20 +120,22 @@ public enum TimeUtils {
         ZonedDateTime utcZdt = odt.atZoneSameInstant(ZoneOffset.UTC);
 
         return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
-
     }
 
-    public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
-                                                 String newOffset) throws UnrecognizedDateTimeFormatException {
+    public static OffsetDateTime convertToOffset(
+            String originalDate, String originalTime, String originalOffset, String newOffset)
+            throws UnrecognizedDateTimeFormatException {
         return convertToOffset(originalDate + " " + originalTime, originalOffset, newOffset);
     }
 
-    public static OffsetDateTime convertToOffset(String originalDateTime, String originalOffset, String newOffset) throws UnrecognizedDateTimeFormatException {
+    public static OffsetDateTime convertToOffset(String originalDateTime, String originalOffset, String newOffset)
+            throws UnrecognizedDateTimeFormatException {
         DateTimeFormatter dateTimeFormat = findCorrectFormatter(originalDateTime);
         return convertToOffset(dateTimeFormat, originalDateTime, originalOffset, newOffset);
     }
 
-    public static OffsetDateTime convertToOffset(DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
+    public static OffsetDateTime convertToOffset(
+            DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
         LOG.info("Date is " + originalDateTime);
         LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
@@ -151,8 +160,7 @@ public enum TimeUtils {
             DateTimeFormatter.ofPattern("M/d/yyyy H:m:s"),
             DateTimeFormatter.ofPattern("M-d-yyyy H:m:s"));
 
-    public static LocalDateTime parseLocalDateTime(String dateTimeString)
-            throws UnrecognizedDateTimeFormatException {
+    public static LocalDateTime parseLocalDateTime(String dateTimeString) throws UnrecognizedDateTimeFormatException {
         var formatter = findCorrectFormatter(dateTimeString);
         return LocalDateTime.parse(dateTimeString, formatter);
     }
@@ -195,25 +203,27 @@ public enum TimeUtils {
     }
 
     /**
-     Calculated UTC Date Time from unit time seconds
+     * Calculates UTC date-time from Unix time seconds.
+     *
+     * @param unixTimeSeconds Unix time in seconds
+     * @return UTC date-time as an ISO 8601 string
      */
     public static String convertUnixTimeToUTCDateTime(double unixTimeSeconds) {
-
-
         Instant instant = Instant.ofEpochSecond((long) unixTimeSeconds);
         OffsetDateTime utcDateTime = instant.atOffset(ZoneOffset.UTC);
         return utcDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
-    public static DateTimeFormatter findCorrectFormatter(String date, String time) throws UnrecognizedDateTimeFormatException {
+    public static DateTimeFormatter findCorrectFormatter(String date, String time)
+            throws UnrecognizedDateTimeFormatException {
         return findCorrectFormatter(date + " " + time);
     }
 
-    public static String UTCtoSQL(String timeUTC) {
+    public static String utcToSql(String timeUTC) {
         return LocalDateTime.parse(timeUTC, ISO_8601_FORMAT).format(MYSQL_FORMAT);
     }
 
-    public static String UTCtoSQL(OffsetDateTime odt) {
+    public static String utcToSql(OffsetDateTime odt) {
         return odt.atZoneSameInstant(ZoneOffset.UTC).format(MYSQL_FORMAT);
     }
 
@@ -221,20 +231,20 @@ public enum TimeUtils {
         return OffsetDateTime.parse(dateTimeString, ISO_8601_FORMAT);
     }
 
-    public static OffsetDateTime SQLtoOffsetDateTime(String sqlDateTime) {
+    public static OffsetDateTime sqlToOffsetDateTime(String sqlDateTime) {
         return LocalDateTime.parse(sqlDateTime, MYSQL_FORMAT).atOffset(ZoneOffset.UTC);
     }
 
-    public static class UnrecognizedDateTimeFormatException extends Exception {
-    }
+    public static class UnrecognizedDateTimeFormatException extends Exception {}
 
     /**
      * Finds the correct DateTimeFormatter by trying to parse a date/time string.
      *
-     * @param dateTimeString
+     * @param dateTimeString input date/time string
      * @return specific DateTimeFormatter
      */
-    public static DateTimeFormatter findCorrectFormatter(String dateTimeString) throws UnrecognizedDateTimeFormatException {
+    public static DateTimeFormatter findCorrectFormatter(String dateTimeString)
+            throws UnrecognizedDateTimeFormatException {
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 LocalDateTime.parse(dateTimeString, formatter);
@@ -254,7 +264,8 @@ public enum TimeUtils {
         private final ArrayList<String> localTimes;
         private final ArrayList<String> utcOffsets;
 
-        public LocalDateTimeResult(ArrayList<String> localDates, ArrayList<String> localTimes, ArrayList<String> utcOffsets) {
+        public LocalDateTimeResult(
+                ArrayList<String> localDates, ArrayList<String> localTimes, ArrayList<String> utcOffsets) {
             this.localDates = localDates;
             this.localTimes = localTimes;
             this.utcOffsets = utcOffsets;

@@ -1,39 +1,52 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.GSON;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.*;
 import org.ngafid.core.util.filters.Filter;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-
-import static org.ngafid.www.WebServer.gson;
-
 public class FlightsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 
+    private FlightsJavalinRoutes() {
+        // Utility class
+    }
+
     private static class FlightsResponse {
         @JsonProperty
-        public List<Flight> flights;
-        @JsonProperty
-        public int numberPages;
-        @JsonProperty
-        public int totalFlights;
+        private final List<Flight> flights;
 
-        public FlightsResponse(List<Flight> flights, int numberPages, int totalFlights) {
+        @JsonProperty
+        private final int numberPages;
+        @JsonProperty
+        private final int totalFlights;
+
+        FlightsResponse(List<Flight> flights, int numberPages, int totalFlights) {
             this.flights = flights;
             this.numberPages = numberPages;
             this.totalFlights = totalFlights;
+        }
+
+        public List<Flight> getFlights() {
+            return flights;
+        }
+
+        public int getNumberPages() {
+            return numberPages;
+        }
+        public int getTotalFlights() {
+            return totalFlights;
         }
     }
 
@@ -51,7 +64,9 @@ public class FlightsJavalinRoutes {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
                 if (flight != null && flight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
+                            + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: "
+                            + fleetId);
                     ctx.status(401);
                     ctx.json("User did not have access to this flight.");
                 }
@@ -66,7 +81,7 @@ public class FlightsJavalinRoutes {
             for (Flight flight : flights) {
                 if (!first) sb.append(", ");
                 first = false;
-                sb.append(gson.toJson(flight));
+                sb.append(GSON.toJson(flight));
             }
             sb.append("];");
 
@@ -219,26 +234,28 @@ public class FlightsJavalinRoutes {
                 final int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
                 final int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
 
-                LOG.info("Ordered by: " + orderingColumnn);
-                LOG.info("Filter: " + filter.toString());
+                LOG.info(() -> "Ordered by: " + orderingColumnn);
+                LOG.info(() -> "Filter: " + filter.toString());
 
-                /**
-                 * Valid Column Names:
-                 *
-                 * Flight Number
-                 * Flight Length (valid data points)
-                 * Start Date and Time
-                 * End Date and Time
-                 * Number Airports Visited
-                 * Number of tags associated
-                 * Total Event Count
-                 * System ID
-                 * Tail Number
-                 * Airframe
-                 * Number Takeoffs/Landings
-                 * Flight ID
-                 **/
-                List<Flight> flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
+                /*
+                    - Valid Column Names:
+
+                    - Flight Number
+                    - Flight Length (valid data points)
+                    - Start Date and Time
+                    - End Date and Time
+                    - Number Airports Visited
+                    - Number of tags associated
+                    - Total Event Count
+                    - System ID
+                    - Tail Number
+                    - Airframe
+                    - Number Takeoffs/Landings
+                    - Flight ID
+                */
+                List<Flight> flights = Flight.getFlightsSorted(
+                    connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending
+                );
 
                 // Populate event counts for each flight
                 if (!flights.isEmpty()) {

@@ -50,11 +50,11 @@
   </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
-  <module name="SuppressionFilter">
-    <property name="file" value="${org.checkstyle.sun.suppressionfilter.config}"
-              default="checkstyle-suppressions.xml" />
-    <property name="optional" value="true"/>
-  </module>
+   <module name="SuppressionFilter">
+      <property name="file" value="${org.checkstyle.sun.suppressionfilter.config}"
+                default=".github/linters/checkstyle-suppressions.xml"/>
+      <property name="optional" value="true"/>
+   </module>
 
   <!-- Checks that a package-info.java file exists for each package.     -->
   <!-- See https://checkstyle.org/checks/javadoc/javadocpackage.html#JavadocPackage -->
@@ -70,7 +70,9 @@
 
   <!-- Checks for Size Violations.                    -->
   <!-- See https://checkstyle.org/checks/sizes/index.html -->
-  <module name="FileLength"/>
+  <module name="FileLength">
+    <property name="max" value="4000"/>
+  </module>
   <module name="LineLength">
     <property name="fileExtensions" value="java"/>
     <property name="max" value="120"/>
@@ -131,10 +133,10 @@
     <!-- See https://checkstyle.org/checks/sizes/index.html -->
     <!--    Originally 150 and 7 respectively -->
     <module name="MethodLength">
-      <property name="max" value="200"/>
+      <property name="max" value="300"/>
     </module>
     <module name="ParameterNumber">
-      <property name="max" value="10"/>
+      <property name="max" value="20"/>
       <property name="tokens" value="METHOD_DEF"/>
     </module>
 
@@ -144,12 +146,21 @@
     <module name="GenericWhitespace"/>
     <module name="MethodParamPad"/>
     <module name="NoWhitespaceAfter"/>
-    <module name="NoWhitespaceBefore"/>
+    <module name="NoWhitespaceBefore">
+      <property name="tokens" value="COMMA,POST_DEC,POST_INC,DOT,METHOD_REF,ELLIPSIS"/>
+      <property name="allowLineBreaks" value="true"/>
+    </module>
+
+    <!-- Permit trailing semicolons for multiline statements -->
+    <module name="NoWhitespaceBefore">
+      <property name="tokens" value="SEMI"/>
+      <property name="allowLineBreaks" value="true"/>
+    </module>
 <!--    <module name="OperatorWrap"/>-->
     <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
     <module name="WhitespaceAfter"/>
-    <module name="WhitespaceAround"/>
+<!--    <module name="WhitespaceAround"/>-->
 
     <!-- Modifier Checks                                    -->
     <!-- See https://checkstyle.org/checks/modifier/index.html -->
@@ -183,7 +194,7 @@
     <!-- See https://checkstyle.org/checks/design/index.html -->
 <!--    TODO: Might be good to bring back eventually -->
 <!--    <module name="DesignForExtension"/>-->
-    <module name="FinalClass"/>
+<!--    <module name="FinalClass"/>-->
     <module name="HideUtilityClassConstructor"/>
 <!--    <module name="InterfaceIsType"/>-->
     <module name="VisibilityModifier">

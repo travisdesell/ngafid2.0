@@ -1,13 +1,6 @@
 package org.ngafid.core.uploads;
 
-import org.apache.commons.compress.archivers.zip.Zip64Mode;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.Config;
-import org.ngafid.core.kafka.Configuration;
-import org.ngafid.core.kafka.Topic;
-import org.ngafid.core.util.MD5;
+import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -22,29 +15,36 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Config;
+import org.ngafid.core.kafka.Configuration;
+import org.ngafid.core.kafka.Topic;
+import org.ngafid.core.util.MD5;
 
 /**
  * Upload object, corresponding to a file uploaded by a user.
  * <p>
- * Upload objects cannot be modified in the database directly without acquiring the corresponding LockedUpload object.
- * This is backed by a MySQL lock to avoid concurrent modification which could cause database corruption.
+ * Upload objects cannot be modified in the database directly without
+ * acquiring the corresponding LockedUpload object. This is backed by a MySQL
+ * lock to avoid concurrent modification which could cause database corruption.
  * <p>
- * The process of actually processing an upload starts in ngafid-data-processor. When an upload finishes uploading, it is
- * added to the Kafka upload topic.
+ * The process of actually processing an upload starts in ngafid-data-processor.
+ * When an upload finishes uploading, it is added to the Kafka upload topic.
  * <p>
- * Uploads can also be manually added to this queue using the utility program {@link org.ngafid.core.bin.UploadHelper}.
+ * Uploads can also be manually added to this queue using the utility program
+ * {@link org.ngafid.core.bin.UploadHelper}.
  */
 public final class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
 
     public static final String DEFAULT_COLUMNS =
-            "id, parent_id, fleet_id, uploader_id, filename, " +
-                    "identifier, kind, number_chunks, uploaded_chunks, " +
-                    "chunk_status, md5_hash, size_bytes, bytes_uploaded, " +
-                    "status, start_time, end_time, n_valid_flights, " +
-                    "n_warning_flights, n_error_flights ";
+            "id, parent_id, fleet_id, uploader_id, filename, " + "identifier, kind, number_chunks, uploaded_chunks, "
+                    + "chunk_status, md5_hash, size_bytes, bytes_uploaded, "
+                    + "status, start_time, end_time, n_valid_flights, "
+                    + "n_warning_flights, n_error_flights ";
 
     public enum Kind {
         FILE,
@@ -66,21 +66,26 @@ public final class Upload {
         FAILED_UNKNOWN,
         DERIVED;
 
-        public static Status[] IMPORTED_SET = new Status[]{
-                Status.PROCESSED_OK,
-                Status.PROCESSED_WARNING,
-                Status.FAILED_UNKNOWN,
-                Status.FAILED_AIRCRAFT_TYPE,
-                Status.FAILED_ARCHIVE_TYPE,
-                Status.FAILED_FILE_TYPE,
+        private static final Status[] IMPORTED_SET = new Status[] {
+            Status.PROCESSED_OK,
+            Status.PROCESSED_WARNING,
+            Status.FAILED_UNKNOWN,
+            Status.FAILED_AIRCRAFT_TYPE,
+            Status.FAILED_ARCHIVE_TYPE,
+            Status.FAILED_FILE_TYPE,
         };
 
-        public static Status[] NOT_IMPORTED_SET = new Status[]{
-                Status.UPLOADING,
-                Status.UPLOADED,
-                Status.UPLOADING_FAILED,
-                Status.ENQUEUED,
+        private static final Status[] NOT_IMPORTED_SET = new Status[] {
+            Status.UPLOADING, Status.UPLOADED, Status.UPLOADING_FAILED, Status.ENQUEUED,
         };
+
+        public static Status[] getImportedSet() {
+            return IMPORTED_SET.clone();
+        }
+
+        public static Status[] getNotImportedSet() {
+            return NOT_IMPORTED_SET.clone();
+        }
 
         public boolean isProcessed() {
             return this == PROCESSED_OK || this == PROCESSED_WARNING;
@@ -88,7 +93,7 @@ public final class Upload {
     }
 
     public class LockedUpload implements AutoCloseable {
-        final Connection connection;
+        private final Connection connection;
         private boolean markedComplete = false;
 
         LockedUpload(Connection connection) throws SQLException, UploadAlreadyLockedException {
@@ -103,11 +108,14 @@ public final class Upload {
         }
 
         /**
-         * Releases or acquires the mysql lock corresponding to this upload, based on parameter acquire.
+         * Releases or acquires the mysql lock corresponding to this upload,
+         * based on parameter acquire.
          * <p>
-         * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK FUNCTIONALITY:
-         * MySQL locks are automatically released when a session is terminated, where a session is effectively a single connection.
-         * This means that the same connection MUST be used to acquire and release the connection.
+         * >>>> THE FOLLOWING IS ABSOLUTELY CRITICAL TO NOT BREAKING THE LOCK
+         * FUNCTIONALITY: MySQL locks are automatically released when a session
+         * is terminated, where a session is effectively a single connection.
+         * This means that the same connection MUST be used to acquire and
+         * release the connection.
          *
          * @param acquire whether to acquire the lock (true) or release the lock (false)
          * @return a boolean representing whether the lock was successfully released or acquired.
@@ -160,12 +168,14 @@ public final class Upload {
                 preparedStatement.executeUpdate();
             }
 
-            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM flight_errors WHERE upload_id = ?")) {
+            try (PreparedStatement preparedStatement =
+                    connection.prepareStatement("DELETE FROM flight_errors WHERE upload_id = ?")) {
                 preparedStatement.setInt(1, id);
                 preparedStatement.executeUpdate();
             }
 
-            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM flights WHERE upload_id = ?")) {
+            try (PreparedStatement preparedStatement =
+                    connection.prepareStatement("DELETE FROM flights WHERE upload_id = ?")) {
                 preparedStatement.setInt(1, id);
                 preparedStatement.executeUpdate();
             }
@@ -189,13 +199,14 @@ public final class Upload {
         public void reset() throws SQLException {
             this.clearUpload();
 
-            if (status != Status.ENQUEUED) {
-                String query = "UPDATE uploads SET status = '" + Status.UPLOADED + "' WHERE id = ?";
-                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                    preparedStatement.setInt(1, id);
-                    LOG.info(preparedStatement.toString());
-                    preparedStatement.executeUpdate();
-                }
+            // Already enqueued, exit
+            if (status == Status.ENQUEUED) return;
+
+            final String query = "UPDATE uploads SET status = '" + Status.ENQUEUED + "' WHERE id = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setInt(1, id);
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
             }
         }
 
@@ -203,8 +214,8 @@ public final class Upload {
 
         public void complete() throws SQLException {
             status = Status.UPLOADED;
-            try (PreparedStatement query = connection
-                    .prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?")) {
+            try (PreparedStatement query =
+                    connection.prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?")) {
                 query.setString(1, status.name());
                 query.setInt(2, id);
                 query.executeUpdate();
@@ -232,11 +243,10 @@ public final class Upload {
             }
         }
 
-        public void updateStatus(Status status) throws SQLException {
-            Upload.this.status = status;
-            try (PreparedStatement query = connection
-                    .prepareStatement("UPDATE uploads SET status = ? WHERE id = ?")) {
-                query.setString(1, status.name());
+        public void updateStatus(Status newStatus) throws SQLException {
+            Upload.this.status = newStatus;
+            try (PreparedStatement query = connection.prepareStatement("UPDATE uploads SET status = ? WHERE id = ?")) {
+                query.setString(1, newStatus.name());
                 query.setInt(2, id);
                 query.executeUpdate();
             }
@@ -254,13 +264,14 @@ public final class Upload {
             // clearUpload();
 
             if (kind == Kind.AIRSYNC) {
-                try (PreparedStatement preparedStatement = connection
-                        .prepareStatement("DELETE FROM airsync_imports WHERE upload_id = " + id)) {
+                try (PreparedStatement preparedStatement =
+                        connection.prepareStatement("DELETE FROM airsync_imports WHERE upload_id = " + id)) {
                     preparedStatement.executeUpdate();
                 }
             }
 
-            try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM uploads WHERE id = ?")) {
+            try (PreparedStatement preparedStatement =
+                    connection.prepareStatement("DELETE FROM uploads WHERE id = ?")) {
                 preparedStatement.setInt(1, id);
                 LOG.info(preparedStatement.toString());
                 preparedStatement.executeUpdate();
@@ -275,7 +286,7 @@ public final class Upload {
         return new LockedUpload(connection);
     }
 
-    //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
     public int id;
     public Integer parentId;
     public int fleetId;
@@ -299,7 +310,7 @@ public final class Upload {
     // For AirSync uploads that are grouped by month.
     String groupString = null;
     String tail = null;
-    //CHECKSTYLE:ON
+    // CHECKSTYLE:ON
 
     public Upload(int id) {
         this.id = id;
@@ -347,7 +358,6 @@ public final class Upload {
         return status;
     }
 
-
     static String getDerivedMd5(String md5) {
         return MD5.computeHexHash(md5 + "DERIVED");
     }
@@ -378,8 +388,8 @@ public final class Upload {
      * @throws SQLException on a database error
      */
     public static Upload getUploadById(Connection connection, int uploadId) throws SQLException {
-        try (PreparedStatement uploadQuery = connection.prepareStatement(
-                "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE id = ?")) {
+        try (PreparedStatement uploadQuery =
+                connection.prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE id = ?")) {
             uploadQuery.setInt(1, uploadId);
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
                 if (resultSet.next()) {
@@ -407,10 +417,31 @@ public final class Upload {
      * @return the upload object
      * @throws SQLException on a database error
      */
-    public static Upload createNewUpload(Connection connection, int uploaderId, int fleetId, String filename,
-                                         String identifier, Kind kind, long size, int numberChunks, String md5hash) throws SQLException {
-        return createUpload(connection, uploaderId, fleetId, null, filename, identifier, kind, size, numberChunks,
-                md5hash, 0, "0".repeat(numberChunks), Status.UPLOADING);
+    public static Upload createNewUpload(
+            Connection connection,
+            int uploaderId,
+            int fleetId,
+            String filename,
+            String identifier,
+            Kind kind,
+            long size,
+            int numberChunks,
+            String md5hash)
+            throws SQLException {
+        return createUpload(
+                connection,
+                uploaderId,
+                fleetId,
+                null,
+                filename,
+                identifier,
+                kind,
+                size,
+                numberChunks,
+                md5hash,
+                0,
+                "0".repeat(numberChunks),
+                Status.UPLOADING);
     }
 
     /**
@@ -425,14 +456,38 @@ public final class Upload {
      */
     public static Upload createDerivedUpload(Connection connection, Upload parent) throws SQLException {
         // Need to create a fake md5 hash for the derived upload.
-        return createUpload(connection, parent.uploaderId, parent.fleetId, parent.id, parent.filename,
-                parent.identifier + "-DERIVED", Kind.DERIVED, 0, 0, getDerivedMd5(parent.md5Hash), 0, "", Status.DERIVED);
+        return createUpload(
+                connection,
+                parent.uploaderId,
+                parent.fleetId,
+                parent.id,
+                parent.filename,
+                parent.identifier + "-DERIVED",
+                Kind.DERIVED,
+                0,
+                0,
+                getDerivedMd5(parent.md5Hash),
+                0,
+                "",
+                Status.DERIVED);
     }
 
     public static Upload createAirsyncUpload(Connection connection, int fleetId) throws SQLException {
         Timestamp ts = Timestamp.valueOf(LocalDateTime.now());
-        return createUpload(connection, 1, fleetId, null, "airsync.zip", "airsync.zip", Kind.AIRSYNC, 0, 1,
-                ts.toString(), 1, "1", Status.UPLOADING);
+        return createUpload(
+                connection,
+                1,
+                fleetId,
+                null,
+                "airsync.zip",
+                "airsync.zip",
+                Kind.AIRSYNC,
+                0,
+                1,
+                ts.toString(),
+                1,
+                "1",
+                Status.UPLOADING);
     }
 
     /**
@@ -455,22 +510,32 @@ public final class Upload {
      * @throws SQLException on a database error
      */
     // Disable checkstyle for 13 parameters > 10 limit
-    //CHECKSTYLE:OFF
-    public static Upload createUpload(Connection connection, int uploaderId, int fleetId, Integer parentId,
-                                      String filename, String identifier, Kind kind, long size, int numberChunks, String md5hash,
-                                      int uploadedChunks, String chunkStatus, Status status) throws SQLException {
-        //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
+    public static Upload createUpload(
+            Connection connection,
+            int uploaderId,
+            int fleetId,
+            Integer parentId,
+            String filename,
+            String identifier,
+            Kind kind,
+            long size,
+            int numberChunks,
+            String md5hash,
+            int uploadedChunks,
+            String chunkStatus,
+            Status status)
+            throws SQLException {
+        // CHECKSTYLE:OFF
         try (PreparedStatement query = connection.prepareStatement(
-                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, " +
-                        "identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, " +
-                        "uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
+                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, "
+                        + "identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, "
+                        + "uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
             query.setInt(1, uploaderId);
             query.setInt(2, fleetId);
 
-            if (parentId != null)
-                query.setInt(3, parentId);
-            else
-                query.setNull(3, java.sql.Types.INTEGER);
+            if (parentId != null) query.setInt(3, parentId);
+            else query.setNull(3, java.sql.Types.INTEGER);
 
             query.setString(4, filename);
             query.setString(5, identifier);
@@ -490,8 +555,8 @@ public final class Upload {
     }
 
     public static Upload getUploadById(Connection connection, int uploadId, String md5Hash) throws SQLException {
-        try (PreparedStatement uploadQuery = connection
-                .prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE id = ? AND md5_hash = ?")) {
+        try (PreparedStatement uploadQuery = connection.prepareStatement(
+                "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE id = ? AND md5_hash = ?")) {
             uploadQuery.setInt(1, uploadId);
             uploadQuery.setString(2, md5Hash);
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
@@ -499,9 +564,9 @@ public final class Upload {
                     Upload upload = new Upload(resultSet);
                     return upload;
                 } else {
-                    //CHECKSTYLE:OFF
+                    // CHECKSTYLE:OFF
                     // TODO: maybe need to throw an exception
-                    //CHECKSTYLE:ON
+                    // CHECKSTYLE:ON
                     return null;
                 }
             }
@@ -515,11 +580,11 @@ public final class Upload {
     /**
      * Fetches uploads for the frontend. Airsync uploads are consequentially filtered out as they have their own page.
      *
-     * @param connection
-     * @param fleetId
-     * @param condition
-     * @return
-     * @throws SQLException
+     * @param connection the database connection
+     * @param fleetId the fleet ID
+     * @param condition the SQL condition
+     * @return list of uploads
+     * @throws SQLException if a database access error occurs
      */
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
         // PreparedStatement uploadQuery = connection.prepareStatement("SELECT id,
@@ -552,11 +617,9 @@ public final class Upload {
 
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
         String query = "SELECT count(id) FROM uploads WHERE kind = 'FILE'";
-        if (fleetId > 0)
-            query += " AND fleet_id = " + fleetId;
+        if (fleetId > 0) query += " AND fleet_id = " + fleetId;
 
-        if (condition != null)
-            query += " " + condition;
+        if (condition != null) query += " " + condition;
 
         try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
@@ -566,7 +629,8 @@ public final class Upload {
         }
     }
 
-    public static List<Upload> getUploads(Connection connection, int fleetId, Upload.Status[] types) throws SQLException {
+    public static List<Upload> getUploads(Connection connection, int fleetId, Upload.Status[] types)
+            throws SQLException {
         // String query = "SELECT id, fleetId, uploaderId, filename, identifier,
         // numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status,
         // startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads
@@ -577,8 +641,7 @@ public final class Upload {
             query += " AND (";
 
             for (int i = 0; i < types.length; i++) {
-                if (i > 0)
-                    query += " OR ";
+                if (i > 0) query += " OR ";
                 query += "status = ?";
             }
             query += ")";
@@ -616,16 +679,14 @@ public final class Upload {
             query += " AND (";
 
             for (int i = 0; i < types.length; i++) {
-                if (i > 0)
-                    query += " OR ";
+                if (i > 0) query += " OR ";
                 query += "status = ?";
             }
             query += ")";
         }
         query += " ORDER BY start_time DESC";
 
-        if (!sqlLimit.isEmpty())
-            query += sqlLimit;
+        if (!sqlLimit.isEmpty()) query += sqlLimit;
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
@@ -646,15 +707,13 @@ public final class Upload {
         uploadQuery.close();
 
         return uploads;
-
     }
 
     public Upload(ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
 
         parentId = resultSet.getInt(2);
-        if (resultSet.wasNull())
-            parentId = null;
+        if (resultSet.wasNull()) parentId = null;
 
         fleetId = resultSet.getInt(3);
         uploaderId = resultSet.getInt(4);
@@ -760,7 +819,8 @@ public final class Upload {
         this.groupString = startTime;
 
         String sql = "SELECT DISTINCT tail FROM airsync_imports WHERE upload_id = " + id;
-        try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet = query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(sql);
+                ResultSet resultSet = query.executeQuery()) {
 
             if (resultSet.next()) {
                 tail = resultSet.getString(1);

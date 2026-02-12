@@ -3,43 +3,53 @@ package org.ngafid.processor.events.proximity;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.logging.Logger;
-
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.event.Event;
 
 public class CalculateProximity {
 
+    private CalculateProximity() {
+        // Utility class
+    }
+
     // Proximity events (and potentially other complicated event calculations) will have negative IDs so they
     // can be excluded from the regular event calculation process
     private static final Logger LOG = Logger.getLogger(CalculateProximity.class.getName());
 
-    public static double calculateDistance(double flightLatitude, double flightLongitude, double flightAltitude,
-                                           double otherFlightLatitude, double otherFlightLongitude,
-                                           double otherFlightAltitude) {
+    public static double calculateDistance(
+            double flightLatitude,
+            double flightLongitude,
+            double flightAltitude,
+            double otherFlightLatitude,
+            double otherFlightLongitude,
+            double otherFlightAltitude) {
 
-        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,
-                otherFlightLatitude, otherFlightLongitude);
+        double lateralDistance = Airports.calculateDistanceInFeet(
+                flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
         double altDiffFt = Math.abs(flightAltitude - otherFlightAltitude);
 
         return Math.sqrt((lateralDistance * lateralDistance) + (altDiffFt * altDiffFt));
     }
 
-    public static double calculateLateralDistance(double flightLatitude, double flightLongitude,
-                                                  double otherFlightLatitude, double otherFlightLongitude) {
+    public static double calculateLateralDistance(
+            double flightLatitude, double flightLongitude, double otherFlightLatitude, double otherFlightLongitude) {
 
-        return Airports.calculateDistanceInFeet(flightLatitude, flightLongitude,
-                otherFlightLatitude, otherFlightLongitude);
-
+        return Airports.calculateDistanceInFeet(
+                flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
     }
 
     public static double calculateVerticalDistance(double flightAltitude, double otherFlightAltitude) {
 
         return Math.abs(flightAltitude - otherFlightAltitude);
-
     }
 
-    public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo,
-                                                  int startLine, int endLine, int otherStartLine, int otherEndLine) {
+    public static double[] calculateRateOfClosure(
+            FlightTimeLocation flightInfo,
+            FlightTimeLocation otherInfo,
+            int startLine,
+            int endLine,
+            int otherStartLine,
+            int otherEndLine) {
 
         int shift = 5;
         int newStart1 = Math.max((startLine - shift), 0);
@@ -65,12 +75,17 @@ public class CalculateProximity {
         endLine = newEnd1;
         otherEndLine = newEnd2;
 
-        double previousDistance = calculateDistance(flightInfo.latitude[startLine], flightInfo.longitude[startLine],
-                flightInfo.altitudeMSL[startLine], otherInfo.latitude[otherStartLine],
-                otherInfo.longitude[otherStartLine], otherInfo.altitudeMSL[otherStartLine]);
+        double previousDistance = calculateDistance(
+                flightInfo.latitude[startLine],
+                flightInfo.longitude[startLine],
+                flightInfo.altitudeMSL[startLine],
+                otherInfo.latitude[otherStartLine],
+                otherInfo.longitude[otherStartLine],
+                otherInfo.altitudeMSL[otherStartLine]);
 
         ArrayList<Double> rateOfClosure = new ArrayList<Double>();
-        int i = (startLine + 1), j = (otherStartLine + 1);
+        int i = (startLine + 1);
+        int j = (otherStartLine + 1);
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime.get(i) == 0) {
                 i++;
@@ -92,8 +107,13 @@ public class CalculateProximity {
                 continue;
             }
 
-            double currentDistance = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i],
-                    flightInfo.altitudeMSL[i], otherInfo.latitude[j], otherInfo.longitude[j], otherInfo.altitudeMSL[j]);
+            double currentDistance = calculateDistance(
+                    flightInfo.latitude[i],
+                    flightInfo.longitude[i],
+                    flightInfo.altitudeMSL[i],
+                    otherInfo.latitude[j],
+                    otherInfo.longitude[j],
+                    otherInfo.altitudeMSL[j]);
 
             rateOfClosure.add(previousDistance - currentDistance);
             previousDistance = currentDistance;
@@ -110,12 +130,14 @@ public class CalculateProximity {
 
         // Handle edge cases where we don't have enough data points
         if (startShift < 5 || endShift < 5) {
-            LOG.info(String.format("Insufficient data points for rate of closure calculation: startShift=%d, endShift=%d. Skipping rate of closure calculation.", startShift, endShift));
+            LOG.info(String.format(
+                    "Insufficient data points for rate of closure calculation: startShift=%d, "
+                            + "endShift=%d. Skipping rate of closure calculation.",
+                    startShift, endShift));
             return new double[0];
         }
 
         return roc;
-
     }
 
     public static void addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
@@ -128,9 +150,12 @@ public class CalculateProximity {
         // Skip self-referential events
         Integer otherFlightId = testEvent.getOtherFlightId();
         if (otherFlightId != null && otherFlightId.equals(testEvent.getFlightId())) {
-            LOG.warning(String.format("Skipping self-referential event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
-                testEvent.getFlightId(), testEvent.getOtherFlightId(),
-                testEvent.getStartTime(), testEvent.getEndTime()));
+            LOG.warning(String.format(
+                    "Skipping self-referential event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
+                    testEvent.getFlightId(),
+                    testEvent.getOtherFlightId(),
+                    testEvent.getStartTime(),
+                    testEvent.getEndTime()));
             return;
         }
 
@@ -138,23 +163,29 @@ public class CalculateProximity {
         for (Event event : eventList) {
             Integer eventOtherFlightId = event.getOtherFlightId();
             Integer testEventOtherFlightId = testEvent.getOtherFlightId();
-            boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId() && 
-                                      Objects.equals(eventOtherFlightId, testEventOtherFlightId));
-            boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime()) && 
-                                       event.getEndTime().equals(testEvent.getEndTime()));
+            boolean hasSameFlightIDs = (event.getFlightId() == testEvent.getFlightId()
+                    && Objects.equals(eventOtherFlightId, testEventOtherFlightId));
+            boolean hasSameTimestamps = (event.getStartTime().equals(testEvent.getStartTime())
+                    && event.getEndTime().equals(testEvent.getEndTime()));
 
             if (hasSameFlightIDs && hasSameTimestamps) {
-                LOG.info(String.format("Skipping duplicate event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
-                    testEvent.getFlightId(), testEvent.getOtherFlightId(), 
-                    testEvent.getStartTime(), testEvent.getEndTime()));
+                LOG.info(String.format(
+                        "Skipping duplicate event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
+                        testEvent.getFlightId(),
+                        testEvent.getOtherFlightId(),
+                        testEvent.getStartTime(),
+                        testEvent.getEndTime()));
                 return;
             }
         }
 
         // Event not in the list, add it
-        LOG.info(String.format("Adding new event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
-            testEvent.getFlightId(), testEvent.getOtherFlightId(), 
-            testEvent.getStartTime(), testEvent.getEndTime()));
+        LOG.info(String.format(
+                "Adding new event: flight_id=%d, other_flight_id=%d, start_time=%s, end_time=%s",
+                testEvent.getFlightId(),
+                testEvent.getOtherFlightId(),
+                testEvent.getStartTime(),
+                testEvent.getEndTime()));
         eventList.add(testEvent);
     }
 }

@@ -1,34 +1,30 @@
 package org.ngafid.www.routes;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.EventStatistics;
-import org.ngafid.www.Navbar;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
-
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.www.ErrorResponse;
+import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
-    public static final Gson GSON = WebServer.gson;
+    public static final Gson GSON = WebServer.GSON;
 
-
+    private EventJavalinRoutes() {
+        // Utility class
+    }
 
     public static void getEventDefinition(Context ctx) {
         final String templateFile = "event_definitions_display.html";
@@ -41,9 +37,11 @@ public class EventJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             long startTime = System.currentTimeMillis();
-            scopes.put("events_js",
+            scopes.put(
+                    "events_js",
                     // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventNames = JSON.parse('" + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + "');\n");
+                    "var eventNames = JSON.parse('" + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId))
+                            + "');\n");
 
             long endTime = System.currentTimeMillis();
 
@@ -80,7 +78,13 @@ public class EventJavalinRoutes {
                 return;
             }
 
-            scopes.put("create_event_js", "var airframes = JSON.parse('" + GSON.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var airframeMap = JSON.parse('" + GSON.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+            scopes.put(
+                    "create_event_js",
+                    "var airframes = JSON.parse('" + GSON.toJson(Airframes.getAll(connection)) + "');\n"
+                            + "var doubleTimeSeriesNames = JSON.parse('"
+                            + GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
+                            + "var airframeMap = JSON.parse('" + GSON.toJson(Airframes.getIdToNameMap(connection))
+                            + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -115,7 +119,14 @@ public class EventJavalinRoutes {
             }
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("event_manager_js", "var eventDefinitions = JSON.parse('" + GSON.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframes = JSON.parse('" + GSON.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var airframeMap = JSON.parse('" + GSON.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+            scopes.put(
+                    "event_manager_js",
+                    "var eventDefinitions = JSON.parse('" + GSON.toJson(EventDefinition.getAll(connection)) + "');\n"
+                            + "var airframes = JSON.parse('" + GSON.toJson(Airframes.getAll(connection)) + "');\n"
+                            + "var doubleTimeSeriesNames = JSON.parse('"
+                            + GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
+                            + "var airframeMap = JSON.parse('" + GSON.toJson(Airframes.getIdToNameMap(connection))
+                            + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
@@ -142,7 +153,14 @@ public class EventJavalinRoutes {
                 return;
             }
 
-            scopes.put("update_event_js", "var airframes = JSON.parse('" + GSON.toJson(Airframes.getAll(connection)) + "');\n" + "var doubleTimeSeriesNames = JSON.parse('" + GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" + "var eventDefinitions = JSON.parse('" + GSON.toJson(EventDefinition.getAll(connection)) + "');\n" + "var airframeMap = JSON.parse('" + GSON.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
+            scopes.put(
+                    "update_event_js",
+                    "var airframes = JSON.parse('" + GSON.toJson(Airframes.getAll(connection)) + "');\n"
+                            + "var doubleTimeSeriesNames = JSON.parse('"
+                            + GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
+                            + "var eventDefinitions = JSON.parse('" + GSON.toJson(EventDefinition.getAll(connection))
+                            + "');\n" + "var airframeMap = JSON.parse('"
+                            + GSON.toJson(Airframes.getIdToNameMap(connection)) + "');\n");
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);

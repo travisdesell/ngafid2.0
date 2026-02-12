@@ -1,23 +1,23 @@
 package org.ngafid.processor.steps;
 
+import static org.ngafid.core.flights.Airframes.AIRFRAME_DJI;
+import static org.ngafid.core.flights.Airframes.AIRFRAME_SCAN_EAGLE;
+import static org.ngafid.core.flights.Parameters.ALT_MSL;
+import static org.ngafid.core.flights.Parameters.ALT_MSL_LAG_DIFF;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.processor.format.FlightBuilder;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Set;
-
-import static org.ngafid.core.flights.Airframes.AIRFRAME_DJI;
-import static org.ngafid.core.flights.Airframes.AIRFRAME_SCAN_EAGLE;
-import static org.ngafid.core.flights.Parameters.ALT_MSL;
-import static org.ngafid.core.flights.Parameters.ALT_MSL_LAG_DIFF;
-
 /**
- * Computes a double time series that contains the altitude above sea level 10 seconds ago (i.e. alt msl lagged by 10 seconds).
+ * Computes a double time series that contains the altitude above sea level 10 seconds ago
+ * (i.e. alt msl lagged by 10 seconds).
  */
 public class ComputeLaggedAltMSL extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL);
@@ -46,9 +46,7 @@ public class ComputeLaggedAltMSL extends ComputeStep {
     }
 
     public boolean airframeIsValid(String airframe) {
-        for (String blacklisted : AIRFRAME_BLACKLIST)
-            if (airframe.contains(blacklisted))
-                return false;
+        for (String blacklisted : AIRFRAME_BLACKLIST) if (airframe.contains(blacklisted)) return false;
 
         return true;
     }
@@ -57,12 +55,9 @@ public class ComputeLaggedAltMSL extends ComputeStep {
         DoubleTimeSeries altMSL = builder.getDoubleTimeSeries(ALT_MSL);
         DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(ALT_MSL_LAG_DIFF, Parameters.Unit.FT_AGL, altMSL.size());
 
-        for (int i = 0; i < LAG; i++)
-            laggedAltMSL.add(0.0);
-        for (int i = LAG; i < altMSL.size(); i++)
-            laggedAltMSL.add(altMSL.get(i) - altMSL.get(i - LAG));
+        for (int i = 0; i < LAG; i++) laggedAltMSL.add(0.0);
+        for (int i = LAG; i < altMSL.size(); i++) laggedAltMSL.add(altMSL.get(i) - altMSL.get(i - LAG));
 
         builder.addTimeSeries(laggedAltMSL);
     }
-
 }

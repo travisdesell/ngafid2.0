@@ -16,6 +16,7 @@ public interface Parameters {
      * EXC = Exceedences
      */
     String PARAM_JSON_LOSS_OF_CONTROL_EXC = "locExceedences";
+
     String PARAM_JSON_CENTER_LINE_EXC = "centerLineExceedences";
     String PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE = "selfDefinedGlideAngle";
     String PARAM_JSON_OPTIMAL_DESCENT_WARN = "optimalDescentWarnings";
@@ -34,6 +35,7 @@ public interface Parameters {
      * certain guidelines
      */
     double AOA_CRIT = 15;
+
     double PROSPIN_LIM = 4;
 
     int YAW_RATE_LAG = 1;
@@ -43,6 +45,7 @@ public interface Parameters {
      * {@link DoubleTimeSeries} constants, column names
      */
     String LAT = "Latitude";
+
     String LON = "Longitude";
     String LAG_SUFFIX = "_lag";
     String LEAD_SUFFIX = "_lead";
@@ -188,5 +191,4 @@ public interface Parameters {
      * Strings that represent the supplementary metrics displayed in the UI
      */
     String[] DEFAULT_METRICS = {};
-
 }

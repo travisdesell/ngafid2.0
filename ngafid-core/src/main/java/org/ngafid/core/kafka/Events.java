@@ -1,22 +1,19 @@
 package org.ngafid.core.kafka;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-
 import java.util.List;
 import java.util.Properties;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
 
 /**
  * Utility class for {@link EventObserver} and {@link EventConsumer}.
  */
-public enum Events {
-    ;
+public enum Events {;
 
     public static final long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
     public static final long N_RECORDS = 50;
 
-    public record EventToCompute(int flightId, int eventId) {
-    }
+    public record EventToCompute(int flightId, int eventId) {}
 
     private static Properties getProperties() {
         Properties props = Configuration.getProperties();

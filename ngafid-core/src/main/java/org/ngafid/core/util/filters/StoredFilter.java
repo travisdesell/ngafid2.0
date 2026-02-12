@@ -1,6 +1,6 @@
 package org.ngafid.core.util.filters;
 
-//CHECKSTYLE:OFF
+// CHECKSTYLE:OFF
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -45,19 +45,46 @@ public final class StoredFilter {
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static List<StoredFilter> getStoredFilters(Connection connection, int fleetId) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT name, filter_json, color FROM " +
-                "stored_filters WHERE fleet_id = " + fleetId); ResultSet resultSet = query.executeQuery()) {
+        try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT name, filter_json, color FROM " + "stored_filters WHERE fleet_id = " + fleetId);
+                ResultSet resultSet = query.executeQuery()) {
 
             List<StoredFilter> filters = new ArrayList<>();
 
             while (resultSet.next()) {
-                StoredFilter filterResponse = new StoredFilter(resultSet.getString(1), resultSet.getString(2),
-                        resultSet.getString(3));
+                StoredFilter filterResponse =
+                        new StoredFilter(resultSet.getString(1), resultSet.getString(2), resultSet.getString(3));
                 filters.add(filterResponse);
             }
 
             return filters;
         }
+    }
+
+    /**
+     * Stores a filter and returns its instance as a {@link StoredFilter}
+     *
+     * @param connection is the SQL database connection
+     * @param fleetId    is the id of the fleet that the filter belongs to
+     * @param filterJSON is the filter in JSON form
+     * @param name       is the common name given by the user
+     * @param color      is the color of this filter in hex
+     * @return a {@link StoredFilter} instance containing the data upon successful insertion into the db
+     * @throws SQLException in the event there is an issue with the SQL query.
+     */
+    public static StoredFilter storeFilter(
+            Connection connection, int fleetId, String filterJSON, String name, String color) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement(
+                "INSERT INTO stored_filters (filter_json, name, " + "fleet_id, color) VALUES (?,?,?,?)")) {
+            query.setString(1, filterJSON);
+            query.setString(2, name);
+            query.setInt(3, fleetId);
+            query.setString(4, color);
+
+            query.executeUpdate();
+        }
+
+        return new StoredFilter(name, filterJSON, color);
     }
 
     /**
@@ -69,8 +96,8 @@ public final class StoredFilter {
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static void removeFilter(Connection connection, int fleetId, String name) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("DELETE FROM stored_filters WHERE fleet_id = ? AND" +
-                " name = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("DELETE FROM stored_filters WHERE fleet_id = ? AND" + " name = ?")) {
             query.setInt(1, fleetId);
             query.setString(2, name);
             query.executeUpdate();
@@ -87,8 +114,8 @@ public final class StoredFilter {
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static boolean filterExists(Connection connection, int fleetId, String name) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement("SELECT EXISTS(SELECT name, fleet_id FROM " +
-                "stored_filters WHERE fleet_id = ? AND name = ?)")) {
+        try (PreparedStatement query = connection.prepareStatement(
+                "SELECT EXISTS(SELECT name, fleet_id FROM " + "stored_filters WHERE fleet_id = ? AND name = ?)")) {
             query.setInt(1, fleetId);
             query.setString(2, name);
 
@@ -105,7 +132,7 @@ public final class StoredFilter {
 
     /**
      * This method inserts or updates a StoredFilter in the database.
-     * 
+     *
      * @param connection is the SQL database connection
      * @param fleetId    is the Fleet ID
      * @param filterJSON is the filter in JSON form
@@ -114,8 +141,9 @@ public final class StoredFilter {
      * @return a {@link StoredFilter} instance containing the data upon successful insertion or update into the db
      * @throws SQLException in the event there is an issue with the SQL query
      */
-    public static StoredFilter upsertFilter(Connection connection, int fleetId, String filterJSON, String name, String color)
-            throws SQLException {
+    public static StoredFilter upsertFilter(Connection connection, int fleetId, String filterJSON,
+        String name, String color) throws SQLException {
+
         try (PreparedStatement q = connection.prepareStatement(
             "INSERT INTO stored_filters (filter_json, name, fleet_id, color) VALUES (?,?,?,?) " +
             "ON DUPLICATE KEY UPDATE filter_json = VALUES(filter_json), color = VALUES(color)")) {
@@ -127,7 +155,7 @@ public final class StoredFilter {
         }
 
         return new StoredFilter(name, filterJSON, color);
-        
+
     }
 
     /**

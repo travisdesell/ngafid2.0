@@ -1,5 +1,9 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
@@ -12,16 +16,12 @@ import org.ngafid.processor.events.LowEndingFuelScanner;
 import org.ngafid.processor.events.SpinEventScanner;
 import org.ngafid.processor.format.FlightBuilder;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-
 /**
- * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of {@link EventScanner}.
+ * An instance of this class is used to scan a flight for an event, and is basically a wrapper on top of
+ * {@link EventScanner}.
  * <p>
- * When adding a custom event, you may have to modify the private factory methods contained within this class to properly
- * compute the event upon ingestion.
+ * When adding a custom event, you may have to modify the private factory methods contained within this class to
+ * properly compute the event upon ingestion.
  */
 public class ComputeEvent extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeEvent.class.getName());
@@ -33,6 +33,7 @@ public class ComputeEvent extends ComputeStep {
 
     /**
      * Maps fleet id to event definitions that are particular to that fleet.
+     * Should not be written to after static initialization.
      */
     private static final Map<Integer, List<EventDefinition>> FLEET_EVENT_DEFS = new HashMap<>();
 
@@ -49,7 +50,9 @@ public class ComputeEvent extends ComputeStep {
                 if (def.getFleetId() == 0) {
                     ALL_FLEET_EVENT_DEFS.add(def);
                 } else {
-                    FLEET_EVENT_DEFS.computeIfAbsent(def.getFleetId(), k -> new ArrayList<>()).add(def);
+                    FLEET_EVENT_DEFS
+                            .computeIfAbsent(def.getFleetId(), k -> new ArrayList<>())
+                            .add(def);
                 }
             }
 
@@ -60,11 +63,11 @@ public class ComputeEvent extends ComputeStep {
     }
 
     /**
-     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied flight builder,
-     * i.e. all the required columns are available.
+     * Returns a list of ComputeEvent objects where the underlying event definitions are applicable to the supplied
+     * flight builder, i.e. all the required columns are available.
      * <p>
-     * Some additional logic is required specifically for custom events, as custom events use subclasses of ComputeEvent
-     * to perform custom compuations.
+     * Some additional logic is required specifically for custom events, as custom events use subclasses of
+     * ComputeEvent to perform custom compuations.
      *
      * @param connection database connection
      * @param fb         flight builder
@@ -73,8 +76,9 @@ public class ComputeEvent extends ComputeStep {
     public static List<ComputeEvent> getAllApplicable(Connection connection, FlightBuilder fb) {
         // We will mark these event definitions as having been computed (or attempted) in the
         var applicableEvents = ALL_EVENT_DEFS.stream()
-                .filter(def -> def.getFleetId() == 0 || def.getFleetId() == fb.meta.fleetId)
-                .filter(def -> def.getAirframeNameId() == 0 || def.getAirframeNameId() == fb.meta.airframe.getId())
+                .filter(def -> def.getFleetId() == 0 || def.getFleetId() == fb.meta.getFleetId())
+                .filter(def -> def.getAirframeNameId() == 0
+                        || def.getAirframeNameId() == fb.meta.getAirframe().getId())
                 .toList();
         return applicableEvents.stream()
                 .map(def -> factory(connection, fb, def))
@@ -83,20 +87,19 @@ public class ComputeEvent extends ComputeStep {
     }
 
     /**
-     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed before
-     * the flight is inserted into the database (namely proximity events), and this function will return null in that case.
+     * Creates ComputeEvent object for the supplied event definition, if possible. Some events cannot be computed
+     * before the flight is inserted into the database (namely proximity events), and this function will return null
+     * in that case.
      *
-     * @param connection
-     * @param fb
-     * @param def
+     * @param connection database connection
+     * @param fb flight builder
+     * @param def event definition
      * @return a ComputeEvent object if successful, or null if the event cannot be computed during initial ingestion.
      */
     private static ComputeEvent factory(Connection connection, FlightBuilder fb, EventDefinition def) {
         var scanner = scannerFactory(fb, def);
-        if (scanner != null)
-            fb.addComputedEvent(def);
-        else
-            return null;
+        if (scanner != null) fb.addComputedEvent(def);
+        else return null;
 
         if (def.getId() > 0) {
             return new ComputeEvent(connection, fb, def, scanner);
@@ -114,16 +117,16 @@ public class ComputeEvent extends ComputeStep {
      * <p>
      * Normal events use a common event scanner, whereas custom events must use custom event scanners.
      *
-     * @param builder
-     * @param definition
-     * @return
+     * @param builder The flight builder
+     * @param definition The event definition
+     * @return An event scanner instance
      */
     private static AbstractEventScanner scannerFactory(FlightBuilder builder, EventDefinition definition) {
         if (definition.getId() > 0) {
             return new EventScanner(definition);
         } else {
             return switch (definition.getId()) {
-                case -6, -5, -4 -> new LowEndingFuelScanner(builder.meta.airframe, definition);
+                case -6, -5, -4 -> new LowEndingFuelScanner(builder.meta.getAirframe(), definition);
                 case -3, -2 -> new SpinEventScanner(definition);
                 // For events with either (1) no scanner or (2)
                 default -> null;
@@ -172,7 +175,7 @@ public class ComputeEvent extends ComputeStep {
     @Override
     public boolean airframeIsValid(Airframes.Airframe airframe) {
         // While we could technically create events for non-fixed wing aircraft, we haven't yet!
-        return builder.meta.airframe.getType().getName().equals("Fixed Wing");
+        return builder.meta.getAirframe().getType().getName().equals("Fixed Wing");
     }
 
     /**

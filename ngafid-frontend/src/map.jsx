@@ -13,6 +13,13 @@ let styles = [];
 let layers = [];
 
 function initializeMap() {
+
+    // Map already initialized, exit
+    if (map) {
+        console.warn("Map instance already exists, initialization aborted.");
+        return;
+    }
+    
     // Azure Maps key is now injected from backend via template
     if (typeof azureMapsKey === 'undefined' || !azureMapsKey) {
         console.error("Azure Maps key is missing or undefined!");

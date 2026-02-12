@@ -3,14 +3,13 @@
  *
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
-
 package org.ngafid.core.util;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class FlightTag {
-    //the key in the database
+    // the key in the database
     private final int hashId;
     private final int fleetId;
     private final String name;
@@ -40,8 +39,12 @@ public class FlightTag {
      * @param resultSet the result set containing the results of a query
      */
     public FlightTag(ResultSet resultSet) throws SQLException {
-        this(resultSet.getInt(1), resultSet.getInt(2), resultSet.getString(3),
-                resultSet.getString(4), resultSet.getString(5));
+        this(
+                resultSet.getInt(1),
+                resultSet.getInt(2),
+                resultSet.getString(3),
+                resultSet.getString(4),
+                resultSet.getString(5));
     }
 
     /**
@@ -98,10 +101,10 @@ public class FlightTag {
     @Override
     public boolean equals(Object other) {
         if (other instanceof FlightTag t) {
-            return t.description.equals(this.description) &&
-                    t.name.equals(this.name) &&
-                    t.color.equals(this.color) &&
-                    t.fleetId == this.fleetId;
+            return t.description.equals(this.description)
+                    && t.name.equals(this.name)
+                    && t.color.equals(this.color)
+                    && t.fleetId == this.fleetId;
         }
         return false;
     }
@@ -113,9 +116,8 @@ public class FlightTag {
      */
     @Override
     public String toString() {
-        return FlightTag.class.getName() + ": " + "id: " + this.hashId +
-                " name: " + this.name + " description: " + this.description +
-                " color: " + this.color;
+        return FlightTag.class.getName() + ": " + "id: " + this.hashId + " name: "
+                + this.name + " description: " + this.description + " color: "
+                + this.color;
     }
 }
-

@@ -1,9 +1,5 @@
 package org.ngafid.core.flights.export;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.uploads.Upload;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +10,9 @@ import java.util.Enumeration;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.uploads.Upload;
 
 public class CachedCSVWriter extends CSVWriter {
     private File zipFile;
@@ -38,9 +37,9 @@ public class CachedCSVWriter extends CSVWriter {
         int uploadId = flight.getUploadId();
         System.out.println("target upload id is: " + uploadId);
 
-        //CHECKSTYLE:OFF
+        // CHECKSTYLE:OFF
         // TODO: Probably better to pass the connection in as an argument to the
-        //CHECKSTYLE:ON
+        // CHECKSTYLE:ON
         // constructor
         Upload upload;
         try (Connection connection = Database.getConnection()) {
@@ -61,9 +60,9 @@ public class CachedCSVWriter extends CSVWriter {
         this.zipFile = new File(archiveFilename);
 
         if (!this.zipFile.exists()) {
-            //CHECKSTYLE:OFF
+            // CHECKSTYLE:OFF
             // TODO: reconstruct from database instead of existing on error
-            //CHECKSTYLE:ON
+            // CHECKSTYLE:ON
 
             System.err.println("ERROR: archive file did not exist!");
             System.exit(1);

@@ -1,16 +1,14 @@
 package org.ngafid.core.kafka;
 
-import org.ngafid.core.Config;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import org.ngafid.core.Config;
 
 /**
  * Contains static methods to generate properties used for instantiating Kafka producers / consumers.
  */
-public enum Configuration {
-    ;
+public enum Configuration {;
 
     public static Properties getProperties() {
         Properties props = new Properties();
@@ -36,6 +34,4 @@ public enum Configuration {
         props.put("value.deserializer", "org.apache.kafka.common.serialization.IntegerDeserializer");
         return props;
     }
-
-
 }

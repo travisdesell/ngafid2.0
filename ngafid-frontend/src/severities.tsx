@@ -76,7 +76,7 @@ export function SeveritiesPage() {
     }, []);
 
 
-    const iniitalEventFlags = useMemo(() => {
+    const initialEventFlags = useMemo(() => {
         const checked: Record<string, boolean> = {};
         const empty:   Record<string, boolean> = {};
         for (const name of eventNames) {
@@ -97,8 +97,9 @@ export function SeveritiesPage() {
     const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
     const [datesChanged, setDatesChanged] = useState(false);
     const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
-    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(iniitalEventFlags.checked);
-    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(iniitalEventFlags.empty);
+    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(initialEventFlags.checked);
+    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventFlags.empty);
+    const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
     const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
     const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
 
@@ -349,7 +350,7 @@ export function SeveritiesPage() {
                         '<extra></extra>'
                 };
 
-                //Put ANY Event underneath other points
+            
                 if (eventName === "ANY Event")
                     severityTraces.unshift(trace as Plotly.Data);
 
@@ -516,7 +517,12 @@ export function SeveritiesPage() {
                     );
 
                     setEventsEmpty((prev) => ({ ...prev, [eventName]: !hasAnyData }));
+                    
                     eventSeverities[eventName] = hasAnyData ? response : {};
+                    setEventSeveritiesState((prev) => ({
+                        ...prev,
+                        [eventName]: hasAnyData ? response : {}
+                    }));
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
                     showErrorModal("Error Loading Uploads", errorThrown);
@@ -585,11 +591,45 @@ export function SeveritiesPage() {
         setEventChecked(cleared);
         setDatesChanged(false);
 
-        await fetchAllEventSeverities();
+        // Check event availability with COUNT queries instead of fetching all events
+        $('#loading').show();
+        
+        const startDate = buildStartDate(startYear, startMonth);
+        const endDate = buildEndDate(endYear, endMonth);
 
-        displayPlot(airframe.name);
+        const submissionData = {
+            startDate: startDate,
+            endDate: endDate,
+            eventNames: JSON.stringify(eventNames),
+            tagName: tagName
+        };
 
-    }, [airframe.name, fetchAllEventSeverities, displayPlot]);
+        $.ajax({
+            type: 'GET',
+            url: '/api/event/severities/available',
+            data: submissionData,
+            success: (response: Record<string, number>) => {
+                $('#loading').hide();
+                
+                // Update eventsEmpty based on counts
+                const newEventsEmpty: Record<string, boolean> = {};
+                for (const eventName of eventNames) {
+                    newEventsEmpty[eventName] = (response[eventName] || 0) === 0;
+                }
+                setEventsEmpty(newEventsEmpty);
+                setEventCounts(response);
+                
+                // Clear any previously loaded event data
+                setEventSeveritiesState({});
+                displayPlot(airframe.name);
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                $('#loading').hide();
+                showErrorModal("Error Checking Event Availability", errorThrown);
+            }
+        });
+
+    }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName]);
 
 
     const airframeChangeFromName = (airframeName: string) => {
@@ -696,7 +736,7 @@ export function SeveritiesPage() {
                                                                 placement="bottom"
                                                             >
                                                                 <label className="form-check-label">
-                                                                    {eventName}
+                                                                    {eventName}{eventCounts[eventName] ? ` (${eventCounts[eventName]})` : ''}
                                                                 </label>
                                                             </OverlayTrigger>
 

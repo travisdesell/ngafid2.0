@@ -1,9 +1,8 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.util.NormalizedColumn;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.ngafid.core.util.NormalizedColumn;
 
 public final class TypeName extends NormalizedColumn<TypeName> {
     public TypeName(String name) {
@@ -30,5 +29,4 @@ public final class TypeName extends NormalizedColumn<TypeName> {
     protected String getTableName() {
         return "data_type_names";
     }
-
 }

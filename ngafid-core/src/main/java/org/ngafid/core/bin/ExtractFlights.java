@@ -1,15 +1,14 @@
 package org.ngafid.core.bin;
 
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import org.apache.commons.cli.*;
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.Flight;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
-
-public enum ExtractFlights {
-    ;
+public final class ExtractFlights {
+    private ExtractFlights() {}
 
     public static void main(String[] arguments) throws Exception {
         Connection connection = Database.getConnection();

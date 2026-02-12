@@ -15,5 +15,4 @@ public class FlightFileFormatException extends Exception {
     public String getMessage() {
         return "File '" + filename + "' is of an unrecognized or unsupported file format.";
     }
-
 }

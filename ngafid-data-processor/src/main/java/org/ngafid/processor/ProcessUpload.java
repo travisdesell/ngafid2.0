@@ -1,14 +1,7 @@
 package org.ngafid.processor;
 
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.flights.FlightError;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.core.uploads.*;
-import org.ngafid.core.util.MD5;
-import org.ngafid.core.util.SendEmail;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.ngafid.core.Config.NGAFID_UPLOAD_DIR;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -27,9 +20,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.ngafid.core.Config.NGAFID_UPLOAD_DIR;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.flights.FlightError;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.core.uploads.*;
+import org.ngafid.core.util.MD5;
+import org.ngafid.core.util.SendEmail;
 
 /**
  * Contains a static method processUpload which will process an upload with the supplied uploadId. This upload should
@@ -43,27 +42,39 @@ import static org.ngafid.core.Config.NGAFID_UPLOAD_DIR;
  */
 public final class ProcessUpload {
 
+    private ProcessUpload() {
+        // Utility class
+    }
+
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
-    public static boolean processUpload(int uploadId) throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
+    public static boolean processUpload(int uploadId)
+            throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
         LOG.info("processing upload with id: " + uploadId);
         Upload upload = null;
 
         try (Connection connection = Database.getConnection()) {
             // We need to set the upload status to PROCESSING
             upload = Upload.getUploadById(connection, uploadId);
-            if (upload == null)
-                throw new UploadDoesNotExistException(uploadId);
 
-            // If this is the first time an upload is being processed, it still exists in pieces on the disk -- combine them here.
+            if (upload == null) throw new UploadDoesNotExistException(uploadId);
+
+            if (upload.kind == Upload.Kind.DERIVED) {
+                return true; // Nothing to do for a derived upload.
+            }
+
+            // If this is the first time an upload is being processed, it still exists in pieces on the disk -- combine
+            // them here.
 
             return processUpload(connection, upload);
         }
     }
 
-    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked) throws IOException {
+    private static void tryCombinePieces(Connection connection, Upload upload, Upload.LockedUpload locked)
+            throws IOException {
         LOG.info("Combining pieces");
-        Path chunkDirectory = Paths.get(NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
+        Path chunkDirectory =
+                Paths.get(NGAFID_UPLOAD_DIR + "/" + upload.fleetId + "/" + upload.uploaderId + "/" + upload.identifier);
         Path targetDirectory = Paths.get(upload.getArchiveDirectory());
 
         targetDirectory.toFile().mkdirs();
@@ -100,13 +111,11 @@ public final class ProcessUpload {
         LOG.info("Done");
     }
 
-
-
     // TODO: Refactor Pipeline and ParquetPipeline into a shared superclass (e.g., AbstractPipeline)
     // to reduce code duplication and simplify support for future formats.
 
-
-    private static boolean processUpload(Connection connection, Upload upload) throws SQLException, UploadAlreadyLockedException {
+    private static boolean processUpload(Connection connection, Upload upload)
+            throws SQLException, UploadAlreadyLockedException {
         try (Upload.LockedUpload lockedUpload = upload.getLockedUpload(connection)) {
             try {
                 tryCombinePieces(connection, upload, lockedUpload);
@@ -121,10 +130,11 @@ public final class ProcessUpload {
 
                 ArrayList<String> recipients = new ArrayList<String>();
                 recipients.add(uploaderEmail);
-                ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); // always email admins to keep tabs on things
+                ArrayList<String> bccRecipients =
+                        SendEmail.getAdminEmails(); // always email admins to keep tabs on things
 
-                String formattedStartDateTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd " +
-                        "hh:mm:ss z (O)"));
+                String formattedStartDateTime =
+                        ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd " + "hh:mm:ss z (O)"));
 
                 String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
                 String body = subject;
@@ -141,7 +151,8 @@ public final class ProcessUpload {
 
                 // only progress if the upload ingestion was successful
                 if (status.isProcessed()) {
-                    String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
+                    String endTime =
+                            ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
                     uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
                 } else {
                     uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
@@ -167,8 +178,8 @@ public final class ProcessUpload {
         }
     }
 
-    public static Upload.Status ingestFlights(Connection connection, Upload upload,
-                                              UploadProcessedEmail uploadProcessedEmail) throws SQLException {
+    public static Upload.Status ingestFlights(
+            Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
 
         int uploadId = upload.getId();
@@ -194,7 +205,7 @@ public final class ProcessUpload {
         if (extension.equals("zip")) {
             // Pipeline must be closed after use as it may open some files / resources.
             try (ZipFile zipFile = ZipFile.builder().setFile(filename).get();
-                 Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
+                    Pipeline pipeline = new Pipeline(connection, upload, zipFile)) {
                 pipeline.execute();
 
                 flightInfo = pipeline.getFlightInfo();
@@ -207,24 +218,25 @@ public final class ProcessUpload {
                 LOG.log(Level.SEVERE, "NoSuchFileException: {0}", e.toString());
                 e.printStackTrace();
 
-                UploadError.insertError(connection, uploadId, "Broken upload: please delete this upload " +
-                        "and re-upload.");
+                UploadError.insertError(
+                        connection, uploadId, "Broken upload: please delete this upload " + "and re-upload.");
                 status = Upload.Status.FAILED_UNKNOWN;
-                uploadException = new Exception(e + ", broken upload: please delete this upload and " +
-                        "re-upload.");
+                uploadException = new Exception(e + ", broken upload: please delete this upload and " + "re-upload.");
 
             } catch (IOException e) {
                 LOG.log(Level.SEVERE, "IOException: {0}", e.toString());
                 e.printStackTrace();
 
-                UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this " +
-                        "upload and re-upload.");
+                UploadError.insertError(
+                        connection,
+                        uploadId,
+                        "Could not read from zip file: please delete this " + "upload and re-upload.");
                 status = Upload.Status.FAILED_ARCHIVE_TYPE;
-                uploadException = new Exception(e + ", could not read from zip file: please delete this " +
-                        "upload and re-upload.");
+                uploadException = new Exception(
+                        e + ", could not read from zip file: please delete this " + "upload and re-upload.");
             }
 
-        }else if (extension.equals("parquet")) {
+        } else if (extension.equals("parquet")) {
 
             LOG.info("Processing Parquet file: " + filename);
 
@@ -237,10 +249,7 @@ public final class ProcessUpload {
             warningFlights = parquetPipeline.getWarningFlightsCount();
             validFlights = parquetPipeline.getValidFlightsCount();
 
-
-
             LOG.info("Successfully processed Parquet file." + filename);
-
 
         } else {
             // insert an upload error for this upload
@@ -251,10 +260,8 @@ public final class ProcessUpload {
         }
 
         // update upload in database, add upload exceptions if there are any
-        try (
-
-                PreparedStatement updateStatement = connection.prepareStatement("UPDATE uploads SET " +
-                        "n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
+        try (PreparedStatement updateStatement = connection.prepareStatement("UPDATE uploads SET "
+                + "n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
             updateStatement.setInt(1, validFlights);
             updateStatement.setInt(2, warningFlights);
             updateStatement.setInt(3, errorFlights);
@@ -270,8 +277,8 @@ public final class ProcessUpload {
 
         // prepare the response email
         if (uploadException != null) {
-            uploadProcessedEmail.addImportFailure("Could not import upload '" + filename + "' due to the following " +
-                    "error:\n");
+            uploadProcessedEmail.addImportFailure(
+                    "Could not import upload '" + filename + "' due to the following " + "error:\n");
             uploadProcessedEmail.addImportFailure(uploadException.getMessage());
 
             // ingestion failed
@@ -329,13 +336,14 @@ public final class ProcessUpload {
          * This is a helper class so we don't keep all loaded flights in memory.
          */
 
-        //CHECKSTYLE:OFF
+        // CHECKSTYLE:OFF
         int id;
+
         int length;
         String filename;
         List<MalformedFlightFileException> exceptions;
 
-        //CHECKSTYLE:ON
+        // CHECKSTYLE:ON
         public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
             this.id = id;
             this.length = length;

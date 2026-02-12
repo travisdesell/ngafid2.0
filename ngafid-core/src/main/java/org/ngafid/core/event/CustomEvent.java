@@ -1,13 +1,12 @@
 package org.ngafid.core.event;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
 
 /**
  * A CustomEvent is an Event that is not able to be calculated by the NGAFID's
@@ -22,6 +21,7 @@ public class CustomEvent extends Event {
     private static EventDefinition LOW_END_FUEL_CESSNA_172 = null;
     private static EventDefinition LOW_END_FUEL_PA_44 = null;
 
+    // These maps absolutely should not be written to after static initialization.
     public static final Map<Integer, EventDefinition> LOW_FUEL_EVENT_DEFINITIONS = new HashMap<>();
     public static final Map<Integer, Double> LOW_FUEL_EVENT_THRESHOLDS = new HashMap<>();
 
@@ -56,8 +56,14 @@ public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
     private final Flight flight;
 
-    public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight,
-                       EventDefinition eventDefinition) {
+    public CustomEvent(
+            String startTime,
+            String endTime,
+            int startLine,
+            int endLine,
+            double severity,
+            Flight flight,
+            EventDefinition eventDefinition) {
         super(startTime, endTime, startLine, endLine, eventDefinition.getId(), severity);
 
         this.flight = flight;

@@ -1,14 +1,13 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.flights.Parameters.Unit;
-import org.ngafid.core.util.Compression;
-import org.ngafid.core.util.NormalizedColumn;
-
-import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import javax.sql.rowset.serial.SerialBlob;
+import org.ngafid.core.flights.Parameters.Unit;
+import org.ngafid.core.util.Compression;
+import org.ngafid.core.util.NormalizedColumn;
 
 public final class StringTimeSeries {
 
@@ -133,10 +132,10 @@ public final class StringTimeSeries {
 
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name)
             throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement(
-                "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, " +
-                        "ss.data FROM string_series AS ss INNER JOIN string_series_names " +
-                        "AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, "
+                        + "ss.data FROM string_series AS ss INNER JOIN string_series_names "
+                        + "AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
 
             query.setString(1, name);
             query.setInt(2, flightId);
@@ -171,8 +170,7 @@ public final class StringTimeSeries {
     }
 
     public void add(String s) {
-        if (!s.equals(""))
-            validCount++;
+        if (!s.equals("")) validCount++;
         timeSeries.add(s);
     }
 
@@ -241,17 +239,14 @@ public final class StringTimeSeries {
     }
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-        return connection.prepareStatement(
-                "INSERT INTO string_series " +
-                        "(flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+        return connection.prepareStatement("INSERT INTO string_series "
+                + "(flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
     }
 
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)
             throws SQLException, IOException {
-        if (name.getId() == -1)
-            setNameId(connection);
-        if (dataType.getId() == -1)
-            setTypeId(connection);
+        if (name.getId() == -1) setNameId(connection);
+        if (dataType.getId() == -1) setTypeId(connection);
 
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, name.getId());
@@ -278,8 +273,7 @@ public final class StringTimeSeries {
     public StringTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
         StringTimeSeries newSeries = new StringTimeSeries(connection, name.getName(), dataType.getName());
 
-        for (int i = from; i < until; i++)
-            newSeries.add(this.timeSeries.get(i));
+        for (int i = from; i < until; i++) newSeries.add(this.timeSeries.get(i));
 
         return newSeries;
     }
@@ -287,8 +281,7 @@ public final class StringTimeSeries {
     public StringTimeSeries subSeries(int from, int until) {
         StringTimeSeries newSeries = new StringTimeSeries(name.getName(), dataType.getName());
 
-        for (int i = from; i < until; i++)
-            newSeries.add(this.timeSeries.get(i));
+        for (int i = from; i < until; i++) newSeries.add(this.timeSeries.get(i));
 
         return newSeries;
     }

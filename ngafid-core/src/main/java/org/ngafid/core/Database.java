@@ -1,13 +1,5 @@
 package org.ngafid.core;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import javax.sql.DataSource;
-
-import org.sql2o.Sql2o;
-import org.sql2o.quirks.Quirks;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,9 +9,14 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.mysql.cj.jdbc.exceptions.*;
+import javax.sql.DataSource;
 
-public class Database {
+import org.sql2o.Sql2o;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+public final class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
 
@@ -34,6 +31,8 @@ public class Database {
     static {
         initializeConnectionPool();
     }
+
+    private Database() {}
 
     public static Connection getConnection() throws SQLException {
 
@@ -64,7 +63,10 @@ public class Database {
                     local = new Sql2o(CONNECTION_POOL);
                     SQL2O = local;
 
-                    LOG.log(Level.INFO, "Created Sql2o instance with Quirks: {0}", local.getQuirks().getClass().getName());
+                    LOG.log(
+                        Level.INFO,
+                        "Created Sql2o instance with Quirks: {0}",
+                        local.getQuirks().getClass().getName());
 
                 }
 
@@ -80,10 +82,8 @@ public class Database {
     }
 
     public static String getDatabaseImplementation() {
-        if (Config.NGAFID_USE_MARIA_DB)
-            return "mariadb";
-        else
-            return "mysql";
+        if (Config.NGAFID_USE_MARIA_DB) return "mariadb";
+        else return "mysql";
     }
 
     private static void readDatabaseCredentials(String path) throws IOException {

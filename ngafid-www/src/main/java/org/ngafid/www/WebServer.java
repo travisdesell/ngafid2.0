@@ -1,15 +1,13 @@
 package org.ngafid.www;
 
+import static org.ngafid.core.util.SendEmail.sendAdminEmails;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import org.ngafid.core.Config;
-import org.ngafid.core.accounts.EmailType;
-import org.ngafid.core.util.ConvertToHTML;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
@@ -20,13 +18,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-
+import org.ngafid.core.Config;
+import org.ngafid.core.accounts.EmailType;
+import org.ngafid.core.util.ConvertToHTML;
 import org.ngafid.www.routes.DockerServiceHeartbeatMonitor;
-
-import static org.ngafid.core.util.SendEmail.sendAdminEmails;
-
-
-
 
 /**
  * The entry point for the NGAFID web server.
@@ -105,34 +100,28 @@ public abstract class WebServer {
         @Override
         public void write(JsonWriter jsonWriter, Double value) throws IOException {
 
-            //Got problematic value, write null
-            if (value == null || !Double.isFinite(value))
-                jsonWriter.nullValue();
+            // Got problematic value, write null
+            if (value == null || !Double.isFinite(value)) jsonWriter.nullValue();
 
-                //Otherwise, write the value
-            else
-                jsonWriter.value(value);
-
+            // Otherwise, write the value
+            else jsonWriter.value(value);
         }
 
         @Override
         public Double read(JsonReader jsonReader) throws IOException {
 
-            //Value is null, return null
+            // Value is null, return null
             if (jsonReader.peek() == JsonToken.NULL) {
 
                 jsonReader.nextNull();
                 return null;
-
             }
 
             return jsonReader.nextDouble();
-
         }
-
     }
 
-    public static final Gson gson = new GsonBuilder()
+    public static final Gson GSON = new GsonBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
             .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter())
@@ -146,7 +135,8 @@ public abstract class WebServer {
 
         preInitialize();
         configureLogging();
-        LOG.info("NGAFID WebServer has started at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")));
+        LOG.info("NGAFID WebServer has started at "
+                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")));
 
         configurePort();
         configureThreads();
@@ -161,7 +151,6 @@ public abstract class WebServer {
         configureAuthChecks();
         configureExceptions();
 
-
         if (Config.DISABLE_PERSISTENT_SESSIONS) {
             LOG.info("Persistent sessions are disabled.");
         } else {
@@ -169,8 +158,7 @@ public abstract class WebServer {
         }
     }
 
-    protected void preInitialize() {
-    }
+    protected void preInitialize() {}
 
     public abstract void start();
 
@@ -200,9 +188,17 @@ public abstract class WebServer {
         String stackTrace = sw.toString(); // stack trace as a string
         LOG.severe("stack trace:\n" + stackTrace);
 
-        String message = "An uncaught exception was thrown in the NGAFID SparkWebServer at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")) + ".\n The exception was: " + exception + "\n" + ".\n The exception message was: " + exception.getMessage() + "\n" + ".\n The exception (to string): " + exception + "\n" + "\n The non-pretty stack trace is:\n" + stackTrace + "\n" + "\nThe stack trace was:\n" + ConvertToHTML.convertError(exception) + "\n";
+        String message = "An uncaught exception was thrown in the NGAFID SparkWebServer at "
+                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"))
+                + ".\n The exception was: " + exception + "\n" + ".\n The exception message was: "
+                + exception.getMessage() + "\n" + ".\n The exception (to string): " + exception + "\n"
+                + "\n The non-pretty stack trace is:\n" + stackTrace + "\n" + "\nThe stack trace was:\n"
+                + ConvertToHTML.convertError(exception) + "\n";
 
-        sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message), EmailType.ADMIN_EXCEPTION_NOTIFICATION);
+        sendAdminEmails(
+                String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()),
+                ConvertToHTML.convertString(message),
+                EmailType.ADMIN_EXCEPTION_NOTIFICATION);
     }
 
     protected void configureLogging() {
@@ -236,5 +232,4 @@ public abstract class WebServer {
         LOG.info("NGAFID web server initialization complete.");
         webserver.start();
     }
-
 }

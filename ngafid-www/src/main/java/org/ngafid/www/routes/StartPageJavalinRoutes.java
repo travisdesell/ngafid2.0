@@ -1,5 +1,10 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.GSON;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,27 +12,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
-import static org.ngafid.www.WebServer.gson;
-
-import io.javalin.Javalin;
-import io.javalin.http.Context;
 
 public class StartPageJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StartPageJavalinRoutes.class.getName());
 
+    private StartPageJavalinRoutes() {
+        // Utility class
+    }
+
     private static class Message {
-        String type;
-        String message;
+        @JsonProperty
+        private final String type;
+
+        @JsonProperty
+        private final String message;
 
         Message(String type, String message) {
             this.type = type;
             this.message = message;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 
@@ -36,7 +51,7 @@ public class StartPageJavalinRoutes {
         Map<String, Object> scopes = new HashMap<>();
 
         if (message != null) {
-            scopes.put("messages", new Message[]{message});
+            scopes.put("messages", new Message[] {message});
         }
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
@@ -56,10 +71,10 @@ public class StartPageJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
-            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId); 
-            
+            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
+
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
-            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
+            scopes.put("fleet_info_js", "var airframes = " + GSON.toJson(airframes) + ";\n");
             LOG.info("var airframes = " + airframes + ";\n");
             if (!messages.isEmpty()) {
                 scopes.put("messages", messages);
@@ -72,16 +87,22 @@ public class StartPageJavalinRoutes {
         }
     }
 
-
     public static void bindRoutes(Javalin app) {
         app.get("/", ctx -> getHome(ctx, null));
-        app.get("/logout_success", ctx -> getHome(ctx, new Message("success", "You have been successfully logged out.")));
-        app.get("/access_denied", ctx -> getHome(ctx, new Message("danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
-//        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
+        app.get(
+                "/logout_success",
+                ctx -> getHome(ctx, new Message("success", "You have been successfully logged out.")));
+        app.get(
+                "/access_denied",
+                ctx -> getHome(
+                        ctx,
+                        new Message("danger",
+                                "You attempted to load a page you did not have access to or "
+                                        + "attempted to access a page while not logged in.")));
+        //        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not
+        // exist.")));
 
         app.get("/protected/waiting", StartPageJavalinRoutes::getWaiting);
         app.get("/protected/summary", ctx -> getSummary(ctx, new ArrayList<>()));
-//        app.get("/protected/*", ctx -> getSummary(ctx, List.of(new Message("danger", "The page you attempted to access does not exist."))));
     }
-
 }

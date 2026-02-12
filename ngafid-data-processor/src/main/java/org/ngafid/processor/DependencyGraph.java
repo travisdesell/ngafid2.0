@@ -1,11 +1,5 @@
 package org.ngafid.processor;
 
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.processor.format.FlightBuilder;
-import org.ngafid.processor.steps.ComputeStep;
-
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +8,11 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.processor.format.FlightBuilder;
+import org.ngafid.processor.steps.ComputeStep;
 
 /**
  * A directed acyclic graph, where nodes are individual process steps and the edges are defined by column names that are
@@ -37,7 +36,6 @@ public class DependencyGraph {
     private List<DependencyNode> sortedNodes;
     private HashSet<DependencyNode> visited;
     private HashSet<DependencyNode> marked;
-    private List<DependencyNode> toVisit;
 
     /**
      * Create nodes for each step and create a mapping from output column name
@@ -53,10 +51,8 @@ public class DependencyGraph {
 
         try {
             registerStep(new DummyStep(builder));
-            for (var step : steps)
-                registerStep(step);
-            for (var node : nodes)
-                createEdges(node);
+            for (var step : steps) registerStep(step);
+            for (var node : nodes) createEdges(node);
         } catch (FatalFlightFileException e) {
             throw new FlightProcessingException(e);
         }
@@ -67,11 +63,11 @@ public class DependencyGraph {
     }
 
     private void nodeConflictError(ComputeStep first, ComputeStep second) throws FatalFlightFileException {
-        throw new FatalFlightFileException("ERROR when building dependency graph! " + "Two ProcessSteps are indicated" +
-                " as having the same output column. " + "While it is possible for two ProcessSteps to have the same " +
-                "output column(s), " + "their use should be mutually exclusive from one another. " + "\nDEBUG INFO:\n" +
-                " node 0: " + first.toString() + "\n node 1: " + second.toString());
-
+        throw new FatalFlightFileException("ERROR when building dependency graph! " + "Two ProcessSteps are indicated"
+                + " as having the same output column. "
+                + "While it is possible for two ProcessSteps to have the same " + "output column(s), "
+                + "their use should be mutually exclusive from one another. " + "\nDEBUG INFO:\n" + " node 0: "
+                + first.toString() + "\n node 1: " + second.toString());
     }
 
     /**
@@ -79,9 +75,8 @@ public class DependencyGraph {
      * column(s).
      *
      * @param step The process step to add to the graph.
-     * @return The node that was created.
      */
-    private DependencyNode registerStep(ComputeStep step) throws FatalFlightFileException {
+    private void registerStep(ComputeStep step) throws FatalFlightFileException {
         DependencyNode node = new DependencyNode(step);
         nodes.add(node);
 
@@ -89,8 +84,6 @@ public class DependencyGraph {
             DependencyNode other = null;
             if ((other = columnToSource.put(outputColumn, node)) != null) nodeConflictError(step, other.step);
         }
-
-        return node;
     }
 
     /**
@@ -130,10 +123,10 @@ public class DependencyGraph {
      * This function linearized the graph such that the dependency nodes can be executed in the returned order without
      * violating any dependencies.
      *
-     * @return
+     * @return the list of dependency nodes in topologically sorted order
      */
     private List<DependencyNode> topologicalSort() {
-        toVisit = new ArrayList<>(nodes);
+        List<DependencyNode> toVisit = new ArrayList<>(nodes);
         sortedNodes = new ArrayList<>();
         visited = new HashSet<>();
         marked = new HashSet<>();
@@ -177,7 +170,12 @@ public class DependencyGraph {
     }
 
     public void computeSequential() throws FlightProcessingException {
-        topologicalSort().forEach(DependencyNode::compute);
+        topologicalSort().forEach(x -> {
+            long startnano = System.nanoTime();
+            x.compute();
+            long endnano = System.nanoTime();
+            LOG.fine("Took " + ((endnano - startnano) / 1_000_000_000.0) + " s to compute " + x.step);
+        }); // DependencyNode::compute);
         handleExceptions();
     }
 
@@ -193,10 +191,9 @@ public class DependencyGraph {
                     fatalExceptions.add(se);
                 } else {
                     LOG.severe("Encountered exception of unknown type when executing dependency graph. "
-                            + "\"" + e.getMessage() + "\"" + "\n." +
-                            "This should not be possible - if this seems plausible you should add a handler for this "
-                            + "type of exception in DependencyGraph::compute."
-                    );
+                            + "\"" + e.getMessage() + "\"" + "\n."
+                            + "This should not be possible - if this seems plausible you should add a handler for this "
+                            + "type of exception in DependencyGraph::compute.");
                     e.printStackTrace();
                     System.exit(1);
                 }
@@ -224,8 +221,8 @@ public class DependencyGraph {
 
             for (var parent : node.requiredBy) {
                 if (!parent.step.isRequired()) {
-                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent.step + "' has a " +
-                            "required dependent step '" + node.step + "'.");
+                    LOG.severe("ERROR in your DependencyGraph! The optional step '" + parent.step + "' has a "
+                            + "required dependent step '" + node.step + "'.");
                     System.exit(1);
                 }
             }
@@ -235,8 +232,7 @@ public class DependencyGraph {
     // Ensure there are no cycles!
     private void cycleCheck() {
         for (var src : nodes) {
-            for (var node : nodes)
-                node.mark = false;
+            for (var node : nodes) node.mark = false;
 
             Queue<DependencyNode> q = new ArrayDeque<>();
             var dst = src;
@@ -244,8 +240,8 @@ public class DependencyGraph {
 
             while ((dst = q.poll()) != null) {
                 if (dst == src) {
-                    System.err.println("ERROR in your DependencyGraph! Cycle was detected from step '" + src + "' to " +
-                            "step '" + dst + "'.");
+                    LOG.severe("ERROR in your DependencyGraph! Cycle was detected from step '" + src + "' to "
+                            + "step '" + dst + "'.");
                     System.exit(1);
                 }
 
@@ -292,8 +288,7 @@ public class DependencyGraph {
         }
 
         // Left blank intentionally
-        public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        }
+        public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {}
     }
 
     /**
@@ -324,6 +319,8 @@ public class DependencyGraph {
 
         /**
          * Disable this node and all descendent nodes.
+         *
+         * @param e the exception that caused the node to be disabled, or null
          */
         void disableChildren(Exception e) {
             if (enabled.get()) {
@@ -331,17 +328,14 @@ public class DependencyGraph {
 
                 String reason = e == null ? step.explainApplicability() : e.getMessage();
                 if (step.isRequired()) {
-                    LOG.severe("Required step " + step.getClass().getName() + " has been disabled for the following " +
-                            "reason:\n    " + reason);
+                    LOG.severe("Required step " + step.getClass().getName() + " has been disabled for the following "
+                            + "reason:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
                 } else {
-                    LOG.info("Optional step " + step.getClass().getName() +
-                            " has been disabled because:\n\t" + reason);
-                    if (e != null)
-                        exceptions.add(new MalformedFlightFileException(reason));
+                    LOG.fine("Optional step " + step.getClass().getName() + " has been disabled because:\n\t" + reason);
+                    if (e != null) exceptions.add(new MalformedFlightFileException(reason));
                 }
-                for (var child : requiredBy)
-                    child.disableChildren(null);
+                for (var child : requiredBy) child.disableChildren(null);
             }
         }
 
@@ -359,7 +353,6 @@ public class DependencyGraph {
             }
 
             if (enabled.get()) {
-
                 try {
                     if (step.applicable()) {
                         step.compute();

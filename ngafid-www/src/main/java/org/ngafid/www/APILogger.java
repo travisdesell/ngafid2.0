@@ -1,19 +1,22 @@
 package org.ngafid.www;
 
-import org.ngafid.core.Database;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import org.ngafid.core.Database;
 
 public class APILogger {
+    private APILogger() {
+        // Utility class
+    }
+
     public static void logRequest(String method, String path, int statusCode, String ipString, String referer) {
         String sql = "INSERT INTO api_logs (method, path, status_code, ip, referer) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, method);
             ps.setString(2, path);

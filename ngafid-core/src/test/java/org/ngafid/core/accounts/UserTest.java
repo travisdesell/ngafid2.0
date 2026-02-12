@@ -1,22 +1,16 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.ngafid.core.TestWithConnection;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,7 +27,7 @@ public class UserTest extends TestWithConnection {
     public void initUsers() throws SQLException, AccountException {
         // Set up test data first
         setupTestData();
-        
+
         // Then get the users
         user1Fleet1 = User.get(connection, 1, 1);
         user1Fleet2 = User.get(connection, 1, 2);
@@ -42,65 +36,130 @@ public class UserTest extends TestWithConnection {
         user3fleet1 = User.get(connection, 3, 1); // User 3 with DENIED access to fleet 1
         user1Fleet2Waiting = User.get(connection, 1, 2); // User 1 with WAITING access to fleet 2
     }
-    
+
     private void setupTestData() throws SQLException {
-        
+
         // Set up additional test users for equals method testing (new range)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, password_token, last_login_time, fleet_selected, two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete) VALUES " +
-                "(1999, 'test1999@example.com', 'Test', 'User1999', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'nnnnnnnnnnnnnnnnnnnn', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1998, 'test1998@example.com', 'Test', 'User1998', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'oooooooooooooooooooo', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1997, 'test1997@example.com', 'Test', 'User1997', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'pppppppppppppppppppp', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1996, 'test1996@example.com', 'Test', 'User1996', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'qqqqqqqqqqqqqqqqqqqq', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1995, 'test1995@example.com', 'Test', 'User1995', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'rrrrrrrrrrrrrrrrrrrr', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1994, 'test1994@example.com', 'Test', 'User1994', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'ssssssssssssssssssss', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1993, 'test1993@example.com', 'Test', 'User1993', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'tttttttttttttttttttt', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1992, 'test1992@example.com', 'Test', 'User1992', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'uuuuuuuuuuuuuuuuuuuu', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1991, 'test1991@example.com', 'Test', 'User1991', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'vvvvvvvvvvvvvvvvvvvv', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1990, 'test1990@example.com', 'Test', 'User1990', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'wwwwwwwwwwwwwwwwwwww', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1989, 'test1989@example.com', 'Test', 'User1989', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'xxxxxxxxxxxxxxxxxxxx', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1988, 'test1988@example.com', 'Test', 'User1988', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'yyyyyyyyyyyyyyyyyyyy', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(1987, 'test1987@example.com', 'Test', 'User1987', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'zzzzzzzzzzzzzzzzzzzz', NOW(), 0, 0, 'secret', 'codes', 0) " +
-                "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
+                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, "
+                        + "zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, "
+                        + "password_token, last_login_time, fleet_selected, two_factor_enabled, "
+                        + "two_factor_secret, backup_codes, two_factor_setup_complete) VALUES "
+                        + "(1999, 'test1999@example.com', 'Test', 'User1999', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'nnnnnnnnnnnnnnnnnnnn', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1998, 'test1998@example.com', 'Test', 'User1998', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'oooooooooooooooooooo', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1997, 'test1997@example.com', 'Test', 'User1997', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'pppppppppppppppppppp', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1996, 'test1996@example.com', 'Test', 'User1996', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'qqqqqqqqqqqqqqqqqqqq', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1995, 'test1995@example.com', 'Test', 'User1995', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'rrrrrrrrrrrrrrrrrrrr', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1994, 'test1994@example.com', 'Test', 'User1994', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'ssssssssssssssssssss', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1993, 'test1993@example.com', 'Test', 'User1993', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'tttttttttttttttttttt', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1992, 'test1992@example.com', 'Test', 'User1992', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'uuuuuuuuuuuuuuuuuuuu', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1991, 'test1991@example.com', 'Test', 'User1991', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'vvvvvvvvvvvvvvvvvvvv', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1990, 'test1990@example.com', 'Test', 'User1990', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'wwwwwwwwwwwwwwwwwwww', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1989, 'test1989@example.com', 'Test', 'User1989', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'xxxxxxxxxxxxxxxxxxxx', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1988, 'test1988@example.com', 'Test', 'User1988', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'yyyyyyyyyyyyyyyyyyyy', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(1987, 'test1987@example.com', 'Test', 'User1987', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'zzzzzzzzzzzzzzzzzzzz', NOW(), 0, 0, 'secret', 'codes', 0) "
+                        + "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
             stmt.executeUpdate();
         }
-        
+
         // Set up additional test users for equals method testing (3000+ range)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, password_token, last_login_time, fleet_selected, two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete) VALUES " +
-                "(2999, 'test2999@example.com', 'Test', 'User2999', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'aaaaaaaaaaaaaaaaaaaa', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2998, 'test2998@example.com', 'Test', 'User2998', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'bbbbbbbbbbbbbbbbbbbb', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2997, 'test2997@example.com', 'Test', 'User2997', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'cccccccccccccccccccc', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2996, 'test2996@example.com', 'Test', 'User2996', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'dddddddddddddddddddd', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2995, 'test2995@example.com', 'Test', 'User2995', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'eeeeeeeeeeeeeeeeeeee', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2994, 'test2994@example.com', 'Test', 'User2994', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'ffffffffffffffffffff', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2993, 'test2993@example.com', 'Test', 'User2993', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'gggggggggggggggggggg', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2992, 'test2992@example.com', 'Test', 'User2992', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'hhhhhhhhhhhhhhhhhhhh', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2991, 'test2991@example.com', 'Test', 'User2991', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'iiiiiiiiiiiiiiiiiiii', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2990, 'test2990@example.com', 'Test', 'User2990', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'jjjjjjjjjjjjjjjjjjjj', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2989, 'test2989@example.com', 'Test', 'User2989', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'kkkkkkkkkkkkkkkkkkkk', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2988, 'test2988@example.com', 'Test', 'User2988', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'llllllllllllllllllll', NOW(), 0, 0, 'secret', 'codes', 0), " +
-                "(2987, 'test2987@example.com', 'Test', 'User2987', '123 Test St', 'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', NOW(), 0, 0, 'mmmmmmmmmmmmmmmmmmmm', NOW(), 0, 0, 'secret', 'codes', 0) " +
-                "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
+                "INSERT INTO user (id, email, first_name, last_name, address, city, country, state, "
+                        + "zip_code, phone_number, reset_phrase, registration_time, admin, aggregate_view, "
+                        + "password_token, last_login_time, fleet_selected, two_factor_enabled, "
+                        + "two_factor_secret, backup_codes, two_factor_setup_complete) VALUES "
+                        + "(2999, 'test2999@example.com', 'Test', 'User2999', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'aaaaaaaaaaaaaaaaaaaa', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2998, 'test2998@example.com', 'Test', 'User2998', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'bbbbbbbbbbbbbbbbbbbb', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2997, 'test2997@example.com', 'Test', 'User2997', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'cccccccccccccccccccc', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2996, 'test2996@example.com', 'Test', 'User2996', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'dddddddddddddddddddd', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2995, 'test2995@example.com', 'Test', 'User2995', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'eeeeeeeeeeeeeeeeeeee', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2994, 'test2994@example.com', 'Test', 'User2994', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'ffffffffffffffffffff', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2993, 'test2993@example.com', 'Test', 'User2993', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'gggggggggggggggggggg', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2992, 'test2992@example.com', 'Test', 'User2992', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'hhhhhhhhhhhhhhhhhhhh', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2991, 'test2991@example.com', 'Test', 'User2991', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'iiiiiiiiiiiiiiiiiiii', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2990, 'test2990@example.com', 'Test', 'User2990', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'jjjjjjjjjjjjjjjjjjjj', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2989, 'test2989@example.com', 'Test', 'User2989', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'kkkkkkkkkkkkkkkkkkkk', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2988, 'test2988@example.com', 'Test', 'User2988', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'llllllllllllllllllll', NOW(), 0, 0, 'secret', 'codes', 0), "
+                        + "(2987, 'test2987@example.com', 'Test', 'User2987', '123 Test St', "
+                        + "'Test City', 'Test Country', 'TS', '12345', '555-123-4567', 'reset', "
+                        + "NOW(), 0, 0, 'mmmmmmmmmmmmmmmmmmmm', NOW(), 0, 0, 'secret', 'codes', 0) "
+                        + "ON DUPLICATE KEY UPDATE email = VALUES(email)")) {
             stmt.executeUpdate();
         }
-        
+
         // Set up fleet_access records for main test users
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED') ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
+                        + "(1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), "
+                        + "(2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED') "
+                        + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
             stmt.executeUpdate();
         }
-        
+
         // Set up fleet_access records for test users (all with VIEW access to fleet 1)
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES " +
-                "(1999, 1, 'VIEW'), (1998, 1, 'VIEW'), (1997, 1, 'VIEW'), (1996, 1, 'VIEW'), (1995, 1, 'VIEW'), " +
-                "(1994, 1, 'VIEW'), (1993, 1, 'VIEW'), (1992, 1, 'VIEW'), (1991, 1, 'VIEW'), (1990, 1, 'VIEW'), " +
-                "(1989, 1, 'VIEW'), (1988, 1, 'VIEW'), (1987, 1, 'VIEW'), " +
-                "(2999, 1, 'VIEW'), (2998, 1, 'VIEW'), (2997, 1, 'VIEW'), (2996, 1, 'VIEW'), (2995, 1, 'VIEW'), " +
-                "(2994, 1, 'VIEW'), (2993, 1, 'VIEW'), (2992, 1, 'VIEW'), (2991, 1, 'VIEW'), (2990, 1, 'VIEW'), " +
-                "(2989, 1, 'VIEW'), (2988, 1, 'VIEW'), (2987, 1, 'VIEW') " +
-                "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
+                        + "(1999, 1, 'VIEW'), (1998, 1, 'VIEW'), (1997, 1, 'VIEW'), (1996, 1, 'VIEW')," +
+                        " (1995, 1, 'VIEW'), "
+                        + "(1994, 1, 'VIEW'), (1993, 1, 'VIEW'), (1992, 1, 'VIEW'), (1991, 1, 'VIEW')," +
+                        " (1990, 1, 'VIEW'), "
+                        + "(1989, 1, 'VIEW'), (1988, 1, 'VIEW'), (1987, 1, 'VIEW'), "
+                        + "(2999, 1, 'VIEW'), (2998, 1, 'VIEW'), (2997, 1, 'VIEW'), (2996, 1, 'VIEW')," +
+                        " (2995, 1, 'VIEW'), "
+                        + "(2994, 1, 'VIEW'), (2993, 1, 'VIEW'), (2992, 1, 'VIEW'), (2991, 1, 'VIEW')," +
+                        " (2990, 1, 'VIEW'), "
+                        + "(2989, 1, 'VIEW'), (2988, 1, 'VIEW'), (2987, 1, 'VIEW') "
+                        + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
             stmt.executeUpdate();
         }
     }
@@ -109,14 +168,15 @@ public class UserTest extends TestWithConnection {
     public void cleanupTestData() throws SQLException {
         // Clean up any fleet access records created during tests
         // but preserve the original test data by restoring it
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id IN (1, 2, 3)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id IN (1, 2, 3)")) {
             stmt.executeUpdate();
         }
-        
+
         // Restore the original test data
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), " +
+                        "(1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
             stmt.executeUpdate();
         }
     }
@@ -128,8 +188,22 @@ public class UserTest extends TestWithConnection {
     public void getUserWithValidIdAndFleetId() throws SQLException, AccountException {
         int userId = 1;
         int fleetId = 1;
-        User expectedUser = new User(connection, 1, "test@email.com", "John", "Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", false, false, 1, -1);
+        User expectedUser = new User(
+                connection,
+                1,
+                "test@email.com",
+                "John",
+                "Doe",
+                "123 House Road",
+                "CityName",
+                "CountryName",
+                "StateName",
+                "10001",
+                "",
+                false,
+                false,
+                1,
+                -1);
 
         User actualUser = User.get(connection, userId, fleetId);
         assertEquals(expectedUser, actualUser);
@@ -140,8 +214,22 @@ public class UserTest extends TestWithConnection {
     public void getUserWithValidIdAndDifferentFleetId() throws SQLException, AccountException {
         int userId = 1;
         int fleetId = 2;
-        User expectedUser = new User(connection, 1, "test@email.com", "John", "Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", false, false, 2, -1);
+        User expectedUser = new User(
+                connection,
+                1,
+                "test@email.com",
+                "John",
+                "Doe",
+                "123 House Road",
+                "CityName",
+                "CountryName",
+                "StateName",
+                "10001",
+                "",
+                false,
+                false,
+                2,
+                -1);
 
         User actualUser = User.get(connection, userId, fleetId);
         assertEquals(expectedUser, actualUser);
@@ -152,8 +240,22 @@ public class UserTest extends TestWithConnection {
     public void getUserWithAdminUser() throws SQLException, AccountException {
         int userId = 2;
         int fleetId = 1;
-        User expectedUser = new User(connection, 2, "test1@email.com", "John Admin", "Aggregate Doe", "123 House Road", "CityName", "CountryName",
-                "StateName", "10001", "", true, true, 1, -1);
+        User expectedUser = new User(
+                connection,
+                2,
+                "test1@email.com",
+                "John Admin",
+                "Aggregate Doe",
+                "123 House Road",
+                "CityName",
+                "CountryName",
+                "StateName",
+                "10001",
+                "",
+                true,
+                true,
+                1,
+                -1);
 
         User actualUser = User.get(connection, userId, fleetId);
         assertEquals(expectedUser, actualUser);
@@ -241,9 +343,21 @@ public class UserTest extends TestWithConnection {
         String duplicateEmail = user1Fleet1.getEmail();
         String existingFleetName = "Test Fleet with ID 1";
 
-        assertThrows(AccountException.class, () -> User.createNewFleetUser(
-                connection, duplicateEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", existingFleetName
-        ));
+        assertThrows(
+                AccountException.class,
+                () -> User.createNewFleetUser(
+                        connection,
+                        duplicateEmail,
+                        "pass",
+                        "first",
+                        "last",
+                        "country",
+                        "state",
+                        "city",
+                        "address",
+                        "phone",
+                        "zip",
+                        existingFleetName));
 
         connection.rollback();
     }
@@ -255,9 +369,21 @@ public class UserTest extends TestWithConnection {
         String duplicateEmail = user1Fleet1.getEmail();
         String newFleetName = "Fleet that doesn't exist 1000";
 
-        assertThrows(AccountException.class, () -> User.createNewFleetUser(
-                connection, duplicateEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", newFleetName
-        ));
+        assertThrows(
+                AccountException.class,
+                () -> User.createNewFleetUser(
+                        connection,
+                        duplicateEmail,
+                        "pass",
+                        "first",
+                        "last",
+                        "country",
+                        "state",
+                        "city",
+                        "address",
+                        "phone",
+                        "zip",
+                        newFleetName));
 
         connection.rollback();
     }
@@ -269,9 +395,21 @@ public class UserTest extends TestWithConnection {
         String newEmail = "coolemail@mail.com";
         String existingFleetName = "Test Fleet with ID 1";
 
-        assertThrows(AccountException.class, () -> User.createNewFleetUser(
-                connection, newEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", existingFleetName
-        ));
+        assertThrows(
+                AccountException.class,
+                () -> User.createNewFleetUser(
+                        connection,
+                        newEmail,
+                        "pass",
+                        "first",
+                        "last",
+                        "country",
+                        "state",
+                        "city",
+                        "address",
+                        "phone",
+                        "zip",
+                        existingFleetName));
 
         connection.rollback();
     }
@@ -283,7 +421,19 @@ public class UserTest extends TestWithConnection {
         String uniqueEmail = "coolemail@mail.com";
         String uniqueFleetName = "cool fleet 100";
 
-        User newUser = User.createNewFleetUser(connection, uniqueEmail, "pass", "first", "last", "country", "state", "city", "address", "phone", "zip", uniqueFleetName);
+        User newUser = User.createNewFleetUser(
+                connection,
+                uniqueEmail,
+                "pass",
+                "first",
+                "last",
+                "country",
+                "state",
+                "city",
+                "address",
+                "phone",
+                "zip",
+                uniqueFleetName);
 
         assertNotNull(newUser);
         assertEquals(uniqueEmail, newUser.getEmail());
@@ -467,16 +617,17 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER AUTHENTICATION TESTS ====================
 
-
     @Test
     @DisplayName("Should return null for user with valid email and password but no fleet access")
     public void getUserWithValidEmailAndPasswordButNoFleetAccess() throws SQLException {
         connection.setAutoCommit(false);
         String email = "nofleet@email.com";
         String password = "password123";
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (email, first_name, last_name, country, state, city, address, "
+                        + "phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setString(1, email);
             stmt.setString(2, "No");
             stmt.setString(3, "Fleet");
@@ -491,7 +642,7 @@ public class UserTest extends TestWithConnection {
             stmt.setString(12, "aaaaaaaaaaaaaaaaaaaa"); // Will be updated to valid format
             stmt.executeUpdate();
         }
-        
+
         User.updatePassword(connection, email, password);
 
         User result = null;
@@ -512,10 +663,12 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         String email = "singlefleet@email.com";
         String password = "password123";
-        
+
         int userId;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                "INSERT INTO user (email, first_name, last_name, country, state, city, address, "
+                        + "phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, email);
             stmt.setString(2, "Single");
@@ -530,7 +683,7 @@ public class UserTest extends TestWithConnection {
             stmt.setBoolean(11, false);
             stmt.setString(12, "aaaaaaaaaaaaaaaaaaaa"); // Will be updated to valid format
             stmt.executeUpdate();
-            
+
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     userId = generatedKeys.getInt(1);
@@ -539,15 +692,15 @@ public class UserTest extends TestWithConnection {
                 }
             }
         }
-        
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?)")) {
+
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?)")) {
             stmt.setInt(1, userId); // Use the actual generated user ID
             stmt.setInt(2, 1); // Fleet 1
             stmt.setString(3, "VIEW");
             stmt.executeUpdate();
         }
-        
+
         User.updatePassword(connection, email, password);
 
         User result = null;
@@ -583,11 +736,11 @@ public class UserTest extends TestWithConnection {
         String email = "test@email.com";
         String correctPassword = "password123";
         String invalidPassword = "wrongpassword";
-        
+
         User.updatePassword(connection, email, correctPassword);
 
         assertThrows(AccountException.class, () -> User.get(connection, email, invalidPassword));
-        
+
         connection.rollback();
     }
 
@@ -652,13 +805,13 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         User user = user1Fleet1;
         String correctPassword = "password123";
-        
+
         User.updatePassword(connection, user.getEmail(), correctPassword);
 
         boolean isValid = user.validate(connection, correctPassword);
 
         assertTrue(isValid);
-        
+
         connection.rollback();
     }
 
@@ -669,7 +822,7 @@ public class UserTest extends TestWithConnection {
         User user = user1Fleet1;
         String correctPassword = "password123";
         String incorrectPassword = "wrongpassword";
-        
+
         User.updatePassword(connection, user.getEmail(), correctPassword);
 
         boolean isValid = user.validate(connection, incorrectPassword);
@@ -719,8 +872,19 @@ public class UserTest extends TestWithConnection {
         String zipCode = "94102";
         String existingFleetName = "Test Fleet with ID 1";
 
-        User newUser = User.createExistingFleetUser(connection, email, password, firstName, lastName,
-                country, state, city, address, phoneNumber, zipCode, existingFleetName);
+        User newUser = User.createExistingFleetUser(
+                connection,
+                email,
+                password,
+                firstName,
+                lastName,
+                country,
+                state,
+                city,
+                address,
+                phoneNumber,
+                zipCode,
+                existingFleetName);
 
         assertNotNull(newUser);
         assertEquals(email, newUser.getEmail());
@@ -745,8 +909,21 @@ public class UserTest extends TestWithConnection {
         String zipCode = "94102";
         String existingFleetName = "Test Fleet with ID 1";
 
-        assertThrows(AccountException.class, () -> User.createExistingFleetUser(connection, duplicateEmail, password, firstName, lastName,
-                country, state, city, address, phoneNumber, zipCode, existingFleetName));
+        assertThrows(
+                AccountException.class,
+                () -> User.createExistingFleetUser(
+                        connection,
+                        duplicateEmail,
+                        password,
+                        firstName,
+                        lastName,
+                        country,
+                        state,
+                        city,
+                        address,
+                        phoneNumber,
+                        zipCode,
+                        existingFleetName));
 
         connection.rollback();
     }
@@ -767,8 +944,21 @@ public class UserTest extends TestWithConnection {
         String zipCode = "94102";
         String nonExistentFleetName = "Non Existent Fleet";
 
-        assertThrows(AccountException.class, () -> User.createExistingFleetUser(connection, email, password, firstName, lastName,
-                country, state, city, address, phoneNumber, zipCode, nonExistentFleetName));
+        assertThrows(
+                AccountException.class,
+                () -> User.createExistingFleetUser(
+                        connection,
+                        email,
+                        password,
+                        firstName,
+                        lastName,
+                        country,
+                        state,
+                        city,
+                        address,
+                        phoneNumber,
+                        zipCode,
+                        nonExistentFleetName));
 
         connection.rollback();
     }
@@ -789,7 +979,16 @@ public class UserTest extends TestWithConnection {
         String newPhoneNumber = "555-5678";
         String newZipCode = "M5H 2N2";
 
-        user.updateProfile(connection, newFirstName, newLastName, newCountry, newState, newCity, newAddress, newPhoneNumber, newZipCode);
+        user.updateProfile(
+                connection,
+                newFirstName,
+                newLastName,
+                newCountry,
+                newState,
+                newCity,
+                newAddress,
+                newPhoneNumber,
+                newZipCode);
 
         assertEquals(newFirstName, user.getFullName().split(" ")[0]);
         assertEquals(newLastName, user.getFullName().split(" ")[1]);
@@ -811,7 +1010,16 @@ public class UserTest extends TestWithConnection {
         String newPhoneNumber = "555-1234";
         String newZipCode = "10001";
 
-        user.updateProfile(connection, newFirstName, newLastName, newCountry, newState, newCity, newAddress, newPhoneNumber, newZipCode);
+        user.updateProfile(
+                connection,
+                newFirstName,
+                newLastName,
+                newCountry,
+                newState,
+                newCity,
+                newAddress,
+                newPhoneNumber,
+                newZipCode);
 
         assertEquals(newFirstName + " " + newLastName, user.getFullName());
 
@@ -927,9 +1135,9 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         int userId = 1;
         String metricName = "test_metric";
-        
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO double_series_names (name) VALUES (?)")) {
+
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO double_series_names (name) VALUES (?)")) {
             stmt.setString(1, metricName);
             stmt.executeUpdate();
         }
@@ -1045,7 +1253,8 @@ public class UserTest extends TestWithConnection {
             int userCount = User.getNumberUsers(connection, fleetId);
             assertTrue(userCount >= 0);
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Invalid value") || e.getMessage().contains("CHARACTER VARYING"));
+            assertTrue(
+                    e.getMessage().contains("Invalid value") || e.getMessage().contains("CHARACTER VARYING"));
         }
     }
 
@@ -1078,42 +1287,48 @@ public class UserTest extends TestWithConnection {
             // Handle the case where SendEmail static initializer fails
             String message = e.getMessage();
             String causeMessage = e.getCause() != null ? e.getCause().getMessage() : "";
-            
+
             // Handle null message case
-            boolean isConfigFileError = (message != null && (message.contains("ngafid.properties") || message.contains("Configuration file not found"))) ||
-                                      (causeMessage != null && (causeMessage.contains("ngafid.properties") || causeMessage.contains("Configuration file not found")));
-            
-            assertTrue(isConfigFileError,
-                      "Expected configuration file exception, got message: " + message + ", cause: " + causeMessage);
+            boolean isConfigFileError = (message != null
+                            && (message.contains("ngafid.properties")
+                                    || message.contains("Configuration file not found")))
+                    || (causeMessage != null
+                            && (causeMessage.contains("ngafid.properties")
+                                    || causeMessage.contains("Configuration file not found")));
+
+            assertTrue(
+                    isConfigFileError,
+                    "Expected configuration file exception, got message: " + message + ", cause: " + causeMessage);
         } catch (RuntimeException e) {
             String message = e.getMessage();
             String causeMessage = e.getCause() != null ? e.getCause().getMessage() : "";
-            
-            assertTrue(message.contains("FileNotFoundException") || 
-                      message.contains("reconfig-server.properties") ||
-                      message.contains("Kafka") ||
-                      message.contains("Connection refused") ||
-                      message.contains("NoClassDefFoundError") ||
-                      message.contains("ngafid.properties") ||
-                      causeMessage.contains("Connection refused") ||
-                      causeMessage.contains("Kafka"),
-                      "Expected infrastructure-related exception, got: " + message);
+
+            assertTrue(
+                    message.contains("FileNotFoundException")
+                            || message.contains("reconfig-server.properties")
+                            || message.contains("Kafka")
+                            || message.contains("Connection refused")
+                            || message.contains("NoClassDefFoundError")
+                            || message.contains("ngafid.properties")
+                            || causeMessage.contains("Connection refused")
+                            || causeMessage.contains("Kafka"),
+                    "Expected infrastructure-related exception, got: " + message);
         } catch (Exception e) {
             String message = e.getMessage();
             String causeMessage = e.getCause() != null ? e.getCause().getMessage() : "";
-            
-            assertTrue(message.contains("Kafka") || 
-                      message.contains("Connection refused") ||
-                      message.contains("NoClassDefFoundError") ||
-                      message.contains("ngafid.properties") ||
-                      causeMessage.contains("Connection refused") ||
-                      causeMessage.contains("Kafka"),
-                      "Expected infrastructure-related exception, got: " + message);
+
+            assertTrue(
+                    message.contains("Kafka")
+                            || message.contains("Connection refused")
+                            || message.contains("NoClassDefFoundError")
+                            || message.contains("ngafid.properties")
+                            || causeMessage.contains("Connection refused")
+                            || causeMessage.contains("Kafka"),
+                    "Expected infrastructure-related exception, got: " + message);
         }
-        
+
         connection.rollback();
     }
-
 
     // ==================== TWO-FACTOR AUTHENTICATION TESTS ====================
 
@@ -1199,9 +1414,7 @@ public class UserTest extends TestWithConnection {
         assertTrue(user.isTwoFactorSetupComplete());
     }
 
-
     // ==================== CONSTRUCTOR EXCEPTION HANDLING TESTS ====================
-
 
     // ==================== EQUALS TESTS ====================
 
@@ -1253,9 +1466,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different IDs")
     public void equalsWithDifferentId() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 999); // Different ID
             stmt.setString(2, "test999@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1271,14 +1486,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2999, 1); // Different ID
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1286,9 +1501,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different emails")
     public void equalsWithDifferentEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 998); // Different ID
             stmt.setString(2, "different@email.com"); // Different email
             stmt.setString(3, "John");
@@ -1304,14 +1521,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2998, 1); // Different email
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1319,9 +1536,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different first names")
     public void equalsWithDifferentFirstName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 997); // Different ID
             stmt.setString(2, "test997@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "Jane"); // Different first name
@@ -1337,14 +1556,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2997, 1); // Different first name
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1352,9 +1571,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different last names")
     public void equalsWithDifferentLastName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 996); // Different ID
             stmt.setString(2, "test996@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1370,14 +1591,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2996, 1); // Different last name
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1385,9 +1606,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different countries")
     public void equalsWithDifferentCountry() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 995); // Different ID
             stmt.setString(2, "test995@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1403,14 +1626,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2995, 1); // Different country
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1418,9 +1641,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different states")
     public void equalsWithDifferentState() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 994); // Different ID
             stmt.setString(2, "test994@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1436,14 +1661,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2994, 1); // Different state
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1451,9 +1676,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different cities")
     public void equalsWithDifferentCity() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 993); // Different ID
             stmt.setString(2, "test993@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1469,14 +1696,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2993, 1); // Different city
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1484,9 +1711,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different addresses")
     public void equalsWithDifferentAddress() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 992); // Different ID
             stmt.setString(2, "test992@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1502,14 +1731,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2992, 1); // Different address
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1517,9 +1746,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different phone numbers")
     public void equalsWithDifferentPhoneNumber() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 991); // Different ID
             stmt.setString(2, "test991@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1535,14 +1766,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2991, 1); // Different phone number
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1550,9 +1781,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different zip codes")
     public void equalsWithDifferentZipCode() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 990); // Different ID
             stmt.setString(2, "test990@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1568,14 +1801,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2990, 1); // Different zip code
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1583,9 +1816,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different admin status")
     public void equalsWithDifferentAdminStatus() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 989); // Different ID
             stmt.setString(2, "test989@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1601,14 +1836,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2989, 1); // Different admin status
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1616,9 +1851,11 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different aggregate view")
     public void equalsWithDifferentAggregateView() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 988); // Different ID
             stmt.setString(2, "test988@email.com"); // Different email to avoid unique constraint
             stmt.setString(3, "John");
@@ -1634,14 +1871,14 @@ public class UserTest extends TestWithConnection {
             stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
             stmt.executeUpdate();
         }
-        
+
         User user1 = user1Fleet1;
         User user2 = User.get(connection, 2988, 1); // Different aggregate view
 
         boolean result = user1.equals(user2);
 
         assertFalse(result);
-        
+
         connection.rollback();
     }
 
@@ -1684,11 +1921,10 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         int userId = 2; // Use existing user ID to avoid foreign key constraint violations
         int customPrecision = 3;
-        
+
         int metricId;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO double_series_names (name) VALUES (?)", 
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO double_series_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "test_metric");
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -1696,14 +1932,14 @@ public class UserTest extends TestWithConnection {
                 metricId = rs.getInt(1);
             }
         }
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
             stmt.setInt(2, customPrecision);
             stmt.executeUpdate();
         }
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences_metrics (user_id, metric_id) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
@@ -1717,7 +1953,7 @@ public class UserTest extends TestWithConnection {
         assertEquals(customPrecision, preferences.getDecimalPrecision());
         assertNotNull(preferences.getFlightMetrics());
         assertFalse(preferences.getFlightMetrics().isEmpty());
-        
+
         connection.rollback();
     }
 
@@ -1727,7 +1963,7 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         int userId = 3; // Use existing user ID to avoid foreign key constraint violations
         int customPrecision = 2;
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
@@ -1740,7 +1976,7 @@ public class UserTest extends TestWithConnection {
         assertNotNull(preferences);
         assertEquals(1, preferences.getDecimalPrecision()); // Default precision
         assertNotNull(preferences.getFlightMetrics());
-        
+
         connection.rollback();
     }
 
@@ -1750,18 +1986,18 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         int userId = 2; // Use different user ID to avoid primary key conflicts
         int customPrecision = 4;
-        
-        int metricId1, metricId2;
+
+        int metricId1;
+        int metricId2;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO double_series_names (name) VALUES (?)", 
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO double_series_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "test_metric_1");
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 rs.next();
                 metricId1 = rs.getInt(1);
             }
-            
+
             stmt.setString(1, "test_metric_2");
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -1769,20 +2005,20 @@ public class UserTest extends TestWithConnection {
                 metricId2 = rs.getInt(1);
             }
         }
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
             stmt.setInt(2, customPrecision);
             stmt.executeUpdate();
         }
-        
+
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO user_preferences_metrics (user_id, metric_id) VALUES (?, ?)")) {
             stmt.setInt(1, userId);
             stmt.setInt(2, metricId1); // First metric
             stmt.executeUpdate();
-            
+
             stmt.setInt(1, userId);
             stmt.setInt(2, metricId2); // Second metric
             stmt.executeUpdate();
@@ -1794,7 +2030,7 @@ public class UserTest extends TestWithConnection {
         assertEquals(customPrecision, preferences.getDecimalPrecision());
         assertNotNull(preferences.getFlightMetrics());
         assertFalse(preferences.getFlightMetrics().isEmpty());
-        
+
         connection.rollback();
     }
 
@@ -1804,18 +2040,18 @@ public class UserTest extends TestWithConnection {
         connection.setAutoCommit(false);
         int userId = 3; // Use different user ID to avoid conflicts
         int customPrecision = 5;
-        
-        int metricId1, metricId2;
+
+        int metricId1;
+        int metricId2;
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO double_series_names (name) VALUES (?)", 
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO double_series_names (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, "test_metric_for_store_1");
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 rs.next();
                 metricId1 = rs.getInt(1);
             }
-            
+
             stmt.setString(1, "test_metric_for_store_2");
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -1823,7 +2059,7 @@ public class UserTest extends TestWithConnection {
                 metricId2 = rs.getInt(1);
             }
         }
-        
+
         List<String> flightMetrics = Arrays.asList("test_metric_for_store_1", "test_metric_for_store_2");
         UserPreferences userPreferences = new UserPreferences(userId, customPrecision, flightMetrics);
 
@@ -1836,7 +2072,7 @@ public class UserTest extends TestWithConnection {
         assertEquals(2, storedPreferences.getFlightMetrics().size());
         assertTrue(storedPreferences.getFlightMetrics().contains("test_metric_for_store_1"));
         assertTrue(storedPreferences.getFlightMetrics().contains("test_metric_for_store_2"));
-        
+
         connection.rollback();
     }
 
@@ -1844,7 +2080,7 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when validating non-existent user")
     public void validateWithNonExistentUser() throws SQLException {
         connection.setAutoCommit(false);
-        
+
         User nonExistentUser = user1Fleet1;
         try {
             java.lang.reflect.Field idField = User.class.getDeclaredField("id");
@@ -1853,13 +2089,13 @@ public class UserTest extends TestWithConnection {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             fail("Failed to set user ID via reflection: " + e.getMessage());
         }
-        
+
         String password = "testpassword";
 
         boolean isValid = nonExistentUser.validate(connection, password);
 
         assertFalse(isValid);
-        
+
         connection.rollback();
     }
 
@@ -1868,20 +2104,19 @@ public class UserTest extends TestWithConnection {
     public void testFleetHasAirsync() throws SQLException, AccountException {
         Fleet fleet = Fleet.get(connection, 1);
         assertNotNull(fleet);
-        
-        boolean hasAirsync = fleet.hasAirsync(connection);
-        
-        assertTrue(hasAirsync == true || hasAirsync == false, "hasAirsync should return boolean");
+
+        // Test that hasAirsync returns successfully without throwing an exception
+        fleet.hasAirsync(connection);
     }
 
     @Test
     @DisplayName("Should get all fleets with valid data")
     public void testFleetGetAllFleets() throws SQLException {
         List<Fleet> fleets = Fleet.getAllFleets(connection);
-        
+
         assertNotNull(fleets, "Fleet list should not be null");
         assertTrue(fleets.size() >= 0, "Fleet list should have non-negative size");
-        
+
         for (Fleet fleet : fleets) {
             assertNotNull(fleet, "Each fleet should not be null");
             assertTrue(fleet.getId() > 0, "Fleet ID should be positive");
@@ -1893,9 +2128,9 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should get number of fleets matching getAllFleets count")
     public void testFleetGetNumberFleets() throws SQLException {
         int numberOfFleets = Fleet.getNumberFleets(connection);
-        
+
         assertTrue(numberOfFleets >= 0, "Number of fleets should be non-negative");
-        
+
         List<Fleet> allFleets = Fleet.getAllFleets(connection);
         assertEquals(allFleets.size(), numberOfFleets, "getNumberFleets should match getAllFleets count");
     }
@@ -1904,13 +2139,13 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should get fleet access getters")
     public void testFleetAccessGetters() throws SQLException, AccountException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess fleetAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
-        
+
         assertEquals(1, fleetAccess.getUserId());
         assertEquals(1, fleetAccess.getFleetId());
         assertEquals(FleetAccess.MANAGER, fleetAccess.getAccessType());
@@ -1919,11 +2154,11 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should check fleet access type checks")
     public void testFleetAccessTypeChecks() throws SQLException, AccountException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess managerAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         assertTrue(managerAccess.isManager());
         assertFalse(managerAccess.isUpload());
@@ -1931,38 +2166,38 @@ public class UserTest extends TestWithConnection {
         assertFalse(managerAccess.isWaiting());
         assertFalse(managerAccess.isDenied());
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 2")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 2")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess uploadAccess = FleetAccess.create(connection, 2, 2, FleetAccess.UPLOAD);
         assertTrue(uploadAccess.isUpload());
         assertFalse(uploadAccess.isManager());
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 3 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 3 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess viewAccess = FleetAccess.create(connection, 3, 1, FleetAccess.VIEW);
         assertTrue(viewAccess.isView());
         assertFalse(viewAccess.isManager());
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 2")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 2")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess waitingAccess = FleetAccess.create(connection, 1, 2, FleetAccess.WAITING);
         assertTrue(waitingAccess.isWaiting());
         assertFalse(waitingAccess.isManager());
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess deniedAccess = FleetAccess.create(connection, 2, 1, FleetAccess.DENIED);
         assertTrue(deniedAccess.isDenied());
         assertFalse(deniedAccess.isManager());
@@ -1971,25 +2206,28 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should get fleet access by user ID")
     public void testFleetAccessGetByUserId() throws SQLException, AccountException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1")) {
+        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         FleetAccess.create(connection, 1, 2, FleetAccess.VIEW);
-        
+
         ArrayList<FleetAccess> accessList = FleetAccess.getAllFleetAccessEntries(connection, 1);
         assertNotNull(accessList);
         assertTrue(accessList.size() >= 2);
-        
+
         boolean foundManager = false;
         boolean foundView = false;
         for (FleetAccess access : accessList) {
-            if (access.getUserId() == 1 && access.getFleetId() == 1 && access.getAccessType().equals(FleetAccess.MANAGER)) {
+            if (access.getUserId() == 1
+                    && access.getFleetId() == 1
+                    && access.getAccessType().equals(FleetAccess.MANAGER)) {
                 foundManager = true;
             }
-            if (access.getUserId() == 1 && access.getFleetId() == 2 && access.getAccessType().equals(FleetAccess.VIEW)) {
+            if (access.getUserId() == 1
+                    && access.getFleetId() == 2
+                    && access.getAccessType().equals(FleetAccess.VIEW)) {
                 foundView = true;
             }
         }
@@ -2000,13 +2238,13 @@ public class UserTest extends TestWithConnection {
     @Test
     @DisplayName("Should get fleet access by user ID and fleet ID")
     public void testFleetAccessGetByUserIdAndFleetId() throws SQLException, AccountException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess.create(connection, 1, 1, FleetAccess.UPLOAD);
-        
+
         FleetAccess access = FleetAccess.get(connection, 1, 1);
         assertNotNull(access);
         assertEquals(1, access.getUserId());
@@ -2026,16 +2264,17 @@ public class UserTest extends TestWithConnection {
         // Create a new fleet access entry using a user/fleet combination that doesn't exist
         // User 1 has VIEW access to fleet 1, but we can create a MANAGER access (upgrade)
         // First, delete the existing VIEW access
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess newAccess = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         assertNotNull(newAccess);
         assertEquals(1, newAccess.getUserId());
         assertEquals(1, newAccess.getFleetId());
         assertEquals(FleetAccess.MANAGER, newAccess.getAccessType());
-        
+
         // Verify it was created in the database
         FleetAccess retrievedAccess = FleetAccess.get(connection, 1, 1);
         assertNotNull(retrievedAccess);
@@ -2045,14 +2284,14 @@ public class UserTest extends TestWithConnection {
     @Test
     public void testFleetAccessCreateDuplicate() throws SQLException, AccountException {
         // First delete the existing VIEW access for user 1 and fleet 1
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         // Create first access
         FleetAccess.create(connection, 1, 1, FleetAccess.UPLOAD);
-        
+
         // Try to create duplicate access
         assertThrows(AccountException.class, () -> {
             FleetAccess.create(connection, 1, 1, FleetAccess.VIEW);
@@ -2066,22 +2305,22 @@ public class UserTest extends TestWithConnection {
         FleetAccess existingAccess = FleetAccess.get(connection, 1, 1);
         if (existingAccess != null) {
             String originalType = existingAccess.getAccessType();
-            
+
             // Update the access type
             FleetAccess.update(connection, 1, 1, FleetAccess.UPLOAD);
-            
+
             // Verify the update
             FleetAccess updatedAccess = FleetAccess.get(connection, 1, 1);
             assertNotNull(updatedAccess);
             assertEquals(FleetAccess.UPLOAD, updatedAccess.getAccessType());
-            
+
             // Restore original type for other tests
             FleetAccess.update(connection, 1, 1, originalType);
         } else {
             // If no existing entry, create one first
             FleetAccess.create(connection, 1, 1, FleetAccess.VIEW);
             FleetAccess.update(connection, 1, 1, FleetAccess.MANAGER);
-            
+
             FleetAccess updatedAccess = FleetAccess.get(connection, 1, 1);
             assertNotNull(updatedAccess);
             assertEquals(FleetAccess.MANAGER, updatedAccess.getAccessType());
@@ -2094,26 +2333,26 @@ public class UserTest extends TestWithConnection {
         FleetAccess existingAccess = FleetAccess.get(connection, 2, 2);
         if (existingAccess != null) {
             String originalType = existingAccess.getAccessType();
-            
+
             // Test updating to different access types
             FleetAccess.update(connection, 2, 2, FleetAccess.UPLOAD);
             FleetAccess access = FleetAccess.get(connection, 2, 2);
             assertEquals(FleetAccess.UPLOAD, access.getAccessType());
-            
+
             FleetAccess.update(connection, 2, 2, FleetAccess.WAITING);
             access = FleetAccess.get(connection, 2, 2);
             assertEquals(FleetAccess.WAITING, access.getAccessType());
-            
+
             FleetAccess.update(connection, 2, 2, FleetAccess.DENIED);
             access = FleetAccess.get(connection, 2, 2);
             assertEquals(FleetAccess.DENIED, access.getAccessType());
-            
+
             // Restore original type
             FleetAccess.update(connection, 2, 2, originalType);
         } else {
             // If no existing entry, create one first
             FleetAccess.create(connection, 2, 2, FleetAccess.VIEW);
-            
+
             FleetAccess.update(connection, 2, 2, FleetAccess.UPLOAD);
             FleetAccess access = FleetAccess.get(connection, 2, 2);
             assertEquals(FleetAccess.UPLOAD, access.getAccessType());
@@ -2135,7 +2374,7 @@ public class UserTest extends TestWithConnection {
         assertDoesNotThrow(() -> {
             FleetAccess.update(connection, 1, 1, FleetAccess.VIEW);
         });
-        
+
         // Also test with non-existent entries to ensure the method executes
         assertDoesNotThrow(() -> {
             FleetAccess.update(connection, 999, 999, FleetAccess.MANAGER);
@@ -2160,7 +2399,7 @@ public class UserTest extends TestWithConnection {
             int userId = existingAccess.getUserId();
             assertEquals(1, userId);
         }
-        
+
         // Also test with another existing entry
         FleetAccess anotherAccess = FleetAccess.get(connection, 2, 1);
         if (anotherAccess != null) {
@@ -2171,30 +2410,30 @@ public class UserTest extends TestWithConnection {
 
     @Test
     public void testFleetAccessEquals() throws SQLException, AccountException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess access1 = FleetAccess.create(connection, 1, 1, FleetAccess.MANAGER);
         FleetAccess access2 = FleetAccess.get(connection, 1, 1); // Same as access1
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 1")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 2 AND fleet_id = 1")) {
             stmt.executeUpdate();
         }
-        
+
         FleetAccess access3 = FleetAccess.create(connection, 2, 1, FleetAccess.MANAGER);
-        
+
         // Test equality
         assertEquals(access1, access2);
         assertEquals(access2, access1);
-        
+
         // Test inequality
         assertNotEquals(access1, access3);
-        
+
         // Test with null
         assertNotEquals(access1, null);
-        
+
         // Test with different object type
         assertNotEquals(access1, "not a FleetAccess");
     }
@@ -2207,7 +2446,6 @@ public class UserTest extends TestWithConnection {
         assertEquals("WAITING", FleetAccess.WAITING);
         assertEquals("DENIED", FleetAccess.DENIED);
     }
- 
 
     @Test
     public void testUserEqualsWithSameUser() {
@@ -2244,10 +2482,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different IDs")
     public void testUserEqualsWithDifferentId() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 999); // Different ID
                 stmt.setString(2, "test999@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2263,7 +2503,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2999, 1); // Different ID
 
@@ -2279,10 +2519,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different emails")
     public void testUserEqualsWithDifferentEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 998); // Different ID
                 stmt.setString(2, "different@email.com"); // Different email
                 stmt.setString(3, "John");
@@ -2298,7 +2540,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2998, 1); // Different email
 
@@ -2314,10 +2556,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different first names")
     public void testUserEqualsWithDifferentFirstName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 997); // Different ID
                 stmt.setString(2, "test997@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "Jane"); // Different first name
@@ -2333,7 +2577,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2997, 1); // Different first name
 
@@ -2349,10 +2593,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different last names")
     public void testUserEqualsWithDifferentLastName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 996); // Different ID
                 stmt.setString(2, "test996@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2368,7 +2614,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2996, 1); // Different last name
 
@@ -2384,10 +2630,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different countries")
     public void testUserEqualsWithDifferentCountry() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 995); // Different ID
                 stmt.setString(2, "test995@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2403,7 +2651,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2995, 1); // Different country
 
@@ -2419,11 +2667,13 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different states")
     public void testUserEqualsWithDifferentState() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             // Create a user with different state
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 994); // Different ID
                 stmt.setString(2, "test994@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2439,7 +2689,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2994, 1); // Different state
 
@@ -2455,10 +2705,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different cities")
     public void testUserEqualsWithDifferentCity() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 993); // Different ID
                 stmt.setString(2, "test993@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2474,7 +2726,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2993, 1); // Different city
 
@@ -2490,10 +2742,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different addresses")
     public void testUserEqualsWithDifferentAddress() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 992); // Different ID
                 stmt.setString(2, "test992@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2509,7 +2763,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2992, 1); // Different address
 
@@ -2525,10 +2779,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different phone numbers")
     public void testUserEqualsWithDifferentPhoneNumber() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 991); // Different ID
                 stmt.setString(2, "test991@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2544,7 +2800,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2991, 1); // Different phone number
 
@@ -2560,10 +2816,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different zip codes")
     public void testUserEqualsWithDifferentZipCode() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 990); // Different ID
                 stmt.setString(2, "test990@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2579,7 +2837,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2990, 1); // Different zip code
 
@@ -2595,10 +2853,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different admin status")
     public void testUserEqualsWithDifferentAdminStatus() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 989); // Different ID
                 stmt.setString(2, "test989@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2614,7 +2874,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2989, 1); // Different admin status
 
@@ -2630,10 +2890,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return false when comparing users with different aggregate view")
     public void testUserEqualsWithDifferentAggregateView() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 988); // Different ID
                 stmt.setString(2, "test988@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2649,7 +2911,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = user1Fleet1;
             User user2 = User.get(connection, 2988, 1); // Different aggregate view
 
@@ -2665,10 +2927,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should return true when comparing identical users")
     public void testUserEqualsWithIdenticalUsers() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view, password_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 987); // Different ID
                 stmt.setString(2, "test987@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2684,7 +2948,7 @@ public class UserTest extends TestWithConnection {
                 stmt.setString(13, "aaaaaaaaaaaaaaaaaaaa");
                 stmt.executeUpdate();
             }
-            
+
             User user1 = User.get(connection, 2987, 1);
             User user2 = User.get(connection, 2987, 1); // Same user, same fleet
 
@@ -2702,9 +2966,9 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should get selected fleet ID")
     public void getSelectedFleetId() {
         User user = user1Fleet1;
-        
+
         Integer selectedFleetId = user.getSelectedFleetId();
-        
+
         assertNotNull(selectedFleetId);
         assertEquals(-1, selectedFleetId.intValue()); // Default value is -1
     }
@@ -2713,19 +2977,19 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should set selected fleet ID successfully")
     public void setSelectedFleetIdSuccessfully() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             User user = user1Fleet1;
             int newFleetId = 2;
-            
+
             user.setSelectedFleetId(connection, newFleetId);
-            
+
             assertEquals(newFleetId, user.getSelectedFleetId().intValue());
             assertEquals(newFleetId, user.getFleetId());
-            
+
             // Verify database was updated
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT fleet_selected FROM user WHERE id = ?")) {
+            try (PreparedStatement stmt =
+                         connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
                 stmt.setInt(1, user.getId());
                 try (ResultSet rs = stmt.executeQuery()) {
                     assertTrue(rs.next());
@@ -2741,13 +3005,12 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should throw AccountException when setting selected fleet ID to non-existent fleet")
     public void setSelectedFleetIdWithNonExistentFleet() throws SQLException {
         connection.setAutoCommit(false);
-        
+
         try {
             User user = user1Fleet1;
             int nonExistentFleetId = 999;
-            
-            assertThrows(AccountException.class, () -> 
-                user.setSelectedFleetId(connection, nonExistentFleetId));
+
+            assertThrows(AccountException.class, () -> user.setSelectedFleetId(connection, nonExistentFleetId));
         } finally {
             connection.rollback();
         }
@@ -2757,32 +3020,33 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should leave selected fleet successfully when multiple fleets available")
     public void leaveSelectedFleetSuccessfully() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             // Create a user with access to multiple fleets
             User user = user1Fleet1; // User 1 has access to fleet 1 and 2
             int originalFleetId = user.getFleetId();
-            
+
             // Ensure user has access to fleet 2 as well
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "VIEW");
                 stmt.executeUpdate();
             }
-            
+
             // Set user to fleet 1 first
             user.setSelectedFleetId(connection, 1);
             assertEquals(1, user.getFleetId());
-            
+
             // Now leave fleet 1 (should switch to fleet 2)
             user.leaveSelectedFleet(connection);
-            
+
             // Should now be on fleet 2
             assertEquals(2, user.getFleetId());
             assertEquals(2, user.getSelectedFleetId().intValue());
-            
+
             // Verify access to original fleet was removed
             try (PreparedStatement stmt = connection.prepareStatement(
                     "SELECT COUNT(*) FROM fleet_access WHERE user_id = ? AND fleet_id = ?")) {
@@ -2802,27 +3066,27 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should throw SQLException when leaving fleet as last manager")
     public void leaveSelectedFleetAsLastManager() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             // Create a user who is the only manager of a fleet
             User user = user1Fleet1;
-            
+
             // Make user a manager of fleet 1 and remove other managers
             try (PreparedStatement stmt = connection.prepareStatement(
                     "UPDATE fleet_access SET type = 'MANAGER' WHERE user_id = ? AND fleet_id = 1")) {
                 stmt.setInt(1, user.getId());
                 stmt.executeUpdate();
             }
-            
+
             // Remove other managers from fleet 1
             try (PreparedStatement stmt = connection.prepareStatement(
                     "DELETE FROM fleet_access WHERE fleet_id = 1 AND user_id != ? AND type = 'MANAGER'")) {
                 stmt.setInt(1, user.getId());
                 stmt.executeUpdate();
             }
-            
+
             user.setSelectedFleetId(connection, 1);
-            
+
             // Should throw SQLException when trying to leave as last manager
             assertThrows(SQLException.class, () -> user.leaveSelectedFleet(connection));
         } finally {
@@ -2834,19 +3098,19 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should throw SQLException when no other fleets available to switch to")
     public void leaveSelectedFleetWithNoOtherFleets() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             User user = user1Fleet1;
-            
+
             // Remove all other fleet access for this user
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM fleet_access WHERE user_id = ? AND fleet_id != 1")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = ? AND fleet_id != 1")) {
                 stmt.setInt(1, user.getId());
                 stmt.executeUpdate();
             }
-            
+
             user.setSelectedFleetId(connection, 1);
-            
+
             // Should throw SQLException when no other fleets available
             assertThrows(SQLException.class, () -> user.leaveSelectedFleet(connection));
         } finally {
@@ -2858,21 +3122,22 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should throw SQLException when only denied/waiting fleets available")
     public void leaveSelectedFleetWithOnlyDeniedFleets() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             User user = user1Fleet1;
-            
+
             // Add access to fleet 2 but with DENIED status
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "DENIED");
                 stmt.executeUpdate();
             }
-            
+
             user.setSelectedFleetId(connection, 1);
-            
+
             // Should throw SQLException when only denied fleets available
             assertThrows(SQLException.class, () -> user.leaveSelectedFleet(connection));
         } finally {
@@ -2884,35 +3149,36 @@ public class UserTest extends TestWithConnection {
     @DisplayName("Should handle transaction rollback on failure")
     public void leaveSelectedFleetWithTransactionRollback() throws SQLException, AccountException {
         connection.setAutoCommit(false);
-        
+
         try {
             User user = user1Fleet1;
-            
+
             // Set up user with access to fleet 2
             try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "VIEW");
                 stmt.executeUpdate();
             }
-            
+
             user.setSelectedFleetId(connection, 1);
             int originalFleetId = user.getFleetId();
-            
+
             // This should handle the rollback properly
             try {
                 user.leaveSelectedFleet(connection);
             } catch (SQLException e) {
                 // Expected - connection issues
-                assertTrue(e.getMessage().contains("Connection") || e.getMessage().contains("closed"));
+                assertTrue(
+                        e.getMessage().contains("Connection") || e.getMessage().contains("closed"));
             }
-            
+
             // Verify user state is still consistent (user should now be on fleet 2)
             assertEquals(2, user.getFleetId());
         } finally {
             connection.rollback();
         }
     }
-
 }

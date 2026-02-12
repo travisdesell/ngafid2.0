@@ -14,12 +14,14 @@ import java.util.List;
 /**
  * Things this program should allow you to do:
  * - Delete computed events, potentially restricting this to a particular flight, upload, or fleet.
- * A flag shall be made available to potentially mark the events as already having been computed therefore preventing the
- * EventObserver from queueing up their re-computation.
+ * A flag shall be made available to potentially mark the events as already having been computed
+ * therefore preventing the EventObserver from queueing up their re-computation.
  * - Delete an event definition and all related entries.
  * -
  */
 public class EventHelper {
+
+    private EventHelper() {}
 
     private static Options getOptions() {
         Options options = new Options();
@@ -36,15 +38,21 @@ public class EventHelper {
         flight.setRequired(false);
         options.addOption(flight);
 
-        Option noRecompute = new Option("nr", "no-recompute", false, "Prevent deleted events from being recomputed by marking them as completed in the database.");
+        Option noRecompute = new Option(
+                "nr",
+                "no-recompute",
+                false,
+                "Prevent deleted events from being recomputed by marking them as completed in the database.");
         noRecompute.setRequired(false);
         options.addOption(noRecompute);
 
-        Option definition = new Option("d", "definition", true, "Event definition ID to delete all associated data for.");
+        Option definition =
+                new Option("d", "definition", true, "Event definition ID to delete all associated data for.");
         definition.setRequired(false);
         options.addOption(definition);
 
-        Option deleteDef = new Option("x", "delete-definition", false, "Remove the event definition after deleting all associated data.");
+        Option deleteDef = new Option(
+                "x", "delete-definition", false, "Remove the event definition after deleting all associated data.");
         deleteDef.setRequired(false);
         options.addOption(deleteDef);
 
@@ -67,7 +75,8 @@ public class EventHelper {
 
         if (cmd.hasOption("definition")) {
             int defId = Integer.parseInt(cmd.getOptionValue("definition"));
-            System.out.println("Read event definition ID " + defId + " -- clearing relevant data from the database (subject to constrains).");
+            System.out.println("Read event definition ID " + defId
+                    + " -- clearing relevant data from the database (subject to constrains).");
             clearDefinition(defId, cmd);
         } else {
             System.out.println("Clearing events subject to constrains.");
@@ -83,7 +92,8 @@ public class EventHelper {
 
         if (cmd.hasOption("flight")) {
             if (eventsTable) {
-                constraints.add("(flight_id = " + cmd.getOptionValue("flight") + " OR other_flight_id = " + cmd.getOptionValue("flight") + ")");
+                constraints.add("(flight_id = " + cmd.getOptionValue("flight") + " OR other_flight_id = "
+                        + cmd.getOptionValue("flight") + ")");
             } else {
                 constraints.add("flight_id = " + cmd.getOptionValue("flight"));
             }
@@ -99,7 +109,9 @@ public class EventHelper {
     }
 
     private static void clearDefinition(int defId, CommandLine cmd) throws SQLException {
-        System.out.println("WARNING: Clearing a definition from the database while upload processing is running may lead to isolated bugs.");
+        System.out.println(
+                "WARNING: Clearing a definition from the database while upload processing is running may lead to "
+                        + "isolated bugs.");
         try (Connection connection = Database.getConnection()) {
             String constraints = getConstraints(cmd, false).trim();
             String eventconstraints = getConstraints(cmd, true).trim();
@@ -108,8 +120,9 @@ public class EventHelper {
 
                 // Delete all events with event definition ID
                 String eventQuery = "DELETE FROM events WHERE event_definition_id = " + defId;
-                if (!eventconstraints.isEmpty())
+                if (!eventconstraints.isEmpty()) {
                     eventQuery += " AND " + eventconstraints;
+                }
 
                 try (PreparedStatement statement = connection.prepareStatement(eventQuery)) {
                     System.out.println("Executing query: \n" + statement.toString());
@@ -118,7 +131,8 @@ public class EventHelper {
 
                 // Delete event definition
                 if (cmd.hasOption("delete-definition")) {
-                    try (PreparedStatement statement = connection.prepareStatement("DELETE FROM event_definitions WHERE id = " + defId)) {
+                    try (PreparedStatement statement =
+                            connection.prepareStatement("DELETE FROM event_definitions WHERE id = " + defId)) {
                         System.out.println("Executing query: \n" + statement.toString());
                         statement.executeUpdate();
                     }
@@ -134,18 +148,22 @@ public class EventHelper {
                                 min_severity = DEFAULT,
                                 max_severity = DEFAULT,
                                 had_error = DEFAULT
-                            WHERE event_definition_id =\s""" + defId;
-                    if (!constraints.isEmpty())
+                            WHERE event_definition_id =
+                            """ + defId;
+                    if (!constraints.isEmpty()) {
                         query += " AND " + constraints;
+                    }
                     try (PreparedStatement statement = connection.prepareStatement(query)) {
                         System.out.println("Executing query: \n" + statement.toString());
                         statement.executeUpdate();
                     }
                 } else {
                     // Delete all entries in flight_processed table for that event
-                    String flightProcessedTableQuery = "DELETE FROM flight_processed WHERE event_definition_id = " + defId;
-                    if (!constraints.isEmpty())
+                    String flightProcessedTableQuery =
+                            "DELETE FROM flight_processed WHERE event_definition_id = " + defId;
+                    if (!constraints.isEmpty()) {
                         flightProcessedTableQuery += " AND " + constraints;
+                    }
 
                     try (PreparedStatement statement = connection.prepareStatement(flightProcessedTableQuery)) {
                         System.out.println("Executing query: \n" + statement.toString());
@@ -163,7 +181,5 @@ public class EventHelper {
         }
     }
 
-    private static void clearEvents(CommandLine cmd) throws SQLException {
-
-    }
+    private static void clearEvents(CommandLine cmd) throws SQLException {}
 }

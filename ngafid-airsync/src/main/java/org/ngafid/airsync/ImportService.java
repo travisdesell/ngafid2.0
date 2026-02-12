@@ -1,9 +1,5 @@
 package org.ngafid.airsync;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.Upload;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.ngafid.core.Database;
+import org.ngafid.core.uploads.Upload;
 
 /**
  * This class contains code for controlling the AirSync daemon, as well
@@ -39,9 +38,8 @@ public final class ImportService {
         LOG.severe("Caught " + message + " when making AirSync request!");
 
         if (message.contains("HTTP response code: 40")) {
-            LOG.severe(
-                    "Bearer token is no longer valid (someone may have requested one elsewhere, " +
-                            "or this daemon is running somewhere else!).");
+            LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, "
+                    + "or this daemon is running somewhere else!).");
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
@@ -60,8 +58,8 @@ public final class ImportService {
         e.printStackTrace();
 
         // TODO: format this as html!
-        StringBuilder sb = new StringBuilder(
-                "The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
+        StringBuilder sb = new StringBuilder("The NGAFID AirSync daemon has crashed at "
+                + LocalDateTime.now().toString() + "!\n");
         sb.append("Exception caught: ").append(e.getMessage()).append("\n");
         sb.append("Stack trace:\n");
         sb.append(ExceptionUtils.getStackTrace(e));
@@ -77,15 +75,13 @@ public final class ImportService {
     static void cli(String[] args) throws IOException, SQLException {
         switch (args[0]) {
             case "reset-all":
-                System.out
-                        .println("Do you really want to delete all airsync uploads and associated flights? (y/n)");
+                System.out.println("Do you really want to delete all airsync uploads and associated flights? (y/n)");
                 int c = System.in.read();
                 if (c == 'y') {
                     try (Connection connection = Database.getConnection();
-                         PreparedStatement query = connection.prepareStatement(
-                                 "SELECT " + Upload.DEFAULT_COLUMNS
-                                         + " FROM uploads WHERE kind = 'AIRSYNC'");
-                         ResultSet results = query.executeQuery()) {
+                            PreparedStatement query = connection.prepareStatement(
+                                    "SELECT " + Upload.DEFAULT_COLUMNS + " FROM uploads WHERE kind = 'AIRSYNC'");
+                            ResultSet results = query.executeQuery()) {
                         while (results.next()) {
                             Upload upload = new Upload(results);
                             try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
@@ -129,10 +125,9 @@ public final class ImportService {
                 // airsync
                 // uploads with
                 // UPLOADING to have state UPLOADED.
-                try (PreparedStatement query = connection.prepareStatement(
-                        "SELECT " + Upload.DEFAULT_COLUMNS
+                try (PreparedStatement query = connection.prepareStatement("SELECT " + Upload.DEFAULT_COLUMNS
                                 + " FROM uploads WHERE kind = 'AIRSYNC' AND status = 'UPLOADING'");
-                     ResultSet results = query.executeQuery()) {
+                        ResultSet results = query.executeQuery()) {
                     while (results.next()) {
                         Upload upload = new Upload(results);
                         try (Upload.LockedUpload locked = upload.getLockedUpload(connection)) {
@@ -143,9 +138,8 @@ public final class ImportService {
                 AirSyncFleet[] airSyncFleets = AirSyncFleet.getAll(connection);
 
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
-                    LOG.severe(
-                            "This instance of the NGAFID does not have any AirSync fleets configured." +
-                                    " Please check the database and try again");
+                    LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured."
+                            + " Please check the database and try again");
                     System.exit(1);
                 }
 

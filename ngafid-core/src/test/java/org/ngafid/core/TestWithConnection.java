@@ -1,10 +1,9 @@
 package org.ngafid.core;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 public class TestWithConnection {
     protected Connection connection;

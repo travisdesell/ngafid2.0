@@ -1,17 +1,17 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
-
 /**
- * A generic step to convert units from one type to another. As of right now, this is only being done with simple
- * conversions that only require a multiplication factor, but it could be extended to support non-linear transformations.
+ * A generic step to convert units from one type to another. As of right now, this is only being
+ * done with simple conversions that only require a multiplication factor, but it could be extended
+ * to support non-linear transformations.
  */
 public class ComputeUnitConversion extends ComputeStep {
 
@@ -21,7 +21,7 @@ public class ComputeUnitConversion extends ComputeStep {
 
         private final double value;
 
-        private UnitConversion(double value) {
+        UnitConversion(double value) {
             this.value = value;
         }
 
@@ -41,7 +41,8 @@ public class ComputeUnitConversion extends ComputeStep {
     private final String outSeriesName;
     private final UnitConversion unitConversion;
 
-    public ComputeUnitConversion(Connection connection, FlightBuilder builder, String inParam, String outSeries, UnitConversion conversion) {
+    public ComputeUnitConversion(
+            Connection connection, FlightBuilder builder, String inParam, String outSeries, UnitConversion conversion) {
         super(connection, builder);
         inSeriesName = inParam;
         outSeriesName = outSeries;
@@ -68,15 +69,14 @@ public class ComputeUnitConversion extends ComputeStep {
         return Set.of(outSeriesName);
     }
 
-    private record UnitConverter(UnitConversion conversion,
-                                 DoubleTimeSeries series) implements DoubleTimeSeries.TimeStepCalculation {
+    private record UnitConverter(UnitConversion conversion, DoubleTimeSeries series)
+            implements DoubleTimeSeries.TimeStepCalculation {
 
         @Override
         public double compute(int i) {
             double value = series.get(i);
 
-            if (Double.isNaN(value))
-                return Double.NaN;
+            if (Double.isNaN(value)) return Double.NaN;
 
             return value * conversion.getConversionFactor();
         }
@@ -85,7 +85,11 @@ public class ComputeUnitConversion extends ComputeStep {
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries inputSeries = builder.getDoubleTimeSeries(inSeriesName);
-        DoubleTimeSeries convertedSeries = DoubleTimeSeries.computed(outSeriesName, unitConversion.getOutputUnit(), inputSeries.size(), new UnitConverter(unitConversion, inputSeries));
+        DoubleTimeSeries convertedSeries = DoubleTimeSeries.computed(
+                outSeriesName,
+                unitConversion.getOutputUnit(),
+                inputSeries.size(),
+                new UnitConverter(unitConversion, inputSeries));
         builder.addTimeSeries(convertedSeries);
     }
 }

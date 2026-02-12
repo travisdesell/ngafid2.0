@@ -1,12 +1,11 @@
 package org.ngafid.airsync;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.FlightWarning;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.FlightWarning;
 
 public class AirSyncImportResponse {
     private final int id;
@@ -34,5 +33,4 @@ public class AirSyncImportResponse {
             this.warnings = FlightWarning.getWarningsByFlight(Database.getConnection(), flightId);
         }
     }
-
 }

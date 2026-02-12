@@ -1,10 +1,10 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.SQLException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for AccountException class.
@@ -17,9 +17,9 @@ public class AccountExceptionTest {
     public void testConstructorWithTitleAndMessage() {
         String title = "Authentication Error";
         String message = "Invalid credentials provided";
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -32,9 +32,9 @@ public class AccountExceptionTest {
         String title = "Database Error";
         String message = "Failed to connect to database";
         Throwable cause = new RuntimeException("Connection timeout");
-        
+
         AccountException exception = new AccountException(title, message, cause);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -46,9 +46,9 @@ public class AccountExceptionTest {
     public void testConstructorWithNullTitle() {
         String title = null;
         String message = "Some error occurred";
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertNull(exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -59,9 +59,9 @@ public class AccountExceptionTest {
     public void testConstructorWithNullMessage() {
         String title = "Error Title";
         String message = null;
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertNull(exception.getMessage());
@@ -72,9 +72,9 @@ public class AccountExceptionTest {
     public void testConstructorWithNullTitleAndMessage() {
         String title = null;
         String message = null;
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertNull(exception.getTitle());
         assertNull(exception.getMessage());
@@ -86,9 +86,9 @@ public class AccountExceptionTest {
         String title = null;
         String message = "Error with cause";
         Throwable cause = new IllegalArgumentException("Invalid argument");
-        
+
         AccountException exception = new AccountException(title, message, cause);
-        
+
         assertNotNull(exception);
         assertNull(exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -101,9 +101,9 @@ public class AccountExceptionTest {
         String title = "Error Title";
         String message = null;
         Throwable cause = new SQLException("Database error");
-        
+
         AccountException exception = new AccountException(title, message, cause);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertNull(exception.getMessage());
@@ -116,9 +116,9 @@ public class AccountExceptionTest {
         String title = "Error Title";
         String message = "Error message";
         Throwable cause = null;
-        
+
         AccountException exception = new AccountException(title, message, cause);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -131,9 +131,9 @@ public class AccountExceptionTest {
         String title = null;
         String message = null;
         Throwable cause = null;
-        
+
         AccountException exception = new AccountException(title, message, cause);
-        
+
         assertNotNull(exception);
         assertNull(exception.getTitle());
         assertNull(exception.getMessage());
@@ -145,9 +145,9 @@ public class AccountExceptionTest {
     public void testConstructorWithEmptyTitleAndMessage() {
         String title = "";
         String message = "";
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals("", exception.getTitle());
         assertEquals("", exception.getMessage());
@@ -158,9 +158,9 @@ public class AccountExceptionTest {
     public void testConstructorWithWhitespaceTitleAndMessage() {
         String title = "   ";
         String message = "\t\n";
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals("   ", exception.getTitle());
         assertEquals("\t\n", exception.getMessage());
@@ -170,10 +170,14 @@ public class AccountExceptionTest {
     @DisplayName("Should handle long title and message")
     public void testConstructorWithLongTitleAndMessage() {
         String title = "Very Long Error Title That Exceeds Normal Length";
-        String message = "This is a very long error message that contains detailed information about what went wrong and how to fix it. It includes multiple sentences and provides comprehensive context for the error.";
-        
+        String message =
+                "This is a very long error message that contains detailed "
+                + "information about what went wrong and how to fix it. It "
+                + "includes multiple sentences and provides comprehensive "
+                + "context for the error.";
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -184,9 +188,9 @@ public class AccountExceptionTest {
     public void testConstructorWithSpecialCharacters() {
         String title = "Error: @#$%^&*()_+-=[]{}|;':\",./<>?";
         String message = "Error with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?";
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -197,9 +201,9 @@ public class AccountExceptionTest {
     public void testConstructorWithUnicodeCharacters() {
         String title = "错误标题";
         String message = "错误消息：数据库连接失败";
-        
+
         AccountException exception = new AccountException(title, message);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
@@ -209,17 +213,17 @@ public class AccountExceptionTest {
     @DisplayName("Should handle different exception types as cause")
     public void testConstructorWithDifferentExceptionTypes() {
         String title = "Various Error Types";
-        
+
         // Test with RuntimeException
         RuntimeException runtimeException = new RuntimeException("Runtime error");
         AccountException exception1 = new AccountException(title, "Runtime error", runtimeException);
         assertEquals(runtimeException, exception1.getCause());
-        
+
         // Test with IllegalArgumentException
         IllegalArgumentException illegalArgumentException = new IllegalArgumentException("Illegal argument");
         AccountException exception2 = new AccountException(title, "Illegal argument error", illegalArgumentException);
         assertEquals(illegalArgumentException, exception2.getCause());
-        
+
         // Test with SQLException
         SQLException sqlException = new SQLException("Database error");
         AccountException exception3 = new AccountException(title, "Database error", sqlException);
@@ -231,13 +235,13 @@ public class AccountExceptionTest {
     public void testTitleImmutability() {
         String title = "Original Title";
         String message = "Test message";
-        
+
         AccountException exception = new AccountException(title, message);
         String retrievedTitle = exception.getTitle();
-        
+
         // The retrieved title should be the same reference (not a copy)
         assertSame(title, retrievedTitle);
-        
+
         // Modifying the original title should not affect the exception's title
         // (though this is more about defensive programming)
         assertEquals("Original Title", exception.getTitle());
@@ -248,19 +252,19 @@ public class AccountExceptionTest {
     public void testConstructorWithNestedExceptions() {
         String title = "Nested Exception Test";
         String message = "Outer exception";
-        
+
         // Create a nested exception chain
         RuntimeException innerException = new RuntimeException("Inner exception");
         SQLException middleException = new SQLException("Middle exception", innerException);
         IllegalArgumentException outerException = new IllegalArgumentException("Outer exception", middleException);
-        
+
         AccountException exception = new AccountException(title, message, outerException);
-        
+
         assertNotNull(exception);
         assertEquals(title, exception.getTitle());
         assertEquals(message, exception.getMessage());
         assertEquals(outerException, exception.getCause());
-        
+
         // Verify the exception chain
         assertEquals(middleException, exception.getCause().getCause());
         assertEquals(innerException, exception.getCause().getCause().getCause());
@@ -273,15 +277,15 @@ public class AccountExceptionTest {
         String message = "Outer message";
         String innerTitle = "Inner Account Exception";
         String innerMessage = "Inner message";
-        
+
         AccountException innerException = new AccountException(innerTitle, innerMessage);
         AccountException outerException = new AccountException(title, message, innerException);
-        
+
         assertNotNull(outerException);
         assertEquals(title, outerException.getTitle());
         assertEquals(message, outerException.getMessage());
         assertEquals(innerException, outerException.getCause());
-        
+
         // Verify the inner exception properties
         assertEquals(innerTitle, ((AccountException) outerException.getCause()).getTitle());
         assertEquals(innerMessage, outerException.getCause().getMessage());

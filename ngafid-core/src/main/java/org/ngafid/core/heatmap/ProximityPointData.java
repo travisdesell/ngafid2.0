@@ -8,8 +8,7 @@ public class ProximityPointData {
     private final OffsetDateTime timestamp;
     private final double altitudeAGL;
 
-    public ProximityPointData(double latitude, double longitude, OffsetDateTime timestamp,
-                              double altitudeAGL) {
+    public ProximityPointData(double latitude, double longitude, OffsetDateTime timestamp, double altitudeAGL) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.timestamp = timestamp;

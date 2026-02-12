@@ -1,3 +1,7 @@
+version: "1.0"
+
+# Split this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
+# itself.
 x-ngafid-service-common-base: &ngafid-service-common-base
   extra_hosts:
     - "host.docker.internal:host-gateway"
@@ -32,24 +36,29 @@ services:
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.topics
+    command: [ "java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.Topic" ]
     <<: *ngafid-service-common-base
     depends_on:
       kafka:
         condition: service_started
+
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
   ngafid-email-consumer:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar", "org.ngafid.core.kafka.EmailConsumer"]
+    command: [ "java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.EmailConsumer" ]
+    restart: unless-stopped
     <<: *ngafid-service-common
 
+  # Our airsync API implementation is fully out of date, this shouldn't be used until it is fixed / rewritten.
   # AirSync sync daemon
   # ngafid-airsync-importer:
   #   build:
   #     context: .
   #     dockerfile: ngafid-airsync/Dockerfile
+  #   restart: unless-stopped
   #   <<: *ngafid-service-common
 
   # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
@@ -59,7 +68,8 @@ services:
       dockerfile: ngafid-data-processor/Dockerfile
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 3
+    restart: unless-stopped
     <<: *ngafid-service-common
 
   # Webserver
@@ -69,6 +79,7 @@ services:
       dockerfile: ngafid-www/Dockerfile
     ports:
       - "8181:8181"
+    restart: unless-stopped
     <<: *ngafid-service-common
 
   # Event Consumer: reads from event topic and computes the events
@@ -76,6 +87,7 @@ services:
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-consumer
+    restart: unless-stopped
     <<: *ngafid-service-common
 
   # Event Observer: scans database for events that have not been computed, and computes them.
@@ -84,6 +96,7 @@ services:
     build:
       context: .
       dockerfile: ngafid-data-processor/Dockerfile.event-observer
+    restart: unless-stopped
     <<: *ngafid-service-common
 
 
@@ -103,9 +116,10 @@ services:
     command: --default-authentication-plugin=mysql_native_password
 
   kafka:
-    image: apache/kafka-native
+    image: apache/kafka
     ports:
       - "9092:9092"
+    restart: unless-stopped
     environment:
       # Configure listeners for both docker and host communication
       KAFKA_LISTENERS: CONTROLLER://localhost:9091,HOST://0.0.0.0:9092,DOCKER://0.0.0.0:9093
@@ -124,5 +138,15 @@ services:
       # Required for a single node cluster
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+      # For persistence
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+    # volumes:
+    #   - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
+
 volumes:
   mysql_data:
+  kafka_data:

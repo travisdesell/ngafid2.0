@@ -1,18 +1,17 @@
 package org.ngafid.processor.steps;
 
+import static org.ngafid.core.flights.Parameters.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
 import org.ngafid.processor.terrain.TerrainCache;
 import org.ngafid.processor.terrain.TerrainUnavailableException;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Set;
-
-import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Computes the altitude above ground level based on the altitude above sea level and lat / long coordinates.
@@ -60,8 +59,8 @@ public class ComputeAltAGL extends ComputeStep {
         DoubleTimeSeries latitudeTS = builder.getDoubleTimeSeries(LATITUDE);
         DoubleTimeSeries longitudeTS = builder.getDoubleTimeSeries(LONGITUDE);
 
-        DoubleTimeSeries altitudeAGLTS = withConnection(
-                connection -> new DoubleTimeSeries(connection, ALT_AGL, Unit.FT_AGL));
+        DoubleTimeSeries altitudeAGLTS =
+                withConnection(connection -> new DoubleTimeSeries(connection, ALT_AGL, Unit.FT_AGL));
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
             double altitudeMSL = altitudeMSLTS.get(i);
@@ -79,10 +78,8 @@ public class ComputeAltAGL extends ComputeStep {
             } catch (TerrainUnavailableException e) {
                 altitudeAGLTS.add(Double.NaN);
             }
-
         }
 
         builder.addTimeSeries(altitudeAGLTS);
     }
-
 }

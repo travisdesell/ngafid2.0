@@ -1,18 +1,16 @@
 package org.ngafid.core.flights;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
-import org.ngafid.core.TestWithConnection;
+import static org.junit.jupiter.api.Assertions.*;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.ngafid.core.TestWithConnection;
 
 /**
  * Airframes class.
@@ -36,27 +34,31 @@ public class AirframesTest extends TestWithConnection {
 
     private void clearTestData() throws SQLException {
         // Use higher IDs to avoid conflicts with existing data
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM fleet_airframes WHERE airframe_id IN (1001, 1002, 1003)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM fleet_airframes WHERE airframe_id IN (1001, 1002, 1003)")) {
             stmt.executeUpdate();
         }
         // Delete flights that reference airframes first
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM flights WHERE airframe_id IN (1001, 1002, 1003)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM flights WHERE airframe_id IN (1001, 1002, 1003)")) {
             stmt.executeUpdate();
         }
         // Delete airframes that reference airframe_types
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM airframes WHERE id IN (1001, 1002, 1003)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM airframes WHERE id IN (1001, 1002, 1003)")) {
             stmt.executeUpdate();
         }
         // Finally delete airframe_types
-        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM airframe_types WHERE id IN (1001, 1002)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM airframe_types WHERE id IN (1001, 1002)")) {
             stmt.executeUpdate();
         }
     }
 
     private void insertTestData() throws SQLException {
         // Insert airframe types
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO airframe_types (id, name) VALUES (?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO airframe_types (id, name) VALUES (?, ?)")) {
             stmt.setInt(1, 1001);
             stmt.setString(2, "Test Fixed Wing");
             try {
@@ -64,7 +66,7 @@ public class AirframesTest extends TestWithConnection {
             } catch (SQLException e) {
                 // Ignore if already exists
             }
-            
+
             stmt.setInt(1, 1002);
             stmt.setString(2, "Test Rotorcraft");
             try {
@@ -75,8 +77,8 @@ public class AirframesTest extends TestWithConnection {
         }
 
         // Insert test airframes
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO airframes (id, airframe, type_id) VALUES (?, ?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO airframes (id, airframe, type_id) VALUES (?, ?, ?)")) {
             stmt.setInt(1, 1001);
             stmt.setString(2, "Test Cessna 172S");
             stmt.setInt(3, 1001);
@@ -85,7 +87,7 @@ public class AirframesTest extends TestWithConnection {
             } catch (SQLException e) {
                 // Ignore if already exists
             }
-            
+
             stmt.setInt(1, 1002);
             stmt.setString(2, "Test PA-28-181");
             stmt.setInt(3, 1001);
@@ -94,7 +96,7 @@ public class AirframesTest extends TestWithConnection {
             } catch (SQLException e) {
                 // Ignore if already exists
             }
-            
+
             stmt.setInt(1, 1003);
             stmt.setString(2, "Test R44");
             stmt.setInt(3, 1002);
@@ -106,8 +108,8 @@ public class AirframesTest extends TestWithConnection {
         }
 
         // Insert fleet-airframe relationships
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_airframes (fleet_id, airframe_id) VALUES (?, ?)")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO fleet_airframes (fleet_id, airframe_id) VALUES (?, ?)")) {
             stmt.setInt(1, 1);
             stmt.setInt(2, 1001);
             try {
@@ -115,7 +117,7 @@ public class AirframesTest extends TestWithConnection {
             } catch (SQLException e) {
                 // Ignore if already exists
             }
-            
+
             stmt.setInt(1, 1);
             stmt.setInt(2, 1002);
             try {
@@ -123,7 +125,7 @@ public class AirframesTest extends TestWithConnection {
             } catch (SQLException e) {
                 // Ignore if already exists
             }
-            
+
             stmt.setInt(1, 2);
             stmt.setInt(2, 1003);
             try {
@@ -219,7 +221,7 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(aliases.containsKey(new Airframes.AliasKey("Robinson R44 Raven I", 1)));
         assertTrue(aliases.containsKey(Airframes.defaultAlias("Robinson R44")));
         assertTrue(aliases.containsKey(Airframes.defaultAlias("Cirrus SR22 (3600 GW)")));
-        
+
         assertEquals("", aliases.get(Airframes.defaultAlias("Unknown Aircraft")));
         assertEquals("Diamond DA40", aliases.get(Airframes.defaultAlias("Diamond DA 40")));
         assertEquals("R44", aliases.get(new Airframes.AliasKey("Garmin Flight Display", 1)));
@@ -235,9 +237,9 @@ public class AirframesTest extends TestWithConnection {
     public void testAliasKeyConstructor() {
         String name = "Test Aircraft";
         int fleetId = 123;
-        
+
         Airframes.AliasKey aliasKey = new Airframes.AliasKey(name, fleetId);
-        
+
         assertEquals(name, aliasKey.name());
         assertEquals(fleetId, aliasKey.fleetId());
     }
@@ -246,7 +248,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create AliasKey with null name")
     public void testAliasKeyWithNullName() {
         Airframes.AliasKey aliasKey = new Airframes.AliasKey(null, 123);
-        
+
         assertNull(aliasKey.name());
         assertEquals(123, aliasKey.fleetId());
     }
@@ -255,7 +257,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create AliasKey with negative fleetId")
     public void testAliasKeyWithNegativeFleetId() {
         Airframes.AliasKey aliasKey = new Airframes.AliasKey("Test", -1);
-        
+
         assertEquals("Test", aliasKey.name());
         assertEquals(-1, aliasKey.fleetId());
     }
@@ -267,7 +269,7 @@ public class AirframesTest extends TestWithConnection {
         Airframes.AliasKey key2 = new Airframes.AliasKey("Test", 1);
         Airframes.AliasKey key3 = new Airframes.AliasKey("Different", 1);
         Airframes.AliasKey key4 = new Airframes.AliasKey("Test", 2);
-        
+
         assertEquals(key1, key2);
         assertNotEquals(key1, key3);
         assertNotEquals(key1, key4);
@@ -280,7 +282,7 @@ public class AirframesTest extends TestWithConnection {
         Airframes.AliasKey key1 = new Airframes.AliasKey("Test", 1);
         Airframes.AliasKey key2 = new Airframes.AliasKey("Test", 1);
         Airframes.AliasKey key3 = new Airframes.AliasKey("Different", 1);
-        
+
         assertEquals(key1.hashCode(), key2.hashCode());
         assertNotEquals(key1.hashCode(), key3.hashCode());
     }
@@ -290,7 +292,7 @@ public class AirframesTest extends TestWithConnection {
     public void testAliasKeyToString() {
         Airframes.AliasKey key = new Airframes.AliasKey("Test Aircraft", 123);
         String toString = key.toString();
-        
+
         assertNotNull(toString);
         assertTrue(toString.contains("Test Aircraft"));
         assertTrue(toString.contains("123"));
@@ -301,7 +303,7 @@ public class AirframesTest extends TestWithConnection {
     public void testDefaultAlias() {
         String name = "Test Aircraft";
         Airframes.AliasKey aliasKey = Airframes.defaultAlias(name);
-        
+
         assertEquals(name, aliasKey.name());
         assertEquals(-1, aliasKey.fleetId());
     }
@@ -310,7 +312,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create default alias with null name")
     public void testDefaultAliasWithNullName() {
         Airframes.AliasKey aliasKey = Airframes.defaultAlias(null);
-        
+
         assertNull(aliasKey.name());
         assertEquals(-1, aliasKey.fleetId());
     }
@@ -322,9 +324,9 @@ public class AirframesTest extends TestWithConnection {
     public void testAirframeNameIDConstructor() {
         String name = "Test Aircraft";
         int id = 123;
-        
+
         Airframes.AirframeNameID airframeNameID = new Airframes.AirframeNameID(name, id);
-        
+
         assertEquals(name, airframeNameID.name());
         assertEquals(id, airframeNameID.id());
     }
@@ -333,7 +335,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create AirframeNameID with null name")
     public void testAirframeNameIDWithNullName() {
         Airframes.AirframeNameID airframeNameID = new Airframes.AirframeNameID(null, 123);
-        
+
         assertNull(airframeNameID.name());
         assertEquals(123, airframeNameID.id());
     }
@@ -342,7 +344,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create AirframeNameID with negative id")
     public void testAirframeNameIDWithNegativeId() {
         Airframes.AirframeNameID airframeNameID = new Airframes.AirframeNameID("Test", -1);
-        
+
         assertEquals("Test", airframeNameID.name());
         assertEquals(-1, airframeNameID.id());
     }
@@ -354,7 +356,7 @@ public class AirframesTest extends TestWithConnection {
         Airframes.AirframeNameID id2 = new Airframes.AirframeNameID("Test", 1);
         Airframes.AirframeNameID id3 = new Airframes.AirframeNameID("Different", 1);
         Airframes.AirframeNameID id4 = new Airframes.AirframeNameID("Test", 2);
-        
+
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);
         assertNotEquals(id1, id4);
@@ -367,7 +369,7 @@ public class AirframesTest extends TestWithConnection {
         Airframes.AirframeNameID id1 = new Airframes.AirframeNameID("Test", 1);
         Airframes.AirframeNameID id2 = new Airframes.AirframeNameID("Test", 1);
         Airframes.AirframeNameID id3 = new Airframes.AirframeNameID("Different", 1);
-        
+
         assertEquals(id1.hashCode(), id2.hashCode());
         assertNotEquals(id1.hashCode(), id3.hashCode());
     }
@@ -377,7 +379,7 @@ public class AirframesTest extends TestWithConnection {
     public void testAirframeNameIDToString() {
         Airframes.AirframeNameID airframeNameID = new Airframes.AirframeNameID("Test Aircraft", 123);
         String toString = airframeNameID.toString();
-        
+
         assertNotNull(toString);
         assertTrue(toString.contains("Test Aircraft"));
         assertTrue(toString.contains("123"));
@@ -390,7 +392,7 @@ public class AirframesTest extends TestWithConnection {
     public void testTypeConstructorWithName() {
         String typeName = "Fixed Wing";
         Airframes.Type type = new Airframes.Type(typeName);
-        
+
         assertNotNull(type);
         // Note: We can't directly test the name since it's inherited from NormalizedColumn
         // and the getName() method might not be accessible or might require database connection
@@ -401,7 +403,7 @@ public class AirframesTest extends TestWithConnection {
     public void testTypeConstructorWithConnectionAndName() throws SQLException {
         String typeName = "Fixed Wing";
         Airframes.Type type = new Airframes.Type(connection, typeName);
-        
+
         assertNotNull(type);
     }
 
@@ -410,7 +412,7 @@ public class AirframesTest extends TestWithConnection {
     public void testTypeConstructorWithConnectionAndId() throws SQLException {
         int typeId = 1;
         Airframes.Type type = new Airframes.Type(connection, typeId);
-        
+
         assertNotNull(type);
     }
 
@@ -456,7 +458,9 @@ public class AirframesTest extends TestWithConnection {
     @Test
     @DisplayName("Should handle Type with very long name")
     public void testTypeWithLongName() {
-        String longName = "Very Long Type Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
+        String longName =
+                "Very Long Type Name That Exceeds Normal Length And "
+                + "Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
         Airframes.Type type = new Airframes.Type(longName);
         assertNotNull(type);
     }
@@ -468,9 +472,9 @@ public class AirframesTest extends TestWithConnection {
     public void testAirframeConstructorWithNameAndType() {
         String name = "Test Aircraft";
         Airframes.Type type = new Airframes.Type("Fixed Wing");
-        
+
         Airframes.Airframe airframe = new Airframes.Airframe(name, type);
-        
+
         assertNotNull(airframe);
         assertEquals(name, airframe.getName());
         assertEquals(type, airframe.getType());
@@ -481,9 +485,9 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create Airframe with null name and type")
     public void testAirframeConstructorWithNullNameAndType() {
         Airframes.Type type = new Airframes.Type("Fixed Wing");
-        
+
         Airframes.Airframe airframe = new Airframes.Airframe(null, type);
-        
+
         assertNotNull(airframe);
         assertNull(airframe.getName());
         assertEquals(type, airframe.getType());
@@ -494,9 +498,9 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create Airframe with name and null type")
     public void testAirframeConstructorWithNameAndNullType() {
         String name = "Test Aircraft";
-        
+
         Airframes.Airframe airframe = new Airframes.Airframe(name, null);
-        
+
         assertNotNull(airframe);
         assertEquals(name, airframe.getName());
         assertNull(airframe.getType());
@@ -507,7 +511,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create Airframe with null name and null type")
     public void testAirframeConstructorWithNullNameAndNullType() {
         Airframes.Airframe airframe = new Airframes.Airframe(null, null);
-        
+
         assertNotNull(airframe);
         assertNull(airframe.getName());
         assertNull(airframe.getType());
@@ -519,9 +523,9 @@ public class AirframesTest extends TestWithConnection {
     public void testAirframeConstructorWithConnectionNameAndType() throws SQLException {
         String name = "Cessna 172S";
         Airframes.Type type = new Airframes.Type("Fixed Wing");
-        
+
         Airframes.Airframe airframe = new Airframes.Airframe(connection, name, type);
-        
+
         assertNotNull(airframe);
         assertEquals(name, airframe.getName());
         assertNotNull(airframe.getType());
@@ -532,9 +536,9 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should create Airframe with connection, name, and null type")
     public void testAirframeConstructorWithConnectionNameAndNullType() throws SQLException {
         String name = "Cessna 172S";
-        
+
         Airframes.Airframe airframe = new Airframes.Airframe(connection, name, null);
-        
+
         assertNotNull(airframe);
         assertEquals(name, airframe.getName());
         assertNotNull(airframe.getType());
@@ -545,9 +549,9 @@ public class AirframesTest extends TestWithConnection {
     // @DisplayName("Should create Airframe with connection and id")
     public void testAirframeConstructorWithConnectionAndId() throws SQLException {
         int id = 1001;
-        
+
         Airframes.Airframe airframe = new Airframes.Airframe(connection, id);
-        
+
         assertNotNull(airframe);
         assertNotNull(airframe.getName());
         assertNotNull(airframe.getType());
@@ -558,7 +562,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle Airframe with non-existent name")
     public void testAirframeWithNonExistentName() throws SQLException {
         String nonExistentName = "Non-existent Aircraft";
-        
+
         // This should throw SQLException because the airframe doesn't exist and type is null
         assertThrows(SQLException.class, () -> {
             new Airframes.Airframe(connection, nonExistentName, null);
@@ -569,7 +573,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle Airframe with non-existent id")
     public void testAirframeWithNonExistentId() throws SQLException {
         int nonExistentId = 999;
-        
+
         assertThrows(SQLException.class, () -> {
             new Airframes.Airframe(connection, nonExistentId);
         });
@@ -579,9 +583,9 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get airframe by name using static method")
     public void testGetAirframeByName() throws SQLException {
         String name = "Cessna 172S";
-        
+
         Airframes.Airframe airframe = Airframes.Airframe.getAirframeByName(connection, name);
-        
+
         assertNotNull(airframe);
         assertEquals(name, airframe.getName());
         assertNotNull(airframe.getType());
@@ -592,13 +596,12 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle getAirframeByName with non-existent name")
     public void testGetAirframeByNameWithNonExistentName() throws SQLException {
         String nonExistentName = "Non-existent Aircraft";
-        
+
         assertThrows(SQLException.class, () -> {
             Airframes.Airframe.getAirframeByName(connection, nonExistentName);
         });
     }
 
-    
     @Test
     @DisplayName("Should handle getAirframeByName with empty name")
     public void testGetAirframeByNameWithEmptyName() throws SQLException {
@@ -611,7 +614,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle getAirframeByName with special characters")
     public void testGetAirframeByNameWithSpecialCharacters() throws SQLException {
         String specialName = "Aircraft @#$%^&*()";
-        
+
         assertThrows(SQLException.class, () -> {
             Airframes.Airframe.getAirframeByName(connection, specialName);
         });
@@ -621,7 +624,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle getAirframeByName with unicode characters")
     public void testGetAirframeByNameWithUnicodeCharacters() throws SQLException {
         String unicodeName = "飞机";
-        
+
         assertThrows(SQLException.class, () -> {
             Airframes.Airframe.getAirframeByName(connection, unicodeName);
         });
@@ -630,8 +633,10 @@ public class AirframesTest extends TestWithConnection {
     @Test
     @DisplayName("Should handle getAirframeByName with very long name")
     public void testGetAirframeByNameWithLongName() throws SQLException {
-        String longName = "Very Long Aircraft Name That Exceeds Normal Length And Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
-        
+        String longName =
+                "Very Long Aircraft Name That Exceeds Normal Length And "
+                + "Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
+
         assertThrows(SQLException.class, () -> {
             Airframes.Airframe.getAirframeByName(connection, longName);
         });
@@ -665,7 +670,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle Airframe with negative id")
     public void testAirframeWithNegativeId() throws SQLException {
         int negativeId = -1;
-        
+
         assertThrows(SQLException.class, () -> {
             new Airframes.Airframe(connection, negativeId);
         });
@@ -675,7 +680,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle Airframe with zero id")
     public void testAirframeWithZeroId() throws SQLException {
         int zeroId = 0;
-        
+
         assertThrows(SQLException.class, () -> {
             new Airframes.Airframe(connection, zeroId);
         });
@@ -685,7 +690,7 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle Airframe with very large id")
     public void testAirframeWithVeryLargeId() throws SQLException {
         int veryLargeId = Integer.MAX_VALUE;
-        
+
         assertThrows(SQLException.class, () -> {
             new Airframes.Airframe(connection, veryLargeId);
         });
@@ -695,13 +700,12 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should handle Airframe with very small id")
     public void testAirframeWithVerySmallId() throws SQLException {
         int verySmallId = Integer.MIN_VALUE;
-        
+
         assertThrows(SQLException.class, () -> {
             new Airframes.Airframe(connection, verySmallId);
         });
     }
 
-   
     // ========== STATIC METHODS TESTS ==========
 
     @Test
@@ -709,16 +713,16 @@ public class AirframesTest extends TestWithConnection {
     public void testSetAirframeFleet() throws SQLException {
         int airframeId = 1001;
         int fleetId = 3;
-        
+
         // This should not throw an exception
         Airframes.setAirframeFleet(connection, airframeId, fleetId);
-        
+
         // Verify the relationship was created
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, airframeId);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 assertTrue(rs.next());
                 assertEquals(1, rs.getInt(1));
@@ -731,19 +735,19 @@ public class AirframesTest extends TestWithConnection {
     public void testSetAirframeFleetWithExistingRelationship() throws SQLException {
         int airframeId = 1001;
         int fleetId = 1;
-        
+
         // First call should succeed
         Airframes.setAirframeFleet(connection, airframeId, fleetId);
-        
+
         // Second call should also succeed (no exception thrown)
         Airframes.setAirframeFleet(connection, airframeId, fleetId);
-        
+
         // Verify only one relationship exists
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM fleet_airframes WHERE fleet_id = ? AND airframe_id = ?")) {
             stmt.setInt(1, fleetId);
             stmt.setInt(2, airframeId);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 assertTrue(rs.next());
                 assertEquals(1, rs.getInt(1));
@@ -751,15 +755,13 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
-    
-
     @Test
     @DisplayName("Should get all airframes for fleet with no airframes")
     public void testGetAllForFleetWithNoAirframes() throws SQLException {
         int fleetId = 999; // Non-existent fleet
-        
+
         ArrayList<String> airframes = Airframes.getAll(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.isEmpty());
     }
@@ -768,22 +770,20 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get all airframes for fleet with negative ID")
     public void testGetAllForFleetWithNegativeId() throws SQLException {
         int fleetId = -1;
-        
+
         ArrayList<String> airframes = Airframes.getAll(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.isEmpty());
     }
-
-   
 
     @Test
     @DisplayName("Should get all airframes for fleet with very large ID")
     public void testGetAllForFleetWithVeryLargeId() throws SQLException {
         int fleetId = Integer.MAX_VALUE;
-        
+
         ArrayList<String> airframes = Airframes.getAll(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.isEmpty());
     }
@@ -792,9 +792,9 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get all airframes for fleet with very small ID")
     public void testGetAllForFleetWithVerySmallId() throws SQLException {
         int fleetId = Integer.MIN_VALUE;
-        
+
         ArrayList<String> airframes = Airframes.getAll(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.isEmpty());
     }
@@ -807,18 +807,16 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-   
-
     @Test
     @DisplayName("Should get all airframes regardless of fleet")
     public void testGetAllAirframes() throws SQLException {
         ArrayList<String> airframes = Airframes.getAll(connection);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.size() >= 1); // Should have at least 1 airframe
         // Just verify we get some airframes back - don't check for specific names
         // as they may vary depending on test data setup
-        
+
         // Additional verification to ensure the while loop executes
         assertTrue(airframes.size() > 0, "Should have retrieved at least one airframe");
         for (String airframe : airframes) {
@@ -835,16 +833,14 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-  
-
     @Test
     @DisplayName("Should get all airframes with IDs regardless of fleet")
     public void testGetAllWithIds() throws SQLException {
         Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.length >= 3); // Should have at least 3 airframes
-        
+
         // Verify the structure
         for (Airframes.AirframeNameID airframe : airframes) {
             assertNotNull(airframe);
@@ -857,12 +853,12 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get all airframes with IDs for specific fleet")
     public void testGetAllWithIdsForFleet() throws SQLException {
         int fleetId = 1;
-        
+
         Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.length >= 2); // Should have at least 2 airframes for fleet 1
-        
+
         // Verify the structure
         for (Airframes.AirframeNameID airframe : airframes) {
             assertNotNull(airframe);
@@ -871,14 +867,13 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
-    
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with negative ID")
     public void testGetAllWithIdsForFleetWithNegativeId() throws SQLException {
         int fleetId = -1;
-        
+
         Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.length >= 3); // Should return all airframes
     }
@@ -887,22 +882,20 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get all airframes with IDs for fleet with zero ID")
     public void testGetAllWithIdsForFleetWithZeroId() throws SQLException {
         int fleetId = 0;
-        
+
         Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.length == 0);
     }
-
-   
 
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with very small ID")
     public void testGetAllWithIdsForFleetWithVerySmallId() throws SQLException {
         int fleetId = Integer.MIN_VALUE;
-        
+
         Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
-        
+
         assertNotNull(airframes);
         assertTrue(airframes.length == 0);
     }
@@ -923,18 +916,14 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
-   
-
-  
-
     @Test
     @DisplayName("Should get ID to name map")
     public void testGetIdToNameMap() throws SQLException {
         HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection);
-        
+
         assertNotNull(idToNameMap);
         assertTrue(idToNameMap.size() >= 3); // Should have at least 3 airframes
-        
+
         // Verify the structure
         for (Map.Entry<Integer, String> entry : idToNameMap.entrySet()) {
             assertNotNull(entry.getKey());
@@ -948,12 +937,12 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get ID to name map for specific fleet")
     public void testGetIdToNameMapForFleet() throws SQLException {
         int fleetId = 1;
-        
+
         HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection, fleetId);
-        
+
         assertNotNull(idToNameMap);
         assertTrue(idToNameMap.size() >= 2); // Should have at least 2 airframes for fleet 1
-        
+
         // Verify the structure
         for (Map.Entry<Integer, String> entry : idToNameMap.entrySet()) {
             assertNotNull(entry.getKey());
@@ -967,21 +956,20 @@ public class AirframesTest extends TestWithConnection {
     @DisplayName("Should get ID to name map for fleet with no airframes")
     public void testGetIdToNameMapForFleetWithNoAirframes() throws SQLException {
         int fleetId = 999; // Non-existent fleet
-        
+
         HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection, fleetId);
-        
+
         assertNotNull(idToNameMap);
         assertTrue(idToNameMap.isEmpty());
     }
 
-   
     @Test
     @DisplayName("Should get ID to name map for fleet with very small ID")
     public void testGetIdToNameMapForFleetWithVerySmallId() throws SQLException {
         int fleetId = Integer.MIN_VALUE;
-        
+
         HashMap<Integer, String> idToNameMap = Airframes.getIdToNameMap(connection, fleetId);
-        
+
         assertNotNull(idToNameMap);
         assertTrue(idToNameMap.isEmpty());
     }
@@ -1001,6 +989,4 @@ public class AirframesTest extends TestWithConnection {
             Airframes.getIdToNameMap(null, 1);
         });
     }
-
-  
 }
