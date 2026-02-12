@@ -285,6 +285,7 @@ public class TurnToFinal implements Serializable {
         }
     }
 
+    static final String DELETE_QUERY_STR = "DELETE FROM turn_to_final WHERE flight_id = ?";
     public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight)
             throws SQLException, IOException, ClassNotFoundException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
@@ -304,8 +305,6 @@ public class TurnToFinal implements Serializable {
 
         query.close();
         resultSet.close();
-
-        final String DELETE_QUERY_STR = "DELETE FROM turn_to_final WHERE flight_id = ?";
 
         if (version != TurnToFinal.serialVersionUID) {
 
@@ -523,7 +522,9 @@ public class TurnToFinal implements Serializable {
             List<Itinerary> itinerary = Itinerary.getItinerary(connection, flight.getId());
             OffsetDateTime startTime = TimeUtils.sqlToOffsetDateTime(flight.getStartDateTime());
 
-            ArrayList<TurnToFinal> ttfs = calculateFlightTurnToFinals( doubleTimeSeries, itinerary, flight.getAirframe(), startTime);
+            ArrayList<TurnToFinal> ttfs = calculateFlightTurnToFinals(
+                doubleTimeSeries, itinerary, flight.getAirframe(), startTime
+            );
 
             LOG.info(() -> "Recomputed TTFs for flight " + flight.getId() + ": " + ttfs.size());
 
