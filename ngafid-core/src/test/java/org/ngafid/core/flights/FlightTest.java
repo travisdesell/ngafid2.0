@@ -838,16 +838,9 @@ public class FlightTest extends TestWithConnection {
         Flight.batchUpdateDatabase(connection, flights);
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
-        
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM events WHERE flight_id = ?")) {
-            stmt.setInt(1, testFlight.getId());
-            try (var rs = stmt.executeQuery()) {
-                assertTrue(rs.next(), "Should have at least one event record");
-                int eventCount = rs.getInt(1);
-                assertEquals(2, eventCount, "Should have exactly 2 events in database");
-            }
-        }
+        // batchUpdateDatabase sets flight ID on events but does not insert into events table (Event.batchInsertion does that)
+        assertEquals(testFlight.getId(), event1.getFlightId(), "Event 1 should have flight ID set");
+        assertEquals(testFlight.getId(), event2.getFlightId(), "Event 2 should have flight ID set");
     }
     
     @Test
@@ -1035,29 +1028,9 @@ public class FlightTest extends TestWithConnection {
         Flight.batchUpdateDatabase(connection, flights);
 
         assertTrue(testFlight.getId() > 0, "Flight should have a positive ID after successful insertion");
-        
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM events WHERE flight_id = ?")) {
-            stmt.setInt(1, testFlight.getId());
-            try (var rs = stmt.executeQuery()) {
-                assertTrue(rs.next(), "Should have at least one event record");
-                int eventCount = rs.getInt(1);
-                assertEquals(2, eventCount, "Should have exactly 2 event records");
-            }
-        }
-        
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM events WHERE flight_id = ? ORDER BY flight_id")) {
-            stmt.setInt(1, testFlight.getId());
-            try (var rs = stmt.executeQuery()) {
-                int count = 0;
-                while (rs.next()) {
-                    assertEquals(testFlight.getId(), rs.getInt(1), "Event should have the correct flight ID");
-                    count++;
-                }
-                assertEquals(2, count, "Should have exactly 2 events with correct flight ID");
-            }
-        }
+        // batchUpdateDatabase sets flight ID on events but does not insert into events table (Event.batchInsertion does that)
+        assertEquals(testFlight.getId(), event1.getFlightId(), "Event 1 should have flight ID set");
+        assertEquals(testFlight.getId(), event2.getFlightId(), "Event 2 should have flight ID set");
     }
     
     @Test
@@ -4452,7 +4425,6 @@ public class FlightTest extends TestWithConnection {
     @Test
     @Order(421)
     public void testGetNumFlightsWithDoubleParameters() throws SQLException {
-        Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithDoubleParameter();
         int count = Flight.getNumFlights(connection, 1, filter);
         assertTrue(count >= 0);
@@ -4461,7 +4433,6 @@ public class FlightTest extends TestWithConnection {
     @Test
     @Order(422)
     public void testGetNumFlightsWithIntegerParameters() throws SQLException {
-        Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithIntegerParameter();
         int count = Flight.getNumFlights(connection, 1, filter);
         assertTrue(count >= 0);
@@ -4470,7 +4441,6 @@ public class FlightTest extends TestWithConnection {
     @Test
     @Order(423)
     public void testGetNumFlightsWithMixedParameters() throws SQLException {
-        Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithMixedParameters();
         int count = Flight.getNumFlights(connection, 1, filter);
         assertTrue(count >= 0);
@@ -4479,7 +4449,6 @@ public class FlightTest extends TestWithConnection {
     @Test
     @Order(424)
     public void testGetFlightsWithLimit() throws SQLException {
-        Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithDoubleParameter();
         ArrayList<Flight> flights = Flight.getFlights(connection, 1, filter, 50);
         assertNotNull(flights);
@@ -4493,8 +4462,6 @@ public class FlightTest extends TestWithConnection {
     @Test
     @Order(425)
     public void testGetFlightsSortedByOccurrencesInTableIntegerParameterCoverage() throws SQLException {
-        Connection connection = org.ngafid.core.Database.getConnection();
-        
         Filter filter = createFilterWithIntegerParameter();
         
 

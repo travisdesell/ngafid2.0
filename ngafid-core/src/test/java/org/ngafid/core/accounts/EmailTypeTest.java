@@ -756,9 +756,9 @@ public class EmailTypeTest {
             assertEquals(1, rowsAffected);
         }
         
-        // Test querying email preferences
+        // Test querying email preferences (count only our user's row; table may have other test data)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM email_preferences WHERE email_type = ?")) {
+                "SELECT COUNT(*) FROM email_preferences WHERE email_type = ? AND user_id = 1")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             
             try (var rs = stmt.executeQuery()) {
@@ -767,9 +767,9 @@ public class EmailTypeTest {
             }
         }
         
-        // Test deleting email preferences
+        // Test deleting email preferences (delete only our user's row)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM email_preferences WHERE email_type = ?")) {
+                "DELETE FROM email_preferences WHERE email_type = ? AND user_id = 1")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             int rowsAffected = stmt.executeUpdate();
             assertEquals(1, rowsAffected);
@@ -777,7 +777,7 @@ public class EmailTypeTest {
         
         // Verify deletion
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM email_preferences WHERE email_type = ?")) {
+                "SELECT COUNT(*) FROM email_preferences WHERE email_type = ? AND user_id = 1")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             
             try (var rs = stmt.executeQuery()) {
@@ -950,18 +950,18 @@ public class EmailTypeTest {
             stmt.executeUpdate();
         }
         
-        // Verify all types exist
+        // Verify all 5 rows we inserted exist (count only user 1 and 2; table may have other test data)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM email_preferences")) {
+                "SELECT COUNT(*) FROM email_preferences WHERE user_id IN (1, 2)")) {
             try (var rs = stmt.executeQuery()) {
                 rs.next();
-                assertEquals(5, rs.getInt(1)); // All 5 types should exist
+                assertEquals(5, rs.getInt(1)); // All 5 types we inserted should exist
             }
         }
         
-        // Test querying current types only
+        // Test querying current types only (for our users)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?, ?)")) {
+                "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?, ?) AND user_id IN (1, 2)")) {
             stmt.setString(1, EmailType.UPLOAD_PROCESS_START.getType());
             stmt.setString(2, EmailType.ADMIN_SHUTDOWN_NOTIFICATION.getType());
             stmt.setString(3, EmailType.IMPORT_PROCESSED_RECEIPT.getType());
@@ -972,9 +972,9 @@ public class EmailTypeTest {
             }
         }
         
-        // Test querying old types only
+        // Test querying old types only (for our users)
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?)")) {
+                "SELECT COUNT(*) FROM email_preferences WHERE email_type IN (?, ?) AND user_id IN (1, 2)")) {
             stmt.setString(1, "test_obsolete_type_1");
             stmt.setString(2, "test_obsolete_type_2");
             
