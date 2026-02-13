@@ -466,12 +466,7 @@ public final class ExtractMaintenanceFlights {
                 
                 for (int splitIndex : validation.splitIndices) {
                     // Determine output file name
-                    String segmentFile;
-                    if (segmentNumber == 1) {
-                        segmentFile = outfile;  // First segment keeps original name
-                    } else {
-                        segmentFile = fullDir + "/" + flight.getId() + "-" + segmentNumber + ".csv";
-                    }
+                    String segmentFile = fullDir + "/" + flight.getId() + "-" + segmentNumber + ".csv";
 
                     try (PrintWriter writer = new PrintWriter(new FileWriter(segmentFile))) {
                         // Write all header lines
@@ -894,9 +889,54 @@ public final class ExtractMaintenanceFlights {
                     if (phaseDir.exists() && phaseDir.isDirectory()) {
                         File[] csvFiles = phaseDir.listFiles((dir, name) -> name.endsWith(".csv"));
                         if (csvFiles != null) {
-                            Arrays.sort(csvFiles);
+                            // Sort by base number, then by suffix (e.g., 1389.csv, 1389-1.csv, 1389-2.csv)
+                            java.util.Arrays.sort(csvFiles, (f1, f2) -> {
+                                String n1 = f1.getName();
+                                String n2 = f2.getName();
+                                // Match: 1389.csv, 1389-1.csv, 1389-2_phases.csv, etc.
+                                java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)(?:-(\\d+))?.*\\.csv");
+                                java.util.regex.Matcher m1 = p.matcher(n1);
+                                java.util.regex.Matcher m2 = p.matcher(n2);
+                                int base1 = 0, base2 = 0, suffix1 = 0, suffix2 = 0;
+                                if (m1.matches()) {
+                                    base1 = Integer.parseInt(m1.group(1));
+                                    suffix1 = m1.group(2) != null ? Integer.parseInt(m1.group(2)) : 0;
+                                }
+                                if (m2.matches()) {
+                                    base2 = Integer.parseInt(m2.group(1));
+                                    suffix2 = m2.group(2) != null ? Integer.parseInt(m2.group(2)) : 0;
+                                }
+                                if (base1 != base2) return Integer.compare(base1, base2);
+                                return Integer.compare(suffix1, suffix2);
+                            });
                             for (int i = 0; i < csvFiles.length; i++) {
-                                String relativePath = clusterId + "/" + workorderTail + "/" + phase + "/" + csvFiles[i].getName();
+                                String fileName = csvFiles[i].getName();
+                                String basePattern = "^(\\d+)(\\.csv)$";
+                                String derivedPattern = "^(\\d+)-(\\d+)(\\.csv)$";
+                                java.util.regex.Pattern baseRegex = java.util.regex.Pattern.compile(basePattern);
+                                java.util.regex.Pattern derivedRegex = java.util.regex.Pattern.compile(derivedPattern);
+                                java.util.regex.Matcher mBase = baseRegex.matcher(fileName);
+                                String baseNum = null;
+                                boolean hasDerived = false;
+                                if (mBase.matches()) {
+                                    baseNum = mBase.group(1);
+                                    // Check for any derived file with same base
+                                    for (int j = 0; j < csvFiles.length; j++) {
+                                        if (j == i) continue;
+                                        java.util.regex.Matcher mDerived = derivedRegex.matcher(csvFiles[j].getName());
+                                        if (mDerived.matches() && mDerived.group(1).equals(baseNum)) {
+                                            hasDerived = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                String relativePath;
+                                if (mBase.matches() && hasDerived) {
+                                    // Output base as -1.csv
+                                    relativePath = clusterId + "/" + workorderTail + "/" + phase + "/" + baseNum + "-1.csv";
+                                } else {
+                                    relativePath = clusterId + "/" + workorderTail + "/" + phase + "/" + fileName;
+                                }
                                 json.append("          \"").append(relativePath).append("\"");
                                 if (i < csvFiles.length - 1) {
                                     json.append(",");
