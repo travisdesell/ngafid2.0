@@ -13,6 +13,7 @@
     <version>1.0-SNAPSHOT</version>
     <name>ngafid-db</name>
     <url>http://maven.apache.org</url>
+    <packaging>pom</packaging>
 
     <build>
         <pluginManagement>
@@ -22,12 +23,23 @@
                     <artifactId>liquibase-maven-plugin</artifactId>
                     <version>4.31.1</version>
                     <configuration>
-                        <searchPath>ngafid-db/src</searchPath>
+                        <searchPath>${project.basedir}/src</searchPath>
                         <propertyFile>liquibase.properties</propertyFile>
                         <changeLogFile>changelog-root.xml</changeLogFile>
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <configuration>
+                    <searchPath>${project.basedir}/src</searchPath>
+                    <propertyFile>liquibase.properties</propertyFile>
+                    <changeLogFile>changelog-root.xml</changeLogFile>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

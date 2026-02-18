@@ -1,8 +1,16 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.GSON;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Logger;
+import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.EventDefinition;
@@ -11,26 +19,31 @@ import org.ngafid.core.util.filters.Filter;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
-
-import static org.ngafid.www.WebServer.gson;
-
 public class FlightsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 
+    private FlightsJavalinRoutes() {
+        // Utility class
+    }
+
     private static class FlightsResponse {
         @JsonProperty
-        public List<Flight> flights;
-        @JsonProperty
-        public int numberPages;
+        private final List<Flight> flights;
 
-        public FlightsResponse(List<Flight> flights, int numberPages) {
+        @JsonProperty
+        private final int numberPages;
+
+        FlightsResponse(List<Flight> flights, int numberPages) {
             this.flights = flights;
             this.numberPages = numberPages;
+        }
+
+        public List<Flight> getFlights() {
+            return flights;
+        }
+
+        public int getNumberPages() {
+            return numberPages;
         }
     }
 
@@ -48,7 +61,9 @@ public class FlightsJavalinRoutes {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
                 if (flight != null && flight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
+                            + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: "
+                            + fleetId);
                     ctx.status(401);
                     ctx.json("User did not have access to this flight.");
                 }
@@ -63,7 +78,7 @@ public class FlightsJavalinRoutes {
             for (Flight flight : flights) {
                 if (!first) sb.append(", ");
                 first = false;
-                sb.append(gson.toJson(flight));
+                sb.append(GSON.toJson(flight));
             }
             sb.append("];");
 
@@ -92,35 +107,35 @@ public class FlightsJavalinRoutes {
 
             sb.append("var airframes = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Airframes.getAll(connection, fleetId)));
+            sb.append(GSON.toJson(Airframes.getAll(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all airframes took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var tagNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Flight.getAllFleetTagNames(connection, fleetId)));
+            sb.append(GSON.toJson(Flight.getAllFleetTagNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tag names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var tailNumbers = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Tails.getAllTails(connection, fleetId)));
+            sb.append(GSON.toJson(Tails.getAllTails(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tails names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var systemIds = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Tails.getAllSystemIds(connection, fleetId)));
+            sb.append(GSON.toJson(Tails.getAllSystemIds(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all system ids names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var doubleTimeSeriesNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)));
+            sb.append(GSON.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all double time series names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
@@ -128,29 +143,36 @@ public class FlightsJavalinRoutes {
             sb.append("var visitedAirports = JSON.parse('");
             startTime = System.currentTimeMillis();
             List<String> airports = Itinerary.getAllAirports(connection, fleetId);
-            sb.append(gson.toJson(airports));
+            sb.append(GSON.toJson(airports));
             endTime = System.currentTimeMillis();
             LOG.info("get all airports names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var visitedRunways = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Itinerary.getAllAirportRunways(connection, fleetId)));
+            sb.append(GSON.toJson(Itinerary.getAllAirportRunways(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all runways names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var eventNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(EventDefinition.getAllNames(connection, fleetId)));
+            sb.append(GSON.toJson(EventDefinition.getAllNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all event definition names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
             sb.append("var flights = [];");
 
-            scopes.put("flights_js", sb.toString());
+            String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
+            if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
+                sb.append("var azureMapsKey = '").append(azureMapsKey).append("';\n");
+            } else {
+                LOG.warning("Azure Maps key is not configured.");
+                sb.append("var azureMapsKey = undefined;\n");
+            }
 
+            scopes.put("flights_js", sb.toString());
 
             StringWriter stringOut = new StringWriter();
             startTime = System.currentTimeMillis();
@@ -184,7 +206,7 @@ public class FlightsJavalinRoutes {
     public static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
-        final Filter filter = gson.fromJson(filterJSON, Filter.class);
+        final Filter filter = GSON.fromJson(filterJSON, Filter.class);
         final int fleetId = user.getFleetId();
 
         // check to see if the user has upload access for this fleet.
@@ -205,10 +227,10 @@ public class FlightsJavalinRoutes {
             final int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             final int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
 
-            LOG.info("Ordered by: " + orderingColumnn);
-            LOG.info("Filter: " + filter.toString());
+            LOG.info(() -> "Ordered by: " + orderingColumnn);
+            LOG.info(() -> "Filter: " + filter.toString());
 
-            /**
+            /*
              * Valid Column Names:
              *
              * Flight Number
@@ -223,12 +245,12 @@ public class FlightsJavalinRoutes {
              * Airframe
              * Number Takeoffs/Landings
              * Flight ID
-             **/
-            List<Flight> flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
+             */
+            List<Flight> flights = Flight.getFlightsSorted(
+                    connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
             if (flights.isEmpty()) {
-                //ctx.json("NO_RESULTS").status(204);
-                ctx.json("NO_RESULTS").status(200); //(Using 200 instead of 204 since we're manually detecting the NO_RESULTS output in the front end)
+                ctx.status(204);
             } else {
                 ctx.json(new FlightsResponse(flights, numberPages)).status(200);
             }

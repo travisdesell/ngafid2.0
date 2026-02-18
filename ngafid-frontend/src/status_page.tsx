@@ -1,13 +1,13 @@
 import "bootstrap";
 
-import {errorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 
 
-import './index.css' //<-- include Tailwind
+import './index.css'; //<-- include Tailwind
 
 
 /*
@@ -17,14 +17,16 @@ enum StatusIcon {
     UNKNOWN = "fa-question",
     OK = "fa-check",
     WARNING = "fa-warning",
-    ERROR = "fa-exclamation-circle"
+    ERROR = "fa-exclamation-circle",
+    UNCHECKED = "fa-forward",
 }
 
 enum StatusName {
     UNKNOWN = "UNKNOWN",
     OK = "OK",
     WARNING = "WARNING",
-    ERROR = "ERROR"
+    ERROR = "ERROR",
+    UNCHECKED = "UNCHECKED",
 }
 
 const STATUS_TUPLE_INDEX_NAME = 0;
@@ -33,7 +35,8 @@ const STATUS_TUPLES = [
     [StatusName.UNKNOWN, StatusIcon.UNKNOWN],
     [StatusName.OK, StatusIcon.OK],
     [StatusName.WARNING, StatusIcon.WARNING],
-    [StatusName.ERROR, StatusIcon.ERROR]
+    [StatusName.ERROR, StatusIcon.ERROR],
+    [StatusName.UNCHECKED, StatusIcon.UNCHECKED],
 ] as const;
 
 type Status = {
@@ -51,12 +54,19 @@ type StatusEntry = {
 }
 const STATUS_DEFAULT_MESSAGE = "No message available...";
 
+const DOCKER_SEPARATOR_ENTRY = "DOCKER_SEPARATOR_ENTRY";
 const STATUS_NAMES_LIST = [
     "flight-processing",
     "event-processing",
     "kafka",
     "chart-service",
-    "database"
+    "database",
+
+    DOCKER_SEPARATOR_ENTRY,
+    "ngafid-email-consumer",
+    "ngafid-event-consumer",
+    "ngafid-event-observer",
+    "ngafid-upload-consumer",
 ];
 
 
@@ -71,7 +81,7 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
 
         return formattedName;
 
-    }
+    };
 
     return {
         name: name,
@@ -85,7 +95,7 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
 
 export default class StatusPage extends React.Component {
 
-    constructor(props: any) {
+    constructor(props: object) {
         super(props);
     }
 
@@ -98,6 +108,10 @@ export default class StatusPage extends React.Component {
         const STATUS_FAILURE_NAMES: string[] = [];
 
         const statusEntryRequests = STATUS_ENTRIES.map((entry) => {
+
+            //Skip the DOCKER_SEPARATOR_ENTRY
+            if (entry.name === DOCKER_SEPARATOR_ENTRY)
+                return Promise.resolve();
 
             const stautsURL = `/api/status/${encodeURIComponent(entry.name)}`;
 
@@ -164,7 +178,7 @@ export default class StatusPage extends React.Component {
             const errorMessage = `Failed to fetch ${(STATUS_FAILURE_NAMES.length > 1) ? "statuses" : "status"} for: ${STATUS_FAILURE_NAMES.join(", ")}`;
 
             const errorModalTitle = (STATUS_FAILURE_NAMES.length > 1) ? "Error Fetching Statuses" : "Error Fetching Status";
-            errorModal.show(errorModalTitle, errorMessage);
+            showErrorModal(errorModalTitle, errorMessage);
         }
 
         //Trigger a re-render
@@ -222,37 +236,60 @@ export default class StatusPage extends React.Component {
 
                             <tbody className="text-[var(--c_text)] leading-8 before:content-['\A']">
 
-                            {/* Empty spacer row */}
-                            <tr className="pointer-none bg-transparent">
-                                <td colSpan={3} className="h-6"/>
-                            </tr>
+                                {/* Empty spacer row */}
+                                <tr className="pointer-none bg-transparent">
+                                    <td colSpan={3} className="h-6"/>
+                                </tr>
 
-                            {STATUS_ENTRIES.map((entry, index) => {
-                                return (
-                                    <tr key={entry.name}
-                                        className={`${index % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}>
+                                {STATUS_ENTRIES.map((entry, index) => {
+                                    return (
 
-                                            <td className="truncate whitespace-nowrap overflow-hidden">
-                                                {index+1} - {entry.nameDisplay}
-                                            </td>
+                                        //Got DOCKER_SEPARATOR_ENTRY, render a separator row
+                                        (entry.name === DOCKER_SEPARATOR_ENTRY)
+                                        ? (
+                                            <tr key={entry.name} className="bg-[var(--c_row_bg)] text-[var(--c_text_alt)] pointer-events-none underline">
+                                                <td className="pt-2 font-bold mr-auto">
+                                                    <i className="fa fa-archive mr-2"/>
+                                                    Docker Services
+                                                </td>
+                                                {/* Empty Cells */}
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        )
 
-                                            <td className="font-mono truncate whitespace-nowrap overflow-hidden">
+                                        //Otherwise, render a status entry row
+                                        : (
+                                            <tr key={entry.name}
+                                                className={`${index % 2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"} text-[var(--c_text_alt)]`}
+                                            >
 
-                                                {/* Status Icon */}
-                                                <i className={`mr-2 scale-100 fa ${entry.status.icon}`}/>
+                                                <td className="truncate whitespace-nowrap overflow-hidden">
 
-                                            {/* Status Name */}
-                                            {entry.status.name}
+                                                    {/* Status Entry Name (Strip leading 'ngafid') */}
+                                                    {entry.nameDisplay.replace(/^ngafid/i, "")}
+                                                </td>
 
-                                        </td>
+                                                <td className="font-mono truncate whitespace-nowrap overflow-hidden">
 
-                                            <td className={`${entry.message == STATUS_DEFAULT_MESSAGE ? "italic opacity-50" : ""}`}>
-                                                {entry.message}
-                                            </td>
+                                                    {/* Status Icon */}
+                                                    <i className={`mr-2 scale-100 fa ${entry.status.icon}`}/>
 
-                                        </tr>
+                                                    {/* Status Name */}
+                                                    {entry.status.name}
+
+                                                </td>
+
+                                                <td className={`${entry.message == STATUS_DEFAULT_MESSAGE ? "italic opacity-50" : ""}`}>
+                                                    {entry.message}
+                                                </td>
+
+                                            </tr>
+                                        )
                                     );
                                 })}
+
                             </tbody>
                         </table>
                     </div>
@@ -261,7 +298,7 @@ export default class StatusPage extends React.Component {
 
             </div>
 
-        </div>
+        </div>;
 
         return jsxOut;
 
@@ -270,7 +307,7 @@ export default class StatusPage extends React.Component {
 }
 
 
-const root = ReactDOM.createRoot(
+const root = createRoot(
     document.getElementById("status-page") as HTMLElement
 );
 root.render(<StatusPage/>);

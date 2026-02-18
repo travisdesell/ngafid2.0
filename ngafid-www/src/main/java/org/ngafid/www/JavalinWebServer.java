@@ -1,7 +1,5 @@
 package org.ngafid.www;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.UnauthorizedResponse;
@@ -13,23 +11,49 @@ import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import io.javalin.security.RouteRole;
-import org.eclipse.jetty.server.session.*;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.FleetAccess;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.www.routes.*;
-import org.ngafid.www.routes.api.*;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import org.eclipse.jetty.server.session.DatabaseAdaptor;
+import org.eclipse.jetty.server.session.DefaultSessionCache;
+import org.eclipse.jetty.server.session.FileSessionDataStore;
+import org.eclipse.jetty.server.session.JDBCSessionDataStore;
+import org.eclipse.jetty.server.session.JDBCSessionDataStoreFactory;
+import org.eclipse.jetty.server.session.SessionCache;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.FleetAccess;
+import org.ngafid.core.accounts.User;
+import org.ngafid.www.routes.AccountJavalinRoutes;
+import org.ngafid.www.routes.AircraftFleetTailsJavalinRoutes;
+import org.ngafid.www.routes.AirsyncJavalinRoutes;
+import org.ngafid.www.routes.AnalysisJavalinRoutes;
+import org.ngafid.www.routes.BugReportJavalinRoutes;
+import org.ngafid.www.routes.CesiumDataJavalinRoutes;
+import org.ngafid.www.routes.DataJavalinRoutes;
+import org.ngafid.www.routes.DoubleSeriesJavalinRoutes;
+import org.ngafid.www.routes.EventJavalinRoutes;
+import org.ngafid.www.routes.FlightsJavalinRoutes;
+import org.ngafid.www.routes.ImportUploadJavalinRoutes;
+import org.ngafid.www.routes.Role;
+import org.ngafid.www.routes.StartPageJavalinRoutes;
+import org.ngafid.www.routes.StatisticsJavalinRoutes;
+import org.ngafid.www.routes.StatusJavalinRoutes;
+import org.ngafid.www.routes.api.AirSyncRoutes;
+import org.ngafid.www.routes.api.AircraftRoutes;
+import org.ngafid.www.routes.api.AuthRoutes;
+import org.ngafid.www.routes.api.EventRoutes;
+import org.ngafid.www.routes.api.FilterRoutes;
+import org.ngafid.www.routes.api.FleetRoutes;
+import org.ngafid.www.routes.api.FlightRoutes;
+import org.ngafid.www.routes.api.TagRoutes;
+import org.ngafid.www.routes.api.UploadRoutes;
+import org.ngafid.www.routes.api.UserRoutes;
 
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
@@ -37,9 +61,10 @@ public class JavalinWebServer extends WebServer {
 
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
-        LOG.info("Using static files location: " + staticFilesLocation);
+        LOG.info(() -> "Using static files location: " + staticFilesLocation);
     }
 
+    @Override
     public void start() {
         app.start();
     }
@@ -49,12 +74,11 @@ public class JavalinWebServer extends WebServer {
         app = Javalin.create(config -> {
             config.fileRenderer(new MustacheHandler());
 
-            Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(OffsetDateTime.class, new TimeUtils.OffsetDateTimeJSONAdapter())
-                    .create();
-            config.jsonMapper(new JavalinGson(gson, false));
+            config.jsonMapper(new JavalinGson(WebServer.GSON, false));
+
             config.bundledPlugins.enableRouteOverview("/api");
 
+            // (kt) Bind all routes
             AircraftRoutes.INSTANCE.bind(config);
             AirSyncRoutes.INSTANCE.bind(config);
             AuthRoutes.INSTANCE.bind(config);
@@ -68,7 +92,6 @@ public class JavalinWebServer extends WebServer {
 
             configureSwagger(config);
         });
-
     }
 
     private void configureSwagger(JavalinConfig config) {
@@ -76,16 +99,12 @@ public class JavalinWebServer extends WebServer {
         config.registerPlugin(new OpenApiPlugin(openApiConfig -> {
             openApiConfig
                     .withDocumentationPath("/openapi.json")
-                    .withDefinitionConfiguration((version, openApiDefinition) ->
-                            openApiDefinition
-                                    .withServer(openApiServer ->
-                                            openApiServer
-                                                    .description("Server description goes here")
-                                                    .url("http://localhost:{port}/{basePath}")
-                                                    .variable("port", "Server's port", "8111", "8112", "7070")
-                                                    .variable("/swagger", "Base path of the server", "", "", "v1")
-                                    )
-                    );
+                    .withDefinitionConfiguration(
+                            (version, openApiDefinition) -> openApiDefinition.withServer(openApiServer -> openApiServer
+                                    .description("Server description goes here")
+                                    .url("http://localhost:{port}/{basePath}")
+                                    .variable("port", "Server's port", "8111", "8112", "7070")
+                                    .variable("/swagger", "Base path of the server", "", "", "v1")));
         }));
 
         config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
@@ -117,8 +136,7 @@ public class JavalinWebServer extends WebServer {
     }
 
     @Override
-    protected void configureHttps() {
-    }
+    protected void configureHttps() {}
 
     @Override
     protected void configureRoutes() {
@@ -131,6 +149,7 @@ public class JavalinWebServer extends WebServer {
         EventJavalinRoutes.bindRoutes(app);
         FlightsJavalinRoutes.bindRoutes(app);
         ImportUploadJavalinRoutes.bindRoutes(app);
+
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         CesiumDataJavalinRoutes.bindRoutes(app);
@@ -189,14 +208,13 @@ public class JavalinWebServer extends WebServer {
                 }
 
                 if (roles.contains(Role.ADMIN_ONLY)) {
-                    if (!user.isAdmin())
-                        throw new UnauthorizedResponse("Admin access is required.");
+                    if (!user.isAdmin()) throw new UnauthorizedResponse("Admin access is required.");
                 }
             }
         });
 
         app.before("/protected/*", ctx -> {
-            LOG.info("protected URI: " + ctx.path());
+            LOG.info(() -> "Protected URI: " + ctx.path());
 
             User user = ctx.sessionAttribute("user");
             String previousURI = ctx.sessionAttribute("previous_uri");
@@ -246,16 +264,17 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configurePersistentSessions() {
-        app.unsafeConfig().jetty.modifyServletContextHandler(
-                handler -> handler.setSessionHandler(createSessionHandler())
-        );
+        app.unsafeConfig()
+                .jetty
+                .modifyServletContextHandler(handler -> handler.setSessionHandler(createSessionHandler()));
     }
 
     private static SessionHandler createSessionHandler() {
         SessionHandler sessionHandler = new SessionHandler();
         SessionCache sessionCache = new DefaultSessionCache(sessionHandler);
-//        sessionCache.setSessionDataStore(createFileSessionDataStore());
-        sessionCache.setSessionDataStore(Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
+        //        sessionCache.setSessionDataStore(createFileSessionDataStore());
+        sessionCache.setSessionDataStore(
+                Objects.requireNonNull(createJDBCDataStore()).getSessionDataStore(sessionHandler));
         sessionHandler.setSessionCache(sessionCache);
         sessionHandler.setHttpOnly(true);
         return sessionHandler;

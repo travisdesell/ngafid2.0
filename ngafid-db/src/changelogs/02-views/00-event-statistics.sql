@@ -378,6 +378,34 @@ GROUP BY
     event_definition_id;
 
 
+--changeset aidan_cu:fleet-event-counts labels:events,views
+CREATE OR REPLACE VIEW
+    v_fleet_event_counts_dated AS
+SELECT
+    fleet_id,
+    event_definition_id,
+    airframe_id,
+    year,
+    month,
+    SUM(fleet_monthly.event_count) as event_count,
+    SUM(fleet_monthly.flight_count) as flight_count,
+    MIN(fleet_monthly.min_duration) as min_duration,
+    SUM(fleet_monthly.avg_duration * fleet_monthly.event_count) / SUM(fleet_monthly.event_count) as avg_duration,
+    MAX(fleet_monthly.max_duration) as max_duration,
+    MIN(fleet_monthly.min_severity) as min_severity,
+    SUM(fleet_monthly.avg_severity * fleet_monthly.event_count) / SUM(fleet_monthly.event_count) as avg_severity,
+    MAX(fleet_monthly.max_severity) as max_severity
+FROM
+    m_fleet_airframe_monthly_event_counts as fleet_monthly
+GROUP BY
+    fleet_id,
+    event_definition_id,
+    airframe_id,
+    year,
+    month;
+
+
+
 --changeset josh:aggregate-event-counts labels:events,views
 CREATE VIEW
     v_aggregate_airframe_event_counts AS
@@ -445,6 +473,26 @@ FROM
 GROUP BY
     fleet_id;
 
+--changeset aidan_cu:fleet-total-event-counts-dated labels:events,views
+CREATE OR REPLACE VIEW
+    v_fleet_total_event_counts_dated AS
+SELECT
+    fleet_id,
+    airframe_id,
+    year,
+    month,
+    SUM(fleet_monthly.event_count) as event_count,
+    MIN(fleet_monthly.min_duration) as min_duration,
+    SUM(fleet_monthly.avg_duration * fleet_monthly.event_count) / SUM(fleet_monthly.event_count) as avg_duration,
+    MAX(fleet_monthly.max_duration) as max_duration
+FROM
+    m_fleet_airframe_monthly_event_counts as fleet_monthly
+GROUP BY
+    fleet_id,
+    airframe_id,
+    year,
+    month;
+
 
 --changeset josh:aggregate-total-event-count labels:events,views
 CREATE VIEW
@@ -469,6 +517,25 @@ SELECT
     MAX(fleet_monthly.max_duration) as max_duration
 FROM
     m_fleet_airframe_monthly_event_counts as fleet_monthly;
+    
+
+--changeset aidan_cu:aggregate-fleet-total-event-counts-dated labels:events,views
+CREATE OR REPLACE VIEW
+    v_aggregate_total_event_counts_dated AS
+SELECT
+    airframe_id,
+    year,
+    month,
+    SUM(fleet_monthly.event_count) as event_count,
+    MIN(fleet_monthly.min_duration) as min_duration,
+    SUM(fleet_monthly.avg_duration * fleet_monthly.event_count) / SUM(fleet_monthly.event_count) as avg_duration,
+    MAX(fleet_monthly.max_duration) as max_duration
+FROM
+    m_fleet_airframe_monthly_event_counts as fleet_monthly
+GROUP BY
+    airframe_id,
+    year,
+    month;
 
 
 --changeset josh:fleet-event-processed-flight-count labels:events,views,materialized-views context:hourly-materialized-view runAlways:true

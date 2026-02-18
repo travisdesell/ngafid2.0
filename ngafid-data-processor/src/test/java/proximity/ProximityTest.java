@@ -1,51 +1,48 @@
 package proximity;
 
-import org.junit.Test;
-import org.ngafid.processor.events.proximity.FlightTimeLocation;
-
-import java.sql.SQLException;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.sql.SQLException;
+import org.junit.Test;
+import org.ngafid.processor.events.proximity.FlightTimeLocation;
+
 public class ProximityTest {
 
-    private FlightTimeLocation createFlight(double minLat, double maxLat,
-                                            double minLon, double maxLon) {
+    private FlightTimeLocation createFlight(double minLat, double maxLat, double minLon, double maxLon) {
         return new FlightTimeLocation(minLat, maxLat, minLon, maxLon);
     }
 
     @Test
-    public void shouldReturnFalse_whenNoOverlapWithoutBuffer() {
+    public void shouldReturnFalseWhenNoOverlapWithoutBuffer() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12.1, 13, 12.1, 13);
 
-        assertFalse(a.hasRegionOverlap(b,0));
-        assertFalse(b.hasRegionOverlap(a,0));
+        assertFalse(a.hasRegionOverlap(b, 0));
+        assertFalse(b.hasRegionOverlap(a, 0));
     }
 
     @Test
-    public void shouldReturnTrue_whenOverlapWithoutBuffer()  {
+    public void shouldReturnTrueWhenOverlapWithoutBuffer() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(11, 13, 11, 13);
 
-        assertTrue(a.hasRegionOverlap(b,0));
-        assertTrue(b.hasRegionOverlap(a,0));
-
+        assertTrue(a.hasRegionOverlap(b, 0));
+        assertTrue(b.hasRegionOverlap(a, 0));
     }
 
     @Test
-    public void shouldReturnTrue_whenBufferTouchesEdges() throws SQLException {
+    public void shouldReturnTrueWhenBufferTouchesEdges() throws SQLException {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12.5, 14, 12.5, 14);
 
         // With buffer, b should now overlap a
-        assertTrue(a.hasRegionOverlap(b,0.5));
-        assertTrue(b.hasRegionOverlap(a,0.5));
+        assertTrue(a.hasRegionOverlap(b, 0.5));
+        assertTrue(b.hasRegionOverlap(a, 0.5));
     }
 
     @Test
-    public void shouldReturnTrue_whenEdgesTouchExactly()  {
+    public void shouldReturnTrueWhenEdgesTouchExactly() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12, 14, 12, 14);
 
@@ -54,7 +51,7 @@ public class ProximityTest {
     }
 
     @Test
-    public void shouldReturnFalse_whenJustOutsideWithoutBuffer() {
+    public void shouldReturnFalseWhenJustOutsideWithoutBuffer() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12.01, 14, 12.01, 14);
 
@@ -63,7 +60,7 @@ public class ProximityTest {
     }
 
     @Test
-    public void shouldReturnTrue_whenRegionIsFullyContainedWithinAnother() {
+    public void shouldReturnTrueWhenRegionIsFullyContainedWithinAnother() {
         FlightTimeLocation outer = createFlight(10, 20, 10, 20);
         FlightTimeLocation inner = createFlight(12, 18, 12, 18);
 
@@ -72,7 +69,7 @@ public class ProximityTest {
     }
 
     @Test
-    public void shouldReturnTrue_whenRegionsAreIdentical() {
+    public void shouldReturnTrueWhenRegionsAreIdentical() {
         FlightTimeLocation a = createFlight(10, 20, 10, 20);
         FlightTimeLocation b = createFlight(10, 20, 10, 20);
 
@@ -85,7 +82,7 @@ public class ProximityTest {
         FlightTimeLocation a = createFlight(-5, -3, -5, -3);
         FlightTimeLocation b = createFlight(-4, -2, -4, -2);
 
-        assertTrue(a.hasRegionOverlap(b,0));
+        assertTrue(a.hasRegionOverlap(b, 0));
     }
 
     @Test
@@ -93,11 +90,11 @@ public class ProximityTest {
         FlightTimeLocation a = createFlight(0, 1, 0, 1);
         FlightTimeLocation b = createFlight(5, 6, 5, 6);
 
-        assertFalse(a.hasRegionOverlap(b,0));
+        assertFalse(a.hasRegionOverlap(b, 0));
     }
 
     @Test
-    public void shouldReturnTrue_whenNegativeRegionsOverlap() {
+    public void shouldReturnTrueWhenNegativeRegionsOverlap() {
         FlightTimeLocation a = createFlight(-5, -3, -5, -3);
         FlightTimeLocation b = createFlight(-4, -2, -4, -2);
 
@@ -106,7 +103,7 @@ public class ProximityTest {
     }
 
     @Test
-    public void shouldReturnFalse_whenRegionsAreFarApartEvenWithBuffer() {
+    public void shouldReturnFalseWhenRegionsAreFarApartEvenWithBuffer() {
         FlightTimeLocation a = createFlight(0, 1, 0, 1);
         FlightTimeLocation b = createFlight(5, 6, 5, 6);
 

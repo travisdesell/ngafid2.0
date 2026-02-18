@@ -1,15 +1,14 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.*;
-import org.ngafid.processor.format.FlightBuilder;
+import static org.ngafid.core.flights.Parameters.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Parameters.*;
+import org.ngafid.core.flights.*;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Computes the itinerary for the flight. We represent the itinerary as a list of {@link Itinerary} objects,
@@ -18,10 +17,11 @@ import static org.ngafid.core.flights.Parameters.*;
 public class ComputeItinerary extends ComputeStep {
     private static final Logger LOG = Logger.getLogger(ComputeItinerary.class.getName());
 
-    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE,
-            RUNWAY_DISTANCE, GND_SPD, E1_RPM);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS =
+            Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE, RUNWAY_DISTANCE, GND_SPD, E1_RPM);
     private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
-    // This is a fake column; never actually created, but for steps that rely on the itinerary they can use this dummy column.
+    // This is a fake column; never actually created, but for steps that rely on the itinerary they can use this dummy
+    // column.
     private static final Set<String> OUTPUT_COLUMNS = Set.of("_itinerary");
 
     public ComputeItinerary(Connection connection, FlightBuilder builder) {
@@ -77,17 +77,36 @@ public class ComputeItinerary extends ComputeStep {
                 // If the airport is a new airport (this shouldn't happen really),
                 // then create a new stop.
                 if (currentItinerary == null) {
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i),
-                            runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
+                    currentItinerary = new Itinerary(
+                            airport,
+                            runway,
+                            i,
+                            altitudeAGL.get(i),
+                            airportDistanceTS.get(i),
+                            runwayDistanceTS.get(i),
+                            groundSpeed.get(i),
+                            rpm.get(i));
                 } else if (airport.equals(currentItinerary.getAirport())) {
-                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i),
-                            runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
+                    currentItinerary.update(
+                            runway,
+                            i,
+                            altitudeAGL.get(i),
+                            airportDistanceTS.get(i),
+                            runwayDistanceTS.get(i),
+                            groundSpeed.get(i),
+                            rpm.get(i));
                 } else {
                     currentItinerary.selectBestRunway();
-                    if (currentItinerary.wasApproach())
-                        itinerary.add(currentItinerary);
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i),
-                            runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
+                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+                    currentItinerary = new Itinerary(
+                            airport,
+                            runway,
+                            i,
+                            altitudeAGL.get(i),
+                            airportDistanceTS.get(i),
+                            runwayDistanceTS.get(i),
+                            groundSpeed.get(i),
+                            rpm.get(i));
                 }
 
             } else {
@@ -95,8 +114,7 @@ public class ComputeItinerary extends ComputeStep {
                 // then we can determine it's runway and add it to the itinerary
                 if (currentItinerary != null) {
                     currentItinerary.selectBestRunway();
-                    if (currentItinerary.wasApproach())
-                        itinerary.add(currentItinerary);
+                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
                 }
 
                 // set the currentItinerary to null until we approach another
@@ -108,8 +126,7 @@ public class ComputeItinerary extends ComputeStep {
         // dont forget to add the last stop in the itinerary if it wasn't set to null
         if (currentItinerary != null) {
             currentItinerary.selectBestRunway();
-            if (currentItinerary.wasApproach())
-                itinerary.add(currentItinerary);
+            if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
         }
 
         for (Itinerary value : itinerary) {
@@ -118,5 +135,4 @@ public class ComputeItinerary extends ComputeStep {
 
         builder.setItinerary(itinerary);
     }
-
 }

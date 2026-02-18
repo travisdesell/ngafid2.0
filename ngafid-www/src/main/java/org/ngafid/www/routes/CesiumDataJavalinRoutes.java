@@ -1,18 +1,13 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.GSON;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.www.ErrorResponse;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -21,13 +16,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import static org.ngafid.www.WebServer.gson;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.www.ErrorResponse;
 
 public class CesiumDataJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());
     private static final String CESIUM_DATA = "cesium_data";
+
+    private CesiumDataJavalinRoutes() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     public static void bindRoutes(Javalin app) {
         app.get("/protected/ngafid_cesium", CesiumDataJavalinRoutes::handleGetNgafidCesium);
@@ -81,22 +85,22 @@ public class CesiumDataJavalinRoutes {
 
                 String airframeType = incomingFlight.getAirframeType();
 
-                DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "AltMSL");
-                DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "Latitude");
-                DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "Longitude");
-                DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "AltAGL");
+                DoubleTimeSeries altMsl =
+                        DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltMSL");
+                DoubleTimeSeries latitude =
+                        DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
+                DoubleTimeSeries longitude =
+                        DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
+                DoubleTimeSeries altAgl =
+                        DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
                 DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
-                DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger,
-                        "GndSpd");
+                DoubleTimeSeries groundSpeed =
+                        DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
 
-                StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger,
-                        "Lcl Date");
-                StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger,
-                        "Lcl Time");
+                StringTimeSeries date =
+                        StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
+                StringTimeSeries time =
+                        StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
 
                 ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
                 ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
@@ -120,15 +124,18 @@ public class CesiumDataJavalinRoutes {
                 // Calculate the taxiing phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i))
+                            && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i))
+                            && (i < dateSize)) {
                         initCounter++;
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
                         flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
+                        if ((rpm != null && rpm.get(i) >= 2100)
+                                && groundSpeed.get(i) > 14.5
                                 && groundSpeed.get(i) < 80) {
                             break;
                         }
@@ -138,9 +145,12 @@ public class CesiumDataJavalinRoutes {
                 // Calculate the takeoff-init phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
+                    if (!Double.isNaN(longitude.get(i))
+                            && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i))
+                            && (i < dateSize)) {
+                        if ((rpm != null && rpm.get(i) >= 2100)
+                                && groundSpeed.get(i) > 14.5
                                 && groundSpeed.get(i) < 80) {
 
                             if (takeoffCounter <= 15) {
@@ -163,9 +173,12 @@ public class CesiumDataJavalinRoutes {
                 // Calculate the climb phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5
+                    if (!Double.isNaN(longitude.get(i))
+                            && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i))
+                            && (i < dateSize)) {
+                        if ((rpm != null && rpm.get(i) >= 2100)
+                                && groundSpeed.get(i) > 14.5
                                 && groundSpeed.get(i) <= 80) {
 
                             if (countPostTakeoff >= 15) {
@@ -189,8 +202,10 @@ public class CesiumDataJavalinRoutes {
                 sizePreClimb = preClimb / 3;
 
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i))
+                            && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i))
+                            && (i < dateSize)) {
 
                         if (countPostCruise >= sizePreClimb) {
                             flightGeoAglCruise.add(longitude.get(i));
@@ -205,8 +220,10 @@ public class CesiumDataJavalinRoutes {
                 // Calculate the full phase
                 // I am avoiding NaN here as well!
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                    if (!Double.isNaN(longitude.get(i))
+                            && !Double.isNaN(latitude.get(i))
+                            && !Double.isNaN(altAgl.get(i))
+                            && (i < dateSize)) {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
@@ -221,16 +238,24 @@ public class CesiumDataJavalinRoutes {
                     ctx.status(401).result("User did not have access to view this fleet.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb,
-                        flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes,
-                        flightCruiseTimes, flightAglTimes, airframeType);
+                CesiumResponse cr = new CesiumResponse(
+                        flightGeoAglTaxiing,
+                        flightGeoAglTakeOff,
+                        flightGeoAglClimb,
+                        flightGeoAglCruise,
+                        flightGeoInfoAgl,
+                        flightTaxiingTimes,
+                        flightTakeOffTimes,
+                        flightClimbTimes,
+                        flightCruiseTimes,
+                        flightAglTimes,
+                        airframeType);
                 cesiumData = "var cesium_data_new = " + ctx.json(cr) + ";\n";
                 flights.put(flightIdNew, cr);
-
             }
 
-            scopes.put(CESIUM_DATA, gson.toJson(flights));
-            scopes.put("cesium_data_js", gson.toJson(cesiumData));
+            scopes.put(CESIUM_DATA, GSON.toJson(flights));
+            scopes.put("cesium_data_js", GSON.toJson(cesiumData));
 
             // This is for webpage section
             String resultString = "";
@@ -249,7 +274,6 @@ public class CesiumDataJavalinRoutes {
             ctx.status(500).json(new ErrorResponse(e));
         }
     }
-
 
     private static void handlePostCesiumData(Context ctx) {
         LOG.info("Handling /protected/cesium_data route");
@@ -299,11 +323,13 @@ public class CesiumDataJavalinRoutes {
             int countPostCruise = 0;
             int dateSize = date.size();
 
-
             // Calculate the taxiing phase
             for (int i = 0; i < altAgl.size(); i++) {
 
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                if (!Double.isNaN(longitude.get(i))
+                        && !Double.isNaN(latitude.get(i))
+                        && !Double.isNaN(altAgl.get(i))
+                        && (i < dateSize)) {
                     initCounter++;
                     flightGeoAglTaxiing.add(longitude.get(i));
                     flightGeoAglTaxiing.add(latitude.get(i));
@@ -319,14 +345,18 @@ public class CesiumDataJavalinRoutes {
             // Calculate the takeoff-init phase
             for (int i = 0; i < altAgl.size(); i++) {
 
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                if (!Double.isNaN(longitude.get(i))
+                        && !Double.isNaN(latitude.get(i))
+                        && !Double.isNaN(altAgl.get(i))
+                        && (i < dateSize)) {
                     if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
 
                         if (takeoffCounter <= 15) {
                             flightGeoAglTakeOff.add(longitude.get(i));
                             flightGeoAglTakeOff.add(latitude.get(i));
                             flightGeoAglTakeOff.add(altAgl.get(i));
-                            flightTakeOffTimes.add(date.get(i) + "T" + time.get(i).trim() + "Z");
+                            flightTakeOffTimes.add(
+                                    date.get(i) + "T" + time.get(i).trim() + "Z");
 
                             initCounter++;
                         } else if (takeoffCounter > 15) {
@@ -342,7 +372,10 @@ public class CesiumDataJavalinRoutes {
             // Calculate the climb phase
             for (int i = 0; i < altAgl.size(); i++) {
 
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                if (!Double.isNaN(longitude.get(i))
+                        && !Double.isNaN(latitude.get(i))
+                        && !Double.isNaN(altAgl.get(i))
+                        && (i < dateSize)) {
                     if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
 
                         if (countPostTakeoff >= 15) {
@@ -366,7 +399,10 @@ public class CesiumDataJavalinRoutes {
             sizePreClimb = preClimb / 3;
 
             for (int i = 0; i < altAgl.size(); i++) {
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                if (!Double.isNaN(longitude.get(i))
+                        && !Double.isNaN(latitude.get(i))
+                        && !Double.isNaN(altAgl.get(i))
+                        && (i < dateSize)) {
 
                     if (countPostCruise >= sizePreClimb) {
                         flightGeoAglCruise.add(longitude.get(i));
@@ -381,7 +417,10 @@ public class CesiumDataJavalinRoutes {
             // Calculate the full phase
             // I am avoiding NaN here as well!
             for (int i = 0; i < altAgl.size(); i++) {
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
+                if (!Double.isNaN(longitude.get(i))
+                        && !Double.isNaN(latitude.get(i))
+                        && !Double.isNaN(altAgl.get(i))
+                        && (i < dateSize)) {
                     flightGeoInfoAgl.add(longitude.get(i));
                     flightGeoInfoAgl.add(latitude.get(i));
                     flightGeoInfoAgl.add(altAgl.get(i));
@@ -389,7 +428,18 @@ public class CesiumDataJavalinRoutes {
                 }
             }
 
-            CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
+            CesiumResponse cr = new CesiumResponse(
+                    flightGeoAglTaxiing,
+                    flightGeoAglTakeOff,
+                    flightGeoAglClimb,
+                    flightGeoAglCruise,
+                    flightGeoInfoAgl,
+                    flightTaxiingTimes,
+                    flightTakeOffTimes,
+                    flightClimbTimes,
+                    flightCruiseTimes,
+                    flightAglTimes,
+                    airframeType);
             flights.put(flightId, cr);
 
             ctx.json(flights);
@@ -400,29 +450,60 @@ public class CesiumDataJavalinRoutes {
     }
 
     private static class CesiumResponse {
-        ArrayList<Double> flightGeoAglTaxiing;
-        ArrayList<Double> flightGeoAglTakeOff;
-        ArrayList<Double> flightGeoAglClimb;
-        ArrayList<Double> flightGeoAglCruise;
-        ArrayList<Double> flightGeoInfoAgl;
-        ArrayList<Event> events;
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglTaxiing;
 
-        ArrayList<String> flightTaxiingTimes;
-        ArrayList<String> flightTakeOffTimes;
-        ArrayList<String> flightClimbTimes;
-        ArrayList<String> flightCruiseTimes;
-        ArrayList<String> flightAglTimes;
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglTakeOff;
 
-        String startTime;
-        String endTime;
-        String airframeType;
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglClimb;
 
-        public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff,
-                              ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise,
-                              ArrayList<Double> flightGeoInfoAgl, ArrayList<String> flightTaxiingTimes,
-                              ArrayList<String> flightTakeOffTimes, ArrayList<String> flightClimbTimes,
-                              ArrayList<String> flightCruiseTimes, ArrayList<String> flightAglTimes,
-                              String airframeType) {
+        @JsonProperty
+        private final ArrayList<Double> flightGeoAglCruise;
+
+        @JsonProperty
+        private final ArrayList<Double> flightGeoInfoAgl;
+
+        @JsonProperty
+        private final ArrayList<Event> events;
+
+        @JsonProperty
+        private final ArrayList<String> flightTaxiingTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightTakeOffTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightClimbTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightCruiseTimes;
+
+        @JsonProperty
+        private final ArrayList<String> flightAglTimes;
+
+        @JsonProperty
+        private final String startTime;
+
+        @JsonProperty
+        private final String endTime;
+
+        @JsonProperty
+        private final String airframeType;
+
+        CesiumResponse(
+                ArrayList<Double> flightGeoAglTaxiing,
+                ArrayList<Double> flightGeoAglTakeOff,
+                ArrayList<Double> flightGeoAglClimb,
+                ArrayList<Double> flightGeoAglCruise,
+                ArrayList<Double> flightGeoInfoAgl,
+                ArrayList<String> flightTaxiingTimes,
+                ArrayList<String> flightTakeOffTimes,
+                ArrayList<String> flightClimbTimes,
+                ArrayList<String> flightCruiseTimes,
+                ArrayList<String> flightAglTimes,
+                String airframeType) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -439,7 +520,63 @@ public class CesiumDataJavalinRoutes {
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
-//            this.events = events;
+            this.events = new ArrayList<>();
+        }
+
+        public ArrayList<Double> getFlightGeoAglTaxiing() {
+            return flightGeoAglTaxiing;
+        }
+
+        public ArrayList<Double> getFlightGeoAglTakeOff() {
+            return flightGeoAglTakeOff;
+        }
+
+        public ArrayList<Double> getFlightGeoAglClimb() {
+            return flightGeoAglClimb;
+        }
+
+        public ArrayList<Double> getFlightGeoAglCruise() {
+            return flightGeoAglCruise;
+        }
+
+        public ArrayList<Double> getFlightGeoInfoAgl() {
+            return flightGeoInfoAgl;
+        }
+
+        public ArrayList<Event> getEvents() {
+            return events;
+        }
+
+        public ArrayList<String> getFlightTaxiingTimes() {
+            return flightTaxiingTimes;
+        }
+
+        public ArrayList<String> getFlightTakeOffTimes() {
+            return flightTakeOffTimes;
+        }
+
+        public ArrayList<String> getFlightClimbTimes() {
+            return flightClimbTimes;
+        }
+
+        public ArrayList<String> getFlightCruiseTimes() {
+            return flightCruiseTimes;
+        }
+
+        public ArrayList<String> getFlightAglTimes() {
+            return flightAglTimes;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public String getAirframeType() {
+            return airframeType;
         }
     }
 }

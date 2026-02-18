@@ -74,17 +74,12 @@ object TagRoutes : RouteProvider() {
         }
     }
 
-    class RemoveTagResponse(@JsonProperty val tag: FlightTag?, @JsonProperty val allTagsCleared: Boolean = false)
+    class RemoveTagResponse(@JsonProperty val tag: FlightTag?)
 
     fun deleteTag(ctx: Context) {
-        val user = SessionUtility.getUser(ctx)
-        val flightId = ctx.pathParam("fid").toInt()
         val tagId = ctx.pathParam("tid").toInt()
 
         Database.getConnection().use { connection ->
-            if (Flight.getFlight(connection, flightId) == null)
-                throw NotFoundResponse("Flight with id $flightId not found.")
-
             val tag = Flight.getTag(connection, tagId)
             Flight.deleteTag(tagId, connection)
             ctx.json(RemoveTagResponse(tag))

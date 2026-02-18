@@ -1,19 +1,18 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.processor.format.FlightBuilder;
+import static org.ngafid.core.flights.Airframes.AIRFRAME_DJI;
+import static org.ngafid.core.flights.Airframes.AIRFRAME_SCAN_EAGLE;
+import static org.ngafid.core.flights.Parameters.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Airframes.AIRFRAME_DJI;
-import static org.ngafid.core.flights.Airframes.AIRFRAME_SCAN_EAGLE;
-import static org.ngafid.core.flights.Parameters.*;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Computes the total amount of fuel over each of the gas tanks an aircraft may have.
@@ -59,15 +58,12 @@ public class ComputeTotalFuel extends ComputeStep {
 
         for (var columnName : REQUIRED_DOUBLE_COLUMNS) {
             DoubleTimeSeries fuelTS = builder.getDoubleTimeSeries(columnName);
-            if (totalFuel == null)
-                totalFuel = new double[fuelTS.size()];
+            if (totalFuel == null) totalFuel = new double[fuelTS.size()];
 
-            for (int i = 0; i < fuelTS.size(); i++)
-                totalFuel[i] += fuelTS.get(i);
+            for (int i = 0; i < fuelTS.size(); i++) totalFuel[i] += fuelTS.get(i);
         }
 
         DoubleTimeSeries totalFuelTS = new DoubleTimeSeries(TOTAL_FUEL, Unit.GALLONS, totalFuel);
         builder.addTimeSeries(totalFuelTS);
     }
-
 }

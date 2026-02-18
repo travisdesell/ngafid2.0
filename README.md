@@ -112,23 +112,23 @@ $NGAFID_DATA_FOLDER
 
 ## 4. Configure the environment
 
-We need to set up two configuration files -- one for docker, the other for locally running services.
+All configuration is now handled through a single properties file that works for both local development and Docker environments.
 
-Copy `template.env` to `.env.host` and modify it to fit your setup, then modify your shell profile to source, e.g.
+Copy the template properties file and customize it for your environment:
 
 ```shell
-source ~/ngafid2.0/.env.host
+cp ngafid-core/src/main/resources/ngafid.template.properties ngafid-core/src/main/resources/ngafid.properties
 ```
 
-Similarly, copy `template.docker.env` to `.env` and modify it to fit your setup. The `docker-compose.yml` file
-is configured to automatically load all environmental variables from this file.
+Edit `ngafid.properties` and configure the following values (look for ⚠️ markers in the file):
 
-Note that the variables specified in the `.env` file are read by docker compose and available in the docker-compose file
-for substitution. Within Dockerfiles, however, variables will have to be manually passed as arguments.
+- `ngafid.repo.path`: Path to your NGAFID repository
+- `ngafid.azure.maps.key`: Your Azure Maps API key
+- `ngafid.db.username` and `ngafid.db.password`: Database credentials
+- `ngafid.admin.emails`: Admin email addresses
+- `ngafid.smtp.*`: Email server configuration (if using email features)
 
-We also pass `.env` as an `env_file` in `docker-compose.yml`, which provides the variables for use within the container.
-The `.env` file format used by docker doesn't support any scripting (e.g. source) so rather than splitting the compose
-env and container env into two separate files, a single common file is used.
+The application automatically detects whether it's running in Docker (by checking for `/.dockerenv`) and uses the appropriate settings. Docker-specific configurations use the `ngafid.docker.*` prefix in the properties file.
 
 ## 5. Build Node Modules
 
@@ -257,3 +257,121 @@ event statistics, frequency, severity, etc. will need to have this data updated 
 ## 11. Chart Processing Service
 
 [Chart Processing Service Documentation](ngafid-chart-processor/README.md)
+
+
+## 12. Two-factor authentication
+
+
+A Time-based One-time Password (TOTP) library was used to implement 2F Authentication.
+https://github.com/wstrange/GoogleAuth
+
+When users login, they will receive a prompt with a recommendation to enable 2F Authentication. If they choose not to setup 2F Auth right after they login, 
+they can always do it later via Account menu where they also can disable 2F Authentication at any time.
+When users 
+
+After 2F Auth is complete, users will receive a set of passcodes they can store as a backup method for identification (e.g. in case of lost internet connection).
+The backup passwords are stored in the database in the user's table, so System administrators can retrieve a password via SQL command if a user is locked out.
+
+To manually disable two-factor authentication for a user. System administrators can update 2F settings as below:
+```
+UPDATE user SET two_factor_enabled = 0,     two_factor_setup_complete = 0,     two_factor_secret = NULL,     backup_codes = NULL WHERE id = "TARGET_ID";
+```
+## 13. AirSync Setup
+NGAFID integrates with AirSync to automatically import flight data. AirSync utilizes Partner API for accessing flight logs. See [Partner API Documentation](documentation/partner-api-documentation.pdf) for  API specifications.
+
+
+### Architecture overview 
+NGAFID uses a pull-based approach: the AirSync daemon periodically(every 24 hs) polls the AirSync API for new flight logs, downloads them, packages them into ZIP files, and processes them through the standard upload pipeline. 
+We can trigger upload by pressing Sync upload button in the AirSync Uploads page. This will set the override flag in the airsync database to 1 and force an upload. 
+The Partner API documentation recommends a push-based approach using webhooks/Amazon SNS for real-time notifications. Our pull-based implementation can be revisited to comply with the Partern API recomenteation. 
+
+### Key components
+- AirSync Daemon (run/airsync_daemon): Polls the AirSync API, downloads flight logs, creates ZIP archives
+- Upload Consumer (run/kafka/upload_consumer): Processes ZIP files and extracts flight data
+- Database Tables: airsync_fleet_info (configuration), airsync_imports (log tracking), uploads (processed files)
+
+### Adding User to the AirSync System
+
+1. Ensure the fleet exists in the database.
+
+``` 
+SELECT id, fleet_name FROM fleet WHERE id = <fleet_id>;
+```
+2. Grant User Access to the Fleet.
+The User needs MANAGER or UPLOAD_ONLY access to trigger AirSync updates via the web UI (Sync button in Uploads page)
+
+``` 
+INSERT INTO fleet_access (user_id, fleet_id, type) 
+VALUES (<user_id>, <fleet_id>, 'MANAGER') 
+ON DUPLICATE KEY UPDATE type = 'MANAGER';
+``` 
+3. Confugure AirSync Fleet Information
+
+``` 
+INSERT INTO airsync_fleet_info 
+    (fleet_id, airsync_fleet_name, api_key, api_secret, timeout, override) 
+VALUES 
+    (<fleet_id>, '<AirSync Account Name>', '<API_KEY>', '<API_SECRET>', 1440, 0)
+ON DUPLICATE KEY UPDATE 
+    airsync_fleet_name = '<AirSync Account Name>',
+    api_key = '<API_KEY>',
+    api_secret = '<API_SECRET>',
+    timeout = 1440,
+    override = 0;
+  
+  ``` 
+Parameters:
+
+- fleet_id: The ID of the fleet from the fleet table
+- airsync_fleet_name: The exact account name as it appears in the AirSync API n
+- api_key: Your AirSync API key
+- api_secret: Your AirSync API secret
+- timeout: Time in minutes between automatic syncs (1440 = 24 hours)
+- override: Set to 1 to force immediate sync, 0 for normal operation
+
+
+### Force imediate Synchronization
+``` 
+UPDATE airsync_fleet_info 
+SET override = 1 
+WHERE fleet_id = <fleet_id>;
+``` 
+
+The daemon will detect this within 30 seconds and start syncing. After processing, it will reset override to 0.
+
+
+### Using Upload Helper to Re-enqueue Uploads
+The run/upload_helper script can manually add uploads to the Kafka processing queue. This is useful when uploads are stuck in UPLOADED status but not being processed.
+
+Re-enqueue specific uploads 
+``` 
+run/upload_helper -u <upload_id_1> <upload_id_2>
+``` 
+
+Re-enqueue  all uploads for a fleet
+``` 
+run/upload_helper -f <fleet_id>
+``` 
+
+Re-enqueue  uploads from a file
+``` 
+run/upload_helper -F <file_path>
+``` 
+
+
+### Clinent's steps to setup AirSync (provide new clients with the instructions below)
+
+1. Log into their AirSync user account
+2. Go to Accounts (top)
+3. Choose their account in the list
+4. Go to Services (menu) > NGAFID  (See screenshot below)
+5. Choose to Enable Service
+6. Option: "Enable New Aircraft by Default"  (this will set it for any new aircraft added to AirSync)
+7. Option: "Default Log Start"  (Select "Full Log History" to give access to log history)
+8. Option: "Enable all aircraft within this account" (Easiest option to enable all aircraft immediately)
+
+See client's airsync menu:
+
+![AirSync Account Menu](documentation/airsync-account.png)
+
+

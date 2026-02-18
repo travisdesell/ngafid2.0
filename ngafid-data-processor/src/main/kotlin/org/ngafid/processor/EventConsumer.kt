@@ -14,6 +14,7 @@ import org.ngafid.core.kafka.DisjointConsumer
 import org.ngafid.core.kafka.Events
 import org.ngafid.core.kafka.Events.EventToCompute
 import org.ngafid.core.kafka.Topic
+import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.util.ColumnNotAvailableException
 import org.ngafid.core.util.filters.Pair
 import org.ngafid.processor.events.AbstractEventScanner
@@ -21,10 +22,15 @@ import org.ngafid.processor.events.EventScanner
 import org.ngafid.processor.events.LowEndingFuelScanner
 import org.ngafid.processor.events.SpinEventScanner
 import org.ngafid.processor.events.proximity.ProximityEventScanner
+import org.ngafid.core.heatmap.HeatmapPointsProcessor
+
 import java.sql.Connection
 import java.sql.SQLException
+import java.sql.PreparedStatement
 import java.util.function.Consumer
 import java.util.logging.Logger
+import java.rmi.UnknownHostException
+import kotlin.io.use
 
 /**
  * The `event` and `event-retry` topics contain events that need to be computed. Most often this should be proximity
@@ -68,17 +74,42 @@ class EventConsumer protected constructor(
             Database.getConnection().use { connection ->
                 val flight = Flight.getFlight(connection, etc.flightId)
                 if (flight == null) {
-                    LOG.info("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because the flight does not exist in the database. Assuming this was a stale request")
+                    LOG.warning("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because the flight does not exist in the database. Assuming this was a stale request")
                     return Pair(record, false)
                 }
 
                 val def = eventDefinitionMap!![etc.eventId]
                 if (def == null) {
-                    LOG.info("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because there is no event with that definition in the database.")
+                    LOG.warning("Cannot compute event with definition id " + etc.eventId + " for flight " + etc.flightId + " because there is no event with that definition in the database.")
                     return Pair(record, false)
                 }
 
-                if (def.airframeNameId > 0 && def.airframeNameId == flight.airframe.id) return Pair(record, false)
+                if (def.airframeNameId > 0 && def.airframeNameId != flight.airframe.id) {
+                    LOG.info("Skipping event - airframe mismatch: event airframe=${def.airframeNameId}, flight airframe=${flight.airframe.id}")
+                    try {
+                        markFlightProcessed(connection, flight, def, hadError = false)
+                    } catch (e: Exception) {
+                        LOG.warning("Failed to mark flight_processed on airframe mismatch skip: ${e.message}")
+                    }
+                    return Pair(record, false)
+                }
+
+                // Check if this event actually exists in the database for this flight
+                try {
+                    val allEvents = Event.getAll(connection, flight.id)
+                    val existingEvents = allEvents.filter { it.eventDefinitionId == def.id }
+                    if (existingEvents.isNotEmpty()) {
+                        LOG.warning("Event already exists in database, skipping reprocessing")
+                        try {
+                            markFlightProcessed(connection, flight, def, hadError = false)
+                        } catch (e: Exception) {
+                            LOG.warning("Failed to mark flight_processed when event already exists: ${e.message}")
+                        }
+                        return Pair(record, false)
+                    }
+                } catch (e: Exception) {
+                    LOG.warning("Error checking existing events: ${e.message}")
+                }
                 try {
                     clearExistingEvents(connection, flight, eventDefinitionMap!![etc.eventId]!!)
                     val scanner = getScanner(
@@ -95,15 +126,44 @@ class EventConsumer protected constructor(
                         .filter { e: Event -> e.eventDefinitionId == etc.eventId }
                         .toList()
 
+
                     Event.batchInsertion(connection, flight, events)
 
-                    // Computed okay.
+
+                    // inserts proximity points for each event into the heatmap_points table
+                    if (scanner is ProximityEventScanner) {
+                        HeatmapPointsProcessor.insertCoordinatesForProximityEvents(
+                            connection,
+                            events,
+                            scanner.mainFlightPointsMap,
+                            scanner.otherFlightPointsMap
+                        )
+                    } else {
+                        // For regular (non-proximity) events, insert points from flight data
+                        HeatmapPointsProcessor.insertCoordinatesForNonProximityEvents(
+                            connection,
+                            events,
+                            flight
+                        )
+                    }
+
+                    /*
+                        Mark this flight+event_definition_id as processed so
+                        EventObserver stops re-queueing.
+
+                        Also clears any previous had_error for this pair.
+                    */
+                    markFlightProcessed(connection, flight, def, hadError = false)
+
                     return Pair(record, false)
                 } catch (e: ColumnNotAvailableException) {
-                    // Some other exception happened...
                     e.printStackTrace()
-                    LOG.info("A required column was not available so the event could not be computed: " + e.message)
-                    return Pair(record, true)
+                    try {
+                        markFlightProcessed(connection, flight, def, hadError = true)
+                    } catch (markErr: Exception) {
+                        LOG.warning("Failed to mark flight_processed after ColumnNotAvailableException: ${markErr.message}")
+                    }
+                    return Pair(record, false)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     // Retry
@@ -139,7 +199,12 @@ class EventConsumer protected constructor(
         private val LOG: Logger = Logger.getLogger(EventConsumer::class.java.name)
 
         @JvmStatic
+        @Throws(UnknownHostException::class)
         fun main(args: Array<String>) {
+
+            /* Start Docker Service Heartbeat Producer */
+            DockerServiceHeartbeat.autostart();
+
             val consumer = Events.createConsumer()
             val producer = Events.createProducer()
 
@@ -162,6 +227,23 @@ class EventConsumer protected constructor(
         @Throws(SQLException::class)
         private fun clearExistingEvents(connection: Connection, flight: Flight, def: EventDefinition) {
             Event.deleteEvents(connection, flight.id, def.id)
+        }
+
+        @Throws(SQLException::class)
+        private fun markFlightProcessed(connection: Connection, flight: Flight, def: EventDefinition, hadError: Boolean) {
+            val sql = """
+                INSERT INTO flight_processed (fleet_id, flight_id, event_definition_id, had_error)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE had_error = VALUES(had_error)
+            """.trimIndent()
+
+            connection.prepareStatement(sql).use { ps: PreparedStatement ->
+                ps.setInt(1, flight.fleetId)
+                ps.setInt(2, flight.id)
+                ps.setInt(3, def.id)
+                ps.setInt(4, if (hadError) 1 else 0)
+                ps.executeUpdate()
+            }
         }
 
         @Throws(SQLException::class)

@@ -18,33 +18,25 @@ class EventDefinitionCard extends React.Component {
     }
 
     render() {
-        let style = {
-            padding: 5
-        };
-
-        let formGroupStyle = {
+        
+        const formGroupStyle = {
             marginBottom: '0px',
             padding: '0 4 0 4'
         };
 
-        let formHeaderStyle = {
+        const formHeaderStyle = {
             width: '200px',
             flex: '0 0 200px'
         };
 
-        let labelStyle = {
+        const labelStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
             textAlign: 'right'
         };
 
-        let bgStyle = {
-            background: "rgba(248,259,250,0.8)",
-            margin: 0
-        };
-
-        let validationMessageStyle = {
+        const validationMessageStyle = {
             padding: '7 0 7 0',
             margin: '0',
             display: 'block',
@@ -62,7 +54,7 @@ class EventDefinitionCard extends React.Component {
             validationMessage = "Start buffer time must be greater than 1 second.";
         } else if (this.props.stopBuffer == "") {
             validationMessage = "Please enter a stop buffer time.";
-        } else if (parseInt(this.props.startBuffer) < 1) {
+        } else if (parseInt(this.props.stopBuffer) < 1) {
             validationMessage = "Stop buffer time must be greater than 1 second.";
 
             //first time rendering this component exceedenceFilter will not be defined
@@ -70,10 +62,10 @@ class EventDefinitionCard extends React.Component {
             validationMessage = "Correct the incomplete filter.";
         }
 
-        let validationHidden = (validationMessage == "");
-        let createEventDisabled = !validationHidden;
+        const validationHidden = (validationMessage == "");
+        const createEventDisabled = !validationHidden;
 
-        console.log("rendering with new severityColumnNames: " + this.props.severityColumnNames);
+        console.log(`rendering with new severityColumnNames: ${  this.props.severityColumnNames}`);
 
         return (
             <div>
@@ -106,7 +98,7 @@ class EventDefinitionCard extends React.Component {
                                     this.props.airframes.map((airframeInfo, index) => {
                                         return (
                                             <option key={index} value={airframeInfo}>{airframeInfo}</option>
-                                        )
+                                        );
                                     })
                                 }
                             </select>
@@ -157,7 +149,7 @@ class EventDefinitionCard extends React.Component {
                                     this.props.doubleTimeSeriesNames.map((seriesName, index) => {
                                         return (
                                             <option key={index} value={seriesName}>{seriesName}</option>
-                                        )
+                                        );
                                     })
                                 }
                             </select>
@@ -165,10 +157,10 @@ class EventDefinitionCard extends React.Component {
                         <div className="p-2 flex-fill">
 
                             {
-                                this.props.severityColumnNames.map((columnName, index) => {
+                                this.props.severityColumnNames.map((columnName) => {
                                     return (<button type="button" key={columnName} className="btn btn-primary mr-1"
                                                     onClick={() => this.props.removeSeverityColumn(columnName)}>{columnName}
-                                        <i className="fa fa-times p-1"></i></button>)
+                                        <i className="fa fa-times p-1"></i></button>);
                                 })
                             }
 
@@ -214,7 +206,7 @@ class EventDefinitionCard extends React.Component {
                                     rules={this.props.rules}
 
                                     getFilter={() => {
-                                        return this.props.getFilter()
+                                        return this.props.getFilter();
                                     }}
                                     setFilter={(filter) => this.props.setFilter(filter)}
                                 />
@@ -252,7 +244,7 @@ class EventDefinitionCard extends React.Component {
                     </div>
                     <div className="p-2">
                         <button className="btn btn-primary float-right" onClick={() => {
-                            this.props.submitFilter()
+                            this.props.submitFilter();
                         }} disabled={createEventDisabled}>{this.props.submitName}</button>
                     </div>
                 </div>
@@ -262,4 +254,4 @@ class EventDefinitionCard extends React.Component {
     }
 }
 
-export {EventDefinitionCard}
+export {EventDefinitionCard};

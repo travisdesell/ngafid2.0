@@ -1,19 +1,18 @@
 package org.ngafid.processor.steps;
 
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.MalformedFlightFileException;
-import org.ngafid.processor.format.FlightBuilder;
+import static org.ngafid.core.flights.Flight.calculateLOCI;
+import static org.ngafid.core.flights.Parameters.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Flight.calculateLOCI;
-import static org.ngafid.core.flights.Parameters.*;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.processor.format.FlightBuilder;
 
 /**
  * Computes the loss of control index. The following work goes into detail about this and the stall index:
@@ -67,16 +66,14 @@ public class ComputeLOCI extends ComputeStep {
 
         int length = roll.size();
 
-        DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", length,
-                (int index) -> {
-                    double laggedHdg = hdgLagged.get(index);
-                    return calculateLOCI(hdg, index, roll, tas, laggedHdg);
-                });
-        DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", length,
-                index -> {
-                    double prob = stallIndex.get(index) * coordIndex.get(index);
-                    return prob / 100;
-                });
+        DoubleTimeSeries coordIndex = DoubleTimeSeries.computed(PRO_SPIN_FORCE, "index", length, (int index) -> {
+            double laggedHdg = hdgLagged.get(index);
+            return calculateLOCI(hdg, index, roll, tas, laggedHdg);
+        });
+        DoubleTimeSeries loci = DoubleTimeSeries.computed(LOCI, "index", length, index -> {
+            double prob = stallIndex.get(index) * coordIndex.get(index);
+            return prob / 100;
+        });
 
         builder.addTimeSeries(coordIndex);
         builder.addTimeSeries(loci);

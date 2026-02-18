@@ -1,10 +1,15 @@
-import 'bootstrap';
-
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-
 import { Modal } from 'bootstrap';
 
+import React, {createRef} from "react";
+import { createRoot } from 'react-dom/client';
+
+
+const confirmModalRef = createRef();
+
+
+const submitMethodDefault = () => {
+    console.warn("No submit method defined for confirm modal!");
+};
 
 class ConfirmModal extends React.Component {
 
@@ -15,7 +20,7 @@ class ConfirmModal extends React.Component {
         this.state = {
             title : "",
             message : "",
-            submitMethod : null
+            submitMethod : submitMethodDefault
         };
 
     }
@@ -46,8 +51,7 @@ class ConfirmModal extends React.Component {
         console.log("Confirm Modal submit clicked!");
         
         //Submit method exists, call it
-        if (this.state.submitMethod != null)
-            this.state.submitMethod();
+        this.state.submitMethod();
 
     }
 
@@ -111,9 +115,16 @@ class ConfirmModal extends React.Component {
     }
 }
 
-const confirmModal = ReactDOM.render(
-    <ConfirmModal/>,
-    document.querySelector("#confirm-modal-content")
-);
+const container = document.querySelector("#confirm-modal-content");
+const root = createRoot(container);
+root.render(<ConfirmModal ref={confirmModalRef}/>);
 
-export { confirmModal };
+
+export function showConfirmModal(title, message, submitMethod=submitMethodDefault) {
+
+    console.log(`Showing Confirm Modal with title: '${title}' and message: '${message}'`);
+
+    //Show the modal with the given title, message, and optional submit method
+    confirmModalRef.current.show(title, message, submitMethod);
+    
+}

@@ -1,9 +1,8 @@
 package org.ngafid.core.flights.export;
 
-import org.ngafid.core.flights.Flight;
-
 import java.io.File;
 import java.util.Optional;
+import org.ngafid.core.flights.Flight;
 
 /**
  * Creates CSV files for flights in the NGAFID

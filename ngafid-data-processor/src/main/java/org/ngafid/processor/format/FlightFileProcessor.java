@@ -1,7 +1,6 @@
 package org.ngafid.processor.format;
 
 import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.FlightProcessingException;
@@ -35,14 +34,15 @@ public abstract class FlightFileProcessor implements Callable<Void> {
                 throws IOException, FatalFlightFileException, SQLException;
     }
 
-    public final Connection connection;
-    public final String filename;
-    public final Pipeline pipeline;
+    protected final Connection connection;
+    protected final String filename;
+    protected final Pipeline pipeline;
 
     /**
-     * This is not final because we want to be able to null the value out so it can be GCd. In `pipeline` we accumulate
-     * all of our FlightFileProcessors, so we will have a reference to every single processor for each and every file, which
-     * will contain an input stream backed by a byte buffer. If we null it out when we're done, it should make it eligible for GC.
+     * This is not final because we want to be able to null the value out so it can be GCd.
+     * In `pipeline` we accumulate all of our FlightFileProcessors, so we will have a reference
+     * to every single processor for each and every file, which will contain an input stream backed
+     * by a byte buffer. If we null it out when we're done, it should make it eligible for GC.
      */
     protected InputStream stream;
 
@@ -56,7 +56,8 @@ public abstract class FlightFileProcessor implements Callable<Void> {
      * @param pipeline
      * @throws IOException
      */
-    public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
+    public FlightFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
+            throws IOException {
         this.connection = connection;
         if (!(stream instanceof ByteArrayInputStream)) {
             this.stream = new ByteArrayInputStream(stream.readAllBytes());
@@ -73,8 +74,7 @@ public abstract class FlightFileProcessor implements Callable<Void> {
     public Void call() {
         List<FlightBuilder> builders = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
-            pipeline
-                    .parse(this)
+            pipeline.parse(this)
                     .parallel()
                     .filter(Objects::nonNull)
                     .map(fbs -> pipeline.build(connection, fbs))
@@ -83,18 +83,18 @@ public abstract class FlightFileProcessor implements Callable<Void> {
             // Null out stream now that we've parsed all of the data in.
             stream = null;
 
-            if (builders.isEmpty())
-                return null;
+            if (builders.isEmpty()) return null;
         } catch (SQLException e) {
             pipeline.fail(filename, e);
         }
 
         long nanostart = System.nanoTime();
         try (Connection connection = Database.getConnection()) {
-            List<Flight> flights = builders.stream().map(FlightBuilder::getFlight).toList();
-            Flight.batchUpdateDatabase(connection, flights);
+            List<Flight> flightsParam =
+                    builders.stream().map(FlightBuilder::getFlight).toList();
+            Flight.batchUpdateDatabase(connection, flightsParam);
             for (FlightBuilder builder : builders) {
-                Event.batchInsertion(connection, builder.getFlight(), builder.getEvents());
+                pipeline.finalize(builder);
                 TurnToFinal.cacheTurnToFinal(connection, builder.getFlight().getId(), builder.getTurnToFinals());
                 builder.getFlight().insertComputedEvents(connection, builder.getEventDefinitions());
             }
@@ -103,11 +103,16 @@ public abstract class FlightFileProcessor implements Callable<Void> {
         }
         long nanoend = System.nanoTime();
 
-        float t = (nanoend - nanostart) / 1_000_000_000f;
-        LOG.info("Inserting took " + t + " s");
+        final double nsToS = (1.0 / 1_000_000_000f);
+        double t = (nanoend - nanostart) * nsToS;
+        LOG.info(() -> "Inserting took " + t + " s");
 
         return null;
     }
 
-    public Stream<Flight> flights = null;
+    private Stream<Flight> flights = null;
+
+    public String getFilename() {
+        return filename;
+    }
 }

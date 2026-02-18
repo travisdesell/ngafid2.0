@@ -1,4 +1,11 @@
-// src/types/globals.d.ts
+// src/types.d.ts
+
+
+
+import React from "react";
+
+
+
 export {};
 
 
@@ -23,10 +30,42 @@ export interface NGAFIDUser {
 }
 
 
+export interface Event {
+
+    id: React.Key;
+    flightId: string | number;
+    otherFlightId: string | number;
+    startTime: string | number | Date;
+    endTime: string | number | Date;
+    severity: number;
+
+}
+
+
+export type MultifleetInvite = {
+    fleetName: string,
+    inviteEmail: string,
+}
+
+export type MultifleetSelectWithAccess = {
+    fleetName: string,
+    fleetId: number,
+    accessType: accessType,
+}
+
+
+//TODO: Figure out the best way to reconcile this with eslint globals
+export interface AirframeNameID {
+    name: string;
+    id: number;
+}
 declare global {
     const waitingUserCount: number;
     const fleetManager: boolean;
     const unconfirmedTailsCount: number;
     const modifyTailsAccess: boolean;
     const plotMapHidden: boolean;
+    const airframes: AirframeNameID[];
+    const tagNames: string[];
+    const eventNames: string[];
 }

@@ -1,27 +1,24 @@
 import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
 import { Colors } from "./map.js";
 
-import { errorModal } from "./error_modal.js";
-import { confirmModal } from "./confirm_modal.js";
+import { showErrorModal } from "./error_modal.js";
 
-const cloneDeep = require('clone-deep');
+import cloneDeep from 'clone-deep';
 
-//This will be helpful for text inputs
-function invalidString(str){
-    return (str == null || str.length < 0 || /^\s*$/.test(str));
-}
 
+import './index.css'; //<-- include Tailwind
+
+
+export const TAG_ID_NONE = -1;
+export const TAG_ID_ALL  = -2;  //<-- For when we refer to all of a flight's tags (e.g. when clearing)
 
 
 /**
  * Tags module
  * Houses the state and information for user-defined tags
- * @module flights/Tags
+ * @module flights/Tags``
  */
 class Tags extends React.Component {
 
@@ -34,7 +31,7 @@ class Tags extends React.Component {
         super(props);
 
         this.state = {
-            activeTag : null,
+            activeTagID : null,
             editedTag : null,  //the tag currently being edited
             infoActive : false,
             adding : false,
@@ -43,35 +40,72 @@ class Tags extends React.Component {
         };
 
         this.handleFormChange = this.handleFormChange.bind(this);
+
+        this._addTagButton = null;
+        this._addTagDropdown = null;
+
+    }
+
+    componentDidUpdate(prevProps) {
+
+        const prevIds = (prevProps.flight.tags || []).map(t => t.hashId).join(',');
+        const currIds = (this.props.flight.tags || []).map(t => t.hashId).join(',');
+
+        //No changes to tags, exit
+        if (prevIds === currIds)
+            return;
+
+        const { activeTagID } = this.state;
+
+        //Active Tag ID not found, exit
+        if (!activeTagID)
+            return;
+
+        const tagStillExists = (this.props.flight.tags || []).some(t => t.hashId === activeTagID);
+
+        //Tag exists, clear selection
+        if (!tagStillExists)
+            this.setState({
+                activeTagID: null,
+                editing: false,
+                addFormActive: false
+            });
+
+    }
+
+    uniqueTagsById = (list) => {
+
+        const map = new Map();
+        (list || []).forEach(t => {
+            
+            if (!map.has(t.hashId))
+                map.set(t.hashId, t);
+
+        });
+
+        return Array.from(map.values());
+
+    };
+
+    getActiveTagFromProps() {
+        const { activeTagID } = this.state;
+        const tags = this.uniqueTagsById(this.props.flight.tags);
+        return tags.find(t => t.hashId === activeTagID) || null;
     }
 
     unToggleAddForm() {
         $("#show-add-form-button").removeClass('active');
     }
 
-    /**
-     * called everytime props are updated
-     * @param oldProps the old props before the update
-     */
-    //componentDidUpdate(oldProps) {
-        //console.log("props updated");
-        //const newProps = this.props;
-          //if (oldProps.tags !== newProps.tags) {
-            //this.state.tags = this.props.tags;
-            //this.state.addFormActive = false; //close the add form to indicate the tag has been edited or no longer exists
-            //this.setState(this.state);
-          //}
-    //}
 
     /**
      * Handles the event for which the add button is pressed
      */
     addClicked() {
-        this.setToggle(-1);
-        this.setState({
-            infoActive : !this.state.infoActive,
-            addFormActive : (this.state.addFormActive ? false : this.state.addFormActive)
-        });
+        this.setState(prevState => ({
+            infoActive: !prevState.infoActive,
+            addFormActive: prevState.addFormActive ? false : prevState.addFormActive
+        }));
     }
 
     /**
@@ -92,50 +126,42 @@ class Tags extends React.Component {
      * to be used later on to determine if any changes have been made.
      * @param tag the tag to edit
      */
-    selectTag(index, tag) {
+    selectTag(tag) {
+
         this.unToggleAddForm();
 
-        tag.index = index;
-        this.setToggle(index);
+        const nextActiveID = (this.state.activeTagID === tag.hashId) ? null : tag.hashId;
 
-        console.log("Editing tag: " + tag.hashId);
-        if (this.state.activeTag == null || this.state.activeTag != tag) {
-            this.state.activeTag = tag;
-            this.state.editing = true;
-            this.state.addFormActive = true;
+        if (nextActiveID) {
+
+            console.log("Selecting Tag: ", tag.hashId, "Next Active ID: ", nextActiveID, "Name: ", tag.name);
+
+            this.setState({
+                activeTagID: nextActiveID,
+                editing: true,
+                addFormActive: true,
+                adding: false,
+                editedTag: cloneDeep(tag)
+            });
+
         } else {
-            this.clearActiveTag();
-            this.state.editing = false;
-            this.state.addFormActive = false;
+
+            console.log("Clearing Selected Tag: ", tag.hashId, "Next Active ID: ", nextActiveID, "Name: ", tag.name);
+
+            this.setState({
+                activeTagID: null,
+                editing: false,
+                addFormActive: false,
+                adding: false,
+                editedTag: null,
+            });
+
         }
-        this.state.adding = false;
 
-        this.state.editedTag = cloneDeep(tag);
-
-        this.setState(this.state);
     }
 
     clearActiveTag() {
-        this.clearSelected();
-        this.state.activeTag = null;
-        this.setState(this.state);
-    }
-
-    clearSelected() {
-        this.setToggle(-1);
-    }
-    
-    setToggle(index) {
-        if (this.props.flight.tags != null && this.props.flight.tags.length > 0) {
-            let len = this.props.flight.tags.length;
-
-            for (var i = 0; i < len; i++) {
-                if (i != index) {
-                    let id = '#tag_button_' + i;
-                    $(id).removeClass('active');
-                }
-            }
-        }
+        this.setState({ activeTagID: null });
     }
 
 
@@ -143,58 +169,60 @@ class Tags extends React.Component {
      * shows @module errorModal when a tag has not been edited properly
      */
     showNoEditError() {
-        errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
+        showErrorModal("Error editing tag", "Please make a change to the tag first before pressing submit!");
     }
 
     removeTag() {
 
-        if (this.state.activeTag==null)
+        const { activeTagID } = this.state;
+        if (activeTagID == null)
             return;
 
-        this.props.removeTag(this.props.flight.id, this.state.activeTag.hashId, false);
-        this.setToggle(-1);
-        this.setState({
-            activeTag : null,
-            editing : false,
-            addFormActive : false
+        const tagResponse = this.props.removeTag(this.props.flight.id, activeTagID, false);
+        tagResponse.then(() => {
+            this.setState({
+                activeTagID : null,
+                editing : false,
+                addFormActive : false
+            });
+
         });
+
     }
 
     deleteTag() {
 
-        if (this.state.activeTag==null)
+        const activeTag = this.getActiveTagFromProps();
+        if (!activeTag)
             return;
 
         this.setState({
-            // activeTag : null,
             editing : false,
             addFormActive : false
         });
 
-        this.props.deleteTag(this.props.flight.id, this.state.activeTag.hashId)
-        .then((data) => {
-            this.clearSelected();
-        });
+        this.props.deleteTag(this.props.flight.id, this.state.activeTagID)
+            .then(() => {
+                this.clearActiveTag();
+            });
 
     }
 
     editTag() {
 
-        if (this.state.activeTag==null)
+        const activeTag = this.getActiveTagFromProps();
+        if (!activeTag)
             return;
 
-        this.props.editTag(this.state.editedTag, this.state.activeTag);
+        this.props.editTag(this.state.editedTag, activeTag);
         this.setState({
             addFormActive: false
         });
 
-        let id = "#tag_img_" + this.state.activeTag.index;
-        $(id).attr('data-title', 'Changes Saved!').tooltip('show');
-        $("#tag_button_" + this.state.activeTag.index).removeClass('active');
+        const imgSel = `#tag_img_${this.props.flight.id}_${activeTag.hashId}`;
+        $(imgSel).attr('data-title', 'Changes Saved!').tooltip('show');
+        setTimeout(() => $(imgSel).tooltip('hide'), 5000);
 
-        setTimeout(function() {
-            $(id).tooltip('hide');
-         }.bind(this), 5000)
     }
 
     createTag() {
@@ -209,22 +237,22 @@ class Tags extends React.Component {
             addFormActive: false
         });
 
-        let id = "#tag_img_" + this.props.flight.tags.length - 1;
+        const id = `#tag_img_${this.props.flight.id}_${this.props.flight.tags.length - 1}`;
         console.log(id);
 
         setTimeout(function() {
             $(id).tooltip('hide');
-         }.bind(this), 5000)
+         }.bind(this), 5000);
     }
 
     /**
      * Handles state changes for when the 'Create a new tag' option is selected
      */
     createClicked() {
-        this.state = {
+        this.setState({
             adding : true,
             editing : false,
-        };
+        });
         this.showAddForm();
     }
 
@@ -232,13 +260,14 @@ class Tags extends React.Component {
      * Shows the form for adding and/or editing a tag
      */
     showAddForm() {
-        this.state.addFormActive = !this.state.addFormActive;
-        this.state.editedTag = {
-            name : "",
-            description : "",
-            color : Colors.randomValue()
-        };
-        this.setState(this.state);
+        this.setState((prevState) => ({
+            addFormActive: !prevState.addFormActive,
+            editedTag: {
+                name: "",
+                description: "",
+                color: Colors.randomValue()
+            }
+        }));
     }
 
     /**
@@ -247,14 +276,15 @@ class Tags extends React.Component {
      * @param e the onChange() event
      */
     handleFormChange(e) {
+        const editedTag = { ...this.state.editedTag };
         if (e.target.id == 'comName') {
-            this.state.editedTag.name = e.target.value;
+            editedTag.name = e.target.value;
         } else if (e.target.id == 'description') {
-            this.state.editedTag.description = e.target.value;
+            editedTag.description = e.target.value;
         } else if (e.target.id == 'color-picker-tag') {
-            this.state.editedTag.color = e.target.value;
+            editedTag.color = e.target.value;
         }
-        this.setState(this.state);
+        this.setState({ editedTag });
     }
 
     /**
@@ -262,31 +292,25 @@ class Tags extends React.Component {
      */
     render() {
 
-        let cellClasses = "d-flex flex-row p-1";
-        let cellStyle = { "overflowX" : "auto" };
-        let vcellStyle = { "overflowY" : "visible"};
+        const cellClasses = "d-flex flex-row p-1";
+        const cellStyle = { "overflowX" : "auto" };
         let addForm = "";
-        let addDrop = "";
-        let activeTag = this.state.activeTag;
-        let editedTag = this.state.editedTag;
-        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const activeTag = this.getActiveTagFromProps();
+        const buttonClasses = "m-1 btn btn-outline-secondary flex! flex-row! gap-2! items-center! justify-between!";
         const styleButton = {
             flex : "0 10 10em",
         };
-        const styleButtonSq = {
-            flex : "0 2 2em",
-            minWidth:"2.50em",
-            minHeight:"2.50em"
-        };
 
-        const styleColorInput = {
-            height : "38",
-        };
+        const tags = this.uniqueTagsById(this.props.flight.tags);
+        const hasAnyTags = (tags != null && tags.length > 0);
+        const unassociatedTags = this.props.getUnassociatedTags(this.props.flight.id);
+        const noTagSelected = (!activeTag);
 
-        let tags = this.props.flight.tags;
-        let unassociatedTags = this.props.getUnassociatedTags(this.props.flight.id);
+        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = {};
+        let tagStat = <></>;
+        let tagEditButtons = <></>;
 
-        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = {}, tagStat = "";
+        //No tags, add indicator card
         if (tags == null || tags.length == 0) {
             tagStat = (
                 <div>
@@ -297,51 +321,82 @@ class Tags extends React.Component {
                     </div>
                 </div>
             );
-        } else {
-           tagStat = ( 
+
+        //Otherwise, display the tag list
+        } else if (hasAnyTags) {
+
+            tagStat = (
                 <div className={cellClasses} style={cellStyle}>
                     {
-                        tags.map((tag, index) => {
+                        tags.map((tag) => {
+                            const isActive = (this.state.activeTagID === tag.hashId);
+                            const tagButtonID= `tag_button_${this.props.flight.id}_${tag.hashId}`;
+                            const tagImageID = `tag_img_${this.props.flight.id}_${tag.hashId}`;
                             return (
-                                <button id={"tag_button_" + index} key={index} className={buttonClasses} data-bs-toggle="button" onClick={() => this.selectTag(index, tag)}>
-                                    <i id={"tag_img_" + index} className="fa fa-tag m-1" data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="right" style={{color : tag.color, marginRight : '10px'}}></i>
+                                <button
+                                    id={tagButtonID}
+                                    key={tag.hashId}
+                                    className={`${buttonClasses} ${isActive ? 'active' : ''}`}
+                                    onClick={() => this.selectTag(tag)}
+                                >
+                                    <i
+                                        id={tagImageID}
+                                        className="fa fa-tag m-1"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-trigger='manual'
+                                        data-bs-placement="right"
+                                        style={{color : tag.color, marginRight : '10px'}}
+                                    />
                                     {tag.name}
                                 </button>
                             );
                         })
                     }
-                    <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag()}><i className="fa fa-minus" aria-hidden="true"></i></button>
+                </div> 
+            );
+
+            tagEditButtons = (
+                <div className="flex flex-row items-center justify-start gap-1 m-1">
                     <button
-                        className={buttonClasses}
-                        style={styleButtonSq}
+                        className={`${buttonClasses}`}
+                        title="Remove the selected tag from this flight"
+                        onClick={() => this.removeTag()}
+                        disabled={noTagSelected}
+                    >
+                        <i className="fa fa-minus" aria-hidden="true"></i>
+                        <div>Remove Selected Tag</div>
+                    </button>
+                    <button
+                        className={`${buttonClasses}`}
                         title="Permanently delete the selected tag from all flights"
                         onClick={() => {
                             this.deleteTag();
                         }}
+                        disabled={noTagSelected}
                     >
                         <i className="fa fa-trash" aria-hidden="true"/>
+                        <div>Delete Selected Tag</div>
                     </button>
                     <button
                         className={buttonClasses}
-                        style={styleButtonSq}
                         title="Clear all the tags from this flight"
                         onClick={() => {
                             this.props.clearTags(this.props.flight.id);
                             this.clearActiveTag();
                             this.setState({
-                                // activeTag : null,
                                 editing : false,
                                 addFormActive : false
                             });
                         }}
                     >
                         <i className="fa fa-eraser" aria-hidden="true"/>
+                        <div>Clear All Tags</div>
                     </button>
-                </div> 
+                </div>
             );
+
         }
 
-        let tagInfo = "";
         if (this.state.editing) {
             defName = this.state.editedTag.name;
             defDescript = this.state.editedTag.description;
@@ -356,55 +411,87 @@ class Tags extends React.Component {
             defAddAction = () => this.createTag();
         }
 
-        let submitButton = (
-            <button id="submit-tag-button" className="btn btn-outline-secondary" style={styleButton} onClick={defAddAction} data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" disabled>
-                <i className="fa fa-check mr-1" aria-hidden="true"/>
-                Submit
-            </button> 
-        );
 
-        if (!this.state.editing || !this.tagEquals(activeTag, editedTag)) {
+        let submitButton = <></>;
+        if (this.state.editing || this.state.adding) {// && this.tagEquals(activeTag, editedTag)) {
+
+            const editedTagHasName = (this.state.editedTag.name.length > 0);
+            const editedTagHasDescription = (this.state.editedTag.description.length > 0);
+
             submitButton = (
-                <button id="submit-tag-button" className="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-trigger='manual' data-bs-placement="top" style={styleButton} onClick={defAddAction} >
+                <button
+                    id="submit-tag-button"
+                    className="btn btn-outline-secondary"
+                    data-bs-toggle="tooltip"
+                    data-bs-trigger='manual'
+                    data-bs-placement="top"
+                    style={styleButton}
+                    onClick={defAddAction}
+                    disabled={!editedTagHasName || !editedTagHasDescription}
+                >
                     <i className="fa fa-check mr-1" aria-hidden="true"/>
                     Submit
                 </button> 
             );
+
         }
 
-        addDrop = (
+        const addDropButtonID = `dropdownMenuButton-${this.props.flight.id}`;
+
+        const addDrop = (
             <div id="dropdown-item-button-add-tag" className="dropdown m-1">
-                <button className="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+
+                <button
+                    ref={(element) => (this._addTagButton = element)}
+                    className="btn btn-outline-secondary dropdown-toggle"
+                    type="button"
+                    id={addDropButtonID}
+                    data-bs-toggle="dropdown"
+                    data-bs-offset="0,8"
+                    data-bs-config='{"boundary":"viewport","popperConfig":{"strategy":"fixed"}}'
+                >
                     Add a Tag
                 </button>
 
-                <div className="dropdown-menu" style={{maxHeight: "256px", overflowY: 'auto'}}>
-                <button className="btn dropdown-item" onClick={() => this.createClicked()}>Create New Tag</button>
-                {unassociatedTags != null && unassociatedTags.length > 0 &&
-                    <div className="dropdown-divider"/>
-                }
-                {unassociatedTags != null && unassociatedTags.length > 0 &&
-                    unassociatedTags.map((tag, index) => {
-                        let style = {
-                            backgroundColor : tag.color,
-                            fontSize : "110%"
-                        }
-                        return (
-                            <button key={index} className="btn dropdown-item" onClick={() => this.props.associateTag(tag.hashId, this.props.flight.id)}>
-                                <div className="row">
-                                    <div className="col-xs-1 text-center">
-                                        <span className="badge badge-pill badge-primary" style={style}>
-                                            <i className="fa fa-tag" aria-hidden="true"></i>
-                                        </span>
+                <div
+                    className="dropdown-menu"
+                    style={{ maxHeight: "256px", overflowY: "auto", zIndex: 2000 }}
+                    aria-labelledby={addDropButtonID}
+                >
+                {/* <div className="dropdown-menu absolute! top-full z-9999!" style={{maxHeight: "256px", overflowY: 'auto'}}> */}
+
+                    {/* Create New Tag Button */}
+                    <button
+                        className="btn dropdown-item italic"
+                        onClick={() => this.createClicked()}
+                    >
+                        + Create New Tag
+                    </button>
+                    {unassociatedTags != null && unassociatedTags.length > 0 &&
+                        <div className="dropdown-divider"/>
+                    }
+                    {unassociatedTags != null && unassociatedTags.length > 0 &&
+                        unassociatedTags.map((tag, index) => {
+                            const style = {
+                                backgroundColor : tag.color,
+                                fontSize : "110%"
+                            };
+                            return (
+                                <button key={index} className="btn dropdown-item" onClick={() => this.props.associateTag(tag.hashId, this.props.flight.id)}>
+                                    <div className="row">
+                                        <div className="col-xs-1 text-center">
+                                            <span className="badge badge-pill badge-primary" style={style}>
+                                                <i className="fa fa-tag" aria-hidden="true"></i>
+                                            </span>
+                                        </div>
+                                        <div className="col text-center">
+                                            {tag.name}
+                                        </div>
                                     </div>
-                                    <div className="col text-center">
-                                        {tag.name}
-                                    </div>
-                                </div>
-                            </button>
-                        );
-                    })
-                }
+                                </button>
+                            );
+                        })
+                    }
                 </div>
             </div>
         );
@@ -415,7 +502,7 @@ class Tags extends React.Component {
                     <div className="col-">
                         <div className="input-group">
                             <div className="input-group-prepend">
-                                 <button type="button" className="btn input-group-text" title="Assign a color to this tag" onClick={(e) => $("#color-picker-tag").click()}>
+                                 <button type="button" className="btn input-group-text" title="Assign a color to this tag" onClick={() => $("#color-picker-tag").click()}>
                                      <i className="fa fa-tag" aria-hidden="true" style={{color: defColor}}></i>
                                  </button>
                                  <input key="cc-0" className="hidden" style={{display: "none"}} type="color" name="eventColor" value={defColor} onChange={(e) => this.handleFormChange(e)} id="color-picker-tag"/>
@@ -446,6 +533,7 @@ class Tags extends React.Component {
         return (
             <div className="w-100">
 
+                {/* Area Header */}
                 <b className={"p-1 d-flex flex-row justify-content-start align-items-center"} style={{marginBottom:"0"}}>
                     <div className="d-flex flex-column mr-3" style={{width: "16px", minWidth:"16px", maxWidth:"16px", height: "16px"}}>
                         <i className='fa fa-plus ml-2' style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
@@ -455,7 +543,9 @@ class Tags extends React.Component {
                     </div>
                 </b>
 
-                {tagStat} 
+                {tagEditButtons}
+                {tagStat}
+
                 <div className="flex-row m-1 mb-2">
                     {addDrop}{addForm}
                 </div>
@@ -464,5 +554,8 @@ class Tags extends React.Component {
     }
 }
 
+
+document.addEventListener('show.bs.dropdown', e => console.log('show', e.target));
+document.addEventListener('shown.bs.dropdown', e => console.log('shown', e.target));
 
 export { Tags };

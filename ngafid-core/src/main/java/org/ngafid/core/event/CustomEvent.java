@@ -1,13 +1,12 @@
 package org.ngafid.core.event;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.Flight;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.Flight;
 
 /**
  * A CustomEvent is an Event that is not able to be calculated by the NGAFID's
@@ -57,8 +56,14 @@ public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
     private final Flight flight;
 
-    public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight,
-                       EventDefinition eventDefinition) {
+    public CustomEvent(
+            String startTime,
+            String endTime,
+            int startLine,
+            int endLine,
+            double severity,
+            Flight flight,
+            EventDefinition eventDefinition) {
         super(startTime, endTime, startLine, endLine, eventDefinition.getId(), severity);
 
         this.flight = flight;

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Script to backfill heatmap points for existing events
+# This script processes all events that don't have heatmap points and backfills them.
+
+# Configuration
+JAR_PATH="ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar"
+
+# Check if JAR file exists
+if [ ! -f $JAR_PATH ]; then
+    echo "Error: JAR file not found at $JAR_PATH"
+    echo "Please build the project first: mvn clean package"
+    exit 1
+fi
+
+# Run the backfill process
+echo "Starting heatmap points backfill process..."
+
+java -cp "$JAR_PATH" org.ngafid.core.heatmap.HeatmapPointsProcessor 

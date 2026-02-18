@@ -2,6 +2,12 @@ package org.ngafid.core.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Logger;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -9,21 +15,17 @@ import org.ngafid.core.Database;
 import org.ngafid.core.util.SendEmail;
 import org.ngafid.core.util.filters.Pair;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Properties;
-import java.util.logging.Logger;
-
 /**
- * The email consumer monitors the email topic and sends batches of emails found in the topic. This consumer will attempt
- * to send each email at most twice, after which the emails are placed into a dead letter queue.
+ * The email consumer monitors the email topic and sends batches of emails
+ * found in the topic. This consumer will attempt to send each email at most
+ * twice, after which the emails are placed into a dead letter queue.
  */
 public class EmailConsumer extends DisjointConsumer<String, String> {
     private static final Logger LOG = Logger.getLogger(EmailConsumer.class.getName());
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    protected EmailConsumer(Thread mainThread, KafkaConsumer<String, String> consumer, KafkaProducer<String, String> producer) {
+    protected EmailConsumer(
+            Thread mainThread, KafkaConsumer<String, String> consumer, KafkaProducer<String, String> producer) {
         super(mainThread, consumer, producer);
     }
 
@@ -47,7 +49,11 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
         return new KafkaProducer<>(getProperties());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
+
+        /* Start Docker Service Heartbeat Producer */
+        DockerServiceHeartbeat.autostart();
+
         new EmailConsumer(Thread.currentThread(), getConsumer(), getProducer()).run();
     }
 
@@ -76,7 +82,7 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
         SendEmail.Email email;
 
         try {
-            email = objectMapper.readValue(record.value(), SendEmail.Email.class);
+            email = OBJECT_MAPPER.readValue(record.value(), SendEmail.Email.class);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return new Pair<>(record, true);

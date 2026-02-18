@@ -1,4 +1,6 @@
+<!DOCTYPE html>
 <html>
+
 <head>
 
 
@@ -9,117 +11,273 @@
     <title>Waiting - NGAFID</title>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
-          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
 
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
-            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
-            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
-            crossorigin="anonymous"></script>
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
-            integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
-            crossorigin="anonymous"></script>
-
-    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/css/ol.css"
-          type="text/css">
-
-    <!-- OpenLayers -->
-    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
-
-    <!-- Plotly -->
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
 
 </head>
+
 <body style="overflow-y:hidden">
-<div id='navbar'></div>
+    <div id='navbar'></div>
 
-<div id="loading" style="display: none;">
-    <div id="loading-image" class="fa fa-spinner" alt="Loading..."></div>
-</div>
-
-<!-- Error Modal -->
-<div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
-    <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
-        <div id='error-modal-content'>
-        </div>
+    <div id="loading" style="display: none;">
+        <div id="loading-image" class="fa fa-spinner" alt="Loading..."></div>
     </div>
-</div>
 
-<div class="m-2">
-
-    <div class="card">
-        <div class="d-flex justify-content-between" style="text-align: start; opacity: 0.8;">
-            <h5 style="margin-right: auto; margin-top: auto; margin-bottom: auto; padding-left:1%">
-                Account awaiting Fleet Access
-            </h5>
-            <div class="p-2">
-                <button type="button" class="btn btn-primary btn-sm mr-1" onclick="logOut()">Log Out</button>
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class='modal' tabIndex='-1' role='dialog'>
+        <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+            <div id='confirm-modal-content'>
             </div>
         </div>
     </div>
 
-    <div class="card-body" style="background-color: transparent">
-
-        <div class="text-center m-4" style="margin-bottom: 8px;">
-            <img src="../images/holding_pattern.jpg">
-        </div>
-
-        <div class="p-3 mr-1 card">
-            Welcome to the NGAFID! Your account has been created successfully.
-            <div>
-                <br/>
+    <!-- Error Modal -->
+    <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
+        <div class='modal-dialog modal-lg' role='document'
+            style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+            <div id='error-modal-content'>
             </div>
-            <div class="p-2 card border-warning text-warning">
-                <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-                However, the managers of the Fleet you requested accesss to have not yet granted you access.<br/>Please
-                contact them so they may grant you access privileges.
+        </div>
+    </div>
+
+    <div class="m-2">
+
+        <div class="col">
+            <div class="card-alt card">
+                <h6 class="card-header d-flex flex-row justify-content-between align-items-center">
+                    <span>Account awaiting Fleet Access</span>
+
+                    <div class="d-flex flex-row align-items-center">
+
+                        <!-- Fleet Select Dropdown -->
+                        <select class="btn btn-primary mr-2" id="fleet-select-dropdown">
+                            <option value="-1">Change Fleet</option>
+                        </select>
+
+                        <!-- Logout Button -->
+                        <button id="logout-button" type="button" class="btn btn-primary btn-sm mr-1">Log Out</button>
+
+                    </div>
+
+                </h6>
+                <div class="my-4 px-4">
+                    Your account has been created successfully.
+                </div>
+                <div class="my-4 px-4 border-warning text-warning">
+                    <i class="fa fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                    However, the managers of the Fleet you requested access to have not yet granted you
+                    access. Please contact them so they may grant you access privileges.
+                </div>
             </div>
         </div>
 
     </div>
 
-</div>
+    <!-- Load React. -->
+    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- Load our React components. -->
+    <script type="module">
+        
+        /* Fleet Select Dropdown Functionality */
+        const selectEl = document.getElementById('fleet-select-dropdown');
+        const ACCESS_ALLOWED = new Set(['VIEW', 'UPLOAD', 'MANAGER']);
+
+        function populateFleetSelect(fleets, invites) {
+
+            const changeFleetText = (invites.length > 0)
+                ? 'Change Fleet / Accept Invite'
+                : 'Change Fleet';
+
+            //Reset options
+            selectEl.innerHTML = `<option value="-1">${changeFleetText}</option>`;
+
+            //Add incoming fleets as options
+            let usableCount = 0;
+            for (const fleet of fleets) {
+
+                const { fleetId, accessType, fleetName } = fleet;
+
+                //No fleet ID found, skip
+                if (!fleetId)
+                    continue;
+
+                const option = document.createElement('option');
+                option.value = String(fleetId);
+                option.textContent = `${fleetName} — ${accessType}`;
+
+                //Disallow switching to fleets the user has no access to
+                if (!ACCESS_ALLOWED.has(accessType)) {
+                    option.disabled = true;
+                    option.textContent += ' (No Access!)';
+
+                //Otherwise, count as a usable option
+                } else {
+                    usableCount++;
+                }
+
+                //Add this option to the list
+                selectEl.appendChild(option);
+
+            }
+            
+            //Add incoming invites as options
+            for (const invite of invites) {
+
+                const { inviteEmail, fleetName } = invite;
+                if (!fleetName)
+                    continue;
+
+                const option = document.createElement('option');
+                option.value = `invite:${fleetName}`;
+                option.textContent = `${fleetName} — INVITED`;
+
+                //Add this option to the list
+                selectEl.appendChild(option);
+
+            }
+
+        }
+
+        function fetchUserAndFleets() {
+
+            $.when(
+                $.ajax({ type: 'GET', url: '/api/user/fleet-access', dataType: 'json' }),
+                $.ajax({ type: 'GET', url: '/api/user/me', dataType: 'json' }),
+                $.ajax({ type: 'GET', url: '/api/user/multifleet-invites', dataType: 'json' })
+            ).done((fleetResult, userResult, inviteResult) => {
+
+                const fleets = fleetResult[0] ?? [];
+                const user = userResult[0] ?? {};
+                const invites = inviteResult[0] ?? [];
+
+                console.log('Fetched fleets:', fleets);
+                console.log('Fetched user info:', user);
+                console.log('Fetched invites:', invites);
+
+                populateFleetSelect(fleets, invites);
+
+            }).fail((jqXHR) => {
+                console.error('Failed to load fleets or user info', jqXHR?.status, jqXHR?.responseText);
+            });
+
+        }
+
+        selectEl.addEventListener('change', function () {
+
+            const chosen = this.value;
+
+            //Selected value is the placeholder, do nothing
+            if (chosen === '-1')
+                return;
+
+            $('#loading').show();
+            selectEl.disabled = true;
 
 
-<!-- Load React. -->
-<!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+            const isInvite = chosen.startsWith('invite:');
 
-<!-- Load our React components. -->
-<script type="text/babel" src="/js/waiting_navbar.js"></script>
-<script type="text/babel" src="/js/error_modal.js"></script>
-<script type="application/javascript">
-    function logOut() {
-        console.log("attempting log out!");
+            const switchToFleet = (fleetIdSelected) => {
 
-        var submissionData = {};
+                $.ajax({
+                    type: 'PUT',
+                    url: '/api/user/select-fleet',
+                    data: { fleetIdSelected },
+                    dataType: 'json',
+                    success: (response) => {
+                        console.log("Successfully left selected fleet:", response);
+                        //Redirect to /protected/welcome
+                        window.location.replace("/protected/welcome");
+                    },
+                    error: (jqXHR, textStatus, errorThrown) => {
+                        $('#loading').hide();
+                        console.error("There was an error updating selected fleet:", errorThrown);
+                    }
+                });
 
-        $.ajax({
-            type: 'POST',
-            url: '../logout',
-            data: submissionData,
-            dataType: 'json',
-            success: function (response) {
-                //processing the response will update the navbar
-                //to the logged out state
+            }
 
-                //logout so they can log back in
-                window.location.replace("/logout_success");
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Logging Out", errorThrown);
-            },
-            async: true
+            //Option is an invite, accept it
+            if (isInvite) {
+
+                const fleetName = chosen.slice('invite:'.length);
+                console.log("Accepting invite to fleet:", fleetName);
+
+                $.ajax({
+                    type: 'POST',
+                    url: `/api/user/multifleet-invites/accept`,
+                    async: true,
+                    data: { fleetName },
+                    success: () => {
+                        console.log('Successfully accepted invite to fleet:', fleetName);
+                        switchToFleet(chosen);
+                    },
+                    error: (jqXHR, textStatus, errorThrown) => {
+                        console.error('Error accepting invite:', errorThrown);
+                    }
+                });
+
+                return;
+            }
+
+            //Otherwise, just switch fleets
+            switchToFleet(chosen);
+
         });
 
-    }
-</script>
+        //Invoke on page load
+        $(fetchUserAndFleets);
+
+
+
+
+        /* Logout Button Functionality */
+        const logoutButton = document.getElementById('logout-button');
+        logoutButton.addEventListener('click', logOut);
+
+        function logOut() {
+
+            console.log("Attempting log out!");
+            const submissionData = {};
+
+            $.ajax({
+                type: 'POST',
+                url: '/api/auth/logout',
+                data: submissionData,
+                dataType: 'json',
+                async: true,
+                success: function (response) {
+                    /*
+                        Processing the response will update
+                        the navbar to the logged-out state
+                    */
+
+                    //logout so they can log back in
+                    window.location.replace("/logout_success");
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error("Error logging out: " + errorThrown);
+                },
+            });
+
+        }
+    </script>
 
 
 </body>
+
 </html>

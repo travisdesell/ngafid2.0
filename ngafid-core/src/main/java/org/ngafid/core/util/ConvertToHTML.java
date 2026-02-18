@@ -3,7 +3,6 @@ package org.ngafid.core.util;
 /**
  * Conversion methods for converting objects into nicely formatted HTML
  */
-
 public final class ConvertToHTML {
     private ConvertToHTML() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated.");

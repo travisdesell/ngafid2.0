@@ -2,8 +2,6 @@ package org.ngafid.core;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-
-import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,8 +9,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.sql.DataSource;
 
-public class Database {
+public final class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;
     private static String dbUser = null;
@@ -24,6 +23,8 @@ public class Database {
     static {
         initializeConnectionPool();
     }
+
+    private Database() {}
 
     public static Connection getConnection() throws SQLException {
         var info = CONNECTION_POOL.getHikariPoolMXBean();
@@ -41,10 +42,8 @@ public class Database {
     }
 
     public static String getDatabaseImplementation() {
-        if (Config.NGAFID_USE_MARIA_DB)
-            return "mariadb";
-        else
-            return "mysql";
+        if (Config.NGAFID_USE_MARIA_DB) return "mariadb";
+        else return "mysql";
     }
 
     private static void readDatabaseCredentials(String path) throws IOException {

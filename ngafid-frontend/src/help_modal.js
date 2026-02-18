@@ -1,13 +1,20 @@
 
 import 'bootstrap';
 
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from 'react-dom/client';
 
 import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
 
+
+const helpModalRef = React.createRef();
+
+
+const closeMethodDefault = () => {
+    console.log("Help modal closed.");
+};
 
 class HelpModal extends React.Component {
     constructor(props) {
@@ -19,41 +26,22 @@ class HelpModal extends React.Component {
         };
     }
 
-    show(title, message, closeMethod) {
-        this.state.title = title;
-        this.state.message = message;
-        this.state.closeMethod = closeMethod;
-        this.setState(this.state);
-
-        $("#help-modal").modal('show');
+    show(title, message, closeMethod=closeMethodDefault) {
+        this.setState({
+            title: title,
+            message: message,
+            closeMethod: closeMethod
+        }, () => {
+            $("#help-modal").modal('show');
+        });
     }
 
     render() {
-        let formGroupStyle = {
-            marginBottom: '8px'
-        };
 
-        let formHeaderStyle = {
-            width: '150px',
-            flex: '0 0 150px'
-        };
-
-        let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'right'
-        };
-
-        let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        console.log("rendering help modal with title: '" + this.state.title + "' and message: " + this.state.message);
+        console.log(
+            "Rendering help modal with title: '", this.state.title,
+            "' and message: ", this.state.message
+        );
 
         return (
             <div className='modal-content'>
@@ -70,17 +58,29 @@ class HelpModal extends React.Component {
                     {this.state.message}
                 </div>
 
+                {/* Modal Footer */}
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal' onClick={() => this.state.closeMethod()}>Close</button>
+
+                    {/* Acknowledge Button */}
+                    <button type='button' className='btn btn-success' data-bs-dismiss='modal' onClick={() => this.state?.closeMethod()}>
+                        <i className='fa fa-check mr-2'></i>
+                        Acknowledge
+                    </button>
                 </div>
             </div>
         );
     }
 }
 
-var helpModal = ReactDOM.render(
-    <HelpModal />,
-    document.querySelector("#help-modal-content")
-);
+const container = document.querySelector("#help-modal-content");
+const root = createRoot(container);
+root.render(<HelpModal ref={helpModalRef}/>);
 
-export { helpModal };
+
+export function showHelpModal(title, message, closeMethod) {
+
+    console.log("Showing help modal with title: '", title, "' and message: ", message);
+
+    helpModalRef.current.show(title, message, closeMethod);
+    
+}

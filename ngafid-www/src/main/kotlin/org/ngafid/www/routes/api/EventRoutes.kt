@@ -14,6 +14,7 @@ import org.ngafid.core.flights.Airframes
 import org.ngafid.www.routes.*
 import java.time.LocalDate
 import java.util.*
+import java.sql.SQLException
 
 object EventRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
@@ -26,6 +27,7 @@ object EventRoutes : RouteProvider() {
 
                 path("severities") {
                     get(EventRoutes::getAllSeverities, Role.LOGGED_IN)
+                    get("available", EventRoutes::getEventAvailability, Role.LOGGED_IN)
                     get("{eventName}", EventRoutes::getEventSeverities, Role.LOGGED_IN)
                 }
 
@@ -90,6 +92,83 @@ object EventRoutes : RouteProvider() {
         Database.getConnection()
             .use { ctx.json(EventMetaData.getEventMetaData(it, ctx.pathParam("eid").toInt())) }
 
+
+    fun getEventAvailability(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+        val startDate = ctx.queryParam("startDate")!!
+        val endDate = ctx.queryParam("endDate")!!
+        val eventNames = ctx.queryParam("eventNames")!!
+        val tagName = ctx.queryParam("tagName")!!
+        val fleetId = user.fleetId
+
+        Database.getConnection().use { connection ->
+            val eventNamesArray = eventNames.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            val availabilityMap: MutableMap<String, Int> = HashMap()
+
+            for (eventName in eventNamesArray) {
+                var eventName = eventName
+                    .replace("\"", "")
+                    .replace("[", "")
+                    .replace("]", "")
+                    .trim { it <= ' ' }
+
+                if (eventName == "ANY Event") continue
+
+                // Get event definition IDs
+                val definitionQuery = "SELECT id FROM event_definitions WHERE (fleet_id = 0 OR fleet_id = ?) AND name LIKE ?"
+                val definitionStmt = connection.prepareStatement(definitionQuery)
+                definitionStmt.setInt(1, fleetId)
+                definitionStmt.setString(2, eventName)
+
+                val definitionIds = mutableListOf<Int>()
+                val rs = definitionStmt.executeQuery()
+                while (rs.next()) {
+                    definitionIds.add(rs.getInt(1))
+                }
+                rs.close()
+                definitionStmt.close()
+
+                // Count events for these definitions
+                var totalCount = 0
+                for (defId in definitionIds) {
+                    val countQuery = if (tagName == "All Tags") {
+                        "SELECT COUNT(*) FROM events WHERE event_definition_id = ? AND fleet_id = ? AND end_time >= ? AND end_time <= ?"
+                    } else {
+                        "SELECT COUNT(*) FROM events, flights, flight_tag_map, flight_tags " +
+                        "WHERE events.flight_id = flights.id " +
+                        "AND flights.id = flight_tag_map.flight_id " +
+                        "AND flight_tag_map.tag_id = flight_tags.id " +
+                        "AND events.fleet_id = flight_tags.fleet_id " +
+                        "AND events.event_definition_id = ? " +
+                        "AND events.fleet_id = ? " +
+                        "AND events.end_time >= ? " +
+                        "AND events.end_time <= ? " +
+                        "AND flight_tags.name = ?"
+                    }
+
+                    val countStmt = connection.prepareStatement(countQuery)
+                    countStmt.setInt(1, defId)
+                    countStmt.setInt(2, fleetId)
+                    countStmt.setString(3, startDate)
+                    countStmt.setString(4, endDate)
+                    if (tagName != "All Tags") {
+                        countStmt.setString(5, tagName)
+                    }
+
+                    val countRs = countStmt.executeQuery()
+                    if (countRs.next()) {
+                        totalCount += countRs.getInt(1)
+                    }
+                    countRs.close()
+                    countStmt.close()
+                }
+
+                availabilityMap[eventName] = totalCount
+            }
+
+            ctx.json(availabilityMap)
+        }
+    }
 
     fun getAllSeverities(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -202,8 +281,16 @@ object EventRoutes : RouteProvider() {
                 }
 
                 if (!airframeNames.containsKey(eventDefinition.airframeNameId)) {
-                    airframeNames[eventDefinition.airframeNameId] =
-                        Airframes.Airframe(connection, eventDefinition.airframeNameId).name
+
+                    try {
+                        airframeNames[eventDefinition.airframeNameId] =
+                            Airframes.Airframe(connection, eventDefinition.airframeNameId).name
+                    } catch (e: SQLException) {
+                        println("Got unknown airframe name for ID ${eventDefinition.airframeNameId}, leaving as Unknown Airframe")
+                        e.printStackTrace()
+                        airframeNames[eventDefinition.airframeNameId] = "Unknown Airframe (${eventDefinition.airframeNameId})"
+                    }
+
                 }
 
                 println("${airframeNames[eventDefinition.airframeNameId]} -> ${eventDefinition.toHumanReadable()}")

@@ -1,14 +1,15 @@
 import 'bootstrap';
 
-import React from "react";
-import ReactDOM from "react-dom";
+import React, {createRef} from "react";
+import { createRoot } from 'react-dom/client';
 
 import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
-import {helpModal} from './help_modal.js';
+import {showHelpModal} from './help_modal.js';
+import {showErrorModal} from './error_modal.js';
 
 import $ from 'jquery';
 
@@ -16,13 +17,17 @@ window.jQuery = $;
 window.$ = $;
 
 
+const selectAircraftModalRef = createRef();
+
+
 class SelectAircraftModal extends React.Component {
-    constructor(props) {
+
+    constructor() {
         super();
         this.state = {
             paths: [],
             activeId: 0
-        }
+        };
         this.getSimAircraft();
         this.reOpen = this.reOpen.bind(this);
     }
@@ -42,18 +47,20 @@ class SelectAircraftModal extends React.Component {
     }
 
     modalClicked() {
-        var selectedPath = this.state.paths[this.state.activeId - 1];
-        var useMSL = $('#altCheck').is(':checked');
-        console.log("will use msl: " + useMSL);
+        let selectedPath = this.state.paths[this.state.activeId - 1];
+        const useMSL = $('#altCheck').is(':checked');
+        console.log(`will use msl: ${  useMSL}`);
 
         if (this.state.activeId == 0) {
             selectedPath = $('#cust_path').val();
             if (selectedPath == null || selectedPath.match(/^ *$/) !== null) {
-                console.log("selected path is not formatted correctly!");
-                let title = "Format Error";
-                let message = "Please make sure there is a path selected or there is a correctly formatted path in the custom path box. Press help for more information";
-                helpModal.show(title, message, this.reOpen);
+
+                console.log("Selected path is not formatted correctly!");
+                const title = "Format Error";
+                const message = "Please make sure there is a path selected or there is a correctly formatted path in the custom path box. Press help for more information";
+                showHelpModal(title, message, this.reOpen);
                 return;
+
             }
             this.addFile(selectedPath); //cache the filepath in the server
         }
@@ -63,43 +70,43 @@ class SelectAircraftModal extends React.Component {
     }
 
     selectPathId(pathId) {
-        this.state.activeId = pathId;
-        this.setState(this.state);
+        this.setState({ activeId: pathId });
     }
 
     helpClicked() {
-        let title = "X-Plane Aircraft Selector Help";
-        let message = "The paths in the list are filepaths to aircraft from previous exports. To add a new aircraft, use the text " +
+        const title = "X-Plane Aircraft Selector Help";
+        const message = "The paths in the list are filepaths to aircraft from previous exports. To add a new aircraft, use the text " +
             "field at the top of the list. The path should follow the format (no quotes): \"Aircraft/Laminar Research/Cessna 172SP/Cessna172SP.acf\"." +
             " It is very important to exclude the leading '/' from the filepath right before the 'Aircraft' directory.";
-        helpModal.show(title, message, this.reOpen);
+        showHelpModal(title, message, this.reOpen);
     }
 
     getSimAircraft() {
-        let thisModal = this;
 
         $.ajax({
             type: 'GET',
             url: '/api/aircraft/sim-aircraft',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+                console.log("Received Response: ", response);
 
-                thisModal.state.paths = response;
-                if (thisModal.state.paths != null & thisModal.state.paths.length > 0) {
-                    thisModal.state.selectedPath = thisModal.state.paths[0];
-                }
+                this.setState({ paths: response });
+                if (response != null && response.length > 0)
+                    this.setState({ selectedPath: response[0] });
+
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                showErrorModal("Error Loading Aircraft", errorThrown);
             },
-            async: true
         });
     }
 
     addFile(filepath) {
-        let thisModal = this;
 
-        let submissionData = {
+        const submissionData = {
             "path": filepath
         };
 
@@ -108,20 +115,22 @@ class SelectAircraftModal extends React.Component {
             url: '/api/aircraft/sim-aircraft',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
+            async: true,
+            success: (response) => {
+                console.log("Received response: ", response);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                showErrorModal("Error Adding Aircraft", errorThrown);
             },
-            async: true
         });
     }
 
     removeFile(index) {
-        let thisModal = this;
 
-        let submissionData = {
+        const submissionData = {
             "path": this.state.paths[index]
         };
 
@@ -130,35 +139,39 @@ class SelectAircraftModal extends React.Component {
             url: '/api/aircraft/sim-aircraft',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                console.log("received response: ");
-                console.log(response);
-                thisModal.state.paths = response;
-                thisModal.setState(thisModal.state);
+            async: true,
+            success: (response) => {
+
+                console.log("Received response: ", response);
+                this.setState({ paths: this.state.paths });
+                
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                showErrorModal("Error Removing Aircraft", errorThrown);
             },
-            async: true
         });
     }
 
 
     render() {
-        let styleButtonSq = {
+        const styleButtonSq = {
             flex: "right",
             float: "auto"
         };
 
-        let listStyle = {
+        const listStyle = {
             maxHeight: "400px",
             overflowY: "scroll"
-        }
+        };
 
         console.log("rendering select aircraft (xplane) modal");
         console.log(this.state.paths);
-        let paths = this.state.paths;
+        const paths = this.state.paths;
 
-        let selectRow = (
+        const selectRow = (
             <ListGroup id="listgrp" defaultActiveKey="#custom" style={listStyle}>
                 <ListGroup.Item active={this.state.activeId == 0} onClick={() => this.selectPathId(0)}>
                     <input type="text" id="cust_path" className="form-control"
@@ -166,8 +179,8 @@ class SelectAircraftModal extends React.Component {
                 </ListGroup.Item>
                 {paths != null && paths.length > 0 &&
                     paths.map((path, index) => {
-                        let relIndex = index + 1;
-                        let isActive = (this.state.activeId - 1 == index);
+                        const relIndex = index + 1;
+                        const isActive = (this.state.activeId - 1 == index);
                         return (
                             <ListGroup.Item active={isActive} key={index} onClick={() => this.selectPathId(relIndex)}>
                                 <Container>
@@ -242,9 +255,19 @@ class SelectAircraftModal extends React.Component {
     }
 }
 
-var selectAircraftModal = ReactDOM.render(
-    <SelectAircraftModal backdrop="static"/>,
-    document.querySelector("#select_aircraft-modal-content")
-);
+const container = document.querySelector("#select_aircraft-modal-content");
+const root = createRoot(container);
+root.render(<SelectAircraftModal backdrop="static" ref={selectAircraftModalRef}/>);
 
-export {selectAircraftModal};
+
+export function showSelectAircraftModal(type, submitMethod) {
+
+    console.log("Showing select aircraft modal with type: '", type, "' and submitMethod: ", submitMethod);
+    const selectAircraftModal = container.querySelector('select-aircraft-modal');
+
+    if (selectAircraftModal)
+        selectAircraftModal.show(type, submitMethod);
+    else
+        console.error("SelectAircraftModal component not found in the DOM.");
+
+}

@@ -1,18 +1,17 @@
 package org.ngafid.processor.events;
 
+import static org.ngafid.core.event.CustomEvent.getHighAltitudeSpin;
+import static org.ngafid.core.event.CustomEvent.getLowAltitudeSpin;
+import static org.ngafid.core.flights.Parameters.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.ngafid.core.event.CustomEvent;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.StringTimeSeries;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.ngafid.core.event.CustomEvent.getHighAltitudeSpin;
-import static org.ngafid.core.event.CustomEvent.getLowAltitudeSpin;
-import static org.ngafid.core.flights.Parameters.*;
 
 /**
  * Scans a flight for both HIGH and LOW altitude spins. This scanner technically searches for two event definitions,
@@ -34,7 +33,8 @@ public class SpinEventScanner extends AbstractEventScanner {
     }
 
     @Override
-    public List<Event> scan(Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+    public List<Event> scan(
+            Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         ArrayList<Event> events = new ArrayList<>();
 
         DoubleTimeSeries ias = doubleTimeSeries.get(IAS);
@@ -86,7 +86,13 @@ public class SpinEventScanner extends AbstractEventScanner {
 
                     if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
                         if (!spinStartFound) {
-                            currentEvent = new CustomEvent(utcSeries.get(lowAirspeedIndex), utcSeries.get(i), lowAirspeedIndex, i, maxNormAc, null);
+                            currentEvent = new CustomEvent(
+                                    utcSeries.get(lowAirspeedIndex),
+                                    utcSeries.get(i),
+                                    lowAirspeedIndex,
+                                    i,
+                                    maxNormAc,
+                                    null);
                             spinStartFound = true;
                         }
                     }

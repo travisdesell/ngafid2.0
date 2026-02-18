@@ -1,10 +1,5 @@
 package org.ngafid.core.flights.export;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,6 +8,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
 
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;
@@ -96,10 +95,8 @@ public class GeneratedCSVWriter extends CSVWriter {
         int startLine = event.getStartLine() - padding;
         int stopLine = event.getEndLine() + padding;
 
-        if (startLine < 0)
-            startLine = 0;
-        if (stopLine > flightLength)
-            stopLine = flightLength;
+        if (startLine < 0) startLine = 0;
+        if (stopLine > flightLength) stopLine = flightLength;
 
         writeToFile(startLine, stopLine);
     }

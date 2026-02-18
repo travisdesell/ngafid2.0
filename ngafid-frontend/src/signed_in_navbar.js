@@ -1,21 +1,127 @@
 import 'bootstrap';
 import React from "react";
-import {errorModal} from "./error_modal.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
 
-var activePage = "";
-
 
 import './index.css';
+import { showErrorModal } from './error_modal.js';
 
+
+
+function MultifleetSelectDropdown() {
+
+    let fleetsWithAccess = [];
+    let fleetCurrent = {};
+
+    //Fetch fleets the user has access to
+    $.ajax({
+        type: 'GET',
+        url: `/api/user/fleet-access`,
+        async: false,
+        success: (response) => {
+            console.log("Fetched Fleet Access:", response);
+
+            //Filter out fleets that the user does not have access to
+            const ACCESS_TYPES_DISALLOWED = ['WAITING', 'DENIED'];
+            fleetsWithAccess = response.filter(fleet => !ACCESS_TYPES_DISALLOWED.includes(fleet.accessType));
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+            console.error("There was an error fetching Fleet Access:", errorThrown);
+            showErrorModal("Error fetching Fleet Access", errorThrown);
+        }
+    });
+
+    //Fetch the user's current fleet
+    $.ajax({
+        type: 'GET',
+        url: `/api/fleet`,
+        async: false,
+        success: (response) => {
+            console.log("Fetched Fleet:", response);
+            fleetCurrent = response;
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+            console.error("There was an error fetching your current fleet:", errorThrown);
+            showErrorModal("Error fetching your current fleet", errorThrown);
+        }
+    });
+
+    
+    const switchToFleet = (fleetIdSelected) => {
+
+        $.ajax({
+            type: 'PUT',
+            url: '/api/user/select-fleet',
+            data: { fleetIdSelected },
+            dataType: 'json',
+            success: (response) => {
+                console.log("Successfully left selected fleet:", response);
+                //Reload page to update everything
+                window.location.reload();
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                $('#loading').hide();
+                console.error("There was an error updating selected fleet:", errorThrown);
+            }
+        });
+
+    };
+
+    return (
+        <div className="nav-item dropdown mr-4">
+            <a
+                className={`nav-link dropdown-toggle`}
+                style={{color: "var(--c_text)"}}
+                href="#!"
+                id="navbarDropdownMenuLink"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+            >
+                <i className="fa fa-fw fa-paper-plane mr-2" aria-hidden="true" />
+                <span>{fleetCurrent.name}</span>
+            </a>
+            <div
+                className="dropdown-menu dropdown-menu-right text-right"
+                aria-labelledby="navbarDropdownMenuLink"
+            >
+
+                {
+                    (fleetsWithAccess.length > 0)
+                    ? (
+                        fleetsWithAccess.map((fleet) => (
+                            <button
+                                key={fleet.fleetId}
+                                className="dropdown-item"
+                                onClick={() => switchToFleet(fleet.fleetId)}
+                                style={{ color: "var(--c-text)" }}
+                            >
+                                {fleet.fleetName} {fleet.isSelected ? "(Current)" : ""}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="dropdown-item" style={{ color: "var(--c-text)" }}>
+                            No Fleets Available
+                        </div>
+                    )
+                }
+                
+            </div>
+        </div>
+    );
+
+}
 
 
 class NavLink extends React.Component {
 
     render() {
 
-        console.log("Rendering navlink: '" + this.props.name + "'");
+        /*
+            console.log("Rendering navlink: '" + this.props.name + "'");
+        */
 
         const {
             active,
@@ -44,7 +150,7 @@ class NavLink extends React.Component {
         return (
             <li className={classNames}>
                 <a className="nav-link" href={href} hidden={hidden} onClick={() => onClick()}>
-                    {(icon !== undefined) ? <i className={"fa fa-fw " + icon} aria-hidden="true"/> : ""}
+                    {(icon !== undefined) ? <i className={`fa fa-fw ${  icon}`} aria-hidden="true"/> : ""}
                     &nbsp;{name} {isCurrent}
                 </a>
             </li>
@@ -104,7 +210,7 @@ class DropdownLink extends React.Component {
 }
 
 
-class SignedInNavbar extends React.Component {
+export default class SignedInNavbar extends React.Component {
 
     constructor(props) {
 
@@ -117,30 +223,30 @@ class SignedInNavbar extends React.Component {
 
     }
 
-    attemptLogIn() {
-        loginModal.show();
-    }
-
     attemptLogOut() {
 
-        var submissionData = {};
+        const submissionData = {};
 
         $.ajax({
             type: 'POST',
             url: '/api/auth/logout',
             data: submissionData,
             dataType: 'json',
-            success: function (response) {
-                //processing the response will update the navbar
-                //to the logged out state
+            async: true,
+            success: () => {
 
-                //redirect to the welcome page
+                /*
+                    Processing the response will update the navbar
+                    to the logged out state.
+
+                    Redirect to the welcome page.
+                */
+
                 window.location.replace("/logout_success");
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Logging Out", errorThrown);
+            error: (jqXHR, textStatus, errorThrown) => {
+                showErrorModal("Error Logging Out", errorThrown);
             },
-            async: true
         });
 
     }
@@ -148,34 +254,36 @@ class SignedInNavbar extends React.Component {
     render() {
         let waitingUsersString = "";
         if (this.props.waitingUserCount > 0)
-            waitingUsersString = " (" + this.props.waitingUserCount + ")";
-        let manageHidden = !this.props.fleetManager;
+            waitingUsersString = ` (${  this.props.waitingUserCount  })`;
+        const manageHidden = !this.props.fleetManager;
 
-        let tailsHidden = !this.props.modifyTailsAccess;
+        const tailsHidden = !this.props.modifyTailsAccess;
 
         let unconfirmedTailsString = "";
         if (this.props.unconfirmedTailsCount > 0)
-            unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
+            unconfirmedTailsString = ` (${  this.props.unconfirmedTailsCount  })`;
 
-        let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
-        console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
+        const accountNotifications = ` (${  this.props.waitingUserCount + this.props.unconfirmedTailsCount  })`;
+        /*
+            console.log("Waiting Users: " + this.props.waitingUserCount + ", Unconfirmed Tails: " + this.props.unconfirmedTailsCount + ", Account Notifications: " + accountNotifications);
+        */
 
-        let filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
+        const filterButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.filterSelected && "active"}`;
 
-        let cesiumButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.cesiumVisible && "active"}`;
-        let plotButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.plotVisible && "active"}`;
-        let mapButtonClasses = `p-1 expand-import-button btn btn-outline-secondary ${this.props.mapVisible && "active"}`;
+        const cesiumButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.cesiumVisible && "active"}`;
+        const plotButtonClasses = `p-1 mr-1 expand-import-button btn btn-outline-secondary ${this.props.plotVisible && "active"}`;
+        const mapButtonClasses = `p-1 expand-import-button btn btn-outline-secondary ${this.props.mapVisible && "active"}`;
 
         const buttonStyle = {minWidth: "2.5em", minHeight: "2.5em"};
         const buttonStyleSmall = {width: "2.40em", height: "2.40em", fontSize: "0.8em"};
 
-        var uploadsButton = "";
-        var importsButton = "";
+        let uploadsButton = "";
+        let importsButton = "";
         if (airSyncEnabled) {
 
             uploadsButton = (
                 <li className="nav-item dropdown">
-                    <a className={"nav-link dropdown-toggle" + (this.props.activePage === "uploads" ? " active" : "")}
+                    <a className={`nav-link dropdown-toggle${  this.props.activePage === "uploads" ? " active" : ""}`}
                        href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown"
                        aria-haspopup="true" aria-expanded="false">
                         <i className="fa fa-fw fa-upload" aria-hidden="true"/>
@@ -191,7 +299,7 @@ class SignedInNavbar extends React.Component {
 
             importsButton = (
                 <li className="nav-item dropdown">
-                    <a className={"nav-link dropdown-toggle" + (this.props.activePage === "imports" ? " active" : "")}
+                    <a className={`nav-link dropdown-toggle${  this.props.activePage === "imports" ? " active" : ""}`}
                        href="#!" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown"
                        aria-haspopup="true" aria-expanded="false">
                         <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
@@ -210,7 +318,7 @@ class SignedInNavbar extends React.Component {
             importsButton = (
                 <NavLink icon={"fa-cloud-download"} name={"Imports"} active={this.props.activePage === "imports"}
                          href="/protected/imports"/>
-            )
+            );
             uploadsButton = (
                 <NavLink icon={"fa-upload"} name={"Uploads"} active={this.props.activePage === "uploads"}
                          href="/protected/uploads"/>
@@ -221,21 +329,35 @@ class SignedInNavbar extends React.Component {
         //Highlight Active Page on Navbar
         console.log(`Active Page: '${this.props.activePage}'`);
 
-        let homeActive = (this.props.activePage === "welcome");
+        const homeActive = (this.props.activePage === "welcome");
 
         const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
-        let eventsActive = (eventPageNames.includes(this.props.activePage));
+        const eventsActive = (eventPageNames.includes(this.props.activePage));
 
         const aggregatePageNames = ["aggregate", "aggregate_trends"];
-        let aggregateActive = (aggregatePageNames.includes(this.props.activePage));
+        const aggregateActive = (aggregatePageNames.includes(this.props.activePage));
 
-        let analysisActive = (this.props.activePage === "ttf");
-        let accountsActive = (this.props.activePage === "account");
+        const analysisActive = (this.props.activePage === "ttf");
+        const accountsActive = (this.props.activePage === "account");
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
-                 style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
-                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">NGAFID</a>
+            <nav
+                id='navbar'
+                className="navbar navbar-expand-lg navbar-light"
+                style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}
+            >
+
+                {/* Brand Logo */}
+                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">
+                    NGAFID
+                </a>
+
+                {/* Fleet Select Dropdown */}
+                <MultifleetSelectDropdown/>
+
+                {/* Map Dropdown */}
+                {this.props.mapLayerDropdown}
+
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
                         aria-label="Toggle navigation">
@@ -331,7 +453,6 @@ class SignedInNavbar extends React.Component {
                                             onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
                                         <option value="Aerial">Aerial</option>
-                                        <option value="AerialWithLabels">Aerial with labels</option>
                                         <option value="Road">Road (static)</option>
                                         <option value="RoadOnDemand">Road (dynamic)</option>
                                         <option value="SectionalCharts">Sectional Charts</option>
@@ -360,7 +481,7 @@ class SignedInNavbar extends React.Component {
                         {/* Aggregate View Dropdown */}
                         {aggregateView ?
                             <li className="nav-item dropdown">
-                                <a className={"nav-link dropdown-toggle" + (aggregateActive ? " active" : "")}
+                                <a className={`nav-link dropdown-toggle${  aggregateActive ? " active" : ""}`}
                                    style={aggregateActive ? {color: "var(--c_text)"} : {}} href="#!"
                                    id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown"
                                    aria-haspopup="true" aria-expanded="false">
@@ -379,7 +500,7 @@ class SignedInNavbar extends React.Component {
 
                         {/* Events Dropdown */}
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")}
+                            <a className={`nav-link dropdown-toggle${  eventsActive ? " active" : ""}`}
                                style={eventsActive ? {color: "var(--c_text)"} : {}} href="#!"
                                id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                                aria-expanded="false">
@@ -392,6 +513,8 @@ class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
                                 <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
+
+                                <DropdownLink icon={"fa-fire"} name={"Heat Map"} hidden={false} href="/protected/heat_map"/>
 
                                 {admin
                                     ? <div className="dropdown-divider"></div>
@@ -407,7 +530,7 @@ class SignedInNavbar extends React.Component {
 
                         {/* Analysis Dropdown */}
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")}
+                            <a className={`nav-link dropdown-toggle${  analysisActive ? " active" : ""}`}
                                style={analysisActive ? {color: "var(--c_text)"} : {}} href="#!"
                                id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                                aria-expanded="false">
@@ -434,7 +557,7 @@ class SignedInNavbar extends React.Component {
                         {/* Account Dropdown */}
                         <li className="nav-item dropdown">
                             <a
-                                className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")}
+                                className={`nav-link dropdown-toggle${  accountsActive ? " active" : ""}`}
                                 style={accountsActive ? {color: "var(--c_text)"} : {}} href="#!"
                                 id="navbarDropdownMenuLink"
                                 role="button"
@@ -443,7 +566,7 @@ class SignedInNavbar extends React.Component {
                                 aria-expanded="false"
                             >
                                 <i className="fa fa-fw fa-user" aria-hidden="true"/>
-                                &nbsp;{"Account" + accountNotifications}
+                                &nbsp;{`Account${  accountNotifications}`}
                                 {
                                     accountsActive
                                         ? (<span className="sr-only">(current)</span>)
@@ -454,13 +577,15 @@ class SignedInNavbar extends React.Component {
                                 className="dropdown-menu dropdown-menu-right text-right"
                                 aria-labelledby="navbarDropdownMenuLink"
                             >
-                                <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden}
+                                <DropdownLink name={`Manage Fleet${  waitingUsersString}`} hidden={manageHidden}
                                               href="/protected/manage_fleet"/>
-                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden}
+                                <DropdownLink name={`Manage Tail Numbers${  unconfirmedTailsString}`} hidden={tailsHidden}
                                               href="/protected/system_ids"/>
                                 <div className="dropdown-divider" hidden={manageHidden}/>
                                 <DropdownLink name={"Update Password"} hidden={false}
                                               href="/protected/update_password"/>
+                                <DropdownLink name={"2-Factor Auth"} hidden={false}
+                                              href="/two-factor-settings#!"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"/>
                                 <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>
@@ -473,8 +598,8 @@ class SignedInNavbar extends React.Component {
 
                     </ul>
 
-                    <div>
-                        &nbsp;<DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
+                    <div className="ml-2">
+                        <DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
                     </div>
 
                 </div>
@@ -482,15 +607,3 @@ class SignedInNavbar extends React.Component {
         );
     }
 }
-
-SignedInNavbar.defaultProps = {
-    showFlightPageOrientationButton: false,
-    filterVisible: false,
-    showPlotButton: false,
-    showCesiumButton: false,
-    showMapButton: false,
-    disableMapButton: false,
-    plotMapHidden: true,
-}
-
-export default SignedInNavbar;

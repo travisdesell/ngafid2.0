@@ -5,7 +5,7 @@ package org.ngafid.core.uploads;
  * starts processing after it was deleted.
  */
 public class UploadDoesNotExistException extends Exception {
-    final int id;
+    private final int id;
 
     public UploadDoesNotExistException(int id) {
         this.id = id;

@@ -1,11 +1,14 @@
 import 'bootstrap';
-import React, {Component} from "react";
-import ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from 'react-dom/client';
 
-import {errorModal} from "./error_modal.js";
-import {loginModal} from "./login.js";
+import { showLoginModal } from "./login.js";
 
 import {DarkModeToggle} from "./dark_mode_toggle.js";
+
+
+import './index.css'; //<-- include Tailwind
+
 
 class NavLink extends React.Component {
     render() {
@@ -15,58 +18,71 @@ class NavLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "#!";
-        //make unclick an empty function if its not defined
-        if (typeof onClick == 'undefined') onClick = function () {
-        };
+        if (typeof href == 'undefined')
+            href = "#!";
 
-        //console.log("rendering navlink '" + name + "', active: " + active);
+        //onClick not defined, make it an empty function
+        if (typeof onClick == 'undefined') onClick = function () { /* ... */ };
 
         const classNames = active ? "nav-item active" : "nav-item";
         const isCurrent = active ? (<span className="sr-only">(current)</span>) : "";
 
         return (
-            <li className={classNames}>
+            <span className={classNames}>
                 <a className="nav-link" href={href} hidden={hidden} onClick={() => onClick()}>
                     {name} {isCurrent}
                 </a>
-            </li>
+            </span>
         );
     }
 }
 
 
-class HomeNavbar extends React.Component {
+export default class HomeNavbar extends React.Component {
+
     attemptLogIn() {
-        console.log("showing login modal!");
-        loginModal.show();
+        console.log("Showing login modal: ...");
+        showLoginModal();
     }
 
     render() {
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light"
-                 style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
+            <nav
+                id='navbar'
+                className="navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between!"
+                style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}
+            >
 
-                <a className="navbar-brand" href="../../src/main/javascript">NGAFID</a>
-                <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
-                        aria-label="Toggle navigation">
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+                {/* Left Elements */}
+                <div>
 
-                <div className="collapse navbar-collapse" id="navbarNavDropdown">
-                    <ul className="navbar-nav mr-auto">
-                    </ul>
-
-                    <ul className="navbar-nav">
-                        <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
-                        <NavLink name={"Create Account"} href="/create_account"/>
-                    </ul>
+                    {/* Navbar Brand & Home Link */}
+                    <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/">
+                        NGAFID
+                    </a>
                 </div>
 
-                <div>
-                    &nbsp;<DarkModeToggle/>
+                {/* Right Elements */}
+                <div className="flex flex-row items-center justify-end">
+
+                    {/* Navlink Buttons */}
+                    {
+                        (this.props.displayNavlinkButtons)
+                        &&
+                        <>
+                            {/* Login Button */}
+                            <NavLink name={"Login"} onClick={() => this.attemptLogIn()}/>
+
+                            {/* Create Account Button */}
+                            <NavLink name={"Create Account"} href="/create_account"/>
+                        </>
+                    }
+
+                    {/* Dark Mode Toggle Button */}
+                    <div className="ml-2">
+                        <DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
+                    </div>
                 </div>
 
             </nav>
@@ -74,9 +90,17 @@ class HomeNavbar extends React.Component {
     }
 }
 
-var navbar = ReactDOM.render(
-    <HomeNavbar/>,
-    document.querySelector('#navbar')
-);
+HomeNavbar.defaultProps = {
+    displayNavlinkButtons: true,
+};
 
-export {navbar};
+
+//Conditionally render and export a homeNavbar to keep the Login modal working
+const container = document.querySelector("#navbar");
+let navbar = null;
+if (container) {
+    navbar = createRoot(container);
+    navbar.render(<HomeNavbar/>);
+}
+
+export {navbar as homeNavbar};

@@ -2,7 +2,7 @@ name: Compile and Test
 
 on:
   pull_request:
-    branches: [ main, josh/refactor ]
+    branches: [ main, aidan_cu/main_july2025 ]
 
 jobs:
   build:
@@ -27,9 +27,11 @@ jobs:
       - name: Setup DAT2CSV
         run: run/setup_dat_importing
 
-      - name: Maven Compile
-        run: mvn clean install -DskipTests
+      - name: Build
+        run: run/build
 
-      - name: Maven Test
+      - name: Package
+        run: run/package
+
+      - name: Test
         run: mvn test
-

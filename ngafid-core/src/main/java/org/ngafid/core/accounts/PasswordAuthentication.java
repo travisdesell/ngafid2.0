@@ -1,7 +1,5 @@
 package org.ngafid.core.accounts;
 
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
@@ -10,6 +8,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Hash passwords for storage, and test passwords against password tokens.
@@ -57,8 +57,7 @@ public final class PasswordAuthentication {
     }
 
     private static int iterations(int cost) {
-        if ((cost < 0) || (cost > 30))
-            throw new IllegalArgumentException("cost: " + cost);
+        if ((cost < 0) || (cost > 30)) throw new IllegalArgumentException("cost: " + cost);
         return 1 << cost;
     }
 
@@ -87,18 +86,16 @@ public final class PasswordAuthentication {
      * @return true if the password and token match
      */
     public boolean authenticate(char[] password, String token) {
-        //TODO: make sure password meets minimum length requirements
+        // TODO: make sure password meets minimum length requirements
 
         Matcher m = LAYOUT.matcher(token);
-        if (!m.matches())
-            throw new IllegalArgumentException("Invalid token format");
+        if (!m.matches()) throw new IllegalArgumentException("Invalid token format");
         int iterations = iterations(Integer.parseInt(m.group(1)));
         byte[] hash = Base64.getUrlDecoder().decode(m.group(2));
         byte[] salt = Arrays.copyOfRange(hash, 0, SIZE / 8);
         byte[] check = pbkdf2(password, salt, iterations);
         int zero = 0;
-        for (int idx = 0; idx < check.length; ++idx)
-            zero |= hash[salt.length + idx] ^ check[idx];
+        for (int idx = 0; idx < check.length; ++idx) zero |= hash[salt.length + idx] ^ check[idx];
         return zero == 0;
     }
 

@@ -1,10 +1,13 @@
 package org.ngafid.core.airports;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.*;
 
 class AirportTest {
     @BeforeAll
@@ -27,7 +30,7 @@ class AirportTest {
             airport.addRunway(runway2);
             iata.put(iataCode, airport);
             site.put(siteNumber, airport);
-            geo.computeIfAbsent(airport.geoHash, k -> new ArrayList<>()).add(airport);
+            geo.computeIfAbsent(airport.getGeoHash(), k -> new ArrayList<>()).add(airport);
         }
         Airports.injectTestData(iata, site, geo);
     }
@@ -35,11 +38,11 @@ class AirportTest {
     @Test
     void testConstructorAndToString() {
         Airport airport = new Airport("ABC", "123", "small", 10.0, 20.0);
-        assertEquals("ABC", airport.iataCode);
-        assertEquals("123", airport.siteNumber);
-        assertEquals("small", airport.type);
-        assertEquals(10.0, airport.latitude);
-        assertEquals(20.0, airport.longitude);
+        assertEquals("ABC", airport.getIataCode());
+        assertEquals("123", airport.getSiteNumber());
+        assertEquals("small", airport.getType());
+        assertEquals(10.0, airport.getLatitude());
+        assertEquals(20.0, airport.getLongitude());
         assertTrue(airport.toString().contains("ABC"));
     }
 

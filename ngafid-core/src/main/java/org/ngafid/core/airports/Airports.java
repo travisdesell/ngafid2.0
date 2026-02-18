@@ -1,9 +1,6 @@
 package org.ngafid.core.airports;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import org.apache.commons.lang3.mutable.MutableDouble;
-import org.ngafid.core.Config;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -13,6 +10,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.mutable.MutableDouble;
+import org.ngafid.core.Config;
 
 public final class Airports {
     private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
@@ -23,8 +22,7 @@ public final class Airports {
     private static final HashMap<String, Airport> IATA_TO_AIRPORT;
 
     private static final boolean TEST_MODE =
-        Boolean.getBoolean("testMode") ||
-        "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
+            Boolean.getBoolean("testMode") || "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
 
     private Airports() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -41,7 +39,7 @@ public final class Airports {
             int numberAirports = 0;
 
             try (BufferedReader airportsReader = new BufferedReader(new FileReader(Config.AIRPORTS_FILE));
-                 BufferedReader runwaysReader = new BufferedReader(new FileReader(Config.RUNWAYS_FILE))) {
+                    BufferedReader runwaysReader = new BufferedReader(new FileReader(Config.RUNWAYS_FILE))) {
 
                 String line;
                 while ((line = airportsReader.readLine()) != null) {
@@ -54,21 +52,24 @@ public final class Airports {
 
                     Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
 
-                    ArrayList<Airport> hashedAirports = GEO_HASH_TO_AIRPORT.computeIfAbsent(airport.geoHash,
-                            k -> new ArrayList<>());
+                    ArrayList<Airport> hashedAirports =
+                            GEO_HASH_TO_AIRPORT.computeIfAbsent(airport.getGeoHash(), k -> new ArrayList<>());
                     hashedAirports.add(airport);
 
                     if (SITE_NUMBER_TO_AIRPORT.get(siteNumber) != null) {
-                        System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as"
-                                + " " + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
+                        System.err.println(
+                                "ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as" + " "
+                                        + SITE_NUMBER_TO_AIRPORT.get(siteNumber));
                         System.exit(1);
-
                     }
-                    SITE_NUMBER_TO_AIRPORT.put(airport.siteNumber, airport);
-                    IATA_TO_AIRPORT.put(airport.iataCode, airport);
+                    SITE_NUMBER_TO_AIRPORT.put(airport.getSiteNumber(), airport);
+                    IATA_TO_AIRPORT.put(airport.getIataCode(), airport);
 
-                    if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
-                    // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
+                    if (hashedAirports.size() > maxHashSize) {
+                        maxHashSize = hashedAirports.size();
+                    }
+                    // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " +
+                    // maxHashSize);
                     numberAirports++;
                 }
 
@@ -146,8 +147,8 @@ public final class Airports {
      * @param lon2 Longitude of the second point of the line segment
      * @return the shortest distance between the point and the line segment
      */
-    public static double shortestDistanceBetweenLineAndPointFt(double plat, double plon, double lat1,
-                                                               double lon1, double lat2, double lon2) {
+    public static double shortestDistanceBetweenLineAndPointFt(
+            double plat, double plon, double lat1, double lon1, double lat2, double lon2) {
         double a = plon - lon1;
         double b = plat - lat1;
         double c = lon2 - lon1;
@@ -183,9 +184,11 @@ public final class Airports {
         double latDistance = Math.toRadians(lat1 - lat2);
         double lngDistance = Math.toRadians(lon1 - lon2);
 
-        double a =
-                Math.sin(latDistance / 2) * Math.sin(latDistance / 2) + Math.cos(Math.toRadians(lat1)) *
-                        Math.cos(Math.toRadians(lat2)) * Math.sin(lngDistance / 2) * Math.sin(lngDistance / 2);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1))
+                        * Math.cos(Math.toRadians(lat2))
+                        * Math.sin(lngDistance / 2)
+                        * Math.sin(lngDistance / 2);
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -200,8 +203,8 @@ public final class Airports {
         return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Airports.FT_PER_KM;
     }
 
-    public static Airport getNearestAirportWithin(double latitude, double longitude, double maxDistanceFt,
-                                                  MutableDouble airportDistance) {
+    public static Airport getNearestAirportWithin(
+            double latitude, double longitude, double maxDistanceFt, MutableDouble airportDistance) {
         String[] geoHashes = GeoHash.getNearbyGeoHashes(latitude, longitude);
 
         double minDistance = maxDistanceFt;
@@ -213,8 +216,8 @@ public final class Airports {
             if (hashedAirports != null) {
                 // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
                 for (Airport airport : hashedAirports) {
-                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude,
-                            airport.longitude);
+                    double distanceFt =
+                            calculateDistanceInFeet(latitude, longitude, airport.getLatitude(), airport.getLongitude());
                     // LOG.info("\t\t" + airport + ", distanceFt: " + distanceFt);
 
                     if (distanceFt < minDistance) {
@@ -234,9 +237,8 @@ public final class Airports {
         return ap != null && ap.hasRunways();
     }
 
-    public static void injectTestData(Map<String, Airport> iata,
-                                      Map<String, Airport> site,
-                                      Map<String, ArrayList<Airport>> geo) {
+    public static void injectTestData(
+            Map<String, Airport> iata, Map<String, Airport> site, Map<String, ArrayList<Airport>> geo) {
         if (!TEST_MODE) {
             throw new IllegalStateException("Can only inject test data in test mode");
         }

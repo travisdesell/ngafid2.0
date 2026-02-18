@@ -3,12 +3,14 @@ import React from 'react';
 
 import $ from 'jquery';
 
+import InfoHint from './info_hint';
+
 window.jQuery = $;
 window.$ = $;
 
-export {EmailSettingsTableUser, EmailSettingsTableManager}
+export {EmailSettingsTableUser, EmailSettingsTableManager};
 
-import './index.css'          //<-- include Tailwind
+import './index.css';          //<-- include Tailwind
 
 /*
 ------------------------------------
@@ -43,7 +45,7 @@ class EmailSettingsTableUser extends React.Component {
             dataType: 'json',
             async: true,
 
-            success: (response) => {
+            success: () => {
                 console.log('Email preferences updated successfully!');
                 this.setState({disableFetching: false});
             },
@@ -53,7 +55,7 @@ class EmailSettingsTableUser extends React.Component {
                 this.setState({disableFetching: false});
             }
         });
-    }
+    };
 
     //Fetch user email preferences
     getUserEmailPreferences = () => {
@@ -66,33 +68,28 @@ class EmailSettingsTableUser extends React.Component {
                 console.log("Got user pref response: ", response);
 
                 let emailTypesIn = response.emailTypesKeys;
-                let emailTypesUserIn = response.emailTypesUser;
+                const emailTypesUserIn = response.emailTypesUser;
 
                 //Filter out email types marked as HIDDEN or FORCED
                 emailTypesIn = emailTypesIn.filter(
-                    type => (
-                        (type.includes("HIDDEN") !== true)
-                        && (type.includes("FORCED") !== true)
-                    )
+                    (type) => !type.includes("HIDDEN") && !type.includes("FORCED")
                 );
 
                 if (this.props.isAdmin) {
-                    let emailTypesAdmin = emailTypesIn.filter(
-                        type => (type.includes("ADMIN") === true)
-                    );
-                    emailTypesIn = emailTypesIn.filter(
-                        type => (type.includes("ADMIN") !== true)
-                    );
-                    emailTypesIn = emailTypesIn.concat(emailTypesAdmin);
+                    const admin = emailTypesIn.filter((type) => type.includes("ADMIN"));
+                    emailTypesIn = emailTypesIn.filter((type) => !type.includes("ADMIN")).concat(admin);
                 } else {
-                    emailTypesIn = emailTypesIn.filter(
-                        type => (type.includes("ADMIN") !== true)
-                    );
+                    emailTypesIn = emailTypesIn.filter((type) => !type.includes("ADMIN"));
                 }
+
+                const emailTypesUserInNormalized = Object.fromEntries(
+                    emailTypesIn.map((t) => [t, !!emailTypesUserIn?.[t]])
+                );
+
 
                 this.setState({
                     emailTypes: emailTypesIn,
-                    settings: emailTypesUserIn
+                    settings: emailTypesUserInNormalized
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
@@ -100,12 +97,12 @@ class EmailSettingsTableUser extends React.Component {
                 console.log(errorThrown);
             },
         });
-    }
+    };
 
     handleCheckboxChange = (type) => {
         this.setState(
             prevState => {
-                let prevStateSettings = (prevState.settings || []);
+                const prevStateSettings = (prevState.settings || {});
                 const updatedSettings = {
                     ...prevStateSettings,
                     [type]: !prevStateSettings[type]
@@ -122,9 +119,9 @@ class EmailSettingsTableUser extends React.Component {
         return (
             <div className="flex flex-row w-full gap-4 items-center justify-center">
             {
-                this.state.emailTypes.map((type, index) => (
+                this.state.emailTypes.map((type) => (
 
-                    <div key={index} className="flex flex-row bg-[var(--c_tag_badge)] rounded-lg items-center p-2 pr-4">
+                    <div key={type} className="flex flex-row bg-[var(--c_tag_badge)] rounded-lg items-center p-2 pr-4">
 
                         {
                             //Admin Type
@@ -151,8 +148,8 @@ class EmailSettingsTableUser extends React.Component {
 
                         <input
                             type="checkbox"
-                            checked={(this.state.settings && this.state.settings[type]) ? this.state.settings[type] : false}
-                            onChange={this.state.disableFetching ? () => undefined : () => this.handleCheckboxChange(type)}
+                            checked={!!this.state.settings?.[type]}
+                            onChange={this.state.disableFetching ? () => {} : () => this.handleCheckboxChange(type)}
                             className="ml-2 !scale-200"
                         />
                     </div>
@@ -160,7 +157,7 @@ class EmailSettingsTableUser extends React.Component {
                 ))
             }
             </div>
-        )
+        );
     }
 };
 
@@ -175,11 +172,23 @@ class EmailSettingsTableManager extends React.Component {
     constructor(props) {
         super(props);
         console.log("Generating Manager Email Settings Table...");
+
+        const prefsByUserSeeded = Object.fromEntries(
+            this.props.fleetUsers.map(user => [
+                user.id,
+                {
+                    emailTypesUser: {},
+                    emailTypesKeys: []
+                }
+            ])
+        );
+
         this.state = {
             emailTypes : [],
-            prefsByUser : {},
+            prefsByUser : prefsByUserSeeded,
             disableFetching : false
         };
+
     }
 
     componentDidMount() {
@@ -189,12 +198,14 @@ class EmailSettingsTableManager extends React.Component {
     updateUserEmailPreferences = (fleetUser, updatedSettings) => {
         const updatedEmailTypeSettingsTarget = updatedSettings[fleetUser.id].emailTypesUser;
 
-        const submissionData = {
-            handleUpdateType : "HANDLE_UPDATE_MANAGER",
-            fleetUserID : fleetUser.id,
-            fleetID : fleetUser.fleet.id,
-            ...updatedEmailTypeSettingsTarget
-        };
+        /*
+            const submissionData = {
+                handleUpdateType : "HANDLE_UPDATE_MANAGER",
+                fleetUserID : fleetUser.id,
+                fleetID : fleetUser.fleet.id,
+                ...updatedEmailTypeSettingsTarget
+            };
+        */
 
         this.setState({ disableFetching: true });
 
@@ -204,62 +215,83 @@ class EmailSettingsTableManager extends React.Component {
             data: updatedEmailTypeSettingsTarget,
             dataType: 'json',
             async: true,
-            success: (response) => {
-                this.setState({ disableFetching: false })
+            success: () => {
+                this.setState({ disableFetching: false });
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error updating preferences:', errorThrown);
                 this.setState({ disableFetching: false });
             }
         });
-    }
+
+    };
 
     getUserEmailPreferences = () => {
         const fleetUsers = this.props.fleetUsers;
 
-        fleetUsers.forEach(userTarget => {
+
+        fleetUsers.forEach((userTarget) => {
             $.ajax({
-                type: 'GET',
-                url: `/api/user/${userTarget.id}/email-prefs`,
-                async: true,
-                success : (response) => {
+            type: "GET",
+            url: `/api/user/${userTarget.id}/email-prefs`,
+            async: true,
+            success: (response) => {
 
-                    const EMAIL_TYPE_TAGS_EXCLUDED = [
-                        "HIDDEN",
-                        "FORCED",
-                        "ADMIN"
-                    ];
+                const EMAIL_TYPE_TAGS_EXCLUDED = [
+                    "HIDDEN",
+                    "FORCED",
+                    "ADMIN"
+                ];
 
-                    const prefsByUser = {
-                        ...this.state.prefsByUser,
-                        [userTarget.id]: {
-                        emailTypesUser: response.emailTypesUser,
-                        emailTypesKeys: response.emailTypesKeys.filter(
-                            type => (
-                                EMAIL_TYPE_TAGS_EXCLUDED.every(tag => !type.includes(tag))
-                            )
-                        ),
-                        }
+                const rawKeys = response.emailTypesKeys.filter((t) =>
+                    EMAIL_TYPE_TAGS_EXCLUDED.every((tag) => !t.includes(tag))
+                );
+
+                this.setState((prev) => {
+
+                    //Make a global header for all known keys
+                    const emailTypes = prev.emailTypes.length
+                        ? Array.from(new Set([...prev.emailTypes, ...rawKeys]))
+                        : rawKeys;
+
+                    //Ensure every header key exists
+                    const normalized = Object.fromEntries(
+                        emailTypes.map((t) => [t, !!response.emailTypesUser?.[t]])
+                    );
+
+                    return {
+                        emailTypes,
+                        prefsByUser: {
+                            ...prev.prefsByUser,
+                            [userTarget.id]: {
+                                emailTypesUser: normalized,
+                                emailTypesKeys: rawKeys,
+                            },
+                        },
                     };
-
-                    this.setState(prevState => ({
-                        emailTypes: prevState.emailTypes.length
-                                    ? prevState.emailTypes
-                                    : prefsByUser[userTarget.id].emailTypesKeys,
-                        prefsByUser
-                    }));
-
-                },
-                error: (jqXHR, textStatus, errorThrown) => {
-                    console.log("Error getting upset data:", errorThrown);
-                }
+                });
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.log("Error getting upset data:", errorThrown);
+            },
             });
         });
-    }
+
+        
+
+    };
 
     handleCheckboxChange = (userTarget, type) => {
+
         this.setState(
             prevState => {
+
+                const userTargetPrefs = prevState.prefsByUser[userTarget.id];
+
+                //Target user's preferences aren't loaded, exit
+                if (!userTargetPrefs || !userTargetPrefs.emailTypesUser)
+                    return null;
+
                 const prefsByUser = {
                     ...prevState.prefsByUser,
                     [userTarget.id]: {
@@ -318,91 +350,106 @@ class EmailSettingsTableManager extends React.Component {
         const prefsByUser = this.state.prefsByUser;
 
         return (
-            <table className="table-hover rounded-lg w-full">
-                <thead className="leading-16 text-[var(--c_text)] border-b-1">
-                    <tr>
-                        <th className="pl-4">
-                            Email
-                        </th>
+            <div className="w-full">
+
+                {/* Mass-Toggle Instruction */}
+                <InfoHint message={"Use the buttons next to each item to mass-toggle that email notification option for all users."} />
+
+                {/* Email Settings Table */}
+                <table className="table-hover rounded-lg w-full">
+                    <thead className="leading-16 text-[var(--c_text)] border-b-1">
+                        <tr>
+                            <th className="pl-4">
+                                Email
+                            </th>
+                            {
+                                this.state.emailTypes.map((type, index) => (
+                                    <th key={index}>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                        }}>
+                                            <ToggleButtonColumnManager
+                                                emailTypes={this.state.emailTypes}
+                                                emailTypeIndex={index}
+                                                fleetUsers={fleetUsers}
+                                                prefsByUser={prefsByUser}
+                                                updateUserEmailPreferences={this.updateUserEmailPreferences}
+                                                disableFetching={this.state.disableFetching}
+                                                bulkToggleColumn={this.bulkToggleColumn}
+                                                showDeniedUsers={showDeniedUsers}
+                                            />
+                                            {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </div>
+                                    </th>
+                                ))
+                            }
+                        </tr>
+                    </thead>
+
+                    <tbody className="text-[var(--c_text)] leading-16 before:content-['\A']">
+
+                        {/* Empty spacer row */}
+                        <tr className="pointer-none bg-transparent">
+                            <td colSpan={3} className="h-6"/>
+                        </tr>
+
                         {
-                            this.state.emailTypes.map((type, index) => (
-                                <th key={index}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}>
-                                        <ToggleButtonColumnManager
-                                            emailTypes={this.state.emailTypes}
-                                            emailTypeIndex={index}
-                                            fleetUsers={fleetUsers}
-                                            prefsByUser={prefsByUser}
-                                            updateUserEmailPreferences={this.updateUserEmailPreferences}
-                                            disableFetching={this.state.disableFetching}
-                                            bulkToggleColumn={this.bulkToggleColumn}
-                                            showDeniedUsers={showDeniedUsers}
-                                        />
-                                        {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                    </div>
-                                </th>
-                            ))
+                            fleetUsers
+                                .map((userCurrent, settingIndex) => {
+
+                                    const rowClassName = (userCurrent.fleetAccess.accessType==="DENIED" ? `italic opacity-50` : `${settingIndex%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`);
+                                    const emailClassName = (userCurrent.fleetAccess.accessType==="DENIED" ? `italic opacity-50` : ``);
+
+                                    return (
+                                        <tr key={settingIndex} className={rowClassName}>
+
+                                            {/* Email */}
+                                            <td className={`pl-4 ${emailClassName}`}>
+                                                {userCurrent.email}
+                                            </td>
+
+                                            {/* Email Types */}
+                                            {
+                                                this.state.emailTypes.map((type, typeIndex) => {
+                                                    const buttonChecked = !!(prefsByUser[userCurrent.id]?.emailTypesUser?.[type]);
+                                                    const buttonDisabled = this.state.disableFetching || !(type in (prefsByUser[userCurrent.id]?.emailTypesUser ?? {}));
+                                                    return (
+                                                        <td key={typeIndex}>
+
+                                                            <div className="flex flex-row gap-2 items-center">
+                                                                <div className="border-l-1 h-12 border-[var(--c_table_border)]"></div>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={buttonChecked}
+                                                                    disabled={buttonDisabled}
+                                                                    onChange={this.state.disableFetching ? () => undefined : () => this.handleCheckboxChange(userCurrent, type)}
+                                                                    className="ml-4 !scale-200"
+                                                                />
+                                                            </div>
+
+                                                        </td>
+                                                    );
+                                                })
+                                            }
+                                        </tr>
+                                    );
+                                })
                         }
-                    </tr>
-                </thead>
 
-                <tbody className="text-[var(--c_text)] leading-16 before:content-['\A']">
+                        {/* Empty spacer row */}
+                        <tr className="pointer-none bg-transparent">
+                            <td colSpan={3} className="h-6"/>
+                        </tr>
 
-                    {/* Empty spacer row */}
-                    <tr className="pointer-none bg-transparent">
-                        <td colSpan={3} className="h-6"/>
-                    </tr>
+                    </tbody>
+                </table>
 
-                    {
-                        fleetUsers
-                            .map((userCurrent, settingIndex) => {
-
-                                const rowClassName = (userCurrent.fleetAccess.accessType==="DENIED" ? `italic opacity-50` : `${settingIndex%2 ? "bg-[var(--c_row_bg)]" : "bg-[var(--c_row_bg_alt)]"}`)
-                                const emailClassName = (userCurrent.fleetAccess.accessType==="DENIED" ? `italic opacity-50` : ``);
-
-                                return (
-                                    <tr key={settingIndex} className={rowClassName}>
-
-                                        {/* Email */}
-                                        <td className={`pl-4 ${emailClassName}`}>
-                                            {userCurrent.email}
-                                        </td>
-
-                                        {/* Email Types */}
-                                        {
-                                            this.state.emailTypes.map((type, typeIndex) => (
-                                                <td key={typeIndex}>
-
-                                                    <div className="flex flex-row gap-2 items-center">
-                                                        <div className="border-l-1 h-12 border-[var(--c_table_border)]"></div>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!prefsByUser[userCurrent.id] && prefsByUser[userCurrent.id].emailTypesUser[type]}
-                                                            onChange={this.state.disableFetching ? () => undefined : () => this.handleCheckboxChange(userCurrent, type)}
-                                                            className="ml-4 !scale-200"
-                                                        />
-                                                    </div>
-
-                                                </td>
-                                            ))
-                                        }
-                                    </tr>
-                                );
-                            })
-                    }
-
-                    {/* Empty spacer row */}
-                    <tr className="pointer-none bg-transparent">
-                        <td colSpan={3} className="h-6"/>
-                    </tr>
-
-                </tbody>
-            </table>
+            </div>
         );
+
     }
+
 }
 
 
@@ -501,11 +548,15 @@ class ToggleButtonColumnManager extends React.Component {
         return (
 
             <button
-                className="ml-4 mr-2"
+                className="
+                    ml-4 mr-2
+                    scale-100 hover:scale-110 transition-transform duration-100
+                    cursor-pointer
+                "
                 onClick={disableFetching ? () => undefined : this.handleToggle}
             >
                 <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--c_tag_badge)]">
-                <i className={`fa fa-${this.state.isChecked ? 'times' : 'check'} text-[var(--c_text)]`}/>
+                <i className={`fa fa-${isChecked ? 'times' : 'check'} text-[var(--c_text)]`}/>
                 </div>
             </button>
         );

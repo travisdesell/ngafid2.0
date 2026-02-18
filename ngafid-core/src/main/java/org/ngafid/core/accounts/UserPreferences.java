@@ -1,8 +1,8 @@
 package org.ngafid.core.accounts;
 
-import java.util.List;
-
 import static org.ngafid.core.flights.Parameters.DEFAULT_METRICS;
+
+import java.util.List;
 
 public class UserPreferences {
     private final List<String> flightMetrics;
@@ -28,7 +28,6 @@ public class UserPreferences {
         this.decimalPrecision = decimalPrecision;
         this.flightMetrics = List.of(metrics);
     }
-
 
     public static UserPreferences defaultPreferences(int userId) {
         return new UserPreferences(userId, 1, DEFAULT_METRICS);

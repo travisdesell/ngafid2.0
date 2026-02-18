@@ -20,4 +20,10 @@ ngafid-airsync/target
 ngafid-chart-processor/temp
 ngafid-frontend/.webpack_cache/*
 .env
+.env.host
 ngafid-db/src/liquibase.docker.properties
+ngafid-email.conf
+ngafid.properties
+.vscode/
+*.log
+ngafid-www/src/test/kotlin/org/ngafid/www/.env

@@ -81,7 +81,7 @@ object UploadRoutes : RouteProvider() {
             val imports = Upload.getUploads(
                 connection,
                 user.fleetId,
-                Upload.Status.IMPORTED_SET,
+                Upload.Status.getImportedSet(),
                 " LIMIT " + (currentPage * pageSize) + "," + pageSize
             )
 

@@ -20,10 +20,12 @@ import java.util.logging.Logger;
 
 import static org.ngafid.core.kafka.Configuration.getUploadProperties;
 
-public enum UploadHelper {
-    ;
-
+public class UploadHelper {
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
+
+    private UploadHelper() {
+        // Private constructor to hide the implicit public one
+    }
 
     private static KafkaProducer<String, Integer> getUploadProducer() {
         return new KafkaProducer<>(getUploadProperties());
@@ -32,7 +34,8 @@ public enum UploadHelper {
     private static Options buildCLIOptions() {
         Options options = new Options();
 
-        Option input = new Option("f", "fleet", true, "Fleet ID for which all uploads should be added to the processing queue");
+        Option input = new Option(
+                "f", "fleet", true, "Fleet ID for which all uploads should be added to the processing queue");
         input.setRequired(false);
         input.setArgs(Option.UNLIMITED_VALUES);
         input.setOptionalArg(true);
@@ -79,8 +82,7 @@ public enum UploadHelper {
                     String[] split = line.split(" ");
                     for (String chunk : split) {
                         chunk = chunk.trim();
-                        if (chunk.isEmpty())
-                            continue;
+                        if (chunk.isEmpty()) continue;
                         try {
                             int id = Integer.parseInt(chunk);
                             ids.add(id);
@@ -91,28 +93,25 @@ public enum UploadHelper {
                 }
             }
         } else if (cmd.hasOption("q")) {
-	    String query = cmd.getOptionValue("q");
-	    String table = cmd.hasOption("fleet") ? "fleet" : "uploads";
+            String query = cmd.getOptionValue("q");
+            String table = cmd.hasOption("fleet") ? "fleet" : "uploads";
 
-	    try (Connection connection = Database.getConnection();
-		 PreparedStatement statement = connection.prepareStatement("SELECT id FROM " + table + " WHERE " + query);
-		 ResultSet resultSet = statement.executeQuery()) {
-	        while (resultSet.next()) {
-		    ids.add(resultSet.getInt(1));
-		}
-	    }
-	}
+            try (Connection connection = Database.getConnection();
+                    PreparedStatement statement =
+                            connection.prepareStatement("SELECT id FROM " + table + " WHERE " + query);
+                    ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    ids.add(resultSet.getInt(1));
+                }
+            }
+        }
 
         if (cmd.hasOption("fleet")) {
-            if (ids.isEmpty())
-                for (String v : cmd.getOptionValues("fleet"))
-                    ids.add(Integer.parseInt(v));
+            if (ids.isEmpty()) for (String v : cmd.getOptionValues("fleet")) ids.add(Integer.parseInt(v));
 
             enqueueFleetUploads(ids);
         } else if (cmd.hasOption("upload")) {
-            if (ids.isEmpty())
-                for (String v : cmd.getOptionValues("upload"))
-                    ids.add(Integer.parseInt(v));
+            if (ids.isEmpty()) for (String v : cmd.getOptionValues("upload")) ids.add(Integer.parseInt(v));
 
             enqueueUploads(ids);
         } else {
@@ -120,22 +119,21 @@ public enum UploadHelper {
         }
     }
 
-
-    static private void enqueueUploads(List<Integer> uploadIds) {
+    private static void enqueueUploads(List<Integer> uploadIds) {
         try (KafkaProducer<String, Integer> producer = getUploadProducer()) {
-            for (Integer uploadId : uploadIds)
-                producer.send(new ProducerRecord<>("upload", uploadId));
+            for (Integer uploadId : uploadIds) producer.send(new ProducerRecord<>("upload", uploadId));
         }
     }
 
-    static private void enqueueFleetUploads(List<Integer> fleetIds) throws SQLException {
+    private static void enqueueFleetUploads(List<Integer> fleetIds) throws SQLException {
         try (Connection connection = Database.getConnection();
-             KafkaProducer<String, Integer> producer = getUploadProducer()) {
+                KafkaProducer<String, Integer> producer = getUploadProducer()) {
             for (Integer fleetId : fleetIds) {
                 // Step through the fleets uploads in pages of 1K, adding them to the upload topic as we do.
                 int idCursor = 0;
                 while (true) {
-                    try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM uploads WHERE fleet_id = ?  AND id > ? LIMIT 1000")) {
+                    try (PreparedStatement statement = connection.prepareStatement(
+                            "SELECT id FROM uploads WHERE fleet_id = ?  AND id > ? LIMIT 1000")) {
                         statement.setInt(1, fleetId);
                         statement.setInt(2, idCursor);
 
@@ -149,8 +147,7 @@ public enum UploadHelper {
                                 nRows += 1;
                             }
 
-                            if (nRows == 0)
-                                break;
+                            if (nRows == 0) break;
                         }
                     }
                 }

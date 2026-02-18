@@ -2,99 +2,101 @@ import 'bootstrap';
 
 import Overlay from 'ol/Overlay';
 import { Map, View } from 'ol';
-import BingMaps from 'ol/source/BingMaps.js';
-import { fromLonLat, toLonLat } from 'ol/proj.js';
+import { fromLonLat } from 'ol/proj.js';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ.js';
 
-
 console.log("doing first load after setting state!");
 
-var styles = [
-    'Aerial',
-    'AerialWithLabels',
-    'Road',
-    'RoadOnDemand'
-];
-
-var layers = [];
-var i;
-var ii = styles.length; //do the mapquest satellite differently
-
-for (i = 0; i < ii; ++i) {
-    layers.push(new TileLayer({
-        visible: false,
-        preload: Infinity,
-        source: new BingMaps({
-            key: 'At3fIeQ6GJzbuGZpfWYkVjMDuzTuhYeFjHTzkraUafn06HMY3Eq1hDvZUlqq5Ysf',
-            imagerySet: styles[i]
-        })
-    }));
-}
-
-styles.push('SectionalCharts');
-var tms_sec = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_sec);
-
-
-styles.push('IFREnrouteLowCharts');
-var tms_enrl = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_enrl);
-
-
-styles.push('IFREnrouteHighCharts');
-var tms_enrh = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_enrh);
-
-styles.push('TerminalAreaCharts');
-var tms_tac = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"})
-});
-
-layers.push(tms_tac);
-
-
-styles.push('HelicopterCharts');
-var heli = new TileLayer({
-    visible: false,
-    preload: Infinity,
-    source : new XYZ({
-        url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"})
-});
-
-
-layers.push(heli);
-
-var center = fromLonLat([-97.0329, 47.9253]);
-
-layers[2].setVisible(true);
-
-var map = null;
+let map = null;
+let styles = [];
+let layers = [];
 
 function initializeMap() {
 
-    console.log("Initializing map instance...");
+    // Map already initialized, exit
+    if (map) {
+        console.warn("Map instance already exists, initialization aborted.");
+        return;
+    }
+    
+    // Azure Maps key is now injected from backend via template
+    if (typeof azureMapsKey === 'undefined' || !azureMapsKey) {
+        console.error("Azure Maps key is missing or undefined!");
+        return;
+    }
+
+    styles = [
+        'Aerial',
+        'Road',
+        'RoadOnDemand'
+    ];
+    layers = [];
+    let i;
+    const ii = styles.length;
+    for (i = 0; i < ii; ++i) {
+        let url = '';
+        if (styles[i] === 'Aerial') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+        } else if (styles[i] === 'Road') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+        } else if (styles[i] === 'RoadOnDemand') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`;
+        }
+        layers.push(new TileLayer({
+            visible: false,
+            preload: Infinity,
+            source: new XYZ({ url })
+        }));
+    }
+
+    styles.push('SectionalCharts');
+    const tms_sec = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"})
+    });
+    layers.push(tms_sec);
+
+    styles.push('IFREnrouteLowCharts');
+    const tms_enrl = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"})
+    });
+    layers.push(tms_enrl);
+
+    styles.push('IFREnrouteHighCharts');
+    const tms_enrh = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"})
+    });
+    layers.push(tms_enrh);
+
+    styles.push('TerminalAreaCharts');
+    const tms_tac = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"})
+    });
+    layers.push(tms_tac);
+
+    styles.push('HelicopterCharts');
+    const heli = new TileLayer({
+        visible: false,
+        preload: Infinity,
+        source : new XYZ({
+            url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"})
+    });
+    layers.push(heli);
+
+    const center = fromLonLat([-97.0329, 47.9253]);
+    layers[2].setVisible(true);
 
     map = new Map({
         target: 'map',
@@ -109,21 +111,62 @@ function initializeMap() {
     });
 
     console.log("Initialized map instance: ", map);
-
 }
-var container = document.getElementById('popup');
-var content = document.getElementById('popup-content');
-var closer = document.getElementById('popup-closer');
-let overlays;
-var overlay;
 
-//Container is null, set overlays to empty array
-if (container == null) {
-    overlays = [];
+function createBaseMapLayers(azureKey) {
+    const styles = [
+        'Aerial',
+        'Road',
+        'RoadOnDemand',
+        'SectionalCharts',
+        'IFREnrouteLowCharts',
+        'IFREnrouteHighCharts',
+        'TerminalAreaCharts',
+        'HelicopterCharts'
+    ];
+    const layers = [];
+    for (let i = 0; i < styles.length; ++i) {
+        let url = '';
+        const name = styles[i];
+        if (name === 'Aerial') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureKey}`;
+        } else if (name === 'Road') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureKey}`;
+        } else if (name === 'RoadOnDemand') {
+            url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureKey}`;
+        } else if (name === 'SectionalCharts') {
+            url = "http://localhost:8187/sectional/{z}/{x}/{-y}.png";
+        } else if (name === 'IFREnrouteLowCharts') {
+            url = "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png";
+        } else if (name === 'IFREnrouteHighCharts') {
+            url = "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png";
+        } else if (name === 'TerminalAreaCharts') {
+            url = "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png";
+        } else if (name === 'HelicopterCharts') {
+            url = "http://localhost:8187/helicopter/{z}/{x}/{-y}.png";
+        }
+        const layer = new TileLayer({
+            visible: false,
+            preload: Infinity,
+            source: new XYZ({ url })
+        });
+        layer.set('name', name);
+        layers.push(layer);
+    }
+    return { styles, layers };
+}
 
-//Otherwise, create new overlay
-} else {
+document.addEventListener('DOMContentLoaded', () => {
+  initializeMap();
+});
 
+const container = document.getElementById('popup');
+const content = document.getElementById('popup-content');
+const closer = document.getElementById('popup-closer');
+let overlay;
+
+//Container is not null, create new overlay
+if (container != null) {
     overlay = new Overlay({
         element: container,
         autoPan: true,
@@ -131,11 +174,9 @@ if (container == null) {
             duration: 250
         }
     });
-
-    overlays = [overlay];
 }
 
-var Colors = {};
+const Colors = {};
 Colors.names = {
     aqua: "#00ffff",
     //azure: "#f0ffff",
@@ -183,22 +224,21 @@ Colors.names = {
 };
 
 Colors.random = function () {
-    var result;
-    var count = 0;
-    for (var prop in this.names)
+    let result;
+    let count = 0;
+    for (const prop in this.names)
         if (Math.random() < 1 / ++count)
             result = prop;
     return result;
 };
 
 Colors.randomValue = function () {
-    var result;
-    var count = 0;
-    for (var prop in this.names)
+    let result;
+    let count = 0;
+    for (const prop in this.names)
         if (Math.random() < 1 / ++count)
             result = this.names[prop];
     return result;
 };
 
-
-export { map, styles, layers, Colors, initializeMap, overlay, container, closer, content };
+export { map, styles, layers, Colors, initializeMap, overlay, container, closer, content, createBaseMapLayers };

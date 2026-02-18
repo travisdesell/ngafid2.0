@@ -1,11 +1,11 @@
 package terrain;
 
+import static org.junit.Assert.assertEquals;
+import static org.ngafid.processor.terrain.TerrainCache.getAltitudeFt;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.ngafid.processor.terrain.TerrainCache;
-
-import static org.junit.Assert.assertEquals;
-import static org.ngafid.processor.terrain.TerrainCache.getAltitudeFt;
 
 public class TerrainCacheTest {
     private void altitudeTest(double latitude, double longitude, double expectedAltitude) {

@@ -1,11 +1,5 @@
 package org.ngafid.processor.format;
 
-import org.jetbrains.annotations.NotNull;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.util.MD5;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.processor.Pipeline;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,11 +18,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.util.MD5;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.processor.Pipeline;
 
 /**
- * File processor for Garmin G5 G3X. These flight data recorders are a bit different from the G1000, and require a bit of
- * additional processing. First, a single file may contain data for many separate flights. This is detected by scanning
- * for large gaps in time in the date column.
+ * File processor for Garmin G5 G3X. These flight data recorders are a bit different from the
+ * G1000, and require a bit of additional processing. First, a single file may contain data for
+ * many separate flights. This is detected by scanning for large gaps in time in the date column.
  *
  * @author Joshua Karns
  * @author Roman Kozulia
@@ -44,21 +43,23 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      */
     public static class G5FlightBuilder extends FlightBuilder {
 
-        public G5FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-                               Map<String, StringTimeSeries> stringTimeSeries) {
+        public G5FlightBuilder(
+                FlightMeta meta,
+                Map<String, DoubleTimeSeries> doubleTimeSeries,
+                Map<String, StringTimeSeries> stringTimeSeries) {
             super(meta, doubleTimeSeries, stringTimeSeries);
         }
 
-        private final Map<String, Set<String>> ALIASES = Map.of(
-                "AltAGL", Set.of("Altitude Above Ground Level"));
+        private final Map<String, Set<String>> aliases = Map.of("AltAGL", Set.of("Altitude Above Ground Level"));
 
         @Override
         protected final Map<String, Set<String>> getAliases() {
-            return ALIASES;
+            return aliases;
         }
     }
 
-    public G5CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) throws IOException {
+    public G5CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
+            throws IOException {
         super(connection, stream, filename, pipeline);
     }
 
@@ -103,8 +104,9 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             }
             List<Integer> splitIndices = splitCSVIntoFlightIndices(stringTimeSeries, SPLIT_TIME_IN_MINUTES);
             return createFlightBuildersFromSegments(splitIndices, rows, doubleTimeSeries, stringTimeSeries).stream();
-        } catch (MalformedFlightFileException | TimeUtils.UnrecognizedDateTimeFormatException |
-                 NullPointerException e) {
+        } catch (MalformedFlightFileException
+                | TimeUtils.UnrecognizedDateTimeFormatException
+                | NullPointerException e) {
             throw new FlightProcessingException(e);
         }
     }
@@ -114,13 +116,13 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * This method extracts the content inside parentheses
      * If parentheses not found, returns the original input.
      *
-     * @param input
-     * @return
+     * @param input The input string to process
+     * @return The content inside parentheses or the original input if not found
      */
     public static String extractContentInsideParentheses(String input) {
         Matcher matcher = PARENTHESIS_PATTERN.matcher(input);
         if (matcher.find()) {
-            return matcher.group(1);  // Content inside parentheses
+            return matcher.group(1); // Content inside parentheses
         }
         return input;
     }
@@ -150,10 +152,12 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      * @return List of FlightBuilder
      * @throws FlightProcessingException
      */
-    private List<FlightBuilder> createFlightBuildersFromSegments(List<Integer> splitIndices,
-                                                                 List<String[]> rows,
-                                                                 Map<String, DoubleTimeSeries> doubleTimeSeries,
-                                                                 Map<String, StringTimeSeries> stringTimeSeries) throws FlightProcessingException {
+    private List<FlightBuilder> createFlightBuildersFromSegments(
+            List<Integer> splitIndices,
+            List<String[]> rows,
+            Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries)
+            throws FlightProcessingException {
 
         List<FlightBuilder> segmentFlightBuilders = new ArrayList<>();
 
@@ -162,8 +166,7 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             int toIndex = (i == splitIndices.size() - 1) ? rows.size() : splitIndices.get(i + 1);
 
             // Ignore anything < 5 minutes
-            if (toIndex - fromIndex < 60 * 5)
-                continue;
+            if (toIndex - fromIndex < 60 * 5) continue;
 
             Map<String, DoubleTimeSeries> segmentDoubleSeries = new HashMap<>();
             doubleTimeSeries.forEach((k, v) -> segmentDoubleSeries.put(k, v.subSeries(fromIndex, toIndex)));
@@ -187,10 +190,14 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     /**
      * Splits flights based on time intervals between rows and returns flight indices.
      *
-     * @param splitIntervalInMinutes - max time difference between rows.
-     * @return
+     * @param stringTimeSeries The string time series data
+     * @param splitIntervalInMinutes max time difference between rows.
+     * @return A list of indices where flights should be split
+     * @throws TimeUtils.UnrecognizedDateTimeFormatException if date/time format is not recognized
      */
-    public List<Integer> splitCSVIntoFlightIndices(Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes) throws TimeUtils.UnrecognizedDateTimeFormatException {
+    public List<Integer> splitCSVIntoFlightIndices(
+            Map<String, StringTimeSeries> stringTimeSeries, int splitIntervalInMinutes)
+            throws TimeUtils.UnrecognizedDateTimeFormatException {
 
         List<Integer> splitIndices = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
@@ -204,11 +211,13 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             timeSeries = stringTimeSeries.get(Parameters.LCL_TIME);
         }
 
-        DateTimeFormatter correctFormatter = getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), timeSeries.get(dateSeries.size() / 2));
+        DateTimeFormatter correctFormatter =
+                getDateTimeFormatter(dateSeries.get(dateSeries.size() / 2), timeSeries.get(dateSeries.size() / 2));
 
         for (int i = 0; i < dateSeries.size(); i++) {
 
-            String dateTimeString = dateSeries.get(i) + " " + timeSeries.get(i); // Assuming the first two columns are date and time
+            String dateTimeString =
+                    dateSeries.get(i) + " " + timeSeries.get(i); // Assuming the first two columns are date and time
             String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");
             LocalDateTime currentTimestamp;
             try {
@@ -236,20 +245,26 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
     }
 
     @NotNull
-    private static DateTimeFormatter getDateTimeFormatter(String date, String time) throws TimeUtils.UnrecognizedDateTimeFormatException {
+    private static DateTimeFormatter getDateTimeFormatter(String date, String time)
+            throws TimeUtils.UnrecognizedDateTimeFormatException {
         String firstDateTimeString = date + " " + time;
-        DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(firstDateTimeString.replaceAll("\\s+", " "));
+        DateTimeFormatter correctFormatter =
+                TimeUtils.findCorrectFormatter(firstDateTimeString.replaceAll("\\s+", " "));
         return correctFormatter;
     }
-
 
     /**
      * Computes the UTC_DATE_TIME column and UNIX_TIME_SECONDS column using the UTC Date and UTC Time found in the G5
      * logs.
+     *
+     * @param doubleTimeSeries The double time series data
+     * @param stringTimeSeries The string time series data
+     * @throws TimeUtils.UnrecognizedDateTimeFormatException if date/time format is not recognized
+     * @throws MalformedFlightFileException if the flight file is malformed
      */
     private void calculateUTCDateTime(
-            Map<String, DoubleTimeSeries> doubleTimeSeries,
-            Map<String, StringTimeSeries> stringTimeSeries) throws TimeUtils.UnrecognizedDateTimeFormatException, MalformedFlightFileException {
+            Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries)
+            throws TimeUtils.UnrecognizedDateTimeFormatException, MalformedFlightFileException {
 
         StringTimeSeries utcDateSeries = stringTimeSeries.get(Parameters.UTC_DATE);
         StringTimeSeries utcTimeSeries = stringTimeSeries.get(Parameters.UTC_TIME);
@@ -258,8 +273,10 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
             throw new NullPointerException("Need UTC Date and UTC Time to compute UTC_DATE_TIME for G5.");
         }
 
-        DoubleTimeSeries unixtime = new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
-        StringTimeSeries timestampSeries = new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+        DoubleTimeSeries unixtime =
+                new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
+        StringTimeSeries timestampSeries =
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
         // Determine formatter
         DateTimeFormatter formatter = null;

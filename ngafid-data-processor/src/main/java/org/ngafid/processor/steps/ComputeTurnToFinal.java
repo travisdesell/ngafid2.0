@@ -1,15 +1,14 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
+import java.util.logging.Logger;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.TurnToFinal;
 import org.ngafid.processor.format.FlightBuilder;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Performs turn to final analysis on the flight. Relies on the itinerary calculation which outputs a "dummy" column.
@@ -23,15 +22,23 @@ public class ComputeTurnToFinal extends ComputeStep {
 
     @Override
     public boolean applicable() {
-        return airframeIsValid(builder.meta.airframe)
-                && builder
-                .getDoubleTimeSeriesKeySet()
-                .containsAll(getRequiredDoubleColumns().stream().filter(c -> !c.equals("_itinerary")).toList());
+        return airframeIsValid(builder.meta.getAirframe())
+                && builder.getDoubleTimeSeriesKeySet()
+                        .containsAll(getRequiredDoubleColumns().stream()
+                                .filter(c -> !c.equals("_itinerary"))
+                                .toList());
     }
 
     @Override
     public Set<String> getRequiredDoubleColumns() {
-        return Set.of(Parameters.LAT, Parameters.LON, Parameters.ALT_AGL, Parameters.ALT_MSL, Parameters.ROLL, Parameters.GND_SPD, "_itinerary");
+        return Set.of(
+                Parameters.LAT,
+                Parameters.LON,
+                Parameters.ALT_AGL,
+                Parameters.ALT_MSL,
+                Parameters.ROLL,
+                Parameters.GND_SPD,
+                "_itinerary");
     }
 
     @Override
@@ -53,8 +60,10 @@ public class ComputeTurnToFinal extends ComputeStep {
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         LOG.info("Compuiting turn to final.");
         var x = TurnToFinal.calculateFlightTurnToFinals(
-                builder.getDoubleTimeSeriesMap(), builder.getItinerary(), builder.meta.airframe, builder.meta.getStartDateTime()
-        );
+                builder.getDoubleTimeSeriesMap(),
+                builder.getItinerary(),
+                builder.meta.getAirframe(),
+                builder.meta.getStartDateTime());
         LOG.info("Computed " + x.size() + " turns to final.");
         builder.emitTurnToFinals(x);
     }

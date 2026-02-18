@@ -5,21 +5,19 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
-
 public class Conditional {
     private static final Logger LOG = Logger.getLogger(Conditional.class.getName());
 
     private static final Set<String> VALID_RULE_CONDITIONS = Set.of("<", ">", ">=", "<=");
     private static final Set<String> VALID_GROUP_CONDITIONS = Set.of("AND", "OR");
 
-
     private String type = null;
 
     private String parameterName = null;
     private double parameterValue = Double.NaN;
 
-    //condition will either be <=, <, >, >= if this conditional's type is RULE
-    //or AND or OR if it's type is GROUP
+    // condition will either be <=, <, >, >= if this conditional's type is RULE
+    // or AND or OR if it's type is GROUP
     private String condition = null;
 
     private double value;
@@ -92,9 +90,9 @@ public class Conditional {
         if (type.equals("RULE")) {
             if (this.parameterName.equals(paramNameToBeSet)) {
                 if (condition.equals("<=") || condition.equals("<")) {
-                    this.parameterValue = minMax.first(); //set to min
+                    this.parameterValue = minMax.first(); // set to min
                 } else {
-                    this.parameterValue = minMax.second(); //set to max
+                    this.parameterValue = minMax.second(); // set to max
                 }
             }
         } else if (type.equals("GROUP")) {
@@ -107,12 +105,10 @@ public class Conditional {
         }
     }
 
-
     /**
      * Resets all the parameter values to NaN (unset).
      */
-    public void reset() {
-    }
+    public void reset() {}
 
     /**
      * Assuming all the parameters have been set this will evaluate the statement.
@@ -122,7 +118,7 @@ public class Conditional {
     public boolean evaluate() {
         if (type.equals("RULE")) {
             if (Double.isNaN(parameterValue)) {
-                //don't trigger exceedences on NaNs
+                // don't trigger exceedences on NaNs
                 return false;
             }
 
@@ -144,24 +140,24 @@ public class Conditional {
 
         } else if (type.equals("GROUP")) {
             if (condition.equals("AND")) {
-                //if any child evaluates to false we can return
-                //false early without evaluating the rest of them
+                // if any child evaluates to false we can return
+                // false early without evaluating the rest of them
                 for (Conditional child : children) {
                     if (!child.evaluate()) return false;
                 }
                 return true;
 
             } else if (condition.equals("OR")) {
-                //if any child evaluates to true we can return
-                //true early without evaluating the rest of them
+                // if any child evaluates to true we can return
+                // true early without evaluating the rest of them
                 for (Conditional child : children) {
                     if (child.evaluate()) return true;
                 }
                 return false;
 
             } else {
-                LOG.severe("Could not evaluate a conditional on a group " +
-                        "with an unknown condition type: '" + this.condition + "'");
+                LOG.severe("Could not evaluate a conditional on a group " + "with an unknown condition type: '"
+                        + this.condition + "'");
                 System.exit(1);
             }
 
@@ -186,15 +182,15 @@ public class Conditional {
 
         StringBuilder classSB = new StringBuilder();
 
-        classSB.append("import java.util.List;\n" + "import java.util.HashMap;\n\n" + "public class " +
-                "CompiledCondition" + this.hashCode() + " {\n\n" + "    private int length = -1;\n");
+        classSB.append("import java.util.List;\n" + "import java.util.HashMap;\n\n" + "public class "
+                + "CompiledCondition" + this.hashCode() + " {\n\n" + "    private int length = -1;\n");
 
         for (String parameter : parameters) {
             classSB.append("    private double[] " + parameter + " = null;\n");
         }
         classSB.append("\n");
-        classSB.append("    public CompiledCondition(int length, HashMap<String, double[]> parameterMap) {\n" + "    " +
-                "    this.length = length;");
+        classSB.append("    public CompiledCondition(int length, HashMap<String, double[]> parameterMap) {\n" + "    "
+                + "    this.length = length;");
         for (String parameter : parameters) {
             classSB.append("        this." + parameter + "Series = parameterMap.get(\"" + parameter + "\");\n");
         }

@@ -1,7 +1,11 @@
+/* webpack.config.js */
 const webpack = require('webpack');
 const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const DeadCodePlugin = require('webpack-deadcode-plugin');
+const dotenv = require('dotenv');
+dotenv.config();
 
 
 const path = require('path');
@@ -50,6 +54,10 @@ module.exports = {
     mode: process.env.NODE_ENV || 'development',
     watch: doWatch,
 
+    optimization: {
+        usedExports: true,
+    },
+
     resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
         fallback: {
@@ -78,40 +86,44 @@ module.exports = {
     },
 
     entry: {
+        aggregate_trends: "./src/aggregate_trends.tsx",
         aggregate: "./src/aggregate.js",
-        aggregate_trends: "./src/aggregate_trends.js",
         airsync_imports: "./src/airsync_imports.js",
         airsync_uploads: "./src/airsync_uploads.js",
+        bug_report: "./src/bug_report_page.tsx",
         create_account: "./src/create_account.js",
         create_event: "./src/create_event.js",
         event_definition: "./src/event_definition.js",
         event_definitions_display: "./src/event_definitions_display.js",
         event_statistics: "./src/event_statistics.js",
-        fleet_trends: "./src/fleet_trends.js",
-        flight: "./src/flight.js",
+        fleet_trends: "./src/fleet_trends.tsx",
         flight_display: "./src/flight_display.js",
+        flight: "./src/flight.js",
         flights: "./src/flights.js",
         forgot_password: "./src/forgot_password.js",
-        signed_in_navbar: "./src/signed_in_navbar.js",
         home_navbar: "./src/home_navbar.js",
         imports: "./src/imports.js",
         manage_events: "./src/manage_events.js",
         manage_fleet: "./src/manage_fleet.js",
         ngafid_cesium: __dirname + "/src/ngafid_cesium.js",
+
+        heat_map: "./src/heat_map.tsx",
         reset_password: "./src/reset_password.js",
-        severities: "./src/severities.js",
+        severities: "./src/severities.tsx",
+        signed_in_navbar: "./src/signed_in_navbar.js",
+        status: "./src/status_page.tsx",
         system_ids: "./src/system_ids.js",
+        theme_preload: "./src/theme_preload.js",
         time_zones: "./src/time_zones.js",
         ttf: "./src/ttf.js",
-        user_preferences: "./src/preferences_page.js",
+        two_factor_prompt: "./src/two_factor_prompt.js",
         update_event: "./src/update_event.js",
+        two_factor_settings: "./src/two_factor_settings.js",
         update_password: "./src/update_password.js",
         update_profile: "./src/update_profile.js",
         uploads: "./src/uploads.js",
+        user_preferences: "./src/preferences_page.tsx",
         welcome: "./src/welcome.js",
-        theme_preload: "./src/theme_preload.js",
-        status: "./src/status_page.tsx",
-        bug_report: "./src/bug_report_page.tsx",
     },
 
     devtool: (process.env.CI ? false : 'source-map'),
@@ -180,9 +192,21 @@ module.exports = {
             ],
         }),
         new webpack.DefinePlugin({
-            CESIUM_BASE_URL: JSON.stringify("/cesium"),
+            CESIUM_BASE_URL: JSON.stringify("/cesium")
         }),
         new ShowChangedFilesPlugin(),
+        new DeadCodePlugin({
+            patterns: [
+                'src/**/*.(js|jsx|css|ts|tsx)',
+            ],
+            exclude: [
+                'node_modules/**',
+                'src/cesium/**',
+                'src/ngafid_cesium.js',
+                'src/plotly.js',
+                'src/plotly.min.js',
+            ],
+        }),
     ],
 
 };

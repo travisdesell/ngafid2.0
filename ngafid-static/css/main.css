@@ -52,6 +52,14 @@
     --c_text_alt_dark: #DDDDD0;
     --c_text_alt: var(--c_text_alt_light);
 
+    --c_text_button_light: #666;
+    --c_text_button_dark: #CCC;
+    --c_text_button: var(--c_text_button_light);
+
+    --c_text_button_alt_light: #495057;
+    --c_text_button_alt_dark: #bdccde;
+    --c_text_button_alt: var(--c_text_button_alt_light);
+
     /* Navbar Colors */
     --c_navbar_bg_light : rgba(208, 224, 239, 0.85);
     --c_navbar_bg_dark : rgba(0,0,0,0.85);
@@ -87,6 +95,10 @@
     --c_card_header_bg_light : rgba(248, 255, 250, 0.375);
     --c_card_header_bg_dark : rgba(50, 50, 50, 0.70);
     --c_card_header_bg : var(--c_card_header_bg_light);
+
+    --c_card_header_bg_opaque_light : rgba(248, 255, 250);
+    --c_card_header_bg_opaque_dark : rgba(50, 50, 50);
+    --c_card_header_bg_opaque : var(--c_card_header_bg_opaque_light);
 
     --c_card_bg_light : rgba(248, 255, 250, 0.65);
     --c_card_bg_dark : rgba(75, 75, 75, 0.65);
@@ -180,6 +192,8 @@
     --c_text : var(--c_text_dark);
     --c_text_solid : var(--c_text_solid_dark);
     --c_text_alt : var(--c_text_alt_dark);
+    --c_text_button : var(--c_text_button_dark);
+    --c_text_button_alt : var(--c_text_button_alt_dark);
 
     --c_navbar_bg : var(--c_navbar_bg_dark);
     --c_navbar_hover : var(--c_navbar_hover_dark);
@@ -192,6 +206,7 @@
     --c_dropdown_bg : var(--c_dropdown_bg_dark);
 
     --c_card_header_bg : var(--c_card_header_bg_dark);
+    --c_card_header_bg_opaque : var(--c_card_header_bg_opaque_dark);
     --c_card_bg : var(--c_card_bg_dark);
     --c_card_bg_alt : var(--c_card_bg_alt_dark);
     --c_card_tab : var(--c_card_tab_dark);
@@ -410,6 +425,10 @@ html, body {
     transition : 0.10s;
 }
 
+
+.dropdown-menu.show {
+    display: block !important;
+}
 .dropdown-toggle {
     background-color: var(--c_button_bg);
     color: var(--c_text);
@@ -551,6 +570,13 @@ html, body {
 .navbar .navbar-brand, 
 .navbar .navbar-brand:hover {
     color: var(--c_text);
+}
+.navbar-brand:focus  {
+    color: var(--c_text) !important;
+}
+
+.nav-link {
+    color: var(--c_text) !important;
 }
 
 .nav-tabs .dropdown-menu {
@@ -772,3 +798,15 @@ html, body {
 }
 
 /* #endregion Plotly Graphs */
+
+
+
+
+/* Vertical Separator */
+.vertical-separator {
+    width: 2px;
+    background-color: var(--c_border_alt);
+    border-left: 1px solid var(--c_border);
+    height: 100%;
+    display: inline-block;
+}

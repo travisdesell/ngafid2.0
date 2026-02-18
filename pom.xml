@@ -17,13 +17,14 @@
     </modules>
 
     <properties>
-        <kotlin.version>2.1.20</kotlin.version>
+        <kotlin.version>2.0.21</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <jvm.target>21</jvm.target>
+        <maven.compiler.release>21</maven.compiler.release>
 
         <spark.version>2.7.2</spark.version>
-        <gson.version>2.11.0</gson.version>
+        <gson.version>2.13.1</gson.version>
         <slf4j.version>1.7.25</slf4j.version>
         <jetty.version>11.0.22</jetty.version>
     </properties>
@@ -153,91 +154,172 @@
     </dependencies>
 
     <build>
-        <plugins>
+        <pluginManagement>
+            <plugins>
+                <!-- Kotlin compiler configuration for all modules -->
+                <plugin>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-maven-plugin</artifactId>
+                    <version>${kotlin.version}</version>
+                    <configuration>
+                        <jvmTarget>${jvm.target}</jvmTarget>
+                        <args>
+                            <arg>-Xjvm-default=all</arg>
+                        </args>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>kotlin-compile</id>
+                            <phase>process-sources</phase>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                            <configuration>
+                                <sourceDirs>
+                                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                </sourceDirs>
+                            </configuration>
+                        </execution>
 
+                        <execution>
+                            <id>kotlin-test-compile</id>
+                            <phase>process-test-sources</phase>
+                            <goals>
+                                <goal>test-compile</goal>
+                            </goals>
+                            <configuration>
+                                <sourceDirs>
+                                    <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                </sourceDirs>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Java compiler configuration for all modules -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.14.1</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-Xmaxwarns</arg>
+                            <arg>50000</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <!-- JavaDoc configuration for all modules -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.6.3</version>
+                    <configuration>
+                        <source>21</source>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+
+                        <!-- Ensure both Java and Kotlin outputs are on the classpath -->
+                        <additionalOptions>
+                            <additionalOption>-Xdoclint:none</additionalOption>
+                            <additionalOption>--ignore-source-errors</additionalOption>
+                            <additionalOption>-classpath</additionalOption>
+                            <additionalOption>
+                                ${project.build.outputDirectory}
+                            </additionalOption>
+                        </additionalOptions>
+
+                        <!-- Add Kotlin sources to sourcepath for package discovery (Won't actually be parsed) -->
+                        <sourcepath>
+                            ${project.build.sourceDirectory}:${project.basedir}/src/main/kotlin
+                        </sourcepath>
+
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
             <!-- Kotlin compiler should be listed first! -->
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <extensions>true</extensions>
-
-                <configuration>
-                    <jvmTarget>${jvm.target}</jvmTarget>
-                </configuration>
-
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                                <sourceDir>${project.basedir}/src/main/java</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                                <sourceDir>${project.basedir}/src/test/java</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
                 <configuration>
-                    <source>21</source>
-                    <target>${jvm.target}</target>
-                    <compilerArgs>
-                        <arg>-Xlint:all</arg>
-                        <arg>-Xmaxwarns</arg>
-                        <arg>50000</arg>
-                    </compilerArgs>
-                    <!--                        Exclude everything under org.ngafid.routes.spark-->
+                    <!-- Exclude everything under org.ngafid.routes.spark-->
                     <excludes>
                         <exclude>org/ngafid/routes/spark/**</exclude>
                         <exclude>org/ngafid/webserver</exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+
+            <!-- JaCoCo Code Coverage Plugin -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
                 <executions>
-                    <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
-                        <id>default-compile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <!-- Replacing default-testCompile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>java-compile</id>
-                        <phase>compile</phase>
                         <goals>
-                            <goal>compile</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>java-test-compile</id>
-                        <phase>test-compile</phase>
+                        <id>report</id>
+                        <phase>test</phase>
                         <goals>
-                            <goal>testCompile</goal>
+                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                        </includes>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
+                        <indent>
+                            <spaces>true</spaces>
+                            <spacesPerTab>4</spacesPerTab>
+                        </indent>
+                        <removeUnusedImports/>
+                        <importOrder/>
+                        <palantirJavaFormat/>
+                    </java>
+                    <kotlin>
+                        <includes>
+                            <include>src/main/kotlin/**/*.kt</include>
+                            <include>src/test/kotlin/**/*.kt</include>
+                        </includes>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
+                        <indent>
+                            <spaces>true</spaces>
+                            <spacesPerTab>4</spacesPerTab>
+                        </indent>
+                    </kotlin>
+                </configuration>
             </plugin>
         </plugins>
     </build>

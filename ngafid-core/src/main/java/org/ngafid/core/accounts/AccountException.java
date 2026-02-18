@@ -1,6 +1,5 @@
 package org.ngafid.core.accounts;
 
-
 public class AccountException extends Exception {
     private String title;
 

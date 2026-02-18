@@ -61,8 +61,8 @@ public class EventMetaData {
     }
 
     public void updateDatabase(Connection connection, int eventIdToUpdate) throws SQLException {
-        try (PreparedStatement statement = connection
-                .prepareStatement("INSERT INTO event_metadata (event_id, key_id, value) VALUES (?, ?, ?)")) {
+        try (PreparedStatement statement =
+                connection.prepareStatement("INSERT INTO event_metadata (event_id, key_id, value) VALUES (?, ?, ?)")) {
             LOG.info(statement.toString());
 
             int eventMetaDataKeyId = this.getEventMetaDataKeyId(connection);
@@ -76,8 +76,8 @@ public class EventMetaData {
     private int getEventMetaDataKeyId(Connection connection) throws SQLException {
 
         int result = 0;
-        try (PreparedStatement statement = connection
-                .prepareStatement("SELECT id from event_metadata_keys where name = ?")) {
+        try (PreparedStatement statement =
+                connection.prepareStatement("SELECT id from event_metadata_keys where name = ?")) {
             statement.setString(1, this.name.toString());
 
             LOG.info(statement.toString());
@@ -94,10 +94,10 @@ public class EventMetaData {
     public static List<EventMetaData> getEventMetaData(Connection connection, int eventId) throws SQLException {
 
         List<EventMetaData> metaDataList = new ArrayList<>();
-        try (PreparedStatement preparedStatement = connection.prepareStatement(
-                "SELECT name, value FROM event_metadata JOIN " +
-                        "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement =
+                        connection.prepareStatement("SELECT name, value FROM event_metadata JOIN "
+                                + "event_metadata_keys as ek on ek.id = key_id WHERE event_id = " + eventId);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
 
             LOG.info(preparedStatement.toString());
 
@@ -107,5 +107,13 @@ public class EventMetaData {
         }
 
         return metaDataList;
+    }
+
+    public EventMetaDataKey getName() {
+        return name;
+    }
+
+    public double getValue() {
+        return value;
     }
 }

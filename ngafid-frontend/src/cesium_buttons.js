@@ -28,7 +28,7 @@ class CesiumButtons extends React.Component {
     }
 
     createButtonStyle() {
-        console.log("Creating style")
+        console.log("Creating style");
         return {
             alignItems: 'center',
             justifyContent: 'center',
@@ -37,7 +37,7 @@ class CesiumButtons extends React.Component {
             borderRadius: 4,
             elevation: 3,
             opacity_disabled: 0,
-        }
+        };
     }
 
     /**
@@ -45,8 +45,8 @@ class CesiumButtons extends React.Component {
      */
     clearCesiumFlights() {
         cesiumFlightsSelected.forEach((removedFlight) => {
-            console.log("Removed " + removedFlight);
-            let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
+            console.log(`Removed ${  removedFlight}`);
+            const toggleButton = document.getElementById(`cesiumToggled${  removedFlight}`);
             toggleButton.click();
         });
 
@@ -57,9 +57,9 @@ class CesiumButtons extends React.Component {
     }
 
     componentDidMount() {
-        let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
-        let viewButton = document.getElementById("cesiumViewButton" + this.props.location);
-        let clearButton = document.getElementById("cesiumClearButton" + this.props.location);
+        const cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
+        const viewButton = document.getElementById(`cesiumViewButton${  this.props.location}`);
+        const clearButton = document.getElementById(`cesiumClearButton${  this.props.location}`);
 
         viewButton.disabled = cesiumButtonsDisabled;
         clearButton.disabled = cesiumButtonsDisabled;
@@ -74,14 +74,14 @@ class CesiumButtons extends React.Component {
                 margin: "0",
             }}>
                 <div className="input-group-prepend p-0">
-                    <button id={"cesiumViewButton" + this.props.location} className="btn btn-sm btn-primary d-none"
+                    <button id={`cesiumViewButton${  this.props.location}`} className="btn btn-sm btn-primary d-none"
                             onClick={() => this.viewCesiumFlights()} style={this.createButtonStyle("blue")}>
                         View Selected Replays
                     </button>
 
                     &nbsp;
 
-                    <button id={"cesiumClearButton" + this.props.location} className="btn btn-sm btn-primary d-none"
+                    <button id={`cesiumClearButton${  this.props.location}`} className="btn btn-sm btn-primary d-none"
                             onClick={() => this.clearCesiumFlights()} style={this.createButtonStyle("red")}>
                         <i className="fa fa-globe mr-2"/>
                         Clear Selected Replays
@@ -89,25 +89,25 @@ class CesiumButtons extends React.Component {
                 </div>
             </div>
 
-        )
+        );
     }
 
 
 }
 
-export let cesiumFlightsSelected = [];
+export const cesiumFlightsSelected = [];
 
 export function updateCesiumButtonState() {
-    let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
+    const cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
 
-    let viewButtonTop = document.getElementById("cesiumViewButtonTop");
-    let clearButtonTop = document.getElementById("cesiumClearButtonTop");
+    const viewButtonTop = document.getElementById("cesiumViewButtonTop");
+    const clearButtonTop = document.getElementById("cesiumClearButtonTop");
     viewButtonTop.disabled = cesiumButtonsDisabled;
     clearButtonTop.disabled = cesiumButtonsDisabled;
 
 
-    let clearButtonBot = document.getElementById("cesiumClearButtonBottom");
-    let viewButtonBot = document.getElementById("cesiumViewButtonBottom");
+    const clearButtonBot = document.getElementById("cesiumClearButtonBottom");
+    const viewButtonBot = document.getElementById("cesiumViewButtonBottom");
     if (clearButtonBot !== null || viewButtonBot !== null) {
         viewButtonBot.disabled = cesiumButtonsDisabled;
         clearButtonBot.disabled = cesiumButtonsDisabled;
@@ -121,12 +121,12 @@ export function cesiumJumpToFlightStart(flightId) {
         to the start of the selected flight
     */
 
-    let flight = cesiumFlights[flightId];
-    let startTime = flight.start_time;
-    let endTime = flight.end_time;
+    const flight = cesiumFlightsSelected[flightId];
+    const startTime = flight.start_time;
+    const endTime = flight.end_time;
 
-    let viewer = cesiumViewer;
-    let clock = viewer.clock;
+    const viewer = this.props.viewer;
+    const clock = viewer.clock;
 
     //Set the clock to the start time of the flight
     clock.currentTime = Cesium.JulianDate.fromDate(new Date(startTime));
@@ -142,5 +142,5 @@ export function cesiumJumpToFlightStart(flightId) {
 
 }
 
-export {CesiumButtons}
+export {CesiumButtons};
 

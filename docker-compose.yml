@@ -1,58 +1,54 @@
+version: "1.0"
+
 # Split this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
 # itself.
 x-ngafid-service-common-base: &ngafid-service-common-base
   extra_hosts:
     - "host.docker.internal:host-gateway"
-  env_file:
-    - .env
 
 x-ngafid-service-common: &ngafid-service-common
   <<: *ngafid-service-common-base
   depends_on:
+    mysql:
+      condition: service_started
     ngafid-kafka-topics:
       condition: service_completed_successfully
   volumes:
-    - $HOST_UPLOAD_DIR:$CONTAINER_UPLOAD_DIR
-    - $HOST_ARCHIVE_DIR:$CONTAINER_ARCHIVE_DIR
-    - $HOST_STATIC_DIR:$CONTAINER_STATIC_DIR
-    - $HOST_TERRAIN_DIR:$CONTAINER_TERRAIN_DIR
+    # Mount the properties file and data directories
+    - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
+    - ./data:/mnt/data
+    - ./data/uploads:/mnt/uploads
+    - ./data/archive:/mnt/archive
+    - ./ngafid-static:/mnt/static
+    - ./data/terrain:/mnt/terrain
+    - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
 
 services:
   base:
-    env_file:
-      - .env
     build:
       context: .
-      args:
-        HOST_DB_INFO: ${HOST_DB_INFO}
-        CONTAINER_DB_INFO: ${CONTAINER_DB_INFO}
-        HOST_KAFKA_CONFIG: ${HOST_KAFKA_CONFIG}
-        CONTAINER_KAFKA_CONFIG: ${CONTAINER_KAFKA_CONFIG}
-        HOST_EMAIL_INFO: ${HOST_EMAIL_INFO}
-        CONTAINER_EMAIL_INFO: ${CONTAINER_EMAIL_INFO}
-        HOST_RUNWAYS: ${HOST_RUNWAYS}
-        CONTAINER_RUNWAYS: ${CONTAINER_RUNWAYS}
-        HOST_AIRPORTS: ${HOST_AIRPORTS}
-        CONTAINER_AIRPORTS: ${CONTAINER_AIRPORTS}
-        HOST_UPLOAD_DIR: ${HOST_UPLOAD_DIR}
-        NGAFID_PARALLELISM: 2
+      # No build args needed - everything configured via properties files
     image: ngafid-base
+    profiles: ["build-only"]
 
   # This must run and complete before everything else to create the Kafka topics
   ngafid-kafka-topics:
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.topics
+    command: [ "java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.Topic" ]
     <<: *ngafid-service-common-base
     depends_on:
       kafka:
         condition: service_started
 
+
   # Reads emails from email kafka topic and sends them using the supplied credentials
   ngafid-email-consumer:
     build:
       context: .
-      dockerfile: ngafid-core/Dockerfile.email
+      dockerfile: Dockerfile
+    command: [ "java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.EmailConsumer" ]
     restart: unless-stopped
     <<: *ngafid-service-common
 
@@ -86,7 +82,7 @@ services:
     restart: unless-stopped
     <<: *ngafid-service-common
 
-  # # Event Consumer: reads from event topic and computes the events
+  # Event Consumer: reads from event topic and computes the events
   ngafid-event-consumer:
     build:
       context: .
@@ -94,8 +90,8 @@ services:
     restart: unless-stopped
     <<: *ngafid-service-common
 
-  # # Event Observer: scans database for events that have not been computed, and computes them.
-  # # This can also be used to re-compute events as potential duplicates are deleted.
+  # Event Observer: scans database for events that have not been computed, and computes them.
+  # This can also be used to re-compute events as potential duplicates are deleted.
   ngafid-event-observer:
     build:
       context: .
@@ -103,6 +99,21 @@ services:
     restart: unless-stopped
     <<: *ngafid-service-common
 
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ngafid
+      MYSQL_USER: ngafid
+      MYSQL_PASSWORD: ngafid
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./ngafid-db/src:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
 
   kafka:
     image: apache/kafka
@@ -128,6 +139,14 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
       # For persistence
-      KAFKA_LOG_DIRS: $CONTAINER_LOG_DIRS
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
     volumes:
-      - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
+      - kafka_data:/var/lib/kafka/data
+
+    # volumes:
+    #   - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
+
+volumes:
+  mysql_data:
+  kafka_data:

@@ -1,16 +1,19 @@
 package org.ngafid.www;
 
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.FleetAccess;
-import org.ngafid.core.accounts.User;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.FleetAccess;
+import org.ngafid.core.accounts.User;
 
 public class Navbar {
+
+    private Navbar() {
+        // Utility class
+    }
 
     public static String getJavascript(Context ctx) {
 
@@ -25,18 +28,17 @@ public class Navbar {
 
         try (Connection connection = Database.getConnection()) {
 
-            //User is a fleet manager...
+            // User is a fleet manager...
             if (user != null && user.getFleetAccessType().equals(FleetAccess.MANAGER)) {
 
                 fleetManager = true;
                 waitingUserCount = user.getWaitingUserCount(connection);
-
             }
 
-            final int FLEET_ID_DEFAULT = -1;
-            int fleetId = FLEET_ID_DEFAULT;
+            final int fleetIdDefault = -1;
+            int fleetId = fleetIdDefault;
 
-            //Found user Fleet ID...
+            // Found user Fleet ID...
             if ((user != null) && (fleetId = user.getFleetId()) > 0) {
 
                 String sql = "SELECT EXISTS(SELECT fleet_id FROM airsync_fleet_info WHERE fleet_id = ?)";
@@ -46,17 +48,13 @@ public class Navbar {
 
                     try (ResultSet resultSet = query.executeQuery()) {
 
-                        if (resultSet.next())
-                            airSyncEnabled = resultSet.getBoolean(1);
+                        if (resultSet.next()) airSyncEnabled = resultSet.getBoolean(1);
 
                         modifyTailsAccess = user.hasUploadAccess(fleetId);
                         hasUploadAccess = user.hasUploadAccess(fleetId);
                         unconfirmedTailsCount = user.getUnconfirmedTailsCount(connection);
-
                     }
-
                 }
-
             }
 
         } catch (SQLException e) {
@@ -81,7 +79,5 @@ public class Navbar {
                 + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
                 + "var airSyncEnabled = " + airSyncEnabled + ";"
                 + "var isUploader = " + hasUploadAccess + ";";
-
     }
-
 }

@@ -1,28 +1,29 @@
 package org.ngafid.processor.steps;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.FatalFlightFileException;
 import org.ngafid.core.flights.MalformedFlightFileException;
 import org.ngafid.processor.format.FlightBuilder;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
-
 /**
- * The processing of flights is broken up into small, discrete steps -- a ComputeStep object computes one of these steps.
+ * The processing of flights is broken up into small, discrete steps -- a ComputeStep object computes one of these
+ * steps.
  * <p>
- * The applicability of a step to a given flight is determined by a few things: the required double series, string series,
- * and valid airframes. Some steps are only applicable to certain aircraft, and every step will have a set of columns
- * required to compute it.
+ * The applicability of a step to a given flight is determined by a few things: the required double series, string
+ * series, and valid airframes. Some steps are only applicable to certain aircraft, and every step will have a set
+ * of columns required to compute it.
  * <p>
- * Compute steps modify a flight builder object (an intermediate representation of a flight) as they see fit, but the primary output
- * comes in the form of columns. Steps should generally not mess with anything they are not directly intended to in the flight builder,
- * e.g. {@link ComputeUTCTime} computes the start and end time of the flight and
- * modifies the metadata in the flight builder to do so, but it shouldn't set the airframe name or type.
+ * Compute steps modify a flight builder object (an intermediate representation of a flight) as they see fit, but
+ * the primary output comes in the form of columns. Steps should generally not mess with anything they are not
+ * directly intended to in the flight builder, e.g. {@link ComputeUTCTime} computes the start and end time of the
+ * flight and modifies the metadata in the flight builder to do so, but it shouldn't set the airframe name or type.
  * <p>
- * So, compute steps have required input columns and output columns. We can use these relationships to form a graph of the compute steps which can then be executed in parallel.
- * We can also linearize this graph and execute it sequentially while ensuring all dependencies are met. This is done in
+ * So, compute steps have required input columns and output columns. We can use these relationships to form a graph
+ * of the compute steps which can then be executed in parallel. We can also linearize this graph and execute it
+ * sequentially while ensuring all dependencies are met. This is done in
  * {@link org.ngafid.uploads.process.DependencyGraph} -- see it for more details.
  */
 public abstract class ComputeStep {
@@ -73,13 +74,9 @@ public abstract class ComputeStep {
     }
 
     public boolean applicable() {
-        return airframeIsValid(builder.meta.airframe)
-                && builder
-                .getStringTimeSeriesKeySet()
-                .containsAll(getRequiredStringColumns())
-                && builder
-                .getDoubleTimeSeriesKeySet()
-                .containsAll(getRequiredDoubleColumns());
+        return airframeIsValid(builder.meta.getAirframe())
+                && builder.getStringTimeSeriesKeySet().containsAll(getRequiredStringColumns())
+                && builder.getDoubleTimeSeriesKeySet().containsAll(getRequiredDoubleColumns());
     }
 
     public final String explainApplicability() {
@@ -88,12 +85,12 @@ public abstract class ComputeStep {
         }
 
         String className = this.getClass().getSimpleName();
-        StringBuilder sb = new StringBuilder(
-                "Step '" + className + "' cannot be applied for the following reason(s):\n");
+        StringBuilder sb =
+                new StringBuilder("Step '" + className + "' cannot be applied for the following reason(s):\n");
 
-        if (!airframeIsValid(builder.meta.airframe)) {
-            sb.append("  - airframeName '" + builder.meta.airframe.getName() + "' is invalid ("
-                    + className + "::airframeIsValid returned false for airframeName '" + className + "')\n");
+        if (!airframeIsValid(builder.meta.getAirframe())) {
+            sb.append("  - airframeName '" + builder.meta.getAirframe().getName() + "' is invalid (" + className
+                    + "::airframeIsValid returned false for airframeName '" + className + "')\n");
         }
 
         for (String key : getRequiredStringColumns()) {

@@ -59,7 +59,7 @@ public final class ErrorMessage {
             String queryString = "SELECT message FROM flight_messages WHERE id = " + messageId;
 
             try (PreparedStatement query = connection.prepareStatement(queryString);
-                 ResultSet resultSet = query.executeQuery()) {
+                    ResultSet resultSet = query.executeQuery()) {
 
                 if (resultSet.next()) {
                     // message existed in the database, return the id

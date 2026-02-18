@@ -1,15 +1,18 @@
 package org.ngafid.www;
 
-
 public class HttpCodes {
 
-    //1XX - Informational
+    private HttpCodes() {
+        // Utility class
+    }
+
+    // 1XX - Informational
     public static final int CONTINUE = 100;
     public static final int SWITCHING_PROTOCOLS = 101;
     public static final int PROCESSING = 102;
     public static final int EARLY_HINTS = 103;
 
-    //2XX - Success
+    // 2XX - Success
     public static final int OK = 200;
     public static final int CREATED = 201;
     public static final int ACCEPTED = 202;
@@ -20,18 +23,18 @@ public class HttpCodes {
     public static final int ALREADY_REPORTED = 208;
     public static final int IM_USED = 226;
 
-    //3XX - Redirection
+    // 3XX - Redirection
     public static final int MULTIPLE_CHOICES = 300;
     public static final int MOVED_PERMANENTLY = 301;
     public static final int FOUND = 302;
     public static final int SEE_OTHER = 303;
     public static final int NOT_MODIFIED = 304;
-    //public static final int USE_PROXY = 305;          /* Deprecated */
-    //public static final int UNUSED_RESERVED = 306;    /* Deprecated */
+    // public static final int USE_PROXY = 305;          /* Deprecated */
+    // public static final int UNUSED_RESERVED = 306;    /* Deprecated */
     public static final int TEMPORARY_REDIRECT = 307;
     public static final int PERMANENT_REDIRECT = 308;
 
-    //4XX - Client Error
+    // 4XX - Client Error
     public static final int BAD_REQUEST = 400;
     public static final int UNAUTHORIZED = 401;
     public static final int FORBIDDEN = 403;
@@ -59,7 +62,7 @@ public class HttpCodes {
     public static final int REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
     public static final int UNAVAILABLE_FOR_LEGAL_REASONS = 451;
 
-    //5XX - Server Error
+    // 5XX - Server Error
     public static final int INTERNAL_SERVER_ERROR = 500;
     public static final int NOT_IMPLEMENTED = 501;
     public static final int BAD_GATEWAY = 502;
@@ -71,5 +74,4 @@ public class HttpCodes {
     public static final int LOOP_DETECTED = 508;
     public static final int NOT_EXTENDED = 510;
     public static final int NETWORK_AUTHENTICATION_REQUIRED = 511;
-
 }

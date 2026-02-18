@@ -1,5 +1,9 @@
 package org.ngafid.processor.events;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.DoubleTimeSeries;
@@ -7,11 +11,6 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Conditional;
 import org.ngafid.core.util.filters.Filter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Scans a flight for a normal event, i.e. an event defined with a `Conditional`.
@@ -59,8 +58,7 @@ public class EventScanner extends AbstractEventScanner {
     }
 
     @Override
-    public List<Event> scan(Map<String, DoubleTimeSeries> doubleSeries,
-                            Map<String, StringTimeSeries> stringSeries) {
+    public List<Event> scan(Map<String, DoubleTimeSeries> doubleSeries, Map<String, StringTimeSeries> stringSeries) {
         StringTimeSeries utcSeries = stringSeries.get(Parameters.UTC_DATE_TIME);
 
         reset();
@@ -86,7 +84,8 @@ public class EventScanner extends AbstractEventScanner {
 
                         if (startCount >= startBuffer) {
                             // we had enough triggers to reach the start count so create the event
-                            Event event = new Event(startTime, endTime, startLine, endLine, definition.getId(), severity);
+                            Event event =
+                                    new Event(startTime, endTime, startLine, endLine, definition.getId(), severity);
                             event.setEventDefinitionId(definition.getId());
                             eventList.add(event);
                         }

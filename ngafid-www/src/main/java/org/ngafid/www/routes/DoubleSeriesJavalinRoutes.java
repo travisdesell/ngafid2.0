@@ -1,12 +1,8 @@
 package org.ngafid.www.routes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import org.ngafid.core.Database;
-import org.ngafid.core.accounts.User;
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.www.ErrorResponse;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,15 +12,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import org.ngafid.core.Database;
+import org.ngafid.core.accounts.User;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.www.ErrorResponse;
 
 public class DoubleSeriesJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());
 
+    private DoubleSeriesJavalinRoutes() {
+        // Utility class - prevent instantiation
+    }
+
     public static class AllDoubleSeriesNames {
-        List<String> names = new ArrayList<String>();
+        @JsonProperty
+        private final List<String> names = new ArrayList<String>();
 
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("SELECT name FROM double_series_names ORDER BY name")) {
+            try (PreparedStatement query =
+                    connection.prepareStatement("SELECT name FROM double_series_names ORDER BY name")) {
                 try (ResultSet resultSet = query.executeQuery()) {
                     while (resultSet.next()) {
                         names.add(resultSet.getString(1));
@@ -32,15 +38,23 @@ public class DoubleSeriesJavalinRoutes {
                 }
             }
         }
+
+        public List<String> getNames() {
+            return names;
+        }
     }
 
     public static class DoubleSeries {
-        String[] x;
-        double[] y;
+        @JsonProperty
+        private final String[] x;
+
+        @JsonProperty
+        private final double[] y;
 
         public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
-            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name + "'");
+            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name
+                    + "'");
 
             int size = 0;
             if (doubleTimeSeries != null) {
@@ -55,13 +69,25 @@ public class DoubleSeriesJavalinRoutes {
                 y[i] = doubleTimeSeries.get(i);
             }
         }
+
+        public String[] getX() {
+            return x;
+        }
+
+        public double[] getY() {
+            return y;
+        }
     }
 
     public static class DoubleSeriesNames {
-        List<String> names = new ArrayList<String>();
+        @JsonProperty
+        private final List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement("SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT dsn.name FROM double_series AS ds "
+                    + "INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id "
+                    + "WHERE ds.flight_id = ? ORDER BY dsn.name")) {
                 query.setInt(1, flightId);
 
                 try (ResultSet resultSet = query.executeQuery()) {
@@ -71,8 +97,11 @@ public class DoubleSeriesJavalinRoutes {
                 }
             }
         }
-    }
 
+        public List<String> getNames() {
+            return names;
+        }
+    }
 
     public static void getAllDoubleSeriesNames(Context ctx) {
         try (Connection connection = Database.getConnection()) {

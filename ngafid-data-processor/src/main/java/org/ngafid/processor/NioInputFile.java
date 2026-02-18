@@ -1,14 +1,12 @@
 package org.ngafid.processor;
 
-
-import org.apache.parquet.io.InputFile;
-import org.apache.parquet.io.SeekableInputStream;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.SeekableInputStream;
 
 /**
  * Java’s default file APIs don’t support random access in the way Parquet needs.
@@ -22,6 +20,7 @@ public class NioInputFile implements InputFile {
     public NioInputFile(Path file) {
         path = file;
     }
+
     @Override
     public long getLength() throws IOException {
         if (length == -1) {
@@ -44,7 +43,7 @@ public class NioInputFile implements InputFile {
                 singleByteBuffer.clear();
                 final int numRead = read(singleByteBuffer);
                 if (numRead >= 0) {
-                    int value = (int)singleByteBuffer.get(0) & 0xFF;
+                    int value = (int) singleByteBuffer.get(0) & 0xFF;
                     return value;
                 } else {
                     return -1;
@@ -98,4 +97,3 @@ public class NioInputFile implements InputFile {
         };
     }
 }
-
