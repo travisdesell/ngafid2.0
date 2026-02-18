@@ -30,3 +30,4 @@ ngafid-www/src/test/kotlin/org/ngafid/www/.env
 guiconfig.properties
 *.pyc
 .run_state.json
+.venv/
