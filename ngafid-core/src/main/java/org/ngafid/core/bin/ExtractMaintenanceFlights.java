@@ -61,13 +61,25 @@ public final class ExtractMaintenanceFlights {
                 }
 
                 while (line != null) {
+                    // Skip blank lines and header rows
+                    if (line.trim().isEmpty()) {
+                        line = reader.readLine();
+                        continue;
+                    }
+                    if (line.startsWith("workorder")) {
+                        line = reader.readLine();
+                        continue;
+                    }
+
                     lineCount++;
+                    // Uncomment for debugging:
+                    // System.out.println("RAW LINE: [" + line + "]");
 
                     MaintenanceRecord record = new MaintenanceRecord(line);
-                    
+
                     // Each record's originalAction becomes its own cluster name
                     String clusterName = record.getOriginalAction();
-                    
+
                     // Add cluster mapping for this record
                     if (!CLUSTER_TO_LABEL.containsKey(clusterName)) {
                         CLUSTER_TO_LABEL.put(clusterName, record.getLabel());
@@ -103,7 +115,6 @@ public final class ExtractMaintenanceFlights {
                         existingRecord.combine(record);
                     }
 
-
                     line = reader.readLine();
                 }
 
@@ -118,8 +129,12 @@ public final class ExtractMaintenanceFlights {
         System.out.println("\n\n\n");
         System.out.println("Number of record lines: " + lineCount);
         System.out.println("Number of workorders: " + ALL_RECORDS.size());
-        System.out.println("earliest date: " + ALL_RECORDS.first().getOpenDate());
-        System.out.println("latest date: " + ALL_RECORDS.last().getCloseDate());
+        if (!ALL_RECORDS.isEmpty()) {
+            System.out.println("earliest date: " + ALL_RECORDS.first().getOpenDate());
+            System.out.println("latest date: " + ALL_RECORDS.last().getCloseDate());
+        } else {
+            System.out.println("No records found: cannot print earliest/latest date.");
+        }
         System.out.println("unique tails: ");
         System.out.println("\t" + TAIL_NUMBERS);
     }
@@ -1105,6 +1120,10 @@ public final class ExtractMaintenanceFlights {
                 int currentRecord = 0;
                 Collections.sort(timeline);
                 MaintenanceRecord previousRecord = null;
+                if (tailRecords.isEmpty()) {
+                    System.out.println("No maintenance records for tail '" + tailNumber + "' in this cluster. Skipping.");
+                    continue;
+                }
                 MaintenanceRecord record = tailRecords.get(currentRecord);
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);

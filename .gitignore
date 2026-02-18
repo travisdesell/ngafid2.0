@@ -7,7 +7,7 @@ init_env.sh
 db/db_info.php
 db/db_info
 email_info.txt
-data/*
+!data/maintenance/maintenance_records.csv
 ngafid-db/src/liquibase.properties
 ngafid-core/target/*
 ngafid-www/target/*
@@ -20,9 +20,4 @@ ngafid-airsync/target
 ngafid-chart-processor/temp
 ngafid-frontend/.webpack_cache/*
 .env
-.env.host
 ngafid-db/src/liquibase.docker.properties
-ngafid-email.conf
-ngafid.properties
-.vscode/
-*.log
