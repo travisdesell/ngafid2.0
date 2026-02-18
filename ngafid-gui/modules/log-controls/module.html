@@ -14,7 +14,6 @@
             <input id="log-lines" type="number" value="200" min="10" step="50"
                 style="width:6rem;background:#2b2b2b;color:#eee;border:1px solid #666;border-radius:6px;padding:.25rem .4rem;">
             <label class="row muted"><input id="log-auto" type="checkbox"> auto-refresh</label>
-            <label class="row muted"><input id="log-wrap" type="checkbox" checked> wrap</label>
         </div>
     </div>
 
@@ -125,13 +124,6 @@
                 autoTimer = setInterval(fetchLogs, 2000);
         }
 
-        function applyWrapFromCheckbox() {
-            const pre = document.getElementById('output');
-            const checked = !!document.getElementById('log-wrap')?.checked;
-            if (pre)
-                pre.style.whiteSpace = checked ? 'pre-wrap' : 'pre';
-        }
-
         function copyOutput() {
             const text = document.getElementById('output')?.textContent || '';
             navigator.clipboard.writeText(text).catch(() => { /* ignored */ });
@@ -141,7 +133,6 @@
             document.getElementById('log-view')?.addEventListener('click', fetchLogs);
             document.getElementById('log-copy')?.addEventListener('click', copyOutput);
             document.getElementById('log-auto')?.addEventListener('change', toggleAuto);
-            document.getElementById('log-wrap')?.addEventListener('change', applyWrapFromCheckbox);
             document.getElementById('log-service')?.addEventListener('change', refreshAvailability);
             window.addEventListener('pageshow', resetAuto);
         }
@@ -150,7 +141,6 @@
             bindEvents();
             await loadServices();
             await refreshAvailability();
-            applyWrapFromCheckbox();
         })();
 
     })();

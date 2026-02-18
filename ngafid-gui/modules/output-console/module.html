@@ -1,18 +1,31 @@
 <div id="output-console">
+    <div class="row output-controls muted">
+        <label class="row"><input id="output-wrap" type="checkbox" checked> wrap</label>
+    </div>
     <pre id="output" class="muted">No output yet.</pre>
 </div>
 
 <style>
     #output-console {
         display: flex;
+        flex-direction: column;
         flex: 1;
         min-height: 0;
+        min-width: 0;
         margin-bottom: 1rem;
     }
 
+    #output-console .output-controls {
+        margin: 0 0 .4rem;
+    }
+
     #output-console #output {
+        width: 100%;
+        max-width: 100%;
         flex: 1;
         min-height: 0;
+        min-width: 0;
+        box-sizing: border-box;
         overflow: auto;
     }
 </style>
@@ -23,6 +36,31 @@
 
         window.NGAFID = window.NGAFID || {};
         const pre = document.getElementById('output');
+        const wrapCheckbox = document.getElementById('output-wrap');
+
+        function applyWrap(enabled) {
+            if (!pre)
+                return;
+            pre.style.whiteSpace = enabled ? 'pre-wrap' : 'pre';
+        }
+
+        function setWrap(enabled) {
+            applyWrap(enabled);
+            localStorage.setItem('ngafid.output.wrap', enabled ? '1' : '0');
+            if (wrapCheckbox)
+                wrapCheckbox.checked = enabled;
+        }
+
+        function initWrap() {
+            const saved = localStorage.getItem('ngafid.output.wrap');
+            const wrapEnabled = saved == null ? true : saved === '1';
+            setWrap(wrapEnabled);
+        }
+
+        if (wrapCheckbox)
+            wrapCheckbox.addEventListener('change', () => setWrap(!!wrapCheckbox.checked));
+
+        window.NGAFID.setOutputWrap = setWrap;
 
         window.NGAFID.show = (text) => {
             if (!pre) {
@@ -35,6 +73,8 @@
 
         if (window.NGAFID._lastOutput && pre)
             window.NGAFID.show(window.NGAFID._lastOutput);
+
+        initWrap();
 
     })();
 

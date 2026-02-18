@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+mvn -pl '!ngafid-db' checkstyle:check \
+  -Dcheckstyle.config.location=.github/linters/checkstyle.xml \
+  -Dorg.checkstyle.sun.suppressionfilter.config=.github/linters/checkstyle-suppresions.xml

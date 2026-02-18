@@ -6,6 +6,7 @@ from flask import current_app, request
 SCRIPTS = {
     "build",
     "package",
+    "checkstyle",
     "generate_javadocs",
 }
 

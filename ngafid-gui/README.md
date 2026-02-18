@@ -14,7 +14,11 @@ Runs a small local server that provides an in-browser GUI for managing the NGAFI
 
 Create a `guiconfig.properties` file in this folder by copying `guiconfig.template.properties`, then edit values as needed.
 
-### Usage
+### Usage (Locally)
+
+...
+
+### Usage (With SSH connection to the beta server)
 
 This section assumes that you are using the GUI server while SSH'd into the beta server using the `local` mode, and that you're using the default HTTP port `5000`.
 

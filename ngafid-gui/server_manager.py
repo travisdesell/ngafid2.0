@@ -260,6 +260,7 @@ def _resolve_services() -> list:
 ALLOWED_RUN_SCRIPTS = {
     "build",
     "package",
+    "checkstyle",
     "generate_javadocs",
     "generate_csvs",
     "generate_email_types",
