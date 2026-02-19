@@ -60,20 +60,17 @@ public class CachedCSVWriter extends CSVWriter {
 
         this.zipFile = new File(archiveFilename);
 
+        //CHECKSTYLE:OFF
+        // TODO: reconstruct from database instead of existing on error
+        //CHECKSTYLE:ON
         if (!this.zipFile.exists()) {
-            //CHECKSTYLE:OFF
-            // TODO: reconstruct from database instead of existing on error
-            //CHECKSTYLE:ON
-
-            System.err.println("ERROR: archive file did not exist!");
-            System.exit(1);
+            throw new RuntimeException("Archive file did not exist: " + this.zipFile.getAbsolutePath());
         } else {
             System.out.println("file exists!");
         }
 
         if (!this.zipFile.canRead()) {
-            System.err.println("ERROR: do not have read access to this file!");
-            System.exit(1);
+            throw new RuntimeException("Do not have read access to archive file: " + this.zipFile.getAbsolutePath());
         } else {
             System.out.println("file is readable!");
         }
