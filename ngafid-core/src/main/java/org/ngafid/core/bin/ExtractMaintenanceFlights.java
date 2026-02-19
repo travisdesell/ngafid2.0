@@ -1224,6 +1224,13 @@ public final class ExtractMaintenanceFlights {
         } // End for loop over clusters
         
         // Generate manifest file after all clusters are processed
-        generateManifest(outputDirectory);
+        System.out.println("Attempting to generate manifest file...");
+        try {
+            generateManifest(outputDirectory);
+            System.out.println("Manifest generation completed.");
+        } catch (Exception e) {
+            System.err.println("Error during manifest generation: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
