@@ -426,8 +426,16 @@ public final class ExtractMaintenanceFlights {
         String zipRoot = NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" + flight.getUploaderId() + "/";
 
         // First, write the original CSV
-        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile + ".tmp")), false);
-        csvWriter.writeToFile();
+        try {
+            CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile + ".tmp")), false);
+            csvWriter.writeToFile();
+        } catch (java.sql.SQLException e) {
+            System.err.println("Warning: SQL error while writing CSV for flight " + flight.getId() + " | Tail: " + flight.getTailNumber() + " | Upload ID: " + flight.getUploadId() + " | Event: " + (event != null ? event.getLabel() : "null") + ": " + e.getMessage());
+            return;
+        } catch (Exception e) {
+            System.err.println("Warning: Unexpected error while writing CSV for flight " + flight.getId() + " | Tail: " + flight.getTailNumber() + " | Upload ID: " + flight.getUploadId() + " | Event: " + (event != null ? event.getLabel() : "null") + ": " + e.getMessage());
+            return;
+        }
 
         // Compute complete flight phases (includes touch-and-go/go-around marking and altitude smoothing)
         FlightPhaseProcessor.FlightPhaseData phaseData = null;
