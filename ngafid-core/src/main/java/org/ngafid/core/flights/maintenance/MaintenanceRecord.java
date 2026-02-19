@@ -15,24 +15,19 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private final String airframe;
     private final int problemATACode;
     private final String label;
+    private final String labelId;
     private final String cleanedProblem;
     private final String originalProblem;
     private final LocalDate actionDate;
     private final int actionATACode;
     private final String originalAction;
-    private final String clusterName;
-    private final String clusterId;
 
     public int getWorkorderNumber() {
         return workorderNumber;
     }
 
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public String getClusterId() {
-        return clusterId;
+    public String getLabelId() {
+        return labelId;
     }
 
     public String getTailNumber() {
@@ -74,20 +69,19 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         airframe = parts[4];
         problemATACode = Integer.parseInt(parts[5]);
         label = parts[6];
-        cleanedProblem = parts[7];
-        originalProblem = parts[8];
-        actionDate = LocalDate.parse(parts[9], formatter);
-        actionATACode = Integer.parseInt(parts[10]);
-        originalAction = parts[11];
-        clusterName = parts[12];
-        clusterId = parts[13];
+        labelId = parts[7];
+        cleanedProblem = parts[8];
+        originalProblem = parts[9];
+        actionDate = LocalDate.parse(parts[10], formatter);
+        actionATACode = Integer.parseInt(parts[11]);
+        originalAction = parts[12];
     }
 
     public void combine(MaintenanceRecord other) {
         ArrayList<String> mismatches = new ArrayList<String>();
         if (workorderNumber != other.workorderNumber) mismatches.add("workorderNumber");
         if (!openDate.equals(other.openDate)) mismatches.add("openDate");
-        if (!closeDate.equals(closeDate)) mismatches.add("closeDate");
+        if (!closeDate.equals(other.closeDate)) mismatches.add("closeDate");
         if (!tailNumber.equals(other.tailNumber)) mismatches.add("tailNumber");
         if (!airframe.equals(other.airframe)) mismatches.add("airframe");
         if (problemATACode != other.problemATACode) mismatches.add("problemATACode");
@@ -97,8 +91,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         if (!actionDate.equals(other.actionDate)) mismatches.add("actionDate");
         if (actionATACode != other.actionATACode) mismatches.add("actionATACode");
         if (!originalAction.equals(other.originalAction)) mismatches.add("originalAction");
-        if (!clusterName.equals(other.clusterName)) mismatches.add("clusterName");
-        if (!clusterId.equals(other.clusterId)) mismatches.add("clusterId");
+        if (!labelId.equals(other.labelId)) mismatches.add("labelId");
 
         if (mismatches.contains("workorderNumber")) {
             System.err.println("Cannot combine two records with different workorder numbers: "
@@ -122,6 +115,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 + "\t\"airframe\" : \"" + airframe + "\",\n"
                 + "\t\"problemATACode\" : \"" + problemATACode + "\",\n"
                 + "\t\"label\" : \"" + label + "\",\n"
+                + "\t\"labelId\" : \"" + labelId + "\",\n"
                 + "\t\"cleanedProblem\" : \"" + cleanedProblem + "\",\n"
                 + "\t\"originalProblem\" : \"" + originalProblem + "\",\n"
                 + "\t\"actionDate\" : \"" + actionDate + "\",\n"
@@ -138,6 +132,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 + "', airframe: '" + airframe
                 + "', problemATACode: '" + problemATACode
                 + "', label: '" + label
+                + "', labelId: '" + labelId
                 + "', cleanedProblem: '" + cleanedProblem
                 + "', originalProblem: '" + originalProblem
                 + "', actionDate: '" + actionDate

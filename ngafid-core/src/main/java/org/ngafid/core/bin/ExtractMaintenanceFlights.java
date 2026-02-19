@@ -399,8 +399,8 @@ public final class ExtractMaintenanceFlights {
             phase = "unknown";
         }
 
-        // Create directory structure: <cluster_id>/<workorder>_<tail>/phase/
-        String clusterDir = event.getClusterId();
+        // Create directory structure: <label_id>/<workorder>_<tail>/phase/
+        String clusterDir = event.getLabelId();
         String workorderTailDir = event.getWorkorderNumber() + "_" + event.getTailNumber();
         String fullDir = outputDirectory + "/" + clusterDir + "/" + workorderTailDir + "/" + phase;
         
@@ -687,7 +687,7 @@ public final class ExtractMaintenanceFlights {
      * @throws IOException if there is an error writing the file
      */
     private static void ensureClusterDirectoryExists(String outputDirectory, String eventCluster, MaintenanceRecord event) throws IOException {
-        String clusterDir = event.getClusterId();
+        String clusterDir = event.getLabelId();
         String workorderTailDir = event.getWorkorderNumber() + "_" + event.getTailNumber();
         String baseDir = outputDirectory + "/" + clusterDir + "/" + workorderTailDir;
         
@@ -825,10 +825,10 @@ public final class ExtractMaintenanceFlights {
             HashMap<String, Integer> clusterFlightCounts = new HashMap<>();
             HashMap<String, String> clusterNames = new HashMap<>();
             
-            // Build cluster name map from records
+            // Build label name map from records (label_id -> label)
             for (MaintenanceRecord record : ALL_RECORDS) {
-                if (record.getClusterId() != null && record.getClusterName() != null) {
-                    clusterNames.put(record.getClusterId(), record.getClusterName());
+                if (record.getLabelId() != null && record.getLabel() != null) {
+                    clusterNames.put(record.getLabelId(), record.getLabel());
                 }
             }
             
@@ -891,8 +891,8 @@ public final class ExtractMaintenanceFlights {
             for (MaintenanceRecord record : ALL_RECORDS) {
                 json.append("    {\n");
                 json.append("      \"workorder\": ").append(record.getWorkorderNumber()).append(",\n");
-                json.append("      \"cluster_id\": \"").append(record.getClusterId()).append("\",\n");
-                json.append("      \"cluster_name\": \"").append(escapeJson(record.getClusterName())).append("\",\n");
+                json.append("      \"label_id\": \"").append(record.getLabelId()).append("\",\n");
+                json.append("      \"label\": \"").append(escapeJson(record.getLabel())).append("\",\n");
                 json.append("      \"tail_number\": \"").append(record.getTailNumber()).append("\",\n");
                 json.append("      \"airframe\": \"").append(record.getAirframe()).append("\",\n");
                 json.append("      \"open_date\": \"").append(record.getOpenDate().toString()).append("\",\n");
@@ -900,9 +900,9 @@ public final class ExtractMaintenanceFlights {
                 json.append("      \"original_action\": \"").append(escapeJson(record.getOriginalAction())).append("\",\n");
                 
                 // Get flight paths for this workorder
-                String clusterId = record.getClusterId();
+                String labelId = record.getLabelId();
                 String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
-                File workorderDir = new File(outputDirectory, clusterId + "/" + workorderTail);
+                File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
                 
                 json.append("      \"flights\": {\n");
                 for (String phase : new String[]{"before", "during", "after"}) {
@@ -956,9 +956,9 @@ public final class ExtractMaintenanceFlights {
                                 String relativePath;
                                 if (mBase.matches() && hasDerived) {
                                     // Output base as -1.csv
-                                    relativePath = clusterId + "/" + workorderTail + "/" + phase + "/" + baseNum + "-1.csv";
+                                    relativePath = labelId + "/" + workorderTail + "/" + phase + "/" + baseNum + "-1.csv";
                                 } else {
-                                    relativePath = clusterId + "/" + workorderTail + "/" + phase + "/" + fileName;
+                                    relativePath = labelId + "/" + workorderTail + "/" + phase + "/" + fileName;
                                 }
                                 json.append("          \"").append(relativePath).append("\"");
                                 if (i < csvFiles.length - 1) {
@@ -978,7 +978,7 @@ public final class ExtractMaintenanceFlights {
                 json.append("      },\n");
                 
                 // Add record JSON path
-                String recordJsonPath = clusterId + "/" + workorderTail + "/" + workorderTail + "_record.json";
+                String recordJsonPath = labelId + "/" + workorderTail + "/" + workorderTail + "_record.json";
                 json.append("      \"record_json\": \"").append(recordJsonPath).append("\"\n");
                 
                 json.append("    }");
