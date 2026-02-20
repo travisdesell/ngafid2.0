@@ -140,6 +140,181 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
+     * Counts flights in the database that overlap the maintenance record's time period
+     * (open date through close date) for the given tail and fleet.
+     *
+     * @param connection the database connection
+     * @param tailNumber  the tail number
+     * @param openDate    maintenance open date
+     * @param closeDate   maintenance close date
+     * @return number of flights with start_time &lt;= closeDate and end_time &gt;= openDate (any fleet), or 0 if tail not found
+     * @throws SQLException if there is an error with the SQL query
+     */
+    private static int countFlightsInMaintenancePeriod(Connection connection, String tailNumber,
+                                                       LocalDate openDate, LocalDate closeDate)
+            throws SQLException {
+        // Use end-of-day for close date so flights that start during the close date are included
+        // (MySQL compares DATETIME to 'YYYY-MM-DD' as midnight, which would exclude same-day flights)
+        String closeEndOfDay = closeDate.toString() + " 23:59:59";
+        PreparedStatement stmt = connection.prepareStatement(
+                "SELECT COUNT(*) FROM flights f " +
+                "JOIN tails t ON f.system_id = t.system_id " +
+                "WHERE t.tail = ? AND f.start_time <= ? AND f.end_time >= ?");
+        stmt.setString(1, tailNumber);
+        stmt.setString(2, closeEndOfDay);
+        stmt.setString(3, openDate.toString());
+        ResultSet rs = stmt.executeQuery();
+        int count = 0;
+        if (rs.next()) {
+            count = rs.getInt(1);
+        }
+        rs.close();
+        stmt.close();
+        return count;
+    }
+
+    /**
+     * Validates maintenance records by checking that each record has at least one flight
+     * in the database overlapping its time period (open–close). Writes only valid rows
+     * to a new CSV file. Run this before extraction so only valid records are used.
+     *
+     * @param connection   the database connection
+     * @param inputCsvPath path to the input maintenance CSV (e.g. test_maintenance.csv)
+     * @param outputCsvPath path for the output CSV containing only valid rows
+     * @throws IOException  if reading or writing files fails
+     * @throws SQLException if a query fails
+     */
+    private static void validateMaintenanceRecords(Connection connection, String inputCsvPath,
+                                                   String outputCsvPath)
+            throws IOException, SQLException {
+        int total = 0;
+        int valid = 0;
+        int invalid = 0;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath));
+             PrintWriter writer = new PrintWriter(new FileWriter(outputCsvPath))) {
+
+            String line = reader.readLine();
+            if (line == null) {
+                System.err.println("Input file is empty.");
+                return;
+            }
+            // Write header (with or without "workorder" header row)
+            if (line.trim().isEmpty()) {
+                line = reader.readLine();
+            }
+            if (line != null && line.startsWith("workorder")) {
+                writer.println(line);
+                line = reader.readLine();
+            }
+
+            while (line != null) {
+                if (line.trim().isEmpty()) {
+                    line = reader.readLine();
+                    continue;
+                }
+                if (line.startsWith("workorder")) {
+                    line = reader.readLine();
+                    continue;
+                }
+
+                total++;
+                try {
+                    MaintenanceRecord record = new MaintenanceRecord(line);
+                    int flightCount = countFlightsInMaintenancePeriod(connection,
+                            record.getTailNumber(), record.getOpenDate(), record.getCloseDate());
+                    if (flightCount > 0) {
+                        writer.println(line);
+                        valid++;
+                    } else {
+                        invalid++;
+                    }
+                } catch (Exception e) {
+                    invalid++;
+                    System.err.println("Skip invalid line (parse error): " + e.getMessage());
+                }
+                line = reader.readLine();
+            }
+        }
+
+        System.out.println("Validation: total=" + total + " valid=" + valid + " invalid=" + invalid + " -> " + outputCsvPath);
+    }
+
+    /**
+     * Verifies that validation logic is consistent: re-queries the DB for each record in the
+     * input and output CSVs and checks that every row in the output has flight count &gt; 0 and
+     * every row only in the input has flight count 0. Use after --validate to double-check.
+     *
+     * @param connection   the database connection
+     * @param inputCsvPath path to the original maintenance CSV
+     * @param outputCsvPath path to the valid_maintenance.csv produced by --validate
+     * @return true if verification passed, false if any mismatch
+     */
+    private static boolean verifyValidationResults(Connection connection, String inputCsvPath,
+                                                    String outputCsvPath)
+            throws IOException, SQLException {
+        Set<String> validKeys = new HashSet<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(outputCsvPath))) {
+            String line = reader.readLine();
+            while (line != null && line.startsWith("workorder")) {
+                line = reader.readLine();
+            }
+            while (line != null) {
+                if (!line.trim().isEmpty() && !line.startsWith("workorder")) {
+                    try {
+                        MaintenanceRecord r = new MaintenanceRecord(line);
+                        validKeys.add(r.getWorkorderNumber() + "|" + r.getTailNumber() + "|"
+                                + r.getOpenDate() + "|" + r.getCloseDate());
+                    } catch (Exception ignored) { }
+                }
+                line = reader.readLine();
+            }
+        }
+
+        List<String> mismatches = new ArrayList<>();
+        int checked = 0;
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath))) {
+            String line = reader.readLine();
+            while (line != null && (line.trim().isEmpty() || line.startsWith("workorder"))) {
+                line = reader.readLine();
+            }
+            while (line != null) {
+                if (line.trim().isEmpty() || line.startsWith("workorder")) {
+                    line = reader.readLine();
+                    continue;
+                }
+                try {
+                    MaintenanceRecord record = new MaintenanceRecord(line);
+                    String key = record.getWorkorderNumber() + "|" + record.getTailNumber() + "|"
+                            + record.getOpenDate() + "|" + record.getCloseDate();
+                    int count = countFlightsInMaintenancePeriod(connection,
+                            record.getTailNumber(), record.getOpenDate(), record.getCloseDate());
+                    boolean inValid = validKeys.contains(key);
+                    if (inValid && count <= 0) {
+                        mismatches.add("WO " + record.getWorkorderNumber() + " in valid CSV but count=" + count + " (expected > 0)");
+                    } else if (!inValid && count > 0) {
+                        mismatches.add("WO " + record.getWorkorderNumber() + " excluded from valid CSV but count=" + count + " (expected 0)");
+                    }
+                    checked++;
+                } catch (Exception e) {
+                    mismatches.add("Parse error: " + e.getMessage());
+                }
+                line = reader.readLine();
+            }
+        }
+
+        if (mismatches.isEmpty()) {
+            System.out.println("VERIFY PASS: " + checked + " records; logic matches DB.");
+            return true;
+        }
+        System.err.println("VERIFY FAIL: " + mismatches.size() + " mismatch(es)");
+        for (String m : mismatches) {
+            System.err.println("  " + m);
+        }
+        return false;
+    }
+
+    /**
      * Get the records for the target cluster and label
      *
      * @param targetCluster the target cluster
@@ -1030,6 +1205,47 @@ public final class ExtractMaintenanceFlights {
      */
     public static void main(String[] arguments) throws SQLException {
         Connection connection = Database.getConnection();
+
+        // Run only validation: --validate <input_csv> [output_csv]
+        // If output_csv omitted, writes to same path with _valid before .csv (e.g. test_maintenance.csv -> test_maintenance_valid.csv).
+        // If output_csv is just a filename (no path), it is written next to the input file.
+        if (arguments.length >= 2 && "--validate".equals(arguments[0])) {
+            String inputCsv = arguments[1];
+            String outputCsv = arguments.length >= 3 ? arguments[2] : inputCsv.replaceFirst("\\.csv$", "_valid.csv");
+            if (arguments.length >= 3 && !outputCsv.contains(File.separator) && !outputCsv.contains("/")) {
+                String inputDir = new File(inputCsv).getParent();
+                outputCsv = (inputDir != null ? inputDir + File.separator : "") + outputCsv;
+            }
+            try {
+                validateMaintenanceRecords(connection, inputCsv, outputCsv);
+            } catch (IOException e) {
+                System.err.println("Validation failed: " + e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
+            return;
+        }
+
+        // Verify validation results: --validate-verify <input_csv> [output_csv]
+        // If output_csv omitted, expects input path with _valid before .csv (e.g. test_maintenance_valid.csv).
+        // If output_csv is just a filename (no path), it is resolved next to the input file.
+        if (arguments.length >= 2 && "--validate-verify".equals(arguments[0])) {
+            String inputCsv = arguments[1];
+            String outputCsv = arguments.length >= 3 ? arguments[2] : inputCsv.replaceFirst("\\.csv$", "_valid.csv");
+            if (arguments.length >= 3 && !outputCsv.contains(File.separator) && !outputCsv.contains("/")) {
+                String inputDir = new File(inputCsv).getParent();
+                outputCsv = (inputDir != null ? inputDir + File.separator : "") + outputCsv;
+            }
+            try {
+                boolean ok = verifyValidationResults(connection, inputCsv, outputCsv);
+                System.exit(ok ? 0 : 1);
+            } catch (IOException e) {
+                System.err.println("Verify failed: " + e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
+            return;
+        }
 
         boolean debugPhases = false;
         String outputDirectory = arguments[0];
