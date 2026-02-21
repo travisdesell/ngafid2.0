@@ -19,13 +19,10 @@ import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 public final class ExtractMaintenanceFlights {
     private static final HashMap<Integer, MaintenanceRecord> RECORDS_BY_WORKORDER = new HashMap<>();
-    private static final HashMap<String, ArrayList<MaintenanceRecord>> RECORDS_BY_LABEL = new HashMap<>();
     private static final HashMap<String, ArrayList<MaintenanceRecord>> RECORDS_BY_TAIL_NUMBER = new HashMap<>();
     private static final TreeSet<MaintenanceRecord> ALL_RECORDS = new TreeSet<>();
     private static final TreeSet<String> TAIL_NUMBERS = new TreeSet<>();
     private static final TreeSet<String> AIRFRAMES = new TreeSet<>();
-    private static final HashMap<String, String> CLUSTER_TO_LABEL = new HashMap<>();
-    private static final HashMap<String, String> LABEL_TO_CLUSTER = new HashMap<>();
     private static int systemIdCount = 0;
     private static int extractedFlightsTotal = 0;
 
@@ -67,15 +64,6 @@ public final class ExtractMaintenanceFlights {
                     lineCount++;
                     MaintenanceRecord record = new MaintenanceRecord(line);
 
-                    // Each record's originalAction becomes its own cluster name
-                    String clusterName = record.getOriginalAction();
-
-                    // Add cluster mapping for this record
-                    if (!CLUSTER_TO_LABEL.containsKey(clusterName)) {
-                        CLUSTER_TO_LABEL.put(clusterName, record.getLabel());
-                        LABEL_TO_CLUSTER.put(record.getLabel(), clusterName);
-                    }
-
                     MaintenanceRecord existingRecord = RECORDS_BY_WORKORDER.get(record.getWorkorderNumber());
                     if (existingRecord == null) {
                         // this is a record we have not yet seen before
@@ -93,11 +81,6 @@ public final class ExtractMaintenanceFlights {
                         ArrayList<MaintenanceRecord> tailSet =
                                 RECORDS_BY_TAIL_NUMBER.computeIfAbsent(record.getTailNumber(), k -> new ArrayList<>());
                         tailSet.add(record);
-
-                        // add it to the list of records by labels
-                        ArrayList<MaintenanceRecord> labelList =
-                                RECORDS_BY_LABEL.computeIfAbsent(record.getLabel(), k -> new ArrayList<>());
-                        labelList.add(record);
 
                         ALL_RECORDS.add(record);
                     } else {
@@ -311,15 +294,6 @@ public final class ExtractMaintenanceFlights {
             System.err.println("  " + m);
         }
         return false;
-    }
-
-    /** Returns the set of tail numbers present in the given records. */
-    private static Set<String> getTailNumbersForRecords(List<MaintenanceRecord> targetRecords) {
-        Set<String> tails = new HashSet<>();
-        for (MaintenanceRecord record : targetRecords) {
-            tails.add(record.getTailNumber());
-        }
-        return tails;
     }
 
     /**
@@ -923,8 +897,9 @@ public final class ExtractMaintenanceFlights {
      */
     /**
      * Exports flights to CSV files. Returns the number of flights actually extracted (written).
+     * @param targetLabelId the label_id of the cluster to export (e.g. c_1, c_13)
      */
-    private static int exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetCluster,
+    private static int exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetLabelId,
                                     String outputDirectory, boolean debugPhases) throws SQLException, IOException {
         int extractedCount = 0;
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
@@ -1000,8 +975,7 @@ public final class ExtractMaintenanceFlights {
                     continue;
                 }
 
-                String eventCluster = LABEL_TO_CLUSTER.get(event.getLabel());
-                if (eventCluster == null || !eventCluster.equals(targetCluster)) {
+                if (!targetLabelId.equals(event.getLabelId())) {
                     continue;
                 }
 
@@ -1267,74 +1241,36 @@ public final class ExtractMaintenanceFlights {
         }
 
         boolean debugPhases = false;
+        List<String> csvFileList = new ArrayList<>();
+        for (int i = 1; i < arguments.length; i++) {
+            if ("--phases".equals(arguments[i])) {
+                debugPhases = true;
+            } else {
+                csvFileList.add(arguments[i]);
+            }
+        }
+        String[] csvFiles = csvFileList.toArray(new String[0]);
         String outputDirectory = arguments[0];
-        String targetCluster = arguments[1];
 
-        // Check for debug argument
-        int argOffset = 2;
-        if (arguments.length > 2 && arguments[2].equals("--phases")) {
-            debugPhases = true;
-            argOffset++;
+        System.out.println("CSV files:");
+        for (String f : csvFiles) {
+            System.out.println("\t'" + f + "'");
         }
 
-        String[] allClusters = new String[arguments.length - argOffset];
-
-        System.out.println("allClusters are:");
-        for (int i = 0; i < allClusters.length; i++) {
-            allClusters[i] = arguments[i + argOffset];
-            System.out.println("\t'" + allClusters[i] + "'");
-        }
-
-        readClusterFiles(allClusters);
-
-        System.out.println("cluster to label:");
-        for (Map.Entry<String, String> kvPair : CLUSTER_TO_LABEL.entrySet()) {
-            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue() + "'");
-        }
+        readClusterFiles(csvFiles);
 
         System.out.println("unique airframes: ");
         System.out.println("\t" + AIRFRAMES);
+        System.out.println("Processing " + ALL_RECORDS.size() + " workorder(s)");
 
-        // Process all clusters found in the file(s)
-        for (String actualCluster : CLUSTER_TO_LABEL.keySet()) {
-            System.out.println("\n\n=== Processing cluster: " + actualCluster + " ===");
-            
-            String targetLabel = CLUSTER_TO_LABEL.get(actualCluster);
-            ArrayList<MaintenanceRecord> targetRecords = RECORDS_BY_LABEL.get(targetLabel);
-            
-            if (targetRecords == null || targetRecords.isEmpty()) {
-                System.err.println("No records found for cluster: " + actualCluster);
-                continue;
-            }
+        try {
+            for (MaintenanceRecord record : ALL_RECORDS) {
+                LocalDate startDate = record.getOpenDate().minusDays(10);
+                LocalDate endDate = record.getCloseDate().plusDays(10);
+                String tailNumber = record.getTailNumber();
+                String labelId = record.getLabelId();
 
-            try {
-                // for each tail
-                // 1. get all flights between start and end date
-                ArrayList<String> tailsWithoutFlights = new ArrayList<>();
-                HashMap<String, Integer> tailFlightCounts = new HashMap<>();
-                HashMap<String, Integer> tailSystemIdCounts = new HashMap<>();
-
-                LocalDate startDate = targetRecords.get(0).getOpenDate().minusDays(10);
-                LocalDate endDate = targetRecords.get(targetRecords.size() - 1).getCloseDate().plusDays(10);
-                Set<String> targetTails = getTailNumbersForRecords(targetRecords);
-
-                System.out.println(actualCluster + " | " + startDate + " to " + endDate + " | " + targetTails.size() + " tail(s)");
-
-            for (String tailNumber : targetTails) {
-                ArrayList<MaintenanceRecord> allTailRecords = RECORDS_BY_TAIL_NUMBER.get(tailNumber);
-                
-                // Filter to only records in this cluster for timeline building
-                // This prevents cross-cluster event assignment issues
-                ArrayList<MaintenanceRecord> tailRecords = new ArrayList<>();
-                for (MaintenanceRecord record : allTailRecords) {
-                    String recordCluster = LABEL_TO_CLUSTER.get(record.getLabel());
-                    if (recordCluster != null && recordCluster.equals(actualCluster)) {
-                        // Create directory structure upfront before filtering
-                        ensureClusterDirectoryExists(outputDirectory, record);
-                        tailRecords.add(record);
-                    }
-                }
-                Collections.sort(tailRecords);
+                ensureClusterDirectoryExists(outputDirectory, record);
 
                 PreparedStatement tailStmt =
                         connection.prepareStatement("SELECT system_id FROM tails WHERE tail = ? and fleet_id = ?");
@@ -1344,46 +1280,31 @@ public final class ExtractMaintenanceFlights {
 
                 ResultSet tailSet = tailStmt.executeQuery();
                 List<AircraftTimeline> timeline = buildTimeline(connection, tailSet, startDate, endDate);
-
+                tailSet.close();
+                tailStmt.close();
 
                 Collections.sort(timeline);
 
-                // Assign each flight to phase (before/during/after) based on open/close:
-                // - before: [openDate-10, openDate), during: [openDate, closeDate], after: (closeDate, closeDate+10]
+                List<MaintenanceRecord> tailRecords = Collections.singletonList(record);
                 assignFlightsToPhases(timeline, tailRecords);
-
-                // setting flights to next/flights since prev
                 setFlightsToNextFlights(connection, timeline);
 
-                // Write the files
-                int extractedThisTail = exportFiles(connection, timeline, actualCluster, outputDirectory, debugPhases);
-                extractedFlightsTotal += extractedThisTail;
+                int extracted = exportFiles(connection, timeline, labelId, outputDirectory, debugPhases);
+                extractedFlightsTotal += extracted;
 
-                tailSystemIdCounts.put(tailNumber, systemIdCount);
-                tailFlightCounts.put(tailNumber, extractedThisTail);
-
-                tailSet.close();
-                tailStmt.close();
-                System.out.println("  " + tailNumber + ": " + tailRecords.size() + " event(s) -> " + extractedThisTail + " flights");
-                if (extractedThisTail == 0) {
-                    tailsWithoutFlights.add(tailNumber);
-                }
+                System.out.println("  WO " + record.getWorkorderNumber() + " " + tailNumber + " [" + labelId + "] " +
+                        startDate + " to " + endDate + " -> " + extracted + " flight(s)");
             }
-            System.out.println("  Total: " + extractedFlightsTotal + " flights extracted");
-            if (!tailsWithoutFlights.isEmpty()) {
-                System.out.println("  Tails with no flights: " + tailsWithoutFlights);
-            }
-
-            } catch (SQLException e) {
-                System.err.println("SQLException: " + e);
-                e.printStackTrace();
-            } catch (IOException e) {
-                System.err.println("IOException: " + e);
-                e.printStackTrace();
-            } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {
-                throw new RuntimeException(e);
-            }
-        } // End for loop over clusters
+            System.out.println("Total: " + extractedFlightsTotal + " flights extracted");
+        } catch (SQLException e) {
+            System.err.println("SQLException: " + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("IOException: " + e);
+            e.printStackTrace();
+        } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {
+            throw new RuntimeException(e);
+        }
         
         // Generate manifest file after all clusters are processed
         try {
