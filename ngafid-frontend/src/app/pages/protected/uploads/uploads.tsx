@@ -465,7 +465,15 @@ export default function UploadsPage() {
                 file,
                 md5Hash: ""
             };
-            setPending((p) => [...p, pendingEntry]);
+            setPending((p) => {
+
+                // Guard to prevent duplicates
+                if (p.some((u) => u.identifier === pendingEntry.identifier))
+                    return p;
+
+                return [...p, pendingEntry];
+                
+            });
 
             await raf();
             await sleep(0); //<-- Wait for event loop to yield before hashing
@@ -778,7 +786,7 @@ export default function UploadsPage() {
                         ?
                         <div className="flex items-center justify-between">
                             <div className="flex gap-2 text-xs min-w-[75%] flex-wrap">
-                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-(--muted) dark:text-shadow-md" variant={"outline"}>
+                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-muted dark:text-shadow-md" variant={"outline"}>
                                     <span className="flex items-center gap-1">
                                         <CloudDownload className="h-3 w-3" />
                                         Total:
@@ -823,7 +831,7 @@ export default function UploadsPage() {
 
                         </div>
                         :
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-[8px]">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
                             <Loader size={20} className="animate-spin duration-2000" />
                             <span>Awaiting import processing...</span>
                         </div>

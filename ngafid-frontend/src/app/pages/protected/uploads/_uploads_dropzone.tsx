@@ -31,7 +31,17 @@ export default function UploadsDropzone({ onPickFiles }: Props) {
 
     const onDrop = useCallback(
         (acceptedFiles: File[]) => {
-            acceptedFiles.forEach((file) => {
+
+            // No files accepted, exit
+            if (acceptedFiles.length === 0) {
+                setModal(ErrorModal, {
+                    title: "No Files Detected",
+                    message: "No valid files were detected. Please try again.",
+                });
+                return;
+            }
+
+            for (const file of acceptedFiles) {
 
                 // Unsupported file type, show error modal
                 if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
@@ -45,12 +55,12 @@ export default function UploadsDropzone({ onPickFiles }: Props) {
 
                 }
 
-                const dataTransferInst = new DataTransfer();
-                acceptedFiles.forEach((f) => dataTransferInst.items.add(f));
+            }
 
-                void onPickFiles(dataTransferInst.files);
+            const dataTransferInst = new DataTransfer();
+            acceptedFiles.forEach((f) => dataTransferInst.items.add(f));
 
-            });
+            void onPickFiles(dataTransferInst.files);
 
         },
         [onPickFiles, setModal]
