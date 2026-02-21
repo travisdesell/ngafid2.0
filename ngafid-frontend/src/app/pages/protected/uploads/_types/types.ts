@@ -14,22 +14,26 @@ export type UploadStatus =
     | "FAILED_UNKNOWN"
     | "DERIVED";
 
+
 export type UploadInfo = {
     id: number;
     identifier: string;
     filename: string;
     md5Hash: string;
-    startTime?: string;
-    endTime?: string;
+    startTime: string;
+    endTime: string;
     status: UploadStatus;
     sizeBytes: number;
     bytesUploaded: number;
-    progressSize?: number;
-    totalSize?: number;
-    numberChunks?: number;
-    chunkStatus?: string;   //<-- String of '0'/'1'
-    position?: number;
-    file?: File;            //<-- Client-side only
+    progressSize: number;
+    totalSize: number;
+    numberChunks: number;
+    chunkStatus: string;   //<-- String of '0'/'1'
+    position: number;
+    file: File;            //<-- Client-side only
+    uploaderId?: number;
+    fleetId: number;
+    kind: string;
 };
 
 export type ImportsPageItem = {
