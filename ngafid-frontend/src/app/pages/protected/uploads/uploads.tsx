@@ -22,7 +22,7 @@ import {
     Trash
 } from "lucide-react";
 import { motion } from "motion/react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import SparkMD5 from "spark-md5";
 
 import SuccessModal from "@/components/modals/success_modal";
@@ -325,7 +325,7 @@ export default function UploadsPage() {
     const [expandedErrors, setExpandedErrors] = useState<Record<number, UploadErrorsPayload | "loading" | "error" | undefined>>({});
 
 
-    const loadUploads = useCallback(async (page = uploadsPage, pageSize = 10) => {
+    const loadUploads = useCallback(async (page = uploadsPage, pageSize = 10, silent = false) => {
 
         const params = new URLSearchParams({
             currentPage: String(page),
@@ -336,18 +336,20 @@ export default function UploadsPage() {
 
         // Error loading uploads, display it
         if (isAPIError(uploadsListResponse)) {
-            setError(`${uploadsListResponse.errorTitle}: ${uploadsListResponse.errorMessage}`);
-            return;
+            if (!silent)
+                setError(`${uploadsListResponse.errorTitle}: ${uploadsListResponse.errorMessage}`);
+            return false;
         }
 
         const filtered = (uploadsListResponse.uploads ?? []).filter((u: UploadInfo) => u.status !== "DERIVED");
         setUploads(filtered);
         setUploadsPages(uploadsListResponse.numberPages ?? 0);
+        return true;
         
     }, [uploadsPage]);
 
 
-    const loadImports = useCallback(async (page = importsPage, pageSize = 10) => {
+    const loadImports = useCallback(async (page = importsPage, pageSize = 10, silent = false) => {
 
         const params = new URLSearchParams({
             currentPage: String(page),
@@ -358,12 +360,14 @@ export default function UploadsPage() {
 
         // Error loading imports, display it
         if (isAPIError(importsListResponse)) {
-            setError(`${importsListResponse.errorTitle}: ${importsListResponse.errorMessage}`);
-            return;
+            if (!silent)
+                setError(`${importsListResponse.errorTitle}: ${importsListResponse.errorMessage}`);
+            return false;
         }
 
         setImports(importsListResponse.imports ?? []);
         setImportsPages(importsListResponse.numberPages ?? 0);
+        return true;
 
     }, [importsPage]);
 
@@ -423,10 +427,104 @@ export default function UploadsPage() {
 
     }, [uploads, pending.length]);
 
+    const isPollingRef = useRef(false);
+    const pollingFailuresRef = useRef(0);
+
+    useEffect(() => {
+
+        const hasLocalActiveUpload = (busy || pending.some((p) => p.status === "HASHING" || p.status === "UPLOADING"));
+        const hasServerActiveUpload = uploads.some((u) =>
+            u.status === "UPLOADED"
+            || u.status === "ENQUEUED"
+            || u.status === "PROCESSING"
+            || u.status === "UPLOADING"
+        );
+
+        const BASE_DELAY_MS_DEFAULT = 15_000;
+        const BASE_DELAY_MS_INACTIVE = 30_000;
+        const BASE_DELAY_MS_ACTIVE_LOCAL = 3_000;
+        const BASE_DELAY_MS_ACTIVE_SERVER = 5_000;
+
+        // Use increased polling frequency when there are active uploads
+        const baseDelayMS = (() => {
+
+            if (document.hidden)
+                return BASE_DELAY_MS_INACTIVE;
+
+            if (hasLocalActiveUpload)
+                return BASE_DELAY_MS_ACTIVE_LOCAL;
+
+            if (hasServerActiveUpload)
+                return BASE_DELAY_MS_ACTIVE_SERVER;
+
+            return BASE_DELAY_MS_DEFAULT;
+
+        })();
+
+        const failureBackoffMS = Math.min(BASE_DELAY_MS_DEFAULT, pollingFailuresRef.current * 2500);
+        const nextDelayMS = Math.min(BASE_DELAY_MS_INACTIVE, baseDelayMS + failureBackoffMS);
+
+        let isCancelled = false;
+        let timeoutId: number | undefined;
+
+        const poll = async () => {
+
+            // Polling cancelled, exit
+            if (isCancelled)
+                return;
+
+            // Page is not visible or we're already polling, delay the next poll
+            if (isPollingRef.current || document.hidden) {
+                timeoutId = window.setTimeout(() => { void poll(); }, nextDelayMS);
+                return;
+            }
+
+            log(`Polling uploads/imports (local active: ${hasLocalActiveUpload}, server active: ${hasServerActiveUpload}, base delay: ${baseDelayMS}ms, backoff: ${failureBackoffMS}ms, next delay: ${nextDelayMS}ms)`);
+
+            isPollingRef.current = true;
+
+            const UPLOAD_IMPORT_LOAD_COUNT = 10;
+
+            try {
+                const [uploadsOK, importsOK] = await Promise.all([
+                    loadUploads(uploadsPage, UPLOAD_IMPORT_LOAD_COUNT, true),
+                    loadImports(importsPage, UPLOAD_IMPORT_LOAD_COUNT, true)
+                ]);
+
+                // Both uploads and imports loaded successfully, reset failure count
+                if (uploadsOK && importsOK)
+                    pollingFailuresRef.current = 0;
+
+                // Otherwise, increment failure count (which will increase backoff delay)
+                else
+                    pollingFailuresRef.current = Math.min(6, pollingFailuresRef.current + 1);
+
+            } catch {
+                pollingFailuresRef.current = Math.min(6, pollingFailuresRef.current + 1);
+            } finally {
+
+                isPollingRef.current = false;
+
+                // Not canceled, schedule the next poll
+                if (!isCancelled)
+                    timeoutId = window.setTimeout(() => { void poll(); }, nextDelayMS);
+            }
+
+        };
+
+        timeoutId = window.setTimeout(() => { void poll(); }, nextDelayMS);
+
+        return () => {
+            isCancelled = true;
+            if (timeoutId)
+                window.clearTimeout(timeoutId);
+        };
+
+    }, [loadUploads, loadImports, uploadsPage, importsPage, busy, pending, uploads]);
+
 
 
     
-
     const onPickFiles = async (files: FileList | null) => {
 
         // No files picked, exit
