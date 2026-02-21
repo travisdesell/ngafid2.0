@@ -13,11 +13,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
 public enum TimeUtils {
     ;
-    private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
 
     public static DateTimeFormatter ISO_8601_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     public static DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -127,7 +125,6 @@ public enum TimeUtils {
     }
 
     public static OffsetDateTime convertToOffset(DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
-        LOG.fine("Date is " + originalDateTime);
         LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
         // fix bad offset values
