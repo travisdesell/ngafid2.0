@@ -82,6 +82,46 @@ const makeEntry = (rawName: string, displayNameTransform?: (displayName: string)
     messageDisplay: "",
 });
 
+function StatusLoader({ entry }: { entry: StatusEntry }) {
+
+    return  <Loader2
+        className="animate-spin duration-200 transition-opacity absolute left-0 top-0 translate-x-1/2 translate-y-1/2"
+        size={16}
+        style={{
+            opacity: (entry.messageDisplay.length) ? 0.00 : 1.00
+        }}
+    />
+
+}
+
+function StatusEntries({ entries }: { entries: StatusEntry[] }) {
+
+    return entries.map((entry) => (
+        <TableRow key={entry.name}>
+            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
+            <TableCell className="flex items-center">
+                <AnimatePresence>
+                    <motion.div
+                        className="absolute translate-y-1/2"
+                        key={entry.status.name}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <entry.status.icon className="inline mr-2" size={16} />
+                        {entry.status.name}
+                    </motion.div>
+                </AnimatePresence>
+            </TableCell>
+            <TableCell className="relative">
+                {entry.messageDisplay}
+                <StatusLoader entry={entry} />
+            </TableCell>
+        </TableRow>
+    ))
+
+}
 
 export default function Status() {
 
@@ -280,18 +320,7 @@ export default function Status() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {
-                                    kafkaEntries.map((entry) => (
-                                        <TableRow key={entry.name}>
-                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
-                                            <TableCell className="flex items-center">
-                                                <entry.status.icon className="inline mr-2" size={16} />
-                                                {entry.status.name}
-                                            </TableCell>
-                                            <TableCell>{entry.message}</TableCell>
-                                        </TableRow>
-                                    ))
-                                }
+                                <StatusEntries entries={kafkaEntries} />
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -317,18 +346,7 @@ export default function Status() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {
-                                    databaseEntries.map((entry) => (
-                                        <TableRow key={entry.name}>
-                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
-                                            <TableCell className="flex items-center">
-                                                <entry.status.icon className="inline mr-2" size={16} />
-                                                {entry.status.name}
-                                            </TableCell>
-                                            <TableCell>{entry.message}</TableCell>
-                                        </TableRow>
-                                    ))
-                                }
+                                <StatusEntries entries={databaseEntries} />
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -354,38 +372,7 @@ export default function Status() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {
-                                    dockerEntries.map((entry) => (
-                                        <TableRow key={entry.name}>
-                                            <TableCell className="font-medium">{entry.nameDisplay}</TableCell>
-                                            <TableCell className="flex items-center">
-                                                <AnimatePresence>
-                                                    <motion.div
-                                                        className="absolute translate-y-1/2"
-                                                        key={entry.status.name}
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-                                                        transition={{ duration: 0.3 }}
-                                                    >
-                                                        <entry.status.icon className="inline mr-2" size={16} />
-                                                        {entry.status.name}
-                                                    </motion.div>
-                                                </AnimatePresence>
-                                            </TableCell>
-                                            <TableCell className="relative">
-                                                {entry.messageDisplay}
-                                                <Loader2
-                                                    className="animate-spin duration-200 transition-opacity absolute left-0 top-0 translate-x-1/2 translate-y-1/2"
-                                                    size={16}
-                                                    style={{
-                                                        opacity: (entry.messageDisplay.length) ? 0.00 : 1.00
-                                                    }}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                }
+                                <StatusEntries entries={dockerEntries} />
                             </TableBody>
                         </Table>
                     </CardContent>
