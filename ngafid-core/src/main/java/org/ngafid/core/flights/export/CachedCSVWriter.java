@@ -33,10 +33,7 @@ public class CachedCSVWriter extends CSVWriter {
             throws SQLException {
         super(flight, outputCSVFile);
 
-        System.out.println("creating file from: '" + directoryRoot + "'");
-
         int uploadId = flight.getUploadId();
-        System.out.println("target upload id is: " + uploadId);
 
         //CHECKSTYLE:OFF
         // TODO: Probably better to pass the connection in as an argument to the
@@ -47,16 +44,12 @@ public class CachedCSVWriter extends CSVWriter {
             upload = Upload.getUploadById(connection, uploadId);
         }
 
-        System.out.println("got an upload with filename: '" + upload.getFilename() + "'");
-
         String archiveFilename;
         if (isAirSync) {
             archiveFilename = directoryRoot + upload.getFilename();
         } else {
             archiveFilename = directoryRoot + uploadId + "__" + upload.getFilename();
         }
-
-        System.out.println("archive filename will be: '" + archiveFilename + "'");
 
         this.zipFile = new File(archiveFilename);
 
@@ -65,14 +58,10 @@ public class CachedCSVWriter extends CSVWriter {
         //CHECKSTYLE:ON
         if (!this.zipFile.exists()) {
             throw new RuntimeException("Archive file did not exist: " + this.zipFile.getAbsolutePath());
-        } else {
-            System.out.println("file exists!");
         }
 
         if (!this.zipFile.canRead()) {
             throw new RuntimeException("Do not have read access to archive file: " + this.zipFile.getAbsolutePath());
-        } else {
-            System.out.println("file is readable!");
         }
 
         try {

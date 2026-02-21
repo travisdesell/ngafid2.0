@@ -127,7 +127,7 @@ public enum TimeUtils {
     }
 
     public static OffsetDateTime convertToOffset(DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
-        LOG.info("Date is " + originalDateTime);
+        LOG.fine("Date is " + originalDateTime);
         LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
         // fix bad offset values

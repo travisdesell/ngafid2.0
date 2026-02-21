@@ -27,7 +27,7 @@ public final class ExtractMaintenanceFlights {
     private static final HashMap<String, String> CLUSTER_TO_LABEL = new HashMap<>();
     private static final HashMap<String, String> LABEL_TO_CLUSTER = new HashMap<>();
     private static int systemIdCount = 0;
-    private static int count = 0;
+    private static int extractedFlightsTotal = 0;
 
     private ExtractMaintenanceFlights() {
         throw new UnsupportedOperationException("Utility class");
@@ -338,7 +338,6 @@ public final class ExtractMaintenanceFlights {
 
         while (tailSet.next()) {
             String systemId = tailSet.getString(1);
-            System.out.println("\tsystem id '" + systemId + "' flights:");
 
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT id, start_time, end_time, airframe_id FROM flights " +
@@ -358,7 +357,6 @@ public final class ExtractMaintenanceFlights {
                 flightEndTime = TimeUtils.toString(TimeUtils.convertToOffset(flightEndTime, "+00:00", "-06:00"));
 
                 timeline.add(new AircraftTimeline(flightId, flightStartTime, flightEndTime));
-                count++;
             }
 
             systemIdCount++;
@@ -499,7 +497,6 @@ public final class ExtractMaintenanceFlights {
                     }
 
                     if (!flightTookOff(connection, a.getFlightId())) {
-                        System.out.println("Skipping ground-run flight (before): " + a.getFlightId());
                         a.setFlightsToNext(-2); // -2 means ground run, don't extract
                         i++;
                         continue;
@@ -527,7 +524,6 @@ public final class ExtractMaintenanceFlights {
                     }
 
                     if (!flightTookOff(connection, a.getFlightId())) {
-                        System.out.println("Skipping ground-run flight (after): " + a.getFlightId());
                         a.setFlightsSincePrevious(-2); // -2 means ground run, don't extract
                         i++;
                         continue;
@@ -554,7 +550,6 @@ public final class ExtractMaintenanceFlights {
                     AircraftTimeline a = timeline.get(j);
                     if (a.getNextEvent() == nextEvent && a.getDaysToNext() > 0) {
                         if (!flightTookOff(connection, a.getFlightId())) {
-                            System.out.println("Skipping ground-run flight (before, second pass): " + a.getFlightId());
                             a.setFlightsToNext(-2);
                         } else if (a.getFlightsToNext() < 0) {
                             a.setFlightsToNext(flightCount);
@@ -575,7 +570,6 @@ public final class ExtractMaintenanceFlights {
                     AircraftTimeline a = timeline.get(j);
                     if (a.getPreviousEvent() == prevEvent && a.getDaysSincePrevious() > 0) {
                         if (!flightTookOff(connection, a.getFlightId())) {
-                            System.out.println("Skipping ground-run flight (after, second pass): " + a.getFlightId());
                             a.setFlightsSincePrevious(-2);
                         } else if (a.getFlightsSincePrevious() < 0) {
                             a.setFlightsSincePrevious(flightCount);
@@ -644,7 +638,6 @@ public final class ExtractMaintenanceFlights {
 
         // Write CSV with flight phase column
         String outfile = fullDir + "/" + flight.getId() + ".csv";
-        System.out.println(outfile);
 
         String zipRoot = NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" + flight.getUploaderId() + "/";
 
@@ -664,9 +657,6 @@ public final class ExtractMaintenanceFlights {
         FlightPhaseProcessor.FlightPhaseData phaseData = null;
         try {
             phaseData = FlightPhaseProcessor.computeCompleteFlightPhases(connection, flight, validation);
-            
-            System.out.println("Computed phases for flight " + flight.getId() + ": " + 
-                             FlightPhaseProcessor.getPhaseSummary(phaseData));
         } catch (Exception e) {
             System.err.println("Warning: Could not compute flight phases for flight " + flight.getId() + ": " + e.getMessage());
         }
@@ -674,9 +664,6 @@ public final class ExtractMaintenanceFlights {
         // Read the temporary CSV and write with FlightPhase column
         // Split into multiple files only for prolonged taxi (30+ sec in middle); not touch-and-go
         if (fileSplitIndices != null && !fileSplitIndices.isEmpty()) {
-            System.out.println("Splitting flight " + flight.getId() + " into " + 
-                             (fileSplitIndices.size() + 1) + " segments (prolonged taxi)");
-            
             try (BufferedReader reader = new BufferedReader(new FileReader(outfile + ".tmp"))) {
                 // Read all lines
                 List<String> allLines = new ArrayList<>();
@@ -761,7 +748,6 @@ public final class ExtractMaintenanceFlights {
                         }
                     }
 
-                    System.out.println("  Created segment " + segmentNumber + ": " + new File(segmentFile).getName());
                     startRow = splitIndex;
                     segmentNumber++;
                 }
@@ -815,8 +801,6 @@ public final class ExtractMaintenanceFlights {
                         System.err.println("Error writing debug phases file for final segment: " + e.getMessage());
                     }
                 }
-
-                System.out.println("  Created segment " + segmentNumber + ": " + new File(finalFile).getName());
             }
         } else {
             // No prolonged taxi split, write single file
@@ -937,9 +921,12 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      * @throws IOException  if there is an error writing the file
      */
-    private static void exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetCluster,
+    /**
+     * Exports flights to CSV files. Returns the number of flights actually extracted (written).
+     */
+    private static int exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetCluster,
                                     String outputDirectory, boolean debugPhases) throws SQLException, IOException {
-        System.err.println("\n\nflightsToNext, flightsSincePrev set, now exporting files:");
+        int extractedCount = 0;
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
             AircraftTimeline ac = timeline.get(currentAircraft);
 
@@ -982,17 +969,11 @@ public final class ExtractMaintenanceFlights {
                     
                     // Skip invalid flights (never left ground)
                     if (!validation.isValid) {
-                        System.out.println("Skipping flight " + flight.getId() + " - never exceeded 10ft AGL (max: " + 
-                                         String.format("%.1f", validation.maxAltAGL) + "ft)");
                         continue;
                     }
                     
                     // File splitting: only for prolonged taxi (30+ sec in middle)
                     fileSplitIndices = FlightPhaseProcessor.detectProlongedTaxiSplits(connection, flight.getId());
-                    if (!fileSplitIndices.isEmpty()) {
-                        System.out.println("Flight " + flight.getId() + " has " + fileSplitIndices.size() +
-                                         " prolonged taxi split(s) (30+ sec)");
-                    }
                 } catch (Exception e) {
                     System.err.println("Warning: Could not validate flight " + flight.getId() + ": " + e.getMessage());
                     // Continue with extraction even if validation fails
@@ -1024,9 +1005,11 @@ public final class ExtractMaintenanceFlights {
                     continue;
                 }
 
+                extractedCount++;
                 writeFiles(connection, outputDirectory, event, flight, when, validation, fileSplitIndices, debugPhases);
             }
         }
+        return extractedCount;
     }
 
     /**
@@ -1036,7 +1019,6 @@ public final class ExtractMaintenanceFlights {
      */
     private static void generateManifest(String outputDirectory) {
         try {
-            System.out.println("\nGenerating manifest file...");
             
             StringBuilder json = new StringBuilder();
             json.append("{\n");
@@ -1222,9 +1204,7 @@ public final class ExtractMaintenanceFlights {
                 writer.write(json.toString());
             }
             
-            System.out.println("Manifest file generated: " + manifestFile.getAbsolutePath());
-            System.out.println("Total workorders: " + RECORDS_BY_WORKORDER.size());
-            System.out.println("Total flights: " + totalFlights);
+            System.out.println("Manifest: " + manifestFile.getName() + " (" + RECORDS_BY_WORKORDER.size() + " workorders, " + totalFlights + " flights)");
             
         } catch (IOException e) {
             System.err.println("Error generating manifest: " + e.getMessage());
@@ -1338,13 +1318,9 @@ public final class ExtractMaintenanceFlights {
                 LocalDate endDate = targetRecords.get(targetRecords.size() - 1).getCloseDate().plusDays(10);
                 Set<String> targetTails = getTailNumbersForRecords(targetRecords);
 
-                System.out.println("earliest date for label: " + startDate);
-                System.out.println("latest date for label: " + endDate);
-                System.out.println("tails: " + targetTails);
+                System.out.println(actualCluster + " | " + startDate + " to " + endDate + " | " + targetTails.size() + " tail(s)");
 
             for (String tailNumber : targetTails) {
-                System.out.println("\n\nNEW TAIL: '" + tailNumber + "'");
-                System.out.println("records for tail: '" + tailNumber + "'");
                 ArrayList<MaintenanceRecord> allTailRecords = RECORDS_BY_TAIL_NUMBER.get(tailNumber);
                 
                 // Filter to only records in this cluster for timeline building
@@ -1360,20 +1336,11 @@ public final class ExtractMaintenanceFlights {
                 }
                 Collections.sort(tailRecords);
 
-                for (MaintenanceRecord record : tailRecords) {
-                    System.out.println("\t" + record.getOpenDate() + " to " + record.getCloseDate() +
-                            " for " + record.getLabel() + ", airframe: " + record.getAirframe());
-                }
-                System.out.println("tail: '" + tailNumber + "' had " + tailRecords.size() + " events in this cluster.");
-                System.out.println();
-
                 PreparedStatement tailStmt =
                         connection.prepareStatement("SELECT system_id FROM tails WHERE tail = ? and fleet_id = ?");
                 tailStmt.setString(1, tailNumber);
                 int fleetId = 1; // UND
                 tailStmt.setInt(2, fleetId);
-
-                System.out.println("tail: '" + tailNumber + "' database flights:");
 
                 ResultSet tailSet = tailStmt.executeQuery();
                 List<AircraftTimeline> timeline = buildTimeline(connection, tailSet, startDate, endDate);
@@ -1389,25 +1356,22 @@ public final class ExtractMaintenanceFlights {
                 setFlightsToNextFlights(connection, timeline);
 
                 // Write the files
-                exportFiles(connection, timeline, actualCluster, outputDirectory, debugPhases);
+                int extractedThisTail = exportFiles(connection, timeline, actualCluster, outputDirectory, debugPhases);
+                extractedFlightsTotal += extractedThisTail;
 
                 tailSystemIdCounts.put(tailNumber, systemIdCount);
-                tailFlightCounts.put(tailNumber, count);
+                tailFlightCounts.put(tailNumber, extractedThisTail);
 
                 tailSet.close();
                 tailStmt.close();
-                System.out.println(count + " total flights.");
-                if (count == 0) {
+                System.out.println("  " + tailNumber + ": " + tailRecords.size() + " event(s) -> " + extractedThisTail + " flights");
+                if (extractedThisTail == 0) {
                     tailsWithoutFlights.add(tailNumber);
                 }
             }
-            System.out.println("all tail numbers (" + TAIL_NUMBERS.size() + "): " + TAIL_NUMBERS);
-            System.out.println("tails without flights (" + tailsWithoutFlights.size() + "): " + tailsWithoutFlights);
-
-            System.out.println("flight counts per tail:");
-            for (Map.Entry<String, Integer> kvPair : tailFlightCounts.entrySet()) {
-                System.out.println("\t'" + kvPair.getKey() + "' -> " + kvPair.getValue()
-                        + " (" + tailSystemIdCounts.get(kvPair.getKey()) + ")");
+            System.out.println("  Total: " + extractedFlightsTotal + " flights extracted");
+            if (!tailsWithoutFlights.isEmpty()) {
+                System.out.println("  Tails with no flights: " + tailsWithoutFlights);
             }
 
             } catch (SQLException e) {
@@ -1422,10 +1386,8 @@ public final class ExtractMaintenanceFlights {
         } // End for loop over clusters
         
         // Generate manifest file after all clusters are processed
-        System.out.println("Attempting to generate manifest file...");
         try {
             generateManifest(outputDirectory);
-            System.out.println("Manifest generation completed.");
         } catch (Exception e) {
             System.err.println("Error during manifest generation: " + e.getMessage());
             e.printStackTrace();
