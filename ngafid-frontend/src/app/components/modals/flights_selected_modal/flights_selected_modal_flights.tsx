@@ -106,7 +106,7 @@ export function FlightsSelectedModalFlights({ chartFlights, setChartFlights, eve
                 ? "None Available"
                 : (!hasLoadedEvents)
                     ? "Loading..."
-                    : `${selectedPresentCount}${missingUniversalCount > 0 ? ` (+${missingUniversalCount} missing)` : ""} / ${totalAvailableTypes} Selected`;
+                    : `${selectedPresentCount} / ${totalAvailableTypes} Selected`;
 
 
             const renderBadges = () => {
