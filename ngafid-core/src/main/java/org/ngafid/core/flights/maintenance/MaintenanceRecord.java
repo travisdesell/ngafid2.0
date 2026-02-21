@@ -54,6 +54,10 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         return closeDate;
     }
 
+    public LocalDate getActionDate() {
+        return actionDate;
+    }
+
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy");
 
     private final ArrayList<MaintenanceRecord> combinedRecords = new ArrayList<MaintenanceRecord>();

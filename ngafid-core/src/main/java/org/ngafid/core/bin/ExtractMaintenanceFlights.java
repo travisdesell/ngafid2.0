@@ -5,7 +5,6 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.flights.export.CSVWriter;
 import org.ngafid.core.flights.export.CachedCSVWriter;
 import org.ngafid.core.flights.maintenance.AircraftTimeline;
 import org.ngafid.core.flights.maintenance.MaintenanceRecord;
@@ -16,11 +15,6 @@ import java.sql.*;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.ngafid.core.bin.FlightPhaseProcessor;
-
 import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 public final class ExtractMaintenanceFlights {
@@ -32,7 +26,6 @@ public final class ExtractMaintenanceFlights {
     private static final TreeSet<String> AIRFRAMES = new TreeSet<>();
     private static final HashMap<String, String> CLUSTER_TO_LABEL = new HashMap<>();
     private static final HashMap<String, String> LABEL_TO_CLUSTER = new HashMap<>();
-    private static final HashMap<String, Integer> CLUSTER_COUNTS = new HashMap<>();
     private static int systemIdCount = 0;
     private static int count = 0;
 
@@ -72,9 +65,6 @@ public final class ExtractMaintenanceFlights {
                     }
 
                     lineCount++;
-                    // Uncomment for debugging:
-                    // System.out.println("RAW LINE: [" + line + "]");
-
                     MaintenanceRecord record = new MaintenanceRecord(line);
 
                     // Each record's originalAction becomes its own cluster name
@@ -84,7 +74,6 @@ public final class ExtractMaintenanceFlights {
                     if (!CLUSTER_TO_LABEL.containsKey(clusterName)) {
                         CLUSTER_TO_LABEL.put(clusterName, record.getLabel());
                         LABEL_TO_CLUSTER.put(record.getLabel(), clusterName);
-                        CLUSTER_COUNTS.put(clusterName, 0);
                     }
 
                     MaintenanceRecord existingRecord = RECORDS_BY_WORKORDER.get(record.getWorkorderNumber());
@@ -105,7 +94,7 @@ public final class ExtractMaintenanceFlights {
                                 RECORDS_BY_TAIL_NUMBER.computeIfAbsent(record.getTailNumber(), k -> new ArrayList<>());
                         tailSet.add(record);
 
-                        // add it to the list of reords by labels
+                        // add it to the list of records by labels
                         ArrayList<MaintenanceRecord> labelList =
                                 RECORDS_BY_LABEL.computeIfAbsent(record.getLabel(), k -> new ArrayList<>());
                         labelList.add(record);
@@ -140,29 +129,29 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Counts flights in the database that overlap the maintenance record's time period
-     * (open date through close date) for the given tail and fleet.
+     * Counts flights in the database that overlap the extended maintenance window:
+     * 10 days before open date through 10 days after close date (matches extraction window).
      *
      * @param connection the database connection
      * @param tailNumber  the tail number
      * @param openDate    maintenance open date
      * @param closeDate   maintenance close date
-     * @return number of flights with start_time &lt;= closeDate and end_time &gt;= openDate (any fleet), or 0 if tail not found
+     * @return number of flights in the extended window, or 0 if tail not found
      * @throws SQLException if there is an error with the SQL query
      */
     private static int countFlightsInMaintenancePeriod(Connection connection, String tailNumber,
                                                        LocalDate openDate, LocalDate closeDate)
             throws SQLException {
-        // Use end-of-day for close date so flights that start during the close date are included
-        // (MySQL compares DATETIME to 'YYYY-MM-DD' as midnight, which would exclude same-day flights)
-        String closeEndOfDay = closeDate.toString() + " 23:59:59";
+        LocalDate windowStart = openDate.minusDays(10);
+        LocalDate windowEnd = closeDate.plusDays(10);
+        String windowEndOfDay = windowEnd.toString() + " 23:59:59";
         PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM flights f " +
                 "JOIN tails t ON f.system_id = t.system_id " +
                 "WHERE t.tail = ? AND f.start_time <= ? AND f.end_time >= ?");
         stmt.setString(1, tailNumber);
-        stmt.setString(2, closeEndOfDay);
-        stmt.setString(3, openDate.toString());
+        stmt.setString(2, windowEndOfDay);
+        stmt.setString(3, windowStart.toString());
         ResultSet rs = stmt.executeQuery();
         int count = 0;
         if (rs.next()) {
@@ -175,24 +164,30 @@ public final class ExtractMaintenanceFlights {
 
     /**
      * Validates maintenance records by checking that each record has at least one flight
-     * in the database overlapping its time period (open–close). Writes only valid rows
-     * to a new CSV file. Run this before extraction so only valid records are used.
+     * in the extended window (10 days before open through 10 days after close). Writes valid rows to
+     * valid-{basename}.csv and invalid rows to invalid-{basename}.csv in the same directory
+     * as the input. Run this before extraction so only valid records are used.
      *
      * @param connection   the database connection
      * @param inputCsvPath path to the input maintenance CSV (e.g. test_maintenance.csv)
-     * @param outputCsvPath path for the output CSV containing only valid rows
      * @throws IOException  if reading or writing files fails
      * @throws SQLException if a query fails
      */
-    private static void validateMaintenanceRecords(Connection connection, String inputCsvPath,
-                                                   String outputCsvPath)
+    private static void validateMaintenanceRecords(Connection connection, String inputCsvPath)
             throws IOException, SQLException {
         int total = 0;
         int valid = 0;
         int invalid = 0;
 
+        File inputFile = new File(inputCsvPath);
+        String dir = inputFile.getParent();
+        String baseName = inputFile.getName();
+        String validCsvPath = (dir != null ? dir + File.separator : "") + "valid-" + baseName;
+        String invalidCsvPath = (dir != null ? dir + File.separator : "") + "invalid-" + baseName;
+
         try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath));
-             PrintWriter writer = new PrintWriter(new FileWriter(outputCsvPath))) {
+             PrintWriter validWriter = new PrintWriter(new FileWriter(validCsvPath));
+             PrintWriter invalidWriter = new PrintWriter(new FileWriter(invalidCsvPath))) {
 
             String line = reader.readLine();
             if (line == null) {
@@ -204,7 +199,8 @@ public final class ExtractMaintenanceFlights {
                 line = reader.readLine();
             }
             if (line != null && line.startsWith("workorder")) {
-                writer.println(line);
+                validWriter.println(line);
+                invalidWriter.println(line);
                 line = reader.readLine();
             }
 
@@ -224,12 +220,14 @@ public final class ExtractMaintenanceFlights {
                     int flightCount = countFlightsInMaintenancePeriod(connection,
                             record.getTailNumber(), record.getOpenDate(), record.getCloseDate());
                     if (flightCount > 0) {
-                        writer.println(line);
+                        validWriter.println(line);
                         valid++;
                     } else {
+                        invalidWriter.println(line);
                         invalid++;
                     }
                 } catch (Exception e) {
+                    invalidWriter.println(line);
                     invalid++;
                     System.err.println("Skip invalid line (parse error): " + e.getMessage());
                 }
@@ -237,7 +235,8 @@ public final class ExtractMaintenanceFlights {
             }
         }
 
-        System.out.println("Validation: total=" + total + " valid=" + valid + " invalid=" + invalid + " -> " + outputCsvPath);
+        System.out.println("Validation: total=" + total + " valid=" + valid + " invalid=" + invalid +
+                " -> valid: " + validCsvPath + ", invalid: " + invalidCsvPath);
     }
 
     /**
@@ -314,25 +313,13 @@ public final class ExtractMaintenanceFlights {
         return false;
     }
 
-    /**
-     * Get the records for the target cluster and label
-     *
-     * @param targetCluster the target cluster
-     * @param targetLabel   the target label
-     * @param targetRecords the list of all records
-     * @return the set of tails for the target cluster and label
-     */
-    private static Set<String> getRecordForClusterAndLabel(String targetCluster, String targetLabel,
-                                                           List<MaintenanceRecord> targetRecords) {
-        System.out.println("\n\n\n");
-        System.out.println("Getting records for cluster: '" + targetCluster + "' and label: '" + targetLabel + "'");
-
-        HashSet<String> targetTails = new HashSet<>();
+    /** Returns the set of tail numbers present in the given records. */
+    private static Set<String> getTailNumbersForRecords(List<MaintenanceRecord> targetRecords) {
+        Set<String> tails = new HashSet<>();
         for (MaintenanceRecord record : targetRecords) {
-            targetTails.add(record.getTailNumber());
+            tails.add(record.getTailNumber());
         }
-
-        return targetTails;
+        return tails;
     }
 
     /**
@@ -360,9 +347,6 @@ public final class ExtractMaintenanceFlights {
             stmt.setString(2, startDate.toString());
             stmt.setString(3, endDate.toString());
 
-            System.out.println(stmt);
-
-            // if there was a flight processed entry for this flight it was already processed
             ResultSet resultSet = stmt.executeQuery();
             while (resultSet.next()) {
                 int flightId = resultSet.getInt(1);
@@ -402,14 +386,72 @@ public final class ExtractMaintenanceFlights {
         ResultSet rs = stmt.executeQuery();
         boolean tookOff = false;
         if (rs.next()) {
-            int count = rs.getInt(1);
-            System.out.println("Flight " + flightId + " has " + count + " takeoff/landing itinerary entries");
-            tookOff = count > 0;
+            tookOff = rs.getInt(1) > 0;
         }
         rs.close();
         stmt.close();
-        System.out.println("Flight " + flightId + " took off: " + tookOff);
         return tookOff;
+    }
+
+    /**
+     * Assigns each flight to a maintenance phase (before/during/after) based on open and close dates.
+     * Maintenance can span multiple days, so the full open-close range is treated as during.
+     * <ul>
+     *   <li><b>before</b>: flight date in [openDate-10, openDate)</li>
+     *   <li><b>during</b>: flight date between open and close inclusive [openDate, closeDate]</li>
+     *   <li><b>after</b>: flight date in (closeDate, closeDate+10]</li>
+     * </ul>
+     *
+     * @param timeline    sorted list of aircraft timelines (flights)
+     * @param tailRecords sorted list of maintenance records for this tail in the cluster
+     */
+    private static void assignFlightsToPhases(List<AircraftTimeline> timeline,
+                                              List<MaintenanceRecord> tailRecords) {
+        for (AircraftTimeline ac : timeline) {
+            LocalDate flightDate = ac.getStartTime();
+            MaintenanceRecord duringRecord = null;
+            MaintenanceRecord beforeRecord = null;
+            MaintenanceRecord afterRecord = null;
+
+            for (MaintenanceRecord r : tailRecords) {
+                LocalDate openMinus10 = r.getOpenDate().minusDays(10);
+                LocalDate closePlus10 = r.getCloseDate().plusDays(10);
+
+                if (!flightDate.isBefore(r.getOpenDate()) && !flightDate.isAfter(r.getCloseDate())) {
+                    // flightDate in [open, close] - during maintenance (can span multiple days)
+                    if (duringRecord == null || r.getOpenDate().isBefore(duringRecord.getOpenDate())) {
+                        duringRecord = r; // pick earliest matching if overlap
+                    }
+                } else if (!flightDate.isBefore(openMinus10) && flightDate.isBefore(r.getOpenDate())) {
+                    // flightDate in [open-10, open); pick record with smallest openDate (closest)
+                    if (beforeRecord == null || r.getOpenDate().isBefore(beforeRecord.getOpenDate())) {
+                        beforeRecord = r;
+                    }
+                } else if (flightDate.isAfter(r.getCloseDate()) && !flightDate.isAfter(closePlus10)) {
+                    // flightDate in (close, close+10]; pick record with largest closeDate (closest)
+                    if (afterRecord == null || r.getCloseDate().isAfter(afterRecord.getCloseDate())) {
+                        afterRecord = r;
+                    }
+                }
+            }
+
+            // DURING takes precedence; otherwise BEFORE or AFTER
+            if (duringRecord != null) {
+                ac.setPreviousEvent(duringRecord, 0);
+                ac.setNextEvent(duringRecord, 0);
+            } else if (beforeRecord != null) {
+                long daysToNext = ChronoUnit.DAYS.between(flightDate, beforeRecord.getOpenDate());
+                ac.setPreviousEvent(null, -1);
+                ac.setNextEvent(beforeRecord, daysToNext);
+            } else if (afterRecord != null) {
+                long daysSincePrev = ChronoUnit.DAYS.between(afterRecord.getCloseDate(), flightDate);
+                ac.setPreviousEvent(afterRecord, daysSincePrev);
+                ac.setNextEvent(null, -1);
+            } else {
+                ac.setPreviousEvent(null, -1);
+                ac.setNextEvent(null, -1);
+            }
+        }
     }
 
     /**
@@ -426,7 +468,7 @@ public final class ExtractMaintenanceFlights {
             AircraftTimeline ac = timeline.get(currentAircraft);
 
             // Trigger counting when: 
-            // 1. Flight is on maintenance day (daysToNext==0 or daysSincePrevious==0)
+            // 1. Flight is during maintenance (between open and close; daysToNext==0 or daysSincePrevious==0)
             // 2. OR when transitioning between maintenance events (nextEvent changes from previous flight)
             boolean isOnMaintenanceDay = ac.getDaysToNext() == 0 || ac.getDaysSincePrevious() == 0;
             boolean isAfterMaintenanceGap = false;
@@ -435,25 +477,27 @@ public final class ExtractMaintenanceFlights {
                 AircraftTimeline prev = timeline.get(currentAircraft - 1);
                 // Check if this is the first flight after a maintenance event (next event changed)
                 isAfterMaintenanceGap = prev.getNextEvent() != ac.getNextEvent();
-                if (isAfterMaintenanceGap) {
-                    System.out.println("DEBUG: Detected maintenance gap at flight " + ac.getFlightId() + 
-                                     " - prevNext=" + (prev.getNextEvent() != null ? prev.getNextEvent().getLabel() : "null") +
-                                     ", curNext=" + (ac.getNextEvent() != null ? ac.getNextEvent().getLabel() : "null"));
-                }
             }
             
             if (isOnMaintenanceDay || isAfterMaintenanceGap) {
+                MaintenanceRecord recordForBefore = ac.getNextEvent(); // during or transition: record for "before" count
+                MaintenanceRecord recordForAfter = ac.getPreviousEvent(); // during or transition: record for "after" count
+
                 int i = 1;
                 int flightCount = 0;
                 while ((currentAircraft - i) >= 0 && flightCount < numberOfExtractions) {
                     AircraftTimeline a = timeline.get(currentAircraft - i);
                     if (a.getDaysToNext() == 0) {
-                        a.setFlightsToNext(-1); // -1 means the flight occurred day of the event, or outside of the range
+                        a.setFlightsToNext(-1); // -1 means during (flight between open and close)
+                        i++;
+                        continue;
+                    }
+                    // Only count flights that are "before" for the same record
+                    if (recordForBefore == null || a.getNextEvent() != recordForBefore) {
                         i++;
                         continue;
                     }
 
-                    // Check if this is a ground run - if so, skip it
                     if (!flightTookOff(connection, a.getFlightId())) {
                         System.out.println("Skipping ground-run flight (before): " + a.getFlightId());
                         a.setFlightsToNext(-2); // -2 means ground run, don't extract
@@ -472,13 +516,16 @@ public final class ExtractMaintenanceFlights {
                 while ((currentAircraft + i) < timeline.size() && flightCount < numberOfExtractions) {
                     AircraftTimeline a = timeline.get(currentAircraft + i);
                     if (a.getDaysSincePrevious() == 0) {
-                        a.setFlightsSincePrevious(-1); // -1 means the flight occurred day of the event, or
-                        // outside of the range
+                        a.setFlightsSincePrevious(-1); // -1 means during (flight between open and close)
+                        i++;
+                        continue;
+                    }
+                    // Only count flights that are "after" for the same record
+                    if (recordForAfter == null || a.getPreviousEvent() != recordForAfter) {
                         i++;
                         continue;
                     }
 
-                    // Check if this is a ground run - if so, skip it
                     if (!flightTookOff(connection, a.getFlightId())) {
                         System.out.println("Skipping ground-run flight (after): " + a.getFlightId());
                         a.setFlightsSincePrevious(-2); // -2 means ground run, don't extract
@@ -547,17 +594,18 @@ public final class ExtractMaintenanceFlights {
      *
      * @param connection      the database connection
      * @param outputDirectory the output directory
-     * @param eventCluster    the event cluster
      * @param event           the maintenance record
      * @param flight          the flight
      * @param when            the when string
-     * @param validation      the flight validation result (for touch-and-go detection)
+     * @param validation      the flight validation result (for phase marking)
+     * @param fileSplitIndices indices where to split CSV into multiple files (prolonged taxi), empty = single file
      * @throws IOException  if there is an error writing the file
      * @throws SQLException if there is an error with the SQL query
      */
-    private static void writeFiles(Connection connection, String outputDirectory, String eventCluster, 
+    private static void writeFiles(Connection connection, String outputDirectory,
                                    MaintenanceRecord event, Flight flight, String when,
                                    FlightPhaseProcessor.FlightValidationResult validation,
+                                   List<Integer> fileSplitIndices,
                                    boolean debugPhases) 
             throws IOException, SQLException {
         assert flight != null;
@@ -602,7 +650,7 @@ public final class ExtractMaintenanceFlights {
 
         // First, write the original CSV
         try {
-            CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile + ".tmp")), false);
+            CachedCSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile + ".tmp")), false);
             csvWriter.writeToFile();
         } catch (java.sql.SQLException e) {
             System.err.println("Warning: SQL error while writing CSV for flight " + flight.getId() + " | Tail: " + flight.getTailNumber() + " | Upload ID: " + flight.getUploadId() + " | Event: " + (event != null ? event.getLabel() : "null") + ": " + e.getMessage());
@@ -624,11 +672,10 @@ public final class ExtractMaintenanceFlights {
         }
 
         // Read the temporary CSV and write with FlightPhase column
-        // Handle touch-and-go splitting if needed
-        if (validation != null && validation.hasTouchAndGo()) {
-            // Split flight into multiple CSV files
+        // Split into multiple files only for prolonged taxi (30+ sec in middle); not touch-and-go
+        if (fileSplitIndices != null && !fileSplitIndices.isEmpty()) {
             System.out.println("Splitting flight " + flight.getId() + " into " + 
-                             (validation.splitIndices.size() + 1) + " segments");
+                             (fileSplitIndices.size() + 1) + " segments (prolonged taxi)");
             
             try (BufferedReader reader = new BufferedReader(new FileReader(outfile + ".tmp"))) {
                 // Read all lines
@@ -662,7 +709,7 @@ public final class ExtractMaintenanceFlights {
                 int segmentNumber = 1;
                 int startRow = 0;
                 
-                for (int splitIndex : validation.splitIndices) {
+                for (int splitIndex : fileSplitIndices) {
                     // Determine output file name
                     String segmentFile = fullDir + "/" + flight.getId() + "-" + segmentNumber + ".csv";
 
@@ -772,7 +819,7 @@ public final class ExtractMaintenanceFlights {
                 System.out.println("  Created segment " + segmentNumber + ": " + new File(finalFile).getName());
             }
         } else {
-            // No touch-and-go, write single file
+            // No prolonged taxi split, write single file
             try (BufferedReader reader = new BufferedReader(new FileReader(outfile + ".tmp"));
                  PrintWriter writer = new PrintWriter(new FileWriter(outfile))) {
                 
@@ -857,11 +904,10 @@ public final class ExtractMaintenanceFlights {
      * Ensures directory structure and JSON record file exist for a maintenance record
      *
      * @param outputDirectory the output directory
-     * @param eventCluster    the event cluster name
      * @param event           the maintenance record
      * @throws IOException if there is an error writing the file
      */
-    private static void ensureClusterDirectoryExists(String outputDirectory, String eventCluster, MaintenanceRecord event) throws IOException {
+    private static void ensureClusterDirectoryExists(String outputDirectory, MaintenanceRecord event) throws IOException {
         String clusterDir = event.getLabelId();
         String workorderTailDir = event.getWorkorderNumber() + "_" + event.getTailNumber();
         String baseDir = outputDirectory + "/" + clusterDir + "/" + workorderTailDir;
@@ -898,10 +944,9 @@ public final class ExtractMaintenanceFlights {
             AircraftTimeline ac = timeline.get(currentAircraft);
 
             // Extract flights if:
-            // 1. Day of maintenance (before or after)
-            // 2. Between open and close dates (daysSincePrevious >= 0 AND daysToNext >= 0)
-            // 3. One of 3 flights before (flightsToNext 0-2)
-            // 4. One of 3 flights after (flightsSincePrevious 0-2), but only if no nearby maintenance
+            // 1. During: flight between open and close inclusive (daysSincePrevious >= 0 AND daysToNext >= 0)
+            // 2. Before: one of 3 flights in [openDate-10, openDate) (flightsToNext 0-2)
+            // 3. After: one of 3 flights in (closeDate, closeDate+10] (flightsSincePrevious 0-2), unless nearby maintenance
             boolean isDuringMaintenance = ac.getDaysSincePrevious() >= 0 && ac.getDaysToNext() >= 0;
             boolean isBeforeMaintenance = ac.getFlightsToNext() >= 0 && ac.getFlightsToNext() <= 2;
             boolean isAfterMaintenance = ac.getFlightsSincePrevious() >= 0 && ac.getFlightsSincePrevious() <= 2;
@@ -928,8 +973,9 @@ public final class ExtractMaintenanceFlights {
 
                 Flight flight = Flight.getFlight(connection, ac.getFlightId());
                 
-                // Validate flight and check for touch-and-gos BEFORE extraction
+                // Validate flight, detect prolonged taxi for file splitting, touch-and-go for phase marking
                 FlightPhaseProcessor.FlightValidationResult validation = null;
+                List<Integer> fileSplitIndices = new ArrayList<>();
                 try {
                     double[] altAGLValues = FlightPhaseProcessor.getAltAGLValues(connection, flight.getId(), Integer.MAX_VALUE);
                     validation = FlightPhaseProcessor.validateAndDetectTouchAndGo(altAGLValues);
@@ -941,10 +987,11 @@ public final class ExtractMaintenanceFlights {
                         continue;
                     }
                     
-                    // Handle touch-and-gos by splitting CSV files
-                    if (validation.hasTouchAndGo()) {
-                        System.out.println("Flight " + flight.getId() + " has " + validation.getTouchAndGoCount() + 
-                                         " touch-and-go(s) detected");
+                    // File splitting: only for prolonged taxi (30+ sec in middle)
+                    fileSplitIndices = FlightPhaseProcessor.detectProlongedTaxiSplits(connection, flight.getId());
+                    if (!fileSplitIndices.isEmpty()) {
+                        System.out.println("Flight " + flight.getId() + " has " + fileSplitIndices.size() +
+                                         " prolonged taxi split(s) (30+ sec)");
                     }
                 } catch (Exception e) {
                     System.err.println("Warning: Could not validate flight " + flight.getId() + ": " + e.getMessage());
@@ -955,7 +1002,7 @@ public final class ExtractMaintenanceFlights {
 
                 MaintenanceRecord event = null;
                 if (isDuringMaintenance) {
-                    // Flight is between open and close dates
+                    // Flight is between open and close (maintenance period)
                     event = ac.getPreviousEvent();
                     when = "_during";
                 } else if (isAfterMaintenance && !hasNearbyNextMaintenance) {
@@ -977,7 +1024,7 @@ public final class ExtractMaintenanceFlights {
                     continue;
                 }
 
-                writeFiles(connection, outputDirectory, eventCluster, event, flight, when, validation, debugPhases);
+                writeFiles(connection, outputDirectory, event, flight, when, validation, fileSplitIndices, debugPhases);
             }
         }
     }
@@ -1206,18 +1253,12 @@ public final class ExtractMaintenanceFlights {
     public static void main(String[] arguments) throws SQLException {
         Connection connection = Database.getConnection();
 
-        // Run only validation: --validate <input_csv> [output_csv]
-        // If output_csv omitted, writes to same path with _valid before .csv (e.g. test_maintenance.csv -> test_maintenance_valid.csv).
-        // If output_csv is just a filename (no path), it is written next to the input file.
+        // Run only validation: --validate <input_csv>
+        // Writes valid-maintenance.csv and invalid-maintenance.csv in the same directory as input.
         if (arguments.length >= 2 && "--validate".equals(arguments[0])) {
             String inputCsv = arguments[1];
-            String outputCsv = arguments.length >= 3 ? arguments[2] : inputCsv.replaceFirst("\\.csv$", "_valid.csv");
-            if (arguments.length >= 3 && !outputCsv.contains(File.separator) && !outputCsv.contains("/")) {
-                String inputDir = new File(inputCsv).getParent();
-                outputCsv = (inputDir != null ? inputDir + File.separator : "") + outputCsv;
-            }
             try {
-                validateMaintenanceRecords(connection, inputCsv, outputCsv);
+                validateMaintenanceRecords(connection, inputCsv);
             } catch (IOException e) {
                 System.err.println("Validation failed: " + e.getMessage());
                 e.printStackTrace();
@@ -1226,16 +1267,14 @@ public final class ExtractMaintenanceFlights {
             return;
         }
 
-        // Verify validation results: --validate-verify <input_csv> [output_csv]
-        // If output_csv omitted, expects input path with _valid before .csv (e.g. test_maintenance_valid.csv).
-        // If output_csv is just a filename (no path), it is resolved next to the input file.
+        // Verify validation results: --validate-verify <input_csv>
+        // Expects valid-{basename}.csv in same directory as input.
         if (arguments.length >= 2 && "--validate-verify".equals(arguments[0])) {
             String inputCsv = arguments[1];
-            String outputCsv = arguments.length >= 3 ? arguments[2] : inputCsv.replaceFirst("\\.csv$", "_valid.csv");
-            if (arguments.length >= 3 && !outputCsv.contains(File.separator) && !outputCsv.contains("/")) {
-                String inputDir = new File(inputCsv).getParent();
-                outputCsv = (inputDir != null ? inputDir + File.separator : "") + outputCsv;
-            }
+            File inputFile = new File(inputCsv);
+            String dir = inputFile.getParent();
+            String baseName = inputFile.getName();
+            String outputCsv = (dir != null ? dir + File.separator : "") + "valid-" + baseName;
             try {
                 boolean ok = verifyValidationResults(connection, inputCsv, outputCsv);
                 System.exit(ok ? 0 : 1);
@@ -1270,8 +1309,7 @@ public final class ExtractMaintenanceFlights {
 
         System.out.println("cluster to label:");
         for (Map.Entry<String, String> kvPair : CLUSTER_TO_LABEL.entrySet()) {
-            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue()
-                    + "' -- count: " + CLUSTER_COUNTS.get(kvPair.getKey()));
+            System.out.println("\t'" + kvPair.getKey() + "' -> '" + kvPair.getValue() + "'");
         }
 
         System.out.println("unique airframes: ");
@@ -1292,17 +1330,17 @@ public final class ExtractMaintenanceFlights {
             try {
                 // for each tail
                 // 1. get all flights between start and end date
-                ArrayList<String> tailsWithoutFlights = new ArrayList<String>();
+                ArrayList<String> tailsWithoutFlights = new ArrayList<>();
                 HashMap<String, Integer> tailFlightCounts = new HashMap<>();
                 HashMap<String, Integer> tailSystemIdCounts = new HashMap<>();
 
                 LocalDate startDate = targetRecords.get(0).getOpenDate().minusDays(10);
                 LocalDate endDate = targetRecords.get(targetRecords.size() - 1).getCloseDate().plusDays(10);
-                Set<String> targetTails = getRecordForClusterAndLabel(actualCluster, targetLabel, targetRecords);
+                Set<String> targetTails = getTailNumbersForRecords(targetRecords);
 
-            System.out.println("earliest date for label: " + startDate);
-            System.out.println("latest date for label: " + endDate);
-            System.out.println("label present for tails: " + targetTails);
+                System.out.println("earliest date for label: " + startDate);
+                System.out.println("latest date for label: " + endDate);
+                System.out.println("tails: " + targetTails);
 
             for (String tailNumber : targetTails) {
                 System.out.println("\n\nNEW TAIL: '" + tailNumber + "'");
@@ -1316,7 +1354,7 @@ public final class ExtractMaintenanceFlights {
                     String recordCluster = LABEL_TO_CLUSTER.get(record.getLabel());
                     if (recordCluster != null && recordCluster.equals(actualCluster)) {
                         // Create directory structure upfront before filtering
-                        ensureClusterDirectoryExists(outputDirectory, actualCluster, record);
+                        ensureClusterDirectoryExists(outputDirectory, record);
                         tailRecords.add(record);
                     }
                 }
@@ -1341,67 +1379,11 @@ public final class ExtractMaintenanceFlights {
                 List<AircraftTimeline> timeline = buildTimeline(connection, tailSet, startDate, endDate);
 
 
-                int currentRecord = 0;
                 Collections.sort(timeline);
-                MaintenanceRecord previousRecord = null;
-                if (tailRecords.isEmpty()) {
-                    System.out.println("No maintenance records for tail '" + tailNumber + "' in this cluster. Skipping.");
-                    continue;
-                }
-                MaintenanceRecord record = tailRecords.get(currentRecord);
-                for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
-                    AircraftTimeline ac = timeline.get(currentAircraft);
 
-                    while (record != null && ac.getEndTime().isAfter(record.getOpenDate())) {
-                        previousRecord = record;
-                        currentRecord++;
-                        if (currentRecord >= tailRecords.size()) {
-                            record = null;
-                            break;
-                        }
-                        record = tailRecords.get(currentRecord);
-                    }
-
-                    while (record == null || !ac.getEndTime().isAfter(record.getCloseDate())) {
-                        long daysToNext = -1;
-                        if (record != null)
-                            daysToNext = Math.max(0, ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate()));
-
-                        if (daysToNext == 0) {
-                            // this is the day an event occurred so the previous is the current record as
-                            // well
-                            previousRecord = record;
-                        }
-
-                        long daysSincePrev = -1;
-                        if (previousRecord != null)
-                            daysSincePrev = Math.max(0,
-                                    ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
-
-                        if (previousRecord != null) {
-                            ac.setPreviousEvent(previousRecord, daysSincePrev);
-                        } else {
-                            ac.setPreviousEvent(null, -1);
-                        }
-
-                        if (record != null) {
-                            ac.setNextEvent(record, daysToNext);
-                        } else {
-                            ac.setNextEvent(null, -1);
-                        }
-
-                        currentAircraft++;
-                        if (currentAircraft >= timeline.size()) {
-                            break;
-                        }
-                        ac = timeline.get(currentAircraft);
-                    }
-
-                    if (record != null) {
-                        // step back so the last AC can be processed
-                        currentAircraft--;
-                    }
-                }
+                // Assign each flight to phase (before/during/after) based on open/close:
+                // - before: [openDate-10, openDate), during: [openDate, closeDate], after: (closeDate, closeDate+10]
+                assignFlightsToPhases(timeline, tailRecords);
 
                 // setting flights to next/flights since prev
                 setFlightsToNextFlights(connection, timeline);

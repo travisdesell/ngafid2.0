@@ -102,10 +102,12 @@ public final class FlightPhaseProcessor {
 
     /**
      * Result of flight validation and touch-and-go detection.
+     * splitIndices: used for touch-and-go phase marking (not for file splitting).
+     * File splitting uses detectProlongedTaxiSplits() instead.
      */
     public static class FlightValidationResult {
         public final boolean isValid;           // false if flight never exceeds 10ft AGL
-        public final List<Integer> splitIndices; // indices where to split for touch-and-gos (empty if none)
+        public final List<Integer> splitIndices; // touch-and-go indices for phase marking (empty if none)
         public final double maxAltAGL;          // maximum altitude reached
         
         public FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
@@ -128,17 +130,14 @@ public final class FlightPhaseProcessor {
     }
 
     /**
-     * Validates flight and detects ALL touch-and-gos in a single pass.
-     * 
-     * NEW CRITERIA:
+     * Validates flight and detects touch-and-gos for phase marking.
      * - Invalid (ground-only): If max AltAGL never exceeds 10 ft
-     * - Touch-and-go: At least 10 consecutive rows where AltAGL = 0 ft, then goes up
-     *   * Only counts as touch-and-go if aircraft has climbed above 200 ft first (excludes initial taxi)
-     *   * Splits the zeros in half: first half ends first flight, second half starts next flight
-     *   * Both segments are marked as TOUCH_AND_GO phase
-     * 
+     * - Touch-and-go: At least 10 consecutive rows where AltAGL &lt; 5 ft, then goes up
+     *   (must have climbed above 200 ft first to exclude initial taxi).
+     * splitIndices are used only for TOUCH_AND_GO phase marking, not for file splitting.
+     *
      * @param altAGLValues Array of altitude above ground values
-     * @return FlightValidationResult containing validation status and all split points
+     * @return FlightValidationResult with validation status and touch-and-go indices for phase marking
      */
     public static FlightValidationResult validateAndDetectTouchAndGo(double[] altAGLValues) {
         if (altAGLValues == null || altAGLValues.length == 0) {
@@ -182,9 +181,95 @@ public final class FlightPhaseProcessor {
                 zeroStartIndex = -1;
             }
         }
-        // Return all detected touch-and-gos
+        // Return all detected touch-and-gos (for phase marking only; file splitting uses prolonged taxi)
         boolean isValid = maxAltAGL > GROUND_THRESHOLD;
         return new FlightValidationResult(isValid, splitIndices, maxAltAGL);
+    }
+
+    /**
+     * Detects prolonged taxi (30+ seconds) in the middle of a flight using TAXI criteria:
+     * altitude &lt; 5 ft, ground speed &lt; 8 knots, RPM &lt; 2100 (same logic as TAXI phase).
+     * Used for splitting a single CSV into multiple flight files. Taxi at the beginning
+     * (before first climb) and at the end (final approach/landing) are excluded.
+     * Split point is at the midpoint of each prolonged taxi window (first half to one
+     * file, second half to the next).
+     *
+     * @param connection the database connection
+     * @param flightId   the flight ID
+     * @return list of row indices where to split (midpoints of prolonged taxi sequences), empty if none
+     */
+    public static List<Integer> detectProlongedTaxiSplits(Connection connection, int flightId)
+            throws SQLException, IOException {
+        double[] altAGL = getAltAGLValues(connection, flightId, Integer.MAX_VALUE);
+        double[] groundSpeed = getDoubleSeriesValues(connection, flightId, Parameters.GND_SPD, Integer.MAX_VALUE);
+        double[] rpm = null;
+        try {
+            rpm = getDoubleSeriesValues(connection, flightId, Parameters.E1_RPM, Integer.MAX_VALUE);
+        } catch (Exception e) {
+            // RPM may not be available for all aircraft
+        }
+        return detectProlongedTaxiSplitsFromSeries(altAGL, groundSpeed, rpm);
+    }
+
+    /**
+     * Detects prolonged taxi from pre-loaded time series. Taxi = alt &lt; 5 ft, speed &lt; 8 kts, RPM &lt; 2100.
+     */
+    public static List<Integer> detectProlongedTaxiSplitsFromSeries(
+            double[] altAGLValues, double[] groundSpeedValues, double[] rpmValues) {
+        List<Integer> splits = new ArrayList<>();
+        if (altAGLValues == null || altAGLValues.length == 0) return splits;
+        int n = altAGLValues.length;
+        if (groundSpeedValues == null || groundSpeedValues.length == 0) return splits;
+        n = Math.min(n, groundSpeedValues.length);
+
+        final double GROUND_ALT = 5.0;           // ft - on ground
+        final double TAXI_SPEED_MAX = 8.0;       // kts - taxi speed &lt; 8 (takeoff is 14.5+)
+        final double TAKEOFF_RPM = 2100.0;       // RPM - takeoff is 2100+
+        final int MIN_TAXI_ROWS = 30;            // 30 seconds at ~1 Hz sampling
+        final double CLIMB_THRESHOLD = 200.0;    // ft - must have flown first (excludes start taxi)
+
+        boolean hasClimbedHigh = false;
+        int consecCount = 0;
+        int startIdx = -1;
+        int rpmLen = (rpmValues != null) ? rpmValues.length : 0;
+
+        for (int i = 0; i < n; i++) {
+            double alt = altAGLValues[i];
+            double gs = (i < groundSpeedValues.length) ? groundSpeedValues[i] : Double.NaN;
+            double r = (rpmValues != null && i < rpmLen) ? rpmValues[i] : Double.NaN;
+
+            if (Double.isNaN(alt)) { consecCount = 0; startIdx = -1; continue; }
+            if (alt > CLIMB_THRESHOLD) hasClimbedHigh = true;
+
+            // Taxi: alt &lt; 5 ft, speed &lt; 8 kts, RPM &lt; 2100 (or RPM not available)
+            boolean isTaxi = alt < GROUND_ALT
+                    && !Double.isNaN(gs) && gs < TAXI_SPEED_MAX
+                    && (Double.isNaN(r) || r < TAKEOFF_RPM);
+
+            if (hasClimbedHigh && isTaxi) {
+                if (consecCount == 0) startIdx = i;
+                consecCount++;
+            } else if (hasClimbedHigh && !isTaxi && consecCount >= MIN_TAXI_ROWS) {
+                int midpoint = startIdx + consecCount / 2;
+                splits.add(midpoint);
+                consecCount = 0;
+                startIdx = -1;
+            } else if (!isTaxi) {
+                consecCount = 0;
+                startIdx = -1;
+            }
+        }
+        return splits;
+    }
+
+    private static double[] getDoubleSeriesValues(Connection connection, int flightId,
+                                                   String columnName, int maxRows)
+            throws SQLException, IOException {
+        DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, columnName);
+        int len = Math.min(series.size(), maxRows);
+        double[] arr = new double[len];
+        for (int i = 0; i < len; i++) arr[i] = series.get(i);
+        return arr;
     }
 
     /**
