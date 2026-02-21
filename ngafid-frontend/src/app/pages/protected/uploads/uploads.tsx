@@ -40,6 +40,8 @@ import type {
     UploadListResponse,
     UploadStatus
 } from "./_types/types";
+import { openModal } from "@/components/modals/modal_store";
+import UploadDetailsModal from "@/components/modals/upload_details_modal/upload_details_modal";
 
 
 const log = getLogger("Uploads", "black", "Page");
@@ -549,7 +551,7 @@ export default function UploadsPage() {
             setError(null);
 
             // Seed pending entry
-            const pendingEntry: UploadInfo = {
+            const pendingEntry = {
                 id: -1,
                 identifier: `${file.size}-${safeFilename(file.name)}`,
                 filename: file.name,
@@ -561,13 +563,21 @@ export default function UploadsPage() {
                 numberChunks: Math.ceil(file.size / CHUNK_SIZE),
                 position: pending.length,
                 file,
-                md5Hash: ""
-            };
+                md5Hash: "",
+                uploaderId: undefined,
+                fleetId: -1,
+            } as UploadInfo;
+
             setPending((p) => {
 
                 // Guard to prevent duplicates
-                if (p.some((u) => u.identifier === pendingEntry.identifier))
+                if (p.some((u) => u.identifier === pendingEntry.identifier)) {
+                    setModal(ErrorModal, {
+                        title: "Duplicate File",
+                        message: `The file "${file.name}" is already being uploaded. Please wait for the current upload to finish before uploading it again.`
+                    });
                     return p;
+                }
 
                 return [...p, pendingEntry];
                 
@@ -810,6 +820,11 @@ export default function UploadsPage() {
 
     };
 
+    const openUploadDetailsModal = (uploadImportData: UploadImportItem) => {
+
+        openModal(UploadDetailsModal, { uploadImportData });
+
+    }
 
     const UploadCard = (u:UploadInfo|UploadImportItem, isPending?:boolean) => {
 
@@ -820,7 +835,24 @@ export default function UploadsPage() {
         const disableAll = (u.status === "HASHING" || u.status === "UPLOADING");
         const isImported = (u.status === "PROCESSED_OK");
         const hasImportData = ("validFlights" in u);
-        const totalFlights = hasImportData ? (u.validFlights + u.errorFlights) : 0;
+        const totalFlights = hasImportData ? (u.validFlights + u.warningFlights + u.errorFlights) : 0;
+
+        const importPendingMessage = (() => {
+
+            switch (u.status) {
+
+                case "HASHING":
+                    return "Hashing, please do not refresh or navigate away...";
+
+                case "UPLOADING":
+                    return "Uploading, please do not refresh or navigate away...";
+
+                default:
+                    return "Awaiting import processing...";
+
+            }
+
+        })();
 
         return (
             <Card className="card-glossy w-full bg-background! h-48">
@@ -911,7 +943,7 @@ export default function UploadsPage() {
                                         {u.warningFlights}
                                     </span>
                                 </Badge>
-                                <Badge className="inline-flex grow items-center gap-1 rounded-md px-2 py-1 bg-(--error) dark:text-shadow-md" variant={"outline"}>
+                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-(--error) dark:text-shadow-md" variant={"outline"}>
                                     <span className="flex items-center gap-1">
                                         <CircleAlert className="h-3 w-3" />
                                         Errors:
@@ -922,7 +954,10 @@ export default function UploadsPage() {
                                 </Badge>
                             </div>
 
-                            <Button variant={"ghost"} >
+                            <Button
+                                variant={"ghost"} 
+                                onClick={() => openUploadDetailsModal(u)}
+                            >
                                 <List />
                                 Details
                             </Button>
@@ -931,7 +966,7 @@ export default function UploadsPage() {
                         :
                         <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
                             <Loader size={20} className="animate-spin duration-2000" />
-                            <span>Awaiting import processing...</span>
+                            <span>{importPendingMessage}</span>
                         </div>
                     }
 
@@ -1071,7 +1106,7 @@ export default function UploadsPage() {
                         </div> */}
 
                     </CardHeader>
-                    <CardContent className="space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto">
+                    <CardContent className="space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
 
                         {/* <div className="space-y-3 grid-cols-2 grid-rows-1 gap-2 bg-red-500/50"> */}
 
