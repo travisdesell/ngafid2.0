@@ -47,7 +47,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
 
     //Union of event names (preserve first row's order, then append any extras)
-    const primaryOrder = rows[0]?.names ?? [];
+    const primaryOrder = rows[0]?.names?? [];
     const extra = rows.flatMap(r => r.names.filter(n => !primaryOrder.includes(n)));
     const eventNames = [...primaryOrder, ...extra];
 
@@ -110,6 +110,10 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
     });
 
+    // Use an adaptive height based on the number of events
+    const BASE_HEIGHT = 300;
+    const HEIGHT_PER_EVENT = 40;
+    const chartHeight = BASE_HEIGHT + (chartData.length * HEIGHT_PER_EVENT);
 
     log("Rendering...");
     return (
@@ -126,7 +130,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
             <CardContent>
 
-                <ChartContainer config={chartConfig} className="min-h-0 w-full">
+                <ChartContainer config={chartConfig} className="min-h-0 w-full" style={{minHeight: chartHeight}}>
                     {
                         (!chartHasData)
                         ?
@@ -149,7 +153,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
                                 tickLine={false}
                                 axisLine={false}
                                 tickMargin={8}
-                                width={150}
+                                width={200}
                             />
 
                             <CartesianGrid vertical={false} />
