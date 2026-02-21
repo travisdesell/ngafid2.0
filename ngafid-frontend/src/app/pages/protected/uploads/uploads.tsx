@@ -979,15 +979,6 @@ export default function UploadsPage() {
         Placeholder Paginator Component
     */
     const Pager = (page: number, pages: number, onPage: (n: number) => void) => (
-        // <div className="flex items-center justify-end gap-2">
-        //     <Button variant="outline" size="icon" disabled={page <= 0} onClick={() => onPage(page - 1)} title="Previous">
-        //         <ChevronLeft className="h-4 w-4" />
-        //     </Button>
-        //     <div className="text-xs text-muted-foreground">Page {page + 1} / {Math.max(1, pages)}</div>
-        //     <Button variant="outline" size="icon" disabled={pages === 0 || page >= pages - 1} onClick={() => onPage(page + 1)} title="Next">
-        //         <ChevronRight className="h-4 w-4" />
-        //     </Button>
-        // </div>
 
         <Pagination className="mx-0 w-full justify-start p-4">
             <PaginationContent>
@@ -1089,40 +1080,20 @@ export default function UploadsPage() {
                             <CardDescription>Manage file uploads and review imported results.</CardDescription>
                         </div>
 
-                        {/* File Picker */}
-                        {/* <div className="flex flex-wrap items-center w-fit">
-
-                            <Input className="w-[200px] hidden!" type="file" multiple onChange={(e) => onPickFiles(e.target.files)} disabled={busy} />
-                            <Button onClick={() => (document.querySelector<HTMLInputElement>('input[type="file"]')?.click())} disabled={busy}>
-                                <UploadIcon className="h-4 w-4 mr-2" />
-                                Choose Files
-                            </Button>
-                            {busy && (
-                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Info className="h-3 w-3" /> Working…
-                                </span>
-                            )}
-
-                        </div> */}
-
                     </CardHeader>
                     <CardContent className="space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
 
-                        {/* <div className="space-y-3 grid-cols-2 grid-rows-1 gap-2 bg-red-500/50"> */}
+                        {mergedUploadsImports.map((u: UploadInfo | UploadImportItem, i) =>
 
-                            {mergedUploadsImports.map((u: UploadInfo | UploadImportItem, i) =>
-
-                                <motion.div
-                                    key={`upload-${u.identifier}`}
-                                    initial={{ opacity: 0.00 }}
-                                    animate={{ opacity: 1.00 }}
-                                    transition={{ duration: 0.50, delay: 0.03 * i }}
-                                >
-                                    {UploadCard(u, u.id === -1)}
-                                </motion.div>
-                            )}
-                            
-                        {/* </div> */}
+                            <motion.div
+                                key={`upload-${u.identifier}`}
+                                initial={{ opacity: 0.00 }}
+                                animate={{ opacity: 1.00 }}
+                                transition={{ duration: 0.50, delay: 0.03 * i }}
+                            >
+                                {UploadCard(u, u.id === -1)}
+                            </motion.div>
+                        )}
 
                     </CardContent>
 
