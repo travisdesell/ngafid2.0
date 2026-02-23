@@ -933,33 +933,6 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Ensures directory structure and JSON record file exist for a maintenance record
-     *
-     * @param outputDirectory the output directory
-     * @param event           the maintenance record
-     * @throws IOException if there is an error writing the file
-     */
-    private static void ensureClusterDirectoryExists(String outputDirectory, MaintenanceRecord event) throws IOException {
-        String clusterDir = event.getLabelId();
-        String workorderTailDir = event.getWorkorderNumber() + "_" + event.getTailNumber();
-        String baseDir = outputDirectory + "/" + clusterDir + "/" + workorderTailDir;
-        
-        // Create base directory
-        File directory = new File(baseDir);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-        
-        // Generate JSON record file
-        File jsonFile = new File(baseDir + "/" + workorderTailDir + "_record.json");
-        if (!jsonFile.exists()) {
-            try (FileWriter jsonWriter = new FileWriter(jsonFile)) {
-                jsonWriter.write(event.toJSON());
-            }
-        }
-    }
-
-    /**
      * Export the files for the given connection, timeline, target cluster and output directory
      *
      * @param connection      the database connection
@@ -1050,6 +1023,34 @@ public final class ExtractMaintenanceFlights {
                 try {
                     fileSplitIndices = FlightPhaseProcessor.detectProlongedTaxiSplits(connection, flight.getId());
                 } catch (Exception ignored) { }
+
+                // Only split if every resulting segment reaches cruise (max AGL >= 600 ft)
+                if (!fileSplitIndices.isEmpty() && altAGLValues != null) {
+                    List<Integer> sortedSplits = new ArrayList<>(fileSplitIndices);
+                    Collections.sort(sortedSplits);
+                    int n = altAGLValues.length;
+                    int start = 0;
+                    boolean allReachCruise = true;
+                    for (int split : sortedSplits) {
+                        double segMax = Double.NEGATIVE_INFINITY;
+                        for (int i = start; i < split && i < n; i++) {
+                            if (!Double.isNaN(altAGLValues[i]) && altAGLValues[i] > segMax) segMax = altAGLValues[i];
+                        }
+                        if (segMax < CRUISE_ALTITUDE_AGL_FT) {
+                            allReachCruise = false;
+                            break;
+                        }
+                        start = split;
+                    }
+                    if (allReachCruise && start < n) {
+                        double segMax = Double.NEGATIVE_INFINITY;
+                        for (int i = start; i < n; i++) {
+                            if (!Double.isNaN(altAGLValues[i]) && altAGLValues[i] > segMax) segMax = altAGLValues[i];
+                        }
+                        if (segMax < CRUISE_ALTITUDE_AGL_FT) allReachCruise = false;
+                    }
+                    if (!allReachCruise) fileSplitIndices = new ArrayList<>();
+                }
 
                 String when = null;
 
@@ -1167,11 +1168,32 @@ public final class ExtractMaintenanceFlights {
             json.append("    }\n");
             json.append("  },\n");
             
-            // Generate workorders array
+            // Generate workorders array (only workorders that have at least one extracted flight)
             json.append("  \"workorders\": [\n");
             
-            int recordIndex = 0;
+            boolean firstWorkorder = true;
             for (MaintenanceRecord record : ALL_RECORDS) {
+                String labelId = record.getLabelId();
+                String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
+                File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
+
+                java.util.List<String> beforePaths = new java.util.ArrayList<>();
+                java.util.List<String> duringPaths = new java.util.ArrayList<>();
+                java.util.List<String> afterPaths = new java.util.ArrayList<>();
+                collectPhasePaths(labelId, workorderTail, workorderDir, "before", beforePaths);
+                collectPhasePaths(labelId, workorderTail, workorderDir, "during", duringPaths);
+                collectPhasePaths(labelId, workorderTail, workorderDir, "after", afterPaths);
+                int totalFlightsForWorkorder = beforePaths.size() + duringPaths.size() + afterPaths.size();
+
+                if (totalFlightsForWorkorder == 0) {
+                    continue; // Skip workorders with no extracted flights; no manifest entry, no record_json
+                }
+
+                if (!firstWorkorder) {
+                    json.append(",\n");
+                }
+                firstWorkorder = false;
+
                 json.append("    {\n");
                 json.append("      \"workorder\": ").append(record.getWorkorderNumber()).append(",\n");
                 json.append("      \"label_id\": \"").append(record.getLabelId()).append("\",\n");
@@ -1181,98 +1203,17 @@ public final class ExtractMaintenanceFlights {
                 json.append("      \"open_date\": \"").append(record.getOpenDate().toString()).append("\",\n");
                 json.append("      \"close_date\": \"").append(record.getCloseDate().toString()).append("\",\n");
                 json.append("      \"original_action\": \"").append(escapeJson(record.getOriginalAction())).append("\",\n");
-                
-                // Get flight paths for this workorder
-                String labelId = record.getLabelId();
-                String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
-                File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
-                
                 json.append("      \"flights\": {\n");
-                for (String phase : new String[]{"before", "during", "after"}) {
-                    json.append("        \"").append(phase).append("\": [\n");
-                    
-                    File phaseDir = new File(workorderDir, phase);
-                    if (phaseDir.exists() && phaseDir.isDirectory()) {
-                        File[] csvFiles = phaseDir.listFiles((dir, name) -> name.endsWith(".csv"));
-                        if (csvFiles != null) {
-                            // Sort by base number, then by suffix (e.g., 1389.csv, 1389-1.csv, 1389-2.csv)
-                            java.util.Arrays.sort(csvFiles, (f1, f2) -> {
-                                String n1 = f1.getName();
-                                String n2 = f2.getName();
-                                // Match: 1389.csv, 1389-1.csv, 1389-2_phases.csv, etc.
-                                java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)(?:-(\\d+))?.*\\.csv");
-                                java.util.regex.Matcher m1 = p.matcher(n1);
-                                java.util.regex.Matcher m2 = p.matcher(n2);
-                                int base1 = 0, base2 = 0, suffix1 = 0, suffix2 = 0;
-                                if (m1.matches()) {
-                                    base1 = Integer.parseInt(m1.group(1));
-                                    suffix1 = m1.group(2) != null ? Integer.parseInt(m1.group(2)) : 0;
-                                }
-                                if (m2.matches()) {
-                                    base2 = Integer.parseInt(m2.group(1));
-                                    suffix2 = m2.group(2) != null ? Integer.parseInt(m2.group(2)) : 0;
-                                }
-                                if (base1 != base2) return Integer.compare(base1, base2);
-                                return Integer.compare(suffix1, suffix2);
-                            });
-                            for (int i = 0; i < csvFiles.length; i++) {
-                                String fileName = csvFiles[i].getName();
-                                String basePattern = "^(\\d+)(\\.csv)$";
-                                String derivedPattern = "^(\\d+)-(\\d+)(\\.csv)$";
-                                java.util.regex.Pattern baseRegex = java.util.regex.Pattern.compile(basePattern);
-                                java.util.regex.Pattern derivedRegex = java.util.regex.Pattern.compile(derivedPattern);
-                                java.util.regex.Matcher mBase = baseRegex.matcher(fileName);
-                                String baseNum = null;
-                                boolean hasDerived = false;
-                                if (mBase.matches()) {
-                                    baseNum = mBase.group(1);
-                                    // Check for any derived file with same base
-                                    for (int j = 0; j < csvFiles.length; j++) {
-                                        if (j == i) continue;
-                                        java.util.regex.Matcher mDerived = derivedRegex.matcher(csvFiles[j].getName());
-                                        if (mDerived.matches() && mDerived.group(1).equals(baseNum)) {
-                                            hasDerived = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                String relativePath;
-                                if (mBase.matches() && hasDerived) {
-                                    // Output base as -1.csv
-                                    relativePath = labelId + "/" + workorderTail + "/" + phase + "/" + baseNum + "-1.csv";
-                                } else {
-                                    relativePath = labelId + "/" + workorderTail + "/" + phase + "/" + fileName;
-                                }
-                                json.append("          \"").append(relativePath).append("\"");
-                                if (i < csvFiles.length - 1) {
-                                    json.append(",");
-                                }
-                                json.append("\n");
-                            }
-                        }
-                    }
-                    
-                    json.append("        ]");
-                    if (!phase.equals("after")) {
-                        json.append(",");
-                    }
-                    json.append("\n");
-                }
+                json.append("        \"before\": ").append(pathListToJson(beforePaths)).append(",\n");
+                json.append("        \"during\": ").append(pathListToJson(duringPaths)).append(",\n");
+                json.append("        \"after\": ").append(pathListToJson(afterPaths)).append("\n");
                 json.append("      },\n");
-                
-                // Add record JSON path
                 String recordJsonPath = labelId + "/" + workorderTail + "/" + workorderTail + "_record.json";
                 json.append("      \"record_json\": \"").append(recordJsonPath).append("\"\n");
-                
                 json.append("    }");
-                if (recordIndex < ALL_RECORDS.size() - 1) {
-                    json.append(",");
-                }
-                json.append("\n");
-                recordIndex++;
             }
             
-            json.append("  ]\n");
+            json.append("\n  ]\n");
             json.append("}\n");
             
             // Write manifest file to data/maintenance/manifest.json
@@ -1301,6 +1242,68 @@ public final class ExtractMaintenanceFlights {
                   .replace("\n", "\\n")
                   .replace("\r", "\\r")
                   .replace("\t", "\\t");
+    }
+
+    /**
+     * Collects sorted CSV paths for one phase into the given list (used for manifest).
+     */
+    private static void collectPhasePaths(String labelId, String workorderTail,
+            File workorderDir, String phase, java.util.List<String> outPaths) {
+        File phaseDir = new File(workorderDir, phase);
+        if (!phaseDir.exists() || !phaseDir.isDirectory()) return;
+        File[] csvFiles = phaseDir.listFiles((dir, name) -> name.endsWith(".csv"));
+        if (csvFiles == null) return;
+        java.util.Arrays.sort(csvFiles, (f1, f2) -> {
+            String n1 = f1.getName();
+            String n2 = f2.getName();
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)(?:-(\\d+))?.*\\.csv");
+            java.util.regex.Matcher m1 = p.matcher(n1);
+            java.util.regex.Matcher m2 = p.matcher(n2);
+            int base1 = 0, base2 = 0, suffix1 = 0, suffix2 = 0;
+            if (m1.matches()) {
+                base1 = Integer.parseInt(m1.group(1));
+                suffix1 = m1.group(2) != null ? Integer.parseInt(m1.group(2)) : 0;
+            }
+            if (m2.matches()) {
+                base2 = Integer.parseInt(m2.group(1));
+                suffix2 = m2.group(2) != null ? Integer.parseInt(m2.group(2)) : 0;
+            }
+            if (base1 != base2) return Integer.compare(base1, base2);
+            return Integer.compare(suffix1, suffix2);
+        });
+        java.util.regex.Pattern baseRegex = java.util.regex.Pattern.compile("^(\\d+)(\\.csv)$");
+        java.util.regex.Pattern derivedRegex = java.util.regex.Pattern.compile("^(\\d+)-(\\d+)(\\.csv)$");
+        for (int i = 0; i < csvFiles.length; i++) {
+            String fileName = csvFiles[i].getName();
+            java.util.regex.Matcher mBase = baseRegex.matcher(fileName);
+            String baseNum = null;
+            boolean hasDerived = false;
+            if (mBase.matches()) {
+                baseNum = mBase.group(1);
+                for (int j = 0; j < csvFiles.length; j++) {
+                    if (j == i) continue;
+                    java.util.regex.Matcher mDerived = derivedRegex.matcher(csvFiles[j].getName());
+                    if (mDerived.matches() && mDerived.group(1).equals(baseNum)) {
+                        hasDerived = true;
+                        break;
+                    }
+                }
+            }
+            String relativePath = (mBase.matches() && hasDerived)
+                    ? (labelId + "/" + workorderTail + "/" + phase + "/" + baseNum + "-1.csv")
+                    : (labelId + "/" + workorderTail + "/" + phase + "/" + fileName);
+            outPaths.add(relativePath);
+        }
+    }
+
+    /** Returns JSON array of quoted path strings, e.g. ["a/b/c.csv"]. */
+    private static String pathListToJson(java.util.List<String> paths) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < paths.size(); i++) {
+            if (i > 0) sb.append(", ");
+            sb.append("\"").append(escapeJson(paths.get(i))).append("\"");
+        }
+        return sb.append("]").toString();
     }
 
     /**
@@ -1375,7 +1378,8 @@ public final class ExtractMaintenanceFlights {
                 String tailNumber = record.getTailNumber();
                 String labelId = record.getLabelId();
 
-                ensureClusterDirectoryExists(outputDirectory, record);
+                // Directories and record JSON are created in writeFiles() when the first CSV is written.
+                // Do not create them here so workorders with no extracted flights leave no empty structure.
 
                 PreparedStatement tailStmt =
                         connection.prepareStatement("SELECT system_id FROM tails WHERE tail = ? and fleet_id = ?");
