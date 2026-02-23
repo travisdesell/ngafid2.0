@@ -13,6 +13,13 @@ type PanelAlertProps = {
 
 export default function PanelAlert(props: PanelAlertProps) {
 
+    /*
+        NOTE: Multi-line descriptions are expected
+        as an array of strings.
+
+        Automatic text wrapping is disabled for the description.
+    */
+
     const { title, description, isCritical=false } = props;
 
     return <motion.div
