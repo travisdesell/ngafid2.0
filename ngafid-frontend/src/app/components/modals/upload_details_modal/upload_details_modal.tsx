@@ -126,63 +126,45 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
     function UploadMeta() {
 
-        return <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="optionalInfo" className="border-transparent">
-                <AccordionTrigger className="mb-6 mt-4">
-                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
-                    Upload Metadata
-                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
-                </AccordionTrigger>
+        return <AccordionItem value="uploadMetadata" className="border-transparent">
+            <AccordionTrigger className="mb-6 mt-4">
+                <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
+                Upload Metadata
+                <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
+            </AccordionTrigger>
 
-                <AccordionContent className="flex flex-col gap-1 px-4 *:text-nowrap">
+            <AccordionContent className="flex flex-col gap-1 px-4 *:text-nowrap">
 
-                        {/* Identifiers */}
-                        <UploadMetaGroup groupName="Identifiers">
-                            {UploadMetaRow({ label: "ID", value: uploadImportData.id })}
-                            {UploadMetaRow({ label: "Identifier", value: uploadImportData.identifier })}
-                            {UploadMetaRow({ label: "MD5 Hash", value: uploadImportData.md5Hash })}
-                        </UploadMetaGroup>
+                    {/* Identifiers */}
+                    <UploadMetaGroup groupName="Identifiers">
+                        {UploadMetaRow({ label: "ID", value: uploadImportData.id })}
+                        {UploadMetaRow({ label: "Identifier", value: uploadImportData.identifier })}
+                        {UploadMetaRow({ label: "MD5 Hash", value: uploadImportData.md5Hash })}
+                    </UploadMetaGroup>
 
-                        {/* File Info */}
-                        <UploadMetaGroup groupName="File Info">
-                            {UploadMetaRow({ label: "Filename", value: uploadImportData.filename })}
-                            {UploadMetaRow({ label: "Size (MB)", value: ()=>(uploadImportData.sizeBytes / (1024 * 1024)).toFixed(2) })}
-                            {UploadMetaRow({ label: "Kind", value: uploadImportData.kind })}
-                        </UploadMetaGroup>
+                    {/* File Info */}
+                    <UploadMetaGroup groupName="File Info">
+                        {UploadMetaRow({ label: "Filename", value: uploadImportData.filename })}
+                        {UploadMetaRow({ label: "Size (MB)", value: ()=>(uploadImportData.sizeBytes / (1024 * 1024)).toFixed(2) })}
+                        {UploadMetaRow({ label: "Kind", value: uploadImportData.kind })}
+                    </UploadMetaGroup>
 
-                        {/* Uploader Info */}
-                        <UploadMetaGroup groupName="Uploader Info">
-                            {UploadMetaRow({ label: "Uploader", value: () => uploadImportData.uploaderId ? `User No. ${uploadImportData.uploaderId}` : "Unknown" })}
-                            {UploadMetaRow({ label: "Fleet", value: () => uploadImportData.fleetId ? `Fleet No. ${uploadImportData.fleetId}` : "Unknown" })}
-                        </UploadMetaGroup>
+                    {/* Uploader Info */}
+                    <UploadMetaGroup groupName="Uploader Info">
+                        {UploadMetaRow({ label: "Uploader", value: () => uploadImportData.uploaderId ? `User No. ${uploadImportData.uploaderId}` : "Unknown" })}
+                        {UploadMetaRow({ label: "Fleet", value: () => uploadImportData.fleetId ? `Fleet No. ${uploadImportData.fleetId}` : "Unknown" })}
+                    </UploadMetaGroup>
 
-                        {/* Details */}
-                        <UploadMetaGroup groupName="Details">
-                            {UploadMetaRow({ label: "Start Time", value: uploadImportData.startTime })}
-                            {UploadMetaRow({ label: "End Time", value: uploadImportData.endTime })}
-                            {UploadMetaRow({ label: "Number of Chunks", value: uploadImportData.numberChunks })}
-                        </UploadMetaGroup>
+                    {/* Details */}
+                    <UploadMetaGroup groupName="Details">
+                        {UploadMetaRow({ label: "Start Time", value: uploadImportData.startTime })}
+                        {UploadMetaRow({ label: "End Time", value: uploadImportData.endTime })}
+                        {UploadMetaRow({ label: "Number of Chunks", value: uploadImportData.numberChunks })}
+                    </UploadMetaGroup>
 
-                </AccordionContent>
+            </AccordionContent>
 
-            </AccordionItem>
-        </Accordion>
-
-    }
-
-    function FlightIssueRow({ filename, message, level, sameFilename }: { filename: string; message: string; level: "warning" | "error"; sameFilename?: boolean }) {
-
-        const rowClass = (level === "error")
-            ? "border-(--error) text-(--error)"
-            : "border-(--warning) text-(--warning)";
-
-        return (
-            <li className={`${rowClass}`}>
-                <span className={`font-semibold ${rowClass}`}>
-                    {sameFilename ? "" : filename} 
-                </span> — {message}
-            </li>
-        );
+        </AccordionItem>
 
     }
 
@@ -192,19 +174,44 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
     function ErrorDetailItems({ groups }: { groups: { label: string; filenames: Set<string>; count: number }[] }) {
 
-        return <div className="flex flex-col gap-2">
-            {groups.map((group, index) => (
-                <li key={`error-group-${index}`} className="border-(--error) rounded-md p-2 text-wrap wrap-break-word">
-                    <div className="flex underline underline-offset-4 mb-2">
-                        <span className="font-semibold">{group.label}</span>
-                        &nbsp;<span>({group.count} flights):</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        {Array.from(group.filenames).join(", ")}
-                    </div>
-                </li>
-            ))}
-        </div>
+        const copyErrorDetailsToClipboard = (group: { label: string; filenames: Set<string>; count: number }) => {
+
+            const textToCopy = `Error: ${group.label}\nCount: ${group.count}\nFilenames: ${Array.from(group.filenames).join(", ")}`;
+
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    log("Copied error details to clipboard:", textToCopy);
+                })
+                .catch(err => {
+                    log("Failed to copy error details to clipboard:", err);
+                });
+
+        };
+
+        return <button className="flex flex-col gap-2 overflow-y-auto max-h-64">
+            {
+                groups.map((group, index) => (
+                    <button
+                        key={`error-group-${index}`}
+                        className="border-(--error) rounded-md p-2 mr-2 text-wrap wrap-break-word text-left cursor-pointer bg-background"
+                        onClick={() => copyErrorDetailsToClipboard(group)}
+                    >
+
+                        {/* Error Title & Flight Count */}
+                        <div className="flex mb-2">
+                            <span className="font-semibold">{group.label}</span>
+                            &nbsp;<span className="text-nowrap">({group.count} flights):</span>
+                        </div>
+
+                        {/* Error Flight Files */}
+                        <div className="text-xs text-muted-foreground">
+                            {Array.from(group.filenames).join(", ")}
+                        </div>
+
+                    </button>
+                )
+            )}
+        </button>
 
     }
 
@@ -254,73 +261,68 @@ export default function UploadDetailsModal({ data }: ModalProps) {
         const sortedWarningGroups = Object.values(warningGroups).sort((a, b) => b.count - a.count);
         log("Sorted Warning Groups:", sortedWarningGroups);
 
-        return <Accordion
-            type="single"
-            collapsible
-            className="w-full **:disabled:opacity-50 **:disabled:pointer-events-none **:disabled:select-none"
-            disabled={!allowErrorDetailDisplay}
-        >
-            <AccordionItem value="optionalInfo" className="border-transparent">
-                <AccordionTrigger className="mb-6 mt-4">
-                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
-                    Error Details
-                    <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
-                </AccordionTrigger>
+        return <AccordionItem value="errorDetails" className="border-transparent" disabled={!allowErrorDetailDisplay}>
+            <AccordionTrigger className="mb-6 mt-4">
+                <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
+                Error Details
+                <hr className='border-b border-gray-500/25 flex flex-1 mx-4'/>
+            </AccordionTrigger>
 
-                <AccordionContent className="flex flex-col gap-1 px-4 *:text-wrap max-h-128 overflow-y-auto">
+            <AccordionContent className="flex flex-col gap-1 px-4 *:text-wrap max-h-128 overflow-y-auto">
 
-                    {
-                        loadingDetails
-                        ? <div className="text-xs text-muted-foreground py-2">Loading warnings and errors...</div>
-                        : null
-                    }
+                {
+                    loadingDetails
+                    ? <div className="text-xs text-muted-foreground py-2">Loading warnings and errors...</div>
+                    : null
+                }
 
-                    {
-                        loadingError
-                        ? <div className="text-xs text-(--error) py-2">{loadingError}</div>
-                        : null
-                    }
+                {
+                    loadingError
+                    ? <div className="text-xs text-(--error) py-2">{loadingError}</div>
+                    : null
+                }
 
-                    {
-                        (!loadingDetails && !loadingError && !hasDetails)
-                        ? <div className="text-xs text-muted-foreground py-2">No error or warning details were returned for this upload.</div>
-                        : null
-                    }
+                {/* {
+                    (!loadingDetails && !loadingError && !hasDetails)
+                    ? <div className="text-xs text-muted-foreground py-2">No error or warning details were returned for this upload.</div>
+                    : null
+                } */}
 
-                    {
-                        (errorDetails.uploadErrors?.length ?? 0) > 0
-                        ? (
-                            <UploadMetaGroup groupName="Upload Errors">
-                                {errorDetails.uploadErrors.map((entry) => (
-                                    <UploadIssueRow key={`upload-error-${entry.id}-${entry.message}`} message={entry.message} />
-                                ))}
-                            </UploadMetaGroup>
-                        )
-                        : null
-                    }
+                <div className="text-xs text-muted-foreground py-2">Click on an error or warning to copy it.</div>
 
-                    {
-                        (errorDetails.flightWarnings?.length ?? 0) > 0
-                        ? (
-                            <UploadMetaGroup groupName="Flight Warnings">
-                                <ErrorDetailItems groups={sortedWarningGroups} />
-                            </UploadMetaGroup>
-                        )
-                        : null
-                    }
+                {
+                    (errorDetails.uploadErrors?.length ?? 0) > 0
+                    ? (
+                        <UploadMetaGroup groupName="Upload Errors">
+                            {errorDetails.uploadErrors.map((entry) => (
+                                <UploadIssueRow key={`upload-error-${entry.id}-${entry.message}`} message={entry.message} />
+                            ))}
+                        </UploadMetaGroup>
+                    )
+                    : null
+                }
 
-                    {
-                        (errorDetails.flightErrors?.length ?? 0) > 0
-                        ? (
-                            <UploadMetaGroup groupName="Flight Errors">
-                                <ErrorDetailItems groups={sortedErrorGroups} />
-                            </UploadMetaGroup>
-                        )
-                        : null
-                    }
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
+                {
+                    (errorDetails.flightWarnings?.length ?? 0) > 0
+                    ? (
+                        <UploadMetaGroup groupName="Flight Warnings">
+                            <ErrorDetailItems groups={sortedWarningGroups} />
+                        </UploadMetaGroup>
+                    )
+                    : null
+                }
+
+                {
+                    (errorDetails.flightErrors?.length ?? 0) > 0
+                    ? (
+                        <UploadMetaGroup groupName="Flight Errors">
+                            <ErrorDetailItems groups={sortedErrorGroups} />
+                        </UploadMetaGroup>
+                    )
+                    : null
+                }
+            </AccordionContent>
+        </AccordionItem>
 
     }
 
@@ -361,11 +363,20 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                         <UploadCountBadge label="Errors" count={uploadImportData.errorFlights} icon={CircleAlert} colorClass="bg-(--error) dark:text-shadow-md" />
                     </div>
 
-                    {/* Error Details */}
-                    {ErrorDetails()}
+                    <Accordion
+                        type="single"
+                        collapsible
+                        className="w-full **:disabled:opacity-50 **:disabled:pointer-events-none **:disabled:select-none"
+                        // disabled={!allowErrorDetailDisplay}
+                    >
 
-                    {/* Upload Metadata */}
-                    {UploadMeta()}
+                        {/* Error Details */}
+                        {ErrorDetails()}
+
+                        {/* Upload Metadata */}
+                        {UploadMeta()}
+
+                    </Accordion>
 
                 </CardContent>
             </Card>
