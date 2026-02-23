@@ -23,10 +23,10 @@ import java.util.List;
  *    - LANDING: Below 100 ft and descending
  *    - GROUND: Altitude <= 5 ft and speed < 5 knots
  * 
- * 2. Touch-and-Go Detection (altitude pattern analysis)
- *    - Detects when altitude stays < 5 ft for 10+ consecutive rows
- *    - Must occur after initial climb above 200 ft
- *    - Marks ±5 rows around split point as TOUCH_AND_GO phase
+ * 2. Touch-and-Go Detection (altitude + speed)
+ *    - Detects when altitude stays < 5 ft for 10+ consecutive rows (after climbing above 200 ft)
+ *    - Requires significant ground speed during the touch phase (rolling on runway)
+ *    - Stationary periods (speed < 15 kts) are GROUND, not TOUCH_AND_GO
  * 
  * 3. Go-Around Detection (valley pattern analysis)
  *    - Detects descent below 100 ft followed by climb without landing
@@ -644,12 +644,34 @@ public final class FlightPhaseProcessor {
             DoubleTimeSeries groundSpeed,
             FlightValidationResult validation) {
         
-        // Mark touch-and-go zones (±10 rows around split points)
+        // Mark touch-and-go zones (±10 rows around split points) only when aircraft had rolling speed
+        // Touch-and-go = brief ground contact while moving (landing/takeoff roll). Stationary = GROUND.
+        final double MIN_ROLLING_SPEED_KTS = 15.0;
         if (validation != null && validation.hasTouchAndGo()) {
             for (int splitIndex : validation.splitIndices) {
-                for (int i = Math.max(0, splitIndex - 10); 
-                     i <= Math.min(phaseData.getPhases().size() - 1, splitIndex + 10); i++) {
-                    phaseData.getPhases().set(i, FlightPhase.TOUCH_AND_GO);
+                int start = Math.max(0, splitIndex - 10);
+                int end = Math.min(phaseData.getPhases().size() - 1, splitIndex + 10);
+                boolean hasRollingSpeed = false;
+                if (groundSpeed != null) {
+                    for (int i = start; i <= end && i < groundSpeed.size(); i++) {
+                        double gs = groundSpeed.get(i);
+                        if (!Double.isNaN(gs) && gs >= MIN_ROLLING_SPEED_KTS) {
+                            hasRollingSpeed = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasRollingSpeed) {
+                    for (int i = start; i <= end; i++) {
+                        phaseData.getPhases().set(i, FlightPhase.TOUCH_AND_GO);
+                    }
+                } else {
+                    for (int i = start; i <= end; i++) {
+                        double alt = (i < altAglArray.length) ? altAglArray[i] : Double.NaN;
+                        if (!Double.isNaN(alt) && alt <= 5.0) {
+                            phaseData.getPhases().set(i, FlightPhase.GROUND);
+                        }
+                    }
                 }
             }
         }

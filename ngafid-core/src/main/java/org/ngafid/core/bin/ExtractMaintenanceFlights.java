@@ -1,5 +1,6 @@
 package org.ngafid.core.bin;
 
+import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
 import org.ngafid.core.flights.DoubleTimeSeries;
@@ -345,36 +346,62 @@ public final class ExtractMaintenanceFlights {
     }
 
 
+    private static final class AltAGLResult {
+        final double[] values;
+        final String failureReason;
+
+        AltAGLResult(double[] values, String failureReason) {
+            this.values = values;
+            this.failureReason = failureReason;
+        }
+    }
+
     /**
      * Obtains AltAGL values for a flight. Tries DB first, then fallback: AltMSL/AltB + Lat/Lon + terrain.
-     * @return AltAGL array, or null if unobtainable
+     * @return AltAGLResult with values or null failureReason; if unobtainable, values is null and failureReason describes what is missing
      */
-    private static double[] getAltAGLForExtraction(Connection connection, int flightId, int maxRows) {
+    private static AltAGLResult getAltAGLForExtraction(Connection connection, int flightId, int maxRows) {
         try {
-            return FlightPhaseProcessor.getAltAGLValues(connection, flightId, maxRows);
+            double[] values = FlightPhaseProcessor.getAltAGLValues(connection, flightId, maxRows);
+            if (values != null && values.length > 0) {
+                return new AltAGLResult(values, null);
+            }
+            return new AltAGLResult(null, "AltAGL empty or zero rows in DB");
         } catch (Exception ignored) {
-            /* fall through to terrain-based fallback */
+            /* fall through to terrain-based fallback: AltB/AltMSL + Lat/Lon + terrain */
         }
         DoubleTimeSeries lat = null;
         DoubleTimeSeries lon = null;
-        DoubleTimeSeries altSource = null;
+        DoubleTimeSeries altMSL = null;
+        DoubleTimeSeries altB = null;
         try {
             lat = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
             lon = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
-            altSource = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
-            if (altSource == null) {
-                altSource = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_B);
-            }
-        } catch (SQLException ignored) {
-            return null;
+            altMSL = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
+            altB = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_B);
+        } catch (SQLException e) {
+            return new AltAGLResult(null, "AltAGL not in DB; fallback failed: error fetching series - " + e.getMessage());
         }
-        if (lat == null || lon == null || altSource == null) {
-            return null;
+        DoubleTimeSeries altSource = altMSL != null ? altMSL : altB;
+        if (altSource == null) {
+            return new AltAGLResult(null, "AltAGL not in DB; cannot compute from AltB+terrain: AltMSL and AltB both missing");
+        }
+        if (lat == null) {
+            return new AltAGLResult(null, "AltAGL not in DB; cannot compute from AltB+terrain: Latitude missing (needed for terrain lookup)");
+        }
+        if (lon == null) {
+            return new AltAGLResult(null, "AltAGL not in DB; cannot compute from AltB+terrain: Longitude missing (needed for terrain lookup)");
+        }
+        if (Config.NGAFID_TERRAIN_DIR == null || Config.NGAFID_TERRAIN_DIR.trim().isEmpty()) {
+            return new AltAGLResult(null, "AltAGL not in DB; cannot compute from AltB+terrain: terrain not configured (ngafid.terrain.dir empty)");
         }
         int n = Math.min(altSource.size(), Math.min(lat.size(), lon.size()));
         n = Math.min(n, maxRows);
-        if (n == 0) return null;
+        if (n == 0) {
+            return new AltAGLResult(null, "AltAGL not in DB; cannot compute from AltB+terrain: no data rows in altitude/position series");
+        }
         double[] agl = new double[n];
+        int terrainFailCount = 0;
         for (int i = 0; i < n; i++) {
             double msl = altSource.get(i);
             double la = lat.get(i);
@@ -382,11 +409,16 @@ public final class ExtractMaintenanceFlights {
             if (Double.isNaN(msl) || Double.isNaN(la) || Double.isNaN(lo)) {
                 agl[i] = Double.NaN;
             } else {
-                agl[i] = MSLtoAGLConverter.convertMSLToAGL(msl, la, lo);
+                double a = MSLtoAGLConverter.convertMSLToAGL(msl, la, lo);
+                agl[i] = a;
+                if (Double.isNaN(a)) terrainFailCount++;
             }
         }
+        if (terrainFailCount == n) {
+            return new AltAGLResult(null, "AltAGL not in DB; cannot compute from AltB+terrain: terrain lookup returned NaN for all " + n + " points (tile missing or coordinates out of range)");
+        }
         System.err.println("Flight " + flightId + ": AltAGL computed from " + altSource.getName() + " + terrain");
-        return agl;
+        return new AltAGLResult(agl, null);
     }
 
     /**
@@ -978,11 +1010,12 @@ public final class ExtractMaintenanceFlights {
                 Flight flight = Flight.getFlight(connection, ac.getFlightId());
 
                 // 1. Obtain AltAGL (DB or fallback: AltMSL/AltB + terrain)
-                double[] altAGLValues = getAltAGLForExtraction(connection, flight.getId(), Integer.MAX_VALUE);
-                if (altAGLValues == null || altAGLValues.length == 0) {
-                    System.err.println("Skipping flight " + flight.getId() + ": could not obtain AltAGL (no AltAGL/AltMSL/AltB or terrain unavailable)");
+                AltAGLResult altAGLResult = getAltAGLForExtraction(connection, flight.getId(), Integer.MAX_VALUE);
+                if (altAGLResult.values == null || altAGLResult.values.length == 0) {
+                    System.err.println("Skipping flight " + flight.getId() + ": could not obtain AltAGL (" + altAGLResult.failureReason + ")");
                     continue;
                 }
+                double[] altAGLValues = altAGLResult.values;
 
                 // 2. Validate: must have left ground (max AGL > 10 ft)
                 FlightPhaseProcessor.FlightValidationResult validation =
