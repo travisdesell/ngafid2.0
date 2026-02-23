@@ -1,0 +1,5 @@
+workorder,open,close,tail,airframe,ata,label,label_id, cleaned_problem,original_problem,date,ata,original_action
+999003,8/1/21,8/1/21,N294ND,C172,7100,drain line/tube damage,c_18,Fuel drain line cracked and leaking,Leak detected during preflight inspection,8/1/21,7100,Replaced fuel drain line and pressure tested system
+999001,7/30/18,8/3/18,N294ND,C172,7100,aircraft start/external issue,c_1,Engine starter motor replaced,Starter motor failed to engage,8/1/18,7100,Replaced starter motor and tested engine start
+999002,8/2/19,8/2/19,N294ND,C172,7100,cylinder compression issue,c_13,Low compression detected on cylinder 3,Annual compression check revealed issue,8/2/19,7100,Replaced cylinder 3 and performed compression test
+999002,8/2/19,8/2/19,N294NDd,C172,7100,cylinder compression issue,c_13,Low compression detected on cylinder 3,Annual compression check revealed issue,8/2/19,7100,Replaced cylinder 3 and performed compression test
