@@ -607,6 +607,27 @@ public final class FlightPhaseProcessor {
     }
 
     /**
+     * Compute complete flight phases from a pre-computed AltAGL array (e.g. from terrain fallback).
+     * Use when AltAGL is not in DB but was computed from AltMSL/AltB + terrain.
+     */
+    public static FlightPhaseData computeCompleteFlightPhasesFromAltAGLArray(
+            Connection connection, int flightId, double[] altAglArray,
+            FlightValidationResult validation) throws SQLException, IOException {
+        Flight flight = Flight.getFlight(connection, flightId);
+        DoubleTimeSeries altAglTS = new DoubleTimeSeries(Parameters.ALT_AGL, Parameters.Unit.FT_AGL, altAglArray);
+        DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
+        DoubleTimeSeries rpm = null;
+        try {
+            rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
+        } catch (Exception ignored) { }
+        FlightPhaseData phaseData = computeFlightPhasesFromTimeSeries(altAglTS, groundSpeed, rpm);
+        if (validation != null) {
+            applyCompletePhaseProcessing(phaseData, altAglArray, groundSpeed, validation);
+        }
+        return phaseData;
+    }
+
+    /**
      * Apply complete phase post-processing including touch-and-go marking,
      * go-around detection, altitude smoothing, and final taxi detection.
      * This method can be used standalone with arrays (e.g., from CSV files)

@@ -1,6 +1,7 @@
 package org.ngafid.core.bin;
 
 import org.ngafid.core.Database;
+import org.ngafid.core.agl_converter.MSLtoAGLConverter;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
@@ -25,6 +26,8 @@ public final class ExtractMaintenanceFlights {
     private static final TreeSet<String> AIRFRAMES = new TreeSet<>();
     private static int systemIdCount = 0;
     private static int extractedFlightsTotal = 0;
+    private static int extractedDuringTotal = 0;
+    private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
 
     private ExtractMaintenanceFlights() {
         throw new UnsupportedOperationException("Utility class");
@@ -343,6 +346,50 @@ public final class ExtractMaintenanceFlights {
 
 
     /**
+     * Obtains AltAGL values for a flight. Tries DB first, then fallback: AltMSL/AltB + Lat/Lon + terrain.
+     * @return AltAGL array, or null if unobtainable
+     */
+    private static double[] getAltAGLForExtraction(Connection connection, int flightId, int maxRows) {
+        try {
+            return FlightPhaseProcessor.getAltAGLValues(connection, flightId, maxRows);
+        } catch (Exception ignored) {
+            /* fall through to terrain-based fallback */
+        }
+        DoubleTimeSeries lat = null;
+        DoubleTimeSeries lon = null;
+        DoubleTimeSeries altSource = null;
+        try {
+            lat = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LATITUDE);
+            lon = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.LONGITUDE);
+            altSource = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
+            if (altSource == null) {
+                altSource = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_B);
+            }
+        } catch (SQLException ignored) {
+            return null;
+        }
+        if (lat == null || lon == null || altSource == null) {
+            return null;
+        }
+        int n = Math.min(altSource.size(), Math.min(lat.size(), lon.size()));
+        n = Math.min(n, maxRows);
+        if (n == 0) return null;
+        double[] agl = new double[n];
+        for (int i = 0; i < n; i++) {
+            double msl = altSource.get(i);
+            double la = lat.get(i);
+            double lo = lon.get(i);
+            if (Double.isNaN(msl) || Double.isNaN(la) || Double.isNaN(lo)) {
+                agl[i] = Double.NaN;
+            } else {
+                agl[i] = MSLtoAGLConverter.convertMSLToAGL(msl, la, lo);
+            }
+        }
+        System.err.println("Flight " + flightId + ": AltAGL computed from " + altSource.getName() + " + terrain");
+        return agl;
+    }
+
+    /**
      * Check if the flight actually took off (not a ground run)
      * by checking if there are any takeoff or landing entries in the itinerary table
      *
@@ -574,6 +621,7 @@ public final class ExtractMaintenanceFlights {
                                    MaintenanceRecord event, Flight flight, String when,
                                    FlightPhaseProcessor.FlightValidationResult validation,
                                    List<Integer> fileSplitIndices,
+                                   FlightPhaseProcessor.FlightPhaseData phaseData,
                                    boolean debugPhases) 
             throws IOException, SQLException {
         assert flight != null;
@@ -627,13 +675,7 @@ public final class ExtractMaintenanceFlights {
             return;
         }
 
-        // Compute complete flight phases (includes touch-and-go/go-around marking and altitude smoothing)
-        FlightPhaseProcessor.FlightPhaseData phaseData = null;
-        try {
-            phaseData = FlightPhaseProcessor.computeCompleteFlightPhases(connection, flight, validation);
-        } catch (Exception e) {
-            System.err.println("Warning: Could not compute flight phases for flight " + flight.getId() + ": " + e.getMessage());
-        }
+        // phaseData is pre-computed and passed in (required for extraction)
 
         // Read the temporary CSV and write with FlightPhase column
         // Split into multiple files only for prolonged taxi (30+ sec in middle); not touch-and-go
@@ -934,25 +976,47 @@ public final class ExtractMaintenanceFlights {
             if (isDuringMaintenance || isBeforeMaintenance || (isAfterMaintenance && !hasNearbyNextMaintenance)) {
 
                 Flight flight = Flight.getFlight(connection, ac.getFlightId());
-                
-                // Validate flight, detect prolonged taxi for file splitting, touch-and-go for phase marking
-                FlightPhaseProcessor.FlightValidationResult validation = null;
+
+                // 1. Obtain AltAGL (DB or fallback: AltMSL/AltB + terrain)
+                double[] altAGLValues = getAltAGLForExtraction(connection, flight.getId(), Integer.MAX_VALUE);
+                if (altAGLValues == null || altAGLValues.length == 0) {
+                    System.err.println("Skipping flight " + flight.getId() + ": could not obtain AltAGL (no AltAGL/AltMSL/AltB or terrain unavailable)");
+                    continue;
+                }
+
+                // 2. Validate: must have left ground (max AGL > 10 ft)
+                FlightPhaseProcessor.FlightValidationResult validation =
+                        FlightPhaseProcessor.validateAndDetectTouchAndGo(altAGLValues);
+                if (!validation.isValid) {
+                    System.err.println("Skipping flight " + flight.getId() + ": never left ground (max AGL <= 10 ft)");
+                    continue;
+                }
+
+                // 3. Must reach cruise altitude (600 ft AGL)
+                double maxAGL = Double.NEGATIVE_INFINITY;
+                for (double v : altAGLValues) {
+                    if (!Double.isNaN(v) && v > maxAGL) maxAGL = v;
+                }
+                if (maxAGL < CRUISE_ALTITUDE_AGL_FT) {
+                    System.err.println("Skipping flight " + flight.getId() + ": never reached cruise (max AGL " + String.format("%.0f", maxAGL) + " ft < " + (int) CRUISE_ALTITUDE_AGL_FT + " ft)");
+                    continue;
+                }
+
+                // 4. Compute flight phases (required for extraction)
+                FlightPhaseProcessor.FlightPhaseData phaseData;
+                try {
+                    phaseData = FlightPhaseProcessor.computeCompleteFlightPhasesFromAltAGLArray(
+                            connection, flight.getId(), altAGLValues, validation);
+                } catch (Exception e) {
+                    System.err.println("Skipping flight " + flight.getId() + ": could not compute flight phases (" + e.getMessage() + ")");
+                    continue;
+                }
+
+                // 5. File splitting: prolonged taxi (30+ sec in middle)
                 List<Integer> fileSplitIndices = new ArrayList<>();
                 try {
-                    double[] altAGLValues = FlightPhaseProcessor.getAltAGLValues(connection, flight.getId(), Integer.MAX_VALUE);
-                    validation = FlightPhaseProcessor.validateAndDetectTouchAndGo(altAGLValues);
-                    
-                    // Skip invalid flights (never left ground)
-                    if (!validation.isValid) {
-                        continue;
-                    }
-                    
-                    // File splitting: only for prolonged taxi (30+ sec in middle)
                     fileSplitIndices = FlightPhaseProcessor.detectProlongedTaxiSplits(connection, flight.getId());
-                } catch (Exception e) {
-                    System.err.println("Warning: Could not validate flight " + flight.getId() + ": " + e.getMessage());
-                    // Continue with extraction even if validation fails
-                }
+                } catch (Exception ignored) { }
 
                 String when = null;
 
@@ -980,7 +1044,10 @@ public final class ExtractMaintenanceFlights {
                 }
 
                 extractedCount++;
-                writeFiles(connection, outputDirectory, event, flight, when, validation, fileSplitIndices, debugPhases);
+                if ("_during".equals(when)) {
+                    extractedDuringTotal++;
+                }
+                writeFiles(connection, outputDirectory, event, flight, when, validation, fileSplitIndices, phaseData, debugPhases);
             }
         }
         return extractedCount;
@@ -1014,6 +1081,7 @@ public final class ExtractMaintenanceFlights {
             json.append("    \"total_workorders\": ").append(RECORDS_BY_WORKORDER.size()).append(",\n");
             
             // Count flights per cluster by scanning directories
+            int totalDuring = 0;
             File baseDir = new File(outputDirectory);
             if (baseDir.exists() && baseDir.isDirectory()) {
                 for (File clusterDir : baseDir.listFiles()) {
@@ -1029,6 +1097,9 @@ public final class ExtractMaintenanceFlights {
                                         if (csvFiles != null) {
                                             clusterCount += csvFiles.length;
                                             totalFlights += csvFiles.length;
+                                            if ("during".equals(phase)) {
+                                                totalDuring += csvFiles.length;
+                                            }
                                         }
                                     }
                                 }
@@ -1042,6 +1113,7 @@ public final class ExtractMaintenanceFlights {
             }
             
             json.append("    \"total_flights\": ").append(totalFlights).append(",\n");
+            json.append("    \"total_during\": ").append(totalDuring).append(",\n");
             json.append("    \"by_cluster\": {\n");
             
             int clusterIndex = 0;
@@ -1295,7 +1367,7 @@ public final class ExtractMaintenanceFlights {
                 System.out.println("  WO " + record.getWorkorderNumber() + " " + tailNumber + " [" + labelId + "] " +
                         startDate + " to " + endDate + " -> " + extracted + " flight(s)");
             }
-            System.out.println("Total: " + extractedFlightsTotal + " flights extracted");
+            System.out.println("Total: " + extractedFlightsTotal + " flights extracted (" + extractedDuringTotal + " during)");
         } catch (SQLException e) {
             System.err.println("SQLException: " + e);
             e.printStackTrace();
