@@ -28,6 +28,7 @@ public final class ExtractMaintenanceFlights {
     private static int systemIdCount = 0;
     private static int extractedFlightsTotal = 0;
     private static int extractedDuringTotal = 0;
+    private static int discardedDuringMultiDayCount = 0;
     private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
 
     private ExtractMaintenanceFlights() {
@@ -445,13 +446,14 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Assigns each flight to a maintenance phase (before/during/after) based on open and close dates.
-     * Maintenance can span multiple days, so the full open-close range is treated as during.
+     * Assigns each flight to a maintenance phase (before/during/after) based on open, close and action dates.
      * <ul>
-     *   <li><b>before</b>: flight date in [openDate-10, openDate)</li>
-     *   <li><b>during</b>: flight date between open and close inclusive [openDate, closeDate]</li>
-     *   <li><b>after</b>: flight date in (closeDate, closeDate+10]</li>
+     *   <li><b>before</b>: flight date in [openDate-10, openDate), or first day of multi-day window when action not on first day</li>
+     *   <li><b>during</b>: flight on single-day window [openDate==closeDate], or (legacy) full window for compatibility</li>
+     *   <li><b>after</b>: flight date in (closeDate, closeDate+10], or last day of multi-day window when action not on last day</li>
      * </ul>
+     * For multi-day windows: first-day flights (when action not on first day) -> before; last-day flights
+     * (when action not on last day) -> after; all other days in window -> discarded.
      *
      * @param timeline    sorted list of aircraft timelines (flights)
      * @param tailRecords sorted list of maintenance records for this tail in the cluster
@@ -469,9 +471,29 @@ public final class ExtractMaintenanceFlights {
                 LocalDate closePlus10 = r.getCloseDate().plusDays(10);
 
                 if (!flightDate.isBefore(r.getOpenDate()) && !flightDate.isAfter(r.getCloseDate())) {
-                    // flightDate in [open, close] - during maintenance (can span multiple days)
-                    if (duringRecord == null || r.getOpenDate().isBefore(duringRecord.getOpenDate())) {
-                        duringRecord = r; // pick earliest matching if overlap
+                    // flightDate in [open, close] - during maintenance window
+                    boolean isSingleDay = r.getOpenDate().equals(r.getCloseDate());
+                    if (isSingleDay) {
+                        // Single-day window: keep as during
+                        if (duringRecord == null || r.getOpenDate().isBefore(duringRecord.getOpenDate())) {
+                            duringRecord = r;
+                        }
+                    } else {
+                        // Multi-day window: reclassify first/last day or discard middle days
+                        if (flightDate.equals(r.getOpenDate()) && !r.getActionDate().equals(r.getOpenDate())) {
+                            // First day, maintenance not on first day -> before
+                            if (beforeRecord == null || r.getOpenDate().isBefore(beforeRecord.getOpenDate())) {
+                                beforeRecord = r;
+                            }
+                        } else if (flightDate.equals(r.getCloseDate()) && !r.getActionDate().equals(r.getCloseDate())) {
+                            // Last day, maintenance not on last day -> after
+                            if (afterRecord == null || r.getCloseDate().isAfter(afterRecord.getCloseDate())) {
+                                afterRecord = r;
+                            }
+                        } else {
+                            // Middle days or action day: discard (do not assign, do not count in during)
+                            discardedDuringMultiDayCount++;
+                        }
                     }
                 } else if (!flightDate.isBefore(openMinus10) && flightDate.isBefore(r.getOpenDate())) {
                     // flightDate in [open-10, open); pick record with smallest openDate (closest)
@@ -534,14 +556,31 @@ public final class ExtractMaintenanceFlights {
                 MaintenanceRecord recordForBefore = ac.getNextEvent(); // during or transition: record for "before" count
                 MaintenanceRecord recordForAfter = ac.getPreviousEvent(); // during or transition: record for "after" count
 
+                // Reclassified first-day (before) or last-day (after): set their flight count to 0
+                boolean isReclassifiedFirstDay = ac.getNextEvent() != null && ac.getPreviousEvent() == null
+                        && ac.getDaysToNext() == 0;
+                boolean isReclassifiedLastDay = ac.getPreviousEvent() != null && ac.getNextEvent() == null
+                        && ac.getDaysSincePrevious() == 0;
+                if (isReclassifiedFirstDay && flightTookOff(connection, ac.getFlightId())) {
+                    ac.setFlightsToNext(0);
+                }
+                if (isReclassifiedLastDay && flightTookOff(connection, ac.getFlightId())) {
+                    ac.setFlightsSincePrevious(0);
+                }
+
                 int i = 1;
                 int flightCount = 0;
                 while ((currentAircraft - i) >= 0 && flightCount < numberOfExtractions) {
                     AircraftTimeline a = timeline.get(currentAircraft - i);
                     if (a.getDaysToNext() == 0) {
-                        a.setFlightsToNext(-1); // -1 means during (flight between open and close)
-                        i++;
-                        continue;
+                        // True during = both events set and same; reclassified first-day has only nextEvent
+                        boolean isTrueDuring = a.getPreviousEvent() != null && a.getNextEvent() != null
+                                && a.getPreviousEvent() == a.getNextEvent();
+                        if (isTrueDuring) {
+                            a.setFlightsToNext(-1); // -1 means during
+                            i++;
+                            continue;
+                        }
                     }
                     // Only count flights that are "before" for the same record
                     if (recordForBefore == null || a.getNextEvent() != recordForBefore) {
@@ -566,9 +605,14 @@ public final class ExtractMaintenanceFlights {
                 while ((currentAircraft + i) < timeline.size() && flightCount < numberOfExtractions) {
                     AircraftTimeline a = timeline.get(currentAircraft + i);
                     if (a.getDaysSincePrevious() == 0) {
-                        a.setFlightsSincePrevious(-1); // -1 means during (flight between open and close)
-                        i++;
-                        continue;
+                        // True during = both events set and same; reclassified last-day has only previousEvent
+                        boolean isTrueDuring = a.getPreviousEvent() != null && a.getNextEvent() != null
+                                && a.getPreviousEvent() == a.getNextEvent();
+                        if (isTrueDuring) {
+                            a.setFlightsSincePrevious(-1); // -1 means during
+                            i++;
+                            continue;
+                        }
                     }
                     // Only count flights that are "after" for the same record
                     if (recordForAfter == null || a.getPreviousEvent() != recordForAfter) {
@@ -1116,6 +1160,7 @@ public final class ExtractMaintenanceFlights {
             
             // Count flights per cluster by scanning directories
             int totalDuring = 0;
+            int totalDuringSameDay = 0;
             File baseDir = new File(outputDirectory);
             if (baseDir.exists() && baseDir.isDirectory()) {
                 for (File clusterDir : baseDir.listFiles()) {
@@ -1133,6 +1178,14 @@ public final class ExtractMaintenanceFlights {
                                             totalFlights += csvFiles.length;
                                             if ("during".equals(phase)) {
                                                 totalDuring += csvFiles.length;
+                                                // Count during flights for records where open_date == close_date
+                                                try {
+                                                    int woNum = Integer.parseInt(workorderDir.getName().split("_")[0]);
+                                                    MaintenanceRecord rec = RECORDS_BY_WORKORDER.get(woNum);
+                                                    if (rec != null && rec.getOpenDate().equals(rec.getCloseDate())) {
+                                                        totalDuringSameDay += csvFiles.length;
+                                                    }
+                                                } catch (NumberFormatException ignored) { }
                                             }
                                         }
                                     }
@@ -1148,6 +1201,8 @@ public final class ExtractMaintenanceFlights {
             
             json.append("    \"total_flights\": ").append(totalFlights).append(",\n");
             json.append("    \"total_during\": ").append(totalDuring).append(",\n");
+            json.append("    \"total_during_same_day\": ").append(totalDuringSameDay).append(",\n");
+            json.append("    \"during_multi_day_discarded\": ").append(discardedDuringMultiDayCount).append(",\n");
             json.append("    \"by_cluster\": {\n");
             
             int clusterIndex = 0;
@@ -1166,6 +1221,35 @@ public final class ExtractMaintenanceFlights {
             }
             
             json.append("    }\n");
+            json.append("  },\n");
+            
+            // Single-day during paths: flights that occurred on same-day maintenance (open==close), grouped by label_id for manual review
+            Map<String, java.util.List<String>> singleDayDuringByLabel = new LinkedHashMap<>();
+            for (String cid : clusterNames.keySet()) {
+                singleDayDuringByLabel.put(cid, new java.util.ArrayList<>());
+            }
+            for (MaintenanceRecord record : ALL_RECORDS) {
+                if (!record.getOpenDate().equals(record.getCloseDate())) continue;
+                String labelId = record.getLabelId();
+                String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
+                File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
+                java.util.List<String> duringPaths = new java.util.ArrayList<>();
+                collectPhasePaths(labelId, workorderTail, workorderDir, "during", duringPaths);
+                singleDayDuringByLabel.get(labelId).addAll(duringPaths);
+            }
+            json.append("  \"single_day_during_paths\": {\n");
+            int labelIdx = 0;
+            for (Map.Entry<String, java.util.List<String>> e : singleDayDuringByLabel.entrySet()) {
+                String labelId = e.getKey();
+                String labelName = clusterNames.getOrDefault(labelId, "Unknown");
+                json.append("    \"").append(labelId).append("\": {\n");
+                json.append("      \"name\": \"").append(escapeJson(labelName)).append("\",\n");
+                json.append("      \"paths\": ").append(pathListToJson(e.getValue())).append("\n");
+                json.append("    }");
+                if (labelIdx < singleDayDuringByLabel.size() - 1) json.append(",");
+                json.append("\n");
+                labelIdx++;
+            }
             json.append("  },\n");
             
             // Generate workorders array (only workorders that have at least one extracted flight)
