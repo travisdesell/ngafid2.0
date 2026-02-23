@@ -42,6 +42,7 @@ import type {
 } from "./_types/types";
 import { openModal } from "@/components/modals/modal_store";
 import UploadDetailsModal from "@/components/modals/upload_details_modal/upload_details_modal";
+import PanelAlert from "@/components/panel_alert";
 
 
 const log = getLogger("Uploads", "black", "Page");
@@ -1063,6 +1064,7 @@ export default function UploadsPage() {
     }, [uploads, imports, pending]);
 
 
+    const hasAnyUploadsOrImports = (mergedUploadsImports.length > 0);
 
     const render = () => (
         <div className="page-container">
@@ -1081,19 +1083,27 @@ export default function UploadsPage() {
                         </div>
 
                     </CardHeader>
-                    <CardContent className="space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
+                    <CardContent className="w-full h-full  space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
 
-                        {mergedUploadsImports.map((u: UploadInfo | UploadImportItem, i) =>
-
-                            <motion.div
-                                key={`upload-${u.identifier}`}
-                                initial={{ opacity: 0.00 }}
-                                animate={{ opacity: 1.00 }}
-                                transition={{ duration: 0.50, delay: 0.03 * i }}
-                            >
-                                {UploadCard(u, u.id === -1)}
-                            </motion.div>
-                        )}
+                        {
+                            (hasAnyUploadsOrImports)
+                            ?
+                            mergedUploadsImports.map((u: UploadInfo | UploadImportItem, i) =>
+                                <motion.div
+                                    key={`upload-${u.identifier}`}
+                                    initial={{ opacity: 0.00 }}
+                                    animate={{ opacity: 1.00 }}
+                                    transition={{ duration: 0.50, delay: 0.03 * i }}
+                                >
+                                    {UploadCard(u, u.id === -1)}
+                                </motion.div>
+                            )
+                            :
+                            <PanelAlert
+                                title="No Uploads"
+                                description={["Use the 'Upload Files' button above to add files for upload.", "Active and finalized uploads will appear here."]}
+                            />
+                        }
 
                     </CardContent>
 
