@@ -159,7 +159,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                             <DropdownMenuItem asChild>
-                                <Link to="/protected/trends">
+                                <Link to="/protected/turn_to_final">
                                     Turn to Final
                                 </Link>
                             </DropdownMenuItem>

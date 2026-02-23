@@ -183,7 +183,6 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
 
                     {/* Open Page - Analysis - Turn to Final */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
                         name="Go to Analysis — Turn to Final Page"
                         command={()=>navigate("/protected/turn_to_final")}
