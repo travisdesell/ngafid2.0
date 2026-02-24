@@ -39,8 +39,24 @@ import java.util.List;
  *    - Reclassifies phases based on altitude and vertical trend
  *    - Only altitude changes > 5 feet considered significant
  *    - Eliminates all UNKNOWN phases
+ *
+ * 5. Sustained-Trend and Ground Lock (reduces end-of-flight flicker)
+ *    - Requires 5+ consecutive rows at ground level before trusting ground phase
+ *    - Requires sustained climb/descent (5-row window, net change > 5 ft) before CLIMB/LANDING
+ *    - Short runs of 1-4 CLIMB/LANDING rows surrounded by TAXI/GROUND are reclassified to TAXI
  */
 public final class FlightPhaseProcessor {
+
+    /** Minimum consecutive rows at ground level to consider "consistently on ground" (avoids sensor noise). */
+    private static final int MIN_CONSECUTIVE_GROUND_ROWS = 5;
+    /** Window size for sustained trend (climb/descent) to avoid single-row noise. */
+    private static final int SUSTAINED_TREND_WINDOW = 5;
+    /** Net altitude change over window (ft) to consider trend significant. */
+    private static final double SUSTAINED_TREND_THRESHOLD_FT = 5.0;
+    /** Altitude (ft AGL) below which we consider "ground context" for locking. */
+    private static final double GROUND_CONTEXT_ALT_FT = 10.0;
+    /** Max length of CLIMB/LANDING run to reclassify as TAXI when surrounded by ground. */
+    private static final int MAX_SHORT_AIRBORNE_RUN = 4;
 
     /**
      * Flight phase enumeration representing different stages of flight
@@ -628,6 +644,85 @@ public final class FlightPhaseProcessor {
     }
 
     /**
+     * Returns true if index i is in "ground context": at least MIN_CONSECUTIVE_GROUND_ROWS
+     * of the last SUSTAINED_TREND_WINDOW rows have altitude <= GROUND_CONTEXT_ALT_FT.
+     * Used to avoid assigning CLIMB/LANDING when we're really on ground with noisy altitude.
+     */
+    private static boolean isInGroundContext(double[] altAglArray, int i) {
+        int start = Math.max(0, i - SUSTAINED_TREND_WINDOW + 1);
+        int count = 0;
+        for (int k = start; k <= i && k < altAglArray.length; k++) {
+            if (!Double.isNaN(altAglArray[k]) && altAglArray[k] <= GROUND_CONTEXT_ALT_FT) {
+                count++;
+            }
+        }
+        return count >= MIN_CONSECUTIVE_GROUND_ROWS;
+    }
+
+    /** Trend over a window: "climb", "descent", or "flat" based on net altitude change. */
+    private static String getSustainedTrend(double[] altAglArray, int i) {
+        int start = Math.max(0, i - SUSTAINED_TREND_WINDOW + 1);
+        if (start >= i || i >= altAglArray.length) return "flat";
+        double first = Double.NaN, last = Double.NaN;
+        for (int k = start; k <= i && k < altAglArray.length; k++) {
+            if (Double.isNaN(altAglArray[k])) continue;
+            if (Double.isNaN(first)) first = altAglArray[k];
+            last = altAglArray[k];
+        }
+        if (Double.isNaN(first) || Double.isNaN(last)) return "flat";
+        double change = last - first;
+        if (change > SUSTAINED_TREND_THRESHOLD_FT) return "climb";
+        if (change < -SUSTAINED_TREND_THRESHOLD_FT) return "descent";
+        return "flat";
+    }
+
+    /**
+     * Reclassify short runs of CLIMB or LANDING (1 to MAX_SHORT_AIRBORNE_RUN rows) that are
+     * surrounded by at least MIN_CONSECUTIVE_GROUND_ROWS TAXI/GROUND as TAXI (or GROUND if speed 0).
+     */
+    private static void smoothShortAirborneInGround(
+            List<FlightPhase> phases, double[] altAglArray,
+            DoubleTimeSeries groundSpeed, int n) {
+        int i = 0;
+        while (i < n) {
+            FlightPhase p = phases.get(i);
+            if (p != FlightPhase.CLIMB && p != FlightPhase.LANDING) {
+                i++;
+                continue;
+            }
+            int runStart = i;
+            while (i < n && (phases.get(i) == FlightPhase.CLIMB || phases.get(i) == FlightPhase.LANDING)) {
+                i++;
+            }
+            int runLen = i - runStart;
+            if (runLen > MAX_SHORT_AIRBORNE_RUN) {
+                continue;
+            }
+            // Check backward: at least MIN_CONSECUTIVE_GROUND_ROWS of TAXI/GROUND before runStart
+            int groundBefore = 0;
+            for (int k = runStart - 1; k >= 0 && groundBefore < MIN_CONSECUTIVE_GROUND_ROWS; k--) {
+                FlightPhase q = phases.get(k);
+                if (q == FlightPhase.TAXI || q == FlightPhase.GROUND) groundBefore++;
+                else break;
+            }
+            if (groundBefore < MIN_CONSECUTIVE_GROUND_ROWS) continue;
+            // Check forward: at least MIN_CONSECUTIVE_GROUND_ROWS of TAXI/GROUND after run
+            int groundAfter = 0;
+            for (int k = i; k < n && groundAfter < MIN_CONSECUTIVE_GROUND_ROWS; k++) {
+                FlightPhase q = phases.get(k);
+                if (q == FlightPhase.TAXI || q == FlightPhase.GROUND) groundAfter++;
+                else break;
+            }
+            if (groundAfter < MIN_CONSECUTIVE_GROUND_ROWS) continue;
+            // Reclassify run to TAXI or GROUND
+            for (int j = runStart; j < i; j++) {
+                double gs = (groundSpeed != null && j < groundSpeed.size()) ? groundSpeed.get(j) : Double.NaN;
+                phases.set(j, (!Double.isNaN(gs) && gs > 0.0) ? FlightPhase.TAXI : FlightPhase.GROUND);
+            }
+        }
+    }
+
+    /**
      * Apply complete phase post-processing including touch-and-go marking,
      * go-around detection, altitude smoothing, and final taxi detection.
      * This method can be used standalone with arrays (e.g., from CSV files)
@@ -690,17 +785,17 @@ public final class FlightPhaseProcessor {
             }
         }
 
-        // FINAL PASS: Reclassify all remaining UNKNOWNs
+        // FINAL PASS: Reclassify all remaining UNKNOWNs using sustained trend to reduce sensor-noise flicker
         List<FlightPhase> phases = phaseData.getPhases();
         int n = phases.size();
         for (int i = 0; i < n; i++) {
             if (phases.get(i) == FlightPhase.UNKNOWN) {
                 double alt = (i >= 0 && i < altAglArray.length) ? altAglArray[i] : Double.NaN;
-                double prevAlt = (i > 0 && i - 1 < altAglArray.length) ? altAglArray[i - 1] : Double.NaN;
-                double nextAlt = (i < n - 1 && i + 1 < altAglArray.length) ? altAglArray[i + 1] : Double.NaN;
                 double gndSpd = (groundSpeed != null && i < groundSpeed.size()) ? groundSpeed.get(i) : Double.NaN;
-                // Taxi logic: on ground (<=5 ft) and moving
-                if (!Double.isNaN(alt) && alt <= 5.0) {
+                // Ground/taxi: altitude <= 5 ft (or in ground context with low alt to avoid noise)
+                boolean onGroundAlt = !Double.isNaN(alt) && alt <= 5.0;
+                boolean inGroundContext = isInGroundContext(altAglArray, i);
+                if (onGroundAlt || (inGroundContext && !Double.isNaN(alt) && alt <= GROUND_CONTEXT_ALT_FT)) {
                     if (!Double.isNaN(gndSpd) && gndSpd > 0.0) {
                         phases.set(i, FlightPhase.TAXI);
                     } else {
@@ -708,29 +803,34 @@ public final class FlightPhaseProcessor {
                     }
                     continue;
                 }
-                // Use climb/descent/cruise logic for others
-                boolean climbing = !Double.isNaN(prevAlt) && !Double.isNaN(alt) && alt > prevAlt;
-                boolean descending = !Double.isNaN(prevAlt) && !Double.isNaN(alt) && alt < prevAlt;
-                if (!Double.isNaN(prevAlt) && !Double.isNaN(nextAlt)) {
-                    if (alt > prevAlt && nextAlt > alt) {
-                        climbing = true;
-                        descending = false;
-                    } else if (alt < prevAlt && nextAlt < alt) {
-                        climbing = false;
-                        descending = true;
+                // Use sustained trend (5-row window) instead of single-row to avoid CLIMB/LANDING flicker
+                String trend = getSustainedTrend(altAglArray, i);
+                // If we're in ground context but above 5 ft (sensor bounce), don't assign CLIMB/LANDING unless sustained climb
+                if (inGroundContext && alt < 100) {
+                    if (!"climb".equals(trend)) {
+                        phases.set(i, FlightPhase.TAXI);
+                        continue;
                     }
                 }
-                if (climbing) {
+                if ("climb".equals(trend)) {
                     phases.set(i, FlightPhase.CLIMB);
-                } else if (descending) {
-                    phases.set(i, FlightPhase.DESCENT);
+                } else if ("descent".equals(trend)) {
+                    phases.set(i, alt < 100 ? FlightPhase.LANDING : FlightPhase.DESCENT);
                 } else if (!Double.isNaN(alt) && alt >= 600) {
                     phases.set(i, FlightPhase.CRUISE);
                 } else {
-                    phases.set(i, FlightPhase.CLIMB);
+                    // Flat or unclear: prefer TAXI if near ground, else default to CLIMB for legacy behavior
+                    if (inGroundContext || (!Double.isNaN(alt) && alt < 50)) {
+                        phases.set(i, (!Double.isNaN(gndSpd) && gndSpd > 0.0) ? FlightPhase.TAXI : FlightPhase.GROUND);
+                    } else {
+                        phases.set(i, FlightPhase.CLIMB);
+                    }
                 }
             }
         }
+
+        // Smooth out short CLIMB/LANDING runs (1-4 rows) surrounded by TAXI/GROUND
+        smoothShortAirborneInGround(phases, altAglArray, groundSpeed, n);
     }
 
     /**
