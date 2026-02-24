@@ -57,6 +57,10 @@ public final class FlightPhaseProcessor {
     private static final double GROUND_CONTEXT_ALT_FT = 10.0;
     /** Max length of CLIMB/LANDING run to reclassify as TAXI when surrounded by ground. */
     private static final int MAX_SHORT_AIRBORNE_RUN = 4;
+    /** Min ground rows on each side to reclassify short LANDING/CLIMB runs (lower than MIN_CONSECUTIVE_GROUND_ROWS to catch single-row flicker). */
+    private static final int MIN_GROUND_SURROUND_FOR_SHORT_RUN = 2;
+    /** Max altitude AGL (ft) in a short run to allow reclassify to TAXI; above this we may be in a real approach. */
+    private static final double MAX_ALT_AGL_FOR_SHORT_RUN_RECLASSIFY_FT = 20.0;
 
     /**
      * Flight phase enumeration representing different stages of flight
@@ -645,10 +649,12 @@ public final class FlightPhaseProcessor {
 
     /**
      * Reclassify short runs of CLIMB or LANDING (1 to MAX_SHORT_AIRBORNE_RUN rows) that are
-     * surrounded by at least MIN_CONSECUTIVE_GROUND_ROWS TAXI/GROUND as TAXI (or GROUND if speed 0).
+     * surrounded by at least MIN_GROUND_SURROUND_FOR_SHORT_RUN TAXI/GROUND as TAXI (or GROUND if speed 0).
+     * Only reclassifies when the run is at ground level (max Alt AGL in run <= MAX_ALT_AGL_FOR_SHORT_RUN_RECLASSIFY_FT)
+     * so real low approaches are not converted to TAXI.
      */
     private static void smoothShortAirborneInGround(
-            List<FlightPhase> phases, DoubleTimeSeries groundSpeed, int n) {
+            List<FlightPhase> phases, double[] altAglArray, DoubleTimeSeries groundSpeed, int n) {
         int i = 0;
         while (i < n) {
             FlightPhase p = phases.get(i);
@@ -664,22 +670,30 @@ public final class FlightPhaseProcessor {
             if (runLen > MAX_SHORT_AIRBORNE_RUN) {
                 continue;
             }
-            // Check backward: at least MIN_CONSECUTIVE_GROUND_ROWS of TAXI/GROUND before runStart
+            // Check backward: at least MIN_GROUND_SURROUND_FOR_SHORT_RUN of TAXI/GROUND before runStart
             int groundBefore = 0;
-            for (int k = runStart - 1; k >= 0 && groundBefore < MIN_CONSECUTIVE_GROUND_ROWS; k--) {
+            for (int k = runStart - 1; k >= 0 && groundBefore < MIN_GROUND_SURROUND_FOR_SHORT_RUN; k--) {
                 FlightPhase q = phases.get(k);
                 if (q == FlightPhase.TAXI || q == FlightPhase.GROUND) groundBefore++;
                 else break;
             }
-            if (groundBefore < MIN_CONSECUTIVE_GROUND_ROWS) continue;
-            // Check forward: at least MIN_CONSECUTIVE_GROUND_ROWS of TAXI/GROUND after run
+            if (groundBefore < MIN_GROUND_SURROUND_FOR_SHORT_RUN) continue;
+            // Check forward: at least MIN_GROUND_SURROUND_FOR_SHORT_RUN of TAXI/GROUND after run
             int groundAfter = 0;
-            for (int k = i; k < n && groundAfter < MIN_CONSECUTIVE_GROUND_ROWS; k++) {
+            for (int k = i; k < n && groundAfter < MIN_GROUND_SURROUND_FOR_SHORT_RUN; k++) {
                 FlightPhase q = phases.get(k);
                 if (q == FlightPhase.TAXI || q == FlightPhase.GROUND) groundAfter++;
                 else break;
             }
-            if (groundAfter < MIN_CONSECUTIVE_GROUND_ROWS) continue;
+            if (groundAfter < MIN_GROUND_SURROUND_FOR_SHORT_RUN) continue;
+            // Only reclassify if run is at ground level (avoid converting real low approach to TAXI)
+            if (altAglArray != null) {
+                double maxAltInRun = Double.NEGATIVE_INFINITY;
+                for (int j = runStart; j < i && j < altAglArray.length; j++) {
+                    if (!Double.isNaN(altAglArray[j]) && altAglArray[j] > maxAltInRun) maxAltInRun = altAglArray[j];
+                }
+                if (maxAltInRun > MAX_ALT_AGL_FOR_SHORT_RUN_RECLASSIFY_FT) continue;
+            }
             // Reclassify run to TAXI or GROUND
             for (int j = runStart; j < i; j++) {
                 double gs = (groundSpeed != null && j < groundSpeed.size()) ? groundSpeed.get(j) : Double.NaN;
@@ -795,8 +809,8 @@ public final class FlightPhaseProcessor {
             }
         }
 
-        // Smooth out short CLIMB/LANDING runs (1-4 rows) surrounded by TAXI/GROUND
-        smoothShortAirborneInGround(phases, groundSpeed, n);
+        // Smooth out short CLIMB/LANDING runs (1-4 rows) surrounded by TAXI/GROUND (only when at ground level)
+        smoothShortAirborneInGround(phases, altAglArray, groundSpeed, n);
     }
 
     /**
