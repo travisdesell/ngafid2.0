@@ -135,10 +135,6 @@ public final class FlightPhaseProcessor {
         public boolean hasTouchAndGo() {
             return !splitIndices.isEmpty();
         }
-        
-        public int getTouchAndGoCount() {
-            return splitIndices.size();
-        }
     }
 
     private FlightPhaseProcessor() {
@@ -221,7 +217,7 @@ public final class FlightPhaseProcessor {
         double[] rpm = null;
         try {
             rpm = getDoubleSeriesValues(connection, flightId, Parameters.E1_RPM, Integer.MAX_VALUE);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             // RPM may not be available for all aircraft
         }
         return detectProlongedTaxiSplitsFromSeries(altAGL, groundSpeed, rpm);
@@ -327,10 +323,9 @@ public final class FlightPhaseProcessor {
                 !Double.isNaN(altAglArray[i-1]) && !Double.isNaN(altAglArray[i+1]) &&
                 alt < altAglArray[i-1] && alt < altAglArray[i+1]) {
                 // Check for climb of at least 50 ft after the valley
-                double minAlt = altAglArray[i];
                 int climbEnd = -1;
                 for (int j = i + 1; j < Math.min(i + 30, altAglArray.length); j++) {
-                    if (!Double.isNaN(altAglArray[j]) && altAglArray[j] - minAlt >= CLIMB_RECOVERY_THRESHOLD) {
+                    if (!Double.isNaN(altAglArray[j]) && altAglArray[j] - alt >= CLIMB_RECOVERY_THRESHOLD) {
                         climbEnd = j;
                         break;
                     }
@@ -378,7 +373,7 @@ public final class FlightPhaseProcessor {
         
         try {
             rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             // RPM may not be available for all aircraft types
             System.err.println("Warning: RPM not available for flight " + flight.getId() + ", using alternative phase detection");
         }
@@ -425,26 +420,6 @@ public final class FlightPhaseProcessor {
             DoubleTimeSeries groundSpeed,
             DoubleTimeSeries rpm) {
         
-        return computeFlightPhasesFromTimeSeries(altAgl, groundSpeed, rpm, null);
-    }
-    
-    /**
-     * Compute flight phases from time series data with optional airport distance.
-     * 
-     * @param altAgl altitude AGL time series
-     * @param groundSpeed ground speed time series  
-     * @param rpm RPM time series (can be null if not available)
-     * @param airportDistance distance to nearest airport (can be null)
-     * @return FlightPhaseData containing phase information for each row
-     */
-    public static FlightPhaseData computeFlightPhasesFromTimeSeries(
-            DoubleTimeSeries altAgl,
-            DoubleTimeSeries groundSpeed,
-            DoubleTimeSeries rpm,
-            DoubleTimeSeries airportDistance) {
-        
-
-
         int numRows = altAgl.size();
         List<FlightPhase> phases = new ArrayList<>(numRows);
         for (int i = 0; i < numRows; i++) {
@@ -483,11 +458,6 @@ public final class FlightPhaseProcessor {
                 climbIdx++;
                 continue;
             }
-            // Ensure TAKEOFF rows are not overridden
-            if (phases.get(climbIdx) == FlightPhase.TAKEOFF) {
-                climbIdx++;
-                continue;
-            }
             if (!Double.isNaN(altAgl.get(climbIdx)) && !Double.isNaN(groundSpeed.get(climbIdx))) {
                 if (altAgl.get(climbIdx) >= 600) {
                     climbIdx++;
@@ -499,13 +469,10 @@ public final class FlightPhaseProcessor {
         }
 
         // PHASE 4: CRUISE - After reaching 600 ft, mark high altitude phases
-        // Cruise begins immediately after climb ends (when AGL >= 600)
+        // Cruise begins immediately after climb ends (when AGL >= 600); j >= climbIdx so never TAKEOFF
         for (int j = climbIdx; j < numRows; j++) {
-            if (phases.get(j) == FlightPhase.TAKEOFF) continue;
-            if (!Double.isNaN(altAgl.get(j))) {
-                if (altAgl.get(j) >= 600 && phases.get(j) == FlightPhase.UNKNOWN) {
-                    phases.set(j, FlightPhase.CRUISE);
-                }
+            if (!Double.isNaN(altAgl.get(j)) && altAgl.get(j) >= 600 && phases.get(j) == FlightPhase.UNKNOWN) {
+                phases.set(j, FlightPhase.CRUISE);
             }
         }
 
@@ -681,8 +648,7 @@ public final class FlightPhaseProcessor {
      * surrounded by at least MIN_CONSECUTIVE_GROUND_ROWS TAXI/GROUND as TAXI (or GROUND if speed 0).
      */
     private static void smoothShortAirborneInGround(
-            List<FlightPhase> phases, double[] altAglArray,
-            DoubleTimeSeries groundSpeed, int n) {
+            List<FlightPhase> phases, DoubleTimeSeries groundSpeed, int n) {
         int i = 0;
         while (i < n) {
             FlightPhase p = phases.get(i);
@@ -790,7 +756,7 @@ public final class FlightPhaseProcessor {
         int n = phases.size();
         for (int i = 0; i < n; i++) {
             if (phases.get(i) == FlightPhase.UNKNOWN) {
-                double alt = (i >= 0 && i < altAglArray.length) ? altAglArray[i] : Double.NaN;
+                double alt = (i < altAglArray.length) ? altAglArray[i] : Double.NaN;
                 double gndSpd = (groundSpeed != null && i < groundSpeed.size()) ? groundSpeed.get(i) : Double.NaN;
                 // Ground/taxi: altitude <= 5 ft (or in ground context with low alt to avoid noise)
                 boolean onGroundAlt = !Double.isNaN(alt) && alt <= 5.0;
@@ -830,35 +796,9 @@ public final class FlightPhaseProcessor {
         }
 
         // Smooth out short CLIMB/LANDING runs (1-4 rows) surrounded by TAXI/GROUND
-        smoothShortAirborneInGround(phases, altAglArray, groundSpeed, n);
+        smoothShortAirborneInGround(phases, groundSpeed, n);
     }
 
-    /**
-     * Get a summary of phases in the flight
-     * @param phaseData the flight phase data
-     * @return a string summary of phase distribution
-     */
-    public static String getPhaseSummary(FlightPhaseData phaseData) {
-        int[] phaseCounts = new int[FlightPhase.values().length];
-        
-        for (FlightPhase phase : phaseData.getPhases()) {
-            phaseCounts[phase.ordinal()]++;
-        }
-        
-        StringBuilder summary = new StringBuilder();
-        summary.append("Flight Phase Summary (").append(phaseData.getNumberOfRows()).append(" rows):\n");
-        
-        for (FlightPhase phase : FlightPhase.values()) {
-            int count = phaseCounts[phase.ordinal()];
-            if (count > 0) {
-                double percentage = (count * 100.0) / phaseData.getNumberOfRows();
-                summary.append(String.format("  %s: %d rows (%.1f%%)\n", 
-                    phase.name(), count, percentage));
-            }
-        }
-        
-        return summary.toString();
-    }
     /**
      * Loads the AltAGL time series for a flight and returns it as a double array.
      *
