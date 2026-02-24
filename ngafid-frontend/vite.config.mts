@@ -95,7 +95,7 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
 
         server: {
             host: '0.0.0.0',
-            port: 4000,
+            port: 5173,
             strictPort: true,
             proxy: { '/api': { target: 'http://localhost:8181', changeOrigin: true }}
         }
