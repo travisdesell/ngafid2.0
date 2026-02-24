@@ -771,11 +771,9 @@ public final class ExtractMaintenanceFlights {
                 for (int i = 0; i < allLines.size(); i++) {
                     String currentLine = allLines.get(i);
                     if (currentLine.startsWith("#")) {
-                        // Metadata header line - append ,FlightPhase
-                        headerLines.add(currentLine + ",FlightPhase");
+                        headerLines.add(currentLine);
                         dataStartIndex = i + 1;
                     } else if (i == dataStartIndex) {
-                        // This is the column names line (first non-# line after # lines)
                         headerLines.add(currentLine + ",FlightPhase");
                         dataStartIndex = i + 1;
                         break;
@@ -903,13 +901,11 @@ public final class ExtractMaintenanceFlights {
                 String line = reader.readLine();
                 int rowIndex = 0;
                 
-                // Write metadata headers (lines starting with '#')
                 while (line != null && line.startsWith("#")) {
-                    writer.println(line + ",FlightPhase");
+                    writer.println(line);
                     line = reader.readLine();
                 }
                 
-                // Write column names header
                 if (line != null) {
                     writer.println(line + ",FlightPhase");
                     
