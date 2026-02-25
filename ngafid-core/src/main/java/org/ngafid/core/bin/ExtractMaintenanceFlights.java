@@ -765,13 +765,15 @@ public final class ExtractMaintenanceFlights {
                 }
                 
                 // Extract header lines (lines starting with '#' and the column names line)
+                // Second # line is data types; append ", enum" so it matches column count of header+FlightPhase
                 List<String> headerLines = new ArrayList<>();
                 int dataStartIndex = 0;
-                
+                int sharpLineCount = 0;
                 for (int i = 0; i < allLines.size(); i++) {
                     String currentLine = allLines.get(i);
                     if (currentLine.startsWith("#")) {
-                        headerLines.add(currentLine);
+                        sharpLineCount++;
+                        headerLines.add(sharpLineCount == 2 ? currentLine + ", enum" : currentLine);
                         dataStartIndex = i + 1;
                     } else if (i == dataStartIndex) {
                         headerLines.add(currentLine + ",FlightPhase");
@@ -897,15 +899,15 @@ public final class ExtractMaintenanceFlights {
             try (BufferedReader reader = new BufferedReader(new FileReader(outfile + ".tmp"));
                  PrintWriter writer = new PrintWriter(new FileWriter(outfile))) {
                 
-                // Read and write all header lines
+                // Read and write all header lines (metadata # line as-is; data types # line + ", enum"; column names + ",FlightPhase")
                 String line = reader.readLine();
                 int rowIndex = 0;
-                
+                int sharpLineCount = 0;
                 while (line != null && line.startsWith("#")) {
-                    writer.println(line);
+                    sharpLineCount++;
+                    writer.println(sharpLineCount == 2 ? line + ", enum" : line);
                     line = reader.readLine();
                 }
-                
                 if (line != null) {
                     writer.println(line + ",FlightPhase");
                     
