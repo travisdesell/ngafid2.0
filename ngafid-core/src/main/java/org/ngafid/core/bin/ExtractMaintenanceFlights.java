@@ -15,20 +15,25 @@ import org.ngafid.core.util.TimeUtils;
 import java.io.*;
 import java.sql.*;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 
 public final class ExtractMaintenanceFlights {
+    /** Central time (airport/maintenance records). Used to convert maintenance date window to GMT for DB queries. */
+    private static final ZoneId CENTRAL = ZoneId.of("America/Chicago");
+    private static final DateTimeFormatter MYSQL_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private static final HashMap<Integer, MaintenanceRecord> RECORDS_BY_WORKORDER = new HashMap<>();
-    private static final HashMap<String, ArrayList<MaintenanceRecord>> RECORDS_BY_TAIL_NUMBER = new HashMap<>();
     private static final TreeSet<MaintenanceRecord> ALL_RECORDS = new TreeSet<>();
     private static final TreeSet<String> TAIL_NUMBERS = new TreeSet<>();
     private static final TreeSet<String> AIRFRAMES = new TreeSet<>();
-    private static int systemIdCount = 0;
     private static int extractedFlightsTotal = 0;
+    private static int extractedBeforeTotal = 0;
     private static int extractedDuringTotal = 0;
-    private static int discardedDuringMultiDayCount = 0;
+    private static int extractedDuringSingleDayTotal = 0;
+    private static int extractedAfterTotal = 0;
     private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
 
     private ExtractMaintenanceFlights() {
@@ -36,7 +41,7 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Reads the cluster files and populates the recordsByWorkorder, recordsByLabel,
+     * Reads the cluster files and populates RECORDS_BY_WORKORDER, ALL_RECORDS, TAIL_NUMBERS, and AIRFRAMES.
      *
      * @param allClusters the list of all cluster files
      */
@@ -82,11 +87,6 @@ public final class ExtractMaintenanceFlights {
 
                         AIRFRAMES.add(record.getAirframe());
 
-                        // add it to the list of records by tails
-                        ArrayList<MaintenanceRecord> tailSet =
-                                RECORDS_BY_TAIL_NUMBER.computeIfAbsent(record.getTailNumber(), k -> new ArrayList<>());
-                        tailSet.add(record);
-
                         ALL_RECORDS.add(record);
                     } else {
                         existingRecord.combine(record);
@@ -117,13 +117,39 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
+     * Converts start of the given date in Central to GMT, formatted for MySQL (flights are stored in GMT).
+     */
+    private static String centralDateToGmtStartOfDay(LocalDate date) {
+        return date.atStartOfDay(CENTRAL).withZoneSameInstant(ZoneOffset.UTC).format(MYSQL_DATETIME);
+    }
+
+    /**
+     * Converts end of the given date in Central (23:59:59) to GMT, formatted for MySQL.
+     */
+    private static String centralDateToGmtEndOfDay(LocalDate date) {
+        return date.atTime(23, 59, 59).atZone(CENTRAL).withZoneSameInstant(ZoneOffset.UTC).format(MYSQL_DATETIME);
+    }
+
+    /**
+     * Converts a datetime string (in GMT, e.g. from DB) to Central (America/Chicago) for timeline.
+     * Uses the zone (not a fixed offset) so CST/CDT is handled correctly.
+     */
+    private static String gmtToCentral(String gmtDateTime) throws TimeUtils.UnrecognizedDateTimeFormatException {
+        DateTimeFormatter formatter = TimeUtils.findCorrectFormatter(gmtDateTime);
+        LocalDateTime ldt = LocalDateTime.parse(gmtDateTime, formatter);
+        ZonedDateTime utc = ldt.atZone(ZoneOffset.UTC);
+        return utc.withZoneSameInstant(CENTRAL).format(MYSQL_DATETIME);
+    }
+
+    /**
      * Counts flights in the database that overlap the extended maintenance window:
      * 10 days before open date through 10 days after close date (matches extraction window).
+     * Maintenance dates are in Central; converts window to GMT for comparison with DB (flights stored in GMT).
      *
      * @param connection the database connection
      * @param tailNumber  the tail number
-     * @param openDate    maintenance open date
-     * @param closeDate   maintenance close date
+     * @param openDate    maintenance open date (Central)
+     * @param closeDate   maintenance close date (Central)
      * @return number of flights in the extended window, or 0 if tail not found
      * @throws SQLException if there is an error with the SQL query
      */
@@ -132,14 +158,15 @@ public final class ExtractMaintenanceFlights {
             throws SQLException {
         LocalDate windowStart = openDate.minusDays(10);
         LocalDate windowEnd = closeDate.plusDays(10);
-        String windowEndOfDay = windowEnd.toString() + " 23:59:59";
+        String windowStartGmt = centralDateToGmtStartOfDay(windowStart);
+        String windowEndGmt = centralDateToGmtEndOfDay(windowEnd);
         PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM flights f " +
                 "JOIN tails t ON f.system_id = t.system_id " +
                 "WHERE t.tail = ? AND f.start_time <= ? AND f.end_time >= ?");
         stmt.setString(1, tailNumber);
-        stmt.setString(2, windowEndOfDay);
-        stmt.setString(3, windowStart.toString());
+        stmt.setString(2, windowEndGmt);
+        stmt.setString(3, windowStartGmt);
         ResultSet rs = stmt.executeQuery();
         int count = 0;
         if (rs.next()) {
@@ -302,28 +329,31 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Populates the timeline list with the flights for the given tail set
+     * Populates the timeline list with the flights for the given tail set.
+     * Maintenance window (startDate/endDate) is in Central; converts to GMT for query (flights stored in GMT).
      *
      * @param connection the database connection
      * @param tailSet    the set of tails
-     * @param startDate  the start date
-     * @param endDate    the end date
+     * @param startDate  start of window in Central (e.g. openDate - 10)
+     * @param endDate    end of window in Central (e.g. closeDate + 10)
      * @return the list of aircraft timelines
      * @throws SQLException if there is an error with the SQL query
      */
     private static List<AircraftTimeline> buildTimeline(Connection connection, ResultSet tailSet, LocalDate startDate,
                                                         LocalDate endDate) throws SQLException, TimeUtils.UnrecognizedDateTimeFormatException {
         List<AircraftTimeline> timeline = new ArrayList<>();
+        String windowStartGmt = centralDateToGmtStartOfDay(startDate);
+        String windowEndGmt = centralDateToGmtEndOfDay(endDate);
 
         while (tailSet.next()) {
             String systemId = tailSet.getString(1);
 
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT id, start_time, end_time, airframe_id FROM flights " +
-                            "WHERE system_id = ? AND start_time > ? AND end_time < ? ORDER BY start_time");
+                            "WHERE system_id = ? AND start_time <= ? AND end_time >= ? ORDER BY start_time");
             stmt.setString(1, systemId);
-            stmt.setString(2, startDate.toString());
-            stmt.setString(3, endDate.toString());
+            stmt.setString(2, windowEndGmt);
+            stmt.setString(3, windowStartGmt);
 
             ResultSet resultSet = stmt.executeQuery();
             while (resultSet.next()) {
@@ -331,14 +361,13 @@ public final class ExtractMaintenanceFlights {
                 String flightStartTime = resultSet.getString(2);
                 String flightEndTime = resultSet.getString(3);
 
-                // convert the start time (which is in GMT) to CST
-                flightStartTime = TimeUtils.toString(TimeUtils.convertToOffset(flightStartTime, "+00:00", "-06:00"));
-                flightEndTime = TimeUtils.toString(TimeUtils.convertToOffset(flightEndTime, "+00:00", "-06:00"));
+                // convert from GMT to Central (America/Chicago) so flight date is correct for before/during/after
+                flightStartTime = gmtToCentral(flightStartTime);
+                flightEndTime = gmtToCentral(flightEndTime);
 
                 timeline.add(new AircraftTimeline(flightId, flightStartTime, flightEndTime));
             }
 
-            systemIdCount++;
             resultSet.close();
             stmt.close();
         }
@@ -448,12 +477,10 @@ public final class ExtractMaintenanceFlights {
     /**
      * Assigns each flight to a maintenance phase (before/during/after) based on open, close and action dates.
      * <ul>
-     *   <li><b>before</b>: flight date in [openDate-10, openDate), or first day of multi-day window when action not on first day</li>
-     *   <li><b>during</b>: flight on single-day window [openDate==closeDate], or (legacy) full window for compatibility</li>
-     *   <li><b>after</b>: flight date in (closeDate, closeDate+10], or last day of multi-day window when action not on last day</li>
+     *   <li><b>before</b>: flight date in [openDate-10, openDate)</li>
+     *   <li><b>during</b>: flight date in [openDate, closeDate] (single- or multi-day window; all such flights go to during)</li>
+     *   <li><b>after</b>: flight date in (closeDate, closeDate+10]</li>
      * </ul>
-     * For multi-day windows: first-day flights (when action not on first day) -> before; last-day flights
-     * (when action not on last day) -> after; all other days in window -> discarded.
      *
      * @param timeline    sorted list of aircraft timelines (flights)
      * @param tailRecords sorted list of maintenance records for this tail in the cluster
@@ -471,29 +498,9 @@ public final class ExtractMaintenanceFlights {
                 LocalDate closePlus10 = r.getCloseDate().plusDays(10);
 
                 if (!flightDate.isBefore(r.getOpenDate()) && !flightDate.isAfter(r.getCloseDate())) {
-                    // flightDate in [open, close] - during maintenance window
-                    boolean isSingleDay = r.getOpenDate().equals(r.getCloseDate());
-                    if (isSingleDay) {
-                        // Single-day window: keep as during
-                        if (duringRecord == null || r.getOpenDate().isBefore(duringRecord.getOpenDate())) {
-                            duringRecord = r;
-                        }
-                    } else {
-                        // Multi-day window: reclassify first/last day or discard middle days
-                        if (flightDate.equals(r.getOpenDate()) && !r.getActionDate().equals(r.getOpenDate())) {
-                            // First day, maintenance not on first day -> before
-                            if (beforeRecord == null || r.getOpenDate().isBefore(beforeRecord.getOpenDate())) {
-                                beforeRecord = r;
-                            }
-                        } else if (flightDate.equals(r.getCloseDate()) && !r.getActionDate().equals(r.getCloseDate())) {
-                            // Last day, maintenance not on last day -> after
-                            if (afterRecord == null || r.getCloseDate().isAfter(afterRecord.getCloseDate())) {
-                                afterRecord = r;
-                            }
-                        } else {
-                            // Middle days or action day: discard (do not assign, do not count in during)
-                            discardedDuringMultiDayCount++;
-                        }
+                    // flightDate in [open, close] - during maintenance window (single- or multi-day; no discarding)
+                    if (duringRecord == null || r.getOpenDate().isBefore(duringRecord.getOpenDate())) {
+                        duringRecord = r;
                     }
                 } else if (!flightDate.isBefore(openMinus10) && flightDate.isBefore(r.getOpenDate())) {
                     // flightDate in [open-10, open); pick record with smallest openDate (closest)
@@ -555,18 +562,6 @@ public final class ExtractMaintenanceFlights {
             if (isOnMaintenanceDay || isAfterMaintenanceGap) {
                 MaintenanceRecord recordForBefore = ac.getNextEvent(); // during or transition: record for "before" count
                 MaintenanceRecord recordForAfter = ac.getPreviousEvent(); // during or transition: record for "after" count
-
-                // Reclassified first-day (before) or last-day (after): set their flight count to 0
-                boolean isReclassifiedFirstDay = ac.getNextEvent() != null && ac.getPreviousEvent() == null
-                        && ac.getDaysToNext() == 0;
-                boolean isReclassifiedLastDay = ac.getPreviousEvent() != null && ac.getNextEvent() == null
-                        && ac.getDaysSincePrevious() == 0;
-                if (isReclassifiedFirstDay && flightTookOff(connection, ac.getFlightId())) {
-                    ac.setFlightsToNext(0);
-                }
-                if (isReclassifiedLastDay && flightTookOff(connection, ac.getFlightId())) {
-                    ac.setFlightsSincePrevious(0);
-                }
 
                 int i = 1;
                 int flightCount = 0;
@@ -681,6 +676,52 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
+     * Writes a debug _phases.csv file for a flight (or a segment of it).
+     *
+     * @param connection    the database connection
+     * @param flight        the flight
+     * @param phaseData     pre-computed phase data
+     * @param debugFilePath output path for the _phases.csv file
+     * @param headerFirstLine first line of the header (e.g. "# Flight 123" or "# Flight 123 Segment 2")
+     * @param startRow      first row index (inclusive)
+     * @param endRowExclusive last row index (exclusive); use Integer.MAX_VALUE for "to end of data"
+     */
+    private static void writeDebugPhasesCsv(Connection connection, Flight flight,
+                                           FlightPhaseProcessor.FlightPhaseData phaseData,
+                                           String debugFilePath, String headerFirstLine,
+                                           int startRow, int endRowExclusive) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(debugFilePath))) {
+            writer.println(headerFirstLine);
+            writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
+            writer.println("# ----------------------------------------");
+            DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
+            DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
+            DoubleTimeSeries rpm = null;
+            try { rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM); } catch (Exception e) {}
+            DoubleTimeSeries airportDist = null;
+            DoubleTimeSeries nearestAirport = null;
+            try { airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE); } catch (Exception e) {}
+            try { nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT); } catch (Exception e) {}
+            StringTimeSeries timestamps = null;
+            try { timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME); } catch (Exception e) {}
+            int endRow = Math.min(endRowExclusive, altAgl.size());
+            for (int i = startRow; i < endRow; i++) {
+                String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
+                double alt = altAgl.get(i);
+                double gs = groundSpeed.get(i);
+                double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
+                double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
+                String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
+                String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
+                writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
+                    i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
+            }
+        } catch (Exception e) {
+            System.err.println("Error writing debug phases file: " + e.getMessage());
+        }
+    }
+
+    /**
      * Writes the files for the given event, flight and when
      *
      * @param connection      the database connection
@@ -688,14 +729,12 @@ public final class ExtractMaintenanceFlights {
      * @param event           the maintenance record
      * @param flight          the flight
      * @param when            the when string
-     * @param validation      the flight validation result (for phase marking)
      * @param fileSplitIndices indices where to split CSV into multiple files (prolonged taxi), empty = single file
      * @throws IOException  if there is an error writing the file
      * @throws SQLException if there is an error with the SQL query
      */
     private static void writeFiles(Connection connection, String outputDirectory,
                                    MaintenanceRecord event, Flight flight, String when,
-                                   FlightPhaseProcessor.FlightValidationResult validation,
                                    List<Integer> fileSplitIndices,
                                    FlightPhaseProcessor.FlightPhaseData phaseData,
                                    boolean debugPhases) 
@@ -807,37 +846,11 @@ public final class ExtractMaintenanceFlights {
                         }
                     }
 
-                    // Generate debug phases CSV for this segment if enabled
                     if (debugPhases) {
-                        String debugFile = segmentFile.replace(".csv", "_phases.csv");
-                        try (PrintWriter writer = new PrintWriter(new FileWriter(debugFile))) {
-                            writer.println("# Flight " + flight.getId() + " Segment " + segmentNumber);
-                            writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
-                            writer.println("# ----------------------------------------");
-                            DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
-                            DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
-                            DoubleTimeSeries rpm = null;
-                            try { rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM); } catch (Exception e) {}
-                            DoubleTimeSeries airportDist = null;
-                            DoubleTimeSeries nearestAirport = null;
-                            try { airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE); } catch (Exception e) {}
-                            try { nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT); } catch (Exception e) {}
-                            StringTimeSeries timestamps = null;
-                            try { timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME); } catch (Exception e) {}
-                            for (int i = startRow; i < splitIndex && i < altAgl.size(); i++) {
-                                String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
-                                double alt = altAgl.get(i);
-                                double gs = groundSpeed.get(i);
-                                double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
-                                double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
-                                String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
-                                String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
-                                writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
-                                    i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
-                            }
-                        } catch (Exception e) {
-                            System.err.println("Error writing debug phases file for segment: " + e.getMessage());
-                        }
+                        writeDebugPhasesCsv(connection, flight, phaseData,
+                                segmentFile.replace(".csv", "_phases.csv"),
+                                "# Flight " + flight.getId() + " Segment " + segmentNumber,
+                                startRow, splitIndex);
                     }
 
                     startRow = splitIndex;
@@ -861,37 +874,11 @@ public final class ExtractMaintenanceFlights {
                     }
                 }
 
-                // Generate debug phases CSV for final segment if enabled
                 if (debugPhases) {
-                    String debugFile = finalFile.replace(".csv", "_phases.csv");
-                    try (PrintWriter writer = new PrintWriter(new FileWriter(debugFile))) {
-                        writer.println("# Flight " + flight.getId() + " Segment " + segmentNumber);
-                        writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
-                        writer.println("# ----------------------------------------");
-                        DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
-                        DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
-                        DoubleTimeSeries rpm = null;
-                        try { rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM); } catch (Exception e) {}
-                        DoubleTimeSeries airportDist = null;
-                        DoubleTimeSeries nearestAirport = null;
-                        try { airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE); } catch (Exception e) {}
-                        try { nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT); } catch (Exception e) {}
-                        StringTimeSeries timestamps = null;
-                        try { timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME); } catch (Exception e) {}
-                        for (int i = startRow; i < altAgl.size(); i++) {
-                            String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
-                            double alt = altAgl.get(i);
-                            double gs = groundSpeed.get(i);
-                            double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
-                            double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
-                            String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
-                            String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
-                            writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
-                                i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Error writing debug phases file for final segment: " + e.getMessage());
-                    }
+                    writeDebugPhasesCsv(connection, flight, phaseData,
+                            finalFile.replace(".csv", "_phases.csv"),
+                            "# Flight " + flight.getId() + " Segment " + segmentNumber,
+                            startRow, Integer.MAX_VALUE);
                 }
             }
         } else {
@@ -927,66 +914,25 @@ public final class ExtractMaintenanceFlights {
         // Delete temporary file
         new File(outfile + ".tmp").delete();
 
-        // DEBUG PHASES CSV OUTPUT
         if (debugPhases) {
-            String debugFile = outfile.replace(".csv", "_phases.csv");
-            try (PrintWriter writer = new PrintWriter(new FileWriter(debugFile))) {
-                // Write header
-                writer.println("# Flight " + flight.getId());
-                writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\tAirport_Distance_ft\tNearest_Airport\tFlight_Phase");
-                writer.println("# ----------------------------------------");
-                DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
-                DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
-                DoubleTimeSeries rpm = null;
-                try {
-                    rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
-                } catch (Exception e) {
-                    // RPM may not be available
-                }
-                DoubleTimeSeries airportDist = null;
-                DoubleTimeSeries nearestAirport = null;
-                try {
-                    airportDist = flight.getDoubleTimeSeries(connection, Parameters.AIRPORT_DISTANCE);
-                } catch (Exception e) {}
-                try {
-                    nearestAirport = flight.getDoubleTimeSeries(connection, Parameters.NEAREST_AIRPORT);
-                } catch (Exception e) {}
-                // Get timestamp from StringTimeSeries
-                StringTimeSeries timestamps = null;
-                try {
-                    timestamps = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
-                } catch (Exception e) {}
-                int nRows = altAgl.size();
-                for (int i = 0; i < nRows; i++) {
-                    String timestamp = (timestamps != null && i < timestamps.size()) ? timestamps.get(i) : "";
-                    double alt = altAgl.get(i);
-                    double gs = groundSpeed.get(i);
-                    double rpmVal = (rpm != null) ? rpm.get(i) : Double.NaN;
-                    double airportDistVal = (airportDist != null) ? airportDist.get(i) : Double.NaN;
-                    String nearestAirportVal = (nearestAirport != null) ? String.valueOf(nearestAirport.get(i)) : "";
-                    String phaseStr = (phaseData != null) ? phaseData.getPhaseStringAt(i) : "UNKNOWN";
-                    writer.printf("%d\t%s\t%.1f\t%.1f\t%.0f\t%.1f\t%s\t%s\n",
-                        i, timestamp, alt, gs, rpmVal, airportDistVal, nearestAirportVal, phaseStr);
-                }
-            } catch (Exception e) {
-                System.err.println("Error writing debug phases file: " + e.getMessage());
-            }
+            writeDebugPhasesCsv(connection, flight, phaseData,
+                    outfile.replace(".csv", "_phases.csv"),
+                    "# Flight " + flight.getId(),
+                    0, Integer.MAX_VALUE);
         }
     }
 
     /**
-     * Export the files for the given connection, timeline, target cluster and output directory
+     * Exports flights to CSV files. Returns the number of flights actually extracted (written).
      *
      * @param connection      the database connection
      * @param timeline        the list of aircraft timelines
-     * @param targetCluster   the target cluster
+     * @param targetLabelId   the label_id of the cluster to export (e.g. c_1, c_13)
      * @param outputDirectory the output directory
+     * @param debugPhases     whether to write debug _phases.csv files
+     * @return number of flights written
      * @throws SQLException if there is an error with the SQL query
      * @throws IOException  if there is an error writing the file
-     */
-    /**
-     * Exports flights to CSV files. Returns the number of flights actually extracted (written).
-     * @param targetLabelId the label_id of the cluster to export (e.g. c_1, c_13)
      */
     private static int exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetLabelId,
                                     String outputDirectory, boolean debugPhases) throws SQLException, IOException {
@@ -1120,10 +1066,19 @@ public final class ExtractMaintenanceFlights {
                 }
 
                 extractedCount++;
-                if ("_during".equals(when)) {
-                    extractedDuringTotal++;
+                if (when != null) {
+                    if (when.startsWith("_before_")) {
+                        extractedBeforeTotal++;
+                    } else if ("_during".equals(when)) {
+                        extractedDuringTotal++;
+                        if (event.getOpenDate().equals(event.getCloseDate())) {
+                            extractedDuringSingleDayTotal++;
+                        }
+                    } else if (when.startsWith("_after_")) {
+                        extractedAfterTotal++;
+                    }
                 }
-                writeFiles(connection, outputDirectory, event, flight, when, validation, fileSplitIndices, phaseData, debugPhases);
+                writeFiles(connection, outputDirectory, event, flight, when, fileSplitIndices, phaseData, debugPhases);
             }
         }
         return extractedCount;
@@ -1157,8 +1112,10 @@ public final class ExtractMaintenanceFlights {
             json.append("    \"total_workorders\": ").append(RECORDS_BY_WORKORDER.size()).append(",\n");
             
             // Count flights per cluster by scanning directories
+            int totalBefore = 0;
             int totalDuring = 0;
             int totalDuringSameDay = 0;
+            int totalAfter = 0;
             File baseDir = new File(outputDirectory);
             if (baseDir.exists() && baseDir.isDirectory()) {
                 for (File clusterDir : baseDir.listFiles()) {
@@ -1174,7 +1131,9 @@ public final class ExtractMaintenanceFlights {
                                         if (csvFiles != null) {
                                             clusterCount += csvFiles.length;
                                             totalFlights += csvFiles.length;
-                                            if ("during".equals(phase)) {
+                                            if ("before".equals(phase)) {
+                                                totalBefore += csvFiles.length;
+                                            } else if ("during".equals(phase)) {
                                                 totalDuring += csvFiles.length;
                                                 // Count during flights for records where open_date == close_date
                                                 try {
@@ -1184,6 +1143,8 @@ public final class ExtractMaintenanceFlights {
                                                         totalDuringSameDay += csvFiles.length;
                                                     }
                                                 } catch (NumberFormatException ignored) { }
+                                            } else if ("after".equals(phase)) {
+                                                totalAfter += csvFiles.length;
                                             }
                                         }
                                     }
@@ -1198,9 +1159,9 @@ public final class ExtractMaintenanceFlights {
             }
             
             json.append("    \"total_flights\": ").append(totalFlights).append(",\n");
-            json.append("    \"total_during\": ").append(totalDuring).append(",\n");
-            json.append("    \"total_during_same_day\": ").append(totalDuringSameDay).append(",\n");
-            json.append("    \"during_multi_day_discarded\": ").append(discardedDuringMultiDayCount).append(",\n");
+            json.append("    \"total_before\": ").append(totalBefore).append(",\n");
+            json.append("    \"total_during\": { \"all\": ").append(totalDuring).append(", \"same_day\": ").append(totalDuringSameDay).append(" },\n");
+            json.append("    \"total_after\": ").append(totalAfter).append(",\n");
             json.append("    \"by_cluster\": {\n");
             
             int clusterIndex = 0;
@@ -1486,7 +1447,9 @@ public final class ExtractMaintenanceFlights {
                 System.out.println("  WO " + record.getWorkorderNumber() + " " + tailNumber + " [" + labelId + "] " +
                         startDate + " to " + endDate + " -> " + extracted + " flight(s)");
             }
-            System.out.println("Total: " + extractedFlightsTotal + " flights extracted (" + extractedDuringTotal + " during)");
+            System.out.println("Total: " + extractedFlightsTotal + " flights extracted (before: " + extractedBeforeTotal
+                    + ", during: " + extractedDuringTotal + ", during single-day: " + extractedDuringSingleDayTotal
+                    + ", after: " + extractedAfterTotal + ")");
         } catch (SQLException e) {
             System.err.println("SQLException: " + e);
             e.printStackTrace();
