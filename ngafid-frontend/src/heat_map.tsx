@@ -1991,6 +1991,8 @@ const HeatMapPage: React.FC = () => {
             const allProximityEventPoints: ProximityEventPoints[] = [];
             const allSingleEventPoints: ProximityEventPoints[] = [];
             const processedPairs = new Set<string>();
+
+            const pointsLoadStartMs = performance.now();
             for (const event of events) {
                 if (isProximityEvent(event)) {
                     // Deduplicate within the same event to prevent processing the same flight pair twice
@@ -2059,16 +2061,22 @@ const HeatMapPage: React.FC = () => {
                             airframe: event.airframe,
                             otherAirframe: '' // Use empty string instead of null
                         });
-                        console.log(`[processEventsAndPoints] Added to allSingleEventPoints. Total count:`, allSingleEventPoints.length);
                     } catch (error) {
                         console.warn(`Error fetching event points for event ${eventId}:`, error);
                         continue; // Skip this event if there's an error
                     }
                 }
             }
+            const pointsLoadEndMs = performance.now();
+            const pointsLoadTimeSec = (pointsLoadEndMs - pointsLoadStartMs) / 1000;
+            const totalEventsWithPoints = allProximityEventPoints.length + allSingleEventPoints.length;
+            console.log(
+                `[processEventsAndPoints] Points load time: ${pointsLoadTimeSec.toFixed(2)}s for ${totalEventsWithPoints} events (${events.length} events in selection)`
+            );
+
             setProximityEventPoints([...allProximityEventPoints, ...allSingleEventPoints]);
             setLoading(false);
-            
+
             // Calculate and set event statistics
             const allEvents = [...allProximityEventPoints, ...allSingleEventPoints];
             const statistics = calculateEventStatistics(allEvents);
