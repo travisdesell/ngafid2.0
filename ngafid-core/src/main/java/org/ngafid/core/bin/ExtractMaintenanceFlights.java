@@ -97,7 +97,7 @@ public final class ExtractMaintenanceFlights {
 
                 reader.close();
             } catch (IOException e) {
-                System.err.println("Could not read cluster file: '" + allCluster + "'");
+                System.err.println("Could not read cluster file: '" + allCluster + "': " + e.getMessage());
                 e.printStackTrace();
                 System.exit(1);
             }
