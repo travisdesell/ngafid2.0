@@ -65,20 +65,25 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     public MaintenanceRecord(String line) {
         String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+        if (parts.length != 13) {
+            throw new IllegalArgumentException("Maintenance CSV line must have exactly 13 columns "
+                    + "(workorder,open,close,tail,airframe,ata,label,label_id,cleaned_problem,original_problem,date,ata,original_action); got "
+                    + parts.length + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
+        }
 
-        workorderNumber = Integer.parseInt(parts[0]);
-        openDate = LocalDate.parse(parts[1], formatter);
-        closeDate = LocalDate.parse(parts[2], formatter);
-        tailNumber = parts[3];
-        airframe = parts[4];
-        problemATACode = Integer.parseInt(parts[5]);
-        label = parts[6];
-        labelId = parts[7];
-        cleanedProblem = parts[8];
-        originalProblem = parts[9];
-        actionDate = LocalDate.parse(parts[10], formatter);
-        actionATACode = Integer.parseInt(parts[11]);
-        originalAction = parts[12];
+        workorderNumber = Integer.parseInt(parts[0].trim());
+        openDate = LocalDate.parse(parts[1].trim(), formatter);
+        closeDate = LocalDate.parse(parts[2].trim(), formatter);
+        tailNumber = parts[3].trim();
+        airframe = parts[4].trim();
+        problemATACode = Integer.parseInt(parts[5].trim());
+        label = parts[6].trim();
+        labelId = parts[7].trim();
+        cleanedProblem = parts[8].trim();
+        originalProblem = parts[9].trim();
+        actionDate = LocalDate.parse(parts[10].trim(), formatter);
+        actionATACode = Integer.parseInt(parts[11].trim());
+        originalAction = parts[12].trim();
     }
 
     public void combine(MaintenanceRecord other) {
