@@ -34,6 +34,16 @@ public final class ExtractMaintenanceFlights {
     private static int extractedAfterTotal = 0;
     private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
 
+    /** Log file for per-workorder time trace; all dates in GMT. */
+    private static PrintWriter timeLogWriter = null;
+
+    /** Writes time-trace line to extraction_log.txt only (no console output). */
+    private static void timeLog(String line) {
+        if (timeLogWriter != null) {
+            timeLogWriter.println(line);
+        }
+    }
+
     private ExtractMaintenanceFlights() {
         throw new UnsupportedOperationException("Utility class");
     }
@@ -477,6 +487,16 @@ public final class ExtractMaintenanceFlights {
      */
     private static void assignFlightsToPhases(List<AircraftTimeline> timeline,
                                               List<MaintenanceRecord> tailRecords) {
+        for (MaintenanceRecord r : tailRecords) {
+            LocalDate openGmt = maintenanceDateAsGmt(r.getOpenDate());
+            LocalDate closeGmt = maintenanceDateAsGmt(r.getCloseDate());
+            timeLog("[TIME] WO " + r.getWorkorderNumber());
+            timeLog("[TIME]   Maintenance record (GMT):  open  = " + openGmt + "   close = " + closeGmt);
+            timeLog("[TIME]   Action date (GMT):        " + r.getActionDate());
+            timeLog("[TIME]   Sorted flights:");
+        }
+        String previousPhase = null;
+        int countBefore = 0, countDuring = 0, countAfter = 0, countOutside = 0;
         for (AircraftTimeline ac : timeline) {
             LocalDate flightDateGmt = ac.getStartTime(); // flight date from DB (GMT)
             MaintenanceRecord duringRecord = null;
@@ -509,22 +529,51 @@ public final class ExtractMaintenanceFlights {
             }
 
             // DURING takes precedence; otherwise BEFORE or AFTER (all comparisons in GMT)
+            String phase;
             if (duringRecord != null) {
                 ac.setPreviousEvent(duringRecord, 0);
                 ac.setNextEvent(duringRecord, 0);
+                phase = "during";
+                countDuring++;
             } else if (beforeRecord != null) {
                 long daysToNext = ChronoUnit.DAYS.between(flightDateGmt, maintenanceDateAsGmt(beforeRecord.getOpenDate()));
                 ac.setPreviousEvent(null, -1);
                 ac.setNextEvent(beforeRecord, daysToNext);
+                phase = "before";
+                countBefore++;
             } else if (afterRecord != null) {
                 long daysSincePrev = ChronoUnit.DAYS.between(maintenanceDateAsGmt(afterRecord.getCloseDate()), flightDateGmt);
                 ac.setPreviousEvent(afterRecord, daysSincePrev);
                 ac.setNextEvent(null, -1);
+                phase = "after";
+                countAfter++;
             } else {
                 ac.setPreviousEvent(null, -1);
                 ac.setNextEvent(null, -1);
+                phase = "outside";
+                countOutside++;
             }
+
+            if (previousPhase != null && !phase.equals(previousPhase)) {
+                timeLog("");
+            }
+            if (phase.equals("before") && (previousPhase == null || !previousPhase.equals("before"))) {
+                timeLog("[TIME]   --- before ---");
+            } else if (phase.equals("during") && (previousPhase == null || !previousPhase.equals("during"))) {
+                timeLog("[TIME]   --- during ---");
+            } else if (phase.equals("after") && (previousPhase == null || !previousPhase.equals("after"))) {
+                timeLog("[TIME]   --- after ---");
+            } else if (phase.equals("outside") && (previousPhase == null || !previousPhase.equals("outside"))) {
+                timeLog("[TIME]   --- outside ---");
+            }
+            previousPhase = phase;
+
+            timeLog("[TIME]     flightId=" + ac.getFlightId() + "  flightDate(GMT)=" + flightDateGmt
+                    + "  start(GMT)=" + ac.getStartDateTimeUtc() + "  end(GMT)=" + ac.getEndDateTimeUtc() + "  -> " + phase);
         }
+        timeLog("");
+        timeLog("[TIME]   Counts:  before=" + countBefore + "  during=" + countDuring + "  after=" + countAfter
+                + (countOutside > 0 ? "  outside=" + countOutside : ""));
     }
 
     /**
@@ -1508,7 +1557,28 @@ public final class ExtractMaintenanceFlights {
         System.out.println("Processing " + ALL_RECORDS.size() + " workorder(s)");
 
         try {
+            File logDir = new File(outputDirectory).getParentFile();
+            if (logDir == null) {
+                logDir = new File(outputDirectory);
+            }
+            File logFile = new File(logDir, "extraction_log.txt");
+            try {
+                timeLogWriter = new PrintWriter(new FileWriter(logFile));
+                timeLogWriter.println("Maintenance extraction time log");
+                timeLogWriter.println("All dates in GMT (maintenance record and flight dates).");
+                timeLogWriter.println();
+            } catch (IOException e) {
+                System.err.println("Could not create time log file: " + logFile.getAbsolutePath() + " - " + e.getMessage());
+                timeLogWriter = null;
+            }
+
+            boolean firstWorkorder = true;
             for (MaintenanceRecord record : ALL_RECORDS) {
+                if (!firstWorkorder) {
+                    timeLog("");
+                }
+                firstWorkorder = false;
+
                 LocalDate startDate = record.getOpenDate().minusDays(10);
                 LocalDate endDate = record.getCloseDate().plusDays(10);
                 String tailNumber = record.getTailNumber();
@@ -1540,6 +1610,13 @@ public final class ExtractMaintenanceFlights {
                 System.out.println("  WO " + record.getWorkorderNumber() + " " + tailNumber + " [" + labelId + "] " +
                         startDate + " to " + endDate + " -> " + extracted + " flight(s)");
             }
+
+            if (timeLogWriter != null) {
+                timeLogWriter.close();
+                timeLogWriter = null;
+                System.out.println("Time log: " + new File(logDir, "extraction_log.txt").getAbsolutePath());
+            }
+
             System.out.println("Total: " + extractedFlightsTotal + " flights extracted (before: " + extractedBeforeTotal
                     + ", during: " + extractedDuringTotal + ", during single-day: " + extractedDuringSingleDayTotal
                     + ", after: " + extractedAfterTotal + ")");

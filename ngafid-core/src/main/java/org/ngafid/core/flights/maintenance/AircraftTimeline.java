@@ -10,6 +10,8 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private final int flightId;
     private final LocalDate startTime;
     private final LocalDate endTime;
+    private final String startDateTimeUtc;
+    private final String endDateTimeUtc;
 
     private MaintenanceRecord previousEvent = null;
     private long daysSincePrevious = 0;
@@ -34,6 +36,16 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
 
     public LocalDate getEndTime() {
         return endTime;
+    }
+
+    /** Full start datetime string from DB (GMT). */
+    public String getStartDateTimeUtc() {
+        return startDateTimeUtc;
+    }
+
+    /** Full end datetime string from DB (GMT). */
+    public String getEndDateTimeUtc() {
+        return endDateTimeUtc;
     }
 
     public long getDaysToNext() {
@@ -82,9 +94,9 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
 
     public AircraftTimeline(int flightId, String startTime, String endTime) {
         this.flightId = flightId;
-        //System.out.println("parsing start time: '" + startTime + "'");
+        this.startDateTimeUtc = startTime;
+        this.endDateTimeUtc = endTime;
         this.startTime = LocalDate.parse(startTime, formatter);
-        //System.out.println("parsing end time: '" + endTime + "'");
         this.endTime = LocalDate.parse(endTime, formatter);
     }
 
