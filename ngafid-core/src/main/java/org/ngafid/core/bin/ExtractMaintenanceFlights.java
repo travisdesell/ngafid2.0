@@ -37,7 +37,7 @@ public final class ExtractMaintenanceFlights {
     /** Log file for per-workorder time trace; all dates in GMT. */
     private static PrintWriter timeLogWriter = null;
 
-    /** Writes time-trace line to extraction_log.txt only (no console output). */
+    /** Writes time-trace line to maintenance_flight_sort_log.txt only (no console output). */
     private static void timeLog(String line) {
         if (timeLogWriter != null) {
             timeLogWriter.println(line);
@@ -1557,13 +1557,11 @@ public final class ExtractMaintenanceFlights {
         System.out.println("Processing " + ALL_RECORDS.size() + " workorder(s)");
 
         try {
-            // Put extraction_log.txt next to the output dir (same folder as extract.log when run from maintenance/)
-            File outputDir = new File(outputDirectory).getAbsoluteFile();
-            File logDir = outputDir.getParentFile();
-            if (logDir == null) {
-                logDir = outputDir;
-            }
-            File logFile = new File(logDir, "extraction_log.txt");
+            // Write flight-sort log next to the CSV input (e.g. data/maintenance/) so it appears with extract.log
+            File logDir = csvFiles.length > 0
+                    ? new File(csvFiles[0]).getAbsoluteFile().getParentFile()
+                    : new File(System.getProperty("user.dir"));
+            File logFile = new File(logDir, "maintenance_flight_sort_log.txt");
             try {
                 timeLogWriter = new PrintWriter(new FileWriter(logFile));
                 timeLogWriter.println("Maintenance extraction time log");
@@ -1616,7 +1614,7 @@ public final class ExtractMaintenanceFlights {
             if (timeLogWriter != null) {
                 timeLogWriter.close();
                 timeLogWriter = null;
-                System.out.println("Time log: " + new File(logDir, "extraction_log.txt").getAbsolutePath());
+                System.out.println("Time log: " + logFile.getAbsolutePath());
             }
 
             System.out.println("Total: " + extractedFlightsTotal + " flights extracted (before: " + extractedBeforeTotal
