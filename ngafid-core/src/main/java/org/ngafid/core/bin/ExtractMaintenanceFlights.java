@@ -22,6 +22,8 @@ import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 public final class ExtractMaintenanceFlights {
     /** Maintenance records are UTC; DB is GMT. All timeline logic uses GMT. */
     private static final DateTimeFormatter MYSQL_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /** Log dates in same format as CSV (MM-dd-yyyy) to avoid confusion with source records. */
+    private static final DateTimeFormatter LOG_DATE = DateTimeFormatter.ofPattern("MM-dd-yyyy");
 
     private static final HashMap<Integer, MaintenanceRecord> RECORDS_BY_WORKORDER = new HashMap<>();
     private static final TreeSet<MaintenanceRecord> ALL_RECORDS = new TreeSet<>();
@@ -491,8 +493,8 @@ public final class ExtractMaintenanceFlights {
             LocalDate openGmt = maintenanceDateAsGmt(r.getOpenDate());
             LocalDate closeGmt = maintenanceDateAsGmt(r.getCloseDate());
             timeLog("[TIME] WO " + r.getWorkorderNumber());
-            timeLog("[TIME]   Maintenance record (GMT):  open  = " + openGmt + "   close = " + closeGmt);
-            timeLog("[TIME]   Action date (GMT):        " + r.getActionDate());
+            timeLog("[TIME]   Maintenance record (GMT):  open  = " + LOG_DATE.format(openGmt) + "   close = " + LOG_DATE.format(closeGmt));
+            timeLog("[TIME]   Action date (GMT):        " + LOG_DATE.format(r.getActionDate()));
             timeLog("[TIME]   Sorted flights:");
         }
         String previousPhase = null;
