@@ -7,7 +7,10 @@ init_env.sh
 db/db_info.php
 db/db_info
 email_info.txt
-!data/maintenance/maintenance_records.csv
+# Ignore contents of data/ but track data/maintenance so "git add data/maintenance" works
+data/*
+!data/maintenance/
+!data/maintenance/**
 ngafid-db/src/liquibase.properties
 ngafid-core/target/*
 ngafid-www/target/*
@@ -21,3 +24,10 @@ ngafid-chart-processor/temp
 ngafid-frontend/.webpack_cache/*
 .env
 ngafid-db/src/liquibase.docker.properties
+
+# Local / generated (optional: remove if you want to track)
+.vscode/
+extraction.log
+kafka.log
+kraft-combined-logs/
+resources/kraft-combined-logs/
