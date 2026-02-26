@@ -1557,9 +1557,11 @@ public final class ExtractMaintenanceFlights {
         System.out.println("Processing " + ALL_RECORDS.size() + " workorder(s)");
 
         try {
-            File logDir = new File(outputDirectory).getParentFile();
+            // Put extraction_log.txt next to the output dir (same folder as extract.log when run from maintenance/)
+            File outputDir = new File(outputDirectory).getAbsoluteFile();
+            File logDir = outputDir.getParentFile();
             if (logDir == null) {
-                logDir = new File(outputDirectory);
+                logDir = outputDir;
             }
             File logFile = new File(logDir, "extraction_log.txt");
             try {
