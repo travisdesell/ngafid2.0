@@ -2,6 +2,7 @@ package org.ngafid.core.flights.maintenance;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -58,10 +59,32 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         return actionDate;
     }
 
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yy");
+    /** MM-dd-yyyy (e.g. 02-02-2017, 07-01-2012) — used in many maintenance CSVs. */
+    private static final DateTimeFormatter FORMAT_MM_DD_YYYY = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+    /** M/d/yy (e.g. 7/13/12) — alternate format in same CSV. */
+    private static final DateTimeFormatter FORMAT_M_D_YY = DateTimeFormatter.ofPattern("M/d/yy");
 
     private final ArrayList<MaintenanceRecord> combinedRecords = new ArrayList<MaintenanceRecord>();
 
+    /**
+     * Parses a date string that may be either MM-dd-yyyy or M/d/yy.
+     * Tries MM-dd-yyyy first (e.g. 02-02-2017), then M/d/yy (e.g. 7/13/12).
+     */
+    private static LocalDate parseDate(String raw) {
+        String s = raw == null ? "" : raw.trim();
+        if (s.isEmpty()) {
+            throw new IllegalArgumentException("Empty date string");
+        }
+        try {
+            return LocalDate.parse(s, FORMAT_MM_DD_YYYY);
+        } catch (DateTimeParseException e) {
+            try {
+                return LocalDate.parse(s, FORMAT_M_D_YY);
+            } catch (DateTimeParseException e2) {
+                throw new IllegalArgumentException("Cannot parse date '" + s + "'; expected MM-dd-yyyy or M/d/yy", e2);
+            }
+        }
+    }
 
     public MaintenanceRecord(String line) {
         String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
@@ -72,8 +95,8 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         }
 
         workorderNumber = Integer.parseInt(parts[0].trim());
-        openDate = LocalDate.parse(parts[1].trim(), formatter);
-        closeDate = LocalDate.parse(parts[2].trim(), formatter);
+        openDate = parseDate(parts[1]);
+        closeDate = parseDate(parts[2]);
         tailNumber = parts[3].trim();
         airframe = parts[4].trim();
         problemATACode = Integer.parseInt(parts[5].trim());
@@ -81,7 +104,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         labelId = parts[7].trim();
         cleanedProblem = parts[8].trim();
         originalProblem = parts[9].trim();
-        actionDate = LocalDate.parse(parts[10].trim(), formatter);
+        actionDate = parseDate(parts[10]);
         actionATACode = Integer.parseInt(parts[11].trim());
         originalAction = parts[12].trim();
     }
