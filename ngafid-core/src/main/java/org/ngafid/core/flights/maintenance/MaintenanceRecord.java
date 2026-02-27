@@ -22,6 +22,9 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private final LocalDate actionDate;
     private final int actionATACode;
     private final String originalAction;
+    /** Raw date strings from CSV (for debugging log). */
+    private final String rawOpenDate;
+    private final String rawCloseDate;
 
     public int getWorkorderNumber() {
         return workorderNumber;
@@ -57,6 +60,16 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     public LocalDate getActionDate() {
         return actionDate;
+    }
+
+    /** Raw open date string as read from CSV (for debugging). */
+    public String getRawOpenDate() {
+        return rawOpenDate;
+    }
+
+    /** Raw close date string as read from CSV (for debugging). */
+    public String getRawCloseDate() {
+        return rawCloseDate;
     }
 
     /** MM-dd-yyyy (e.g. 02-02-2017, 07-01-2012) — used in many maintenance CSVs. */
@@ -95,6 +108,8 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         }
 
         workorderNumber = Integer.parseInt(parts[0].trim());
+        rawOpenDate = parts[1].trim();
+        rawCloseDate = parts[2].trim();
         openDate = parseDate(parts[1]);
         closeDate = parseDate(parts[2]);
         tailNumber = parts[3].trim();
