@@ -1963,7 +1963,9 @@ const HeatMapPage: React.FC = () => {
         return event.event_definition_id === -1 || event.event_definition_id === -2 || event.event_definition_id === -3;
     };
 
-    // Main orchestration: fetch events, then fetch points for each event (simple for loop, easy to extend)
+    const BATCH_SIZE = 1000;
+
+    // Main orchestration: fetch events, then fetch points via batch endpoint (1000 events per batch)
     const processEventsAndPoints = async (filters: {
         airframe: string;
         eventDefinitionIds: number[];
@@ -1988,95 +1990,87 @@ const HeatMapPage: React.FC = () => {
                 setLoading(false);
                 return [];
             }
+            // Chunk event IDs into batches of BATCH_SIZE and fetch in parallel
+            const eventIds = events.map((e: any) => e.id);
+            const batches: number[][] = [];
+            for (let i = 0; i < eventIds.length; i += BATCH_SIZE) {
+                batches.push(eventIds.slice(i, i + BATCH_SIZE));
+            }
+
+            const batchPromises = batches.map((batchIds) =>
+                fetch('/protected/heatmap_points_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ event_ids: batchIds })
+                }).then((r) => r.ok ? r.json() : Promise.reject(new Error(`Batch failed: ${r.status}`)))
+            );
+
+            const batchResponses = await Promise.all(batchPromises);
+            const allResults: { event_id: number; flight_id: number; points: any[] }[] = [];
+            for (const resp of batchResponses) {
+                const results = resp?.results || [];
+                allResults.push(...results);
+            }
+
+            // Build map: eventId -> flightId -> points
+            const pointsByEventAndFlight: Record<number, Record<number, any[]>> = {};
+            for (const r of allResults) {
+                if (!pointsByEventAndFlight[r.event_id]) pointsByEventAndFlight[r.event_id] = {};
+                pointsByEventAndFlight[r.event_id][r.flight_id] = r.points || [];
+            }
+
             const allProximityEventPoints: ProximityEventPoints[] = [];
             const allSingleEventPoints: ProximityEventPoints[] = [];
             const processedPairs = new Set<string>();
-            for (const event of events) {
-                if (isProximityEvent(event)) {
-                    // Deduplicate within the same event to prevent processing the same flight pair twice
-                    // but allow different events with the same flight pair
-                    const mainFlightId = event.flight_id;
-                    const otherFlightId = event.other_flight_id;
-                    const eventId = event.id;
-                    const pairKey = `${eventId}-${Math.min(mainFlightId, otherFlightId)}-${Math.max(mainFlightId, otherFlightId)}`;
-                    if (processedPairs.has(pairKey)) {
-                        continue; // skip duplicate pair within the same event
-                    }
-                    processedPairs.add(pairKey);
-                    const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
-                    const otherUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${otherFlightId}`;
-                    
-                    try {
-                        const [mainResp, otherResp] = await Promise.all([
-                            fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } }),
-                            fetch(otherUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } })
-                        ]);
-                        
-                        // Check if both responses are successful
-                        if (!mainResp.ok || !otherResp.ok) {
-                            console.warn(`Failed to fetch proximity points for event ${eventId}: main=${mainResp.status}, other=${otherResp.status}`);
-                            continue; // Skip this event if we can't get its points
-                        }
-                        
-                        const mainData = await mainResp.json();
-                        const otherData = await otherResp.json();
-                        allProximityEventPoints.push({
-                            eventId: eventId,
-                            eventDefinitionId: event.event_definition_id,
-                            mainFlightId: mainFlightId,
-                            otherFlightId: otherFlightId,
-                            mainFlightPoints: mainData.points || mainData || [],
-                            otherFlightPoints: otherData.points || otherData || [],
-                            severity: event.severity,
-                            airframe: event.airframe,
-                            otherAirframe: event.otherAirframe
-                        });
-                    } catch (error) {
-                        console.warn(`Error fetching proximity points for event ${eventId}:`, error);
-                        continue; // Skip this event if there's an error
-                    }
-                } else {
-                    // Regular event: fetch points for just the main flight
-                    const mainFlightId = event.flight_id;
-                    const eventId = event.id;
-                    const mainUrl = `/protected/heatmap_points_for_event_and_flight?event_id=${eventId}&flight_id=${mainFlightId}`;
 
-                    try {
-                        const mainResp = await fetch(mainUrl, { credentials: 'include', headers: { 'Accept': 'application/json' } });
-                        if (!mainResp.ok) {
-                            console.warn(`Failed to fetch event points for event ${eventId}: ${mainResp.status} ${mainResp.statusText}`);
-                            continue; // Skip this event if we can't get its points
-                        }
-                        const mainData = await mainResp.json();
-                        allSingleEventPoints.push({
-                            eventId: eventId,
-                            eventDefinitionId: event.event_definition_id,
-                            mainFlightId: mainFlightId,
-                            otherFlightId: null, // Use null for regular events
-                            mainFlightPoints: mainData.points || mainData || [],
-                            otherFlightPoints: [],
-                            severity: event.severity,
-                            airframe: event.airframe,
-                            otherAirframe: '' // Use empty string instead of null
-                        });
-                        console.log(`[processEventsAndPoints] Added to allSingleEventPoints. Total count:`, allSingleEventPoints.length);
-                    } catch (error) {
-                        console.warn(`Error fetching event points for event ${eventId}:`, error);
-                        continue; // Skip this event if there's an error
-                    }
+            for (const event of events) {
+                const eventId = event.id;
+                const mainFlightId = event.flight_id;
+                const otherFlightId = event.other_flight_id;
+
+                if (isProximityEvent(event)) {
+                    const pairKey = `${eventId}-${Math.min(mainFlightId, otherFlightId)}-${Math.max(mainFlightId, otherFlightId)}`;
+                    if (processedPairs.has(pairKey)) continue;
+                    processedPairs.add(pairKey);
+
+                    const mainFlightPoints = pointsByEventAndFlight[eventId]?.[mainFlightId] || [];
+                    const otherFlightPoints = pointsByEventAndFlight[eventId]?.[otherFlightId] || [];
+                    allProximityEventPoints.push({
+                        eventId,
+                        eventDefinitionId: event.event_definition_id,
+                        mainFlightId,
+                        otherFlightId,
+                        mainFlightPoints,
+                        otherFlightPoints,
+                        severity: event.severity,
+                        airframe: event.airframe,
+                        otherAirframe: event.otherAirframe
+                    });
+                } else {
+                    const mainFlightPoints = pointsByEventAndFlight[eventId]?.[mainFlightId] || [];
+                    allSingleEventPoints.push({
+                        eventId,
+                        eventDefinitionId: event.event_definition_id,
+                        mainFlightId,
+                        otherFlightId: null,
+                        mainFlightPoints,
+                        otherFlightPoints: [],
+                        severity: event.severity,
+                        airframe: event.airframe,
+                        otherAirframe: ''
+                    });
                 }
             }
+
             setProximityEventPoints([...allProximityEventPoints, ...allSingleEventPoints]);
             setLoading(false);
-            
+
             // Calculate and set event statistics
             const allEvents = [...allProximityEventPoints, ...allSingleEventPoints];
             const statistics = calculateEventStatistics(allEvents);
             setEventStatistics(statistics);
-            
-            console.log('[processEventsAndPoints] Processing events. Proximity events:', allProximityEventPoints.length, 'Single events:', allSingleEventPoints.length);
 
-            
             // Process both types of events together
             if (allProximityEventPoints.length > 0 && allSingleEventPoints.length > 0) {
                 processMixedEventCoordinates(allProximityEventPoints, allSingleEventPoints, showGrid);
@@ -2086,8 +2080,6 @@ const HeatMapPage: React.FC = () => {
             } else if (allSingleEventPoints.length > 0) {
                 // We have only regular events - process them
                 processSingleEventCoordinates(allSingleEventPoints, showGrid);
-            } else {
-                console.log('[processEventsAndPoints] No events to process');
             }
             
             return [...allProximityEventPoints, ...allSingleEventPoints];
