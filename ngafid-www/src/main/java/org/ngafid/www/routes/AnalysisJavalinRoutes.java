@@ -492,6 +492,48 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Batch heatmap points endpoint. Accepts POST body JSON: { "event_ids": [1, 2, 3, ...] }.
+     * Returns heatmap points for all event IDs in chunks (server-side chunking).
+     * Response: { "results": [ { "event_id", "flight_id", "points", "flight_airframe" }, ... ] }
+     */
+    @SuppressWarnings("unchecked")
+    public static void postHeatmapPointsBatch(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        try {
+            Map<String, Object> body = GSON.fromJson(ctx.body(), Map.class);
+            if (body == null || !body.containsKey("event_ids")) {
+                ctx.status(400).result("Missing required field: event_ids");
+                return;
+            }
+            Object eventIdsObj = body.get("event_ids");
+            if (!(eventIdsObj instanceof List)) {
+                ctx.status(400).result("event_ids must be an array of integers");
+                return;
+            }
+            List<Integer> eventIds = new ArrayList<>();
+            for (Object o : (List<?>) eventIdsObj) {
+                if (o instanceof Number) {
+                    eventIds.add(((Number) o).intValue());
+                }
+            }
+            if (eventIds.isEmpty()) {
+                ctx.json(Map.of("results", List.of()));
+                return;
+            }
+            List<Map<String, Object>> results = HeatmapPointsProcessor.getCoordinatesForEventIds(eventIds);
+            ctx.json(Map.of("results", results));
+        } catch (Exception e) {
+            LOG.severe("Error in postHeatmapPointsBatch: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).result("Internal server error: " + e.getMessage());
+        }
+    }
+
     public static void getHeatmapPoints(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
@@ -916,6 +958,7 @@ public class AnalysisJavalinRoutes {
                 "/protected/heatmap_points_for_event_and_flight",
                 AnalysisJavalinRoutes::getHeatmapPointsForEventAndFlight);
         app.get("/protected/heatmap_points_for_flight", AnalysisJavalinRoutes::getHeatmapPointsForFlight);
+        app.post("/protected/heatmap_points_batch", AnalysisJavalinRoutes::postHeatmapPointsBatch);
         app.get("/protected/heatmap_points", AnalysisJavalinRoutes::getHeatmapPoints);
         app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
         app.get("/protected/event_columns_values", AnalysisJavalinRoutes::getEventColumnsValues);

@@ -395,6 +395,102 @@ public class HeatmapPointsProcessor {
         return eventMap;
     }
 
+    /** Chunk size for batch heatmap points queries. Keeps IN clause and memory bounded. */
+    private static final int HEATMAP_POINTS_CHUNK_SIZE = 1000;
+
+    /**
+     * Fetches heatmap points for multiple event IDs in chunks.
+     * Splits event IDs into chunks of HEATMAP_POINTS_CHUNK_SIZE (default 1000),
+     * runs one SELECT per chunk, and merges results.
+     *
+     * @param eventIds list of event IDs (up to 100k supported; will be chunked)
+     * @return list of maps, each with event_id, flight_id, points, flight_airframe (same structure as getCoordinates)
+     */
+    public static List<Map<String, Object>> getCoordinatesForEventIds(List<Integer> eventIds) {
+        List<Map<String, Object>> allResults = new ArrayList<>();
+        if (eventIds == null || eventIds.isEmpty()) {
+            return allResults;
+        }
+        try (Connection connection = Database.getConnection()) {
+            for (int i = 0; i < eventIds.size(); i += HEATMAP_POINTS_CHUNK_SIZE) {
+                int end = Math.min(i + HEATMAP_POINTS_CHUNK_SIZE, eventIds.size());
+                List<Integer> chunk = eventIds.subList(i, end);
+                List<Map<String, Object>> chunkResults = getCoordinatesForEventIdsChunk(connection, chunk);
+                allResults.addAll(chunkResults);
+            }
+        } catch (SQLException e) {
+            LOG.severe("SQL error in getCoordinatesForEventIds: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return allResults;
+    }
+
+    /**
+     * Fetches heatmap points for a single chunk of event IDs.
+     * Groups rows by (event_id, flight_id) and returns one map per pair.
+     */
+    private static List<Map<String, Object>> getCoordinatesForEventIdsChunk(Connection connection, List<Integer> eventIds)
+            throws SQLException {
+        List<Map<String, Object>> results = new ArrayList<>();
+        if (eventIds.isEmpty()) return results;
+
+        StringBuilder placeholders = new StringBuilder();
+        for (int j = 0; j < eventIds.size(); j++) {
+            if (j > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        String query = "SELECT pp.event_id, pp.flight_id, pp.latitude, pp.longitude, pp.timestamp, "
+                + "pp.altitude_agl, a.airframe as flight_airframe "
+                + "FROM heatmap_points pp "
+                + "JOIN flights f ON pp.flight_id = f.id "
+                + "JOIN airframes a ON f.airframe_id = a.id "
+                + "WHERE pp.event_id IN (" + placeholders + ") "
+                + "ORDER BY pp.event_id, pp.flight_id, pp.timestamp";
+
+        // Use a structure that holds points list and airframe (from first row)
+        Map<String, List<Map<String, Object>>> pointsByKey = new LinkedHashMap<>();
+        Map<String, String> airframeByKey = new HashMap<>();
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            for (int k = 0; k < eventIds.size(); k++) {
+                stmt.setInt(k + 1, eventIds.get(k));
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int eventId = rs.getInt("event_id");
+                    int flightId = rs.getInt("flight_id");
+                    String airframe = rs.getString("flight_airframe");
+                    String key = eventId + "_" + flightId;
+                    pointsByKey.computeIfAbsent(key, k -> new ArrayList<>());
+                    if (!airframeByKey.containsKey(key)) {
+                        airframeByKey.put(key, airframe);
+                    }
+
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("latitude", rs.getDouble("latitude"));
+                    point.put("longitude", rs.getDouble("longitude"));
+                    point.put("timestamp", rs.getTimestamp("timestamp").toString());
+                    point.put("altitude_agl", rs.getDouble("altitude_agl"));
+                    pointsByKey.get(key).add(point);
+                }
+            }
+        }
+
+        for (Map.Entry<String, List<Map<String, Object>>> entry : pointsByKey.entrySet()) {
+            List<Map<String, Object>> points = entry.getValue();
+            if (points.isEmpty()) continue;
+            String[] parts = entry.getKey().split("_");
+            int eventId = Integer.parseInt(parts[0]);
+            int flightId = Integer.parseInt(parts[1]);
+            Map<String, Object> result = new HashMap<>();
+            result.put("event_id", eventId);
+            result.put("flight_id", flightId);
+            result.put("points", points);
+            result.put("flight_airframe", airframeByKey.get(entry.getKey()));
+            results.add(result);
+        }
+        return results;
+    }
+
     /**
      * Gets the relevant column names for a given event ID and flight ID.
      * This method retrieves the event definition and returns the column_names
