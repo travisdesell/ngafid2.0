@@ -3,6 +3,7 @@ export type UploadStatus =
     | "HASHING"
     | "UPLOADING"
     | "UPLOADING_FAILED"
+    | "FAILED_INTERRUPTED"
     | "UPLOADED"
     | "ENQUEUED"
     | "PROCESSING"
