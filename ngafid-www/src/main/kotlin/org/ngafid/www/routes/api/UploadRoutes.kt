@@ -36,6 +36,7 @@ object UploadRoutes : RouteProvider() {
                 path("{uid}") {
                     get("file", UploadRoutes::getUpload, Role.LOGGED_IN)
                     get("errors", UploadRoutes::getUploadErrors, Role.LOGGED_IN)
+                    post("retry", UploadRoutes::retryUpload, Role.LOGGED_IN, Role.UPLOADER_ONLY)
                     put("chunk/{cid}", UploadRoutes::putUploadChunk, Role.LOGGED_IN, Role.UPLOADER_ONLY)
                     delete(UploadRoutes::deleteUpload, Role.LOGGED_IN, Role.UPLOADER_ONLY)
                 }
@@ -225,6 +226,33 @@ object UploadRoutes : RouteProvider() {
 
     fun getUploadErrors(ctx: Context) {
         ctx.json(UploadDetails(ctx.pathParam("uid").toInt()))
+    }
+
+    fun retryUpload(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+        val uploadId = ctx.pathParam("uid").toInt()
+
+        Database.getConnection().use { connection ->
+            val upload = Upload.getUploadById(connection, uploadId)
+                ?: throw NotFoundResponse("Upload with id $uploadId not found.")
+
+            // Upload/User fleet mismatch -> Error
+            if (upload.getFleetId() != user.fleetId)
+                throw UnauthorizedResponse("User or upload is not a part of the correct fleet.")
+
+            // Status not FAILED_UNKNOWN -> Error
+            if (upload.status != Upload.Status.FAILED_UNKNOWN)
+                throw BadRequestResponse("Only FAILED_UNKNOWN uploads can be retried by requeueing processing.")
+
+            upload.getLockedUpload(connection).use { locked ->
+                locked.reset()
+            }
+
+            val refreshed = Upload.getUploadById(connection, uploadId)
+                ?: throw NotFoundResponse("Upload with id $uploadId not found after retry.")
+
+            ctx.json(refreshed)
+        }
     }
 
     fun putUploadChunk(ctx: Context) {
