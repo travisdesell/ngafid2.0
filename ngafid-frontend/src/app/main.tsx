@@ -6,6 +6,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 // Import Providers
 import { ModalOutlet, ModalProvider } from '@/components/modals/modal_provider';
 import { AirframesProvider } from '@/components/providers/airframes_provider';
+import { AirportsProvider } from '@/components/providers/airports_provider';
 import { AuthProvider, RequireAuth } from '@/components/providers/auth_provider';
 import { CommandsProvider } from '@/components/providers/commands_provider';
 import { FlightFiltersProvider } from '@/components/providers/flight_filters_provider';
@@ -268,6 +269,7 @@ const providerTree: ProviderEntry[] = [
     [CommandsProvider, {}],
     [TagsProvider, {}],
     [AirframesProvider, {}],
+    [AirportsProvider, {}],
     [SystemIdsProvider, {}],
     [TimeHeaderProvider, {}],
     [NotificationsProvider, {}],
