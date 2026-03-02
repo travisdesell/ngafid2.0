@@ -3,6 +3,8 @@ import FilterEditModal from "@/components/modals/filter_edit_modal";
 import FilterListModal from "@/components/modals/filter_list_modal/filter_list_modal";
 import { useModal } from "@/components/modals/modal_context";
 import Ping from "@/components/pings/ping";
+import { ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
+import { useAirports } from "@/components/providers/airports_provider";
 import { CommandData, useRegisterCommands } from "@/components/providers/commands_provider";
 import { useFlightFilters } from "@/components/providers/flight_filters_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -28,7 +30,9 @@ export default function FlightsPanelSearch() {
     const { filters, saveFilter, deleteFilterByName } = useFlightFilters();
     const { setModal } = useModal();
     const { fleetTags } = useTags();
+    const { airframes } = useAirframes();
     const { systemIds } = useSystemIds();
+    const { visitedAirports, visitedRunways } = useAirports();
 
 
     const filterRef = useRef(filter);
@@ -93,6 +97,12 @@ export default function FlightsPanelSearch() {
 
 
     const ruleDefinitions = useMemo(() => {
+
+        const airframeNames = airframes
+            .map((airframe) => airframe.name)
+            .filter((name) => (name !== ALL_AIRFRAMES_NAME))
+            .filter((name) => !!name)
+            .sort((a, b) => a.localeCompare(b));
         
         const systemIDNames = systemIds.map(id => id.toString())
             .sort((a, b) => a.localeCompare(b));
@@ -102,20 +112,20 @@ export default function FlightsPanelSearch() {
             .sort((a, b) => a.localeCompare(b));
 
         const ruleOptions: RuleOptions = {
-            airframes: [],              // TODO
+            airframes: airframeNames,
             systemIds: systemIDNames,
             tailNumbers: [],            // TODO
             timeZones: ["UTC", "Local"],
             doubleTimeSeriesNames: [],  // TODO
-            visitedAirports: [],        // TODO
-            visitedRunways: [],         // TODO
+            visitedAirports,
+            visitedRunways,
             eventNames: [],             // TODO
             tagNames,
         };
 
         return createRules(ruleOptions);
 
-    }, [fleetTags, systemIds, /* TODO dependencies for other options */]);
+    }, [airframes, fleetTags, systemIds, visitedAirports, visitedRunways, /* TODO dependencies for other options */]);
 
 
     const isFilterValid = useMemo(
