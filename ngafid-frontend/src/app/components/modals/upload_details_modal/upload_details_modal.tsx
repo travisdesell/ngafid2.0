@@ -271,22 +271,16 @@ export default function UploadDetailsModal({ data }: ModalProps) {
             <AccordionContent className="flex flex-col gap-1 px-4 *:text-wrap max-h-128 overflow-y-auto">
 
                 {
-                    loadingDetails
-                    ? <div className="text-xs text-muted-foreground py-2">Loading warnings and errors...</div>
-                    : null
+                    (loadingDetails)
+                    &&
+                    <div className="text-xs text-muted-foreground py-2">Loading warnings and errors...</div>
                 }
 
                 {
-                    loadingError
-                    ? <div className="text-xs text-(--error) py-2">{loadingError}</div>
-                    : null
+                    (loadingError)
+                    &&
+                    <div className="text-xs text-(--error) py-2">{loadingError}</div>
                 }
-
-                {/* {
-                    (!loadingDetails && !loadingError && !hasDetails)
-                    ? <div className="text-xs text-muted-foreground py-2">No error or warning details were returned for this upload.</div>
-                    : null
-                } */}
 
                 <div className="text-xs text-muted-foreground py-2">Click on an error or warning to copy it.</div>
 
