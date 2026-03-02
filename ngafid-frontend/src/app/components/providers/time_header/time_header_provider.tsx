@@ -97,7 +97,7 @@ export function TimeHeaderProvider({ children }: { children: React.ReactNode }) 
     const renderDateRangeNumeric = React.useCallback(() => {
 
         return (
-            <div className="flex flex-row items-center gap-1 mt-1 text-sm text-[var(--c_text_subtle)] opacity-50">
+            <div className="flex flex-row items-center gap-1 mt-1 text-sm text-(--c_text_subtle) opacity-50">
                 <Calendar size={16} className="mb-0.5" /> {endpointStartDate} — {endpointEndDate}
             </div>
         );
@@ -111,7 +111,7 @@ export function TimeHeaderProvider({ children }: { children: React.ReactNode }) 
         const endString = appliedEndDate.toLocaleDateString(undefined, options);
 
         return (
-            <div className="flex flex-row items-center gap-1 text-xs font-medium text-[var(--c_text_subtle)] opacity-50">
+            <div className="flex flex-row items-center gap-1 text-xs font-medium text-(--c_text_subtle) opacity-50">
                 <Calendar size={16} /> {startString} — {endString}
             </div>
         );
