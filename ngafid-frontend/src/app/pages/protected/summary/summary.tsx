@@ -322,7 +322,7 @@ export default function SummaryPage() {
                             }}
                         >
                             <Button asChild variant="outline">
-                                <SelectTrigger className="w-[200px]">
+                                <SelectTrigger className="w-50">
                                     <SelectValue placeholder="Airframe" />
                                 </SelectTrigger>
                             </Button>
@@ -366,7 +366,7 @@ export default function SummaryPage() {
                                     <col style={{ width: "30%" }} />
                                 </colgroup>
 
-                                <thead className="leading-16 border-b-1">
+                                <thead className="leading-16 border-b">
                                     <tr>
                                         <th>Airframe</th>
                                         <th className="text-right">Flights</th>
