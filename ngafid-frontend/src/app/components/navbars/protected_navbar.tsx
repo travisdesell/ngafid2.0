@@ -21,6 +21,7 @@ import { ROUTE_DEFAULT_LOGGED_IN } from "@/lib/route_utils";
 import { motion } from "framer-motion";
 import BugReportModal from "../modals/bug_report_modal";
 import Notifications from "../providers/notifications/notifications";
+import MultifleetSelect from "@/components/navbars/multifleet_select";
 
 const log = getLogger("ProtectedNavbar", "teal", "Navbar");
 
@@ -47,7 +48,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
         return (
             <nav
                 id='navbar'
-                className="shrink-0 navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-(--sidebar) @container/navbar"
+                className="shrink-0 navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-sidebar @container/navbar"
             >
 
                 {/* Left Elements */}
@@ -57,6 +58,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                     <Link className="font-semibold text-xl" to={ROUTE_DEFAULT_LOGGED_IN}>
                         NGAFID
                     </Link>
+
+                    {/* Multifleet Select */}
+                    <MultifleetSelect />
 
                     {/* Child Elements */}
                     <div className="flex flex-row items-center justify-end gap-2">
