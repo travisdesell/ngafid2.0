@@ -45,6 +45,7 @@ import org.ngafid.www.routes.StatisticsJavalinRoutes;
 import org.ngafid.www.routes.StatusJavalinRoutes;
 import org.ngafid.www.routes.*;
 import org.ngafid.www.routes.api.AirSyncRoutes;
+import org.ngafid.www.routes.api.AirportRoutes;
 import org.ngafid.www.routes.api.AircraftRoutes;
 import org.ngafid.www.routes.api.AuthRoutes;
 import org.ngafid.www.routes.api.CesiumRoutes;
@@ -80,6 +81,7 @@ public class JavalinWebServer extends WebServer {
             config.bundledPlugins.enableRouteOverview("/api");
 
             // (kt) Bind all routes
+            AirportRoutes.INSTANCE.bind(config);
             AircraftRoutes.INSTANCE.bind(config);
             AirSyncRoutes.INSTANCE.bind(config);
             AuthRoutes.INSTANCE.bind(config);
