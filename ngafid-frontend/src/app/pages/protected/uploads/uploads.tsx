@@ -19,16 +19,21 @@ import {
     Download,
     List,
     Loader,
+    RotateCcw,
     Trash
 } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import SparkMD5 from "spark-md5";
 
+import { openModal } from "@/components/modals/modal_store";
 import SuccessModal from "@/components/modals/success_modal";
+import UploadDetailsModal from "@/components/modals/upload_details_modal/upload_details_modal";
+import PanelAlert from "@/components/panel_alert";
 import { getLogger } from "@/components/providers/logger";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropzone";
 import type {
     APIError,
@@ -40,9 +45,6 @@ import type {
     UploadListResponse,
     UploadStatus
 } from "./_types/types";
-import { openModal } from "@/components/modals/modal_store";
-import UploadDetailsModal from "@/components/modals/upload_details_modal/upload_details_modal";
-import PanelAlert from "@/components/panel_alert";
 
 
 const log = getLogger("Uploads", "black", "Page");
@@ -67,6 +69,7 @@ function statusBadgeVariant(status: UploadStatus): { label: string; variant: Bad
         case "PROCESSED_WARNING":
             return { label: "PROCESSED WARNING", variant: "outline" };
         case "UPLOADING_FAILED":
+        case "FAILED_INTERRUPTED":
         case "FAILED_FILE_TYPE":
         case "FAILED_AIRCRAFT_TYPE":
         case "FAILED_ARCHIVE_TYPE":
@@ -104,6 +107,24 @@ function safeFilename(name: string) {
     const UPLOAD_FILE_NAME_DEFAULT = "UnknownFlightData.zip";
 
     return name?.replace(/[^0-9a-zA-Z._-]/g, "") || UPLOAD_FILE_NAME_DEFAULT;
+
+}
+
+async function pickRetryFile(): Promise<File | null> {
+
+    return await new Promise((resolve) => {
+
+        const input = document.createElement("input");
+        input.type = "file";
+
+        input.onchange = () => {
+            const file = input.files?.item(0) ?? null;
+            resolve(file);
+        };
+
+        input.click();
+
+    });
 
 }
 
@@ -321,11 +342,18 @@ export default function UploadsPage() {
 
     // Pending (client-side) uploads that are currently hashing/uploading
     const [pending, setPending] = useState<UploadInfo[]>([]);
+    const [deletingUploadIds, setDeletingUploadIds] = useState<Set<number>>(new Set());
+    const activeUploadIdsRef = useRef<Set<number>>(new Set());
+    const pendingIdentifiersRef = useRef<Set<string>>(new Set());
 
     // UI handling
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [expandedErrors, setExpandedErrors] = useState<Record<number, UploadErrorsPayload | "loading" | "error" | undefined>>({});
+
+    useEffect(() => {
+        pendingIdentifiersRef.current = new Set(pending.map((p) => p.identifier));
+    }, [pending]);
 
 
     const loadUploads = useCallback(async (page = uploadsPage, pageSize = 10, silent = false) => {
@@ -344,7 +372,22 @@ export default function UploadsPage() {
             return false;
         }
 
-        const filtered = (uploadsListResponse.uploads ?? []).filter((u: UploadInfo) => u.status !== "DERIVED");
+        const filtered = (uploadsListResponse.uploads ?? [])
+            .filter((u: UploadInfo) => u.status !== "DERIVED")
+            .map((u: UploadInfo) => {
+
+                const uploadIsLocalActive = (
+                    activeUploadIdsRef.current.has(u.id)
+                    || pendingIdentifiersRef.current.has(u.identifier)
+                );
+
+                if (u.status === "UPLOADING" && !uploadIsLocalActive)
+                    return { ...u, status: "FAILED_INTERRUPTED" as UploadStatus };
+
+                return u;
+
+            });
+
         setUploads(filtered);
         setUploadsPages(uploadsListResponse.numberPages ?? 0);
         return true;
@@ -382,13 +425,19 @@ export default function UploadsPage() {
             when the 'error' state changes.
         */
 
+        const clearError = () => setError(null);
+
         if (error)
             log.error("Error changed:", error);
         else
             log.log("Error cleared");
 
         if (error)
-            setModal(ErrorModal, { title: "Error", message: error });
+            setModal(
+                ErrorModal,
+                { title: "Error", message: error },
+                clearError
+            );
 
     }, [error]);
     
@@ -426,7 +475,16 @@ export default function UploadsPage() {
             return;
 
         const serverIDs = new Set(uploads.map((u) => u.identifier));
-        setPending((prev) => prev.filter((p) => !serverIDs.has(p.identifier)));
+        setPending((prev) => prev.filter((p) => {
+
+            // Keep active local work visible even if a matching server row exists.
+            if (p.status === "HASHING" || p.status === "UPLOADING")
+                return true;
+
+            // Non-active pending entries can be removed once server has same identifier.
+            return !serverIDs.has(p.identifier);
+
+        }));
 
     }, [uploads, pending.length]);
 
@@ -475,6 +533,12 @@ export default function UploadsPage() {
             // Polling cancelled, exit
             if (isCancelled)
                 return;
+
+            // Skip polling while local uploads are actively hashing/uploading to avoid request contention.
+            if (hasLocalActiveUpload) {
+                timeoutId = window.setTimeout(() => { void poll(); }, nextDelayMS);
+                return;
+            }
 
             // Page is not visible or we're already polling, delay the next poll
             if (isPollingRef.current || document.hidden) {
@@ -543,6 +607,9 @@ export default function UploadsPage() {
 
     const startUploadFlow = async (file: File) => {
 
+        const pendingIdentifier = `${file.size}-${safeFilename(file.name)}`;
+        let createdUploadId: number | null = null;
+
         try {
 
             // Flag as busy
@@ -554,7 +621,7 @@ export default function UploadsPage() {
             // Seed pending entry
             const pendingEntry = {
                 id: -1,
-                identifier: `${file.size}-${safeFilename(file.name)}`,
+                identifier: pendingIdentifier,
                 filename: file.name,
                 status: "HASHING",
                 sizeBytes: file.size,
@@ -569,18 +636,25 @@ export default function UploadsPage() {
                 fleetId: -1,
             } as UploadInfo;
 
+            const existingPending = pending.find((u) => u.identifier === pendingIdentifier);
+            const hasActiveDuplicate = (
+                !!existingPending
+                && (existingPending.status === "HASHING" || existingPending.status === "UPLOADING")
+            );
+
+            if (hasActiveDuplicate) {
+                setModal(ErrorModal, {
+                    title: "Duplicate File",
+                    message: `The file "${file.name}" is already being uploaded. Please wait for the current upload to finish before uploading it again.`
+                });
+                return;
+            }
+
             setPending((p) => {
 
-                // Guard to prevent duplicates
-                if (p.some((u) => u.identifier === pendingEntry.identifier)) {
-                    setModal(ErrorModal, {
-                        title: "Duplicate File",
-                        message: `The file "${file.name}" is already being uploaded. Please wait for the current upload to finish before uploading it again.`
-                    });
-                    return p;
-                }
-
-                return [...p, pendingEntry];
+                // Replace any non-active duplicate so retried uploads visibly restart from HASHING.
+                const next = p.filter((u) => u.identifier !== pendingEntry.identifier);
+                return [...next, pendingEntry];
                 
             });
 
@@ -629,12 +703,35 @@ export default function UploadsPage() {
             setPending((p) => p.map((x) =>
                 (x.identifier === pendingEntry.identifier) ? { ...x, id: created.id } : x
             ));
+            activeUploadIdsRef.current.add(created.id);
+            createdUploadId = created.id;
 
-            // Chunk upload loop
+            // Chunk upload loop (supports resuming interrupted uploads)
             const nChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const normalizedChunkStatus = (created.chunkStatus ?? "").slice(0, nChunks);
+
             let uploadedBytes = 0;
+            for (let n = 0; n < nChunks; n++) {
+                if (normalizedChunkStatus[n] === "1") {
+                    const start = n * CHUNK_SIZE;
+                    const end = Math.min(start + CHUNK_SIZE, file.size);
+                    uploadedBytes += (end - start);
+                }
+            }
+
+            setPending((p) =>
+                p.map((u) =>
+                    u.identifier === pendingEntry.identifier
+                        ? { ...u, status: "UPLOADING", progressSize: uploadedBytes, bytesUploaded: uploadedBytes, totalSize: file.size }
+                        : u
+                )
+            );
 
             for (let n = 0; n < nChunks; n++) {
+
+                // This chunk is already present on the server from a previous interrupted upload.
+                if (normalizedChunkStatus[n] === "1")
+                    continue;
 
                 const start = n * CHUNK_SIZE;
                 const end = Math.min(start + CHUNK_SIZE, file.size);
@@ -642,16 +739,41 @@ export default function UploadsPage() {
                 const form = new FormData();
                 form.append("chunk", blob, file.name);
 
-                const putRes = await fetch(
-                    `/api/upload/${created.id}/chunk/${n}`,
-                    { method: "PUT", body: form }
-                );
+                let putRes: Response | null = null;
+                let lastChunkError: unknown = null;
+                const MAX_CHUNK_ATTEMPTS = 3;
+
+                for (let attempt = 1; attempt <= MAX_CHUNK_ATTEMPTS; attempt++) {
+                    try {
+                        putRes = await fetch(
+                            `/api/upload/${created.id}/chunk/${n}`,
+                            { method: "PUT", body: form }
+                        );
+
+                        if (!putRes.ok) {
+                            const text = await putRes.text();
+                            throw new Error(text || `Chunk ${n} failed (${putRes.status})`);
+                        }
+
+                        lastChunkError = null;
+                        break;
+                    } catch (err) {
+                        lastChunkError = err;
+
+                        if (attempt < MAX_CHUNK_ATTEMPTS) {
+                            const retryDelayMS = 500 * attempt;
+                            await sleep(retryDelayMS);
+                            continue;
+                        }
+
+                        throw err;
+                    }
+                }
 
                 // Chunk upload failed, throw error
-                if (!putRes.ok) {
-                    const text = await putRes.text();
-                    throw new Error(text || `Chunk ${n} failed (${putRes.status})`);
-                }
+                if (!putRes)
+                    throw new Error((lastChunkError as Error)?.message || `Chunk ${n} failed.`);
+
                 const updated = (await putRes.json()) as UploadInfo & APIError;
 
                 // Server returned an error, throw it
@@ -685,19 +807,33 @@ export default function UploadsPage() {
                 )
             );
 
-            // Refresh the uploads list from server
-            await loadUploads();
+            // Refresh the uploads list from server (best effort; upload already completed locally)
+            try {
+                await loadUploads();
+            } catch (refreshError) {
+                log.warn("Upload completed, but failed to refresh uploads list:", refreshError);
+            }
 
         } catch (e: any) {
 
-            setError(e?.message || String(e));
+            const errorMessage = e?.message || String(e);
+            setError(errorMessage);
 
-            // Mark any pending upload that was HASHING or UPLOADING as failed
+            const interruptedError = /Failed to fetch|timed out|NetworkError|ERR_CONNECTION_TIMED_OUT/i.test(errorMessage);
+
+            // Mark only this pending upload as failed
             setPending((p) =>
-                p.map((u) => (u.status === "UPLOADING" || u.status === "HASHING" ? { ...u, status: "UPLOADING_FAILED" } : u))
+                p.map((u) =>
+                    (u.identifier === pendingIdentifier && (u.status === "UPLOADING" || u.status === "HASHING"))
+                        ? { ...u, status: (interruptedError ? "FAILED_INTERRUPTED" : "UPLOADING_FAILED") }
+                        : u
+                )
             );
 
         } finally {
+
+            if (createdUploadId !== null)
+                activeUploadIdsRef.current.delete(createdUploadId);
 
             // No longer busy
             setBusy(false);
@@ -715,10 +851,20 @@ export default function UploadsPage() {
 
                 log("Confirmed deletion of upload:", u);
 
-                // Optimistic removal from UI (will be reloaded from server after)
-                setUploads((list) => list.filter((x) => x.id !== u.id));
-                setImports((list) => list.filter((x) => x.id !== u.id));
-                setPending((list) => list.filter((x) => x.identifier !== u.identifier));
+                const hasAnyLocalActiveUpload = pending.some((p) => p.status === "HASHING" || p.status === "UPLOADING") || busy;
+                if (hasAnyLocalActiveUpload) {
+                    setModal(ErrorModal, {
+                        title: "Delete Disabled During Upload",
+                        message: "Please wait until active uploads finish before deleting an upload."
+                    });
+                    return;
+                }
+
+                setDeletingUploadIds((prev) => {
+                    const next = new Set(prev);
+                    next.add(u.id);
+                    return next;
+                });
 
                 try {
 
@@ -764,11 +910,87 @@ export default function UploadsPage() {
 
                     setError(e?.message || String(e));
 
+                } finally {
+
+                    setDeletingUploadIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(u.id);
+                        return next;
+                    });
+
                 }
 
             }
 
         });
+
+    };
+
+
+    const retryUpload = async (u: UploadInfo | UploadImportItem) => {
+
+        setError(null);
+
+        if (u.status === "FAILED_INTERRUPTED") {
+
+            const selectedFile = await pickRetryFile();
+
+            if (!selectedFile)
+                return;
+
+            if (selectedFile.name !== u.filename) {
+                setModal(ErrorModal, {
+                    title: "Retry Upload",
+                    message: `Please select the original file named '${u.filename}'.`
+                });
+                return;
+            }
+
+            void startUploadFlow(selectedFile);
+            return;
+        }
+
+        if (u.status === "UPLOADING_FAILED") {
+
+            const fileToRetry = ("file" in u && u.file instanceof File) ? u.file : null;
+
+            if (!fileToRetry) {
+                setModal(ErrorModal, {
+                    title: "Retry Upload",
+                    message: "This upload can only be retried by re-selecting the original file from your device."
+                });
+                return;
+            }
+
+            setPending((list) => list.filter((x) => x.identifier !== u.identifier));
+            void startUploadFlow(fileToRetry);
+            return;
+        }
+
+        if (u.status === "FAILED_UNKNOWN") {
+
+            try {
+
+                const retryResponse = await fetchJson.post<UploadInfo | APIError>(`/api/upload/${u.id}/retry`, new URLSearchParams());
+
+                if (isAPIError(retryResponse))
+                    throw new Error(`${retryResponse.errorTitle}: ${retryResponse.errorMessage}`);
+
+                setModal(SuccessModal, {
+                    title: "Upload Requeued",
+                    message: `The upload '${u.filename}' has been requeued for processing.`
+                });
+
+                await loadUploads();
+                await loadImports();
+
+            } catch (e: any) {
+
+                setError(e?.message || String(e));
+
+            }
+
+        }
 
     };
 
@@ -832,8 +1054,27 @@ export default function UploadsPage() {
         const uploadProgress = percent(u.progressSize ?? u.bytesUploaded ?? 0, u.totalSize ?? u.sizeBytes ?? 0);
         const progressBarColor = (u.status === "HASHING" ? "bg-secondary-foreground" : "");
         const { label, variant } = statusBadgeVariant(u.status);
+        const isDeleting = (u.id !== -1 && deletingUploadIds.has(u.id));
 
-        const disableAll = (u.status === "HASHING" || u.status === "UPLOADING");
+        const hasAnyLocalActiveUpload = (busy || pending.some((p) => p.status === "HASHING" || p.status === "UPLOADING"));
+        const disableAll = (u.status === "HASHING" || u.status === "UPLOADING" || isDeleting);
+        const canRetry = (u.status === "UPLOADING_FAILED" || u.status === "FAILED_INTERRUPTED" || u.status === "FAILED_UNKNOWN");
+        const retryDisabled = (disableAll || !canRetry || (u.status === "FAILED_UNKNOWN" && u.id === -1));
+        const deleteDisabled = (disableAll || isPending || u.id === -1 || hasAnyLocalActiveUpload);
+        const retryTooltipMessage = (() => {
+
+            if (u.status === "FAILED_INTERRUPTED")
+                return `Select the original file '${u.filename}' to resume this interrupted upload.`;
+
+            if (u.status === "UPLOADING_FAILED")
+                return "Retries the upload using the original local file if it is still available.";
+
+            if (u.status === "FAILED_UNKNOWN")
+                return "Requeues this upload on the server for processing again.";
+
+            return "Retry is only available for interrupted or failed uploads.";
+
+        })();
         const isImported = (u.status === "PROCESSED_OK");
         const hasImportData = ("validFlights" in u);
         const totalFlights = hasImportData ? (u.validFlights + u.warningFlights + u.errorFlights) : 0;
@@ -848,6 +1089,10 @@ export default function UploadsPage() {
                 case "UPLOADING":
                     return "Uploading, please do not refresh or navigate away...";
 
+                case "UPLOADING_FAILED":
+                case "FAILED_INTERRUPTED":
+                    return "Awaiting file reupload...";
+
                 default:
                     return "Awaiting import processing...";
 
@@ -856,7 +1101,7 @@ export default function UploadsPage() {
         })();
 
         return (
-            <Card className="card-glossy w-full bg-background! h-48">
+            <Card className={`card-glossy w-full bg-background! h-48 transition-opacity ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}>
                 <CardContent className="px-6 space-y-4 mt-3">
 
                     {/* Top Row */}
@@ -888,10 +1133,28 @@ export default function UploadsPage() {
 
                         {/* Delete & Download Buttons */}
                         <div className="flex justify-end gap-2">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            disabled={retryDisabled}
+                                            onClick={() => { void retryUpload(u); }}
+                                            title="Retry upload"
+                                        >
+                                            <RotateCcw className="h-4 w-4" />
+                                        </Button>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {retryTooltipMessage}
+                                </TooltipContent>
+                            </Tooltip>
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                disabled={disableAll || isPending || u.id === -1}
+                                disabled={deleteDisabled}
                                 onClick={() => (u.id !== -1 ? deleteUpload(u) : null)}
                                 title="Delete upload"
                                 className="hover:bg-red-500/25 hover:text-red-500 focus:ring-red-500"
@@ -1030,7 +1293,22 @@ export default function UploadsPage() {
     const mergedUploadsImports = React.useMemo(() => {
 
         const byIdentifier = new Map(uploads.map((u) => [u.identifier, u]));
-        const visiblePending = pending.filter((p) => !byIdentifier.has(p.identifier));
+        const visiblePending = pending.filter((p) => {
+
+            // No server upload with this identifier, always show pending.
+            if (!byIdentifier.has(p.identifier))
+                return true;
+
+            // If local upload is actively hashing/uploading, prefer local pending card.
+            return (p.status === "HASHING" || p.status === "UPLOADING");
+
+        });
+
+        const activePendingIdentifiers = new Set(
+            visiblePending
+                .filter((p) => p.status === "HASHING" || p.status === "UPLOADING")
+                .map((p) => p.identifier)
+        );
 
         const combined: (UploadInfo | UploadImportItem)[] = [];
 
@@ -1041,6 +1319,10 @@ export default function UploadsPage() {
 
         // Add uploads, merging in import data (if it exists)
         for (const u of uploads) {
+
+            // Local active pending card takes precedence over same server identifier.
+            if (activePendingIdentifiers.has(u.identifier))
+                continue;
 
             const importData = imports.find((i) => i.id === u.id);
 
