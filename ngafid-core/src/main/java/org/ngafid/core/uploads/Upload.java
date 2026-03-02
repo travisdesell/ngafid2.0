@@ -55,6 +55,7 @@ public final class Upload {
     public enum Status {
         UPLOADING,
         UPLOADING_FAILED,
+        FAILED_INTERRUPTED,
         UPLOADED,
         ENQUEUED,
         PROCESSING,
