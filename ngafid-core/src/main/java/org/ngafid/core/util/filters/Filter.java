@@ -191,10 +191,16 @@ public class Filter {
 
             for (UiCondition condition : rule.getConditions()) {
 
-                if (condition != null && condition.getName() != null)
-                    inputs.add(condition.getName());
-                else
+                if (condition == null) {
                     inputs.add("");
+                    continue;
+                }
+
+                Object value = condition.getValue();
+                final String valueStr = (value == null)
+                    ? ""
+                    : String.valueOf(value);
+                inputs.add(valueStr);
 
             }
 
