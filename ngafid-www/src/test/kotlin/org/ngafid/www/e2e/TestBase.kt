@@ -2,8 +2,8 @@ package org.ngafid.www.e2e
 
 import org.junit.jupiter.api.*
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.edge.EdgeOptions
+import org.openqa.selenium.edge.ChromeDrivre
+import org.openqa.selenium.edge.ChromeOptions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 
@@ -22,11 +22,11 @@ open class TestBase {
             ?: throw IllegalStateException("Missing required env var: $name")
     @BeforeAll
     fun setupDriver() {
-        val options = EdgeOptions()
+        val options = ChromeOptions()
         options.addArguments("--headless=new")
         options.addArguments("--disable-gpu")
         options.addArguments("--no-sandbox")
-        driver = EdgeDriver(options)
+        driver = ChromeDriver(options)
         wait = WebDriverWait(driver, Duration.ofSeconds(10))
     }
     @AfterAll
