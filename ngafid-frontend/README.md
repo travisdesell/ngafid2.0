@@ -16,7 +16,7 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
     pnpm install
 ~~~
 
-3. Run the Vite development server (2 options):
+3. Run the Vite development server (multiple options):
 ~~~
     npx vite [--port=<TARGET PORT HERE>]
 ~~~
@@ -26,7 +26,34 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
 
 3. Connect to the device at the given IP address.
 
-<span style="opacity:0.50">🛈 If configured correctly, you can also connect to the Vite server from other devices on your network. (Trying to host from inside WSL may require additional setup inside Windows: https://learn.microsoft.com/en-us/windows/wsl/networking) </span>
+<span style="opacity:0.50">
+🛈 If configured correctly, you can also connect to the Vite server from other devices on your network. (Trying to host from inside WSL may require additional setup inside Windows: <a>https://learn.microsoft.com/en-us/windows/wsl/networking</a>)
+</span>
+
+---
+
+### Building (& Previewing)
+
+* Run either of these commands to build (the latter will continuously watch for file changes):
+
+```
+    pnpm build
+```
+
+```
+    pnpm watch
+```
+
+* Run this command to preview the build:
+
+```
+    pnpm preview
+```
+
+<span style="opacity:0.50">
+🛈 Some performance-intensive features (e.g., interactive charts/graphs) might be easier to work with when using the build preview, but don't avoid
+trying to do any optimization passes because of this (...or else ಠಠ).
+</span>
 
 ---
 
