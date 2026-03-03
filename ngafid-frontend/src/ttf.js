@@ -21,6 +21,7 @@ import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
 
 import Plotly from 'plotly.js';
+import { showErrorModal } from './error_modal.js';
 
 const ROLL_THRESHOLDS = {
     Min: 0,
@@ -138,6 +139,16 @@ class TTFCard extends React.Component {
     constructor(props) {
         super(props);
         const date = new Date();
+
+        // Missing airports data, exit
+        if (!airports || airports.length === 0) {
+
+            console.error("No airports data found!");
+            showErrorModal("Missing Airports", "Airport data is required for this page to function correctly, but no airport data was found.");
+
+        }
+
+        const selectedAirportInitial = (airports?.[0] ?? null);
         this.state = {
             // The start of the date range that this.state.data corresponds to.
             // This will be null if and only if this.state.data is null
@@ -168,7 +179,7 @@ class TTFCard extends React.Component {
             endDate: `${new String(date.getFullYear())}-${date.getMonth() + 1}-01`,
             endDateObject: this.parseDate(`${new String(date.getFullYear())}-${date.getMonth() + 1}-01`),
 
-            selectedAirport: airports[0],
+            selectedAirport: selectedAirportInitial,
             selectedRunway: "Any Runway",
             mapVisible: true,
             plotVisible: true,
@@ -694,6 +705,14 @@ class TTFCard extends React.Component {
         const endDateString = this.state.endDate;
         const airport = this.state.selectedAirport;
 
+        // Invalid airport, exit
+        if (!airport) {
+            
+            showErrorModal("Invalid Airport", "Please select a valid airport before fetching data.");
+            return;
+
+        }
+
         const submissionData = {
             startDate: startDateString,
             endDate: endDateString,
@@ -822,11 +841,7 @@ class TTFCard extends React.Component {
         //list of airport IATA codes
         const airports = [];
 
-        for (const [ap] of Object.entries(this.state.data.airports)) {
-            airports.push(ap.iataCode);
-        }
-
-        return airports;
+        return this.state.data.airports.map(ap => ap.iataCode);
 
     }
 
@@ -1050,7 +1065,10 @@ class TTFCard extends React.Component {
 
     render() {
 
-        const runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
+        const runwayList = (this.state.selectedAirport)
+            ? runways[this.state.selectedAirport].map(runway => runway.name)
+            : [];
+
         const rollSlider =
             <RollSlider
                 rollSliderMin={0}
