@@ -1035,10 +1035,10 @@ class FlightsPage extends React.Component {
 
                 }
 
-                //Response is invalid, show error modal
-                if (response.errorTitle) {
+                //Response is invalid, show error modal (only if we have something to show)
+                if (response.errorTitle || response.errorMessage) {
                     console.log("Error in 'Get Flights', displaying error modal!");
-                    showErrorModal(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle || "Error", response.errorMessage || "");
                     return;
                 }
 

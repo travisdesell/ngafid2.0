@@ -13,9 +13,20 @@ let styles = [];
 let layers = [];
 
 function initializeMap() {
+    // Avoid creating a second map (e.g. DOMContentLoaded and FlightsPage componentDidMount both call this)
+    if (map !== null) {
+        console.warn("Map instance already exists, initialization aborted.");
+        return;
+    }
+
     // Azure Maps key is now injected from backend via template
     if (typeof azureMapsKey === 'undefined' || !azureMapsKey) {
         console.error("Azure Maps key is missing or undefined!");
+        return;
+    }
+
+    // Target element may not exist yet when DOMContentLoaded runs before React has rendered (e.g. Flights page)
+    if (!document.getElementById('map')) {
         return;
     }
 
@@ -149,9 +160,11 @@ function createBaseMapLayers(azureKey) {
     return { styles, layers };
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initializeMap();
-});
+// Do not auto-initialize on DOMContentLoaded: on the Flights page the #map div is inside
+// React and may be hidden when DOMContentLoaded fires, so that init would create a
+// zero-size map and cause componentDidMount to abort the correct init. Let the
+// page (Flights, TTF, etc.) call initializeMap() from componentDidMount only.
+// document.addEventListener('DOMContentLoaded', () => { initializeMap(); });
 
 const container = document.getElementById('popup');
 const content = document.getElementById('popup-content');
