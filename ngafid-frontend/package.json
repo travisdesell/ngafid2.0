@@ -5,6 +5,8 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
+        "watch": "vite build --watch",
+        "preview": "vite preview",
         "check": "eslint . --ext .js,.jsx,.mjs,.ts,.tsx"
     },
     "keywords": [],
