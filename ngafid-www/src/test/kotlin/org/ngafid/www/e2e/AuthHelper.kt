@@ -20,4 +20,4 @@ object AuthHelper {
         modal.findElement(By.cssSelector("button[type='submit']")).click()
         wait.until(ExpectedConditions.invisibilityOf(modal))
     }
-}
+ }z
