@@ -124,7 +124,7 @@ Edit `ngafid.properties` and configure the following values (look for ⚠️ mar
 
 - `ngafid.repo.path`: Path to your NGAFID repository
 - `ngafid.azure.maps.key`: Your Azure Maps API key
-- `ngafid.db.username` and `ngafid.db.password`: Database credentials
+- Database credentials: in the file pointed to by `ngafid.db.info` (e.g. `ngafid-db/src/liquibase.properties`)
 - `ngafid.admin.emails`: Admin email addresses
 - `ngafid.smtp.*`: Email server configuration (if using email features)
 
