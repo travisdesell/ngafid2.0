@@ -20,3 +20,37 @@
         cursor: not-allowed !important;
     }
 }
+
+/* Dual-thumb range slider: transparent track, visible thumbs */
+.labeling-dual-range input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+.labeling-dual-range input[type="range"]::-webkit-slider-runnable-track {
+    background: transparent;
+    border: none;
+}
+.labeling-dual-range input[type="range"]::-moz-range-track {
+    background: transparent;
+    border: none;
+}
+.labeling-dual-range input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0d6efd;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+}
+.labeling-dual-range input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0d6efd;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+}

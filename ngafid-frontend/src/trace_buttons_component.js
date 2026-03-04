@@ -66,7 +66,6 @@ class TraceButtons extends React.Component {
 
     render() {
         const cellClasses = "d-flex flex-row pb-1";
-        const cellStyle = {"overflowX": "auto"};
         const buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex: "0 0 10em"
@@ -90,9 +89,9 @@ class TraceButtons extends React.Component {
                     </div>
                 </b>
 
-                <div className="p-1" style={{overflowX: "auto"}}>
-
-                    <div className={cellClasses} style={cellStyle}>
+                <div className="p-1 pb-2" style={{overflowX: "auto", minWidth: 0}}>
+                    <div style={{width: "max-content", minWidth: "100%"}}>
+                    <div className={cellClasses}>
                         {
                             parentFlight.state.commonTraceNames.map((traceName) => {
                                 const ariaPressed = parentFlight.state.traceVisibility[traceName];
@@ -109,7 +108,7 @@ class TraceButtons extends React.Component {
                             })
                         }
                     </div>
-                    <div className={cellClasses} style={cellStyle}>
+                    <div className={cellClasses}>
                         {
                             parentFlight.state.uncommonTraceNames.map((traceName) => {
                                 const ariaPressed = parentFlight.state.traceVisibility[traceName];
@@ -125,6 +124,7 @@ class TraceButtons extends React.Component {
                                 );
                             })
                         }
+                    </div>
                     </div>
 
                 </div>
