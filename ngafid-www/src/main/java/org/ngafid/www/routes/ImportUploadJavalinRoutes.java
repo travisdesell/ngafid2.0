@@ -45,7 +45,15 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static int getRequestedPage(Context ctx) {
-        return Integer.parseInt(Objects.requireNonNull(ctx.pathParam("page")));
+
+        String pageParam = ctx.pathParam("page");
+
+        // Page param is not a valid number, default to page 0 (first page)
+        if (!pageParam.matches("\\d+"))
+            return 0;
+
+        return Integer.parseInt(pageParam);
+
     }
 
     private static boolean redirectIfClamped(Context ctx, String basePath, int requestedPage, int currentPage) {
