@@ -334,7 +334,7 @@ Parameters:
 - timeout: Time in minutes between automatic syncs (1440 = 24 hours)
 - override: Set to 1 to force immediate sync, 0 for normal operation
 
-### Force imediate Synchronization
+### Force immediate Synchronization
 
 ```
 UPDATE airsync_fleet_info
