@@ -1,20 +1,35 @@
 import 'bootstrap';
 import React from "react";
-import {createRoot} from "react-dom/client";
-import {showConfirmModal} from "./confirm_modal.js";
-import {showErrorModal} from "./error_modal.js";
-import SignedInNavbar from "./signed_in_navbar.js";
-import {Paginator} from "./paginator_component.tsx";
+import { createRoot } from "react-dom/client";
+import { showConfirmModal } from "./confirm_modal.js";
+import { showErrorModal } from "./error_modal.js";
 import { showAjaxErrorModal } from './extract_ajax_error_message.js';
+import { Paginator } from "./paginator_component.tsx";
+import SignedInNavbar from "./signed_in_navbar.js";
 
-import SparkMD5 from "spark-md5";
 import Button from "react-bootstrap/Button";
+import SparkMD5 from "spark-md5";
 
 
 
 const paused = [];
 
 const chunkSize = 2 * 1024 * 1024; //2MB
+
+function getUploadsPagePath(currentPage) {
+    return `/protected/uploads/${currentPage + 1}`;
+}
+
+function syncUploadsPageUrl(currentPage) {
+    if (window.history && window.history.replaceState) {
+        const nextPath = getUploadsPagePath(currentPage);
+
+        // Target path is different than current path, update the URL to match the current page
+        if (window.location.pathname !== nextPath)
+            window.history.replaceState({}, '', nextPath);
+
+    }
+}
 
 class Upload extends React.Component {
 
@@ -778,9 +793,12 @@ export class UploadsPage extends React.Component {
 
                 console.log("Got response: ", response, response.sizeAll);
 
+                syncUploadsPageUrl(response.currentPage);
+
                 this.setState({
                     uploads: response.uploads,
-                    numberPages: response.numberPages
+                    numberPages: response.numberPages,
+                    currentPage: response.currentPage
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
@@ -882,10 +900,14 @@ export class UploadsPage extends React.Component {
                                     numberPages={this.state.numberPages}
                                     pageSize={this.state.pageSize}
                                     updateCurrentPage={(currentPage) => {
-                                        this.setState({ currentPage: currentPage });
+                                        this.setState({ currentPage: currentPage }, () => {
+                                            this.submitFilter();
+                                        });
                                     }}
                                     updateItemsPerPage={(pageSize) => {
-                                        this.setState({ pageSize: pageSize });
+                                        this.setState({ pageSize: pageSize }, () => {
+                                            this.submitFilter();
+                                        });
                                     }}
                                     doUploadButtonHide={doUploadButtonHide}
                                 />
