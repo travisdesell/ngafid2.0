@@ -152,6 +152,7 @@ public final class Upload {
                 producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
                 producer.flush();
                 producer.close();
+                producer = null;
             }
         }
 
