@@ -3,8 +3,8 @@ import React from "react";
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
-import {PaginationSorter} from './sorter_component.js';
-import {showErrorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
+import { PaginationSorter } from './sorter_component.js';
 import { UploadsPage } from './uploads.js';
 
 type PaginatorProps = {
@@ -213,7 +213,8 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
         if (this.props.numberPages == 0)
             numTotalPages = 1;
 
-        const PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
+        const PAGE_FLIGHTS = window.location.pathname.startsWith("/protected/flights");
+        const PAGE_UPLOADS = window.location.pathname.startsWith("/protected/uploads");
 
         return (
             <div className="card border-secondary"
@@ -275,7 +276,7 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
 
                             {
                                 //Show Upload Flights button on the Uploads page
-                                (window.location.pathname === "/protected/uploads" && !this.props.doUploadButtonHide)
+                                (PAGE_UPLOADS && !this.props.doUploadButtonHide)
                                 &&
                                 <button id="upload-flights-button" className="btn btn-primary btn-sm float-right mr-2"
                                         onClick={() => this.triggerInput()}>
@@ -329,4 +330,4 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
 }
 
 
-export {Paginator};
+export { Paginator };

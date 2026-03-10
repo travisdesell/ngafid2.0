@@ -1,11 +1,27 @@
 import 'bootstrap';
 import React from "react";
-import {createRoot} from "react-dom/client";
+import { createRoot } from "react-dom/client";
 
-import {showErrorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
 import { showAjaxErrorModal } from './extract_ajax_error_message.js';
+import { Paginator } from "./paginator_component.tsx";
 import SignedInNavbar from "./signed_in_navbar.js";
-import {Paginator} from "./paginator_component.tsx";
+
+function getImportsPagePath(currentPage) {
+    return `/protected/imports/${currentPage + 1}`;
+}
+
+function syncImportsPageUrl(currentPage) {
+    if (window.history && window.history.replaceState) {
+
+        const nextPath = getImportsPagePath(currentPage);
+
+        // Target path is different than current path, update the URL to match the current page
+        if (window.location.pathname !== nextPath)
+            window.history.replaceState({}, '', nextPath);
+        
+    }
+}
 
 class FlightWarning extends React.Component {
     constructor(props) {
@@ -585,7 +601,7 @@ class ImportsPage extends React.Component {
         };
 
         $.ajax({
-            type: 'POST',
+            type: 'GET',
             url: '/api/upload/imported',
             data: submissionData,
             dataType: 'json',
@@ -604,9 +620,12 @@ class ImportsPage extends React.Component {
 
                 console.log(`got response: ${  response  } ${  response.size}`);
 
+                syncImportsPageUrl(response.currentPage);
+
                 this.setState({
                     imports: response.imports,
-                    numberPages: response.numberPages
+                    numberPages: response.numberPages,
+                    currentPage: response.currentPage
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
@@ -653,10 +672,14 @@ class ImportsPage extends React.Component {
                             numberPages={this.state.numberPages}
                             pageSize={this.state.pageSize}
                             updateCurrentPage={(currentPage) => {
-                                this.setState({currentPage: currentPage});
+                                this.setState({currentPage: currentPage}, () => {
+                                    this.submitFilter();
+                                });
                             }}
                             updateItemsPerPage={(pageSize) => {
-                                this.setState({pageSize: pageSize});
+                                this.setState({pageSize: pageSize}, () => {
+                                    this.submitFilter();
+                                });
                             }}
                         />
                     </div>

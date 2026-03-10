@@ -291,7 +291,7 @@ export default class SignedInNavbar extends React.Component {
                     </a>
                     <div className="dropdown-menu dropdown-menu-right text-right"
                          aria-labelledby="navbarDropdownMenuLink">
-                        <DropdownLink name={"Manual Uploads"} href="/protected/uploads"/>
+                        <DropdownLink name={"Manual Uploads"} href="/protected/uploads/1"/>
                         <DropdownLink name={"AirSync Uploads"} href="/protected/airsync_uploads"/>
                     </div>
                 </li>
@@ -307,7 +307,7 @@ export default class SignedInNavbar extends React.Component {
                     </a>
                     <div className="dropdown-menu dropdown-menu-right text-right"
                          aria-labelledby="navbarDropdownMenuLink">
-                        <DropdownLink name={"Manual Imports"} href="/protected/imports"/>
+                        <DropdownLink name={"Manual Imports"} href="/protected/imports/1"/>
                         <DropdownLink name={"AirSync Imports"} href="/protected/airsync_imports"/>
                     </div>
                 </li>
@@ -317,11 +317,11 @@ export default class SignedInNavbar extends React.Component {
 
             importsButton = (
                 <NavLink icon={"fa-cloud-download"} name={"Imports"} active={this.props.activePage === "imports"}
-                         href="/protected/imports"/>
+                         href="/protected/imports/1"/>
             );
             uploadsButton = (
                 <NavLink icon={"fa-upload"} name={"Uploads"} active={this.props.activePage === "uploads"}
-                         href="/protected/uploads"/>
+                         href="/protected/uploads/1"/>
             );
         }
 
