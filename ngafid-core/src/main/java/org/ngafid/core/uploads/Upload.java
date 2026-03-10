@@ -808,12 +808,12 @@ public final class Upload {
             Files.createDirectories(parent);
         }
 
-        try (var zos = new ZipArchiveOutputStream(new BufferedOutputStream(new FileOutputStream(path.toFile())))) {
-            zos.setLevel(ZipArchiveOutputStream.DEFAULT_COMPRESSION);
-            zos.setMethod(ZipArchiveOutputStream.DEFLATED);
-            zos.setUseZip64(Zip64Mode.Always);
-            return zos;
-        }
+        ZipArchiveOutputStream zos =
+                new ZipArchiveOutputStream(new BufferedOutputStream(new FileOutputStream(path.toFile())));
+        zos.setLevel(ZipArchiveOutputStream.DEFAULT_COMPRESSION);
+        zos.setMethod(ZipArchiveOutputStream.DEFLATED);
+        zos.setUseZip64(Zip64Mode.Always);
+        return zos;
         
     }
 
