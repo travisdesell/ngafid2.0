@@ -265,7 +265,6 @@ https://github.com/wstrange/GoogleAuth
 
 When users login, they will receive a prompt with a recommendation to enable 2F Authentication. If they choose not to setup 2F Auth right after they login,
 they can always do it later via Account menu where they also can disable 2F Authentication at any time.
-When users
 
 After 2F Auth is complete, users will receive a set of passcodes they can store as a backup method for identification (e.g. in case of lost internet connection).
 The backup passwords are stored in the database in the user's table, so System administrators can retrieve a password via SQL command if a user is locked out.
