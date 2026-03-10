@@ -365,7 +365,7 @@ Re-enqueue uploads from a file
 run/upload_helper -F <file_path>
 ```
 
-### Clinent's steps to setup AirSync (provide new clients with the instructions below)
+### Client's steps to setup AirSync (provide new clients with the instructions below)
 
 1. Log into their AirSync user account
 2. Go to Accounts (top)
