@@ -604,12 +604,12 @@ public final class Upload {
 
             uploadQuery.setInt(1, fleetId);
             uploadQuery.setInt(2, -1);
-            ResultSet resultSet = uploadQuery.executeQuery();
             uploads = new ArrayList<>();
-            while (resultSet.next()) {
-                uploads.add(new Upload(resultSet));
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                while (resultSet.next()) {
+                    uploads.add(new Upload(resultSet));
+                }
             }
-            
         }
 
         return uploads;
