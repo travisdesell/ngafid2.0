@@ -284,7 +284,7 @@ NGAFID integrates with AirSync to automatically import flight data. AirSync util
 
 NGAFID uses a pull-based approach: the AirSync daemon periodically(every 24 hs) polls the AirSync API for new flight logs, downloads them, packages them into ZIP files, and processes them through the standard upload pipeline.
 We can trigger upload by pressing Sync upload button in the AirSync Uploads page. This will set the override flag in the airsync database to 1 and force an upload.
-The Partner API documentation recommends a push-based approach using webhooks/Amazon SNS for real-time notifications. Our pull-based implementation can be revisited to comply with the Partern API recomenteation.
+The Partner API documentation recommends a push-based approach using webhooks/Amazon SNS for real-time notifications. Our pull-based implementation can be revisited to comply with the Partner API recommendation.
 
 ### Key components
 
