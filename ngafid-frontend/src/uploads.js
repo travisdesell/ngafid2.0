@@ -5,6 +5,7 @@ import {showConfirmModal} from "./confirm_modal.js";
 import {showErrorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {Paginator} from "./paginator_component.tsx";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 
 import SparkMD5 from "spark-md5";
 import Button from "react-bootstrap/Button";
@@ -72,7 +73,7 @@ class Upload extends React.Component {
 
                 const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Downloading Upload: ", errorMessage);
-                showErrorModal("Error Downloading Upload", errorMessage);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Downloading Upload");
             }
         });
 
@@ -114,7 +115,7 @@ class Upload extends React.Component {
 
                 const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Removing Upload: ", errorMessage);
-                showErrorModal("Error Removing Upload", errorMessage);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Removing Upload");
 
             }
 
@@ -783,7 +784,7 @@ export class UploadsPage extends React.Component {
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Uploads", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Uploads");
             },
         });
     }
