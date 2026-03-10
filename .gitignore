@@ -8,6 +8,8 @@ db/db_info.php
 db/db_info
 email_info.txt
 data/*
+fleets
+temp
 ngafid-db/src/liquibase.properties
 ngafid-core/target/*
 ngafid-www/target/*
