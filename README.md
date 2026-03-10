@@ -309,7 +309,7 @@ VALUES (<user_id>, <fleet_id>, 'MANAGER')
 ON DUPLICATE KEY UPDATE type = 'MANAGER';
 ```
 
-3. Confugure AirSync Fleet Information
+3. Configure AirSync Fleet Information
 
 ```
 INSERT INTO airsync_fleet_info
