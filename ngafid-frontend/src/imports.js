@@ -3,8 +3,8 @@ import React from "react";
 import {createRoot} from "react-dom/client";
 
 import {showErrorModal} from "./error_modal.js";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 import SignedInNavbar from "./signed_in_navbar.js";
-
 import {Paginator} from "./paginator_component.tsx";
 
 class FlightWarning extends React.Component {
@@ -210,7 +210,7 @@ class Import extends React.Component {
 
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    showErrorModal("Error Loading Uploads", errorThrown);
+                    showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Upload Details");
                 },
             });
         }
@@ -610,7 +610,7 @@ class ImportsPage extends React.Component {
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Flights");
             },
         });
     }
