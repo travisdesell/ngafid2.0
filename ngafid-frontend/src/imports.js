@@ -11,6 +11,25 @@ function getImportsPagePath(currentPage) {
     return `/protected/imports/${currentPage + 1}`;
 }
 
+function getImportsPageFromPath() {
+
+    const match = window.location.pathname.match(/^\/protected\/imports\/(\d+)$/);
+
+    // No specified page, default to page 0 (first page)
+    if (!match)
+        return 0;
+
+    const publicPage = Number(match[1]);
+
+    // Page is not a valid number, default to page 0 (first page)
+    if (!Number.isInteger(publicPage) || publicPage < 1)
+        return 0;
+
+    // Convert from 1-indexed public page to 0-indexed internal page
+    return publicPage - 1;
+
+}
+
 function syncImportsPageUrl(currentPage) {
     if (window.history && window.history.replaceState) {
 
@@ -591,6 +610,14 @@ class ImportsPage extends React.Component {
             numberPages: this.props.numberPages, //this will be set globally in the javascript
             pageSize: 10
         };
+    }
+
+    componentDidMount() {
+        const currentPage = getImportsPageFromPath();
+
+        this.setState({ currentPage }, () => {
+            this.submitFilter();
+        });
     }
 
     submitFilter() {
