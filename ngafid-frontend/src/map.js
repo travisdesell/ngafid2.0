@@ -8,6 +8,9 @@ import XYZ from 'ol/source/XYZ.js';
 
 console.log("doing first load after setting state!");
 
+/** Chart tile base URL (injected by backend or fallback for local dev). */
+const getChartBase = () => (typeof chartTileBaseUrl !== 'undefined' ? chartTileBaseUrl : 'http://localhost:8187');
+
 let map = null;
 let styles = [];
 let layers = [];
@@ -54,12 +57,13 @@ function initializeMap() {
         }));
     }
 
+    const chartBase = getChartBase();
     styles.push('SectionalCharts');
     const tms_sec = new TileLayer({
         visible: false,
         preload: Infinity,
         source : new XYZ({
-            url : "http://localhost:8187/sectional/{z}/{x}/{-y}.png"})
+            url : chartBase + "/sectional/{z}/{x}/{-y}.png"})
     });
     layers.push(tms_sec);
 
@@ -68,7 +72,7 @@ function initializeMap() {
         visible: false,
         preload: Infinity,
         source : new XYZ({
-            url : "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png"})
+            url : chartBase + "/ifr-enroute-low/{z}/{x}/{-y}.png"})
     });
     layers.push(tms_enrl);
 
@@ -77,7 +81,7 @@ function initializeMap() {
         visible: false,
         preload: Infinity,
         source : new XYZ({
-            url : "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png"})
+            url : chartBase + "/ifr-enroute-high/{z}/{x}/{-y}.png"})
     });
     layers.push(tms_enrh);
 
@@ -86,7 +90,7 @@ function initializeMap() {
         visible: false,
         preload: Infinity,
         source : new XYZ({
-            url : "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png"})
+            url : chartBase + "/terminal-area/{z}/{x}/{-y}.png"})
     });
     layers.push(tms_tac);
 
@@ -95,7 +99,7 @@ function initializeMap() {
         visible: false,
         preload: Infinity,
         source : new XYZ({
-            url : "http://localhost:8187/helicopter/{z}/{x}/{-y}.png"})
+            url : chartBase + "/helicopter/{z}/{x}/{-y}.png"})
     });
     layers.push(heli);
 
@@ -139,15 +143,15 @@ function createBaseMapLayers(azureKey) {
         } else if (name === 'RoadOnDemand') {
             url = `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureKey}`;
         } else if (name === 'SectionalCharts') {
-            url = "http://localhost:8187/sectional/{z}/{x}/{-y}.png";
+            url = getChartBase() + "/sectional/{z}/{x}/{-y}.png";
         } else if (name === 'IFREnrouteLowCharts') {
-            url = "http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png";
+            url = getChartBase() + "/ifr-enroute-low/{z}/{x}/{-y}.png";
         } else if (name === 'IFREnrouteHighCharts') {
-            url = "http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png";
+            url = getChartBase() + "/ifr-enroute-high/{z}/{x}/{-y}.png";
         } else if (name === 'TerminalAreaCharts') {
-            url = "http://localhost:8187/terminal-area/{z}/{x}/{-y}.png";
+            url = getChartBase() + "/terminal-area/{z}/{x}/{-y}.png";
         } else if (name === 'HelicopterCharts') {
-            url = "http://localhost:8187/helicopter/{z}/{x}/{-y}.png";
+            url = getChartBase() + "/helicopter/{z}/{x}/{-y}.png";
         }
         const layer = new TileLayer({
             visible: false,
