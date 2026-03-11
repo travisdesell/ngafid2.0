@@ -3,8 +3,8 @@ import React from "react";
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
-import {PaginationSorter} from './sorter_component.js';
-import {showErrorModal} from "./error_modal.js";
+import { showErrorModal } from "./error_modal.js";
+import { PaginationSorter } from './sorter_component.js';
 import { UploadsPage } from './uploads.js';
 
 type PaginatorProps = {
@@ -225,10 +225,10 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
                  }}
             >
 
-            	<div className="row m-0 p-2 d-flex flex-column">
+                <div className="row m-0 p-2 d-flex flex-column">
 
 
-                	<div className="d-flex flex-row flex-wrap" style={{rowGap:"0.50em"}}>
+                    <div className="d-flex flex-row flex-wrap" style={{rowGap:"0.50em"}}>
 
                         <div className="row" style={{alignContent: "start", marginLeft: "0em", marginRight: "auto"}}>
 
@@ -296,8 +296,8 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
                                         display: "inline-block",
                                         verticalAlign: "-25%"
                                     }}>
-                                    	{`${this.props.pageSize  } ${  this.props.itemName  } per page`}
-                                	</span>
+                                        {`${this.props.pageSize  } ${  this.props.itemName  } per page`}
+                                    </span>
                                 } size="sm">
                                     <Dropdown.Item as="button"
                                                    onClick={() => this.repaginate(10)}>10 {this.props.itemName} per
@@ -329,4 +329,4 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
 }
 
 
-export {Paginator};
+export { Paginator };

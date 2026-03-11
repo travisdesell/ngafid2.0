@@ -357,6 +357,10 @@ public class AnalysisJavalinRoutes {
 
             for (Flight flight : flights) {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
+                    
+                    // Enforce flight ID (in case older cached TTF rows have an empty/incorrect flightId)
+                    ttf.setFlightId(flight.getId());
+                    
                     var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         ttfs.add(jsonElement);
