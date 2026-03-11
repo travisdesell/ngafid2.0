@@ -37,8 +37,6 @@ const LABELING_SECTION_COLORS = [
     '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45',
     '#fabed4', '#469990', '#dcbeff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075',
 ];
-import { rejects } from 'assert';
-
 
 class Flight extends React.Component {
 
@@ -47,7 +45,6 @@ class Flight extends React.Component {
         super(props);
 
         const color = Colors.randomValue();
-        console.log("Flight color: ", color);
 
         this.state = {
 
@@ -86,21 +83,28 @@ class Flight extends React.Component {
             // Labeling tool: parameter list, map path, two-click sections, popup/side panel, highlight layers
             labelingParametersVisible: false,
             labelingParameterNames: [],
-            labelingSelectedParameter: null,
+            /** Multi-select: array of selected parameter names */
+            labelingSelectedParameters: [],
             labelingPathVisible: false,
-            labelingSeriesData: null,
+            /** Series data per parameter: { [paramName]: { x, y } } */
+            labelingSeriesDataByParameter: {},
             labelingPopup: null,
             labelingPopupPinned: false,
             labelingHoverTooltip: null,
-            /** Sections created by two clicks. List of { startIndex, endIndex, startTime, endTime, startValue, endValue } — entity per section, ready for DB. */
+            /** Sections from two-click. Each: { startIndex, endIndex, startTime, endTime, startValue, endValue, label?, parameterNames: string[] } */
             labelingClickSections: [],
-            /** Pending first click for next section: { index, time, value } or null */
+            /** Pending first click: { index, time, value } or null */
             labelingSectionStart: null,
             labelingMarkerLayer: null,
             labelingClickSectionsLayer: null,
             labelingSections: [],
             labelingSectionRange: { low: '', high: '' },
             labelingHighlightLayer: null,
+            labelingViewMode: 'chart',
+            /** Trace index on plot per parameter: { [paramName]: number } */
+            labelingTraceIndices: {},
+            /** Per-parameter value sections only: { [paramName]: { valueSections: [{ min, max }] } }. DB-driven later. */
+            labelingDataByParameter: {},
         };
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -115,6 +119,9 @@ class Flight extends React.Component {
         this.removeLabelingSection = this.removeLabelingSection.bind(this);
         this.updateLabelingHighlightLayer = this.updateLabelingHighlightLayer.bind(this);
         this._labelingHoverThrottle = null;
+        this.labelingPlotClick = this.labelingPlotClick.bind(this);
+        this.updateLabelingChartShapes = this.updateLabelingChartShapes.bind(this);
+        this.fitMapToFlightWhenVisible = this.fitMapToFlightWhenVisible.bind(this);
     }
 
     async fetchEvents() {
@@ -294,8 +301,6 @@ class Flight extends React.Component {
 
                     for (let i = 0; i < response.names.length; i++) {
                         const name = response.names[i];
-
-                        //console.log(name);
                         if (preferredNames.includes(name)) {
                             commonTraceNames.push(name);
                         } else {
@@ -667,13 +672,16 @@ class Flight extends React.Component {
                 const d = dx * dx + dy * dy;
                 if (d < minDist) { minDist = d; pathIdx = i; }
             }
-            // Path visible but no parameter selected: show hint when user clicks on or near the path
-            if (!this.state.labelingSelectedParameter || !this.state.labelingSeriesData) {
-                const pathClickThresholdSq = 40000; // ~200m in Web Mercator (meters), squared
+            const selected = this.state.labelingSelectedParameters || [];
+            const byParam = this.state.labelingSeriesDataByParameter || {};
+            const firstParam = selected[0];
+            const firstSeries = firstParam && byParam[firstParam];
+            if (selected.length === 0 || !firstSeries || !firstSeries.x) {
+                const pathClickThresholdSq = 40000;
                 if (minDist < pathClickThresholdSq) {
                     showErrorModal(
                         'Select a parameter first',
-                        'Please choose a parameter from the list above before clicking on the flight path to add a section.'
+                        'Please choose at least one parameter from the list above before clicking on the flight path to add a section.'
                     );
                 }
                 return;
@@ -687,10 +695,10 @@ class Flight extends React.Component {
                     idx = sectionStart.index;
                 }
             }
-            const { x, y } = this.state.labelingSeriesData;
+            const { x, y } = firstSeries;
             const time = x[idx];
             const value = y[idx];
-            // Odd "click" = first of pair (incomplete); even = second (complete section). Don't add section until second point.
+            const parameterNames = [...selected];
             if (sectionStart == null) {
                 this.setState({ labelingSectionStart: { index: idx, time, value } }, () => {
                     this.updateLabelingMarkers();
@@ -703,7 +711,7 @@ class Flight extends React.Component {
                 const endTime = x[endIndex];
                 const startValue = y[startIndex];
                 const endValue = y[endIndex];
-                const sectionEntity = { startIndex, endIndex, startTime, endTime, startValue, endValue, label: '' };
+                const sectionEntity = { startIndex, endIndex, startTime, endTime, startValue, endValue, label: '', parameterNames, visibleOnChart: true };
                 const nextSections = [...(this.state.labelingClickSections || []), sectionEntity];
                 this.setState({ labelingSectionStart: null, labelingClickSections: nextSections }, () => {
                     this.updateLabelingMarkers();
@@ -816,22 +824,32 @@ class Flight extends React.Component {
             this.hideLabelingMap();
             this.closeLabelingPopup();
             this.removeLabelingClickSectionsLayer();
+            this.removeLabelingTraceFromPlot();
+            this.removeLabelingPlotClickListener();
+            if (this.props.onLabelingViewMode) this.props.onLabelingViewMode(null);
+            const selected = this.state.labelingSelectedParameters || [];
+            const currentValue = this.state.labelingSections || [];
+            let byParam = this.state.labelingDataByParameter || {};
+            if (selected.length === 1) {
+                byParam = { ...byParam, [selected[0]]: { valueSections: currentValue.map((s) => ({ min: s.min, max: s.max })) } };
+            }
             this.setState({
                 labelingParametersVisible: false,
                 labelingParameterNames: [],
-                labelingSelectedParameter: null,
-                labelingSeriesData: null,
+                labelingSelectedParameters: [],
+                labelingSeriesDataByParameter: {},
                 labelingPopupPinned: false,
                 labelingClickSections: [],
                 labelingSectionStart: null,
                 labelingSections: [],
                 labelingSectionRange: { low: '', high: '' },
                 labelingHighlightLayer: null,
-            });
+                labelingViewMode: 'chart',
+                labelingTraceIndices: {},
+                labelingDataByParameter: byParam,
+            }, () => this.updateLabelingChartShapes());
             return;
         }
-
-        console.log("Labeling tool clicked for flight", flightId, "- fetching available columns...");
 
         $.ajax({
             type: 'GET',
@@ -840,16 +858,12 @@ class Flight extends React.Component {
             async: true,
             success: (response) => {
                 const names = response.names || [];
-                console.log("Available columns (double-series names) for flight", flightId, ":", names);
                 this.setState({
                     labelingParametersVisible: true,
                     labelingParameterNames: names,
-                    labelingSelectedParameter: null,
+                    labelingSelectedParameters: [],
                 });
-                // Show map with path only (no colored sections, map button stays inactive)
-                if (this.props.flightInfo.has_coords !== "0") {
-                    this.showMapForLabeling();
-                }
+                // Chart is shown when user selects a parameter; map on demand via Chart|Map toggle
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.error("Error fetching double-series names for flight", flightId, errorThrown);
@@ -858,18 +872,59 @@ class Flight extends React.Component {
     }
 
     labelingParameterClicked(name) {
-        if (this.state.labelingSelectedParameter === name) {
-            this.removeLabelingHighlightLayer();
-            this.removeLabelingClickSectionsLayer();
-            this.setState({ labelingSelectedParameter: null, labelingSeriesData: null, labelingSections: [], labelingSectionRange: { low: '', high: '' }, labelingClickSections: [], labelingSectionStart: null });
-            this.closeLabelingPopup();
+        const selected = this.state.labelingSelectedParameters || [];
+        const byParamData = this.state.labelingSeriesDataByParameter || {};
+        const isCurrentlySelected = selected.includes(name);
+
+        if (isCurrentlySelected) {
+            const nextSelected = selected.filter((p) => p !== name);
+            this.removeLabelingTraceFromPlot();
+            const nextSeries = { ...byParamData };
+            delete nextSeries[name];
+            if (nextSelected.length === 0) {
+                let byParam = this.state.labelingDataByParameter || {};
+                if (selected.length === 1) {
+                    byParam = { ...byParam, [selected[0]]: { valueSections: (this.state.labelingSections || []).map((s) => ({ min: s.min, max: s.max })) } };
+                }
+                this.removeLabelingHighlightLayer();
+                const clickSections = this.state.labelingClickSections || [];
+                const paramsInSections = [...new Set(clickSections.flatMap((s) => s.parameterNames || []))];
+                const seriesToKeep = {};
+                paramsInSections.forEach((p) => {
+                    if (byParamData[p]) seriesToKeep[p] = byParamData[p];
+                });
+                this.setState({
+                    labelingSelectedParameters: [],
+                    labelingSeriesDataByParameter: seriesToKeep,
+                    labelingTraceIndices: {},
+                    labelingSections: [],
+                    labelingSectionRange: { low: '', high: '' },
+                    labelingSectionStart: null,
+                    labelingDataByParameter: byParam,
+                }, () => {
+                    this.addLabelingTraceToPlot();
+                    this.updateLabelingChartShapes();
+                    this.updateLabelingClickSectionsLayer();
+                    this.renderLabelingPopup();
+                });
+                return;
+            }
+            this.setState({
+                labelingSelectedParameters: nextSelected,
+                labelingSeriesDataByParameter: nextSeries,
+                labelingSections: nextSelected.length === 1 ? (this.state.labelingDataByParameter?.[nextSelected[0]]?.valueSections || []) : [],
+                labelingSectionRange: { low: '', high: '' },
+            }, () => {
+                this.addLabelingTraceToPlot();
+                this.updateLabelingChartShapes();
+                if (nextSelected.length === 1) this.updateLabelingHighlightLayer();
+                this.updateLabelingClickSectionsLayer();
+                this.renderLabelingPopup();
+            });
             return;
         }
-        this.removeLabelingHighlightLayer();
-        this.removeLabelingClickSectionsLayer();
-        this.setState({ labelingSelectedParameter: name, labelingSeriesData: null, labelingSections: [], labelingSectionRange: { low: '', high: '' }, labelingClickSections: [], labelingSectionStart: null });
-        console.log("Labeling parameter selected:", name);
 
+        const nextSelected = [...selected, name];
         const flightId = this.props.flightInfo.id;
         $.ajax({
             type: 'GET',
@@ -877,8 +932,29 @@ class Flight extends React.Component {
             dataType: 'json',
             async: true,
             success: (response) => {
+                const viewMode = this.state.labelingViewMode || 'chart';
+                const nextSeries = { ...(this.state.labelingSeriesDataByParameter || {}), [name]: { x: response.x || [], y: response.y || [] } };
+                const isFirst = (this.state.labelingSelectedParameters || []).length === 0;
                 this.setState({
-                    labelingSeriesData: { x: response.x || [], y: response.y || [] },
+                    labelingSelectedParameters: nextSelected,
+                    labelingSeriesDataByParameter: nextSeries,
+                    labelingViewMode: viewMode,
+                    labelingSections: nextSelected.length === 1 ? (this.state.labelingDataByParameter?.[name]?.valueSections || []) : [],
+                    labelingSectionRange: { low: '', high: '' },
+                    labelingSectionStart: null,
+                }, () => {
+                    if (this.props.onLabelingViewMode) this.props.onLabelingViewMode(viewMode);
+                    if (viewMode === 'chart') this.props.showPlot();
+                    else {
+                        this.props.showMap();
+                        if (isFirst) this.showMapForLabeling();
+                    }
+                    setTimeout(() => this.addLabelingTraceToPlot(), 200);
+                    this.updateLabelingChartShapes();
+                    this.updateLabelingClickSectionsLayer();
+                    if (nextSelected.length === 1) this.updateLabelingHighlightLayer();
+                    this.renderLabelingPopup();
+                    if (viewMode === 'map' && isFirst) this.fitMapToFlightWhenVisible();
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
@@ -890,7 +966,6 @@ class Flight extends React.Component {
     closeLabelingPopup() {
         const popup = this.state.labelingPopup;
         if (popup) {
-            console.log('[Labeling] Closing popup, removing from DOM');
             const { root, element } = popup;
             try { root.render(null); } catch (e) { /* ignore */ }
             if (element && element.parentNode) element.parentNode.removeChild(element);
@@ -909,7 +984,10 @@ class Flight extends React.Component {
     }
 
     labelingHover(event) {
-        if (!this.state.labelingPathVisible || !this.state.labelingSeriesData || !this.state.labelingSelectedParameter) {
+        const selected = this.state.labelingSelectedParameters || [];
+        const byParam = this.state.labelingSeriesDataByParameter || {};
+        const firstSeries = selected.length > 0 ? byParam[selected[0]] : null;
+        if (!this.state.labelingPathVisible || !firstSeries || selected.length === 0) {
             this.hideLabelingHoverTooltip();
             return;
         }
@@ -925,7 +1003,7 @@ class Flight extends React.Component {
         const pixel = event.pixel;
         const features = [];
         map.forEachFeatureAtPixel(pixel, (feature) => features.push(feature));
-        const { x, y } = this.state.labelingSeriesData;
+        const { x, y } = firstSeries;
         let idx = null;
         let lineFeature = features.find(f => f.get && f.get('name') === 'Line' && f.get('flightId') === this.props.flightInfo.id);
         const sectionFeature = features.find(f => f.get && f.get('name') === 'LabelingSection');
@@ -969,7 +1047,7 @@ class Flight extends React.Component {
             return;
         }
         const time = x[idx];
-        const value = y[idx];
+        const value = selected.length === 1 ? y[idx] : undefined;
         const offset = 10;
         const placement = [pixel[0] + offset, pixel[1] + offset];
 
@@ -997,6 +1075,166 @@ class Flight extends React.Component {
 
     showMapForLabeling() {
         this.mapClicked(true);
+    }
+
+    /**
+     * Return sections that include the given parameter (for display or DB export).
+     */
+    getSectionsForParameter(paramName) {
+        const entry = (this.state.labelingDataByParameter || {})[paramName];
+        const clickSections = (this.state.labelingClickSections || []).filter((s) => (s.parameterNames || []).includes(paramName));
+        return {
+            clickSections: [...clickSections],
+            valueSections: (entry && entry.valueSections) ? entry.valueSections.map((s) => ({ min: s.min, max: s.max })) : [],
+        };
+    }
+
+    /**
+     * Fit the map view to this flight's path after the map container is visible.
+     * Used when switching from Chart to Map in labeling so getSize() is non-zero.
+     */
+    fitMapToFlightWhenVisible() {
+        let attempts = 0;
+        const maxAttempts = 20;
+        const tryFit = () => {
+            const baseLayer = this.state.baseLayer;
+            if (!baseLayer || attempts++ >= maxAttempts) return;
+            try {
+                map.updateSize();
+                const size = map.getSize();
+                if (size && size[0] > 0 && size[1] > 0) {
+                    const extent = baseLayer.getSource().getExtent();
+                    map.getView().fit(extent, { size: map.getSize(), padding: [20, 20, 20, 20], maxZoom: 15 });
+                    return;
+                }
+            } catch (e) { /* ignore */ }
+            setTimeout(tryFit, 50);
+        };
+        setTimeout(tryFit, 100);
+    }
+
+    /**
+     * Add one trace per selected parameter on the chart (parameter buttons only).
+     * Always removes any existing labeling traces first to avoid duplicates.
+     */
+    addLabelingTraceToPlot() {
+        const plotEl = document.getElementById('plot');
+        const selected = this.state.labelingSelectedParameters || [];
+        const byParam = this.state.labelingSeriesDataByParameter || {};
+        if (!plotEl || !plotEl.data) return;
+
+        const oldIndices = this.state.labelingTraceIndices || {};
+        const toRemove = Object.values(oldIndices).sort((a, b) => b - a);
+        try {
+            toRemove.forEach((idx) => {
+                if (idx < plotEl.data.length) Plotly.deleteTraces('plot', [idx]);
+            });
+        } catch (e) {
+            console.warn('Labeling: could not remove traces', e);
+        }
+
+        if (selected.length === 0) {
+            this.setState({ labelingTraceIndices: {} });
+            return;
+        }
+
+        const indices = {};
+        selected.forEach((name) => {
+            const data = byParam[name];
+            if (!data || !data.x) return;
+            const trace = {
+                x: data.x,
+                y: data.y,
+                mode: 'lines',
+                name: `Labeling: ${this.props.flightInfo.id} – ${name}`,
+                line: { width: 2 },
+            };
+            Plotly.addTraces('plot', [trace]);
+            indices[name] = plotEl.data.length - 1;
+        });
+        this.setState({ labelingTraceIndices: indices }, () => this.attachLabelingPlotClickListener());
+    }
+
+    /**
+     * Remove all labeling traces from the plot and clear trace indices.
+     */
+    removeLabelingTraceFromPlot() {
+        const indices = this.state.labelingTraceIndices || {};
+        const toRemove = Object.values(indices).sort((a, b) => b - a);
+        if (toRemove.length === 0) {
+            this.setState({ labelingTraceIndices: {} });
+            return;
+        }
+        try {
+            const plotEl = document.getElementById('plot');
+            if (plotEl && plotEl.data) {
+                toRemove.forEach((idx) => {
+                    if (idx < plotEl.data.length) Plotly.deleteTraces('plot', [idx]);
+                });
+            }
+        } catch (e) {
+            console.warn('Labeling: could not remove traces', e);
+        }
+        this.setState({ labelingTraceIndices: {} });
+    }
+
+    attachLabelingPlotClickListener() {
+        const plotEl = document.getElementById('plot');
+        if (!plotEl) return;
+        if (plotEl.removeAllListeners) plotEl.removeAllListeners('plotly_click');
+        plotEl.on('plotly_click', this.labelingPlotClick);
+    }
+
+    removeLabelingPlotClickListener() {
+        const plotEl = document.getElementById('plot');
+        if (plotEl && plotEl.removeAllListeners) plotEl.removeAllListeners('plotly_click');
+    }
+
+    /**
+     * Handle click on the Plotly chart when in labeling chart view: two-click section selection.
+     * With multiple params, click on any trace creates a section tagged with all selected parameters.
+     */
+    labelingPlotClick(event) {
+        const selected = this.state.labelingSelectedParameters || [];
+        const byParam = this.state.labelingSeriesDataByParameter || {};
+        const traceIndices = this.state.labelingTraceIndices || {};
+        if (selected.length === 0 || this.state.labelingViewMode !== 'chart') return;
+        if (!event || !event.points || event.points.length === 0) return;
+        const pt = event.points[0];
+        const curveNumber = pt.curveNumber;
+        const paramForTrace = selected.find((p) => traceIndices[p] === curveNumber);
+        if (paramForTrace == null) return;
+        const data = byParam[paramForTrace];
+        if (!data || !data.x) return;
+        const { x, y } = data;
+        const pointIndex = typeof pt.pointIndex !== 'undefined' ? pt.pointIndex : pt.pointNumber;
+        if (pointIndex < 0 || pointIndex >= (x.length || 0)) return;
+        const time = x[pointIndex];
+        const value = y[pointIndex];
+        const parameterNames = [...selected];
+        const sectionStart = this.state.labelingSectionStart;
+        if (sectionStart == null) {
+            this.setState({ labelingSectionStart: { index: pointIndex, time, value } }, () => {
+                this.updateLabelingMarkers();
+                this.renderLabelingPopup();
+                if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+            });
+        } else {
+            const startIndex = Math.min(sectionStart.index, pointIndex);
+            const endIndex = Math.max(sectionStart.index, pointIndex);
+            const startTime = x[startIndex];
+            const endTime = x[endIndex];
+            const startValue = y[startIndex];
+            const endValue = y[endIndex];
+            const sectionEntity = { startIndex, endIndex, startTime, endTime, startValue, endValue, label: '', parameterNames, visibleOnChart: true };
+            const nextSections = [...(this.state.labelingClickSections || []), sectionEntity];
+            this.setState({ labelingSectionStart: null, labelingClickSections: nextSections }, () => {
+                this.updateLabelingMarkers();
+                this.updateLabelingClickSectionsLayer();
+                this.renderLabelingPopup();
+                if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+            });
+        }
     }
 
     hideLabelingMap() {
@@ -1034,6 +1272,7 @@ class Flight extends React.Component {
         }
         const features = [];
         labelingClickSections.forEach((sec, colorIndex) => {
+            if (sec.visibleOnChart === false) return;
             const startIndex = sec.startIndex;
             const endIndex = sec.endIndex;
             const color = LABELING_SECTION_COLORS[colorIndex % LABELING_SECTION_COLORS.length];
@@ -1093,9 +1332,12 @@ class Flight extends React.Component {
     }
 
     addLabelingSection() {
-        const { labelingSectionRange, labelingSeriesData } = this.state;
-        if (!labelingSeriesData || !labelingSeriesData.y || labelingSeriesData.y.length === 0) return;
-        const y = labelingSeriesData.y;
+        const selected = this.state.labelingSelectedParameters || [];
+        if (selected.length !== 1) return;
+        const data = (this.state.labelingSeriesDataByParameter || {})[selected[0]];
+        if (!data || !data.y || data.y.length === 0) return;
+        const { labelingSectionRange } = this.state;
+        const y = data.y;
         const numericY = y.filter((v) => v != null && typeof v === 'number' && !isNaN(v));
         const dataMin = numericY.length ? Math.min(...numericY) : 0;
         const dataMax = numericY.length ? Math.max(...numericY) : 1;
@@ -1107,24 +1349,36 @@ class Flight extends React.Component {
         const maxVal = Math.max(lowRaw, highRaw);
         // Single segment only: new range replaces the previous one
         const next = [{ min: minVal, max: maxVal }];
-        this.setState({ labelingSections: next }, () => this.updateLabelingHighlightLayer());
+        this.setState({ labelingSections: next }, () => {
+            this.updateLabelingHighlightLayer();
+            if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+        });
     }
 
     removeLabelingSection(index) {
         const next = this.state.labelingSections.filter((_, i) => i !== index);
-        this.setState({ labelingSections: next }, () => this.updateLabelingHighlightLayer());
+        this.setState({ labelingSections: next }, () => {
+            this.updateLabelingHighlightLayer();
+            if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+        });
     }
 
     /**
      * Highlight on the path all segments where the series value falls within any of labelingSections.
      */
     updateLabelingHighlightLayer() {
-        const { points, labelingSeriesData, labelingSections, labelingHighlightLayer } = this.state;
-        if (!points || points.length === 0 || !labelingSeriesData || !labelingSeriesData.y || !labelingSections || labelingSections.length === 0) {
+        const selected = this.state.labelingSelectedParameters || [];
+        if (selected.length !== 1) {
             this.removeLabelingHighlightLayer();
             return;
         }
-        const y = labelingSeriesData.y;
+        const { points, labelingSections, labelingHighlightLayer } = this.state;
+        const data = (this.state.labelingSeriesDataByParameter || {})[selected[0]];
+        if (!points || points.length === 0 || !data || !data.y || !labelingSections || labelingSections.length === 0) {
+            this.removeLabelingHighlightLayer();
+            return;
+        }
+        const y = data.y;
         const inRange = (val) => {
             if (val == null || (typeof val === 'number' && isNaN(val))) return false;
             const v = Number(val);
@@ -1180,6 +1434,112 @@ class Flight extends React.Component {
         this.setState({ labelingHighlightLayer: layer });
     }
 
+    /**
+     * Update Plotly chart shapes for labeling: value-range highlight and two-click sections.
+     * Only runs when labelingViewMode === 'chart'. Removes any existing shapes with id 'labeling-*'.
+     */
+    updateLabelingChartShapes() {
+        const shapes = plotlyLayoutGlobal.shapes || [];
+        const { labelingViewMode, labelingSections, labelingClickSections, labelingSectionStart } = this.state;
+        const selected = this.state.labelingSelectedParameters || [];
+        // Remove previous labeling shapes
+        for (let i = shapes.length - 1; i >= 0; i--) {
+            if (shapes[i].id && String(shapes[i].id).startsWith('labeling-')) {
+                shapes.splice(i, 1);
+            }
+        }
+        const byParam = this.state.labelingSeriesDataByParameter || {};
+        const firstData = selected.length > 0 ? byParam[selected[0]] : null;
+        if (labelingViewMode !== 'chart' || !firstData || !firstData.x) {
+            try { Plotly.relayout('plot', plotlyLayoutGlobal); } catch (e) { /* plot may not exist */ }
+            return;
+        }
+        const x = firstData.x;
+        const y = firstData.y || [];
+
+        // Value-range highlight: segments where y is within any of labelingSections
+        if (labelingSections && labelingSections.length > 0) {
+            const inRange = (val) => {
+                if (val == null || (typeof val === 'number' && isNaN(val))) return false;
+                const v = Number(val);
+                return !isNaN(v) && labelingSections.some((s) => v >= s.min && v <= s.max);
+            };
+            let runStart = null;
+            let valueRunId = 0;
+            for (let i = 0; i < y.length; i++) {
+                if (inRange(y[i])) {
+                    if (runStart == null) runStart = i;
+                } else {
+                    if (runStart != null) {
+                        const x0 = x[runStart];
+                        const x1 = x[i - 1];
+                        if (x0 != null && x1 != null) {
+                            shapes.push({
+                                id: `labeling-value-${valueRunId++}`,
+                                type: 'rect',
+                                xref: 'x', yref: 'paper',
+                                x0, x1, y0: 0, y1: 1,
+                                fillcolor: 'rgba(255, 165, 0, 0.35)',
+                                line: { width: 0 },
+                            });
+                        }
+                        runStart = null;
+                    }
+                }
+            }
+            if (runStart != null) {
+                const x0 = x[runStart];
+                const x1 = x[y.length - 1];
+                if (x0 != null && x1 != null) {
+                    shapes.push({
+                        id: `labeling-value-${valueRunId}`,
+                        type: 'rect',
+                        xref: 'x', yref: 'paper',
+                        x0, x1, y0: 0, y1: 1,
+                        fillcolor: 'rgba(255, 165, 0, 0.35)',
+                        line: { width: 0 },
+                    });
+                }
+            }
+        }
+
+        // Two-click sections: vertical bands (only when section is visible on chart)
+        if (labelingClickSections && labelingClickSections.length > 0) {
+            labelingClickSections.forEach((sec, i) => {
+                if (sec.visibleOnChart === false) return;
+                const x0 = sec.startTime;
+                const x1 = sec.endTime;
+                if (x0 == null || x1 == null) return;
+                const color = LABELING_SECTION_COLORS[i % LABELING_SECTION_COLORS.length];
+                shapes.push({
+                    id: `labeling-click-${i}`,
+                    type: 'rect',
+                    xref: 'x', yref: 'paper',
+                    x0, x1, y0: 0, y1: 1,
+                    fillcolor: color,
+                    opacity: 0.4,
+                    line: { width: 0 },
+                });
+            });
+        }
+
+        // Pending section start: vertical line
+        if (labelingSectionStart != null) {
+            const xVal = labelingSectionStart.time;
+            if (xVal != null) {
+                shapes.push({
+                    id: 'labeling-pending-start',
+                    type: 'line',
+                    xref: 'x', yref: 'paper',
+                    x0: xVal, x1: xVal, y0: 0, y1: 1,
+                    line: { color: LABELING_SECTION_COLORS[(labelingClickSections || []).length % LABELING_SECTION_COLORS.length], width: 2, dash: 'dot' },
+                });
+            }
+        }
+
+        try { Plotly.relayout('plot', plotlyLayoutGlobal); } catch (e) { /* plot may not exist */ }
+    }
+
     updateLabelingMarkers() {
         const { labelingSectionStart, labelingClickSections, points, labelingMarkerLayer } = this.state;
         if (!points || points.length === 0) return;
@@ -1226,7 +1586,7 @@ class Flight extends React.Component {
      * Sections are from two-click selection; each row: Start date/time, End date/time, Value start, Value end, Remove.
      */
     renderLabelingPopup() {
-        const { labelingClickSections, labelingSectionStart, labelingSelectedParameter, labelingSeriesData, labelingPopup } = this.state;
+        const { labelingClickSections, labelingSectionStart, labelingSelectedParameters, labelingPopup } = this.state;
         const startDateTime = this.props.flightInfo.startDateTime;
         const showPopup = (labelingClickSections && labelingClickSections.length > 0) || labelingSectionStart != null;
 
@@ -1245,13 +1605,30 @@ class Flight extends React.Component {
             startValue: sec.startValue,
             endValue: sec.endValue,
             label: sec.label ?? '',
+            parameterNames: sec.parameterNames || [],
+            visibleOnChart: sec.visibleOnChart !== false,
         }));
 
+        const paramDisplay = (labelingSelectedParameters || []).length > 0
+            ? (labelingSelectedParameters || []).join(', ')
+            : 'Sections';
+
         const popupProps = {
-            paramName: labelingSelectedParameter,
+            paramName: paramDisplay,
             sections,
             startDateTime,
             pendingSectionStart: labelingSectionStart != null,
+            selectionHint: this.state.labelingViewMode === 'chart' ? 'chart' : 'path',
+            onToggleVisibility: (i, visible) => {
+                const next = (this.state.labelingClickSections || []).map((sec, idx) =>
+                    idx === i ? { ...sec, visibleOnChart: visible } : sec
+                );
+                this.setState({ labelingClickSections: next }, () => {
+                    this.updateLabelingClickSectionsLayer();
+                    this.updateLabelingChartShapes();
+                    this.renderLabelingPopup();
+                });
+            },
             onUpdateLabel: (i, value) => {
                 const next = (this.state.labelingClickSections || []).map((sec, idx) =>
                     idx === i ? { ...sec, label: value } : sec
@@ -1263,6 +1640,7 @@ class Flight extends React.Component {
                 this.setState({ labelingClickSections: next }, () => {
                     this.updateLabelingClickSectionsLayer();
                     this.renderLabelingPopup();
+                    if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
                 });
             },
             onClearAll: () => {
@@ -1270,6 +1648,7 @@ class Flight extends React.Component {
                     this.updateLabelingMarkers();
                     this.updateLabelingClickSectionsLayer();
                     this.renderLabelingPopup();
+                    if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
                 });
             },
             onClose: () => {
@@ -1278,12 +1657,19 @@ class Flight extends React.Component {
         };
 
         if (labelingPopup) {
+            const desiredContainer = this.state.labelingViewMode === 'chart'
+                ? (document.getElementById('plot-container') || document.body)
+                : (document.getElementById('map-container') || document.getElementById('map') || document.body);
+            if (labelingPopup.element && labelingPopup.element.parentNode !== desiredContainer) {
+                desiredContainer.appendChild(labelingPopup.element);
+            }
             labelingPopup.root.render(React.createElement(LabelingMapPopup, popupProps));
             return;
         }
 
-        const mapContainer = document.getElementById('map-container') || document.getElementById('map');
-        const container = mapContainer || document.body;
+        const container = this.state.labelingViewMode === 'chart'
+            ? (document.getElementById('plot-container') || document.body)
+            : (document.getElementById('map-container') || document.getElementById('map') || document.body);
         const popupEl = document.createElement('div');
         popupEl.id = 'labeling-popup-root';
         popupEl.style.cssText = 'position:absolute;left:0;top:0;right:0;bottom:0;width:100%;height:100%;z-index:10000;pointer-events:none;overflow:visible;';
@@ -1793,12 +2179,14 @@ class Flight extends React.Component {
 
         }
 
-        // Labeling parameters row: scrollable list, single-select, log selection
+        // Labeling parameters row: scrollable list, multi-select toggle
         const labelingButtonClasses = "m-1 btn btn-outline-secondary";
         const labelingButtonStyle = { flex: "0 0 10em" };
         let labelingRow = FLIGHT_COMPONENT_ROW_HIDDEN;
-        if (this.state.labelingParametersVisible && this.state.labelingParameterNames.length > 0) {
-            const seriesData = this.state.labelingSeriesData;
+            if (this.state.labelingParametersVisible && this.state.labelingParameterNames.length > 0) {
+            const selectedParams = this.state.labelingSelectedParameters || [];
+            const singleParamSeries = selectedParams.length === 1 ? (this.state.labelingSeriesDataByParameter || {})[selectedParams[0]] : null;
+            const seriesData = singleParamSeries;
             const yArr = seriesData && seriesData.y ? seriesData.y : [];
             const numericY = yArr.filter((v) => v != null && typeof v === 'number' && !isNaN(v));
             const minVal = numericY.length ? Math.min(...numericY) : 0;
@@ -1808,30 +2196,99 @@ class Flight extends React.Component {
 
             labelingRow = (
                 <div className="w-100">
-                    <b className="p-1 d-flex flex-row justify-content-start align-items-center" style={{ marginBottom: "0" }}>
-                        <div className="d-flex flex-column mr-3" style={{ width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px" }}>
-                            <i className="fa fa-tag ml-2" style={{ fontSize: "12px", marginTop: "3px", opacity: "0.50" }} />
+                    <b className="p-1 d-flex flex-row justify-content-between align-items-center" style={{ marginBottom: "0" }}>
+                        <div className="d-flex flex-row align-items-center">
+                            <div className="d-flex flex-column mr-3" style={{ width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px" }}>
+                                <i className="fa fa-tag ml-2" style={{ fontSize: "12px", marginTop: "3px", opacity: "0.50" }} />
+                            </div>
+                            <div style={{ fontSize: "0.75em" }}>Parameters</div>
                         </div>
-                        <div style={{ fontSize: "0.75em" }}>Parameters</div>
-                    </b>
-                    <div className="p-1" style={{ overflowX: "auto" }}>
-                        <div className="d-flex flex-row pb-1">
-                            {this.state.labelingParameterNames.map((name) => {
-                                const isSelected = this.state.labelingSelectedParameter === name;
-                                return (
+                        {selectedParams.length > 0 && (
+                            <div className="d-flex flex-row align-items-center gap-1" style={{ fontSize: "0.75em" }}>
+                                <span className="text-muted mr-1">View:</span>
+                                <div className="btn-group btn-group-sm" role="group">
                                     <button
-                                        key={name}
                                         type="button"
-                                        className={labelingButtonClasses + (isSelected ? " active" : "")}
-                                        style={labelingButtonStyle}
-                                        onClick={() => this.labelingParameterClicked(name)}
+                                        className={`btn btn-outline-secondary ${this.state.labelingViewMode === 'chart' ? 'active' : ''}`}
+                                        onClick={() => {
+                                            this.setState({ labelingViewMode: 'chart' }, () => {
+                                                this.updateLabelingChartShapes();
+                                                if ((this.state.labelingClickSections?.length || 0) > 0 || this.state.labelingSectionStart != null) {
+                                                    this.renderLabelingPopup();
+                                                }
+                                            });
+                                            this.props.showPlot();
+                                            if (this.props.onLabelingViewMode) this.props.onLabelingViewMode('chart');
+                                            if (Object.keys(this.state.labelingTraceIndices || {}).length > 0) this.attachLabelingPlotClickListener();
+                                        }}
+                                        title="Select sections on the chart"
                                     >
-                                        {name}
+                                        <i className="fa fa-area-chart mr-1" /> Chart
                                     </button>
-                                );
-                            })}
+                                    <button
+                                        type="button"
+                                        className={`btn btn-outline-secondary ${this.state.labelingViewMode === 'map' ? 'active' : ''}`}
+                                        disabled={this.props.flightInfo.has_coords === "0"}
+                                        onClick={() => {
+                                            this.setState({ labelingViewMode: 'map' }, () => {
+                                                this.updateLabelingChartShapes();
+                                                if ((this.state.labelingClickSections?.length || 0) > 0 || this.state.labelingSectionStart != null) {
+                                                    this.renderLabelingPopup();
+                                                }
+                                            });
+                                            this.props.showMap();
+                                            this.showMapForLabeling();
+                                            if (this.props.onLabelingViewMode) this.props.onLabelingViewMode('map');
+                                            this.removeLabelingPlotClickListener();
+                                            this.fitMapToFlightWhenVisible();
+                                        }}
+                                        title="Select sections on the map"
+                                    >
+                                        <i className="fa fa-map-o mr-1" /> Map
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </b>
+                    <div className="p-1">
+                        <div className="d-flex flex-row pb-1" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingTop: "1.25rem" }}>
+                            {(() => {
+                                const getCount = (n) => (this.state.labelingClickSections || []).filter((s) => (s.parameterNames || []).includes(n)).length;
+                                const sorted = [...this.state.labelingParameterNames].sort((a, b) => getCount(b) - getCount(a));
+                                return sorted.map((name) => {
+                                    const isSelected = (this.state.labelingSelectedParameters || []).includes(name);
+                                    const count = getCount(name);
+                                    return (
+                                        <div key={name} style={{ position: "relative", display: "inline-block", marginRight: "0.25rem", flexShrink: 0 }}>
+                                            {count > 0 && (
+                                                <span style={{
+                                                    position: "absolute",
+                                                    bottom: "100%",
+                                                    left: 0,
+                                                    right: 0,
+                                                    marginBottom: 2,
+                                                    fontSize: "0.7em",
+                                                    color: "var(--c_text_muted, #6c757d)",
+                                                    textAlign: "center",
+                                                    whiteSpace: "nowrap",
+                                                }}>
+                                                    labels: {count}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className={labelingButtonClasses + (isSelected ? " active" : "")}
+                                                style={labelingButtonStyle}
+                                                onClick={() => this.labelingParameterClicked(name)}
+                                            >
+                                                {name}
+                                            </button>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
-                        {seriesData && yArr.length > 0 && (
+                        {selectedParams.length === 1 && seriesData && yArr.length > 0 && (
                             <div className="mt-2 p-2 border rounded" style={{ fontSize: "0.8em", background: "var(--c_row_bg_alt, #f8f9fa)" }}>
                                 <div className="mb-1">
                                     <strong>Value range</strong>: {minVal.toFixed(3)} to {maxVal.toFixed(3)}

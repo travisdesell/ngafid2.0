@@ -67,6 +67,7 @@ class FlightsCard extends React.Component {
                                         clearTags={this.props.clearTags}
                                         editTag={this.props.editTag}
                                         onAddFilter={this.props.onAddFilter}
+                                        onLabelingViewMode={this.props.onLabelingViewMode}
                                     />
                                 );
                             }

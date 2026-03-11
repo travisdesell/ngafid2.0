@@ -427,6 +427,8 @@ class FlightsPage extends React.Component {
             filterSelected: true,
             plotVisible: false,
             mapVisible: false,
+            /** When a flight is in labeling mode: 'chart' = show only plot, 'map' = show only map, null = normal */
+            flightLabelingViewMode: null,
             cesiumVisible: false,
             mapStyle: "Road",
             flightsRef: React.createRef(),
@@ -1749,6 +1751,12 @@ class FlightsPage extends React.Component {
                         this.cesiumRef.current.cesiumJumpToFlightStart(flightId);
                     }}
                     onAddFilter={this.handleAddFilter}
+                    onLabelingViewMode={(mode) => {
+                        this.setState({
+                            flightLabelingViewMode: mode,
+                            ...(mode === 'chart' ? { plotVisible: true, mapVisible: false } : mode === 'map' ? { mapVisible: true, plotVisible: false } : {})
+                        });
+                    }}
                 />
             </div>
         );
@@ -1814,11 +1822,12 @@ class FlightsPage extends React.Component {
 
         //Plot Graphic Item
         const plotDiv = (<div id="plot" className="h-100"></div>);
+        const showPlotCard = this.state.plotVisible && (this.state.flightLabelingViewMode === null || this.state.flightLabelingViewMode === 'chart');
         const plotGraphicItem = (
             <div
                 id="plot-container"
                 ref={this.plotContainerRef}
-                className={`card ${this.state.plotVisible ? "d-flex" : "d-none"}`}
+                className={`card ${showPlotCard ? "d-flex" : "d-none"}`}
                 style={{
                     overflow: "hidden",
                     borderColor: "var(--c_border_alt)",
@@ -1929,10 +1938,11 @@ class FlightsPage extends React.Component {
 
         //Map Graphic Item
         const mapDiv = (<div id="map" className="map h-100 bg-[var(--c_bg)]!" style={{minHeight: "500px"}}></div>);
+        const showMapCard = this.state.mapVisible && (this.state.flightLabelingViewMode === null || this.state.flightLabelingViewMode === 'map');
         const mapGraphicItem = (
             <div
                 id="map-container"
-                className={`card ${this.state.mapVisible ? "d-flex" : "d-none"}`}
+                className={`card ${showMapCard ? "d-flex" : "d-none"}`}
                 style={{
                     overflow: "hidden",
                     borderColor: "var(--c_border_alt)",

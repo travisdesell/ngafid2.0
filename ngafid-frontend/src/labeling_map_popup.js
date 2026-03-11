@@ -311,7 +311,7 @@ class LabelingMapPopup extends React.Component {
     }
 
     render() {
-        const { paramName, sections, startDateTime, pendingSectionStart, onUpdateLabel, onRemoveSection, onClearAll, onClose } = this.props;
+        const { paramName, sections, startDateTime, pendingSectionStart, selectionHint, onToggleVisibility, onUpdateLabel, onRemoveSection, onClearAll, onClose } = this.props;
         const list = sections || [];
         const { right, top, width, height, dragging, resizing } = this.state;
 
@@ -371,24 +371,39 @@ class LabelingMapPopup extends React.Component {
                 <div style={{ padding: 8, overflow: 'auto', flex: 1, fontSize: '0.75em' }}>
                     {pendingSectionStart && (
                         <div className="text-muted mb-2" style={{ fontSize: '0.9em' }}>
-                            Click on path to set section end.
+                            {selectionHint === 'chart' ? 'Click on chart to set section end.' : 'Click on path to set section end.'}
                         </div>
                     )}
                     <table className="table table-sm table-bordered mb-0">
                         <thead>
                             <tr>
+                                <th style={{ width: 32, fontSize: '0.7em' }} title="Show/hide this section on the chart">Show</th>
                                 <th style={{ width: 24 }}></th>
                                 <th style={{ fontSize: '0.7em' }}>Start</th>
                                 <th style={{ fontSize: '0.7em' }}>End</th>
                                 <th style={{ fontSize: '0.7em' }}>Val start</th>
                                 <th style={{ fontSize: '0.7em' }}>Val end</th>
+                                <th style={{ fontSize: '0.7em' }}>Parameters</th>
                                 <th style={{ fontSize: '0.7em' }}>Label</th>
                                 <th style={{ width: 32 }}></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {list.map((sec, i) => (
+                            {list.map((sec, i) => {
+                                const showVal = sec.parameterNames && sec.parameterNames.length === 1;
+                                return (
                                 <tr key={i}>
+                                    <td style={{ verticalAlign: 'middle' }}>
+                                        {onToggleVisibility && (
+                                            <input
+                                                type="checkbox"
+                                                checked={sec.visibleOnChart !== false}
+                                                onChange={(e) => onToggleVisibility(i, e.target.checked)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                title={sec.visibleOnChart !== false ? 'Hide this section on chart' : 'Show this section on chart'}
+                                            />
+                                        )}
+                                    </td>
                                     <td>
                                         <span style={{
                                             display: 'inline-block',
@@ -406,8 +421,9 @@ class LabelingMapPopup extends React.Component {
                                     <td style={{ fontSize: '0.8em' }}>
                                         {formatLabelingDate(sec.endTime, startDateTime)} {formatLabelingTimeOnly(sec.endTime, startDateTime)}
                                     </td>
-                                    <td style={{ fontSize: '0.8em' }}>{fmtVal(sec.startValue)}</td>
-                                    <td style={{ fontSize: '0.8em' }}>{fmtVal(sec.endValue)}</td>
+                                    <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.startValue) : '—'}</td>
+                                    <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.endValue) : '—'}</td>
+                                    <td style={{ fontSize: '0.75em' }}>{(sec.parameterNames && sec.parameterNames.length > 0) ? sec.parameterNames.join(', ') : '—'}</td>
                                     <td style={{ padding: '2px 4px' }}>
                                         <input
                                             type="text"
@@ -428,7 +444,8 @@ class LabelingMapPopup extends React.Component {
                                         )}
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -454,12 +471,12 @@ class LabelingMapPopup extends React.Component {
 }
 
 /**
- * Brief hover tooltip: just date/time and value (one line).
+ * Brief hover tooltip: date/time, and value only when a single parameter is selected.
  */
 function LabelingHoverTooltip({ placement, time, value, startDateTime, navbarWidth = 40 }) {
     if (!placement || placement.length < 2) return null;
     const timeStr = formatLabelingDateTime(time, startDateTime);
-    const valueStr = value != null ? (typeof value === 'number' ? value.toFixed(3) : String(value)) : '—';
+    const valueStr = value != null ? (typeof value === 'number' ? value.toFixed(3) : String(value)) : null;
     return (
         <div
             style={{
@@ -476,7 +493,7 @@ function LabelingHoverTooltip({ placement, time, value, startDateTime, navbarWid
                 pointerEvents: 'none',
             }}
         >
-            {timeStr} &nbsp; {valueStr}
+            {timeStr}{valueStr != null ? <> &nbsp; {valueStr}</> : null}
         </div>
     );
 }
