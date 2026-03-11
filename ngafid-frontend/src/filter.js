@@ -1,9 +1,9 @@
 import 'bootstrap';
 import React, { useEffect } from "react";
 import {Colors} from "./map.js";
-import { showErrorModal } from './error_modal.js';
 import {timeZones} from "./time_zones.js";
 import {showConfirmModal} from "./confirm_modal.js";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 
 const MESSAGE_BIND_PERIOD_MS = 3_000;
 
@@ -339,7 +339,7 @@ class Rule extends React.Component {
                 </div>
             );
 
-            //Has selected rule...
+        //Has selected rule...
         } else {
 
             while (inputs.length < selectedRule.conditions.length + 1) {
@@ -675,7 +675,7 @@ export function Group(props) {
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("This Filter: ", this);
                 console.log("This Filter Props: ", props);
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Modifying Filter");
             }
         });
     };
@@ -705,7 +705,7 @@ export function Group(props) {
                 setStoredFilters(updatedFiltersList);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Deleting Filter");
             }
         });
 
@@ -761,7 +761,7 @@ export function Group(props) {
             },
 
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Saving Filter");
             }
         });
     };
@@ -781,7 +781,7 @@ export function Group(props) {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error getting stored filters: ", errorThrown);
-                showErrorModal("Error Getting Stored Filters", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Getting Stored Filters");
             },
         });
 
