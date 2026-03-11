@@ -20,7 +20,7 @@ You will need the following software packages:
 
 1. Mysql
 2. Maven
-3. Java >= 25
+3. Java >= 24
 4. Nodejs
 5. Kafka
 

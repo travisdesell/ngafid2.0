@@ -174,7 +174,7 @@
                 </executions>
             </plugin>
 
-            <!-- Surefire configured for JUnit 5 and Selenium runs on JDK 25+ -->
+            <!-- Surefire configured for JUnit 5 and Selenium runs on JDK 24+ -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
