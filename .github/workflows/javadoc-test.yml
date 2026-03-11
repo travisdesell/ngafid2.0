@@ -2,7 +2,7 @@ name: Test JavaDoc Generation
 
 on:
   push:
-    branches: [roman/feature/javadoc-github-pages, aidan_cu/main_july2025]
+    branches: [roman/feature/javadoc-github-pages]
     paths:
       - "**/*.java"
       - "**/*.kt"
