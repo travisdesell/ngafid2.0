@@ -20,6 +20,8 @@ x-ngafid-service-common: &ngafid-service-common
     - ./ngafid-static:/mnt/static
     - ./data/terrain:/mnt/terrain
     - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
+    # Email credentials: repo-root email_info.txt (line 1=SMTP user, line 2=password) is mounted at /etc/ngafid-email.conf in the container.
+    - ./email_info.txt:/etc/ngafid-email.conf:ro
 
 services:
   base:
