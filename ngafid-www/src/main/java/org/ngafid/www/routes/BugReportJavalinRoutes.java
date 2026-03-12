@@ -6,6 +6,7 @@ import static org.ngafid.www.WebServer.GSON;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.http.Context;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +64,9 @@ public final class BugReportJavalinRoutes {
         boolean includeEmail = payload.includeEmail;
         String subject = "NGAFID Bug Report: " + title;
 
-        // Use env variable 'NGAFID_ADMIN_EMAILS' as the recipient
-        String recipientEmail = Config.NGAFID_ADMIN_EMAILS;
-        if (recipientEmail == null || recipientEmail.isBlank()) {
+        // Use ngafid.admin.emails (semicolon-separated) as recipients
+        String adminEmails = Config.NGAFID_ADMIN_EMAILS;
+        if (adminEmails == null || adminEmails.isBlank()) {
 
             ctx.status(INTERNAL_SERVER_ERROR)
                     .result("Admin email not configured, aborting bug report")
@@ -73,8 +74,18 @@ public final class BugReportJavalinRoutes {
             return;
         }
 
-        // Use the email address as the recipient
-        List<String> recipients = List.of(recipientEmail);
+        // Split by semicolon to get individual email addresses
+        List<String> recipients = Arrays.stream(adminEmails.split(";"))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+
+        if (recipients.isEmpty()) {
+            ctx.status(INTERNAL_SERVER_ERROR)
+                    .result("Admin email not configured, aborting bug report")
+                    .json(INTERNAL_SERVER_ERROR);
+            return;
+        }
 
         List<String> bccRecipients;
 
@@ -84,7 +95,7 @@ public final class BugReportJavalinRoutes {
         // Otherwise, no BCC recipients
         else bccRecipients = List.of();
 
-        LOG.info("Attempting to send bug report email to '" + recipientEmail
+        LOG.info("Attempting to send bug report email to '" + recipients
                 + "'" + " from  '" + senderEmail
                 + "'" + " (BCC Status: " + includeEmail + ")"
                 + "...");
@@ -112,8 +123,8 @@ public final class BugReportJavalinRoutes {
         }
 
         // Email sent successfully, report success
-        LOG.info("Sent bug report email to " + recipientEmail);
-        ctx.status(OK).result("Bug report sent to " + recipientEmail).json(OK);
+        LOG.info("Sent bug report email to " + recipients);
+        ctx.status(OK).result("Bug report sent to " + recipients).json(OK);
     }
 
     private static class BugReportPayload {
