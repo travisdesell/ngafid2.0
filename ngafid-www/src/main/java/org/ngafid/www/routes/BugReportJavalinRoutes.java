@@ -89,11 +89,13 @@ public final class BugReportJavalinRoutes {
 
         List<String> bccRecipients;
 
-        // Flagged to include the sender's email address, add it to the BCC list
-        if (includeEmail && senderEmail != null && !senderEmail.isBlank()) bccRecipients = List.of(senderEmail);
-
-        // Otherwise, no BCC recipients
-        else bccRecipients = List.of();
+        // Flagged to include the sender's email address, add it to the BCC list (unless already a recipient)
+        if (includeEmail && senderEmail != null && !senderEmail.isBlank()) {
+            String trimmedSender = senderEmail.trim();
+            bccRecipients = recipients.contains(trimmedSender) ? List.of() : List.of(trimmedSender);
+        } else {
+            bccRecipients = List.of();
+        }
 
         LOG.info("Attempting to send bug report email to '" + recipients
                 + "'" + " from  '" + senderEmail
