@@ -179,26 +179,30 @@ public abstract class WebServer {
     protected abstract void configurePersistentSessions();
 
     protected void exceptionHandler(Exception exception) {
-        LOG.severe("Exception: " + exception);
-        LOG.severe("Exception message: " + exception.getMessage());
+        LOG.severe(() -> "Exception: " + exception);
+        LOG.severe(() -> "Exception message: " + exception.getMessage());
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        exception.printStackTrace(pw);
-        String stackTrace = sw.toString(); // stack trace as a string
-        LOG.severe("stack trace:\n" + stackTrace);
+        try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
+            
+            exception.printStackTrace(pw);
+            String stackTrace = sw.toString(); // <-- Stack trace as a string
+            LOG.severe(() -> "Stack trace:\n" + stackTrace);
 
-        String message = "An uncaught exception was thrown in the NGAFID SparkWebServer at "
-                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"))
-                + ".\n The exception was: " + exception + "\n" + ".\n The exception message was: "
-                + exception.getMessage() + "\n" + ".\n The exception (to string): " + exception + "\n"
-                + "\n The non-pretty stack trace is:\n" + stackTrace + "\n" + "\nThe stack trace was:\n"
-                + ConvertToHTML.convertError(exception) + "\n";
+            String message = "An uncaught exception was thrown in the NGAFID SparkWebServer at "
+                    + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"))
+                    + ".\n The exception was: " + exception + "\n" + ".\n The exception message was: "
+                    + exception.getMessage() + "\n" + ".\n The exception (to string): " + exception + "\n"
+                    + "\n The non-pretty stack trace is:\n" + stackTrace + "\n" + "\nThe stack trace was:\n"
+                    + ConvertToHTML.convertError(exception) + "\n";
 
-        sendAdminEmails(
-                String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()),
-                ConvertToHTML.convertString(message),
-                EmailType.ADMIN_EXCEPTION_NOTIFICATION);
+            sendAdminEmails(
+                    String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()),
+                    ConvertToHTML.convertString(message),
+                    EmailType.ADMIN_EXCEPTION_NOTIFICATION);
+        } catch (IOException e) {
+            LOG.severe(() -> "Got IO exception: '" + e + "' while handling incoming exception: '" + exception + "'");
+        }
+
     }
 
     protected void configureLogging() {
