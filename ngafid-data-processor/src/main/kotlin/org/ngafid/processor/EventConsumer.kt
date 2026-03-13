@@ -200,6 +200,12 @@ class EventConsumer protected constructor(
                         LOG.warning("Failed to mark flight_processed after ColumnNotAvailableException: ${markErr.message}")
                     }
                     return Pair(record, false)
+                    try {
+                        markFlightProcessed(connection, flight, def, hadError = true)
+                    } catch (markErr: Exception) {
+                        LOG.warning("Failed to mark flight_processed after ColumnNotAvailableException: ${markErr.message}")
+                    }
+                    return Pair(record, false)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     markFlightProcessed(connection, flight, def, hadError=true)

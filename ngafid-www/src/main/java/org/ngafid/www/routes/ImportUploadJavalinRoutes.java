@@ -19,12 +19,59 @@ import org.ngafid.www.Navbar;
 
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
+    private static final int DEFAULT_PAGE_SIZE = 10;
 
     private ImportUploadJavalinRoutes() {
         // Utility class
     }
 
+    private static int calculateNumberPages(int totalItems, int pageSize) {
+        if (pageSize <= 0) return 0;
+        return (int) Math.ceil((double) totalItems / pageSize);
+    }
+
+    private static int clampPage(int requestedPage, int numberPages) {
+        if (numberPages <= 0) return 0;
+        return Math.max(0, Math.min(requestedPage, numberPages - 1));
+    }
+
+    private static int convertPublicPageToInternalPage(int publicPage) {
+        return Math.max(0, publicPage - 1);
+    }
+
+    private static String buildPagePath(String basePath, int internalPage) {
+        return basePath + "/" + (internalPage + 1);
+    }
+
+    private static int getRequestedPage(Context ctx) {
+
+        String pageParam = ctx.pathParam("page");
+
+        // Page param is not a valid number, default to page 0 (first page)
+        if (!pageParam.matches("\\d+"))
+            return 0;
+
+        return Integer.parseInt(pageParam);
+
+    }
+
+    private static boolean redirectIfClamped(Context ctx, String basePath, int requestedPage, int currentPage) {
+        final int canonicalPublicPage = currentPage + 1;
+        if (requestedPage == canonicalPublicPage) return false;
+
+        ctx.redirect(buildPagePath(basePath, currentPage));
+        return true;
+    }
+
     public static void getUploads(Context ctx) {
+        ctx.redirect(buildPagePath("/protected/uploads", 0));
+    }
+
+    public static void getUploadsPage(Context ctx) {
+        renderUploads(ctx, getRequestedPage(ctx), true);
+    }
+
+    private static void renderUploads(Context ctx, int requestedPage, boolean isPageRoute) {
         final String templateFile = "uploads.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -36,11 +83,16 @@ public class ImportUploadJavalinRoutes {
             final int fleetId = user.getFleetId();
 
             // default page values
-            final int pageSize = 10;
-            int currentPage = 0;
+            final int pageSize = DEFAULT_PAGE_SIZE;
+            final int requestedInternalPage = convertPublicPageToInternalPage(requestedPage);
 
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
-            final int numberPages = totalUploads / pageSize;
+            final int numberPages = calculateNumberPages(totalUploads, pageSize);
+            final int currentPage = clampPage(requestedInternalPage, numberPages);
+
+            if (isPageRoute && redirectIfClamped(ctx, "/protected/uploads", requestedPage, currentPage)) {
+                return;
+            }
 
             List<Upload> pendingUploads =
                     Upload.getUploads(connection, fleetId, new Upload.Status[] {Upload.Status.UPLOADING});
@@ -58,7 +110,7 @@ public class ImportUploadJavalinRoutes {
                     Upload.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
-            scopes.put("index_js", "var currentPage = 0;");
+            scopes.put("index_js", "var currentPage = " + currentPage + ";");
 
             scopes.put(
                     "uploads_js",
@@ -75,29 +127,46 @@ public class ImportUploadJavalinRoutes {
     }
 
     public static void getImports(Context ctx) {
+        ctx.redirect(buildPagePath("/protected/imports", 0));
+    }
+
+    public static void getImportsPage(Context ctx) {
+        renderImports(ctx, getRequestedPage(ctx), true);
+    }
+
+    private static void renderImports(Context ctx, int requestedPage, boolean isPageRoute) {
         final String templateFile = "imports.html";
 
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int fleetId = user.getFleetId();
-            Map<String, Object> scopes = new HashMap<String, Object>();
+            Map<String, Object> scopes = new HashMap<>();
 
             // default page values
-            final int totalImports = Upload.getNumUploads(connection, fleetId, null);
-            final int startPage = 0;
-            final int pageSize = 10;
-            final int numberPages = totalImports / pageSize;
+            final int pageSize = DEFAULT_PAGE_SIZE;
+            final int requestedInternalPage = convertPublicPageToInternalPage(requestedPage);
+            final int totalImports = Upload.getNumUploadsByStatus(connection, fleetId, Upload.Status.getImportedSet());
+            final int numberPages = calculateNumberPages(totalImports, pageSize);
+            final int currentPage = clampPage(requestedInternalPage, numberPages);
+
+            if (isPageRoute && redirectIfClamped(ctx, "/protected/imports", requestedPage, currentPage)) {
+                return;
+            }
+
             final List<Upload> imports = Upload.getUploads(
-                    connection, fleetId, Upload.Status.getImportedSet(), " LIMIT " + startPage + "," + pageSize);
+                    connection,
+                    fleetId,
+                    Upload.Status.getImportedSet(),
+                    " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
-            scopes.put("index_js", "var currentPage = 0;");
+            scopes.put("index_js", "var currentPage = " + currentPage + ";");
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("imports_js", "var imports = JSON.parse('" + GSON.toJson(imports) + "');");
 
             for (String key : scopes.keySet()) {
                 if (scopes.get(key) == null) {
-                    LOG.severe("ERROR! key '" + key + "' was null.");
+                    LOG.severe(() -> "ERROR! key '" + key + "' was null.");
                 }
             }
 
@@ -119,9 +188,11 @@ public class ImportUploadJavalinRoutes {
         // app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
 
         app.get("/protected/uploads", ImportUploadJavalinRoutes::getUploads);
+        app.get("/protected/uploads/{page}", ImportUploadJavalinRoutes::getUploadsPage);
         // app.post("/protected/uploads", ImportUploadJavalinRoutes::postUploads);
 
         app.get("/protected/imports", ImportUploadJavalinRoutes::getImports);
+        app.get("/protected/imports/{page}", ImportUploadJavalinRoutes::getImportsPage);
         // app.post("/protected/get_imports", ImportUploadJavalinRoutes::postImports);
 
         // app.post("/protected/upload_details", ImportUploadJavalinRoutes::postUploadDetails);

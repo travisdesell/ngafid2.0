@@ -1,11 +1,48 @@
 import 'bootstrap';
 import React from "react";
-import {createRoot} from "react-dom/client";
+import { createRoot } from "react-dom/client";
 
-import {showErrorModal} from "./error_modal";
-import SignedInNavbar from "./signed_in_navbar";
+import { showErrorModal } from "./error_modal.js";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
+import { Paginator } from "./paginator_component.tsx";
+import SignedInNavbar from "./signed_in_navbar.js";
 
-import {Paginator} from "./paginator_component.tsx";
+function getImportsPagePath(currentPage) {
+    return `/protected/imports/${currentPage + 1}`;
+}
+
+function getImportsPageFromPath() {
+
+    const match = window.location.pathname.match(/^\/protected\/imports\/(\d+)$/);
+
+    // No specified page, default to page 0 (first page)
+    if (!match) {
+        return 0;
+    }
+
+    const publicPage = Number(match[1]);
+
+    // Page is not a valid number, default to page 0 (first page)
+    if (!Number.isInteger(publicPage) || publicPage < 1) {
+        return 0;
+    }
+
+    // Convert from 1-indexed public page to 0-indexed internal page
+    return publicPage - 1;
+
+}
+
+function syncImportsPageUrl(currentPage) {
+    if (window.history && window.history.replaceState) {
+
+        const nextPath = getImportsPagePath(currentPage);
+
+        // Target path is different than current path, update the URL to match the current page
+        if (window.location.pathname !== nextPath)
+            window.history.replaceState({}, '', nextPath);
+        
+    }
+}
 
 class FlightWarning extends React.Component {
     constructor(props) {
@@ -210,7 +247,7 @@ class Import extends React.Component {
 
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
-                    showErrorModal("Error Loading Uploads", errorThrown);
+                    showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Upload Details");
                 },
             });
         }
@@ -577,6 +614,14 @@ class ImportsPage extends React.Component {
         };
     }
 
+    componentDidMount() {
+        const currentPage = getImportsPageFromPath();
+
+        this.setState({ currentPage }, () => {
+            this.submitFilter();
+        });
+    }
+
     submitFilter() {
 
         const submissionData = {
@@ -585,7 +630,7 @@ class ImportsPage extends React.Component {
         };
 
         $.ajax({
-            type: 'POST',
+            type: 'GET',
             url: '/api/upload/imported',
             data: submissionData,
             dataType: 'json',
@@ -604,13 +649,16 @@ class ImportsPage extends React.Component {
 
                 console.log(`got response: ${  response  } ${  response.size}`);
 
+                syncImportsPageUrl(response.currentPage);
+
                 this.setState({
                     imports: response.imports,
-                    numberPages: response.numberPages
+                    numberPages: response.numberPages,
+                    currentPage: response.currentPage
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Flights");
             },
         });
     }
@@ -653,10 +701,14 @@ class ImportsPage extends React.Component {
                             numberPages={this.state.numberPages}
                             pageSize={this.state.pageSize}
                             updateCurrentPage={(currentPage) => {
-                                this.setState({currentPage: currentPage});
+                                this.setState({currentPage: currentPage}, () => {
+                                    this.submitFilter();
+                                });
                             }}
                             updateItemsPerPage={(pageSize) => {
-                                this.setState({pageSize: pageSize});
+                                this.setState({pageSize: pageSize}, () => {
+                                    this.submitFilter();
+                                });
                             }}
                         />
                     </div>

@@ -2,13 +2,13 @@ import 'bootstrap';
 import React from "react";
 import { createRoot } from 'react-dom/client';
 
-import {showErrorModal} from "./error_modal";
-import SignedInNavbar from "./signed_in_navbar";
-import {EmailSettingsTableManager} from "./email_settings";
+import { EmailSettingsTableManager } from "./email_settings.js";
+import { showErrorModal } from "./error_modal.js";
+import SignedInNavbar from "./signed_in_navbar.js";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 
 
-import './index.css';          //<-- include Tailwind
-
+import './index.css'; //<-- include Tailwind
 
 
 class AccessCheck extends React.Component {
@@ -113,7 +113,7 @@ class FleetUserRow extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 $("#loading").hide();
-                showErrorModal("Error Loading Uploads", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error updating user access");
             },
         });
     };
@@ -240,10 +240,7 @@ class ManageFleetPage extends React.Component {
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                console.log(jqXHR);
-                console.log(textStatus);
-                console.log(errorThrown);
-                showErrorModal("Error Sending Invite");
+                showAjaxErrorModal(jqXHR, errorThrown, "Error sending invite");
             }
 
         });

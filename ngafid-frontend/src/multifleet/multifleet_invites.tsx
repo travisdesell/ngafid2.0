@@ -25,7 +25,7 @@ const declineInvite = ({ fleetName, inviteEmail, removeMultifleetInviteLocally }
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error declining invite:', errorThrown);
-                showErrorModal("Error accepting invite:", errorThrown);
+                showErrorModal("Error declining invite:", errorThrown);
             }
         });
 

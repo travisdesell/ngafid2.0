@@ -58,9 +58,9 @@ class PersistenceTest {
             modal.findElement(By.id("loginPassword")).sendKeys(password)
             modal.findElement(By.cssSelector("button[type='submit']")).click()
             wait.until(ExpectedConditions.invisibilityOf(modal))
-            wait.until { driver.currentUrl?.contains("/protected") == true }
+            wait.until { driver.currentUrl.orEmpty().contains("/protected") }
             driver.navigate().refresh()
-            wait.until { driver.currentUrl?.contains("/protected") == true }
+            wait.until { driver.currentUrl.orEmpty().contains("/protected") }
             assertTrue(driver.findElements(By.linkText("Login")).isEmpty(),"User should remain logged in after refresh"
             )
         } finally {

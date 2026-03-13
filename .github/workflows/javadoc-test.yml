@@ -2,7 +2,7 @@ name: Test JavaDoc Generation
 
 on:
   push:
-    branches: [roman/feature/javadoc-github-pages, aidan_cu/main_july2025]
+    branches: [roman/feature/javadoc-github-pages]
     paths:
       - "**/*.java"
       - "**/*.kt"
@@ -18,17 +18,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup JDK 21
+      - name: Setup JDK 24
         uses: actions/setup-java@v4
         with:
-          java-version: "21"
+          java-version: "24"
           distribution: "temurin"
 
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-kotlin-2.0.21
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-kotlin-2.3.10
           restore-keys: |
             ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-
             ${{ runner.os }}-m2-

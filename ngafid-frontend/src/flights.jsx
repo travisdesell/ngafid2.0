@@ -5,21 +5,22 @@ import { createRoot } from 'react-dom/client';
 import SignedInNavbar from "./signed_in_navbar";
 import {initializeMap, layers, map, styles} from "./map";
 
-import {showErrorModal} from "./error_modal";
-import {showConfirmModal} from "./confirm_modal";
+import {showErrorModal} from "./error_modal.js";
+import {showConfirmModal} from "./confirm_modal.js";
 
-import {Filter, isValidFilter} from './filter';
+import {Filter, isValidFilter} from './filter.js';
 import {Paginator} from './paginator_component.tsx';
-import {FlightsCard} from './flights_card_component';
-import Plotly from 'plotly';
-import {timeZones} from "./time_zones";
-import CesiumPage from "./ngafid_cesium";
-import {cesiumFlightsSelected} from "./cesium_buttons";
+import {FlightsCard} from './flights_card_component.js';
+import Plotly from 'plotly.js';
+import {timeZones} from "./time_zones.js";
+import CesiumPage from "./ngafid_cesium.js";
+import {cesiumFlightsSelected} from "./cesium_buttons.js";
 
 
-import { TAG_ID_NONE, TAG_ID_ALL } from "./tags_component";
+import { TAG_ID_NONE, TAG_ID_ALL } from "./tags_component.js";
 
 import './index.css'; //<-- include Tailwind
+import { showAjaxErrorModal } from "./extract_ajax_error_message.js";
 
 
 function invalidString(str) {
@@ -962,7 +963,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
 
                 console.log("Error loading stored filters: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Loading Filters", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Filters");
                 
             },
         });
@@ -1035,10 +1036,10 @@ class FlightsPage extends React.Component {
 
                 }
 
-                //Response is invalid, show error modal
-                if (response.errorTitle) {
+                //Response is invalid, show error modal (only if we have something to show)
+                if (response.errorTitle || response.errorMessage) {
                     console.log("Error in 'Get Flights', displaying error modal!");
-                    showErrorModal(response.errorTitle, response.errorMessage);
+                    showErrorModal(response.errorTitle || "Error", response.errorMessage || "");
                     return;
                 }
 
@@ -1052,7 +1053,7 @@ class FlightsPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error loading flights: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Flights");
             },
             complete: () => {
                 console.log("Flight loading complete!");
@@ -1136,7 +1137,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => { 
 
                 console.log("Error creating tag: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Creating Tag", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Creating Tag");
 
             }
         });
@@ -1232,7 +1233,7 @@ class FlightsPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error loading unassociated tags: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Loading Unassociated Tags", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Unassociated Tags");
             }
         });
 
@@ -1419,7 +1420,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
 
                 console.log("Error associating tag: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Associating Tag", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Associating Tag");
 
             }
         });

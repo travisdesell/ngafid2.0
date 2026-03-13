@@ -3,9 +3,9 @@ import 'bootstrap';
 import React from "react";
 import { createRoot } from 'react-dom/client';
 
-import {showErrorModal} from "./error_modal";
-import SignedInNavbar from "./signed_in_navbar";
 import $ from "jquery";
+import SignedInNavbar from "./signed_in_navbar.js";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 
 window.jQuery = $;
 window.$ = $;
@@ -34,6 +34,7 @@ class AirframeCard extends React.Component {
         this.state = {
             expanded: false,
             isLoaded: false,
+            isLoading: false,
         };
     }
 
@@ -46,37 +47,44 @@ class AirframeCard extends React.Component {
     }
 
     expandClicked() {
-        this.setState({
-            expanded: !this.state.expanded
-        });
-
-        if (!this.state.isLoaded) {
-            this.getStats(this);
-        }
+        this.setState(
+            (prevState) => ({
+                expanded: !prevState.expanded
+            }),
+            () => {
+                if (this.state.expanded && !this.state.isLoaded && !this.state.isLoading) {
+                    this.getStats();
+                }
+            }
+        );
     }
 
-    getStats(airframeCard) {
+    getStats() {
 
         console.log("Acquiring event stats");
+        this.setState({isLoading: true});
 
         $.ajax({
             type: 'GET',
             url: `/api/event/count/by-airframe/${this.props.airframeId}`,
             dataType: 'json',
-            async: false,
+            async: true,
             success: (response) => {
                 if (response.events != null) {
                     console.log("Successfully acquired event stats for airframe");
-                    airframeCard.setState({
+                    this.setState({
                         isLoaded: true,
+                        isLoading: false,
                         eventStats: response
                     });
                 } else {
                     console.log("Bad juju, must investigate");
+                    this.setState({isLoading: false});
                 }
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Getting Event Statistics", errorThrown);
+                this.setState({isLoading: false});
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Getting Event Statistics");
             },
         });
         
@@ -111,6 +119,18 @@ class AirframeCard extends React.Component {
                 </div>
 
                 <div className="row" style={{padding: "0 15 0 15"}}>
+                    {
+                        (this.state.expanded && this.state.isLoading) ? (
+                            <div className="col-sm-12" style={{padding: "0 0 0 0"}}>
+                                <div className="card mb-1 m-1">
+                                    <div className="card-body" style={{display: "flex", alignItems: "center", gap: "10px"}}>
+                                        <div className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                                        <span>Loading event statistics...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : ""
+                    }
                     {
                         (!this.state.expanded || this.state.eventStats == null) ? "" : this.state.eventStats.events.map((eventInfo, eventIndex) => {
                             const processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);

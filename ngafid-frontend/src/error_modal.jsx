@@ -23,19 +23,20 @@ class ErrorModal extends React.Component {
     }
 
     show(title, message) {
+        const t = title != null ? String(title) : "";
+        const m = message != null ? String(message) : "";
         this.setState(
-            {
-                title: String(title),
-                message: String(message),
-            },
-            () => this.bsModal.show()      //<-- Show the modal after state has updated
+            { title: t, message: m },
+            () => {
+                // Don't open modal when both title and message are empty (avoids empty error popup)
+                if (t.trim() || m.trim())
+                    this.bsModal.show();
+            }
         );
     }
 
     render() {
         const { title, message } = this.state;
-
-        console.warn(`Rendering Error Modal with error title: '${title}' and message: '${message}'`);
 
         return (
             <div className='modal-content'>
@@ -76,19 +77,15 @@ class ErrorModal extends React.Component {
 }
 
 
-// const container = document.querySelector("#error-modal-content");
-// const root = createRoot(container);
-// root.render(<ErrorModal ref={errorModalRef}/>);
+const container = document.querySelector("#error-modal-content");
+const root = createRoot(container);
+root.render(<ErrorModal ref={errorModalRef}/>);
 
 
 export function showErrorModal(title, message) {
-
-    //Got the error modal reference, show it
-    if (errorModalRef.current)
-        errorModalRef.current.show(title, message);
-
-    //Otherwise, log an error
-    else
+    if (!errorModalRef.current) {
         console.error("Error Modal reference is not set. Cannot show error modal.");
-
+        return;
+    }
+    errorModalRef.current.show(title, message);
 }

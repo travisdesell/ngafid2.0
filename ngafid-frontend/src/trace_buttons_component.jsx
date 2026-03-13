@@ -2,7 +2,7 @@ import 'bootstrap';
 import React from "react";
 
 import Plotly from 'plotly.js';
-import {showErrorModal} from "./error_modal";
+import {showErrorModal} from "./error_modal.js";
 
 class TraceButtons extends React.Component {
     constructor(props) {

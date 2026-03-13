@@ -14,8 +14,8 @@ class SeleniumSmokeTest {
     @Test
     fun homePageHasTitle() {
         driver.get(baseUrl)
-        val title = driver.title
-        assertTrue(!title.isNullOrBlank(), "Expected a page title when navigating to $baseUrl")
+        val title = driver.title.orEmpty()
+        assertTrue(title.isNotBlank(), "Expected a page title when navigating to $baseUrl")
     }
 
     companion object {

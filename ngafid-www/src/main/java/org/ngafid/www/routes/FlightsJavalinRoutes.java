@@ -5,10 +5,12 @@ import static org.ngafid.www.WebServer.GSON;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
+import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.*;
@@ -21,6 +23,19 @@ public class FlightsJavalinRoutes {
 
     private FlightsJavalinRoutes() {
         // Utility class
+    }
+
+    private static String getChartTileBaseUrlScript() {
+        try {
+            String chartBase = Config.getProperty("ngafid.chart.tile.base.url");
+            if (chartBase != null && !chartBase.trim().isEmpty())
+                chartBase = chartBase.replaceAll("/+$", "");
+            else
+                chartBase = "http://localhost:8187";
+            return "var chartTileBaseUrl = '" + chartBase + "';\n";
+        } catch (RuntimeException e) {
+            return "var chartTileBaseUrl = 'http://localhost:8187';\n";
+        }
     }
 
     private static class FlightsResponse {
@@ -48,6 +63,7 @@ public class FlightsJavalinRoutes {
         public int getTotalFlights() {
             return totalFlights;
         }
+
     }
 
     private static void getFlight(Context ctx) {
@@ -60,6 +76,7 @@ public class FlightsJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
+            scopes.put("chart_tile_base_url", getChartTileBaseUrlScript());
             for (String flightId : flightIds) {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
@@ -165,7 +182,15 @@ public class FlightsJavalinRoutes {
     //         LOG.info("get all event definition names took: " + ((endTime - startTime) / 1000.0) + " seconds");
     //         sb.append("');\n");
 
-    //         sb.append("var flights = [];");
+    // sb.append("var flights = [];");
+
+    // String azureMapsKey = Config.getProperty("ngafid.azure.maps.key");
+    // if (azureMapsKey != null && !azureMapsKey.trim().isEmpty()) {
+    //     sb.append("var azureMapsKey = '").append(azureMapsKey).append("';\n");
+    // } else {
+    //     LOG.warning("Azure Maps key is not configured.");
+    //     sb.append("var azureMapsKey = undefined;\n");
+    // }
 
     //         scopes.put("flights_js", sb.toString());
 

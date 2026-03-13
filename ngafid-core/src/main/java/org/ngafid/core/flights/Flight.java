@@ -227,7 +227,7 @@ public class Flight {
      * no filter if the filter is null).
      */
     public static int getNumFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
+        ArrayList<Object> parameters = new ArrayList<>();
 
         String queryStr;
         if (fleetId <= 0) {
@@ -339,12 +339,12 @@ public class Flight {
             query.setInt(1, fleetId);
             for (int i = 0; i < parameters.size(); i++) {
 
-                if (parameters.get(i) instanceof String) {
-                    query.setString(i + 2, (String) parameters.get(i));
-                } else if (parameters.get(i) instanceof Double) {
-                    query.setDouble(i + 2, (Double) parameters.get(i));
-                } else if (parameters.get(i) instanceof Integer) {
-                    query.setInt(i + 2, (Integer) parameters.get(i));
+                switch (parameters.get(i)) {
+                    case String string -> query.setString(i + 2, string);
+                    case Double aDouble -> query.setDouble(i + 2, aDouble);
+                    case Integer integer -> query.setInt(i + 2, integer);
+                    default -> {
+                    }
                 }
             }
 
@@ -431,12 +431,12 @@ public class Flight {
 
     private static void setQueryParameters(ArrayList<Object> parameters, PreparedStatement query) throws SQLException {
         for (int i = 0; i < parameters.size(); i++) {
-            if (parameters.get(i) instanceof String) {
-                query.setString(i + 2, (String) parameters.get(i));
-            } else if (parameters.get(i) instanceof Double) {
-                query.setDouble(i + 2, (Double) parameters.get(i));
-            } else if (parameters.get(i) instanceof Integer) {
-                query.setInt(i + 2, (Integer) parameters.get(i));
+            switch (parameters.get(i)) {
+                case String string -> query.setString(i + 2, string);
+                case Double aDouble -> query.setDouble(i + 2, aDouble);
+                case Integer integer -> query.setInt(i + 2, integer);
+                default -> {
+                }
             }
         }
     }
@@ -1163,7 +1163,7 @@ public class Flight {
         for (String param : seriesNames) {
             if (!this.doubleTimeSeries.containsKey(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
-                LOG.severe("WARNING: " + errMsg);
+                LOG.severe(() -> "WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
             }
         }
@@ -1393,51 +1393,51 @@ public class Flight {
     public void writeToFile(Connection connection, String fname) throws IOException, SQLException {
         ArrayList<DoubleTimeSeries> series = DoubleTimeSeries.getAllDoubleTimeSeries(connection, id);
 
-        PrintWriter printWriter = new PrintWriter(new FileWriter(fname));
+        try (PrintWriter printWriter = new PrintWriter(new FileWriter(fname))) {
 
-        boolean afterFirst = false;
-        printWriter.print("#");
-        for (DoubleTimeSeries item : series) {
-            String name = item.getName();
-            if (name.equals("AirportDistance") || name.equals("RunwayDistance") || item.getMin() == item.getMax()) {
-                LOG.warning("Skipping column: '" + name + "'");
-                continue;
-            }
-
-            if (afterFirst) printWriter.print(",");
-            printWriter.print(item.getName());
-            afterFirst = true;
-        }
-        printWriter.println();
-        printWriter.flush();
-
-        afterFirst = false;
-        printWriter.print("#");
-        for (DoubleTimeSeries value : series) {
-            String name = value.getName();
-            if (name.equals("AirportDistance") || name.equals("RunwayDistance") || value.getMin() == value.getMax())
-                continue;
-            if (afterFirst) printWriter.print(",");
-            printWriter.print(value.getDataType());
-            afterFirst = true;
-        }
-        printWriter.println();
-        printWriter.flush();
-
-        // Skip the first 2 minutes to get rid of initial weird values
-        for (int i = 119; i < numberRows; i++) {
-            afterFirst = false;
-            for (DoubleTimeSeries timeSeries : series) {
-                String name = timeSeries.getName();
-                if (name.equals("AirportDistance")
-                        || name.equals("RunwayDistance")
-                        || timeSeries.getMin() == timeSeries.getMax()) continue;
+            boolean afterFirst = false;
+            printWriter.print("#");
+            for (DoubleTimeSeries item : series) {
+                String name = item.getName();
+                if (name.equals("AirportDistance") || name.equals("RunwayDistance") || item.getMin() == item.getMax()) {
+                    LOG.warning(() -> "Skipping column: '" + name + "'");
+                    continue;
+                }
+                
                 if (afterFirst) printWriter.print(",");
-                printWriter.print(timeSeries.get(i));
+                printWriter.print(item.getName());
                 afterFirst = true;
             }
             printWriter.println();
+            printWriter.flush();
+            
+            afterFirst = false;
+            printWriter.print("#");
+            for (DoubleTimeSeries value : series) {
+                String name = value.getName();
+                if (name.equals("AirportDistance") || name.equals("RunwayDistance") || value.getMin() == value.getMax())
+                    continue;
+                if (afterFirst) printWriter.print(",");
+                printWriter.print(value.getDataType());
+                afterFirst = true;
+            }
+            printWriter.println();
+            printWriter.flush();
+            
+            // Skip the first 2 minutes to get rid of initial weird values
+            for (int i = 119; i < numberRows; i++) {
+                afterFirst = false;
+                for (DoubleTimeSeries timeSeries : series) {
+                    String name = timeSeries.getName();
+                    if (name.equals("AirportDistance")
+                            || name.equals("RunwayDistance")
+                            || timeSeries.getMin() == timeSeries.getMax()) continue;
+                    if (afterFirst) printWriter.print(",");
+                    printWriter.print(timeSeries.get(i));
+                    afterFirst = true;
+                }
+                printWriter.println();
+            }
         }
-        printWriter.close();
     }
 }

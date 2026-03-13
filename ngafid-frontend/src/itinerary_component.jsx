@@ -1,8 +1,8 @@
 import 'bootstrap';
 import React from "react";
 
-import {fromLonLat} from 'ol/proj';
-import { map } from "./map";
+import {fromLonLat} from 'ol/proj.js';
+import { map } from "./map.js";
 
 class Itinerary extends React.Component {
 

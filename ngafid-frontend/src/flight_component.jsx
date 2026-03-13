@@ -1,8 +1,8 @@
 import 'bootstrap';
 import React from "react";
 import { createRoot } from "react-dom/client";
-import {showErrorModal} from "./error_modal";
-import {MapPopup} from "./map_popup";
+import {showErrorModal} from "./error_modal.js";
+import {MapPopup} from "./map_popup.js";
 
 import {Colors, map} from "./map";
 
@@ -14,17 +14,17 @@ import Feature from 'ol/Feature';
 import LineString from 'ol/geom/LineString';
 import Point from 'ol/geom/Point';
 
-import {Itinerary} from './itinerary_component';
-import {TraceButtons} from './trace_buttons_component';
-import {Tags} from './tags_component';
-import {Events, eventDefinitions} from './events_component';
-import {showSelectAircraftModal} from './select_acft_modal';
-import {generateLOCILayer, generateStallLayer} from './map_utils';
+import {Itinerary} from './itinerary_component.js';
+import {TraceButtons} from './trace_buttons_component.js';
+import {Tags} from './tags_component.js';
+import {Events, eventDefinitions} from './events_component.js';
+import {showSelectAircraftModal} from './select_acft_modal.js';
+import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
 import {cesiumFlightsSelected} from "./cesium_buttons";
 
-import { plotlyLayoutGlobal } from './flights';
+import { plotlyLayoutGlobal } from './flights.js';
 
 import moment from 'moment';
 import { rejects } from 'assert';

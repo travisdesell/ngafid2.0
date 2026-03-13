@@ -3,7 +3,7 @@ import 'bootstrap';
 import React from "react";
 import { createRoot } from 'react-dom/client';
 
-import {MetricViewerSettings} from "./metricviewer_preferences";
+import {MetricViewerSettings} from "./metricviewer_preferences.js";
 
 import $ from 'jquery';
 

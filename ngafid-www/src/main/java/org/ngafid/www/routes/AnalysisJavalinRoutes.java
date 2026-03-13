@@ -290,6 +290,18 @@ public class AnalysisJavalinRoutes {
             // Azure Maps key not configured - maps will use fallback layers
             scopes.put("azure_maps_key", "var azureMapsKey = undefined;\n");
         }
+
+        // Chart tile service base URL (aviation charts).
+        try {
+            String chartBase = Config.getProperty("ngafid.chart.tile.base.url");
+            if (chartBase != null && !chartBase.trim().isEmpty())
+                chartBase = chartBase.replaceAll("/+$", "");
+            else
+                chartBase = "http://localhost:8187";
+            scopes.put("chart_tile_base_url", "var chartTileBaseUrl = '" + chartBase + "';\n");
+        } catch (RuntimeException e) {
+            scopes.put("chart_tile_base_url", "var chartTileBaseUrl = 'http://localhost:8187';\n");
+        }
     }
 
     public static void getSeverities(Context ctx) {
@@ -357,6 +369,10 @@ public class AnalysisJavalinRoutes {
 
             for (Flight flight : flights) {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
+                    
+                    // Enforce flight ID (in case older cached TTF rows have an empty/incorrect flightId)
+                    ttf.setFlightId(flight.getId());
+                    
                     var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         ttfs.add(jsonElement);
@@ -487,6 +503,48 @@ public class AnalysisJavalinRoutes {
             ctx.status(400).result("Invalid number format for event_id or flight_id");
         } catch (Exception e) {
             LOG.severe("Error fetching heatmap points: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).result("Internal server error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Batch heatmap points endpoint. Accepts POST body JSON: { "event_ids": [1, 2, 3, ...] }.
+     * Returns heatmap points for all event IDs in chunks (server-side chunking).
+     * Response: { "results": [ { "event_id", "flight_id", "points", "flight_airframe" }, ... ] }
+     */
+    @SuppressWarnings("unchecked")
+    public static void postHeatmapPointsBatch(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.status(401).result("User not logged in");
+            return;
+        }
+        try {
+            Map<String, Object> body = GSON.fromJson(ctx.body(), Map.class);
+            if (body == null || !body.containsKey("event_ids")) {
+                ctx.status(400).result("Missing required field: event_ids");
+                return;
+            }
+            Object eventIdsObj = body.get("event_ids");
+            if (!(eventIdsObj instanceof List)) {
+                ctx.status(400).result("event_ids must be an array of integers");
+                return;
+            }
+            List<Integer> eventIds = new ArrayList<>();
+            for (Object o : (List<?>) eventIdsObj) {
+                if (o instanceof Number) {
+                    eventIds.add(((Number) o).intValue());
+                }
+            }
+            if (eventIds.isEmpty()) {
+                ctx.json(Map.of("results", List.of()));
+                return;
+            }
+            List<Map<String, Object>> results = HeatmapPointsProcessor.getCoordinatesForEventIds(eventIds);
+            ctx.json(Map.of("results", results));
+        } catch (Exception e) {
+            LOG.severe("Error in postHeatmapPointsBatch: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).result("Internal server error: " + e.getMessage());
         }
@@ -916,6 +974,7 @@ public class AnalysisJavalinRoutes {
                 "/protected/heatmap_points_for_event_and_flight",
                 AnalysisJavalinRoutes::getHeatmapPointsForEventAndFlight);
         app.get("/protected/heatmap_points_for_flight", AnalysisJavalinRoutes::getHeatmapPointsForFlight);
+        app.post("/protected/heatmap_points_batch", AnalysisJavalinRoutes::postHeatmapPointsBatch);
         app.get("/protected/heatmap_points", AnalysisJavalinRoutes::getHeatmapPoints);
         app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
         app.get("/protected/event_columns_values", AnalysisJavalinRoutes::getEventColumnsValues);

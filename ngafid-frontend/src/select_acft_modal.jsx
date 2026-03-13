@@ -8,8 +8,8 @@ import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
-import {showHelpModal} from './help_modal';
-import {showErrorModal} from './error_modal';
+import {showHelpModal} from './help_modal.js';
+import {showErrorModal} from './error_modal.js';
 
 import $ from 'jquery';
 

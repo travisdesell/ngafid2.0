@@ -1,11 +1,12 @@
 import 'bootstrap';
 import React from "react";
 
-import { DarkModeToggle } from "./dark_mode_toggle";
+import {DarkModeToggle} from "./dark_mode_toggle.js";
 
 
 import { showErrorModal } from './error_modal';
 import './index.css';
+import { showErrorModal } from './error_modal.js';
 
 
 
@@ -239,7 +240,7 @@ export default class SignedInNavbar extends React.Component {
                     Processing the response will update the navbar
                     to the logged out state.
 
-                    Redirect to the summary page.
+                    Redirect to the welcome page.
                 */
 
                 window.location.replace("/logout_success");
@@ -291,7 +292,7 @@ export default class SignedInNavbar extends React.Component {
                     </a>
                     <div className="dropdown-menu dropdown-menu-right text-right"
                          aria-labelledby="navbarDropdownMenuLink">
-                        <DropdownLink name={"Manual Uploads"} href="/protected/uploads"/>
+                        <DropdownLink name={"Manual Uploads"} href="/protected/uploads/1"/>
                         <DropdownLink name={"AirSync Uploads"} href="/protected/airsync_uploads"/>
                     </div>
                 </li>
@@ -307,7 +308,7 @@ export default class SignedInNavbar extends React.Component {
                     </a>
                     <div className="dropdown-menu dropdown-menu-right text-right"
                          aria-labelledby="navbarDropdownMenuLink">
-                        <DropdownLink name={"Manual Imports"} href="/protected/imports"/>
+                        <DropdownLink name={"Manual Imports"} href="/protected/imports/1"/>
                         <DropdownLink name={"AirSync Imports"} href="/protected/airsync_imports"/>
                     </div>
                 </li>
@@ -317,11 +318,11 @@ export default class SignedInNavbar extends React.Component {
 
             importsButton = (
                 <NavLink icon={"fa-cloud-download"} name={"Imports"} active={this.props.activePage === "imports"}
-                         href="/protected/imports"/>
+                         href="/protected/imports/1"/>
             );
             uploadsButton = (
                 <NavLink icon={"fa-upload"} name={"Uploads"} active={this.props.activePage === "uploads"}
-                         href="/protected/uploads"/>
+                         href="/protected/uploads/1"/>
             );
         }
 
@@ -329,7 +330,7 @@ export default class SignedInNavbar extends React.Component {
         //Highlight Active Page on Navbar
         console.log(`Active Page: '${this.props.activePage}'`);
 
-        const homeActive = (this.props.activePage === "summary");
+        const homeActive = (this.props.activePage === "welcome");
 
         const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
         const eventsActive = (eventPageNames.includes(this.props.activePage));
@@ -341,9 +342,21 @@ export default class SignedInNavbar extends React.Component {
         const accountsActive = (this.props.activePage === "account");
 
         return (
-            <nav id='navbar' className="navbar navbar-expand-lg navbar-light"
-                 style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}>
-                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/summary">NGAFID</a>
+            <nav
+                id='navbar'
+                className="navbar navbar-expand-lg navbar-light"
+                style={{zIndex: "999", opacity: "1.0", backgroundColor: "var(--c_navbar_bg)"}}
+            >
+
+                {/* Brand Logo */}
+                <a className="navbar-brand" style={{color: "var(--c_text)"}} href="/protected/welcome">
+                    NGAFID
+                </a>
+
+                {/* Fleet Select Dropdown */}
+                <MultifleetSelectDropdown/>
+
+                {/* Map Dropdown */}
                 {this.props.mapLayerDropdown}
 
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse"

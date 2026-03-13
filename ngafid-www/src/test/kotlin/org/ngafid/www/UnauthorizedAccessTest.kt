@@ -46,13 +46,9 @@ class UnauthorizedAccessTest {
         try {
             driver.get("${baseurl}protected/uploads")
             wait.until {
-                driver.currentUrl?.contains("access_denied") == true ||
-                    (driver.pageSource?.contains("Login") == true)
+                driver.currentUrl.orEmpty().contains("access_denied") || driver.pageSource.orEmpty().contains("Login")
             }
-            assertTrue(
-                driver.pageSource?.contains("Login") == true,
-                "Expected unauthenticated user to be redirected to login"
-            )
+            assertTrue(driver.pageSource.orEmpty().contains("Login"), "Expected unauthenticated user to be redirected to login")
         } finally {
             driver.quit()
         }

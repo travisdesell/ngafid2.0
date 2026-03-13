@@ -22,6 +22,9 @@ x-ngafid-service-common: &ngafid-service-common
     - ./ngafid-static:/mnt/static
     - ./data/terrain:/mnt/terrain
     - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
+    # Email credentials: repo-root email_info.txt (line 1=SMTP user, line 2=password) is mounted at /etc/ngafid-email.conf in the container.
+    - ./email_info.txt:/etc/ngafid-email.conf:ro
+    - /mnt/ngafid:/mnt/ngafid:ro   
 
 services:
   base:
@@ -36,7 +39,13 @@ services:
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.topics
-    command: [ "java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.Topic" ]
+    command:
+      [
+        "java",
+        "-cp",
+        "/opt/ngafid-core/ngafid-core.jar:/app",
+        "org.ngafid.core.kafka.Topic",
+      ]
     <<: *ngafid-service-common-base
     depends_on:
       kafka:
@@ -48,7 +57,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [ "java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.EmailConsumer" ]
+    command:
+      [
+        "java",
+        "-cp",
+        "/opt/ngafid-core/ngafid-core.jar:/app",
+        "org.ngafid.core.kafka.EmailConsumer",
+      ]
     restart: unless-stopped
     <<: *ngafid-service-common
 
@@ -99,7 +114,6 @@ services:
     restart: unless-stopped
     <<: *ngafid-service-common
 
-
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -146,6 +160,10 @@ services:
 
     # volumes:
     #   - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
+
+volumes:
+  mysql_data:
+  kafka_data:
 
 volumes:
   mysql_data:

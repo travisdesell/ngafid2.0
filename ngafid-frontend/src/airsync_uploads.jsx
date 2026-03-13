@@ -1,8 +1,8 @@
 import 'bootstrap';
 import {Paginator} from "./paginator_component.tsx";
-import { showConfirmModal } from "./confirm_modal";
-import { showErrorModal } from './error_modal';
-import SignedInNavbar from "./signed_in_navbar";
+import { showConfirmModal } from "./confirm_modal.js";
+import { showErrorModal } from './error_modal.js';
+import SignedInNavbar from "./signed_in_navbar.js";
 import React from "react";
 import { createRoot } from 'react-dom/client';
 

@@ -1,7 +1,7 @@
 import 'bootstrap';
 import React from "react";
 
-import { Flight } from './flight_component';
+import { Flight } from './flight_component.js';
 
 
 class FlightsCard extends React.Component {

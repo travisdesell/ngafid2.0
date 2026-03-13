@@ -8,7 +8,6 @@ import io.javalin.http.Context
 import io.javalin.http.NotFoundResponse
 import io.javalin.http.UnauthorizedResponse
 import jakarta.servlet.MultipartConfigElement
-import org.ngafid.core.Config
 import org.ngafid.core.Database
 import org.ngafid.core.flights.FlightError
 import org.ngafid.core.flights.FlightWarning
@@ -26,6 +25,8 @@ import java.nio.file.StandardCopyOption
 import java.util.logging.Level
 
 object UploadRoutes : RouteProvider() {
+    private const val DEFAULT_PAGE_SIZE = 10
+
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/upload") {
@@ -50,35 +51,55 @@ object UploadRoutes : RouteProvider() {
         }
     }
 
-    class UploadsResponse(@JsonProperty var uploads: List<Upload>, @JsonProperty var numberPages: Int)
+    class UploadsResponse(
+        @JsonProperty var uploads: List<Upload>,
+        @JsonProperty var numberPages: Int,
+        @JsonProperty var currentPage: Int
+    )
+
+    private fun calculateNumberPages(totalItems: Int, pageSize: Int): Int {
+        if (pageSize <= 0) return 0
+        return kotlin.math.ceil(totalItems.toDouble() / pageSize.toDouble()).toInt()
+    }
+
+    private fun clampPage(requestedPage: Int, numberPages: Int): Int {
+        if (numberPages <= 0) return 0
+        return requestedPage.coerceIn(0, numberPages - 1)
+    }
 
     fun getUploads(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
 
         Database.getConnection().use { connection ->
-            val currentPage = ctx.queryParam("currentPage")!!.toInt()
-            val pageSize = ctx.queryParam("pageSize")!!.toInt()
+            val requestedPage = ctx.queryParam("currentPage")?.toIntOrNull() ?: 0
+            val pageSize = (ctx.queryParam("pageSize")?.toIntOrNull() ?: DEFAULT_PAGE_SIZE).coerceAtLeast(1)
             val totalUploads = Upload.getNumUploads(connection, user.fleetId, null)
-            val numberPages = totalUploads / pageSize
+            val numberPages = calculateNumberPages(totalUploads, pageSize)
+            val currentPage = clampPage(requestedPage, numberPages)
 
             val uploads =
                 Upload.getUploads(connection, user.fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize)
 
-            ctx.json(UploadsResponse(uploads, numberPages))
+            ctx.json(UploadsResponse(uploads, numberPages, currentPage))
         }
     }
 
-    class ImportsResponse(@JsonProperty var imports: List<Upload>, @JsonProperty var numberPages: Int)
+    class ImportsResponse(
+        @JsonProperty var imports: List<Upload>,
+        @JsonProperty var numberPages: Int,
+        @JsonProperty var currentPage: Int
+    )
 
     fun getImported(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
 
         Database.getConnection().use { connection ->
-            val currentPage = ctx.queryParam("currentPage")!!.toInt()
-            val pageSize = ctx.queryParam("pageSize")!!.toInt()
+            val requestedPage = ctx.queryParam("currentPage")?.toIntOrNull() ?: 0
+            val pageSize = (ctx.queryParam("pageSize")?.toIntOrNull() ?: DEFAULT_PAGE_SIZE).coerceAtLeast(1)
 
-            val totalImports = Upload.getNumUploads(connection, user.fleetId, null)
-            val numberPages = totalImports / pageSize
+            val totalImports = Upload.getNumUploadsByStatus(connection, user.fleetId, Upload.Status.getImportedSet())
+            val numberPages = calculateNumberPages(totalImports, pageSize)
+            val currentPage = clampPage(requestedPage, numberPages)
             val imports = Upload.getUploads(
                 connection,
                 user.fleetId,
@@ -86,7 +107,7 @@ object UploadRoutes : RouteProvider() {
                 " LIMIT " + (currentPage * pageSize) + "," + pageSize
             )
 
-            ctx.json(ImportsResponse(imports, numberPages))
+            ctx.json(ImportsResponse(imports, numberPages, currentPage))
         }
     }
 
@@ -163,7 +184,7 @@ object UploadRoutes : RouteProvider() {
 
         val uid = ctx.pathParam("uid").toInt()
         val upload: Upload? = Database.getConnection().use { connection ->
-            Upload.getUploadById(connection, uid, ctx.formParam("md5Hash"))
+            Upload.getUploadById(connection, uid)
         }
 
         // Upload was not found, return 404
@@ -176,10 +197,7 @@ object UploadRoutes : RouteProvider() {
             throw UnauthorizedResponse("User does not have upload access to fleet of upload.")
         }
 
-        //Build the file path
-        val file = File(
-            "${Config.NGAFID_ARCHIVE_DIR}/${upload.getFleetId()}/${upload.getUploaderId()}/${upload.getId()}__${upload.getFilename()}",
-        )
+        val file = upload.getArchivePath().toFile()
 
         //File was found, attempt to send the file to the client
         if (file.exists()) {

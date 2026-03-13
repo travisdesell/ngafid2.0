@@ -9,7 +9,7 @@ window.$ = $;
 
 
 import './index.css';
-import HomeNavbar from './app/components/navbars/home_navbar';
+import HomeNavbar from './home_navbar';
 
 
 class ForgotPassword extends React.Component {
