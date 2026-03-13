@@ -21,11 +21,11 @@ public class MustacheHandler implements FileRenderer {
         String templateFile = MUSTACHE_TEMPLATE_DIR + "/" + templateFilename;
         JavalinLogger.info("handling mustache template: " + templateFile);
         Mustache mustache = mf.compile(templateFilename);
-        StringWriter stringOut = new StringWriter();
-
-        mustache.execute(new PrintWriter(stringOut), scopes).flush();
-
-        return stringOut.toString();
+        try (StringWriter stringOut = new StringWriter()) {
+            mustache.execute(new PrintWriter(stringOut), scopes).flush();
+            return stringOut.toString();
+        }
+        
     }
 
     @NotNull
