@@ -1,12 +1,14 @@
 package org.ngafid.airsync;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
+
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ngafid.core.Database;
 import org.ngafid.core.uploads.Upload;
@@ -156,7 +158,7 @@ public final class ImportService {
                         LOG.info("Update status: " + status);
                     }
                 }
-            } catch (SQLException | IOException e) {
+            } catch (SQLException | URISyntaxException | IOException e) {
                 LOG.severe("Encountered the following error: ");
                 e.printStackTrace();
             }

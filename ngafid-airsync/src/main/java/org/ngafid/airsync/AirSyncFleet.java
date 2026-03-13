@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.*;
 import java.time.Duration;
@@ -374,49 +376,54 @@ public class AirSyncFleet extends Fleet {
      *
      * @return a {@link List} of the {@link AirSyncAircraft} in this fleet.
      */
-    public List<AirSyncAircraft> getAircraft() throws IOException {
-        if (aircraft == null) {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRCRAFT).openConnection();
+    public List<AirSyncAircraft> getAircraft() throws IOException, URISyntaxException {
 
-            connection.setRequestMethod("GET");
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.authCreds.getBearerString());
+        // Already have the aircraft
+        if (this.aircraft != null)
+            return this.aircraft;
 
-            for (Map.Entry<String, List<String>> e :
-                    connection.getRequestProperties().entrySet()) {
-                LOG.info(e.getKey() + ": "
-                        + e.getValue().stream().reduce((a, b) -> a + ", " + b).get());
-            }
+        URI uri = new URI(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft");
+        URL url = uri.toURL();
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
-            byte[] respRaw;
-            try (InputStream is = connection.getInputStream()) {
-                respRaw = is.readAllBytes();
-            }
+        connection.setRequestMethod("GET");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Authorization", this.authCreds.getBearerString());
 
-            String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
+        for (Map.Entry<String, List<String>> e :
+                connection.getRequestProperties().entrySet()) {
+            LOG.info(() -> e.getKey() + ": " + e.getValue().stream().reduce((a, b) -> a + ", " + b).get());
+        }
 
-            List<AirSyncAircraft> aircrafts =
-                    OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncAircraft>>() {});
-            for (AirSyncAircraft a : aircrafts) a.initialize(this);
+        byte[] respRaw;
+        try (InputStream is = connection.getInputStream()) {
+            respRaw = is.readAllBytes();
+        }
 
-            LOG.info("airsync fleet name is uhhhh " + airsyncFleetName);
+        String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
 
-            List<AirSyncAccount> accounts = AirSyncAccount.getAirSyncAccounts(this);
-            AirSyncAccount account = accounts.stream()
-                    .filter(airSyncAccount -> airSyncAccount.getName().equals(airsyncFleetName))
-                    .findFirst()
-                    .orElse(null);
+        List<AirSyncAircraft> aircrafts =
+                OBJECT_MAPPER.readValue(resp, new TypeReference<List<AirSyncAircraft>>() {});
+        for (AirSyncAircraft a : aircrafts) a.initialize(this);
 
-            if (account == null) {
-                this.aircraft = List.of();
-            } else {
-                this.aircraft = aircrafts.stream()
-                        .filter(airSyncAircraft -> airSyncAircraft.accountToken.equals(account.getAccountToken()))
-                        .toList();
-            }
+        LOG.info(() -> "Airsync fleet name is uhhhh " + airsyncFleetName);
+
+        List<AirSyncAccount> accounts = AirSyncAccount.getAirSyncAccounts(this);
+        AirSyncAccount account = accounts.stream()
+                .filter(airSyncAccount -> airSyncAccount.getName().equals(airsyncFleetName))
+                .findFirst()
+                .orElse(null);
+
+        if (account == null) {
+            this.aircraft = List.of();
+        } else {
+            this.aircraft = aircrafts.stream()
+                    .filter(airSyncAircraft -> airSyncAircraft.accountToken.equals(account.getAccountToken()))
+                    .toList();
         }
 
         return this.aircraft;
+
     }
 
     /**
@@ -470,7 +477,7 @@ public class AirSyncFleet extends Fleet {
      * @return a "status" string that is human readable
      * @throws SQLException if the DBMS has an issue
      */
-    public String update(Connection connection) throws IOException, SQLException {
+    public String update(Connection connection) throws IOException, SQLException, URISyntaxException {
         try (AirSyncFleetUpdater updater = new AirSyncFleetUpdater()) {
             updater.run();
         }
@@ -489,9 +496,9 @@ public class AirSyncFleet extends Fleet {
         private int filesAdded = 0;
         // CHECKSTYLE:ON
 
-        AirSyncFleetUpdater() throws IOException {
+        AirSyncFleetUpdater() throws IOException, URISyntaxException {
             aircraft = getAircraft();
-            LOG.info("Updating " + aircraft.size() + " aircraft");
+            LOG.info(() -> "Updating " + aircraft.size() + " aircraft");
             for (AirSyncAircraft a : aircraft) {
                 LOG.info(OBJECT_MAPPER.writeValueAsString(a));
             }

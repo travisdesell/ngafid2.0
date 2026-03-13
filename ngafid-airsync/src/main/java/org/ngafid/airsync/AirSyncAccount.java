@@ -34,7 +34,7 @@ public class AirSyncAccount {
         return accountToken;
     }
 
-    public static List<AirSyncAccount> getAirSyncAccounts(AirSyncFleet fleet) throws IOException {
+    public static List<AirSyncAccount> getAirSyncAccounts(AirSyncFleet fleet) throws IOException, URISyntaxException {
         byte[] respRaw = getBytes(fleet);
         return OBJECT_MAPPER.readValue(respRaw, new TypeReference<>() {});
     }
