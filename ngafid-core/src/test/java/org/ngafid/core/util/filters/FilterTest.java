@@ -82,13 +82,13 @@ class FilterTest {
         ArrayList<Object> parameters = new ArrayList<>();
         String tailIsQuery = filterOf("Tail Number", "is", "N12345").getRuleQuery(8, parameters);
 
-        assertEquals("flights.system_id in (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)", tailIsQuery);
+        assertEquals("flights.system_id IN (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)", tailIsQuery);
         assertParameters(parameters, 8, "N12345");
 
         parameters.clear();
         String tailIsNotQuery = filterOf("Tail Number", "is not", "N12345").getRuleQuery(8, parameters);
 
-        assertEquals("flights.system_id not in (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)", tailIsNotQuery);
+        assertEquals("flights.system_id NOT IN (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)", tailIsNotQuery);
         assertParameters(parameters, 8, "N12345");
 
         parameters.clear();
