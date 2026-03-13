@@ -1,11 +1,11 @@
 // ngafid-frontend/vite.config.mts
 import tailwind from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
 import path, { resolve } from 'path';
 import externalGlobals from 'rollup-plugin-external-globals';
 import { fileURLToPath } from 'url';
 import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,7 +22,9 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
         plugins: [
             react(),
             tailwind(),
-            tsconfigPaths(),
+            babel({
+                presets: [reactCompilerPreset()],
+            }),
 
             // Map ESM imports to window.globals
             {
