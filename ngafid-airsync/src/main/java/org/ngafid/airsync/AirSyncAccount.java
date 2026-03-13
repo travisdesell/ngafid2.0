@@ -5,10 +5,14 @@ import static org.ngafid.airsync.Utility.OBJECT_MAPPER;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+
 import javax.net.ssl.HttpsURLConnection;
 
 public class AirSyncAccount {
@@ -35,10 +39,13 @@ public class AirSyncAccount {
         return OBJECT_MAPPER.readValue(respRaw, new TypeReference<>() {});
     }
 
-    private static byte[] getBytes(AirSyncFleet fleet) throws IOException {
+    private static byte[] getBytes(AirSyncFleet fleet) throws IOException, URISyntaxException {
         AirSyncAuth authentication = fleet.getAuth();
-        HttpsURLConnection netConnection = (HttpsURLConnection)
-                new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" + "/accounts").openConnection();
+
+        URI uri = new URI(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft" + "/accounts");
+        URL url = uri.toURL();
+        HttpsURLConnection netConnection = (HttpsURLConnection) url.openConnection();
+
         netConnection.setRequestMethod("GET");
         netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
