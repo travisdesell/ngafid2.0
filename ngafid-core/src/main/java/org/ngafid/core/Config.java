@@ -66,13 +66,14 @@ public final class Config {
     private Config() {}
 
     private static void loadProperties() {
-        // Check for custom properties file first
+        // Check for custom properties file first (system property)
         String customPropertiesFile = System.getProperty("ngafid.config.file");
         if (customPropertiesFile != null) {
             try (InputStream input = Config.class.getClassLoader().getResourceAsStream(customPropertiesFile)) {
                 if (input != null) {
                     PROPERTIES.load(input);
                     System.out.println("Loaded configuration from " + customPropertiesFile);
+                    resolveVariableSubstitutions();
                     return;
                 }
             } catch (IOException e) {
@@ -81,7 +82,23 @@ public final class Config {
             }
         }
 
-        // Load the unified properties file
+        // In Docker: prefer mounted config at /app/ngafid.properties (docker-compose volume)
+        if (IS_DOCKER_ENVIRONMENT) {
+            java.io.File dockerConfig = new java.io.File("/app/ngafid.properties");
+            if (dockerConfig.exists()) {
+                try (InputStream input = new java.io.FileInputStream(dockerConfig)) {
+                    PROPERTIES.load(input);
+                    System.out.println("Loaded configuration from " + dockerConfig.getAbsolutePath());
+                    resolveVariableSubstitutions();
+                    return;
+                } catch (IOException e) {
+                    System.err.println(
+                            "Error loading Docker config file " + dockerConfig + ": " + e.getMessage());
+                }
+            }
+        }
+
+        // Load the unified properties file from classpath
         try (InputStream input = Config.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
             if (input != null) {
                 PROPERTIES.load(input);

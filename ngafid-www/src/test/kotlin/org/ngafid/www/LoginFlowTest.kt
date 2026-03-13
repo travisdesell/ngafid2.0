@@ -58,7 +58,7 @@ class LoginFlowTest {
         modal.findElement(By.id("loginPassword")).sendKeys(password)
         modal.findElement(By.cssSelector("button[type='submit']")).click()
         wait.until(ExpectedConditions.invisibilityOf(modal))
-        wait.until { driver.currentUrl.contains("/protected") }
-        assertTrue(driver.currentUrl.contains("/protected"), "Expected redirect to protected area after login")
+        wait.until { driver.currentUrl.orEmpty().contains("/protected") }
+        assertTrue(driver.currentUrl.orEmpty().contains("/protected"), "Expected redirect to protected area after login")
     }
 }

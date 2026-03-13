@@ -1,10 +1,5 @@
 import 'bootstrap';
 import React from "react";
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import Col from 'react-bootstrap/Col';
-import Popover from 'react-bootstrap/Popover';
-import Row from 'react-bootstrap/Row';
 import { createRoot } from 'react-dom/client';
 
 import { Vector as VectorLayer } from 'ol/layer.js';
@@ -21,6 +16,10 @@ import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
 
 import Plotly from 'plotly.js';
+import { showErrorModal } from './error_modal.js';
+
+import './index.css'; //<-- include Tailwind
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 
 const ROLL_THRESHOLDS = {
     Min: 0,
@@ -34,52 +33,196 @@ class TTFMapPopup extends React.Component {
 
     constructor(props) {
         super(props);
-        console.log("Creating TTFMapPopup");
-        this.state = {
-            visible: true
+        this.popupRef = React.createRef();
+        this.dragStart = { x: 0, y: 0 };
+        this.popupStart = { left: props.initialLeft, top: props.initialTop };
+        this.currentPosition = { left: props.initialLeft, top: props.initialTop };
+        this.dragging = false;
+        this.frameHandle = null;
+        this.frameIsAnimationFrame = false;
+        this.pendingPosition = null;
+
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+    }
+
+    componentDidMount() {
+        this.applyPosition(this.currentPosition.left, this.currentPosition.top);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('mouseup', this.handleMouseUp);
+        if (this.frameHandle !== null) {
+            if (this.frameIsAnimationFrame && typeof window.cancelAnimationFrame === 'function') {
+                window.cancelAnimationFrame(this.frameHandle);
+            } else {
+                window.clearTimeout(this.frameHandle);
+            }
+            this.frameHandle = null;
+            this.frameIsAnimationFrame = false;
+        }
+    }
+
+    onDragStart(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.dragStart = { x: e.clientX, y: e.clientY };
+        this.popupStart = { left: this.currentPosition.left, top: this.currentPosition.top };
+        this.dragging = true;
+
+        if (this.popupRef.current) {
+            this.popupRef.current.style.cursor = 'grabbing';
+        }
+
+        window.addEventListener('mousemove', this.handleMouseMove);
+        window.addEventListener('mouseup', this.handleMouseUp);
+    }
+
+    applyPosition(left, top) {
+        if (!this.popupRef.current)
+            return;
+
+        this.popupRef.current.style.left = `${left}px`;
+        this.popupRef.current.style.top = `${top}px`;
+    }
+
+    schedulePositionUpdate(left, top) {
+        this.pendingPosition = { left, top };
+        if (this.frameHandle !== null)
+            return;
+
+        const flush = () => {
+            this.frameHandle = null;
+            this.frameIsAnimationFrame = false;
+            if (!this.pendingPosition)
+                return;
+
+            const { left: nextLeft, top: nextTop } = this.pendingPosition;
+            this.currentPosition = { left: nextLeft, top: nextTop };
+            this.applyPosition(nextLeft, nextTop);
+            this.pendingPosition = null;
         };
+
+        if (typeof window.requestAnimationFrame === 'function') {
+            this.frameIsAnimationFrame = true;
+            this.frameHandle = window.requestAnimationFrame(flush);
+        } else {
+            this.frameHandle = window.setTimeout(flush, 16);
+        }
     }
 
-    show() {
-        this.setState({ visible: true });
+    handleMouseMove(e) {
+
+        // No container/not dragging, exit
+        if (!this.props.mapContainer || !this.dragging)
+            return;
+
+        e.preventDefault();
+
+        const dx = e.clientX - this.dragStart.x;
+        const dy = e.clientY - this.dragStart.y;
+
+        const mapRect = this.props.mapContainer.getBoundingClientRect();
+        const popupWidth = this.popupRef.current?.offsetWidth ?? 300;
+        const popupHeight = this.popupRef.current?.offsetHeight ?? 140;
+        const maxLeft = Math.max(0, mapRect.width - popupWidth);
+        const maxTop = Math.max(0, mapRect.height - popupHeight);
+
+        const left = Math.max(0, Math.min(this.popupStart.left + dx, maxLeft));
+        const top = Math.max(0, Math.min(this.popupStart.top + dy, maxTop));
+
+        this.schedulePositionUpdate(left, top);
     }
 
-    close() {
-        this.setState({ visible: false });
+    handleMouseUp() {
+        this.dragging = false;
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('mouseup', this.handleMouseUp);
+
+        if (this.popupRef.current)
+            this.popupRef.current.style.cursor = 'default';
     }
 
     render() {
-        const style = {
-            top: this.props.pixel[1] + this.props.map_container_rect.y - 10,
-            left: this.props.pixel[0] + this.props.map_container_rect.x + 15
-        };
-
-        if (!this.state.visible) {
-            return null;
-        }
-
+        const hasFlightId = !!this.props.flightId;
         return (
-            <div style={{ height: 120 }}>
-                <Popover
-                    style={style}
+            <div
+                ref={this.popupRef}
+                className="ol-popup"
+                style={{
+                    position: 'absolute',
+                    zIndex: 120,
+                    minWidth: 260,
+                    maxWidth: 340,
+                    pointerEvents: 'auto',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                    borderRadius: '10px',
+                    border: '1px solid #cccccc',
+                    padding: '0.6rem 0.75rem 0.75rem',
+                    background: 'var(--c_card_header_bg_opaque)'
+                }}
+            >
+                <div
+                    className="d-flex justify-content-between align-items-center mb-2"
+                    style={{ userSelect: 'none', gap: '8px' }}
                 >
-                    <Popover.Title as="h2" style={{ display: "flex" }}><Row>
-                        <Col>Flight {this.props.flight_id} Approach {this.props.approach_n}</Col>
-                        <Col sm="auto"></Col>
-                        <Col>
-                            <ButtonGroup>
-                                <Button variant="outline-info"
-                                    href={`/protected/flights?flight_id=${this.props.flight_id}`} target="_blank">
-                                    <i className="fa fa-plane p-1"></i>
-                                </Button>
-                                <Button onClick={() => this.close()} data-bs-toggle="button" variant="outline-danger">
-                                    <i className="fa fa-times p-1"></i>
-                                </Button>
-                            </ButtonGroup>
-                        </Col>
-                    </Row></Popover.Title>
-                    <Popover.Content></Popover.Content>
-                </Popover>
+                    {/* Grab & Drag Area */}
+                    <div
+                        className={`
+                            group
+                            ${this.dragging ? 'cursor-grabbing' : 'cursor-grab'}
+                            mb-2
+                        `}
+                        onMouseDown={(e) => this.onDragStart(e)}
+                    >
+                        <span className={`
+                            fa fa-arrows
+                            ${this.dragging ? 'opacity-100 select-none' : 'opacity-25 group-hover:opacity-100 select-auto'}
+                            mr-2
+                            scale-100 group-hover:scale-125
+                            transition-all duration-200 ease-in-out
+                        `}/>
+                    </div>
+                    <div className="d-flex align-items-center" style={{ gap: '6px', marginLeft: 'auto' }}>
+                        {
+                            (hasFlightId)
+                                ? (
+                                    <a
+                                        className="btn btn-sm btn-outline-info"
+                                        href={`/protected/flight?flight_id=${this.props.flightId}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title="Open flight"
+                                    >
+                                        <i className="fa fa-plane" aria-hidden="true"></i>
+                                    </a>
+                                )
+                                : (
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-info grayscale opacity-50"
+                                        disabled
+                                        title="Flight ID unavailable"
+                                    >
+                                        <i className="fa fa-plane" aria-hidden="true"></i>
+                                    </button>
+                                )
+                        }
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => this.props.onClose(this.props.popupId)}
+                            title="Close popup"
+                        >
+                            <i className="fa fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <div><strong>Flight ID:</strong> {this.props.flightId || '(unknown)'}</div>
+                    <div><strong>Approach:</strong> {this.props.approachN ?? '(unknown)'}</div>
+                </div>
             </div>
         );
     }
@@ -138,6 +281,16 @@ class TTFCard extends React.Component {
     constructor(props) {
         super(props);
         const date = new Date();
+
+        // Missing airports data, exit
+        if (!airports || airports.length === 0) {
+
+            console.error("No airports data found!");
+            showErrorModal("Missing Airports", "Airport data is required for this page to function correctly, but no airport data was found.");
+
+        }
+
+        const selectedAirportInitial = (airports?.[0] ?? null);
         this.state = {
             // The start of the date range that this.state.data corresponds to.
             // This will be null if and only if this.state.data is null
@@ -168,13 +321,12 @@ class TTFCard extends React.Component {
             endDate: `${new String(date.getFullYear())}-${date.getMonth() + 1}-01`,
             endDateObject: this.parseDate(`${new String(date.getFullYear())}-${date.getMonth() + 1}-01`),
 
-            selectedAirport: airports[0],
+            selectedAirport: selectedAirportInitial,
             selectedRunway: "Any Runway",
             mapVisible: true,
             plotVisible: true,
             mapStyle: "Road",
             disableFetching: false,
-            popups: [],
             // Style object for ttf lines. This is just a thin green line style.
             ttfStyle:
                 new Style({
@@ -192,6 +344,9 @@ class TTFCard extends React.Component {
                     })
                 }),
         };
+
+            this.popupMounts = [];
+            this.nextPopupId = 0;
 
         const navbarContainer = document.querySelector('#navbar');
         const navbarRoot = createRoot(navbarContainer);
@@ -220,6 +375,204 @@ class TTFCard extends React.Component {
 
     }
 
+    extractFlightId(ttf) {
+
+        const candidates = [
+            ttf?.popupFlightId,
+            ttf?.flight_id,
+            ttf?.flightId,
+            ttf?.flightID,
+            ttf?.id,
+            ttf?.flight?.id,
+            ttf?.flight?.flightId,
+            ttf?.flight?.flight_id
+        ];
+
+        for (const value of candidates) {
+
+            // Got empty/null/undefined value, skip
+            if (value === null || value === undefined)
+                continue;
+
+            const str = String(value).trim();
+
+            // Stringified value is empty, skip
+            if (str.length === 0)
+                continue;
+
+            // "Approach N" is a display label, not the canonical flight ID, skip
+            if (/^approach\s+\d+$/i.test(str))
+                continue;
+
+            return str;
+
+        }
+
+        return null;
+
+    }
+
+    normalizeFlightTimestamp(value) {
+
+        // Got empty/null/undefined value -> null
+        if (value === null || value === undefined)
+            return null;
+
+        const str = String(value).trim();
+
+        // Stringified value is empty -> null
+        if (str.length === 0)
+            return null;
+
+        // Attempt simplified parsing for common timestamp formats (e.g., "2024-01-01 12:00:00")
+        const simpleMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
+        if (simpleMatch)
+            return `${simpleMatch[1]} ${simpleMatch[2]}`;
+
+        // Fallback to Date parsing
+        const parsed = Date.parse(str);
+        if (Number.isNaN(parsed))
+            return null;
+
+        return new Date(parsed).toISOString().slice(0, 19).replace('T', ' ');
+
+    }
+
+    buildFlightLookupIndex(flights) {
+        const lookup = new Map();
+
+        for (const flight of flights ?? []) {
+            const timestampKey = this.normalizeFlightTimestamp(flight?.startDateTime);
+
+            // Timestamp missing, skip
+            if (!timestampKey)
+                continue;
+
+            // Target timestamp key doesn't exist in lookup, initialize with empty array
+            if (!lookup.has(timestampKey))
+                lookup.set(timestampKey, []);
+
+            // Add current flight to lookup under the normalized timestamp key
+            lookup.get(timestampKey).push(flight);
+
+        }
+
+        return lookup;
+
+    }
+
+    matchFlightIdFromLookup(ttf, flightLookup, airportIataCode) {
+
+        // Flight lookup is not a valid Map instance, cannot perform lookup -> null
+        if (!(flightLookup instanceof Map))
+            return null;
+
+        const timestampKey = this.normalizeFlightTimestamp(ttf?.flightStartDate);
+
+        // Timestamp missing/invalid, cannot perform lookup -> null
+        if (!timestampKey)
+            return null;
+
+        const candidates = flightLookup.get(timestampKey) ?? [];
+
+        // No flights found matching the TTF's normalized flight start timestamp, cannot determine flight ID -> null
+        if (candidates.length === 0)
+            return null;
+
+        const runwayName = ttf?.runway?.name;
+        const matchingCandidates = candidates.filter((flight) => {
+            const itinerary = Array.isArray(flight?.itinerary) ? flight.itinerary : [];
+            return itinerary.some((stop) => {
+
+                // Stop doesn't have an airport or runway -> false
+                if (stop?.airport !== airportIataCode)
+                    return false;
+
+                // Runway name not provided, attmpt to match any stop at the airport
+                if (!runwayName || stop?.runway === runwayName)
+                    return true;
+
+                return false;
+            });
+        });
+
+        const resolvedCandidates = matchingCandidates.length > 0 ? matchingCandidates : candidates;
+        const uniqueFlightIds = [...new Set(resolvedCandidates
+            .map((flight) => flight?.id)
+            .filter((flightId) => flightId !== null && flightId !== undefined))];
+
+        if (uniqueFlightIds.length === 1)
+            return String(uniqueFlightIds[0]);
+
+        return null;
+    }
+
+    fetchFlightLookupForMissingIds(startDate, endDate, airportIataCode) {
+        const overlapFilter = {
+            type: 'GROUP',
+            condition: 'OR',
+            filters: [
+                {
+                    type: 'GROUP',
+                    condition: 'AND',
+                    filters: [
+                        { type: 'RULE', inputs: ['Start Date', '>=', startDate] },
+                        { type: 'RULE', inputs: ['Start Date', '<=', endDate] }
+                    ]
+                },
+                {
+                    type: 'GROUP',
+                    condition: 'AND',
+                    filters: [
+                        { type: 'RULE', inputs: ['End Date', '>=', startDate] },
+                        { type: 'RULE', inputs: ['End Date', '<=', endDate] }
+                    ]
+                }
+            ]
+        };
+
+        const filters = {
+            type: 'GROUP',
+            condition: 'AND',
+            filters: [
+                { type: 'RULE', inputs: ['Airport', airportIataCode, 'visited'] },
+                overlapFilter
+            ]
+        };
+
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'GET',
+                url: '/api/flight',
+                data: {
+                    filterQuery: JSON.stringify(filters),
+                    currentPage: 0,
+                    pageSize: 10000,
+                    sortingColumn: 'start_time',
+                    sortingOrder: 'Ascending'
+                },
+                async: true,
+                success: (response) => {
+
+                    if (response?.errorTitle || response?.errorMessage) {
+                        reject(new Error(response.errorMessage || response.errorTitle || 'Unable to fetch flights for TTF lookup.'));
+                        showErrorModal(
+                            response.errorTitle || 'Error Fetching Flights for TTF Lookup',
+                            response.errorMessage || 'An unknown error occurred while fetching flights for TTF lookup.'
+                        );
+                        return;
+                    }
+
+                    resolve(this.buildFlightLookupIndex(response?.flights ?? []));
+                },
+                error: (jqXHR, textStatus, errorThrown) => {
+                    reject(new Error(errorThrown || textStatus || jqXHR?.responseText || 'Unable to fetch flights for TTF lookup.'));
+                    showAjaxErrorModal(jqXHR, errorThrown, 'Unable to Fetch Flights for TTF Lookup');
+                }
+            });
+        });
+    }
+
     componentDidMount() {
 
         initializeMap();
@@ -238,6 +591,28 @@ class TTFCard extends React.Component {
 
     }
 
+    componentWillUnmount() {
+        this.clearAllPopups();
+    }
+
+    removePopupById(popupId) {
+        const index = this.popupMounts.findIndex((mount) => mount.id === popupId);
+        if (index === -1)
+            return;
+
+        const [mount] = this.popupMounts.splice(index, 1);
+        mount.root.unmount();
+        mount.node.remove();
+    }
+
+    clearAllPopups() {
+        for (const mount of this.popupMounts) {
+            mount.root.unmount();
+            mount.node.remove();
+        }
+        this.popupMounts = [];
+    }
+
     openMapPopup(event) {
         closer.onclick = function () {
             overlay.setPosition(undefined);
@@ -254,22 +629,39 @@ class TTFCard extends React.Component {
         if (f && f.get('type') == 'ttf') {
 
             console.log(`selected feature ${f.get('name')}`);
-            // window.open("/protected/flight?flight_id=" + f.get('name'), '_blank').focus();
             const ttfObject = f.get('ttf');
-            const rect = document.getElementById('map-container').getBoundingClientRect();
-            const popupProps = {
-                pixel: event.pixel,
-                flight_id: f.get('name'),
-                map_container_rect: rect,
-                approach_n: ttfObject.approachn
-            };
+            const mapElement = document.getElementById('map');
+            if (!mapElement) {
+                console.warn('Cannot open TTF popup: missing #map');
+                return;
+            }
 
-            const outerHTML = document.createElement('div');
-            createRoot(outerHTML).render(React.createElement(TTFMapPopup, popupProps));
-            document.body.appendChild(outerHTML);
-            this.state.popups.push(outerHTML);
+            mapElement.style.position = 'relative';
+            const popupId = `ttf-popup-${++this.nextPopupId}`;
+            const popupNode = document.createElement('div');
+            const popupRoot = createRoot(popupNode);
+            const estimatedWidth = 320;
+            const estimatedHeight = 140;
+            const maxLeft = Math.max(0, mapElement.clientWidth - estimatedWidth);
+            const maxTop = Math.max(0, mapElement.clientHeight - estimatedHeight);
+            const initialLeft = Math.max(0, Math.min(event.pixel[0] + 12, maxLeft));
+            const initialTop = Math.max(0, Math.min(event.pixel[1] + 12, maxTop));
+            const flightId = this.extractFlightId(ttfObject) ?? f.get('flightId') ?? null;
 
-            outerHTML.setAttribute("id", `popover${this.state.popups.length}`);
+            mapElement.appendChild(popupNode);
+            this.popupMounts.push({ id: popupId, node: popupNode, root: popupRoot });
+
+            popupRoot.render(
+                <TTFMapPopup
+                    popupId={popupId}
+                    mapContainer={mapElement}
+                    initialLeft={initialLeft}
+                    initialTop={initialTop}
+                    flightId={flightId}
+                    approachN={ttfObject?.approachn}
+                    onClose={(id) => this.removePopupById(id)}
+                />
+            );
 
         } else {
 
@@ -279,12 +671,7 @@ class TTFCard extends React.Component {
     }
 
     zoomChanged() {
-
-        for (const i in this.state.popups) {
-            this.state.popups[i].close();
-        }
-
-        this.setState({ popups: [] });
+        this.clearAllPopups();
     }
 
     mapSelectChanged(style) {
@@ -451,7 +838,8 @@ class TTFCard extends React.Component {
         const features = [
             new Feature({
                 geometry: new LineString(points),
-                name: ttf.flightId,
+                name: ttf.popupFlightName ?? ttf.flightId ?? '(unknown)',
+                flightId: ttf.popupFlightId,
                 type: 'ttf',
                 ttf: ttf
             }),
@@ -546,7 +934,7 @@ class TTFCard extends React.Component {
                 ttfIndex += 1;
                 const glideAngle = ttf.selfDefinedGlideAngle;
                 const alt = ttf.AltAGL;
-                const traceName = ttf.flightId ?? ttf.flight_id ?? "(unknown)";
+                const traceName = ttf.popupTraceName ?? ttf.popupFlightName ?? ttf.flightId ?? ttf.flight_id ?? "(unknown)";
 
                 // This is what applies the roll filter
                 if (this.shouldDisplay(ttf)) {
@@ -694,6 +1082,14 @@ class TTFCard extends React.Component {
         const endDateString = this.state.endDate;
         const airport = this.state.selectedAirport;
 
+        // Invalid airport, exit
+        if (!airport) {
+            
+            showErrorModal("Invalid Airport", "Please select a valid airport before fetching data.");
+            return;
+
+        }
+
         const submissionData = {
             startDate: startDateString,
             endDate: endDateString,
@@ -718,16 +1114,38 @@ class TTFCard extends React.Component {
             This will show TTFs in the specified date range and hide every other TTF.
             If the TTFs have already been plotted it will use the previous layer.
         */
-        const responseFunction = (response) => {
+        const responseFunction = (response, flightLookup = null) => {
 
             const ttfs = [];
             const approachCounts = {};
+            let missingFlightIdLogged = 0;
+            let recoveredFlightIds = 0;
             for (let i = 0; i < response.ttfs.length; i++) {
 
                 const ttf = response.ttfs[i];
                 // Normalize field names from backend JSON to frontend expectations.
+                const rawFlightId = this.extractFlightId(ttf);
+                const resolvedFlightId = rawFlightId ?? this.matchFlightIdFromLookup(ttf, flightLookup, submissionData.airport);
+                if (rawFlightId == null && resolvedFlightId != null) {
+                    recoveredFlightIds += 1;
+                }
+
+                if (resolvedFlightId == null && missingFlightIdLogged < 5) {
+                    missingFlightIdLogged += 1;
+                    console.warn('TTF record missing flight ID fields', {
+                        keys: Object.keys(ttf),
+                        ttfIndex: i,
+                        flightStartDate: ttf.flightStartDate,
+                        runway: ttf?.runway?.name ?? null
+                    });
+                }
                 if (ttf.flightId === undefined && ttf.flight_id !== undefined)
                     ttf.flightId = ttf.flight_id;
+
+                if (resolvedFlightId != null) {
+                    ttf.flightId = resolvedFlightId;
+                    ttf.flight_id = resolvedFlightId;
+                }
 
                 if (ttf.lat === undefined && Array.isArray(ttf.latitude))
                     ttf.lat = ttf.latitude;
@@ -735,15 +1153,23 @@ class TTFCard extends React.Component {
                 if (ttf.lon === undefined && Array.isArray(ttf.longitude))
                     ttf.lon = ttf.longitude;
                 
-                if (!(ttf.flightId in approachCounts))
-                    approachCounts[ttf.flightId] = 0;
+                const approachKey = resolvedFlightId ?? '__unknown_flight__';
+                if (!(approachKey in approachCounts))
+                    approachCounts[approachKey] = 0;
 
-                ttf.approachn = ++approachCounts[ttf.flightId];
-                if (!ttf.flightId)
-                    ttf.flightId = `Approach ${ttf.approachn}`;
+                ttf.approachn = ++approachCounts[approachKey];
+                ttf.popupFlightId = resolvedFlightId;
+                ttf.popupFlightName = `Approach ${ttf.approachn}`;
+                ttf.popupTraceName = (resolvedFlightId != null && resolvedFlightId !== '')
+                    ? `Flight ${resolvedFlightId} - Approach ${ttf.approachn}`
+                    : `Approach ${ttf.approachn}`;
                 
                 ttfs.push(ttf);
                 this.plotTTF(ttf);
+            }
+
+            if (recoveredFlightIds > 0) {
+                console.info(`Recovered ${recoveredFlightIds} TTF flight IDs from /api/flight lookup.`);
             }
 
             this.setState({ data: response });
@@ -794,17 +1220,33 @@ class TTFCard extends React.Component {
                 success: (response) => {
                     console.log("Fetched response: ", response);
 
-                    // store the dates we have fetched data for
-                    this.setState({
-                        disableFetching: false,
-                        dataAirport: submissionData.airport,
-                        dataStartDate: submissionData.startDate,
-                        dataEndDate: submissionData.endDate
-                    }, () => {
-                        responseFunction(response);
-                    });
+                    const missingFlightIds = (response?.ttfs ?? []).some((ttf) => this.extractFlightId(ttf) == null);
+                    const lookupPromise = missingFlightIds
+                        ? this.fetchFlightLookupForMissingIds(
+                            submissionData.startDate,
+                            submissionData.endDate,
+                            submissionData.airport
+                        )
+                        : Promise.resolve(null);
+
+                    lookupPromise
+                        .catch((error) => {
+                            console.warn('Unable to recover missing TTF flight IDs from /api/flight.', error);
+                            return null;
+                        })
+                        .then((flightLookup) => {
+                            // store the dates we have fetched data for
+                            this.setState({
+                                disableFetching: false,
+                                dataAirport: submissionData.airport,
+                                dataStartDate: submissionData.startDate,
+                                dataEndDate: submissionData.endDate
+                            }, () => {
+                                responseFunction(response, flightLookup);
+                            });
+                        });
                 },
-                error: (jqXHR, textStatus, errorThrown) => {
+                error: (jqXHR) => {
                     console.error("Error fetching TTF data: ", jqXHR.responseText);
                     this.setState({ disableFetching: false, datesChanged: false, });
                 },
@@ -819,14 +1261,7 @@ class TTFCard extends React.Component {
             return null;
         }
 
-        //list of airport IATA codes
-        const airports = [];
-
-        for (const [ap] of Object.entries(this.state.data.airports)) {
-            airports.push(ap.iataCode);
-        }
-
-        return airports;
+        return this.state.data.airports.map(ap => ap.iataCode);
 
     }
 
@@ -1050,7 +1485,10 @@ class TTFCard extends React.Component {
 
     render() {
 
-        const runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
+        const runwayList = (this.state.selectedAirport)
+            ? runways[this.state.selectedAirport].map(runway => runway.name)
+            : [];
+
         const rollSlider =
             <RollSlider
                 rollSliderMin={0}

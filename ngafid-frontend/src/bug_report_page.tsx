@@ -10,6 +10,7 @@ import { createRoot } from 'react-dom/client';
 
 import './index.css'; //<-- include Tailwind
 import type {NGAFIDUser} from "./types";
+import { showHelpModal } from "./help_modal.js";
 
 
 interface BugReportPageProps {
@@ -89,13 +90,13 @@ export default class BugReportPage extends React.Component<BugReportPageProps> {
                     const sendEnd = new Date();
                     console.log(`Bug report submitted successfully! (${  sendEnd.toLocaleString()  })`);
 
-                    showConfirmModal(
+                    showHelpModal(
                         "Bug Report Submitted",
                         "Your bug report has been submitted successfully. Thank you for your feedback!",
                     );
 
                 },
-                error: function (jqXHR, textStatus, errorThrown) {
+                error: function (jqXHR: any, textStatus: any, errorThrown: any) {
 
                     const sendEnd = new Date();
                     console.warn(`Error submitting bug report. (${  sendEnd.toLocaleString()  })`);

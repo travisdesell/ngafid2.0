@@ -173,12 +173,40 @@ object UserRoutes : RouteProvider() {
         val fleetName = ctx.formParam("fleetName")!!
         val inviteEmail = ctx.formParam("email")!!
 
-        // check to see if the logged-in user can invite users to this fleet
+        // User doesn't have fleet access/authority, reject request
         if (!user.managesFleet(fleetId)) {
+
             AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to invite other users.")
             ctx.status(401)
             ctx.result("User did not have access to invite other users.")
+
+        // Otherwise, attempt to send the invite email and write the invite to the database
         } else {
+
+            /*
+                Verify that the invited email isn't already associated with this fleet.
+                Should also implicitly prevent a user sending an invite to themselves.
+            */
+            Database.getConnection().use { connection ->
+                val statement = connection.prepareStatement(
+                    """
+                    SELECT * FROM fleet_access
+                    JOIN user ON fleet_access.user_id = user.id
+                    WHERE fleet_access.fleet_id = ? AND user.email = ?
+                    """
+                )
+                statement.setInt(1, fleetId)
+                statement.setString(2, inviteEmail)
+                val resultSet = statement.executeQuery()
+
+                // Target email is already associated with an account that has access to this fleet, reject the invite request
+                if (resultSet.next()) {
+                    ctx.status(400)
+                    ctx.result("This email is already associated with an account that has access to this fleet. An invitation was not sent.")
+                    return
+                }
+            }
+
             val recipient: MutableList<String> = ArrayList<String>()
             recipient.add(inviteEmail)
 

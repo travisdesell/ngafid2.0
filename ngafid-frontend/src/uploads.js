@@ -1,19 +1,56 @@
 import 'bootstrap';
 import React from "react";
-import {createRoot} from "react-dom/client";
-import {showConfirmModal} from "./confirm_modal.js";
-import {showErrorModal} from "./error_modal.js";
+import { createRoot } from "react-dom/client";
+import { showConfirmModal } from "./confirm_modal.js";
+import { showErrorModal } from "./error_modal.js";
+import { showAjaxErrorModal } from './extract_ajax_error_message.js';
+import { Paginator } from "./paginator_component.tsx";
 import SignedInNavbar from "./signed_in_navbar.js";
-import {Paginator} from "./paginator_component.tsx";
 
-import SparkMD5 from "spark-md5";
 import Button from "react-bootstrap/Button";
+import SparkMD5 from "spark-md5";
 
 
 
 const paused = [];
 
 const chunkSize = 2 * 1024 * 1024; //2MB
+
+function getUploadsPagePath(currentPage) {
+    return `/protected/uploads/${currentPage + 1}`;
+}
+
+function getUploadsPageFromPath() {
+
+    const match = window.location.pathname.match(/^\/protected\/uploads\/(\d+)$/);
+
+    // No specified page, default to page 0 (first page)
+    if (!match) {
+        return 0;
+    }
+
+    const publicPage = Number(match[1]);
+
+    // Page is not a valid number, default to page 0 (first page)
+    if (!Number.isInteger(publicPage) || publicPage < 1) {
+        return 0;
+    }
+
+    // Convert from 1-indexed public page to 0-indexed internal page
+    return publicPage - 1;
+
+}
+
+function syncUploadsPageUrl(currentPage) {
+    if (window.history && window.history.replaceState) {
+        const nextPath = getUploadsPagePath(currentPage);
+
+        // Target path is different than current path, update the URL to match the current page
+        if (window.location.pathname !== nextPath)
+            window.history.replaceState({}, '', nextPath);
+
+    }
+}
 
 class Upload extends React.Component {
 
@@ -72,7 +109,7 @@ class Upload extends React.Component {
 
                 const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Downloading Upload: ", errorMessage);
-                showErrorModal("Error Downloading Upload", errorMessage);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Downloading Upload");
             }
         });
 
@@ -114,7 +151,7 @@ class Upload extends React.Component {
 
                 const errorMessage = `${errorThrown}\n\n${textStatus}`;
                 console.log("Error Removing Upload: ", errorMessage);
-                showErrorModal("Error Removing Upload", errorMessage);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Removing Upload");
 
             }
 
@@ -399,6 +436,14 @@ export class UploadsPage extends React.Component {
             numberPages: this.props.numberPages, //this will be set globally in the javascript
             pageSize: 10
         };
+    }
+
+    componentDidMount() {
+        const currentPage = getUploadsPageFromPath();
+
+        this.setState({ currentPage }, () => {
+            this.submitFilter();
+        });
     }
 
     getMD5Hash(file, onFinish, uploadsPage) {
@@ -777,13 +822,16 @@ export class UploadsPage extends React.Component {
 
                 console.log("Got response: ", response, response.sizeAll);
 
+                syncUploadsPageUrl(response.currentPage);
+
                 this.setState({
                     uploads: response.uploads,
-                    numberPages: response.numberPages
+                    numberPages: response.numberPages,
+                    currentPage: response.currentPage
                 });
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                showErrorModal("Error Loading Uploads", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Uploads");
             },
         });
     }
@@ -881,10 +929,14 @@ export class UploadsPage extends React.Component {
                                     numberPages={this.state.numberPages}
                                     pageSize={this.state.pageSize}
                                     updateCurrentPage={(currentPage) => {
-                                        this.setState({ currentPage: currentPage });
+                                        this.setState({ currentPage: currentPage }, () => {
+                                            this.submitFilter();
+                                        });
                                     }}
                                     updateItemsPerPage={(pageSize) => {
-                                        this.setState({ pageSize: pageSize });
+                                        this.setState({ pageSize: pageSize }, () => {
+                                            this.submitFilter();
+                                        });
                                     }}
                                     doUploadButtonHide={doUploadButtonHide}
                                 />

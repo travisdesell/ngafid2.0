@@ -26,6 +26,19 @@ public class FlightsJavalinRoutes {
         // Utility class
     }
 
+    private static String getChartTileBaseUrlScript() {
+        try {
+            String chartBase = Config.getProperty("ngafid.chart.tile.base.url");
+            if (chartBase != null && !chartBase.trim().isEmpty())
+                chartBase = chartBase.replaceAll("/+$", "");
+            else
+                chartBase = "http://localhost:8187";
+            return "var chartTileBaseUrl = '" + chartBase + "';\n";
+        } catch (RuntimeException e) {
+            return "var chartTileBaseUrl = 'http://localhost:8187';\n";
+        }
+    }
+
     private static class FlightsResponse {
         @JsonProperty
         private final List<Flight> flights;
@@ -57,6 +70,7 @@ public class FlightsJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
+            scopes.put("chart_tile_base_url", getChartTileBaseUrlScript());
             for (String flightId : flightIds) {
                 Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
@@ -100,6 +114,7 @@ public class FlightsJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
+            scopes.put("chart_tile_base_url", getChartTileBaseUrlScript());
 
             long startTime;
             long endTime;

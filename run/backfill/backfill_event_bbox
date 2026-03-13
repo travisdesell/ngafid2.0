@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Backfill min_latitude, max_latitude, min_longitude, max_longitude on the events table
+# for existing events that have NULL bbox. Required so older events show on the heatmap
+# (proximity_events_in_box filters by these columns).
+#
+# Run from repo root: ./run/backfill/backfill_event_bbox [--batch N] [--limit N]
+
+JAR_PATH="ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar"
+
+if [ ! -f "$JAR_PATH" ]; then
+    echo "Error: JAR file not found at $JAR_PATH"
+    echo "Please build the project first: mvn clean package"
+    exit 1
+fi
+
+java -cp "$JAR_PATH" org.ngafid.core.heatmap.BackfillEventBbox "$@"

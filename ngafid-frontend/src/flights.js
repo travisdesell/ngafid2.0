@@ -20,6 +20,7 @@ import {cesiumFlightsSelected} from "./cesium_buttons.js";
 import { TAG_ID_NONE, TAG_ID_ALL } from "./tags_component.js";
 
 import './index.css'; //<-- include Tailwind
+import { showAjaxErrorModal } from "./extract_ajax_error_message.js";
 
 
 function invalidString(str) {
@@ -964,7 +965,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
 
                 console.log("Error loading stored filters: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Loading Filters", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Filters");
                 
             },
         });
@@ -1054,7 +1055,7 @@ class FlightsPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error loading flights: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Loading Flights", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Flights");
             },
             complete: () => {
                 console.log("Flight loading complete!");
@@ -1138,7 +1139,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => { 
 
                 console.log("Error creating tag: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Creating Tag", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Creating Tag");
 
             }
         });
@@ -1234,7 +1235,7 @@ class FlightsPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error loading unassociated tags: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Loading Unassociated Tags", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Loading Unassociated Tags");
             }
         });
 
@@ -1421,7 +1422,7 @@ class FlightsPage extends React.Component {
             error: (jqXHR, textStatus, errorThrown) => {
 
                 console.log("Error associating tag: ", jqXHR, textStatus, errorThrown);
-                showErrorModal("Error Associating Tag", errorThrown);
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Associating Tag");
 
             }
         });

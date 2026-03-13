@@ -5,12 +5,12 @@ name: Publish JavaDoc to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - '**/*.java'
-      - '**/*.kt'
-      - '**/pom.xml'
-      - '.github/workflows/javadoc-publish.yml'
+      - "**/*.java"
+      - "**/*.kt"
+      - "**/pom.xml"
+      - ".github/workflows/javadoc-publish.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,31 +28,31 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Setup JDK 21
+
+      - name: Setup JDK 24
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          
+          java-version: "24"
+          distribution: "temurin"
+
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-kotlin-2.0.21
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-kotlin-2.3.10
           restore-keys: |
             ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-
             ${{ runner.os }}-m2-
-            
+
       - name: Setup DAT2CSV
         run: |
           # Install the local DAT2CSV JAR file into Maven repository
           mvn install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
-            
+
       - name: Build and Generate JavaDoc
         run: |
           # First install all modules to resolve dependencies
@@ -70,15 +70,15 @@ jobs:
           echo "<li><a href='ngafid-db/'>ngafid-db</a></li>" >> target/site/javadoc/index.html
           echo "<li><a href='ngafid-airsync/'>ngafid-airsync</a></li>" >> target/site/javadoc/index.html
           echo "</ul></body></html>" >> target/site/javadoc/index.html
-          
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: target/site/javadoc
-          
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -105,16 +105,23 @@ interface EventStatistics {
 // SECTION: Constants and Configuration
 // =======================
 
+/** Chart tile base URL (injected by backend via template, or fallback for local dev). */
+function getChartTileBase(): string {
+    if (typeof window !== 'undefined' && (window as unknown as { chartTileBaseUrl?: string }).chartTileBaseUrl != null)
+        return (window as unknown as { chartTileBaseUrl: string }).chartTileBaseUrl;
+    return 'http://localhost:8187';
+}
+
 // Map layer configuration
 const mapLayerOptions = [
     { value: 'Aerial', label: 'Aerial', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
     { value: 'Road', label: 'Road (static)', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
     { value: 'RoadOnDemand', label: 'Road (dynamic)', url: () => azureMapsKey ? `https://atlas.microsoft.com/map/tile?api-version=2.0&tilesetId=microsoft.base.hybrid.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}` : undefined },
-    { value: 'SectionalCharts', label: 'Sectional Charts', url: () => 'http://localhost:8187/sectional/{z}/{x}/{-y}.png' },
-    { value: 'TerminalAreaCharts', label: 'Terminal Area Charts', url: () => 'http://localhost:8187/terminal-area/{z}/{x}/{-y}.png' },
-    { value: 'IFREnrouteLowCharts', label: 'IFR Enroute Low Charts', url: () => 'http://localhost:8187/ifr-enroute-low/{z}/{x}/{-y}.png' },
-    { value: 'IFREnrouteHighCharts', label: 'IFR Enroute High Charts', url: () => 'http://localhost:8187/ifr-enroute-high/{z}/{x}/{-y}.png' },
-    { value: 'HelicopterCharts', label: 'Helicopter Charts', url: () => 'http://localhost:8187/helicopter/{z}/{x}/{-y}.png' },
+    { value: 'SectionalCharts', label: 'Sectional Charts', url: () => `${getChartTileBase()}/sectional/{z}/{x}/{-y}.png` },
+    { value: 'TerminalAreaCharts', label: 'Terminal Area Charts', url: () => `${getChartTileBase()}/terminal-area/{z}/{x}/{-y}.png` },
+    { value: 'IFREnrouteLowCharts', label: 'IFR Enroute Low Charts', url: () => `${getChartTileBase()}/ifr-enroute-low/{z}/{x}/{-y}.png` },
+    { value: 'IFREnrouteHighCharts', label: 'IFR Enroute High Charts', url: () => `${getChartTileBase()}/ifr-enroute-high/{z}/{x}/{-y}.png` },
+    { value: 'HelicopterCharts', label: 'Helicopter Charts', url: () => `${getChartTileBase()}/helicopter/{z}/{x}/{-y}.png` },
 ];
 
 // Event definitions mapping

@@ -146,11 +146,13 @@ public final class Upload {
             // We don't want to add this upload to the kafka queue while it is still locked, because then processing
             // could fail if it is read from the queue too fast while we still have the lock.
             if (markedComplete) {
-                if (producer == null) {
+                if (producer == null)
                     producer = new KafkaProducer<>(Configuration.getUploadProperties());
-                }
 
                 producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
+                producer.flush();
+                producer.close();
+                producer = null;
             }
         }
 
@@ -547,7 +549,7 @@ public final class Upload {
             query.setString(11, chunkStatus);
             query.setString(12, status.name());
 
-            LOG.info("QUERY: " + query.toString());
+            LOG.info(() -> "QUERY: " + query.toString());
             query.executeUpdate();
 
             return Upload.getUploadByUser(connection, uploaderId, md5hash);
@@ -597,20 +599,18 @@ public final class Upload {
             query += " " + condition;
         }
 
-        PreparedStatement uploadQuery = connection.prepareStatement(query);
-        uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, -1);
+        ArrayList<Upload> uploads;
+        try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
 
-        ResultSet resultSet = uploadQuery.executeQuery();
-
-        ArrayList<Upload> uploads = new ArrayList<Upload>();
-
-        while (resultSet.next()) {
-            uploads.add(new Upload(resultSet));
+            uploadQuery.setInt(1, fleetId);
+            uploadQuery.setInt(2, -1);
+            uploads = new ArrayList<>();
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                while (resultSet.next()) {
+                    uploads.add(new Upload(resultSet));
+                }
+            }
         }
-
-        // resultSet.close();
-        uploadQuery.close();
 
         return uploads;
     }
@@ -622,6 +622,44 @@ public final class Upload {
         if (condition != null) query += " " + condition;
 
         try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1);
+            }
+        }
+    }
+
+    public static int getNumUploadsByStatus(Connection connection, int fleetId, Upload.Status[] types) throws SQLException {
+
+        String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
+
+        // Has defined types to filter by, add to query
+        if (types.length > 0) {
+            query += " AND (";
+
+            for (int i = 0; i < types.length; i++) {
+                if (i > 0) query += " OR ";
+                query += "status = ?";
+            }
+            query += ")";
+        }
+
+        /*
+            Query with format:
+
+            SELECT count(id) FROM uploads
+            WHERE fleet_id = ?
+                AND uploader_id != ?
+                AND (status = ? OR status = ? OR ...)
+        */
+        try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
+            uploadQuery.setInt(1, fleetId);
+            uploadQuery.setInt(2, -1);
+
+            for (int i = 0; i < types.length; i++) {
+                uploadQuery.setString(i + 3, types[i].toString());
+            }
+
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
                 resultSet.next();
                 return resultSet.getInt(1);
@@ -648,25 +686,23 @@ public final class Upload {
         }
         query += " ORDER BY start_time DESC";
 
-        PreparedStatement uploadQuery = connection.prepareStatement(query);
+        ArrayList<Upload> uploads;
+        try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
 
-        uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, -1);
+            uploadQuery.setInt(1, fleetId);
+            uploadQuery.setInt(2, -1);
+            for (int i = 0; i < types.length; i++) {
+                uploadQuery.setString(i + 3, types[i].toString());
+            }
+            
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                uploads = new ArrayList<>();
+                while (resultSet.next()) {
+                    uploads.add(new Upload(resultSet));
+                }
+            }
 
-        for (int i = 0; i < types.length; i++) {
-            uploadQuery.setString(i + 3, types[i].toString());
         }
-
-        ResultSet resultSet = uploadQuery.executeQuery();
-
-        ArrayList<Upload> uploads = new ArrayList<Upload>();
-
-        while (resultSet.next()) {
-            uploads.add(new Upload(resultSet));
-        }
-
-        resultSet.close();
-        uploadQuery.close();
 
         return uploads;
     }
@@ -688,23 +724,23 @@ public final class Upload {
 
         if (!sqlLimit.isEmpty()) query += sqlLimit;
 
-        PreparedStatement uploadQuery = connection.prepareStatement(query);
-        uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, -1);
+        ArrayList<Upload> uploads;
+        try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
+            
+            uploadQuery.setInt(1, fleetId);
+            uploadQuery.setInt(2, -1);
+            for (int i = 0; i < types.length; i++) {
+                uploadQuery.setString(i + 3, types[i].toString());
+            }
+            
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                uploads = new ArrayList<>();
+                while (resultSet.next()) {
+                    uploads.add(new Upload(resultSet));
+                }
+            }
 
-        for (int i = 0; i < types.length; i++) {
-            uploadQuery.setString(i + 3, types[i].toString());
         }
-        ResultSet resultSet = uploadQuery.executeQuery();
-
-        ArrayList<Upload> uploads = new ArrayList<Upload>();
-
-        while (resultSet.next()) {
-            uploads.add(new Upload(resultSet));
-        }
-
-        resultSet.close();
-        uploadQuery.close();
 
         return uploads;
     }
@@ -740,29 +776,21 @@ public final class Upload {
      * @return the folder which will contain the zip file corresponding to this upload
      */
     public String getArchiveDirectory() {
-        switch (kind) {
-            case AIRSYNC:
-                return NGAFID_ARCHIVE_DIR + "/" + fleetId + "/airsync/" + uploaderId;
-            case DERIVED:
-                return NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/derived";
-            case FILE:
-                return NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId;
-            default:
-                return ""; // unreachable
-        }
+        return switch (kind) {
+            case AIRSYNC -> NGAFID_ARCHIVE_DIR + "/" + fleetId + "/airsync/" + uploaderId;
+            case DERIVED -> NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/derived";
+            case FILE -> NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId;
+            default -> "";
+        }; // unreachable
     }
 
     public String getArchiveFilename() {
-        switch (kind) {
-            case AIRSYNC:
-                return id + "__airsync__" + filename;
-            case DERIVED:
-                return id + "__derived__" + filename;
-            case FILE:
-                return id + "__" + filename;
-            default:
-                return ""; // unreachable
-        }
+        return switch (kind) {
+            case AIRSYNC -> id + "__airsync__" + filename;
+            case DERIVED -> id + "__derived__" + filename;
+            case FILE -> id + "__" + filename;
+            default -> "";
+        }; // unreachable
     }
 
     public String getChunkDirectory() {
@@ -780,11 +808,13 @@ public final class Upload {
             Files.createDirectories(parent);
         }
 
-        var zos = new ZipArchiveOutputStream(new BufferedOutputStream(new FileOutputStream(path.toFile())));
+        ZipArchiveOutputStream zos =
+                new ZipArchiveOutputStream(new BufferedOutputStream(new FileOutputStream(path.toFile())));
         zos.setLevel(ZipArchiveOutputStream.DEFAULT_COMPRESSION);
         zos.setMethod(ZipArchiveOutputStream.DEFLATED);
         zos.setUseZip64(Zip64Mode.Always);
         return zos;
+        
     }
 
     public int getFleetId() {
@@ -831,7 +861,7 @@ public final class Upload {
 
                     // It indicates that more than one aircraft is grouped into an
                     // AirSync upload, which is not intended!
-                    LOG.severe("This should not be happening! Multiple tails in one AirSync upload! "
+                    LOG.severe(() -> "This should not be happening! Multiple tails in one AirSync upload! "
                             + Arrays.toString(Thread.currentThread().getStackTrace()));
                 }
             }

@@ -302,19 +302,39 @@ class TurnToFinalHeaderComponents extends React.Component {
 
     makeDropdown(currentItem, items, onChange) {
 
+        const CURRENT_ITEM_DEFAULT = "(None)";
+
         const dropdownStyle = {
             maxHeight: "200px",
             overflowY: "auto"
         };
 
+        const noOptionsAvailable = (!items || items.length === 0);
+
         return (
             <div className="col-auto">
                 <div className="dropdown">
-                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {currentItem}
+                    <button
+                        disabled={noOptionsAvailable}
+                        className="btn btn-secondary-outline dropdown-toggle"
+                        type="button"
+                        id="dropdownMenuButton"
+                        data-bs-toggle="dropdown"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                    >
+                        {currentItem ?? CURRENT_ITEM_DEFAULT}
                     </button>
                     <div className="dropdown-menu" aria-labelledby="dropdownMenuButton" style={dropdownStyle}>
                         {
+
+                            // No options available
+                            (noOptionsAvailable)
+                            ?
+                            <span className="dropdown-item">(No options)</span>
+
+                            // Has at least 1 option available
+                            :
                             items.map((itemName, index) => {
                                 return (
                                     <a key={index} className="dropdown-item" onClick={() => onChange(itemName)}>{itemName}</a>
