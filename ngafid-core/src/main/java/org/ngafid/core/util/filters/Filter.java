@@ -460,7 +460,7 @@ public class Filter {
                 if (inputs.get(1).equals("is")) {
                     return "flights.system_id IN (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)";
                 } else {
-                    return "flights.system_id NOT IN (SELECT system_id FROM tails WHERE fleet_id = ? AND tail != ?)";
+                    return "flights.system_id NOT IN (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)";
                 }
             }
 
