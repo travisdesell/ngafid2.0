@@ -3,13 +3,14 @@ import React from "react";
 import Button from 'react-bootstrap/Button';
 
 /**
- * Format time for display: elapsed seconds -> "H:MM:SS", Unix timestamp -> datetime string.
+ * Format time for display: elapsed seconds -> "H:MM:SS", Unix timestamp (seconds) -> datetime string (local).
+ * Backend sends label start/end as Unix seconds (~1.7e9 for 2025); chart x is seconds-from-start (< 1e5).
  */
 export function formatLabelingTime(time) {
     const t = toLabelingTimeNumber(time);
     if (t == null) return '—';
-    if (t > 1e10) {
-        return new Date(t * 1000).toISOString().slice(0, 19).replace('T', ' ');
+    if (t >= 1e9) {
+        return formatDateLocal(new Date(t * 1000));
     }
     const totalSeconds = Math.floor(t);
     const h = Math.floor(totalSeconds / 3600);
@@ -36,44 +37,55 @@ function toLabelingTimeNumber(time) {
 }
 
 /**
- * Get a Date for a point: from elapsed seconds + flight start, or Unix timestamp.
- * Time may come as string (e.g. backend sends x as string indices "0","1",...) or number.
+ * Get a Date for a point: from elapsed seconds + flight start, or Unix timestamp (seconds).
+ * Label API returns startTime/endTime as Unix seconds; chart x is seconds-from-start. Use 1e9 to split.
  */
 function getLabelingDate(time, startDateTime) {
     const t = toLabelingTimeNumber(time);
     if (t == null) return null;
-    if (t > 1e10) return new Date(t * 1000);
+    if (t >= 1e9) return new Date(t * 1000);
     if (!startDateTime) return null;
     const start = new Date(String(startDateTime).replace(' ', 'T'));
     if (isNaN(start.getTime())) return null;
     return new Date(start.getTime() + t * 1000);
 }
 
+/** Format a Date in local time as YYYY-MM-DD HH:mm:ss to match the flight info card on the page. */
+function formatDateLocal(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${y}-${m}-${d} ${h}:${min}:${s}`;
+}
+
 /**
- * Human-readable date and time for a point (single string).
+ * Human-readable date and time for a point (single string), in local time to match flight info.
  */
 export function formatLabelingDateTime(time, startDateTime) {
     const d = getLabelingDate(time, startDateTime);
     if (!d) return formatLabelingTime(time);
-    return d.toISOString().slice(0, 19).replace('T', ' ');
+    return formatDateLocal(d);
 }
 
 /**
- * Date only: YYYY-MM-DD
+ * Date only: YYYY-MM-DD (local).
  */
 export function formatLabelingDate(time, startDateTime) {
     const d = getLabelingDate(time, startDateTime);
     if (!d) return '—';
-    return d.toISOString().slice(0, 10);
+    return formatDateLocal(d).slice(0, 10);
 }
 
 /**
- * Time only: HH:MM:SS
+ * Time only: HH:MM:SS (local), to match flight info card.
  */
 export function formatLabelingTimeOnly(time, startDateTime) {
     const d = getLabelingDate(time, startDateTime);
     if (!d) return '—';
-    return d.toISOString().slice(11, 19);
+    return formatDateLocal(d).slice(11, 19);
 }
 
 const LABELING_MARKER_COLORS = [
@@ -92,28 +104,24 @@ const LABELING_POPUP_WIDTH_STORAGE_KEY = 'ngafid_labeling_popup_width';
 const LABELING_POPUP_HEIGHT_STORAGE_KEY = 'ngafid_labeling_popup_height';
 const RESIZE_HANDLE_SIZE = 8;
 
-function getStoredPopupWidth() {
+function getStoredSize(key, defaultVal, minVal, maxVal) {
     try {
-        const stored = localStorage.getItem(LABELING_POPUP_WIDTH_STORAGE_KEY);
-        if (stored == null) return LABELING_POPUP_WIDTH;
+        const stored = localStorage.getItem(key);
+        if (stored == null) return defaultVal;
         const n = Number(stored);
-        if (!Number.isFinite(n)) return LABELING_POPUP_WIDTH;
-        return Math.max(LABELING_POPUP_MIN_WIDTH, Math.min(LABELING_POPUP_MAX_WIDTH, Math.round(n)));
+        if (!Number.isFinite(n)) return defaultVal;
+        return Math.max(minVal, Math.min(maxVal, Math.round(n)));
     } catch {
-        return LABELING_POPUP_WIDTH;
+        return defaultVal;
     }
 }
 
+function getStoredPopupWidth() {
+    return getStoredSize(LABELING_POPUP_WIDTH_STORAGE_KEY, LABELING_POPUP_WIDTH, LABELING_POPUP_MIN_WIDTH, LABELING_POPUP_MAX_WIDTH);
+}
+
 function getStoredPopupHeight() {
-    try {
-        const stored = localStorage.getItem(LABELING_POPUP_HEIGHT_STORAGE_KEY);
-        if (stored == null) return LABELING_POPUP_HEIGHT;
-        const n = Number(stored);
-        if (!Number.isFinite(n)) return LABELING_POPUP_HEIGHT;
-        return Math.max(LABELING_POPUP_MIN_HEIGHT, Math.min(LABELING_POPUP_MAX_HEIGHT, Math.round(n)));
-    } catch {
-        return LABELING_POPUP_HEIGHT;
-    }
+    return getStoredSize(LABELING_POPUP_HEIGHT_STORAGE_KEY, LABELING_POPUP_HEIGHT, LABELING_POPUP_MIN_HEIGHT, LABELING_POPUP_MAX_HEIGHT);
 }
 
 function setStoredPopupSize(width, height) {
@@ -121,6 +129,11 @@ function setStoredPopupSize(width, height) {
         localStorage.setItem(LABELING_POPUP_WIDTH_STORAGE_KEY, String(width));
         localStorage.setItem(LABELING_POPUP_HEIGHT_STORAGE_KEY, String(height));
     } catch (_) {}
+}
+
+/** Display section start/end time: use raw string if provided, else format from Unix seconds. */
+function formatSectionTime(display, time, startDateTime) {
+    return (display != null && display !== '') ? display : (formatLabelingDate(time, startDateTime) + ' ' + formatLabelingTimeOnly(time, startDateTime));
 }
 
 /** Resize handle identifiers for edges and corners. */
@@ -379,8 +392,8 @@ class LabelingMapPopup extends React.Component {
                             <tr>
                                 <th style={{ width: 32, fontSize: '0.7em' }} title="Show/hide this section on the chart">Show</th>
                                 <th style={{ width: 24 }}></th>
-                                <th style={{ fontSize: '0.7em' }}>Start</th>
-                                <th style={{ fontSize: '0.7em' }}>End</th>
+                                <th style={{ fontSize: '0.7em' }}>Start time</th>
+                                <th style={{ fontSize: '0.7em' }}>End time</th>
                                 <th style={{ fontSize: '0.7em' }}>Val start</th>
                                 <th style={{ fontSize: '0.7em' }}>Val end</th>
                                 <th style={{ fontSize: '0.7em' }}>Parameters</th>
@@ -415,12 +428,8 @@ class LabelingMapPopup extends React.Component {
                                             boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
                                         }} title={`Section ${i + 1}`}/>
                                     </td>
-                                    <td style={{ fontSize: '0.8em' }}>
-                                        {formatLabelingDate(sec.startTime, startDateTime)} {formatLabelingTimeOnly(sec.startTime, startDateTime)}
-                                    </td>
-                                    <td style={{ fontSize: '0.8em' }}>
-                                        {formatLabelingDate(sec.endTime, startDateTime)} {formatLabelingTimeOnly(sec.endTime, startDateTime)}
-                                    </td>
+                                    <td style={{ fontSize: '0.8em' }}>{formatSectionTime(sec.startTimeDisplay, sec.startTime, startDateTime)}</td>
+                                    <td style={{ fontSize: '0.8em' }}>{formatSectionTime(sec.endTimeDisplay, sec.endTime, startDateTime)}</td>
                                     <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.startValue) : '—'}</td>
                                     <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.endValue) : '—'}</td>
                                     <td style={{ fontSize: '0.75em' }}>{(sec.parameterNames && sec.parameterNames.length > 0) ? sec.parameterNames.join(', ') : '—'}</td>

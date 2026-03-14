@@ -91,7 +91,7 @@ class Flight extends React.Component {
             labelingPopup: null,
             labelingPopupPinned: false,
             labelingHoverTooltip: null,
-            /** Sections from two-click. Each: { startIndex, endIndex, startTime, endTime, startValue, endValue, label?, parameterNames: string[] } */
+            /** Sections from two-click. Each: { id?, startIndex, endIndex, startTime, endTime, startValue, endValue, label?, parameterNames: string[] } */
             labelingClickSections: [],
             /** Pending first click: { index, time, value } or null */
             labelingSectionStart: null,
@@ -711,12 +711,17 @@ class Flight extends React.Component {
                 const endTime = x[endIndex];
                 const startValue = y[startIndex];
                 const endValue = y[endIndex];
-                const sectionEntity = { startIndex, endIndex, startTime, endTime, startValue, endValue, label: '', parameterNames, visibleOnChart: true };
+                const sectionEntity = { id: null, startIndex, endIndex, startTime, endTime, startValue, endValue, label: '', parameterNames, visibleOnChart: true };
                 const nextSections = [...(this.state.labelingClickSections || []), sectionEntity];
+                const newIndex = nextSections.length - 1;
                 this.setState({ labelingSectionStart: null, labelingClickSections: nextSections }, () => {
                     this.updateLabelingMarkers();
                     this.updateLabelingClickSectionsLayer();
                     this.renderLabelingPopup();
+                    this.saveNewLabelSection({
+                        id: null, startIndex, endIndex, startTime, endTime,
+                        startValue, endValue, labelText: '', parameterNames,
+                    }, newIndex);
                 });
             }
             return;
@@ -864,6 +869,15 @@ class Flight extends React.Component {
                     labelingSelectedParameters: [],
                 });
                 // Chart is shown when user selects a parameter; map on demand via Chart|Map toggle
+                // Load any existing label sections for this flight
+                $.ajax({
+                    type: 'GET',
+                    url: `/api/flight/${flightId}/labels`,
+                    dataType: 'json',
+                    async: true,
+                    success: (sections) => this.applyLabelSections(this.mapApiSectionsToClickSections(sections)),
+                    error: (jqXHR, textStatus, errorThrown) => console.error("Error fetching flight labels", errorThrown),
+                });
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.error("Error fetching double-series names for flight", flightId, errorThrown);
@@ -944,12 +958,17 @@ class Flight extends React.Component {
                     labelingSectionStart: null,
                 }, () => {
                     if (this.props.onLabelingViewMode) this.props.onLabelingViewMode(viewMode);
-                    if (viewMode === 'chart') this.props.showPlot();
-                    else {
+                    if (viewMode === 'chart') {
+                        this.props.showPlot();
+                        // Ensure plot container is visible before adding traces (parent re-renders async)
+                        setTimeout(() => {
+                            this.addLabelingTraceToPlot();
+                            if (typeof Plotly !== 'undefined' && Plotly.Plots) Plotly.Plots.resize('plot');
+                        }, 400);
+                    } else {
                         this.props.showMap();
                         if (isFirst) this.showMapForLabeling();
                     }
-                    setTimeout(() => this.addLabelingTraceToPlot(), 200);
                     this.updateLabelingChartShapes();
                     this.updateLabelingClickSectionsLayer();
                     if (nextSelected.length === 1) this.updateLabelingHighlightLayer();
@@ -959,6 +978,50 @@ class Flight extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.error("Error fetching time series for", name, errorThrown);
+            },
+        });
+    }
+
+    /** Map API label sections to our click-section format. */
+    mapApiSectionsToClickSections(sections) {
+        return (sections || []).map((s) => ({
+            id: s.id, startIndex: s.startIndex, endIndex: s.endIndex,
+            startTime: s.startTime, endTime: s.endTime,
+            startTimeDisplay: s.startTimeDisplay, endTimeDisplay: s.endTimeDisplay,
+            startValue: s.startValue, endValue: s.endValue,
+            label: s.labelText || '', parameterNames: s.parameterNames || [],
+        }));
+    }
+
+    /** Apply label sections to state and update layers/popup. */
+    applyLabelSections(clickSections) {
+        this.setState({ labelingClickSections: clickSections }, () => {
+            this.updateLabelingClickSectionsLayer();
+            if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+            this.renderLabelingPopup();
+        });
+    }
+
+    /** POST a new section, then update state with saved id and display times. */
+    saveNewLabelSection(sectionData, newIndex) {
+        const flightId = this.props.flightInfo.id;
+        $.ajax({
+            type: 'POST',
+            url: `/api/flight/${flightId}/labels`,
+            contentType: 'application/json',
+            data: JSON.stringify(sectionData),
+            success: (saved) => {
+                this.setState((prev) => {
+                    const list = prev.labelingClickSections || [];
+                    if (newIndex < 0 || newIndex >= list.length) return null;
+                    const updated = list.map((s, i) =>
+                        i === newIndex ? { ...s, id: saved.id, startTimeDisplay: saved.startTimeDisplay, endTimeDisplay: saved.endTimeDisplay } : s
+                    );
+                    return { labelingClickSections: updated };
+                }, () => this.renderLabelingPopup());
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.error("Error saving label section", errorThrown);
             },
         });
     }
@@ -1121,14 +1184,17 @@ class Flight extends React.Component {
         const plotEl = document.getElementById('plot');
         const selected = this.state.labelingSelectedParameters || [];
         const byParam = this.state.labelingSeriesDataByParameter || {};
-        if (!plotEl || !plotEl.data) return;
+        if (!plotEl) return;
 
-        const oldIndices = this.state.labelingTraceIndices || {};
-        const toRemove = Object.values(oldIndices).sort((a, b) => b - a);
+        const prefix = `Labeling: ${this.props.flightInfo.id} – `;
+        const toRemove = [];
+        const dataArr = plotEl.data || [];
+        for (let i = 0; i < dataArr.length; i++) {
+            const n = dataArr[i].name;
+            if (typeof n === 'string' && n.startsWith(prefix)) toRemove.push(i);
+        }
         try {
-            toRemove.forEach((idx) => {
-                if (idx < plotEl.data.length) Plotly.deleteTraces('plot', [idx]);
-            });
+            toRemove.sort((a, b) => b - a).forEach((idx) => Plotly.deleteTraces('plot', [idx]));
         } catch (e) {
             console.warn('Labeling: could not remove traces', e);
         }
@@ -1146,11 +1212,11 @@ class Flight extends React.Component {
                 x: data.x,
                 y: data.y,
                 mode: 'lines',
-                name: `Labeling: ${this.props.flightInfo.id} – ${name}`,
+                name: `${prefix}${name}`,
                 line: { width: 2 },
             };
             Plotly.addTraces('plot', [trace]);
-            indices[name] = plotEl.data.length - 1;
+            indices[name] = (plotEl.data ? plotEl.data.length : 1) - 1;
         });
         this.setState({ labelingTraceIndices: indices }, () => this.attachLabelingPlotClickListener());
     }
@@ -1226,13 +1292,18 @@ class Flight extends React.Component {
             const endTime = x[endIndex];
             const startValue = y[startIndex];
             const endValue = y[endIndex];
-            const sectionEntity = { startIndex, endIndex, startTime, endTime, startValue, endValue, label: '', parameterNames, visibleOnChart: true };
+            const sectionEntity = { id: null, startIndex, endIndex, startTime, endTime, startValue, endValue, label: '', parameterNames, visibleOnChart: true };
             const nextSections = [...(this.state.labelingClickSections || []), sectionEntity];
+            const newIndex = nextSections.length - 1;
             this.setState({ labelingSectionStart: null, labelingClickSections: nextSections }, () => {
                 this.updateLabelingMarkers();
                 this.updateLabelingClickSectionsLayer();
                 this.renderLabelingPopup();
                 if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+                this.saveNewLabelSection({
+                    id: null, startIndex, endIndex, startTime, endTime,
+                    startValue, endValue, labelText: '', parameterNames,
+                }, newIndex);
             });
         }
     }
@@ -1503,12 +1574,15 @@ class Flight extends React.Component {
             }
         }
 
-        // Two-click sections: vertical bands (only when section is visible on chart)
+        // Two-click sections: vertical bands (only when section is visible on chart).
+        // Use startIndex/endIndex to get x coords from the trace - chart x is seconds-from-flight-start,
+        // not Unix seconds, so sec.startTime/endTime would squash the trace into a line.
         if (labelingClickSections && labelingClickSections.length > 0) {
             labelingClickSections.forEach((sec, i) => {
                 if (sec.visibleOnChart === false) return;
-                const x0 = sec.startTime;
-                const x1 = sec.endTime;
+                const si = sec.startIndex, ei = sec.endIndex;
+                if (si == null || ei == null || si < 0 || ei >= x.length) return;
+                const x0 = x[si], x1 = x[ei];
                 if (x0 == null || x1 == null) return;
                 const color = LABELING_SECTION_COLORS[i % LABELING_SECTION_COLORS.length];
                 shapes.push({
@@ -1602,6 +1676,8 @@ class Flight extends React.Component {
             endIndex: sec.endIndex,
             startTime: sec.startTime,
             endTime: sec.endTime,
+            startTimeDisplay: sec.startTimeDisplay,
+            endTimeDisplay: sec.endTimeDisplay,
             startValue: sec.startValue,
             endValue: sec.endValue,
             label: sec.label ?? '',
@@ -1630,18 +1706,46 @@ class Flight extends React.Component {
                 });
             },
             onUpdateLabel: (i, value) => {
-                const next = (this.state.labelingClickSections || []).map((sec, idx) =>
+                const sections = this.state.labelingClickSections || [];
+                const target = sections[i];
+                const next = sections.map((sec, idx) =>
                     idx === i ? { ...sec, label: value } : sec
                 );
                 this.setState({ labelingClickSections: next }, () => this.renderLabelingPopup());
+
+                if (target && target.id != null) {
+                    const flightIdUpdate = this.props.flightInfo.id;
+                    $.ajax({
+                        type: 'PUT',
+                        url: `/api/flight/${flightIdUpdate}/labels/${encodeURIComponent(target.id)}`,
+                        contentType: 'application/json',
+                        data: JSON.stringify({ labelText: value }),
+                        error: (jqXHR, textStatus, errorThrown) => {
+                            console.error("Error updating label text", errorThrown);
+                        },
+                    });
+                }
             },
             onRemoveSection: (i) => {
-                const next = (this.state.labelingClickSections || []).filter((_, idx) => idx !== i);
+                const sections = this.state.labelingClickSections || [];
+                const target = sections[i];
+                const next = sections.filter((_, idx) => idx !== i);
                 this.setState({ labelingClickSections: next }, () => {
                     this.updateLabelingClickSectionsLayer();
                     this.renderLabelingPopup();
                     if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
                 });
+
+                if (target && target.id != null) {
+                    const flightIdDelete = this.props.flightInfo.id;
+                    $.ajax({
+                        type: 'DELETE',
+                        url: `/api/flight/${flightIdDelete}/labels/${encodeURIComponent(target.id)}`,
+                        error: (jqXHR, textStatus, errorThrown) => {
+                            console.error("Error deleting label section", errorThrown);
+                        },
+                    });
+                }
             },
             onClearAll: () => {
                 this.setState({ labelingClickSections: [], labelingSectionStart: null }, () => {
@@ -2021,6 +2125,10 @@ class Flight extends React.Component {
         if (oldProps.tags !== newProps.tags) {
             this.setState({ tags: this.props.tags });
         }
+        // Re-render labeling popup when expand/collapse changes so it stays visible in both layouts
+        if (oldProps.containerExpanded !== newProps.containerExpanded && this.state.labelingPopup) {
+            setTimeout(() => this.renderLabelingPopup(), 0);
+        }
     }
 
     addCesiumFlightPhase(phase) {
@@ -2203,52 +2311,102 @@ class Flight extends React.Component {
                             </div>
                             <div style={{ fontSize: "0.75em" }}>Parameters</div>
                         </div>
-                        {selectedParams.length > 0 && (
-                            <div className="d-flex flex-row align-items-center gap-1" style={{ fontSize: "0.75em" }}>
-                                <span className="text-muted mr-1">View:</span>
-                                <div className="btn-group btn-group-sm" role="group">
-                                    <button
-                                        type="button"
-                                        className={`btn btn-outline-secondary ${this.state.labelingViewMode === 'chart' ? 'active' : ''}`}
-                                        onClick={() => {
-                                            this.setState({ labelingViewMode: 'chart' }, () => {
-                                                this.updateLabelingChartShapes();
-                                                if ((this.state.labelingClickSections?.length || 0) > 0 || this.state.labelingSectionStart != null) {
+                        <div className="d-flex flex-row align-items-center gap-1 flex-wrap" style={{ fontSize: "0.75em" }}>
+                            {selectedParams.length > 0 && (
+                                <>
+                                    <span className="text-muted mr-1">View:</span>
+                                    <div className="btn-group btn-group-sm" role="group">
+                                        <button
+                                            type="button"
+                                            className={`btn btn-outline-secondary ${this.state.labelingViewMode === 'chart' ? 'active' : ''}`}
+                                            onClick={() => {
+                                                this.setState({ labelingViewMode: 'chart' }, () => {
+                                                    this.updateLabelingChartShapes();
                                                     this.renderLabelingPopup();
-                                                }
-                                            });
-                                            this.props.showPlot();
-                                            if (this.props.onLabelingViewMode) this.props.onLabelingViewMode('chart');
-                                            if (Object.keys(this.state.labelingTraceIndices || {}).length > 0) this.attachLabelingPlotClickListener();
-                                        }}
-                                        title="Select sections on the chart"
-                                    >
-                                        <i className="fa fa-area-chart mr-1" /> Chart
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`btn btn-outline-secondary ${this.state.labelingViewMode === 'map' ? 'active' : ''}`}
-                                        disabled={this.props.flightInfo.has_coords === "0"}
-                                        onClick={() => {
-                                            this.setState({ labelingViewMode: 'map' }, () => {
-                                                this.updateLabelingChartShapes();
-                                                if ((this.state.labelingClickSections?.length || 0) > 0 || this.state.labelingSectionStart != null) {
+                                                });
+                                                this.props.showPlot();
+                                                if (this.props.onLabelingViewMode) this.props.onLabelingViewMode('chart');
+                                                if (Object.keys(this.state.labelingTraceIndices || {}).length > 0) this.attachLabelingPlotClickListener();
+                                            }}
+                                            title="Select sections on the chart"
+                                        >
+                                            <i className="fa fa-area-chart mr-1" /> Chart
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`btn btn-outline-secondary ${this.state.labelingViewMode === 'map' ? 'active' : ''}`}
+                                            disabled={this.props.flightInfo.has_coords === "0"}
+                                            onClick={() => {
+                                                this.setState({ labelingViewMode: 'map' }, () => {
+                                                    this.updateLabelingChartShapes();
                                                     this.renderLabelingPopup();
-                                                }
+                                                });
+                                                this.props.showMap();
+                                                this.showMapForLabeling();
+                                                if (this.props.onLabelingViewMode) this.props.onLabelingViewMode('map');
+                                                this.removeLabelingPlotClickListener();
+                                                this.fitMapToFlightWhenVisible();
+                                            }}
+                                            title="Select sections on the map"
+                                        >
+                                            <i className="fa fa-map-o mr-1" /> Map
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                            <div className="btn-group btn-group-sm ml-2" role="group">
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    title="Download labels for this flight as CSV"
+                                    onClick={() => { window.location.href = `/api/flight/${this.props.flightInfo.id}/labels/csv`; }}
+                                >
+                                    <i className="fa fa-download mr-1" /> Flight
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    title="Download all fleet labels as CSV"
+                                    onClick={() => { window.location.href = '/api/fleet/labels/csv'; }}
+                                >
+                                    <i className="fa fa-download mr-1" /> Fleet
+                                </button>
+                                <label className="btn btn-outline-secondary mb-0" title="Import labels from CSV. Use pipe (|) to separate parameter names.">
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        className="d-none"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            const flightId = this.props.flightInfo.id;
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+                                            $.ajax({
+                                                url: `/api/flight/${flightId}/labels/import`,
+                                                type: 'POST',
+                                                data: formData,
+                                                processData: false,
+                                                contentType: false,
+                                                success: (res) => {
+                                                    if (res.imported != null && res.imported > 0) {
+                                                        $.ajax({
+                                                            type: 'GET',
+                                                            url: `/api/flight/${flightId}/labels`,
+                                                            dataType: 'json',
+                                                            success: (sections) => this.applyLabelSections(this.mapApiSectionsToClickSections(sections)),
+                                                        });
+                                                    }
+                                                },
+                                                error: (xhr) => console.error('Import failed', xhr.responseText),
                                             });
-                                            this.props.showMap();
-                                            this.showMapForLabeling();
-                                            if (this.props.onLabelingViewMode) this.props.onLabelingViewMode('map');
-                                            this.removeLabelingPlotClickListener();
-                                            this.fitMapToFlightWhenVisible();
+                                            e.target.value = '';
                                         }}
-                                        title="Select sections on the map"
-                                    >
-                                        <i className="fa fa-map-o mr-1" /> Map
-                                    </button>
-                                </div>
+                                    />
+                                    <i className="fa fa-upload mr-1" /> Import
+                                </label>
                             </div>
-                        )}
+                        </div>
                     </b>
                     <div className="p-1">
                         <div className="d-flex flex-row pb-1" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingTop: "1.25rem" }}>

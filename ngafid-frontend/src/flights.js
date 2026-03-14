@@ -1703,6 +1703,7 @@ class FlightsPage extends React.Component {
             >
                 <FlightsCard
                     parent={this}
+                    containerExpanded={this.state.containerExpanded}
                     layers={this.state.layers}
                     flights={this.state.flights}
                     navBar={this.navRef}
