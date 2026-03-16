@@ -139,7 +139,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             {/* Event Info */}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
-                                <Link to="/protected/event_statistics">
+                                <Link to="/protected/statistics">
                                     Statistics
                                 </Link>
                             </DropdownMenuItem>
