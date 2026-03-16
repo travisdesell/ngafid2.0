@@ -112,7 +112,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
 
     // Use an adaptive height based on the number of events
     const BASE_HEIGHT = 300;
-    const HEIGHT_PER_EVENT = 40;
+    const HEIGHT_PER_EVENT = 25;
     const chartHeight = BASE_HEIGHT + (chartData.length * HEIGHT_PER_EVENT);
 
     log("Rendering...");

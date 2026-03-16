@@ -1,11 +1,8 @@
-// ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-counts.tsx
+// ngafid-frontend/src/app/pages/summary/charts/chart-summary-percentage-of-flights-with-event.tsx
 "use client"
 
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
-    BAR_RADIUS_HORIZONTAL_FIRST,
-    BAR_RADIUS_HORIZONTAL_LAST,
-    BAR_RADIUS_HORIZONTAL_MIDDLE,
     BAR_RADIUS_HORIZONTAL_SOLO,
     ChartConfig,
     ChartContainer,
@@ -30,6 +27,33 @@ type ChartSummaryEventCountsProps = {
     renderNoDataAvailableMessage: () => JSX.Element;
 };
 
+type PercentageChartDatum = {
+    eventName: string;
+    fleetPercent: number;
+    aggregatePercent: number;
+    fleetFlightsWithEvent: number;
+    fleetTotalFlights: number;
+    aggregateFlightsWithEvent: number;
+    aggregateTotalFlights: number;
+};
+
+const toPercent = (numerator: number, denominator: number): number => {
+    if (denominator <= 0)
+        return 0;
+
+    return (100 * numerator) / denominator;
+};
+
+const formatPercent = (value: number): string => {
+    if (!Number.isFinite(value) || value <= 0)
+        return "0.00%";
+
+    if (value < 1)
+        return `${value.toFixed(-Math.ceil(Math.log10(value)) + 2)}%`;
+
+    return `${value.toFixed(2)}%`;
+};
+
 export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAvailableMessage }: ChartSummaryEventCountsProps) {
 
     const { useHighContrastCharts } = useTheme();
@@ -46,68 +70,67 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
     log.table("Rows:", rows);
 
 
-    //Union of event names (preserve first row's order, then append any extras)
+    // Union of event names (preserve first row order, append extras)
     const primaryOrder = rows[0]?.names ?? [];
     const extra = rows.flatMap(r => r.names.filter(n => !primaryOrder.includes(n)));
     const eventNames = [...primaryOrder, ...extra];
 
 
-    //One series per airframe (safe keys for CSS vars)
-    const afKeys = rows.map((_, i) => `af${i}`);
+    // Fleet vs all-fleets percentage values per event.
+    const chartData: PercentageChartDatum[] = eventNames.map((eventName) => {
+        let fleetFlightsWithEvent = 0;
+        let fleetTotalFlights = 0;
+        let aggregateFlightsWithEvent = 0;
+        let aggregateTotalFlights = 0;
 
+        rows.forEach((row) => {
+            const index = row.names.indexOf(eventName);
+            if (index < 0)
+                return;
 
-    //Chart config (labels, colors)
-    const chartConfig = rows.reduce((acc, r, i) => {
-        const key = afKeys[i];
-        const color = (
-            useHighContrastCharts
-            ? `var(--chart-hc-${(i % 12) + 1})`  // High-contrast palette
-            : `var(--chart-${(i % 12) + 1})`     // Standard palette
-        )
-        acc[key] = {
-            label: r.airframeName,  //<-- Legend label
-            color,
-        };
-        return acc;
-    }, {} as ChartConfig);
+            fleetFlightsWithEvent += Number(row.flightsWithEventCounts[index] ?? 0);
+            fleetTotalFlights += Number(row.totalFlightsCounts[index] ?? 0);
 
-
-    //Pivot (event row -> counts per airframe)
-    const chartData = eventNames.map((eventName) => {
-        const point: Record<string, string | number> = { eventName };
-        rows.forEach((r, i) => {
-            const j = r.names.indexOf(eventName);
-            point[afKeys[i]] = j >= 0 ? (r.totalEventsCounts[j] ?? 0) : 0;
+            aggregateFlightsWithEvent += Number(row.aggregateFlightsWithEventCounts[index] ?? 0);
+            aggregateTotalFlights += Number(row.aggregateTotalFlightsCounts[index] ?? 0);
         });
-        return point;
-    });
+
+        return {
+            eventName,
+            fleetPercent: toPercent(fleetFlightsWithEvent, fleetTotalFlights),
+            aggregatePercent: toPercent(aggregateFlightsWithEvent, aggregateTotalFlights),
+            fleetFlightsWithEvent,
+            fleetTotalFlights,
+            aggregateFlightsWithEvent,
+            aggregateTotalFlights,
+        };
+    }).filter((point) => point.fleetTotalFlights > 0 || point.aggregateTotalFlights > 0);
+
+    const chartConfig = {
+        fleetPercent: {
+            label: "Your Fleet",
+            color: useHighContrastCharts ? "var(--chart-hc-1)" : "var(--chart-1)",
+        },
+        aggregatePercent: {
+            label: "All Fleets",
+            color: useHighContrastCharts ? "var(--chart-hc-2)" : "var(--chart-2)",
+        },
+    } satisfies ChartConfig;
+
     log.table("Chart Data:", chartData);
 
-    //Sort events by total descending
+    // Sort events by combined percentage descending.
     chartData.sort((a, b) => {
-        const sum = (o: any) => afKeys.reduce((s, k) => s + Number(o[k] || 0), 0);
-        return sum(b) - sum(a);
+        const sumA = a.fleetPercent + a.aggregatePercent;
+        const sumB = b.fleetPercent + b.aggregatePercent;
+        return sumB - sumA;
     });
 
-    const chartHasData = (chartData.length > 0 && rows.length > 0);
+    const chartHasData = (chartData.length > 0);
 
-
-    const firstIdxForRow = chartData.map((point) =>
-
-        afKeys.findIndex((key) => Number(point[key] || 0) > 0)
-
-    );
-
-    const lastIdxForRow = chartData.map((point) => {
-
-        for (let idx = afKeys.length - 1; idx >= 0; idx--) {
-            if (Number(point[afKeys[idx]] || 0) > 0)
-                return idx;
-        }
-
-        return -1;
-
-    });
+    const BASE_HEIGHT = 300;
+    const HEIGHT_PER_EVENT = 25;
+    const chartHeight = BASE_HEIGHT + (chartData.length * HEIGHT_PER_EVENT);
 
 
     log("Rendering...");
@@ -115,17 +138,17 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
         <Card className="card-glossy">
             <CardHeader>
                 <CardTitle className="flex justify-between">
-                    Percentage of Flights With Event (WIP)
+                    Percentage of Flights With Event
                     {renderDateRangeMonthly()}
                 </CardTitle>
                 <CardDescription>
-                    Percentage of flights in this fleet with at least one event, by airframe and event type.
+                    Percentage of flights with at least one event for your fleet versus all fleets, grouped by event type.
                 </CardDescription>
             </CardHeader>
 
             <CardContent>
 
-                <ChartContainer config={chartConfig} className="min-h-0 w-full">
+                <ChartContainer config={chartConfig} className="min-h-0 w-full" style={{ minHeight: chartHeight }}>
                     {
                         (!chartHasData)
                         ?
@@ -138,8 +161,14 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
                             margin={{ left: 4, bottom: 8 }}
                             barCategoryGap={8}
                         >
-                            {/* Horizontal numeric axis (Event Counts) */}
-                            <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
+                            {/* Horizontal numeric axis (Percent) */}
+                            <XAxis
+                                type="number"
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={8}
+                                tickFormatter={(value) => `${value}%`}
+                            />
 
                             {/* Vertical category axis (Event Names) */}
                             <YAxis
@@ -148,45 +177,62 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
                                 tickLine={false}
                                 axisLine={false}
                                 tickMargin={8}
-                                width={150}
+                                width={200}
                             />
 
                             <CartesianGrid vertical={false} />
-                            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                            <ChartTooltip
+                                content={
+                                    <ChartTooltipContent
+                                        hideLabel
+                                        formatter={(value, name, item: any) => {
+                                            const point = item?.payload as PercentageChartDatum;
+                                            const isFleet = item?.dataKey === "fleetPercent";
+
+                                            const flightsWithEvent = isFleet
+                                                ? (point?.fleetFlightsWithEvent ?? 0)
+                                                : (point?.aggregateFlightsWithEvent ?? 0);
+
+                                            const totalFlights = isFleet
+                                                ? (point?.fleetTotalFlights ?? 0)
+                                                : (point?.aggregateTotalFlights ?? 0);
+
+                                            const percentValue = Array.isArray(value)
+                                                ? Number(value[0] ?? 0)
+                                                : Number(value ?? 0);
+
+                                            return (
+                                                <div className="flex flex-1 justify-between leading-none gap-2 items-center">
+                                                    <div className="grid gap-1">
+                                                        <span className="text-muted-foreground">{name}</span>
+                                                        <span className="text-muted-foreground/80">
+                                                            {`${flightsWithEvent.toLocaleString()} / ${totalFlights.toLocaleString()} flights`}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-foreground font-mono font-medium tabular-nums">
+                                                        {formatPercent(percentValue)}
+                                                    </span>
+                                                </div>
+                                            );
+                                        }}
+                                    />
+                                }
+                            />
                             <ChartLegend content={<ChartLegendContent />} />
 
-                            {/* One stacked bar per Airframe */}
-                            {afKeys.map((k, iAf) => (
-                                <Bar
-                                    key={k}
-                                    dataKey={k}
-                                    stackId="total"
-                                    fill={`var(--color-${k})`}
-                                    maxBarSize={48}
-                                >
-                                    {chartData.map((_, jRow) => {
-                                        const first = firstIdxForRow[jRow];
-                                        const last = lastIdxForRow[jRow];
+                            <Bar
+                                dataKey="fleetPercent"
+                                fill="var(--color-fleetPercent)"
+                                maxBarSize={32}
+                                radius={BAR_RADIUS_HORIZONTAL_SOLO}
+                            />
 
-                                        // Whole row is zero, 'middle'
-                                        const isSolo = (first === last && first === iAf && first !== -1);
-                                        const isFirst = (iAf === first && first !== -1);
-                                        const isLast = (iAf === last && last !== -1);
-
-                                        const radius =
-                                            isSolo
-                                                ? BAR_RADIUS_HORIZONTAL_SOLO
-                                                : isFirst
-                                                    ? BAR_RADIUS_HORIZONTAL_FIRST
-                                                    : isLast
-                                                        ? BAR_RADIUS_HORIZONTAL_LAST
-                                                        : BAR_RADIUS_HORIZONTAL_MIDDLE;
-
-                                        // @ts-expect-error recharts Cell typing lacks 'radius'
-                                        return <Cell key={`${k}-${jRow}`} radius={radius} />;
-                                    })}
-                                </Bar>
-                            ))}
+                            <Bar
+                                dataKey="aggregatePercent"
+                                fill="var(--color-aggregatePercent)"
+                                maxBarSize={32}
+                                radius={BAR_RADIUS_HORIZONTAL_SOLO}
+                            />
                         </BarChart>
                     }
                 </ChartContainer>

@@ -56,6 +56,18 @@ export interface AirframeNameID {
     name: string;
     id: number;
 }
+
+export type AirframeEventCounts = {
+    airframeName: string;
+    names: string[];
+    flightsWithEventCounts: number[];
+    totalFlightsCounts: number[];
+    totalEventsCounts: number[];
+    aggregateFlightsWithEventCounts: number[];
+    aggregateTotalFlightsCounts: number[];
+    aggregateTotalEventsCounts: number[];
+}
+
 declare global {
     const waitingUserCount: number;
     const fleetManager: boolean;
