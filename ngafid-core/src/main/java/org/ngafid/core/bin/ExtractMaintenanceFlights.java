@@ -82,8 +82,8 @@ public final class ExtractMaintenanceFlights {
                 reader = new BufferedReader(new FileReader(allCluster));
                 String line = reader.readLine();
                 
-                // Skip header row if this is the first line (starts with "workorder")
-                if (line != null && line.startsWith("workorder")) {
+                // Skip header row (starts with "workorder" or "workorder,")
+                if (line != null && line.toLowerCase().startsWith("workorder")) {
                     line = reader.readLine();
                 }
 
@@ -93,7 +93,7 @@ public final class ExtractMaintenanceFlights {
                         line = reader.readLine();
                         continue;
                     }
-                    if (line.startsWith("workorder")) {
+                    if (line.toLowerCase().startsWith("workorder")) {
                         line = reader.readLine();
                         continue;
                     }
@@ -106,8 +106,9 @@ public final class ExtractMaintenanceFlights {
                         // this is a record we have not yet seen before
                         RECORDS_BY_WORKORDER.put(record.getWorkorderNumber(), record);
 
-                        if ((record.getAirframe().equals("C172") || record.getAirframe().equals("ARCH") ||
-                                record.getAirframe().equals("SEMI"))) {
+                        // Include tail if airframe matches filter or is empty (new format has no airframe)
+                        if (record.getAirframe().isEmpty() || record.getAirframe().equals("C172")
+                                || record.getAirframe().equals("ARCH") || record.getAirframe().equals("SEMI")) {
                             TAIL_NUMBERS.add(record.getTailNumber());
                         }
 
@@ -170,40 +171,26 @@ public final class ExtractMaintenanceFlights {
     private static final String PHASE_AFTER = "after";
 
     /**
-     * Determines the maintenance phase for a flight date given a maintenance record.
-     * <p>
-     * <b>Scenario 1 – Single-day window</b> (open == close): All flights on that day are "during".
-     * Before = [open-10, open), after = (close, close+10].
-     * <p>
-     * <b>Scenario 2 – Multi-day window</b> (open &lt; close): Action date is the repair date.
-     * Before = [open-10, actionDate), during = [actionDate], after = (actionDate, close+10].
-     * <p>
-     * Caller ensures flight date is within [open-10, close+10]; all flights fall into one of the three phases.
+     * Determines the maintenance phase for a flight given a maintenance record.
+     * Uses date_time_opened and date_time_closed for precise comparison:
+     * <ul>
+     *   <li><b>before</b>: flight start &lt; date_time_opened</li>
+     *   <li><b>during</b>: date_time_opened &lt;= flight start &lt;= date_time_closed</li>
+     *   <li><b>after</b>: flight start &gt; date_time_closed</li>
+     * </ul>
      *
-     * @param flightDateGmt flight date (GMT)
-     * @param openGmt       maintenance open date (GMT)
-     * @param closeGmt      maintenance close date (GMT)
-     * @param actionGmt     maintenance action (repair) date (GMT)
+     * @param flightStartGmt flight start datetime (GMT)
+     * @param openGmt        maintenance open datetime (GMT)
+     * @param closeGmt       maintenance close datetime (GMT)
      * @return PHASE_BEFORE, PHASE_DURING, or PHASE_AFTER
      */
-    private static String computeMaintenancePhase(LocalDate flightDateGmt, LocalDate openGmt, LocalDate closeGmt,
-                                                   LocalDate actionGmt) {
-        boolean singleDayWindow = !openGmt.isBefore(closeGmt) && !openGmt.isAfter(closeGmt);
-
-        if (singleDayWindow) {
-            if (!flightDateGmt.isBefore(openGmt) && !flightDateGmt.isAfter(closeGmt)) {
-                return PHASE_DURING;
-            }
-            if (flightDateGmt.isBefore(openGmt)) {
-                return PHASE_BEFORE;
-            }
-            return PHASE_AFTER;
-        }
-
-        if (flightDateGmt.isBefore(actionGmt)) {
+    private static String computeMaintenancePhase(LocalDateTime flightStartGmt,
+                                                   LocalDateTime openGmt,
+                                                   LocalDateTime closeGmt) {
+        if (flightStartGmt.isBefore(openGmt)) {
             return PHASE_BEFORE;
         }
-        if (flightDateGmt.isAfter(actionGmt)) {
+        if (flightStartGmt.isAfter(closeGmt)) {
             return PHASE_AFTER;
         }
         return PHASE_DURING;
@@ -278,10 +265,10 @@ public final class ExtractMaintenanceFlights {
                 return;
             }
             // Write header (with or without "workorder" header row)
-            if (line.trim().isEmpty()) {
+            if (line != null && line.trim().isEmpty()) {
                 line = reader.readLine();
             }
-            if (line != null && line.startsWith("workorder")) {
+            if (line != null && line.toLowerCase().startsWith("workorder")) {
                 validWriter.println(line);
                 invalidWriter.println(line);
                 line = reader.readLine();
@@ -292,7 +279,7 @@ public final class ExtractMaintenanceFlights {
                     line = reader.readLine();
                     continue;
                 }
-                if (line.startsWith("workorder")) {
+                if (line.toLowerCase().startsWith("workorder")) {
                     line = reader.readLine();
                     continue;
                 }
@@ -338,11 +325,11 @@ public final class ExtractMaintenanceFlights {
         Set<String> validKeys = new HashSet<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(outputCsvPath))) {
             String line = reader.readLine();
-            while (line != null && line.startsWith("workorder")) {
+            while (line != null && line.toLowerCase().startsWith("workorder")) {
                 line = reader.readLine();
             }
             while (line != null) {
-                if (!line.trim().isEmpty() && !line.startsWith("workorder")) {
+                if (!line.trim().isEmpty() && !line.toLowerCase().startsWith("workorder")) {
                     try {
                         MaintenanceRecord r = new MaintenanceRecord(line);
                         validKeys.add(r.getWorkorderNumber() + "|" + r.getTailNumber() + "|"
@@ -357,11 +344,11 @@ public final class ExtractMaintenanceFlights {
         int checked = 0;
         try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath))) {
             String line = reader.readLine();
-            while (line != null && (line.trim().isEmpty() || line.startsWith("workorder"))) {
+            while (line != null && (line.trim().isEmpty() || line.toLowerCase().startsWith("workorder"))) {
                 line = reader.readLine();
             }
             while (line != null) {
-                if (line.trim().isEmpty() || line.startsWith("workorder")) {
+                if (line.trim().isEmpty() || line.toLowerCase().startsWith("workorder")) {
                     line = reader.readLine();
                     continue;
                 }
@@ -562,54 +549,50 @@ public final class ExtractMaintenanceFlights {
     private static void assignFlightsToPhases(List<AircraftTimeline> timeline,
                                               List<MaintenanceRecord> tailRecords) {
         for (MaintenanceRecord r : tailRecords) {
-            LocalDate openGmt = maintenanceDateAsGmt(r.getOpenDate());
-            LocalDate closeGmt = maintenanceDateAsGmt(r.getCloseDate());
-            LocalDate actionGmt = maintenanceDateAsGmt(r.getActionDate());
+            LocalDateTime openGmt = r.getOpenDateTime();
+            LocalDateTime closeGmt = r.getCloseDateTime();
             timeLog("[TIME] WO " + r.getWorkorderNumber());
             timeLog("[TIME]   Raw from CSV:              open  = \"" + r.getRawOpenDate() + "\"   close = \"" + r.getRawCloseDate() + "\"");
-            timeLog("[TIME]   Maintenance record (GMT):  open  = " + LOG_DATE.format(openGmt) + "   close = " + LOG_DATE.format(closeGmt));
-            timeLog("[TIME]   Action date (GMT):        " + LOG_DATE.format(actionGmt));
+            timeLog("[TIME]   Maintenance record (GMT):  open  = " + openGmt + "   close = " + closeGmt);
             timeLog("[TIME]   Extracted flights (after filtering: AGL, cruise, phases):");
         }
 
         for (AircraftTimeline ac : timeline) {
-            LocalDate flightDateGmt = ac.getStartTime();
+            LocalDateTime flightStartGmt = ac.getStartDateTime();
             MaintenanceRecord duringRecord = null;
             MaintenanceRecord beforeRecord = null;
             MaintenanceRecord afterRecord = null;
 
             for (MaintenanceRecord r : tailRecords) {
-                LocalDate openGmt = maintenanceDateAsGmt(r.getOpenDate());
-                LocalDate closeGmt = maintenanceDateAsGmt(r.getCloseDate());
-                LocalDate actionGmt = maintenanceDateAsGmt(r.getActionDate());
-                String phase = computeMaintenancePhase(flightDateGmt, openGmt, closeGmt, actionGmt);
+                LocalDateTime openGmt = r.getOpenDateTime();
+                LocalDateTime closeGmt = r.getCloseDateTime();
+                String phase = computeMaintenancePhase(flightStartGmt, openGmt, closeGmt);
 
                 if (PHASE_DURING.equals(phase)) {
-                    if (duringRecord == null || r.getOpenDate().isBefore(duringRecord.getOpenDate())) {
+                    if (duringRecord == null || r.getOpenDateTime().isBefore(duringRecord.getOpenDateTime())) {
                         duringRecord = r;
                     }
                 } else if (PHASE_BEFORE.equals(phase)) {
-                    if (beforeRecord == null || r.getOpenDate().isBefore(beforeRecord.getOpenDate())) {
+                    if (beforeRecord == null || r.getOpenDateTime().isBefore(beforeRecord.getOpenDateTime())) {
                         beforeRecord = r;
                     }
                 } else if (PHASE_AFTER.equals(phase)) {
-                    if (afterRecord == null || r.getCloseDate().isAfter(afterRecord.getCloseDate())) {
+                    if (afterRecord == null || r.getCloseDateTime().isAfter(afterRecord.getCloseDateTime())) {
                         afterRecord = r;
                     }
                 }
             }
 
+            LocalDate flightDateGmt = ac.getStartTime();
             if (duringRecord != null) {
                 ac.setPreviousEvent(duringRecord, 0);
                 ac.setNextEvent(duringRecord, 0);
             } else if (beforeRecord != null) {
-                LocalDate actionGmt = maintenanceDateAsGmt(beforeRecord.getActionDate());
-                long daysToNext = ChronoUnit.DAYS.between(flightDateGmt, actionGmt);
+                long daysToNext = ChronoUnit.DAYS.between(flightDateGmt, beforeRecord.getOpenDate());
                 ac.setPreviousEvent(null, -1);
                 ac.setNextEvent(beforeRecord, daysToNext);
             } else if (afterRecord != null) {
-                LocalDate actionGmt = maintenanceDateAsGmt(afterRecord.getActionDate());
-                long daysSincePrev = ChronoUnit.DAYS.between(actionGmt, flightDateGmt);
+                long daysSincePrev = ChronoUnit.DAYS.between(afterRecord.getCloseDate(), flightDateGmt);
                 ac.setPreviousEvent(afterRecord, daysSincePrev);
                 ac.setNextEvent(null, -1);
             } else {
@@ -848,10 +831,8 @@ public final class ExtractMaintenanceFlights {
         // Generate JSON record file (once per workorder_tail combination)
         File jsonFile = new File(outputDirectory + "/" + clusterDir + "/" + workorderTailDir + "/" + 
                                  workorderTailDir + "_record.json");
-        if (!jsonFile.exists()) {
-            try (FileWriter jsonWriter = new FileWriter(jsonFile)) {
-                jsonWriter.write(event.toJSON());
-            }
+        try (FileWriter jsonWriter = new FileWriter(jsonFile)) {
+            jsonWriter.write(event.toJSON());
         }
 
         // Write CSV with flight phase column
@@ -1351,6 +1332,8 @@ public final class ExtractMaintenanceFlights {
                 json.append("      \"airframe\": \"").append(record.getAirframe()).append("\",\n");
                 json.append("      \"open_date\": \"").append(record.getOpenDate().toString()).append("\",\n");
                 json.append("      \"close_date\": \"").append(record.getCloseDate().toString()).append("\",\n");
+                json.append("      \"open_date_time\": \"").append(record.getOpenDateTime().toString()).append("\",\n");
+                json.append("      \"close_date_time\": \"").append(record.getCloseDateTime().toString()).append("\",\n");
                 json.append("      \"original_action\": \"").append(escapeJson(record.getOriginalAction())).append("\",\n");
                 json.append("      \"flights\": {\n");
                 json.append("        \"before\": ").append(pathListToJson(beforePaths)).append(",\n");
