@@ -24,8 +24,8 @@ import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
  * <p>
  * <b>Flow:</b> (1) Load maintenance records from CSV. (2) For each workorder, build a timeline of flights
  * in the window [open−10, close+10]. (3) Assign each flight to a phase (before/during/after) using
- * {@link #computeMaintenancePhase}: single-day windows put all that day in "during"; multi-day windows
- * use the action (repair) date as pivot. (4) Count up to 3 "before" and 3 "after" flights per workorder
+ * {@link #computeMaintenancePhase}: before = flight start &lt; date_time_opened; during = between open and close;
+ * after = flight start &gt; date_time_closed. (4) Count up to 3 "before" and 3 "after" flights per workorder
  * (setFlightsToNextFlights). (5) Export only flights that pass filters (AGL, left ground, cruise altitude,
  * phase computation) to before/during/after CSVs. (6) Write manifest.json.
  * <p>
@@ -35,8 +35,6 @@ import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
 public final class ExtractMaintenanceFlights {
     /** Maintenance records are UTC; DB is GMT. All timeline logic uses GMT. */
     private static final DateTimeFormatter MYSQL_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    /** Log dates in same format as CSV (MM-dd-yyyy) to avoid confusion with source records. */
-    private static final DateTimeFormatter LOG_DATE = DateTimeFormatter.ofPattern("MM-dd-yyyy");
 
     private static final HashMap<Integer, MaintenanceRecord> RECORDS_BY_WORKORDER = new HashMap<>();
     private static final TreeSet<MaintenanceRecord> ALL_RECORDS = new TreeSet<>();
@@ -144,7 +142,7 @@ public final class ExtractMaintenanceFlights {
     }
 
     // -------------------------------------------------------------------------
-    // Date helpers and phase classification (single-day vs multi-day)
+    // Date helpers and phase classification
     // -------------------------------------------------------------------------
 
     /** Treats the given date as UTC and returns start-of-day in GMT (same instant), formatted for MySQL. */
@@ -155,14 +153,6 @@ public final class ExtractMaintenanceFlights {
     /** Treats the given date as UTC and returns end-of-day (23:59:59) in GMT, formatted for MySQL. */
     private static String utcDateToGmtEndOfDay(LocalDate date) {
         return date.atTime(23, 59, 59).atZone(ZoneOffset.UTC).format(MYSQL_DATETIME);
-    }
-
-    /**
-     * Maintenance dates are stored as UTC (LocalDate). For comparison with flight dates (GMT from DB),
-     * we treat them as GMT so both sides use the same timezone. UTC and GMT share the same calendar date.
-     */
-    private static LocalDate maintenanceDateAsGmt(LocalDate maintenanceDateUtc) {
-        return maintenanceDateUtc; // same calendar date in GMT
     }
 
     /** Phase of a flight relative to a maintenance window: before, during, or after. */
@@ -533,15 +523,12 @@ public final class ExtractMaintenanceFlights {
     }
 
     // -------------------------------------------------------------------------
-    // Phase assignment: before / during / after (single-day vs multi-day rules)
+    // Phase assignment: before / during / after (by date_time_opened, date_time_closed)
     // -------------------------------------------------------------------------
 
     /**
-     * Assigns each flight to a maintenance phase (before/during/after) using single-day vs multi-day rules.
-     * <ul>
-     *   <li><b>Single-day window</b> (open == close): all flights on that day → during; [open-10, open) → before; (close, close+10] → after.</li>
-     *   <li><b>Multi-day window</b> (open &lt; close): action date is pivot; before = [open-10, action), during = action date only, after = (action, close+10].</li>
-     * </ul>
+     * Assigns each flight to a maintenance phase (before/during/after) by comparing flight start
+     * datetime with date_time_opened and date_time_closed.
      *
      * @param timeline    sorted list of aircraft timelines (flights)
      * @param tailRecords sorted list of maintenance records for this tail in the cluster
