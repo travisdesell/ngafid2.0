@@ -105,6 +105,8 @@ class Flight extends React.Component {
             labelingTraceIndices: {},
             /** Per-parameter value sections only: { [paramName]: { valueSections: [{ min, max }] } }. DB-driven later. */
             labelingDataByParameter: {},
+            /** Fleet label definitions for dropdown: [{ id, labelText, displayOrder }]. Fetched when opening labeling tool. */
+            labelDefinitions: [],
         };
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -822,6 +824,20 @@ class Flight extends React.Component {
         }));
     }
 
+    fetchFleetLabelDefinitions() {
+        $.ajax({
+            type: 'GET',
+            url: '/api/fleet/labels',
+            dataType: 'json',
+            async: true,
+            success: (list) => this.setState({ labelDefinitions: list || [] }),
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.error("Error fetching fleet label definitions", errorThrown);
+                this.setState({ labelDefinitions: [] });
+            },
+        });
+    }
+
     labelingClicked() {
         const flightId = this.props.flightInfo.id;
 
@@ -868,7 +884,7 @@ class Flight extends React.Component {
                     labelingParameterNames: names,
                     labelingSelectedParameters: [],
                 });
-                // Chart is shown when user selects a parameter; map on demand via Chart|Map toggle
+                this.fetchFleetLabelDefinitions();
                 // Load any existing label sections for this flight
                 $.ajax({
                     type: 'GET',
@@ -1693,6 +1709,8 @@ class Flight extends React.Component {
             paramName: paramDisplay,
             sections,
             startDateTime,
+            labelDefinitions: this.state.labelDefinitions || [],
+            onRefreshLabels: () => this.fetchFleetLabelDefinitions(),
             pendingSectionStart: labelingSectionStart != null,
             selectionHint: this.state.labelingViewMode === 'chart' ? 'chart' : 'path',
             onToggleVisibility: (i, visible) => {

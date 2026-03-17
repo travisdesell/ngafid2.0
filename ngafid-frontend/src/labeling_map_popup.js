@@ -88,6 +88,67 @@ export function formatLabelingTimeOnly(time, startDateTime) {
     return formatDateLocal(d).slice(11, 19);
 }
 
+const ADD_NEW_LABEL_VALUE = '__add_new__';
+
+/**
+ * Dropdown for section label: options from fleet label definitions, plus "Add new label...".
+ * Calls onRefreshLabels after adding so parent refetches and passes updated labelDefinitions.
+ */
+function LabelCell({ sectionIndex, value, labelDefinitions, onUpdateLabel, onRefreshLabels, onClick }) {
+    const [adding, setAdding] = React.useState(false);
+    const handleChange = (e) => {
+        const v = e.target.value;
+        if (v === ADD_NEW_LABEL_VALUE) {
+            setAdding(true);
+            const text = window.prompt('New label text (e.g. 40-my cluster name):');
+            if (text == null || String(text).trim() === '') {
+                setAdding(false);
+                return;
+            }
+            const labelText = String(text).trim();
+            fetch('/api/fleet/labels', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ labelText }),
+            })
+                .then((res) => {
+                    if (!res.ok) return res.json().then((body) => Promise.reject(new Error(body.error || body.message || res.statusText)));
+                    return res.json();
+                })
+                .then(() => {
+                    onRefreshLabels && onRefreshLabels();
+                    onUpdateLabel && onUpdateLabel(sectionIndex, labelText);
+                })
+                .catch((err) => {
+                    window.alert('Could not add label: ' + (err.message || 'Unknown error'));
+                })
+                .finally(() => setAdding(false));
+            return;
+        }
+        onUpdateLabel && onUpdateLabel(sectionIndex, v);
+    };
+    const options = (labelDefinitions || []).slice().sort((a, b) => (a.displayOrder - b.displayOrder) || ((a.labelText || '').localeCompare(b.labelText || '')));
+    const valueInList = value && options.some((d) => d.labelText === value);
+    return (
+        <select
+            className="form-control form-control-sm"
+            style={{ fontSize: '0.9em', minWidth: 80 }}
+            value={value || ''}
+            onChange={handleChange}
+            onClick={onClick}
+            disabled={adding}
+            title="Select label or add new"
+        >
+            <option value="">—</option>
+            {options.map((d) => (
+                <option key={d.id} value={d.labelText}>{d.labelText}</option>
+            ))}
+            {value && !valueInList ? <option value={value}>{value}</option> : null}
+            <option value={ADD_NEW_LABEL_VALUE}>+ Add new label...</option>
+        </select>
+    );
+}
+
 const LABELING_MARKER_COLORS = [
     '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45',
     '#fabed4', '#469990', '#dcbeff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075',
@@ -324,7 +385,7 @@ class LabelingMapPopup extends React.Component {
     }
 
     render() {
-        const { paramName, sections, startDateTime, pendingSectionStart, selectionHint, onToggleVisibility, onUpdateLabel, onRemoveSection, onClearAll, onClose } = this.props;
+        const { paramName, sections, startDateTime, labelDefinitions = [], onRefreshLabels, pendingSectionStart, selectionHint, onToggleVisibility, onUpdateLabel, onRemoveSection, onClearAll, onClose } = this.props;
         const list = sections || [];
         const { right, top, width, height, dragging, resizing } = this.state;
 
@@ -434,15 +495,13 @@ class LabelingMapPopup extends React.Component {
                                     <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.endValue) : '—'}</td>
                                     <td style={{ fontSize: '0.75em' }}>{(sec.parameterNames && sec.parameterNames.length > 0) ? sec.parameterNames.join(', ') : '—'}</td>
                                     <td style={{ padding: '2px 4px' }}>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            style={{ fontSize: '0.9em', minWidth: 80 }}
-                                            placeholder="Comment..."
+                                        <LabelCell
+                                            sectionIndex={i}
                                             value={sec.label ?? ''}
-                                            onChange={(e) => onUpdateLabel && onUpdateLabel(i, e.target.value)}
+                                            labelDefinitions={labelDefinitions}
+                                            onUpdateLabel={onUpdateLabel}
+                                            onRefreshLabels={onRefreshLabels}
                                             onClick={(e) => e.stopPropagation()}
-                                            title="Click to edit label"
                                         />
                                     </td>
                                     <td>
