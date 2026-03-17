@@ -1,6 +1,7 @@
 import 'bootstrap';
 import React from "react";
 import Button from 'react-bootstrap/Button';
+import { showErrorModal } from './error_modal';
 
 /**
  * Format time for display: elapsed seconds -> "H:MM:SS", Unix timestamp (seconds) -> datetime string (local).
@@ -116,16 +117,19 @@ function LabelCell({ sectionIndex, value, labelDefinitions, onUpdateLabel, onRef
                     return res.json();
                 })
                 .then(() => {
-                    onRefreshLabels && onRefreshLabels();
-                    onUpdateLabel && onUpdateLabel(sectionIndex, labelText);
+                    if (onRefreshLabels)
+                        onRefreshLabels();
+                    if (onUpdateLabel)
+                        onUpdateLabel(sectionIndex, labelText);
                 })
                 .catch((err) => {
-                    window.alert('Could not add label: ' + (err.message || 'Unknown error'));
+                    window.alert(`Could not add label: ${err.message || 'Unknown error'}`);
                 })
                 .finally(() => setAdding(false));
             return;
         }
-        onUpdateLabel && onUpdateLabel(sectionIndex, v);
+        if (onUpdateLabel)
+            onUpdateLabel(sectionIndex, v);
     };
     const options = (labelDefinitions || []).slice().sort((a, b) => (a.displayOrder - b.displayOrder) || ((a.labelText || '').localeCompare(b.labelText || '')));
     const valueInList = value && options.some((d) => d.labelText === value);
@@ -189,12 +193,28 @@ function setStoredPopupSize(width, height) {
     try {
         localStorage.setItem(LABELING_POPUP_WIDTH_STORAGE_KEY, String(width));
         localStorage.setItem(LABELING_POPUP_HEIGHT_STORAGE_KEY, String(height));
-    } catch (_) {}
+    } catch (e) {
+        showErrorModal('Could not save popup size', e.message || 'Unknown error');
+    }
 }
 
 /** Display section start/end time: use raw string if provided, else format from Unix seconds. */
-function formatSectionTime(display, time, startDateTime) {
-    return (display != null && display !== '') ? display : (formatLabelingDate(time, startDateTime) + ' ' + formatLabelingTimeOnly(time, startDateTime));
+function formatSectionDateTimeParts(display, time, startDateTime) {
+    if (display != null && display !== '') {
+        const raw = String(display).trim();
+        const splitAt = raw.indexOf(' ');
+        if (splitAt > 0) {
+            return {
+                datePart: raw.slice(0, splitAt),
+                timePart: raw.slice(splitAt + 1),
+            };
+        }
+        return { datePart: raw, timePart: '' };
+    }
+    return {
+        datePart: formatLabelingDate(time, startDateTime),
+        timePart: formatLabelingTimeOnly(time, startDateTime),
+    };
 }
 
 /** Resize handle identifiers for edges and corners. */
@@ -387,7 +407,7 @@ class LabelingMapPopup extends React.Component {
     render() {
         const { paramName, sections, startDateTime, labelDefinitions = [], onRefreshLabels, pendingSectionStart, selectionHint, onToggleVisibility, onUpdateLabel, onRemoveSection, onClearAll, onClose } = this.props;
         const list = sections || [];
-        const { right, top, width, height, dragging, resizing } = this.state;
+        const { right, top, width, height, dragging, /*resizing,*/ } = this.state;
 
         const wrapperStyle = {
             position: 'absolute',
@@ -399,15 +419,14 @@ class LabelingMapPopup extends React.Component {
             minHeight: LABELING_POPUP_MIN_HEIGHT,
             maxHeight: '90vh',
             zIndex: 10000,
-            pointerEvents: 'auto',
-            background: '#fff',
+            background: 'var(--c_bg, #fff)',
             border: '1px solid rgba(0,0,0,0.2)',
             borderRadius: '0.375rem',
             boxShadow: '0 0.5rem 1rem rgba(0,0,0,0.15)',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            userSelect: 'none',
+            pointerEvents: 'auto',
         };
 
         const fmtVal = (v) => v != null ? (typeof v === 'number' ? v.toFixed(3) : String(v)) : '—';
@@ -421,28 +440,45 @@ class LabelingMapPopup extends React.Component {
                         padding: '8px 12px',
                         background: 'var(--c_row_bg_alt, #f0f0f0)',
                         borderBottom: '1px solid var(--c_border_alt, #dee2e6)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
                         cursor: dragging ? 'grabbing' : 'grab',
                     }}
                     title="Drag to move"
+                    className="flex items-center justify-between"
                 >
                     <strong style={{ fontSize: '0.9em' }}>{paramName || 'Sections'} ({list.length})</strong>
-                    <span onClick={(e) => e.stopPropagation()}>
+                    <span
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2"
+                    >
                         {onClearAll && (
-                            <Button variant="outline-secondary" size="sm" className="me-1" onClick={onClearAll}>
-                                Clear all
+                            <Button
+                                variant="outline-danger"
+                                title="Clear all sections"
+                                aria-label="Clear all sections"
+                                size="sm"
+                                className="flex! items-center gap-1"
+                                onClick={onClearAll}
+                            >
+                                <div className="fa fa-trash" />
+                                <div>Clear All</div>
                             </Button>
                         )}
                         {onClose && (
-                            <Button variant="outline-secondary" size="sm" onClick={onClose}>
-                                <i className="fa fa-times"/> Close
+                            <Button
+                                title="Close"
+                                aria-label="Close"
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={onClose}
+                                className="flex! items-center gap-1"
+                            >
+                                <div className="fa fa-times" />
+                                <div>Close</div>
                             </Button>
                         )}
                     </span>
                 </div>
-                <div style={{ padding: 8, overflow: 'auto', flex: 1, fontSize: '0.75em' }}>
+                <div style={{ overflow: 'auto', flex: 1, fontSize: '0.75em' }} >
                     {pendingSectionStart && (
                         <div className="text-muted mb-2" style={{ fontSize: '0.9em' }}>
                             {selectionHint === 'chart' ? 'Click on chart to set section end.' : 'Click on path to set section end.'}
@@ -465,53 +501,68 @@ class LabelingMapPopup extends React.Component {
                         <tbody>
                             {list.map((sec, i) => {
                                 const showVal = sec.parameterNames && sec.parameterNames.length === 1;
+                                const startParts = formatSectionDateTimeParts(sec.startTimeDisplay, sec.startTime, startDateTime);
+                                const endParts = formatSectionDateTimeParts(sec.endTimeDisplay, sec.endTime, startDateTime);
                                 return (
-                                <tr key={i}>
-                                    <td style={{ verticalAlign: 'middle' }}>
-                                        {onToggleVisibility && (
-                                            <input
-                                                type="checkbox"
-                                                checked={sec.visibleOnChart !== false}
-                                                onChange={(e) => onToggleVisibility(i, e.target.checked)}
+                                    <tr key={i} className="**:select-auto!">
+                                        <td className="align-middle text-center">
+                                            {onToggleVisibility && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={sec.visibleOnChart !== false}
+                                                    onChange={(e) => onToggleVisibility(i, e.target.checked)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    title={sec.visibleOnChart !== false ? 'Hide this section on chart' : 'Show this section on chart'}
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="align-middle text-center">
+                                            <span style={{
+                                                display: 'inline-block',
+                                                width: 14,
+                                                height: 14,
+                                                borderRadius: '50%',
+                                                background: LABELING_MARKER_COLORS[i % LABELING_MARKER_COLORS.length],
+                                                border: '1px solid #fff',
+                                                boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
+                                            }} title={`Section ${i + 1}`} />
+                                        </td>
+                                        <td className="align-middle *:text-nowrap" style={{ fontSize: '0.8em', lineHeight: 1.2 }}>
+                                            <div>{startParts.datePart}</div>
+                                            <div>{startParts.timePart}</div>
+                                        </td>
+                                        <td className="align-middle *:text-nowrap" style={{ fontSize: '0.8em', lineHeight: 1.2 }}>
+                                            <div>{endParts.datePart}</div>
+                                            <div>{endParts.timePart}</div>
+                                        </td>
+                                        <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.startValue) : '—'}</td>
+                                        <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.endValue) : '—'}</td>
+                                        <td style={{ fontSize: '0.75em' }}>{(sec.parameterNames && sec.parameterNames.length > 0) ? sec.parameterNames.join(', ') : '—'}</td>
+                                        <td style={{ padding: '2px 4px' }}>
+                                            <LabelCell
+                                                sectionIndex={i}
+                                                value={sec.label ?? ''}
+                                                labelDefinitions={labelDefinitions}
+                                                onUpdateLabel={onUpdateLabel}
+                                                onRefreshLabels={onRefreshLabels}
                                                 onClick={(e) => e.stopPropagation()}
-                                                title={sec.visibleOnChart !== false ? 'Hide this section on chart' : 'Show this section on chart'}
                                             />
-                                        )}
-                                    </td>
-                                    <td>
-                                        <span style={{
-                                            display: 'inline-block',
-                                            width: 14,
-                                            height: 14,
-                                            borderRadius: '50%',
-                                            background: LABELING_MARKER_COLORS[i % LABELING_MARKER_COLORS.length],
-                                            border: '1px solid #fff',
-                                            boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
-                                        }} title={`Section ${i + 1}`}/>
-                                    </td>
-                                    <td style={{ fontSize: '0.8em' }}>{formatSectionTime(sec.startTimeDisplay, sec.startTime, startDateTime)}</td>
-                                    <td style={{ fontSize: '0.8em' }}>{formatSectionTime(sec.endTimeDisplay, sec.endTime, startDateTime)}</td>
-                                    <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.startValue) : '—'}</td>
-                                    <td style={{ fontSize: '0.8em' }}>{showVal ? fmtVal(sec.endValue) : '—'}</td>
-                                    <td style={{ fontSize: '0.75em' }}>{(sec.parameterNames && sec.parameterNames.length > 0) ? sec.parameterNames.join(', ') : '—'}</td>
-                                    <td style={{ padding: '2px 4px' }}>
-                                        <LabelCell
-                                            sectionIndex={i}
-                                            value={sec.label ?? ''}
-                                            labelDefinitions={labelDefinitions}
-                                            onUpdateLabel={onUpdateLabel}
-                                            onRefreshLabels={onRefreshLabels}
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                    </td>
-                                    <td>
-                                        {onRemoveSection && (
-                                            <Button variant="outline-danger" size="sm" className="p-0" style={{ minWidth: 28 }} onClick={() => onRemoveSection(i)} title="Remove section">
-                                                <i className="fa fa-times"/>
-                                            </Button>
-                                        )}
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td className="align-middle text-center">
+                                            {onRemoveSection && (
+                                                <Button
+                                                    variant="outline-danger"
+                                                    size="sm"
+                                                    className="p-0 aspect-square"
+                                                    style={{ minWidth: 28 }}
+                                                    onClick={() => onRemoveSection(i)}
+                                                    title="Remove section"
+                                                >
+                                                    <div className="fa fa-trash" />
+                                                </Button>
+                                            )}
+                                        </td>
+                                    </tr>
                                 );
                             })}
                         </tbody>
@@ -524,14 +575,13 @@ class LabelingMapPopup extends React.Component {
                         top: 4,
                         fontSize: 10,
                         color: 'rgba(0,0,0,0.35)',
-                        pointerEvents: 'none',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 2,
                     }}
                     title="Resizable from any edge or corner"
                 >
-                    <i className="fa fa-arrows-alt" aria-hidden="true"/>
+                    <i className="fa fa-arrows-alt" aria-hidden="true" />
                 </div>
             </div>
         );
@@ -558,7 +608,6 @@ function LabelingHoverTooltip({ placement, time, value, startDateTime, navbarWid
                 color: '#fff',
                 borderRadius: '4px',
                 whiteSpace: 'nowrap',
-                pointerEvents: 'none',
             }}
         >
             {timeStr}{valueStr != null ? <> &nbsp; {valueStr}</> : null}
@@ -656,7 +705,6 @@ class LabelingSidePanel extends React.Component {
                     borderRadius: 8,
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     overflow: 'hidden',
-                    userSelect: 'none',
                 }}
             >
                 <div
@@ -673,7 +721,7 @@ class LabelingSidePanel extends React.Component {
                 >
                     <strong style={{ fontSize: '0.9em' }}>{paramName || 'Points'}</strong>
                     <Button variant="outline-secondary" size="sm" onClick={onClearAll}>
-                        Clear all
+                        Clear All
                     </Button>
                 </div>
                 <div style={{ padding: 12, overflow: 'auto', flex: 1 }}>
@@ -699,14 +747,14 @@ class LabelingSidePanel extends React.Component {
                                             background: LABELING_MARKER_COLORS[i % LABELING_MARKER_COLORS.length],
                                             border: '1px solid #fff',
                                             boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
-                                        }} title={`Point ${i + 1}`}/>
+                                        }} title={`Point ${i + 1}`} />
                                     </td>
                                     <td style={{ fontSize: '0.8em' }}>{formatLabelingDate(pt.time, startDateTime)}</td>
                                     <td style={{ fontSize: '0.8em' }}>{formatLabelingTimeOnly(pt.time, startDateTime)}</td>
                                     <td style={{ fontSize: '0.8em' }}>{pt.value != null ? (typeof pt.value === 'number' ? pt.value.toFixed(3) : String(pt.value)) : '—'}</td>
                                     <td>
                                         <Button variant="outline-danger" size="sm" className="p-0" style={{ minWidth: 28 }} onClick={() => onRemovePoint(i)} title="Remove">
-                                            <i className="fa fa-times"/>
+                                            <i className="fa fa-times" />
                                         </Button>
                                     </td>
                                 </tr>
@@ -719,4 +767,4 @@ class LabelingSidePanel extends React.Component {
     }
 }
 
-export { LabelingMapPopup, LabelingHoverTooltip, LabelingSidePanel };
+export { LabelingHoverTooltip, LabelingMapPopup, LabelingSidePanel };

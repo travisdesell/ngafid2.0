@@ -1,29 +1,29 @@
 import 'bootstrap';
 import React from "react";
 import { createRoot } from "react-dom/client";
-import {showErrorModal} from "./error_modal.js";
-import {MapPopup} from "./map_popup.js";
-import {LabelingMapPopup, LabelingHoverTooltip} from "./labeling_map_popup.js";
+import { showErrorModal } from "./error_modal.js";
+import { LabelingHoverTooltip, LabelingMapPopup } from "./labeling_map_popup.js";
+import { MapPopup } from "./map_popup.js";
 
-import {Colors, map} from "./map.js";
+import { Colors, map } from "./map.js";
 
-import {fromLonLat} from 'ol/proj.js';
-import {Vector as VectorSource} from 'ol/source.js';
-import {Vector as VectorLayer} from 'ol/layer.js';
-import {Circle, Fill, Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
+import { Vector as VectorLayer } from 'ol/layer.js';
+import { fromLonLat } from 'ol/proj.js';
+import { Vector as VectorSource } from 'ol/source.js';
+import { Circle, Fill, Stroke, Style } from 'ol/style.js';
 
-import {Itinerary} from './itinerary_component.js';
-import {TraceButtons} from './trace_buttons_component.js';
-import {Tags} from './tags_component.js';
-import {Events, eventDefinitions} from './events_component.js';
-import {showSelectAircraftModal} from './select_acft_modal.js';
-import {generateLOCILayer, generateStallLayer} from './map_utils.js';
+import { Events, eventDefinitions } from './events_component.js';
+import { Itinerary } from './itinerary_component.js';
+import { generateLOCILayer, generateStallLayer } from './map_utils.js';
+import { showSelectAircraftModal } from './select_acft_modal.js';
+import { Tags } from './tags_component.js';
+import { TraceButtons } from './trace_buttons_component.js';
 
 import Plotly from 'plotly.js';
-import {cesiumFlightsSelected} from "./cesium_buttons";
+import { cesiumFlightsSelected } from "./cesium_buttons";
 
 import { plotlyLayoutGlobal } from './flights.js';
 
@@ -31,7 +31,7 @@ import moment from 'moment';
 
 // --- Labeling tool (changes in this file) ---
 // Adds: state (labeling*), map click handling for two-click sections, map path-only mode (forLabeling),
-// pointermove hover tooltip, parameter list + range UI row, fa-tag button. See labeling_map_popup.js for popup/side panel.
+// pointermove hover tooltip, parameter list + range UI row, fa-map-pin button. See labeling_map_popup.js for popup/side panel.
 // Labeling tool: colors for map-drawn sections (two-click selection)
 const LABELING_SECTION_COLORS = [
     '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45',
@@ -183,7 +183,7 @@ class Flight extends React.Component {
                 const layer = this.state.layers[i];
                 if (layer.getVisible())
                     activeLayers.push(layer);
-                
+
             }
 
         }
@@ -204,7 +204,7 @@ class Flight extends React.Component {
             pathVisible: false,
             itineraryVisible: false
         });
-        
+
         const activeLayers = this.getActiveLayers();
         if (activeLayers) {
             for (const layer of activeLayers) {
@@ -244,7 +244,7 @@ class Flight extends React.Component {
                         formerly set to visible and the plot button
                         this flight is clicked on otherwise it will hide them
                     */
-                    Plotly.restyle('plot', {visible: (visible && this.state.traceVisibility[seriesName])}, [this.state.traceIndex[seriesName]]);
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [this.state.traceIndex[seriesName]]);
                 }
             }
 
@@ -258,7 +258,7 @@ class Flight extends React.Component {
                         formerly set to visible and the plot button
                         this flight is clicked on otherwise it will hide them
                     */
-                    Plotly.restyle('plot', {visible: (visible && this.state.traceVisibility[seriesName])}, [this.state.traceIndex[seriesName]]);
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [this.state.traceIndex[seriesName]]);
                 }
             }
         }
@@ -341,7 +341,7 @@ class Flight extends React.Component {
                         formerly set to visible and the plot button
                         this flight is clicked on otherwise it will hide them
                     */
-                    Plotly.restyle('plot', {visible: (visible && this.state.traceVisibility[seriesName])}, [this.state.traceIndex[seriesName]]);
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [this.state.traceIndex[seriesName]]);
 
                 }
 
@@ -359,7 +359,7 @@ class Flight extends React.Component {
                         formerly set to visible and the plot button
                         this flight is clicked on otherwise it will hide them
                     */
-                    Plotly.restyle('plot', {visible: (visible && this.state.traceVisibility[seriesName])}, [this.state.traceIndex[seriesName]]);
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [this.state.traceIndex[seriesName]]);
 
                 }
 
@@ -386,17 +386,17 @@ class Flight extends React.Component {
             const layer = target.state.layers[i];
             if (layer.get('nMap')) {
                 layer.setStyle(new Style({
-                        stroke: new Stroke({
-                            color: event.target.value,
-                            width: 12,
-                        })
+                    stroke: new Stroke({
+                        color: event.target.value,
+                        width: 12,
                     })
+                })
                 );
             }
         }
 
 
-        target.setState({color: event.target.value});
+        target.setState({ color: event.target.value });
     }
 
     async exclamationClicked() {
@@ -632,7 +632,7 @@ class Flight extends React.Component {
             This functionality is deprecated.
         */
 
-        const URL = `/protected/ngafid_cesium_old?flight_id=${  (this.props.flightInfo.id).toString()}`;
+        const URL = `/protected/ngafid_cesium_old?flight_id=${(this.props.flightInfo.id).toString()}`;
         window.open(URL);
     }
 
@@ -642,8 +642,8 @@ class Flight extends React.Component {
 
     zoomChanged(oldZoom) {
         const currZoom = map.getView().getZoom();
-        console.log(`old zoom: ${  oldZoom}`);
-        console.log(`current zoom: ${  currZoom}`);
+        console.log(`old zoom: ${oldZoom}`);
+        console.log(`current zoom: ${currZoom}`);
 
         for (let i = 0; i < this.state.mapPopups.length; i++) {
             this.state.mapPopups[i].close();
@@ -778,7 +778,7 @@ class Flight extends React.Component {
                 error: (jqXHR, textStatus, errorThrown) => {
                     console.log("Error getting upset data:", errorThrown);
                 },
-                
+
             });
 
         } else {
@@ -793,17 +793,17 @@ class Flight extends React.Component {
 
         // if we reach the bottom of the stack, we must allocate memory for a new popup component
         if (index < 0 || this.state.mapPopups[index] == null) {
-            
+
             const outterHTM = document.createElement('div');
             document.body.appendChild(outterHTM);
-            outterHTM.setAttribute("id", `popover${  this.state.mapPopups.length}`);
+            outterHTM.setAttribute("id", `popover${this.state.mapPopups.length}`);
             const root = createRoot(outterHTM);
             root.render(React.createElement(MapPopup, props));
             this.state.mapPopups.push({ root, element: outterHTM });
             return root;
-            
+
         } else if (this.state.mapPopups[index].isPinned && this.state.mapPopups[index].isPinned()) {
-            
+
             return this.renderNewPopup(index - 1, props);
 
         } else {
@@ -1084,7 +1084,7 @@ class Flight extends React.Component {
         map.forEachFeatureAtPixel(pixel, (feature) => features.push(feature));
         const { x, y } = firstSeries;
         let idx = null;
-        let lineFeature = features.find(f => f.get && f.get('name') === 'Line' && f.get('flightId') === this.props.flightInfo.id);
+        const lineFeature = features.find(f => f.get && f.get('name') === 'Line' && f.get('flightId') === this.props.flightInfo.id);
         const sectionFeature = features.find(f => f.get && f.get('name') === 'LabelingSection');
         const clickSectionFeature = features.find(f => f.get && f.get('name') === 'LabelingClickSection');
         const segmentFeature = sectionFeature || clickSectionFeature;
@@ -2048,7 +2048,7 @@ class Flight extends React.Component {
                 },
             });
 
-        //2D map layer already loaded for this flight...
+            //2D map layer already loaded for this flight...
         } else {
             // Map already loaded: labeling mode switches to path-only and returns
             if (forLabeling) {
@@ -2083,7 +2083,7 @@ class Flight extends React.Component {
 
                 }
 
-            //Otherwise...
+                //Otherwise...
             } else {
 
                 for (const layer of (this.state.layers || [])) {
@@ -2179,7 +2179,7 @@ class Flight extends React.Component {
             alignContent: "center",
             textAlign: "center"
         };
-        const styleEmptyCell = {fontStyle: "italic", fontSize: "0.75em", opacity: "0.50", userSelect: "none"};
+        const styleEmptyCell = { fontStyle: "italic", fontSize: "0.75em", opacity: "0.50", userSelect: "none" };
 
         const firstCellClasses = "p-1 card mr-1";
         const cellClasses = "p-1 card mr-1";
@@ -2212,7 +2212,7 @@ class Flight extends React.Component {
         let eventsRow = FLIGHT_COMPONENT_ROW_HIDDEN;
         if (this.state.eventsVisible) {
             eventsRow = (
-                <Events className="w-100" events={events} parent={this}/>
+                <Events className="w-100" events={events} parent={this} />
             );
         }
 
@@ -2256,10 +2256,10 @@ class Flight extends React.Component {
                             backgroundColor: 'var(--c_tag_badge)',
                             color: 'var(--c_text)'
                         }} title={tag.description}>
-                        <span className="badge badge-pill badge-primary" style={style}>
-                            <i className="fa fa-tag" aria-hidden="true"/>
-                        </span> {tag.name}
-                    </span>
+                            <span className="badge badge-pill badge-primary" style={style}>
+                                <i className="fa fa-map-pin" aria-hidden="true" />
+                            </span> {tag.name}
+                        </span>
                     );
                 });
         } else {
@@ -2300,7 +2300,7 @@ class Flight extends React.Component {
             tracesRow = (
                 <TraceButtons showPlot={() => {
                     this.props.showPlot();
-                }} parentFlight={this} flightId={flightInfo.id}/>
+                }} parentFlight={this} flightId={flightInfo.id} />
             );
 
         }
@@ -2309,8 +2309,9 @@ class Flight extends React.Component {
         const labelingButtonClasses = "m-1 btn btn-outline-secondary";
         const labelingButtonStyle = { flex: "0 0 10em" };
         let labelingRow = FLIGHT_COMPONENT_ROW_HIDDEN;
-            if (this.state.labelingParametersVisible && this.state.labelingParameterNames.length > 0) {
+        if (this.state.labelingParametersVisible && this.state.labelingParameterNames.length > 0) {
             const selectedParams = this.state.labelingSelectedParameters || [];
+            const labelCount = (this.state.labelingClickSections || []).length;
             const singleParamSeries = selectedParams.length === 1 ? (this.state.labelingSeriesDataByParameter || {})[selectedParams[0]] : null;
             const seriesData = singleParamSeries;
             const yArr = seriesData && seriesData.y ? seriesData.y : [];
@@ -2325,14 +2326,15 @@ class Flight extends React.Component {
                     <b className="p-1 d-flex flex-row justify-content-between align-items-center" style={{ marginBottom: "0" }}>
                         <div className="d-flex flex-row align-items-center">
                             <div className="d-flex flex-column mr-3" style={{ width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px" }}>
-                                <i className="fa fa-tag ml-2" style={{ fontSize: "12px", marginTop: "3px", opacity: "0.50" }} />
+                                <i className="fa fa-map-pin ml-2" style={{ fontSize: "12px", marginTop: "3px", opacity: "0.50" }} />
                             </div>
                             <div style={{ fontSize: "0.75em" }}>Parameters</div>
                         </div>
-                        <div className="d-flex flex-row align-items-center gap-1 flex-wrap" style={{ fontSize: "0.75em" }}>
+                        <div className="d-flex flex-row align-items-center gap-4 flex-wrap" style={{ fontSize: "0.75em" }}>
+                            <span className="text-muted mr-2 underline">Label Count: {labelCount}</span>
                             {selectedParams.length > 0 && (
-                                <>
-                                    <span className="text-muted mr-1">View:</span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-muted mr-1 underline">View On:</span>
                                     <div className="btn-group btn-group-sm" role="group">
                                         <button
                                             type="button"
@@ -2370,7 +2372,7 @@ class Flight extends React.Component {
                                             <i className="fa fa-map-o mr-1" /> Map
                                         </button>
                                     </div>
-                                </>
+                                </div>
                             )}
                             <div className="btn-group btn-group-sm ml-2" role="group">
                                 <button
@@ -2389,7 +2391,7 @@ class Flight extends React.Component {
                                 >
                                     <i className="fa fa-download mr-1" /> Fleet
                                 </button>
-                                <label className="btn btn-outline-secondary mb-0" title="Import labels from CSV. Use pipe (|) to separate parameter names.">
+                                <label className="btn btn-outline-secondary mb-0 rounded-l-none!" title="Import labels from CSV. Use pipe (|) to separate parameter names.">
                                     <input
                                         type="file"
                                         accept=".csv"
@@ -2433,24 +2435,8 @@ class Flight extends React.Component {
                                 const sorted = [...this.state.labelingParameterNames].sort((a, b) => getCount(b) - getCount(a));
                                 return sorted.map((name) => {
                                     const isSelected = (this.state.labelingSelectedParameters || []).includes(name);
-                                    const count = getCount(name);
                                     return (
                                         <div key={name} style={{ position: "relative", display: "inline-block", marginRight: "0.25rem", flexShrink: 0 }}>
-                                            {count > 0 && (
-                                                <span style={{
-                                                    position: "absolute",
-                                                    bottom: "100%",
-                                                    left: 0,
-                                                    right: 0,
-                                                    marginBottom: 2,
-                                                    fontSize: "0.7em",
-                                                    color: "var(--c_text_muted, #6c757d)",
-                                                    textAlign: "center",
-                                                    whiteSpace: "nowrap",
-                                                }}>
-                                                    labels: {count}
-                                                </span>
-                                            )}
                                             <button
                                                 type="button"
                                                 className={labelingButtonClasses + (isSelected ? " active" : "")}
@@ -2467,12 +2453,12 @@ class Flight extends React.Component {
                         {selectedParams.length === 1 && seriesData && yArr.length > 0 && (
                             <div className="mt-2 p-2 border rounded" style={{ fontSize: "0.8em", background: "var(--c_row_bg_alt, #f8f9fa)" }}>
                                 <div className="mb-1">
-                                    <strong>Value range</strong>: {minVal.toFixed(3)} to {maxVal.toFixed(3)}
+                                    <strong>Value Range Selection</strong>
                                 </div>
                                 <div className="mb-2">
-                                    <div className="d-flex justify-content-between small text-muted mb-1">
-                                        <span>Low</span>
-                                        <span>High</span>
+                                    <div className="d-flex justify-content-between small mb-1">
+                                        <span>Low ({minVal.toFixed(3)})</span>
+                                        <span>High ({maxVal.toFixed(3)})</span>
                                     </div>
                                     <div
                                         className="labeling-dual-range"
@@ -2514,49 +2500,49 @@ class Flight extends React.Component {
                                             const rightZ = preferLow ? 2 : 3;
                                             return (
                                                 <>
-                                                <div style={{
-                                                    position: 'absolute', left: 0, right: 0, height: 6,
-                                                    background: 'var(--c_border_alt, #dee2e6)', borderRadius: 3,
-                                                }}/>
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    left: `${lowPct}%`,
-                                                    right: `${100 - highPct}%`,
-                                                    height: 6,
-                                                    background: '#0d6efd',
-                                                    borderRadius: 3,
-                                                }}/>
-                                                <input
-                                                    type="range"
-                                                    min={minVal}
-                                                    max={maxVal}
-                                                    step={(maxVal - minVal) / 500 || 0.01}
-                                                    value={lowVal}
-                                                    onChange={(e) => {
-                                                        const v = parseFloat(e.target.value);
-                                                        this.setState({ labelingSectionRange: { low: String(v), high: String(Math.max(v, highVal)) } });
-                                                    }}
-                                                    style={{ position: 'absolute', width: '100%', margin: 0, height: 28, zIndex: leftZ, pointerEvents: 'auto' }}
-                                                />
-                                                <input
-                                                    type="range"
-                                                    min={minVal}
-                                                    max={maxVal}
-                                                    step={(maxVal - minVal) / 500 || 0.01}
-                                                    value={highVal}
-                                                    onChange={(e) => {
-                                                        const v = parseFloat(e.target.value);
-                                                        this.setState({ labelingSectionRange: { low: String(Math.min(v, lowVal)), high: String(v) } });
-                                                    }}
-                                                    style={{ position: 'absolute', width: '100%', margin: 0, height: 28, zIndex: rightZ, pointerEvents: 'auto' }}
-                                                />
+                                                    <div style={{
+                                                        position: 'absolute', left: 0, right: 0, height: 6,
+                                                        background: 'var(--c_border_alt, #dee2e6)', borderRadius: 3,
+                                                    }} />
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        left: `${lowPct}%`,
+                                                        right: `${100 - highPct}%`,
+                                                        height: 6,
+                                                        background: '#0d6efd',
+                                                        borderRadius: 3,
+                                                    }} />
+                                                    <input
+                                                        type="range"
+                                                        min={minVal}
+                                                        max={maxVal}
+                                                        step={(maxVal - minVal) / 500 || 0.01}
+                                                        value={lowVal}
+                                                        onChange={(e) => {
+                                                            const v = parseFloat(e.target.value);
+                                                            this.setState({ labelingSectionRange: { low: String(v), high: String(Math.max(v, highVal)) } });
+                                                        }}
+                                                        style={{ position: 'absolute', width: '100%', margin: 0, height: 28, zIndex: leftZ, pointerEvents: 'auto' }}
+                                                    />
+                                                    <input
+                                                        type="range"
+                                                        min={minVal}
+                                                        max={maxVal}
+                                                        step={(maxVal - minVal) / 500 || 0.01}
+                                                        value={highVal}
+                                                        onChange={(e) => {
+                                                            const v = parseFloat(e.target.value);
+                                                            this.setState({ labelingSectionRange: { low: String(Math.min(v, lowVal)), high: String(v) } });
+                                                        }}
+                                                        style={{ position: 'absolute', width: '100%', margin: 0, height: 28, zIndex: rightZ, pointerEvents: 'auto' }}
+                                                    />
                                                 </>
                                             );
                                         })()}
                                     </div>
                                 </div>
-                                <div className="d-flex flex-row align-items-center flex-wrap gap-2 mb-2">
-                                    <label className="d-flex align-items-center">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <label className="d-flex align-items-center mb-0">
                                         <span className="mr-1">From</span>
                                         <input
                                             type="number"
@@ -2568,7 +2554,7 @@ class Flight extends React.Component {
                                             step={typeof minVal === 'number' && (maxVal - minVal) < 100 ? (maxVal - minVal) / 100 : undefined}
                                         />
                                     </label>
-                                    <label className="d-flex align-items-center">
+                                    <label className="d-flex align-items-center mb-0">
                                         <span className="mr-1">To</span>
                                         <input
                                             type="number"
@@ -2585,7 +2571,7 @@ class Flight extends React.Component {
                                         className="btn btn-sm btn-primary"
                                         onClick={() => this.addLabelingSection()}
                                     >
-                                        Set section
+                                        Set Section
                                     </button>
                                 </div>
                                 {this.state.labelingSections && this.state.labelingSections.length > 0 && (
@@ -2600,7 +2586,7 @@ class Flight extends React.Component {
                                                 onClick={() => this.removeLabelingSection(0)}
                                                 aria-label="Clear section"
                                             >
-                                                <i className="fa fa-times"/>
+                                                <i className="fa fa-times" />
                                             </button>
                                         </span>
                                     </div>
@@ -2625,12 +2611,12 @@ class Flight extends React.Component {
 
             cesiumHeader = (
                 <b className={"p-1 d-flex flex-row justify-content-start align-items-center"}
-                   style={{marginBottom: "0"}}>
+                    style={{ marginBottom: "0" }}>
                     <div className="d-flex flex-column mr-3"
-                         style={{width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px"}}>
-                        <i className='fa fa-globe ml-2' style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
+                        style={{ width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px" }}>
+                        <i className='fa fa-globe ml-2' style={{ fontSize: "12px", marginTop: "3px", opacity: "0.50" }} />
                     </div>
-                    <div style={{fontSize: "0.75em"}}>
+                    <div style={{ fontSize: "0.75em" }}>
                         Cesium Phases
                     </div>
                 </b>
@@ -2638,13 +2624,13 @@ class Flight extends React.Component {
 
             flightPhasesCheckBox = (
                 <div>
-                    <div className={"d-flex flex-row p-1"} style={{"overflowX": "auto"}}>
+                    <div className={"d-flex flex-row p-1"} style={{ "overflowX": "auto" }}>
                         {
                             flightPhases.map((phase, index) => {
                                 return (
                                     <button
-                                        className={`${buttonClasses  } mr-1`}
-                                        style={{flex: "0 0 10em"}}
+                                        className={`${buttonClasses} mr-1`}
+                                        style={{ flex: "0 0 10em" }}
                                         data-bs-toggle="button"
                                         key={index}
                                         onClick={() => this.props.addCesiumFlightPhase(phase, flightId)}
@@ -2658,17 +2644,17 @@ class Flight extends React.Component {
                 </div>
             );
             toggleCameraButton = (
-                <button className={`${cesiumControlButtonClasses} ml-1 mt-1 mb-1 mr-0`} style={{flex: "0 0 10em"}}
-                        aria-pressed="false" onClick={() => this.props.cesiumFlightTrackedSet(flightId)}>
-                    <i className="fa fa-camera mr-2"/>
+                <button className={`${cesiumControlButtonClasses} ml-1 mt-1 mb-1 mr-0`} style={{ flex: "0 0 10em" }}
+                    aria-pressed="false" onClick={() => this.props.cesiumFlightTrackedSet(flightId)}>
+                    <i className="fa fa-camera mr-2" />
                     Track Flight
                 </button>
 
             );
             jumpToStartButton = (
-                <button className={`${cesiumControlButtonClasses} ml-1 mt-1 mb-1 mr-0`} style={{flex: "0 0 10em"}}
-                        aria-pressed="false" onClick={() => this.props.cesiumJumpToFlightStart(flightId)}>
-                    <i className="fa fa-play mr-2"/>
+                <button className={`${cesiumControlButtonClasses} ml-1 mt-1 mb-1 mr-0`} style={{ flex: "0 0 10em" }}
+                    aria-pressed="false" onClick={() => this.props.cesiumJumpToFlightStart(flightId)}>
+                    <i className="fa fa-play mr-2" />
                     Jump to Start
                 </button>
             );
@@ -2703,22 +2689,22 @@ class Flight extends React.Component {
         });
 
         return (
-            <div className="card mb-1" style={{backgroundColor: "var(--c_entry_bg)"}}>
+            <div className="card mb-1" style={{ backgroundColor: "var(--c_entry_bg)" }}>
                 <div className="">
                     <div className="d-flex flex-column">
 
                         <div className="d-flex flex-row p-1">
 
                             {/* FLIGHT INFO */}
-                            <div style={{flexBasis: "32.5%", whiteSpace: "nowrap"}}>
-                                <div className={`${firstCellClasses} d-flex flex-row`} style={{height: "100%"}}>
-                                    <div className="d-flex flex-column" style={{alignItems: "start"}}>
+                            <div style={{ flexBasis: "32.5%", whiteSpace: "nowrap" }}>
+                                <div className={`${firstCellClasses} d-flex flex-row`} style={{ height: "100%" }}>
+                                    <div className="d-flex flex-column" style={{ alignItems: "start" }}>
 
                                         {/* Filter Add Button */}
                                         <a
                                             href={"#"}
-                                            onMouseEnter={() => this.setState({filterAddButtonHovered: true})}
-                                            onMouseLeave={() => this.setState({filterAddButtonHovered: false})}
+                                            onMouseEnter={() => this.setState({ filterAddButtonHovered: true })}
+                                            onMouseLeave={() => this.setState({ filterAddButtonHovered: false })}
                                             onClick={() => this.props.onAddFilter(this.props.flightInfo.id)}
                                         >
                                             <i className={`fa ${this.state.filterAddButtonHovered ? "fa-search" : "fa-plane"}  p-1`}>
@@ -2736,7 +2722,7 @@ class Flight extends React.Component {
                                         </div>
                                     </div>
 
-                                    <div className="d-flex flex-column ml-3" style={{alignItems: "start"}}>
+                                    <div className="d-flex flex-column ml-3" style={{ alignItems: "start" }}>
                                         <div>
                                             ◦&nbsp;
                                             {
@@ -2749,8 +2735,8 @@ class Flight extends React.Component {
                                             ◦&nbsp;
                                             {
                                                 (flightInfo.airframe.name != null && flightInfo.airframe.name != "")
-                                                ? <a>{flightInfo.airframe.name}</a>
-                                                : <a style={styleEmptyCell}>No Airframe Name...</a>
+                                                    ? <a>{flightInfo.airframe.name}</a>
+                                                    : <a style={styleEmptyCell}>No Airframe Name...</a>
                                             }
                                         </div>
                                     </div>
@@ -2758,9 +2744,9 @@ class Flight extends React.Component {
                             </div>
 
                             {/* START - END DATES */}
-                            <div style={{flexBasis: "32.5%", whiteSpace: "nowrap"}}>
-                                <div className={`${cellClasses} d-flex flex-row`} style={{height: "100%"}}>
-                                    <div className="d-flex flex-column" style={{alignItems: "center"}}>
+                            <div style={{ flexBasis: "32.5%", whiteSpace: "nowrap" }}>
+                                <div className={`${cellClasses} d-flex flex-row`} style={{ height: "100%" }}>
+                                    <div className="d-flex flex-column" style={{ alignItems: "center" }}>
                                         <div>
                                             ◦ {flightInfo.startDateTime}
                                         </div>
@@ -2769,11 +2755,11 @@ class Flight extends React.Component {
                                         </div>
                                     </div>
 
-                                    <div className="d-flex flex-column ml-3" style={{alignItems: "center"}}>
+                                    <div className="d-flex flex-column ml-3" style={{ alignItems: "center" }}>
                                         <div>
                                             ◦ {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                                         </div>
-                                        <div style={{visibility: "hidden"}}>
+                                        <div style={{ visibility: "hidden" }}>
                                             &emsp;
                                         </div>
                                     </div>
@@ -2781,22 +2767,22 @@ class Flight extends React.Component {
                             </div>
 
                             {/* AIRPORTS */}
-                            <div className={cellClasses} style={{flexBasis: "12.50%"}}>
+                            <div className={cellClasses} style={{ flexBasis: "12.50%" }}>
                                 {visitedAirportsRow}
                             </div>
 
                             {/* TAGS */}
-                            <div className={cellClasses} style={{flexBasis: "22.50%"}}>
-                                <div style={{overflow: "hidden"}}>
+                            <div className={cellClasses} style={{ flexBasis: "22.50%" }}>
+                                <div style={{ overflow: "hidden" }}>
 
                                     <div
-                                        style={{position: "absolute", top: "1", right: "1", zIndex: "1", scale: "0.75"}}
+                                        style={{ position: "absolute", top: "1", right: "1", zIndex: "1", scale: "0.75" }}
                                         onClick={() => this.tagClicked()}>
                                         <button
                                             className={"p-1 btn btn-outline-secondary d-flex align-items-center justify-content-center"}
                                             data-bs-toggle="button" title={tagTooltip} aria-pressed="false"
-                                            style={{...styleButton, border: "none"}}>
-                                            <i className="fa fa-plus p-1"/>
+                                            style={{ ...styleButton, border: "none" }}>
+                                            <i className="fa fa-plus p-1" />
                                         </button>
                                     </div>
 
@@ -2808,12 +2794,12 @@ class Flight extends React.Component {
 
 
                             {/* BUTTONS */}
-                            <div style={{flexBasis:"12.50%"}}>
-                                <div className={"card mr-0"} style={{flexBasis:"100px", minHeight:"100%", backgroundColor:"transparent", borderColor:"transparent", margin:"0", padding:"0"}}>
-                                    <div className={"d-flex flex-column"} style={{gap:"0.25em"}}>
+                            <div style={{ flexBasis: "12.50%" }}>
+                                <div className={"card mr-0"} style={{ flexBasis: "100px", minHeight: "100%", backgroundColor: "transparent", borderColor: "transparent", margin: "0", padding: "0" }}>
+                                    <div className={"d-flex flex-column"} style={{ gap: "0.25em" }}>
 
                                         {/* BUTTON ROW -- TOP */}
-                                        <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
+                                        <div className={"d-flex flex-row ml-auto mr-auto"} style={{ flexShrink: "1", gap: "0.25em" }}>
 
                                             {/* Plot Toggle */}
                                             <button
@@ -2823,7 +2809,7 @@ class Flight extends React.Component {
                                                 data-bs-toggle="button"
                                                 onClick={() => this.plotClicked()}
                                             >
-                                                <i className="fa fa-area-chart p-1"/>
+                                                <i className="fa fa-area-chart p-1" />
                                             </button>
 
                                             {/* Cesium Toggle */}
@@ -2835,7 +2821,7 @@ class Flight extends React.Component {
                                                 aria-pressed={this.state.replayToggled}
                                                 onClick={() => this.toggleCesiumFlight()}
                                             >
-                                                <i className="fa fa-globe p-1"/>
+                                                <i className="fa fa-globe p-1" />
                                             </button>
 
                                             {/* Map Toggle */}
@@ -2848,12 +2834,12 @@ class Flight extends React.Component {
                                                 onClick={() => this.mapClicked()}
                                                 disabled={this.state.mapButtonDisabled}
                                             >
-                                                <i className="fa fa-map-o p-1"/>
+                                                <i className="fa fa-map-o p-1" />
                                             </button>
                                         </div>
 
                                         {/* BUTTON ROW -- BOTTOM */}
-                                        <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
+                                        <div className={"d-flex flex-row ml-auto mr-auto"} style={{ flexShrink: "1", gap: "0.25em" }}>
 
                                             {/* Events Toggle */}
                                             <button
@@ -2863,17 +2849,7 @@ class Flight extends React.Component {
                                                 style={styleButton}
                                                 onClick={() => this.exclamationClicked()}
                                             >
-                                                <i className="fa fa-exclamation p-1"/>
-                                            </button>
-
-                                            {/* (OUTDATED / DISABLED!) Replay Button */}
-                                            <button
-                                                className={`${buttonClasses} cursor-not-allowed`}
-                                                style={styleButton}
-                                                disabled={true}
-                                                title={"The external replay system is deprecated.\nCesium flight replays can now be viewed on this page with the globe buttons."}
-                                            >
-                                                <i className="fa fa-video-camera p-1"/>
+                                                <i className="fa fa-exclamation p-1" />
                                             </button>
 
                                             {/* Download Button */}
@@ -2886,7 +2862,7 @@ class Flight extends React.Component {
                                                 aria-haspopup="true"
                                                 aria-expanded="false"
                                             >
-                                                <i className="fa fa-download p-1"/>
+                                                <i className="fa fa-download p-1" />
                                             </button>
 
                                             {/* Labeling Tool */}
@@ -2897,33 +2873,33 @@ class Flight extends React.Component {
                                                 title="Open labeling tool: select a parameter and mark a time section as a label"
                                                 onClick={() => this.labelingClicked()}
                                             >
-                                                <i className="fa fa-tag p-1"/>
+                                                <i className="fa fa-map-pin p-1" />
                                             </button>
 
                                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
                                                 <button className="dropdown-item" type="button"
-                                                        onClick={() => this.downloadClicked('CSV-IMP')}>
+                                                    onClick={() => this.downloadClicked('CSV-IMP')}>
                                                     Export to CSV (Original)
                                                     <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip"
-                                                       data-bs-placement="top"
-                                                       title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                                        data-bs-placement="top"
+                                                        title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button"
-                                                        onClick={() => this.downloadClicked('CSV-GEN')}>
+                                                    onClick={() => this.downloadClicked('CSV-GEN')}>
                                                     Export to CSV (Generated)
                                                     <i className="ml-1 fa fa-question-circle" data-bs-toggle="tooltip"
-                                                       data-bs-placement="top"
-                                                       title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                                        data-bs-placement="top"
+                                                        title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
                                                 </button>
                                                 <button className="dropdown-item" type="button"
-                                                        onClick={() => this.downloadClicked('KML')}>Export to KML
+                                                    onClick={() => this.downloadClicked('KML')}>Export to KML
                                                 </button>
                                                 <button className="dropdown-item" type="button"
-                                                        onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane
+                                                    onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane
                                                     10
                                                 </button>
                                                 <button className="dropdown-item" type="button"
-                                                        onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane
+                                                    onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane
                                                     11
                                                 </button>
                                             </div>
@@ -2968,5 +2944,5 @@ class Flight extends React.Component {
 }
 
 
-export {Flight};
+export { Flight };
 

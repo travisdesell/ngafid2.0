@@ -308,7 +308,7 @@ html, body {
 }
 .btn-group > .btn:last-of-type,
 .btn-group > .dropdown-toggle {
-    background-color: transparent;
+    /* background-color: transparent; */
     -webkit-border-top-right-radius: 4px;
     -moz-border-radius-topright: 4px;
     border-top-right-radius: 4px;
