@@ -529,9 +529,8 @@ public class TurnToFinal implements Serializable {
 
             LOG.info("Recomputed TTFs for flight " + flight.getId() + ": " + ttfs.size());
 
-            // Got some TTFs, cache them
-            if (!ttfs.isEmpty())
-                cacheTurnToFinal(connection, flight.getId(), ttfs);
+            // Cache result (including empty) to avoid recomputing flights with no TTF data
+            cacheTurnToFinal(connection, flight.getId(), ttfs);
 
             return ttfs;
 
