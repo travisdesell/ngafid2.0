@@ -1159,7 +1159,7 @@ class TTFCard extends React.Component {
             Object.assign(accumulatedAirports, responseAirports || {});
         };
 
-        const CHUNK_SIZE_FIRST = 100;
+        const CHUNK_SIZE_FIRST = 1000;  // Larger first batch to amortize setup overhead (DB connection, etc.)
         const CHUNK_SIZE_REST = 1000;
 
         const getBatchLimit = (offset) => (offset === 0 ? CHUNK_SIZE_FIRST : CHUNK_SIZE_REST);
