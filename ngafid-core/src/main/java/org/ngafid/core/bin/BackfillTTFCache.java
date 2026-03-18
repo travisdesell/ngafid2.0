@@ -86,9 +86,9 @@ public final class BackfillTTFCache {
         System.out.println("Found " + flightIds.size() + " flights to repopulate.");
 
         if (!dryRun) {
-            // 2. Delete all from turn_to_final (or only those we're repopulating)
+            // 2. Delete from turn_to_final. Only TRUNCATE on full run (no limit).
             int toDelete = limit != null ? Math.min(flightIds.size(), limit) : flightIds.size();
-            if (toDelete == flightIds.size()) {
+            if (limit == null) {
                 try (PreparedStatement ps = connection.prepareStatement("TRUNCATE TABLE turn_to_final")) {
                     ps.executeUpdate();
                     System.out.println("Truncated turn_to_final");
@@ -128,12 +128,10 @@ public final class BackfillTTFCache {
                 LOG.warning("Failed flight " + flightId + ": " + e.getMessage());
                 result.errors++;
             }
-            if ((i + 1) % batchSize == 0) {
-                long elapsed = (System.currentTimeMillis() - start) / 1000;
-                System.out.println("Progress: " + (i + 1) + "/" + flightIds.size()
-                        + " recomputed=" + result.recomputed + " skipped=" + result.skipped
-                        + " errors=" + result.errors + " (" + elapsed + "s elapsed)");
-            }
+            long elapsed = (System.currentTimeMillis() - start) / 1000;
+            System.out.println("flight_id=" + flightId + " " + (i + 1) + "/" + flightIds.size()
+                    + " recomputed=" + result.recomputed + " skipped=" + result.skipped
+                    + " errors=" + result.errors + " (" + elapsed + "s elapsed)");
         }
         return result;
     }
