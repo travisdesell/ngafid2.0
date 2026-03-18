@@ -362,7 +362,7 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void postTurnToFinal(Context ctx) {
-        long t0 = System.nanoTime();
+        final long t0 = System.nanoTime();
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
         String airportIataCode = ctx.queryParam("airport");
@@ -377,7 +377,7 @@ public class AnalysisJavalinRoutes {
         int rawTotal = 0;
         boolean ttfCapReached = false;
         try (Connection connection = Database.getConnection()) {
-            long t1 = System.nanoTime();
+            final long t1 = System.nanoTime();
             LOG.info(() -> "TTF timing: DB connection " + ((t1 - t0) / 1_000_000) + " ms");
 
             if (offset == 0) {
@@ -385,7 +385,7 @@ public class AnalysisJavalinRoutes {
                         connection, startDate, endDate, airportIataCode);
                 totalFlights = Math.min(rawTotal, MAX_TTF_FLIGHTS);
             }
-            long t2 = System.nanoTime();
+            final long t2 = System.nanoTime();
             LOG.info(() -> "TTF timing: getFlightsCount " + ((t2 - t1) / 1_000_000) + " ms (total=" + totalFlights + ")");
 
             final int totalForLog = totalFlights;
@@ -394,14 +394,14 @@ public class AnalysisJavalinRoutes {
                         ? List.of()
                         : Flight.getFlightIdsWithinDateRangeFromAirport(
                                 connection, startDate, endDate, airportIataCode, effectiveLimit, offset);
-                long t3 = System.nanoTime();
+                final long t3 = System.nanoTime();
                 LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flightIds.size()
                         + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
                 LOG.info(() -> "TTF timing: getFlightIds " + ((t3 - t2) / 1_000_000) + " ms");
 
                 Map<Integer, ArrayList<TurnToFinal>> batchResult =
                         TurnToFinal.getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode);
-                long t4 = System.nanoTime();
+                final long t4 = System.nanoTime();
                 LOG.info(() -> "TTF timing: getTurnToFinalBatchByFlightIds " + ((t4 - t3) / 1_000_000) + " ms");
                 final int batchFlightCount = flightIds.size();
                 for (Integer flightId : flightIds) {
@@ -423,7 +423,7 @@ public class AnalysisJavalinRoutes {
                     }
                 }
                 final boolean capReached = ttfCapReached;
-                long t5 = System.nanoTime();
+                final long t5 = System.nanoTime();
                 LOG.info(() -> "TTF batch: returning " + ttfs.size() + " TTFs from " + batchFlightCount + " flights"
                         + (capReached ? " (TTF cap reached)" : ""));
                 LOG.info(() -> "TTF timing: build ttfs list " + ((t5 - t4) / 1_000_000) + " ms");
@@ -432,7 +432,7 @@ public class AnalysisJavalinRoutes {
                         ? List.of()
                         : Flight.getFlightsWithinDateRangeFromAirport(
                                 connection, startDate, endDate, airportIataCode, effectiveLimit, offset);
-                long t3alt = System.nanoTime();
+                final long t3alt = System.nanoTime();
                 LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flights.size()
                         + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
                 LOG.info(() -> "TTF timing: getFlights " + ((t3alt - t2) / 1_000_000) + " ms");
@@ -454,7 +454,7 @@ public class AnalysisJavalinRoutes {
                         }
                     }
                 }
-                long t4alt = System.nanoTime();
+                final long t4alt = System.nanoTime();
                 LOG.info(() -> "TTF timing: getTurnToFinal loop " + ((t4alt - t3alt) / 1_000_000) + " ms");
             }
         } catch (Exception e) {
@@ -462,12 +462,12 @@ public class AnalysisJavalinRoutes {
             ctx.json(new ErrorResponse(e)).status(500);
         }
 
-        long t6 = System.nanoTime();
+        final long t6 = System.nanoTime();
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
         iataCodesList.addAll(iataCodes);
 
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
-        long t7 = System.nanoTime();
+        final long t7 = System.nanoTime();
         LOG.info(() -> "TTF timing: Airports.getAirports " + ((t7 - t6) / 1_000_000) + " ms");
 
         ctx.status(200);
@@ -478,7 +478,7 @@ public class AnalysisJavalinRoutes {
         if (ttfCapReached) {
             payload.put("ttfCapReached", true);
         }
-        long t8 = System.nanoTime();
+        final long t8 = System.nanoTime();
         ctx.json(payload);
         LOG.info(() -> "TTF timing: ctx.json " + ((System.nanoTime() - t8) / 1_000_000) + " ms, total " + ((t8 - t0) / 1_000_000) + " ms");
     }
