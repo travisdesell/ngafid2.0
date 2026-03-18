@@ -392,26 +392,63 @@ public class TurnToFinal implements Serializable {
     public static Map<Flight, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
             List<Flight> flights, String airportIataCode)
             throws SQLException, IOException, ClassNotFoundException {
-        Map<Flight, ArrayList<TurnToFinal>> result = new HashMap<>();
         if (flights == null || flights.isEmpty()) {
-            return result;
+            return new HashMap<>();
         }
         List<Integer> ids = flights.stream().map(Flight::getId).toList();
-        Map<Integer, ArrayList<TurnToFinal>> cache = getTurnToFinalFromCacheBatch(connection, ids);
-        int hits = cache.size();
-        int misses = ids.size() - hits;
-        LOG.info(() -> "TTF batch lookup: " + ids.size() + " flights, " + hits + " cache hits, " + misses + " computed");
+        Map<Integer, ArrayList<TurnToFinal>> byId = getTurnToFinalBatch(connection, ids, airportIataCode);
+        Map<Flight, ArrayList<TurnToFinal>> result = new HashMap<>();
         for (Flight flight : flights) {
-            ArrayList<TurnToFinal> ttfs = cache.get(flight.getId());
+            ArrayList<TurnToFinal> ttfs = byId.get(flight.getId());
+            if (ttfs != null && !ttfs.isEmpty()) {
+                result.put(flight, ttfs);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Lightweight batch variant using flight IDs only. Avoids loading full Flight objects (Tails, Itinerary, Tags)
+     * for cache hits. Only loads full Flight for cache misses.
+     */
+    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
+            List<Integer> flightIds, String airportIataCode)
+            throws SQLException, IOException, ClassNotFoundException {
+        return getTurnToFinalBatch(connection, flightIds, airportIataCode, id -> {
+            try {
+                return Flight.getFlight(connection, id);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
+            List<Integer> flightIds, String airportIataCode,
+            java.util.function.Function<Integer, Flight> flightLoader)
+            throws SQLException, IOException, ClassNotFoundException {
+        Map<Integer, ArrayList<TurnToFinal>> result = new HashMap<>();
+        if (flightIds == null || flightIds.isEmpty()) {
+            return result;
+        }
+        Map<Integer, ArrayList<TurnToFinal>> cache = getTurnToFinalFromCacheBatch(connection, flightIds);
+        int hits = cache.size();
+        int misses = flightIds.size() - hits;
+        LOG.info(() -> "TTF batch lookup: " + flightIds.size() + " flights, " + hits + " cache hits, " + misses + " computed");
+        for (Integer flightId : flightIds) {
+            ArrayList<TurnToFinal> ttfs = cache.get(flightId);
             if (ttfs == null) {
-                ttfs = computeAndCacheTurnToFinals(connection, flight);
+                Flight flight = flightLoader.apply(flightId);
+                if (flight != null) {
+                    ttfs = computeAndCacheTurnToFinals(connection, flight);
+                }
             }
             if (ttfs != null && !ttfs.isEmpty()) {
                 ArrayList<TurnToFinal> filtered = ttfs.stream()
                         .filter(ttf -> airportIataCode == null || ttf.getAirportIataCode().equals(airportIataCode))
                         .collect(Collectors.toCollection(ArrayList::new));
                 if (!filtered.isEmpty()) {
-                    result.put(flight, filtered);
+                    result.put(flightId, filtered);
                 }
             }
         }

@@ -193,6 +193,43 @@ public class Flight {
     }
 
     /**
+     * Returns flight IDs only (no Tails, Itinerary, Tags) for TTF batch loading. Avoids 3 queries per flight.
+     */
+    public static List<Integer> getFlightIdsWithinDateRangeFromAirport(
+            Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
+            throws SQLException {
+        // CHECKSTYLE:OFF
+        String extraCondition = "    (                " + "    EXISTS(          "
+                + "        SELECT       "
+                + "          id         "
+                + "        FROM         "
+                + "          itinerary  "
+                + "        WHERE        "
+                + "          itinerary.flight_id = flights.id AND "
+                + "          airport = '"
+                + airportIataCode + "' " + "    ) "
+                + "AND   "
+                + "    ( "
+                + "           (start_time BETWEEN '"
+                + startDate + "' AND '" + endDate + "') " + "        OR (end_time   BETWEEN '"
+                + startDate + "' AND '" + endDate + "')  " + "    )"
+                + " ) ";
+        // CHECKSTYLE:ON
+        String queryString = "SELECT id FROM flights WHERE (" + extraCondition + ") ORDER BY id DESC LIMIT " + limit;
+        if (offset > 0) {
+            queryString += " OFFSET " + offset;
+        }
+        List<Integer> ids = new ArrayList<>();
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet rs = query.executeQuery()) {
+            while (rs.next()) {
+                ids.add(rs.getInt(1));
+            }
+        }
+        return ids;
+    }
+
+    /**
      * Returns total count of flights matching the same condition as getFlightsWithinDateRangeFromAirport.
      */
     public static int getFlightsCountWithinDateRangeFromAirport(
