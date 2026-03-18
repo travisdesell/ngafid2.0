@@ -378,7 +378,7 @@ public class AnalysisJavalinRoutes {
         boolean ttfCapReached = false;
         try (Connection connection = Database.getConnection()) {
             final long t1 = System.nanoTime();
-            LOG.info(() -> "TTF timing: DB connection " + ((t1 - t0) / 1_000_000) + " ms");
+            LOG.info("TTF timing: DB connection " + ((t1 - t0) / 1_000_000) + " ms");
 
             if (offset == 0) {
                 rawTotal = Flight.getFlightsCountWithinDateRangeFromAirport(
@@ -386,23 +386,22 @@ public class AnalysisJavalinRoutes {
                 totalFlights = Math.min(rawTotal, MAX_TTF_FLIGHTS);
             }
             final long t2 = System.nanoTime();
-            LOG.info(() -> "TTF timing: getFlightsCount " + ((t2 - t1) / 1_000_000) + " ms (total=" + totalFlights + ")");
+            LOG.info("TTF timing: getFlightsCount " + ((t2 - t1) / 1_000_000) + " ms (total=" + totalFlights + ")");
 
-            final int totalForLog = totalFlights;
             if (USE_BATCH_TTF_LOOKUP) {
                 List<Integer> flightIds = (offset == 0 && totalFlights == 0)
                         ? List.of()
                         : Flight.getFlightIdsWithinDateRangeFromAirport(
                                 connection, startDate, endDate, airportIataCode, effectiveLimit, offset);
                 final long t3 = System.nanoTime();
-                LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flightIds.size()
-                        + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
-                LOG.info(() -> "TTF timing: getFlightIds " + ((t3 - t2) / 1_000_000) + " ms");
+                LOG.info("TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flightIds.size()
+                        + (offset == 0 ? " of " + totalFlights : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
+                LOG.info("TTF timing: getFlightIds " + ((t3 - t2) / 1_000_000) + " ms");
 
                 Map<Integer, ArrayList<TurnToFinal>> batchResult =
                         TurnToFinal.getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode);
                 final long t4 = System.nanoTime();
-                LOG.info(() -> "TTF timing: getTurnToFinalBatchByFlightIds " + ((t4 - t3) / 1_000_000) + " ms");
+                LOG.info("TTF timing: getTurnToFinalBatchByFlightIds " + ((t4 - t3) / 1_000_000) + " ms");
                 final int batchFlightCount = flightIds.size();
                 for (Integer flightId : flightIds) {
                     if (ttfs.size() >= MAX_TTF_APPROACHES) {
@@ -422,20 +421,19 @@ public class AnalysisJavalinRoutes {
                         }
                     }
                 }
-                final boolean capReached = ttfCapReached;
                 final long t5 = System.nanoTime();
-                LOG.info(() -> "TTF batch: returning " + ttfs.size() + " TTFs from " + batchFlightCount + " flights"
-                        + (capReached ? " (TTF cap reached)" : ""));
-                LOG.info(() -> "TTF timing: build ttfs list " + ((t5 - t4) / 1_000_000) + " ms");
+                LOG.info("TTF batch: returning " + ttfs.size() + " TTFs from " + batchFlightCount + " flights"
+                        + (ttfCapReached ? " (TTF cap reached)" : ""));
+                LOG.info("TTF timing: build ttfs list " + ((t5 - t4) / 1_000_000) + " ms");
             } else {
                 List<Flight> flights = (offset == 0 && totalFlights == 0)
                         ? List.of()
                         : Flight.getFlightsWithinDateRangeFromAirport(
                                 connection, startDate, endDate, airportIataCode, effectiveLimit, offset);
                 final long t3alt = System.nanoTime();
-                LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flights.size()
-                        + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
-                LOG.info(() -> "TTF timing: getFlights " + ((t3alt - t2) / 1_000_000) + " ms");
+                LOG.info("TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flights.size()
+                        + (offset == 0 ? " of " + totalFlights : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
+                LOG.info("TTF timing: getFlights " + ((t3alt - t2) / 1_000_000) + " ms");
                 for (Flight flight : flights) {
                     if (ttfs.size() >= MAX_TTF_APPROACHES) {
                         ttfCapReached = true;
@@ -455,7 +453,7 @@ public class AnalysisJavalinRoutes {
                     }
                 }
                 final long t4alt = System.nanoTime();
-                LOG.info(() -> "TTF timing: getTurnToFinal loop " + ((t4alt - t3alt) / 1_000_000) + " ms");
+                LOG.info("TTF timing: getTurnToFinal loop " + ((t4alt - t3alt) / 1_000_000) + " ms");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -468,7 +466,7 @@ public class AnalysisJavalinRoutes {
 
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
         final long t7 = System.nanoTime();
-        LOG.info(() -> "TTF timing: Airports.getAirports " + ((t7 - t6) / 1_000_000) + " ms");
+        LOG.info("TTF timing: Airports.getAirports " + ((t7 - t6) / 1_000_000) + " ms");
 
         ctx.status(200);
         Map<String, Object> payload = new HashMap<>(of("airports", airports, "ttfs", ttfs, "totalFlights", totalFlights));
@@ -480,7 +478,7 @@ public class AnalysisJavalinRoutes {
         }
         final long t8 = System.nanoTime();
         ctx.json(payload);
-        LOG.info(() -> "TTF timing: ctx.json " + ((System.nanoTime() - t8) / 1_000_000) + " ms, total " + ((t8 - t0) / 1_000_000) + " ms");
+        LOG.info("TTF timing: ctx.json " + ((System.nanoTime() - t8) / 1_000_000) + " ms, total " + ((t8 - t0) / 1_000_000) + " ms");
     }
 
     private static int parseIntOrDefault(String value, int defaultValue) {
