@@ -411,8 +411,9 @@ public class AnalysisJavalinRoutes {
                         }
                     }
                 }
+                final boolean capReached = ttfCapReached;
                 LOG.info(() -> "TTF batch: returning " + ttfs.size() + " TTFs from " + batchFlightCount + " flights"
-                        + (ttfCapReached ? " (TTF cap reached)" : ""));
+                        + (capReached ? " (TTF cap reached)" : ""));
             } else {
                 List<Flight> flights = (offset == 0 && totalFlights == 0)
                         ? List.of()
