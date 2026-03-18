@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.ngafid.core.Database;
@@ -18,6 +19,7 @@ import org.ngafid.core.flights.TurnToFinal;
  * Run after deployments that change TurnToFinal.serialVersionUID.
  * <p>
  * Run from repo root: ./run/backfill/backfill_ttf [--batch N] [--limit N] [--dry-run]
+ * Or: ./run/backfill/backfill_ttf --update-version-only  (fast: just UPDATE version, no recompute)
  */
 public final class BackfillTTFCache {
     private static final Logger LOG = Logger.getLogger(BackfillTTFCache.class.getName());
@@ -28,6 +30,7 @@ public final class BackfillTTFCache {
         int batchSize = 100;
         Integer limit = null;
         boolean dryRun = false;
+        boolean updateVersionOnly = false;
         for (int i = 0; i < args.length; i++) {
             if ("--batch".equals(args[i]) && i + 1 < args.length) {
                 batchSize = Integer.parseInt(args[i + 1]);
@@ -37,22 +40,47 @@ public final class BackfillTTFCache {
                 i++;
             } else if ("--dry-run".equals(args[i])) {
                 dryRun = true;
+            } else if ("--update-version-only".equals(args[i])) {
+                updateVersionOnly = true;
             }
         }
 
-        System.out.println("Backfilling TTF cache (delete outdated, recompute)...");
-        if (dryRun) {
-            System.out.println("DRY RUN - no changes will be made");
-        }
+        System.out.println("TurnToFinal.serialVersionUID = " + TurnToFinal.serialVersionUID);
+        Logger.getLogger("org.ngafid.core.flights.TurnToFinal").setLevel(Level.WARNING);
         try (Connection connection = Database.getConnection()) {
-            BackfillResult result = backfill(connection, batchSize, limit, dryRun);
-            System.out.println("Done. recomputed=" + result.recomputed
-                    + " skipped=" + result.skipped
-                    + " errors=" + result.errors);
+            if (updateVersionOnly) {
+                int updated = updateVersionOnly(connection);
+                System.out.println("Done. Updated version for " + updated + " rows.");
+            } else {
+                System.out.println("Backfilling TTF cache (delete outdated, recompute)...");
+                if (dryRun) {
+                    System.out.println("DRY RUN - no changes will be made");
+                }
+                BackfillResult result = backfill(connection, batchSize, limit, dryRun);
+                System.out.println("Done. recomputed=" + result.recomputed
+                        + " skipped=" + result.skipped
+                        + " errors=" + result.errors);
+            }
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
+        }
+    }
+
+    /**
+     * Fast path: UPDATE version column only. Use when only serialVersionUID changed, not the class structure.
+     * If deserialization fails on TTF page after this, run full backfill.
+     */
+    private static int updateVersionOnly(Connection connection) throws SQLException {
+        long currentVersion = TurnToFinal.serialVersionUID;
+        System.out.println("Updating version to " + currentVersion + " for all rows...");
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE turn_to_final SET version = ? WHERE version != ?")) {
+            ps.setLong(1, currentVersion);
+            ps.setLong(2, currentVersion);
+            int updated = ps.executeUpdate();
+            return updated;
         }
     }
 
