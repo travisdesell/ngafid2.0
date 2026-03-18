@@ -19,6 +19,7 @@ import org.ngafid.core.flights.TurnToFinal;
  * Run after deployments that change TurnToFinal.serialVersionUID.
  * <p>
  * Run from repo root: ./run/backfill/backfill_ttf [--batch N] [--limit N] [--dry-run]
+ * Or: ./run/backfill/backfill_ttf --full  (pre-populate from itinerary - all flights with approach data)
  * Or: ./run/backfill/backfill_ttf --update-version-only  (fast: just UPDATE version, no recompute)
  */
 public final class BackfillTTFCache {
@@ -31,6 +32,7 @@ public final class BackfillTTFCache {
         Integer limit = null;
         boolean dryRun = false;
         boolean updateVersionOnly = false;
+        boolean full = false;
         for (int i = 0; i < args.length; i++) {
             if ("--batch".equals(args[i]) && i + 1 < args.length) {
                 batchSize = Integer.parseInt(args[i + 1]);
@@ -42,6 +44,8 @@ public final class BackfillTTFCache {
                 dryRun = true;
             } else if ("--update-version-only".equals(args[i])) {
                 updateVersionOnly = true;
+            } else if ("--full".equals(args[i])) {
+                full = true;
             }
         }
 
@@ -56,7 +60,7 @@ public final class BackfillTTFCache {
                 if (dryRun) {
                     System.out.println("DRY RUN - no changes will be made");
                 }
-                BackfillResult result = backfill(connection, batchSize, limit, dryRun);
+                BackfillResult result = backfill(connection, batchSize, limit, dryRun, full);
                 System.out.println("Done. recomputed=" + result.recomputed
                         + " skipped=" + result.skipped
                         + " errors=" + result.errors);
@@ -90,24 +94,16 @@ public final class BackfillTTFCache {
         int errors;
     }
 
-    public static BackfillResult backfill(Connection connection, int batchSize, Integer limit, boolean dryRun)
+    public static BackfillResult backfill(Connection connection, int batchSize, Integer limit, boolean dryRun, boolean full)
             throws SQLException, IOException, ClassNotFoundException {
         BackfillResult result = new BackfillResult();
 
-        // 1. Get flight_ids to process. Prefer turn_to_final (outdated cache); fallback to itinerary (empty table).
+        // 1. Get flight_ids to process.
+        // --full: use itinerary (all flights with approach data) to pre-populate cache ahead of time.
+        // Default: prefer turn_to_final (outdated cache); fallback to itinerary (empty table).
         List<Integer> flightIds = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement("SELECT flight_id FROM turn_to_final")) {
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    flightIds.add(rs.getInt("flight_id"));
-                    if (limit != null && flightIds.size() >= limit) {
-                        break;
-                    }
-                }
-            }
-        }
-        if (flightIds.isEmpty()) {
-            System.out.println("turn_to_final is empty. Using flights from itinerary (flights with approach data).");
+        if (full) {
+            System.out.println("Using --full: pre-populating from itinerary (all flights with approach data).");
             String sql = "SELECT DISTINCT flight_id FROM itinerary ORDER BY flight_id";
             if (limit != null) {
                 sql += " LIMIT " + limit;
@@ -116,6 +112,30 @@ public final class BackfillTTFCache {
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     flightIds.add(rs.getInt("flight_id"));
+                }
+            }
+        } else {
+            try (PreparedStatement ps = connection.prepareStatement("SELECT flight_id FROM turn_to_final")) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        flightIds.add(rs.getInt("flight_id"));
+                        if (limit != null && flightIds.size() >= limit) {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (flightIds.isEmpty()) {
+                System.out.println("turn_to_final is empty. Using flights from itinerary (flights with approach data).");
+                String sql = "SELECT DISTINCT flight_id FROM itinerary ORDER BY flight_id";
+                if (limit != null) {
+                    sql += " LIMIT " + limit;
+                }
+                try (PreparedStatement ps = connection.prepareStatement(sql);
+                        ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        flightIds.add(rs.getInt("flight_id"));
+                    }
                 }
             }
         }

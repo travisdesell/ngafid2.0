@@ -290,7 +290,7 @@ public class TurnToFinal implements Serializable {
             throws SQLException, IOException, ClassNotFoundException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
         query.setInt(1, flight.getId());
-        LOG.info(query.toString());
+        LOG.fine(() -> "TTF cache lookup: flight_id=" + flight.getId());
 
         ResultSet resultSet = query.executeQuery();
         if (!resultSet.next()) {
@@ -486,6 +486,7 @@ public class TurnToFinal implements Serializable {
     }
 
     private static ArrayList<TurnToFinal> computeAndCacheTurnToFinals(Connection connection, Flight flight) {
+        ArrayList<TurnToFinal> ttfs = null;
 
         try {
             String[] required = {
@@ -522,11 +523,11 @@ public class TurnToFinal implements Serializable {
             List<Itinerary> itinerary = Itinerary.getItinerary(connection, flight.getId());
             OffsetDateTime startTime = TimeUtils.sqlToOffsetDateTime(flight.getStartDateTime());
 
-            ArrayList<TurnToFinal> ttfs = calculateFlightTurnToFinals(
+            ttfs = calculateFlightTurnToFinals(
                 doubleTimeSeries, itinerary, flight.getAirframe(), startTime
             );
 
-            LOG.info(() -> "Recomputed TTFs for flight " + flight.getId() + ": " + ttfs.size());
+            LOG.info("Recomputed TTFs for flight " + flight.getId() + ": " + ttfs.size());
 
             // Got some TTFs, cache them
             if (!ttfs.isEmpty())
@@ -536,6 +537,9 @@ public class TurnToFinal implements Serializable {
 
         } catch (IOException | SQLException e) {
             LOG.info(() -> "Failed to recompute TTF data for flight " + flight.getId() + ": " + e.getMessage());
+            // On duplicate key (concurrent cache write), return computed data - cache already has it
+            if (ttfs != null && !ttfs.isEmpty())
+                return ttfs;
             return new ArrayList<>();
         }
 

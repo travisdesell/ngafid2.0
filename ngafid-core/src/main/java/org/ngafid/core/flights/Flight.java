@@ -465,11 +465,17 @@ public class Flight {
         return getFlights(connection, extraCondition, 0);
     }
 
+    /**
+     * Returns flights matching the extra condition. When limit > 0, orders by id DESC so the most
+     * recent flights are returned first (e.g. TTF tool fetches up to 10k most recent for cache efficiency).
+     */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit)
             throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
-        if (limit > 0) queryString += " LIMIT " + limit;
+        if (limit > 0) {
+            queryString += " ORDER BY id DESC LIMIT " + limit;
+        }
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
                 ResultSet resultSet = query.executeQuery()) {
