@@ -66,7 +66,7 @@ public final class BackfillTTFCache {
             throws SQLException, IOException, ClassNotFoundException {
         BackfillResult result = new BackfillResult();
 
-        // 1. Get flight_ids from turn_to_final (these need repopulation)
+        // 1. Get flight_ids to process. Prefer turn_to_final (outdated cache); fallback to itinerary (empty table).
         List<Integer> flightIds = new ArrayList<>();
         try (PreparedStatement ps = connection.prepareStatement("SELECT flight_id FROM turn_to_final")) {
             try (ResultSet rs = ps.executeQuery()) {
@@ -78,12 +78,24 @@ public final class BackfillTTFCache {
                 }
             }
         }
-
         if (flightIds.isEmpty()) {
-            System.out.println("No TTF cache entries found.");
+            System.out.println("turn_to_final is empty. Using flights from itinerary (flights with approach data).");
+            String sql = "SELECT DISTINCT flight_id FROM itinerary ORDER BY flight_id";
+            if (limit != null) {
+                sql += " LIMIT " + limit;
+            }
+            try (PreparedStatement ps = connection.prepareStatement(sql);
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    flightIds.add(rs.getInt("flight_id"));
+                }
+            }
+        }
+        if (flightIds.isEmpty()) {
+            System.out.println("No flights to process.");
             return result;
         }
-        System.out.println("Found " + flightIds.size() + " flights to repopulate.");
+        System.out.println("Found " + flightIds.size() + " flights to process.");
 
         if (!dryRun) {
             // 2. Delete from turn_to_final. Only TRUNCATE on full run (no limit).
