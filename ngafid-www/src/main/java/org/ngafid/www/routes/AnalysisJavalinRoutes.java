@@ -372,7 +372,7 @@ public class AnalysisJavalinRoutes {
                 Map<Flight, ArrayList<TurnToFinal>> batchResult =
                         TurnToFinal.getTurnToFinalBatch(connection, flights, airportIataCode);
                 for (Flight flight : flights) {
-                    for (TurnToFinal ttf : batchResult.getOrDefault(flight, List.of())) {
+                    for (TurnToFinal ttf : batchResult.getOrDefault(flight, new ArrayList<>())) {
                         ttf.setFlightId(flight.getId());
                         var jsonElement = ttf.jsonify();
                         if (jsonElement != null) {
