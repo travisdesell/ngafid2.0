@@ -1148,16 +1148,27 @@ class TTFCard extends React.Component {
 
         const CHUNK_SIZE = 500;
 
+        const buildLoadingMessage = (startDate, endDate, totalFlights, totalFlightsRaw, batchNum, totalBatches, ttfsSoFar) => {
+            const rangeStr = `${startDate} to ${endDate}`;
+            const countStr = totalFlightsRaw != null
+                ? totalFlightsRaw.toLocaleString()
+                : (totalFlights != null ? totalFlights.toLocaleString() : '?');
+            let msg = `Found ${countStr} flights in ${rangeStr}.`;
+            if (totalFlightsRaw != null && totalFlights != null && totalFlightsRaw > totalFlights) {
+                msg += ` Capped at 5,000.`;
+            }
+            msg += totalFlights != null
+                ? ` Loading batch ${batchNum} of ${totalBatches} (${ttfsSoFar} TTFs so far)...`
+                : ` Loading batch ${batchNum}...`;
+            return msg;
+        };
+
         const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw) => {
             const batchNum = Math.floor(offset / CHUNK_SIZE) + 1;
             const totalBatches = totalFlights != null ? Math.ceil(totalFlights / CHUNK_SIZE) : '?';
-            let msg = totalFlights != null
-                ? `Loading batch ${batchNum} of ${totalBatches} (${accumulatedTtfs.length} TTFs so far)...`
-                : `Loading batch ${batchNum}...`;
-            if (totalFlightsRaw != null && totalFlightsRaw > totalFlights) {
-                msg += ` Showing first ${totalFlights.toLocaleString()} of ${totalFlightsRaw.toLocaleString()} flights.`;
-            }
-            $('#loading-message').text(msg);
+            $('#loading-message').text(buildLoadingMessage(
+                submissionData.startDate, submissionData.endDate,
+                totalFlights, totalFlightsRaw, batchNum, totalBatches, accumulatedTtfs.length));
 
             $.ajax({
                 type: 'GET',
@@ -1218,7 +1229,7 @@ class TTFCard extends React.Component {
             }
             this.setState({ disableFetching: true });
             $('#loading').show();
-            $('#loading-message').text('Loading batch 1...');
+            $('#loading-message').text(`Loading flights in ${submissionData.startDate} to ${submissionData.endDate}...`);
 
             const accumulatedTtfs = [];
             const accumulatedAirports = {};
@@ -1254,6 +1265,9 @@ class TTFCard extends React.Component {
 
                             const totalFlights = response?.totalFlights ?? 0;
                             const totalFlightsRaw = response?.totalFlightsRaw;
+                            $('#loading-message').text(buildLoadingMessage(
+                                submissionData.startDate, submissionData.endDate,
+                                totalFlights, totalFlightsRaw, 1, Math.ceil(totalFlights / CHUNK_SIZE), accumulatedTtfs.length));
                             const nextOffset = CHUNK_SIZE;
                             if (accumulatedTtfs.length >= CHUNK_SIZE && nextOffset < totalFlights) {
                                 fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw);
