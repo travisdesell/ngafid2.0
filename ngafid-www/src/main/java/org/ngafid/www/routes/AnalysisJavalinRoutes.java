@@ -28,6 +28,9 @@ public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.GSON;
 
+    /** Set to false to revert to per-flight TTF cache lookups. */
+    private static final boolean USE_BATCH_TTF_LOOKUP = true;
+
     private AnalysisJavalinRoutes() {
         // Utility class
     }
@@ -356,29 +359,42 @@ public class AnalysisJavalinRoutes {
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
         String airportIataCode = ctx.queryParam("airport");
-        System.out.println(startDate);
-        System.out.println(endDate);
 
         List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         try (Connection connection = Database.getConnection()) {
 
-            // TODO: Update this limit when caching of TTF objects is implemented.
             List<Flight> flights =
                     Flight.getFlightsWithinDateRangeFromAirport(connection, startDate, endDate, airportIataCode, 10000);
+            LOG.info(() -> "TTF: retrieved " + flights.size() + " flights for " + airportIataCode + " " + startDate + "-" + endDate);
 
-            for (Flight flight : flights) {
-                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
-                    
-                    // Enforce flight ID (in case older cached TTF rows have an empty/incorrect flightId)
-                    ttf.setFlightId(flight.getId());
-                    
-                    var jsonElement = ttf.jsonify();
-                    if (jsonElement != null) {
-                        ttfs.add(jsonElement);
-                        iataCodes.add(ttf.getAirportIataCode());
+            if (USE_BATCH_TTF_LOOKUP) {
+                Map<Flight, ArrayList<TurnToFinal>> batchResult =
+                        TurnToFinal.getTurnToFinalBatch(connection, flights, airportIataCode);
+                for (Flight flight : flights) {
+                    for (TurnToFinal ttf : batchResult.getOrDefault(flight, List.of())) {
+                        ttf.setFlightId(flight.getId());
+                        var jsonElement = ttf.jsonify();
+                        if (jsonElement != null) {
+                            ttfs.add(jsonElement);
+                            iataCodes.add(ttf.getAirportIataCode());
+                        }
                     }
                 }
+            } else {
+                for (Flight flight : flights) {
+                    for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
+                        ttf.setFlightId(flight.getId());
+                        var jsonElement = ttf.jsonify();
+                        if (jsonElement != null) {
+                            ttfs.add(jsonElement);
+                            iataCodes.add(ttf.getAirportIataCode());
+                        }
+                    }
+                }
+            }
+            if (USE_BATCH_TTF_LOOKUP) {
+                LOG.info(() -> "TTF batch: returning " + ttfs.size() + " TTFs from " + flights.size() + " flights");
             }
         } catch (Exception e) {
             e.printStackTrace();

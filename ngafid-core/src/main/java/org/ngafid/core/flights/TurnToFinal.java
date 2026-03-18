@@ -339,6 +339,85 @@ public class TurnToFinal implements Serializable {
         }
     }
 
+    /**
+     * Batch lookup of TTF cache for multiple flights. One DB query instead of N.
+     * Returns map of flight_id -> cached TTFs. Missing or invalid entries are omitted (caller treats as cache miss).
+     */
+    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalFromCacheBatch(Connection connection,
+            List<Integer> flightIds) throws SQLException, IOException, ClassNotFoundException {
+        Map<Integer, ArrayList<TurnToFinal>> result = new HashMap<>();
+        if (flightIds == null || flightIds.isEmpty()) {
+            return result;
+        }
+        String placeholders = flightIds.stream().map(id -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT flight_id, version, data FROM turn_to_final WHERE flight_id IN (" + placeholders + ")";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            for (int i = 0; i < flightIds.size(); i++) {
+                stmt.setInt(i + 1, flightIds.get(i));
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int flightId = rs.getInt(1);
+                    long version = rs.getLong(2);
+                    Blob blob = rs.getBlob(3);
+                    if (version != TurnToFinal.serialVersionUID) {
+                        try (PreparedStatement del = connection.prepareStatement(DELETE_QUERY_STR)) {
+                            del.setInt(1, flightId);
+                            del.executeUpdate();
+                        }
+                        continue;
+                    }
+                    try {
+                        Object o = Compression.inflateTTFObject(blob.getBytes(1, (int) blob.length()));
+                        @SuppressWarnings("unchecked")
+                        ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
+                        result.put(flightId, ttfs);
+                    } catch (IOException | ClassNotFoundException e) {
+                        LOG.info(() -> "Failed to deserialize TTF for flight " + flightId + ": " + e.getMessage());
+                        try (PreparedStatement del = connection.prepareStatement(DELETE_QUERY_STR)) {
+                            del.setInt(1, flightId);
+                            del.executeUpdate();
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Batch variant: fetches TTFs for many flights using one cache query, then computes misses per-flight.
+     * Use when loading many flights at once (e.g. TTF map). Reversible via USE_BATCH_TTF_LOOKUP in route.
+     */
+    public static Map<Flight, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
+            List<Flight> flights, String airportIataCode)
+            throws SQLException, IOException, ClassNotFoundException {
+        Map<Flight, ArrayList<TurnToFinal>> result = new HashMap<>();
+        if (flights == null || flights.isEmpty()) {
+            return result;
+        }
+        List<Integer> ids = flights.stream().map(Flight::getId).toList();
+        Map<Integer, ArrayList<TurnToFinal>> cache = getTurnToFinalFromCacheBatch(connection, ids);
+        int hits = cache.size();
+        int misses = ids.size() - hits;
+        LOG.info(() -> "TTF batch lookup: " + ids.size() + " flights, " + hits + " cache hits, " + misses + " computed");
+        for (Flight flight : flights) {
+            ArrayList<TurnToFinal> ttfs = cache.get(flight.getId());
+            if (ttfs == null) {
+                ttfs = computeAndCacheTurnToFinals(connection, flight);
+            }
+            if (ttfs != null && !ttfs.isEmpty()) {
+                ArrayList<TurnToFinal> filtered = ttfs.stream()
+                        .filter(ttf -> airportIataCode == null || ttf.getAirportIataCode().equals(airportIataCode))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                if (!filtered.isEmpty()) {
+                    result.put(flight, filtered);
+                }
+            }
+        }
+        return result;
+    }
+
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(
             Map<String, DoubleTimeSeries> doubleTimeSeries,
             List<Itinerary> itineraries,

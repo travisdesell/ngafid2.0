@@ -1210,6 +1210,7 @@ class TTFCard extends React.Component {
 
             }
             this.setState({ disableFetching: true });
+            $('#loading').show();
 
             // Fetch the data.
             $.ajax({
@@ -1235,6 +1236,7 @@ class TTFCard extends React.Component {
                             return null;
                         })
                         .then((flightLookup) => {
+                            $('#loading').hide();
                             // store the dates we have fetched data for
                             this.setState({
                                 disableFetching: false,
@@ -1247,6 +1249,7 @@ class TTFCard extends React.Component {
                         });
                 },
                 error: (jqXHR) => {
+                    $('#loading').hide();
                     console.error("Error fetching TTF data: ", jqXHR.responseText);
                     this.setState({ disableFetching: false, datesChanged: false, });
                 },
