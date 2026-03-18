@@ -31,6 +31,9 @@ public class AnalysisJavalinRoutes {
     /** Set to false to revert to per-flight TTF cache lookups. */
     private static final boolean USE_BATCH_TTF_LOOKUP = true;
 
+    /** Max flights to load for TTF (avoids 1000+ batches on wide date ranges). */
+    private static final int MAX_TTF_FLIGHTS = 5_000;
+
     private AnalysisJavalinRoutes() {
         // Utility class
     }
@@ -365,12 +368,16 @@ public class AnalysisJavalinRoutes {
         List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         int totalFlights = 0;
+        int rawTotal = 0;
         try (Connection connection = Database.getConnection()) {
 
-            totalFlights = Flight.getFlightsCountWithinDateRangeFromAirport(
+            rawTotal = Flight.getFlightsCountWithinDateRangeFromAirport(
                     connection, startDate, endDate, airportIataCode);
-            List<Flight> flights = Flight.getFlightsWithinDateRangeFromAirport(
-                    connection, startDate, endDate, airportIataCode, limit, offset);
+            totalFlights = Math.min(rawTotal, MAX_TTF_FLIGHTS);
+            List<Flight> flights = offset >= totalFlights
+                    ? List.of()
+                    : Flight.getFlightsWithinDateRangeFromAirport(
+                            connection, startDate, endDate, airportIataCode, limit, offset);
             final int totalForLog = totalFlights;
             LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + limit + " got " + flights.size()
                     + " of " + totalForLog + " for " + airportIataCode + " " + startDate + "-" + endDate);
@@ -414,7 +421,11 @@ public class AnalysisJavalinRoutes {
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
 
         ctx.status(200);
-        ctx.json(of("airports", airports, "ttfs", ttfs, "totalFlights", totalFlights));
+        Map<String, Object> payload = new HashMap<>(of("airports", airports, "ttfs", ttfs, "totalFlights", totalFlights));
+        if (rawTotal > 0 && totalFlights < rawTotal) {
+            payload.put("totalFlightsRaw", rawTotal);
+        }
+        ctx.json(payload);
     }
 
     private static int parseIntOrDefault(String value, int defaultValue) {

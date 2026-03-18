@@ -1148,12 +1148,15 @@ class TTFCard extends React.Component {
 
         const CHUNK_SIZE = 500;
 
-        const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights) => {
+        const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw) => {
             const batchNum = Math.floor(offset / CHUNK_SIZE) + 1;
             const totalBatches = totalFlights != null ? Math.ceil(totalFlights / CHUNK_SIZE) : '?';
-            const msg = totalFlights != null
+            let msg = totalFlights != null
                 ? `Loading batch ${batchNum} of ${totalBatches} (${accumulatedTtfs.length} TTFs so far)...`
                 : `Loading batch ${batchNum}...`;
+            if (totalFlightsRaw != null && totalFlightsRaw > totalFlights) {
+                msg += ` Showing first ${totalFlights.toLocaleString()} of ${totalFlightsRaw.toLocaleString()} flights.`;
+            }
             $('#loading-message').text(msg);
 
             $.ajax({
@@ -1170,8 +1173,9 @@ class TTFCard extends React.Component {
                     this.updateMapViewForTTFs(accumulatedTtfs, accumulatedAirports);
 
                     const nextOffset = offset + CHUNK_SIZE;
+                    const rawTotal = response?.totalFlightsRaw;
                     if (batchTtfs.length >= CHUNK_SIZE && nextOffset < effectiveTotal) {
-                        fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, effectiveTotal);
+                        fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, effectiveTotal, rawTotal);
                     } else {
                         $('#loading').hide();
                         this.setState({
@@ -1249,9 +1253,10 @@ class TTFCard extends React.Component {
                             this.updateMapViewForTTFs(accumulatedTtfs, accumulatedAirports);
 
                             const totalFlights = response?.totalFlights ?? 0;
+                            const totalFlightsRaw = response?.totalFlightsRaw;
                             const nextOffset = CHUNK_SIZE;
                             if (accumulatedTtfs.length >= CHUNK_SIZE && nextOffset < totalFlights) {
-                                fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights);
+                                fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw);
                             } else {
                                 $('#loading').hide();
                                 this.setState({
