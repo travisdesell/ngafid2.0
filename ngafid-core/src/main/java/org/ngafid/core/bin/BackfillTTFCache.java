@@ -168,10 +168,14 @@ public final class BackfillTTFCache {
                 LOG.warning("Failed flight " + flightId + ": " + e.getMessage());
                 result.errors++;
             }
-            long elapsed = (System.currentTimeMillis() - start) / 1000;
-            System.out.println("flight_id=" + flightId + " " + (i + 1) + "/" + flightIds.size()
-                    + " recomputed=" + result.recomputed + " skipped=" + result.skipped
-                    + " errors=" + result.errors + " (" + elapsed + "s elapsed)");
+            int n = i + 1;
+            boolean shouldPrint = n <= 10 || n % 100 == 0;
+            if (shouldPrint) {
+                long elapsed = (System.currentTimeMillis() - start) / 1000;
+                System.out.println("flight_id=" + flightId + " " + n + "/" + flightIds.size()
+                        + " recomputed=" + result.recomputed + " skipped=" + result.skipped
+                        + " errors=" + result.errors + " (" + elapsed + "s elapsed)");
+            }
         }
         return result;
     }
