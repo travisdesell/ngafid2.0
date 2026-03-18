@@ -1182,15 +1182,15 @@ class TTFCard extends React.Component {
             return msg;
         };
 
-        const buildProgressBannerMessage = (batchNum, totalBatches) => {
-            return `Loading batch ${batchNum} of ${totalBatches}....`;
+        const buildProgressBannerMessage = (batchNum, totalBatches, ttfsLoaded) => {
+            return `Batch ${batchNum} of ${totalBatches} · ${ttfsLoaded.toLocaleString()} TTFs loaded`;
         };
 
         const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw) => {
             const batchLimit = getBatchLimit(offset);
             const batchNum = getBatchNum(offset);
             const totalBatches = getTotalBatches(totalFlights);
-            $('#loading-progress-text').text(buildProgressBannerMessage(batchNum, totalBatches));
+            $('#loading-progress-text').text(buildProgressBannerMessage(batchNum, totalBatches, accumulatedTtfs.length));
             $('#loading-progress-banner').show();
 
             $.ajax({
@@ -1253,7 +1253,7 @@ class TTFCard extends React.Component {
             }
             this.setState({ disableFetching: true });
             $('#loading').show();
-            $('#loading-message').text(`Loading flights in ${submissionData.startDate} to ${submissionData.endDate}...`);
+            $('#loading-message').text('Loading flights...');
 
             const accumulatedTtfs = [];
             const accumulatedAirports = {};
