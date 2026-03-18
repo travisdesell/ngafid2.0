@@ -359,14 +359,20 @@ public class AnalysisJavalinRoutes {
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
         String airportIataCode = ctx.queryParam("airport");
+        int limit = parseIntOrDefault(ctx.queryParam("limit"), 1000);
+        int offset = parseIntOrDefault(ctx.queryParam("offset"), 0);
 
         List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
+        int totalFlights = 0;
         try (Connection connection = Database.getConnection()) {
 
-            List<Flight> flights =
-                    Flight.getFlightsWithinDateRangeFromAirport(connection, startDate, endDate, airportIataCode, 10000);
-            LOG.info(() -> "TTF: retrieved " + flights.size() + " flights for " + airportIataCode + " " + startDate + "-" + endDate);
+            totalFlights = Flight.getFlightsCountWithinDateRangeFromAirport(
+                    connection, startDate, endDate, airportIataCode);
+            List<Flight> flights = Flight.getFlightsWithinDateRangeFromAirport(
+                    connection, startDate, endDate, airportIataCode, limit, offset);
+            LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + limit + " got " + flights.size()
+                    + " of " + totalFlights + " for " + airportIataCode + " " + startDate + "-" + endDate);
 
             if (USE_BATCH_TTF_LOOKUP) {
                 Map<Flight, ArrayList<TurnToFinal>> batchResult =
@@ -407,7 +413,16 @@ public class AnalysisJavalinRoutes {
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
 
         ctx.status(200);
-        ctx.json(of("airports", airports, "ttfs", ttfs));
+        ctx.json(of("airports", airports, "ttfs", ttfs, "totalFlights", totalFlights));
+    }
+
+    private static int parseIntOrDefault(String value, int defaultValue) {
+        if (value == null || value.isBlank()) return defaultValue;
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
     public static void getTrends(Context ctx) {

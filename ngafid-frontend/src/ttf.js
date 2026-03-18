@@ -1111,81 +1111,88 @@ class TTFCard extends React.Component {
         const dataEndDate = this.parseDate(this.state.dataEndDate);
 
         /*
-            This will show TTFs in the specified date range and hide every other TTF.
-            If the TTFs have already been plotted it will use the previous layer.
+            Process a batch of TTFs: normalize, plot each, merge into accumulated state.
+            approachCounts is mutated across batches for consistent approach numbering.
         */
-        const responseFunction = (response, flightLookup = null) => {
-
-            const ttfs = [];
-            const approachCounts = {};
+        const processBatch = (batchTtfs, responseAirports, flightLookup, approachCounts, accumulatedTtfs, accumulatedAirports) => {
             let missingFlightIdLogged = 0;
             let recoveredFlightIds = 0;
-            for (let i = 0; i < response.ttfs.length; i++) {
-
-                const ttf = response.ttfs[i];
-                // Normalize field names from backend JSON to frontend expectations.
+            for (let i = 0; i < batchTtfs.length; i++) {
+                const ttf = batchTtfs[i];
                 const rawFlightId = this.extractFlightId(ttf);
                 const resolvedFlightId = rawFlightId ?? this.matchFlightIdFromLookup(ttf, flightLookup, submissionData.airport);
-                if (rawFlightId == null && resolvedFlightId != null) {
-                    recoveredFlightIds += 1;
-                }
-
+                if (rawFlightId == null && resolvedFlightId != null) recoveredFlightIds += 1;
                 if (resolvedFlightId == null && missingFlightIdLogged < 5) {
                     missingFlightIdLogged += 1;
-                    console.warn('TTF record missing flight ID fields', {
-                        keys: Object.keys(ttf),
-                        ttfIndex: i,
-                        flightStartDate: ttf.flightStartDate,
-                        runway: ttf?.runway?.name ?? null
-                    });
+                    console.warn('TTF record missing flight ID fields', { keys: Object.keys(ttf), ttfIndex: i });
                 }
-                if (ttf.flightId === undefined && ttf.flight_id !== undefined)
-                    ttf.flightId = ttf.flight_id;
-
-                if (resolvedFlightId != null) {
-                    ttf.flightId = resolvedFlightId;
-                    ttf.flight_id = resolvedFlightId;
-                }
-
-                if (ttf.lat === undefined && Array.isArray(ttf.latitude))
-                    ttf.lat = ttf.latitude;
-                
-                if (ttf.lon === undefined && Array.isArray(ttf.longitude))
-                    ttf.lon = ttf.longitude;
-                
+                if (ttf.flightId === undefined && ttf.flight_id !== undefined) ttf.flightId = ttf.flight_id;
+                if (resolvedFlightId != null) { ttf.flightId = resolvedFlightId; ttf.flight_id = resolvedFlightId; }
+                if (ttf.lat === undefined && Array.isArray(ttf.latitude)) ttf.lat = ttf.latitude;
+                if (ttf.lon === undefined && Array.isArray(ttf.longitude)) ttf.lon = ttf.longitude;
                 const approachKey = resolvedFlightId ?? '__unknown_flight__';
-                if (!(approachKey in approachCounts))
-                    approachCounts[approachKey] = 0;
-
+                if (!(approachKey in approachCounts)) approachCounts[approachKey] = 0;
                 ttf.approachn = ++approachCounts[approachKey];
                 ttf.popupFlightId = resolvedFlightId;
                 ttf.popupFlightName = `Approach ${ttf.approachn}`;
                 ttf.popupTraceName = (resolvedFlightId != null && resolvedFlightId !== '')
-                    ? `Flight ${resolvedFlightId} - Approach ${ttf.approachn}`
-                    : `Approach ${ttf.approachn}`;
-                
-                ttfs.push(ttf);
+                    ? `Flight ${resolvedFlightId} - Approach ${ttf.approachn}` : `Approach ${ttf.approachn}`;
+                accumulatedTtfs.push(ttf);
                 this.plotTTF(ttf);
             }
-
             if (recoveredFlightIds > 0) {
                 console.info(`Recovered ${recoveredFlightIds} TTF flight IDs from /api/flight lookup.`);
             }
+            Object.assign(accumulatedAirports, responseAirports || {});
+        };
 
-            this.setState({ data: response });
-            this.plotCharts(ttfs, true);
-            this.updateMapViewForTTFs(ttfs, response.airports);
+        const CHUNK_SIZE = 500;
 
+        const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights) => {
+            const batchNum = Math.floor(offset / CHUNK_SIZE) + 1;
+            const totalBatches = totalFlights != null ? Math.ceil(totalFlights / CHUNK_SIZE) : '?';
+            const msg = totalFlights != null
+                ? `Loading batch ${batchNum} of ${totalBatches} (${accumulatedTtfs.length} TTFs so far)...`
+                : `Loading batch ${batchNum}...`;
+            $('#loading-message').text(msg);
+
+            $.ajax({
+                type: 'GET',
+                url: '/api/flight/turn-to-final',
+                data: { ...submissionData, limit: CHUNK_SIZE, offset },
+                async: true,
+                success: (response) => {
+                    const batchTtfs = response?.ttfs ?? [];
+                    const effectiveTotal = totalFlights ?? (response?.totalFlights ?? 0);
+
+                    processBatch(batchTtfs, response?.airports, flightLookup, approachCounts, accumulatedTtfs, accumulatedAirports);
+                    this.plotCharts(accumulatedTtfs, offset === 0);
+                    this.updateMapViewForTTFs(accumulatedTtfs, accumulatedAirports);
+
+                    const nextOffset = offset + CHUNK_SIZE;
+                    if (batchTtfs.length >= CHUNK_SIZE && nextOffset < effectiveTotal) {
+                        fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, effectiveTotal);
+                    } else {
+                        $('#loading').hide();
+                        this.setState({
+                            disableFetching: false,
+                            dataAirport: submissionData.airport,
+                            dataStartDate: submissionData.startDate,
+                            dataEndDate: submissionData.endDate,
+                            data: { ttfs: accumulatedTtfs, airports: accumulatedAirports }
+                        });
+                    }
+                },
+                error: (jqXHR) => {
+                    $('#loading').hide();
+                    console.error("Error fetching TTF data: ", jqXHR.responseText);
+                    this.setState({ disableFetching: false, datesChanged: false });
+                }
+            });
         };
 
         this.setState({ datesChanged: false });
 
-        /*
-            If we already have some data, and the date range of that data contains the new date range,
-            then we don't need to fetch any more data - just turn off layers for data that not within the new range.
-            
-            We should keep the old dataStartDate and dataEndDate though to preserve the entire range.
-        */
         if (
             this.state.data != null
             && this.dateWithinRange(startDate, dataStartDate, dataEndDate)
@@ -1196,38 +1203,32 @@ class TTFCard extends React.Component {
             for (const ttf of this.state.data.ttfs) {
                 ttf.enabled = true;
             }
-
             this.updateDisplay();
 
         } else {
 
-            //Remove all old layers
             if (this.state.data != null) {
-
                 for (const ttf of this.state.data.ttfs) {
                     map.removeLayer(ttf.layer);
                 }
-
             }
             this.setState({ disableFetching: true });
             $('#loading').show();
+            $('#loading-message').text('Loading batch 1...');
 
-            // Fetch the data.
+            const accumulatedTtfs = [];
+            const accumulatedAirports = {};
+            const approachCounts = {};
+
             $.ajax({
                 type: 'GET',
                 url: '/api/flight/turn-to-final',
-                data: submissionData,
+                data: { ...submissionData, limit: CHUNK_SIZE, offset: 0 },
                 async: true,
                 success: (response) => {
-                    console.log("Fetched response: ", response);
-
                     const missingFlightIds = (response?.ttfs ?? []).some((ttf) => this.extractFlightId(ttf) == null);
                     const lookupPromise = missingFlightIds
-                        ? this.fetchFlightLookupForMissingIds(
-                            submissionData.startDate,
-                            submissionData.endDate,
-                            submissionData.airport
-                        )
+                        ? this.fetchFlightLookupForMissingIds(submissionData.startDate, submissionData.endDate, submissionData.airport)
                         : Promise.resolve(null);
 
                     lookupPromise
@@ -1236,23 +1237,38 @@ class TTFCard extends React.Component {
                             return null;
                         })
                         .then((flightLookup) => {
-                            $('#loading').hide();
-                            // store the dates we have fetched data for
-                            this.setState({
-                                disableFetching: false,
-                                dataAirport: submissionData.airport,
-                                dataStartDate: submissionData.startDate,
-                                dataEndDate: submissionData.endDate
-                            }, () => {
-                                responseFunction(response, flightLookup);
-                            });
+                            processBatch(
+                                response?.ttfs ?? [],
+                                response?.airports,
+                                flightLookup,
+                                approachCounts,
+                                accumulatedTtfs,
+                                accumulatedAirports
+                            );
+                            this.plotCharts(accumulatedTtfs, true);
+                            this.updateMapViewForTTFs(accumulatedTtfs, accumulatedAirports);
+
+                            const totalFlights = response?.totalFlights ?? 0;
+                            const nextOffset = CHUNK_SIZE;
+                            if (accumulatedTtfs.length >= CHUNK_SIZE && nextOffset < totalFlights) {
+                                fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights);
+                            } else {
+                                $('#loading').hide();
+                                this.setState({
+                                    disableFetching: false,
+                                    dataAirport: submissionData.airport,
+                                    dataStartDate: submissionData.startDate,
+                                    dataEndDate: submissionData.endDate,
+                                    data: { ttfs: accumulatedTtfs, airports: accumulatedAirports }
+                                });
+                            }
                         });
                 },
                 error: (jqXHR) => {
                     $('#loading').hide();
                     console.error("Error fetching TTF data: ", jqXHR.responseText);
-                    this.setState({ disableFetching: false, datesChanged: false, });
-                },
+                    this.setState({ disableFetching: false, datesChanged: false });
+                }
             });
         }
     }
