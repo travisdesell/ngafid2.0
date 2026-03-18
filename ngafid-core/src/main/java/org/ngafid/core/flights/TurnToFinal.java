@@ -499,9 +499,10 @@ public class TurnToFinal implements Serializable {
             };
             List<String> missing = flight.checkCalculationParameters(required);
 
-            // Required parameters are missing, cannot compute TTFs
+            // Required parameters are missing, cannot compute TTFs - cache empty to avoid repeated checks
             if (!missing.isEmpty()) {
                 LOG.info(() -> "Skipping TTF recompute, missing parameters: " + String.join(", ", missing));
+                cacheTurnToFinal(connection, flight.getId(), new ArrayList<>());
                 return new ArrayList<>();
             }
 
