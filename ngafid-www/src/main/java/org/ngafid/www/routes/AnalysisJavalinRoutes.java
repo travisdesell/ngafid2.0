@@ -371,8 +371,9 @@ public class AnalysisJavalinRoutes {
                     connection, startDate, endDate, airportIataCode);
             List<Flight> flights = Flight.getFlightsWithinDateRangeFromAirport(
                     connection, startDate, endDate, airportIataCode, limit, offset);
+            final int totalForLog = totalFlights;
             LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + limit + " got " + flights.size()
-                    + " of " + totalFlights + " for " + airportIataCode + " " + startDate + "-" + endDate);
+                    + " of " + totalForLog + " for " + airportIataCode + " " + startDate + "-" + endDate);
 
             if (USE_BATCH_TTF_LOOKUP) {
                 Map<Flight, ArrayList<TurnToFinal>> batchResult =
