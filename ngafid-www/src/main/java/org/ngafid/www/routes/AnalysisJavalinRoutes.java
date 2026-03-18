@@ -32,7 +32,10 @@ public class AnalysisJavalinRoutes {
     private static final boolean USE_BATCH_TTF_LOOKUP = true;
 
     /** Max flights to load for TTF (avoids 1000+ batches on wide date ranges). */
-    private static final int MAX_TTF_FLIGHTS = 5_000;
+    private static final int MAX_TTF_FLIGHTS = 10_000;
+
+    /** Max TTFs (approaches) to return; one flight can have multiple TTFs, so this caps displayed items. */
+    private static final int MAX_TTF_APPROACHES = 10_000;
 
     private AnalysisJavalinRoutes() {
         // Utility class
@@ -364,11 +367,14 @@ public class AnalysisJavalinRoutes {
         String airportIataCode = ctx.queryParam("airport");
         int limit = parseIntOrDefault(ctx.queryParam("limit"), 1000);
         int offset = parseIntOrDefault(ctx.queryParam("offset"), 0);
+        // Cap so we never load more than MAX_TTF_FLIGHTS total, regardless of client params
+        int effectiveLimit = Math.min(limit, Math.max(0, MAX_TTF_FLIGHTS - offset));
 
         List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
         int totalFlights = 0;
         int rawTotal = 0;
+        boolean ttfCapReached = false;
         try (Connection connection = Database.getConnection()) {
 
             if (offset == 0) {
@@ -381,14 +387,22 @@ public class AnalysisJavalinRoutes {
                 List<Integer> flightIds = (offset == 0 && totalFlights == 0)
                         ? List.of()
                         : Flight.getFlightIdsWithinDateRangeFromAirport(
-                                connection, startDate, endDate, airportIataCode, limit, offset);
-                LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + limit + " got " + flightIds.size()
+                                connection, startDate, endDate, airportIataCode, effectiveLimit, offset);
+                LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flightIds.size()
                         + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
                 Map<Integer, ArrayList<TurnToFinal>> batchResult =
                         TurnToFinal.getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode);
                 final int batchFlightCount = flightIds.size();
                 for (Integer flightId : flightIds) {
+                    if (ttfs.size() >= MAX_TTF_APPROACHES) {
+                        ttfCapReached = true;
+                        break;
+                    }
                     for (TurnToFinal ttf : batchResult.getOrDefault(flightId, new ArrayList<>())) {
+                        if (ttfs.size() >= MAX_TTF_APPROACHES) {
+                            ttfCapReached = true;
+                            break;
+                        }
                         ttf.setFlightId(flightId);
                         var jsonElement = ttf.jsonify();
                         if (jsonElement != null) {
@@ -397,16 +411,25 @@ public class AnalysisJavalinRoutes {
                         }
                     }
                 }
-                LOG.info(() -> "TTF batch: returning " + ttfs.size() + " TTFs from " + batchFlightCount + " flights");
+                LOG.info(() -> "TTF batch: returning " + ttfs.size() + " TTFs from " + batchFlightCount + " flights"
+                        + (ttfCapReached ? " (TTF cap reached)" : ""));
             } else {
                 List<Flight> flights = (offset == 0 && totalFlights == 0)
                         ? List.of()
                         : Flight.getFlightsWithinDateRangeFromAirport(
-                                connection, startDate, endDate, airportIataCode, limit, offset);
-                LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + limit + " got " + flights.size()
+                                connection, startDate, endDate, airportIataCode, effectiveLimit, offset);
+                LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + effectiveLimit + " got " + flights.size()
                         + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
                 for (Flight flight : flights) {
+                    if (ttfs.size() >= MAX_TTF_APPROACHES) {
+                        ttfCapReached = true;
+                        break;
+                    }
                     for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
+                        if (ttfs.size() >= MAX_TTF_APPROACHES) {
+                            ttfCapReached = true;
+                            break;
+                        }
                         ttf.setFlightId(flight.getId());
                         var jsonElement = ttf.jsonify();
                         if (jsonElement != null) {
@@ -430,6 +453,9 @@ public class AnalysisJavalinRoutes {
         Map<String, Object> payload = new HashMap<>(of("airports", airports, "ttfs", ttfs, "totalFlights", totalFlights));
         if (rawTotal > 0 && totalFlights < rawTotal) {
             payload.put("totalFlightsRaw", rawTotal);
+        }
+        if (ttfCapReached) {
+            payload.put("ttfCapReached", true);
         }
         ctx.json(payload);
     }
