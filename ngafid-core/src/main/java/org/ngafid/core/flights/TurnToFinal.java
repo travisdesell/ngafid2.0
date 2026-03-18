@@ -396,7 +396,7 @@ public class TurnToFinal implements Serializable {
             return new HashMap<>();
         }
         List<Integer> ids = flights.stream().map(Flight::getId).toList();
-        Map<Integer, ArrayList<TurnToFinal>> byId = getTurnToFinalBatch(connection, ids, airportIataCode);
+        Map<Integer, ArrayList<TurnToFinal>> byId = getTurnToFinalBatchByFlightIds(connection, ids, airportIataCode);
         Map<Flight, ArrayList<TurnToFinal>> result = new HashMap<>();
         for (Flight flight : flights) {
             ArrayList<TurnToFinal> ttfs = byId.get(flight.getId());
@@ -411,10 +411,10 @@ public class TurnToFinal implements Serializable {
      * Lightweight batch variant using flight IDs only. Avoids loading full Flight objects (Tails, Itinerary, Tags)
      * for cache hits. Only loads full Flight for cache misses.
      */
-    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
+    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(Connection connection,
             List<Integer> flightIds, String airportIataCode)
             throws SQLException, IOException, ClassNotFoundException {
-        return getTurnToFinalBatch(connection, flightIds, airportIataCode, id -> {
+        return getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode, id -> {
             try {
                 return Flight.getFlight(connection, id);
             } catch (SQLException e) {
@@ -423,7 +423,7 @@ public class TurnToFinal implements Serializable {
         });
     }
 
-    private static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
+    private static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(Connection connection,
             List<Integer> flightIds, String airportIataCode,
             java.util.function.Function<Integer, Flight> flightLoader)
             throws SQLException, IOException, ClassNotFoundException {

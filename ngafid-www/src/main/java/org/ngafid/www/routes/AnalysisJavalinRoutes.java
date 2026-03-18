@@ -385,7 +385,7 @@ public class AnalysisJavalinRoutes {
                 LOG.info(() -> "TTF: batch offset=" + offset + " limit=" + limit + " got " + flightIds.size()
                         + (offset == 0 ? " of " + totalForLog : "") + " for " + airportIataCode + " " + startDate + "-" + endDate);
                 Map<Integer, ArrayList<TurnToFinal>> batchResult =
-                        TurnToFinal.getTurnToFinalBatch(connection, flightIds, airportIataCode);
+                        TurnToFinal.getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode);
                 final int batchFlightCount = flightIds.size();
                 for (Integer flightId : flightIds) {
                     for (TurnToFinal ttf : batchResult.getOrDefault(flightId, new ArrayList<>())) {
