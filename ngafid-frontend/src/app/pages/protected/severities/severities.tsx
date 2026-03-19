@@ -26,7 +26,7 @@ const log = getLogger("Severities", "black", "Page");
 const EVENT_ANY = "ANY Event";
 const TAG_ALL = "All Tags";
 const GARMIN_FLIGHT_DISPLAY = "Garmin Flight Display";
-const MARKER_SHAPES = ["circle", "diamond", "square", "cross", "triangle", "star", "wye"] as const;
+const MARKER_SHAPES = ["circle", "square", "cross", "triangle", "diamond", "star", "wye"] as const;
 
 type EventMetaDataItem = {
     name: string;
@@ -102,6 +102,13 @@ const formatMonthTick = (value: number) => {
     return parsed.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
 };
 
+const formatSeverityTick = (value: number) => {
+    if (!Number.isFinite(value))
+        return "";
+
+    return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+};
+
 const toEpochMs = (value: string | number) => {
     if (typeof value === "number")
         return value;
@@ -165,7 +172,9 @@ const normalizeEventCount = (value: unknown): EventCount | null => {
         eventDefinitionId: Number(raw.eventDefinitionId ?? 0),
         tagName: String(raw.tagName ?? ""),
         flightId: String(raw.flightId ?? ""),
-        otherFlightId: raw.otherFlightId === undefined ? undefined : String(raw.otherFlightId),
+        otherFlightId: (raw.otherFlightId === undefined)
+            ? undefined
+            : String(raw.otherFlightId),
     };
 };
 
@@ -214,8 +223,44 @@ const buildAnyEvent = (source: EventSeverities): EventSeverityByAirframe => {
     return out;
 };
 
+const MarkerShapeIcon = ({ shape, color }: { shape: (typeof MARKER_SHAPES)[number]; color: string }) => {
+    const fillStyle = { fill: color, stroke: "rgba(0, 0, 0, 0.55)", strokeWidth: 0.8 } as const;
+
+    switch (shape) {
+    case "circle":
+        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
+    case "square":
+        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><rect x="3.2" y="3.2" width="9.6" height="9.6" {...fillStyle} /></svg>;
+    case "cross":
+        return (
+            <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
+                <path d="M6.2 2.5h3.6v3.7h3.7v3.6H9.8v3.7H6.2V9.8H2.5V6.2h3.7z" {...fillStyle} />
+            </svg>
+        );
+    case "triangle":
+        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><polygon points="8,2.2 13.6,13.2 2.4,13.2" {...fillStyle} /></svg>;
+    case "diamond":
+        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><polygon points="8,1.8 14.2,8 8,14.2 1.8,8" {...fillStyle} /></svg>;
+    case "star":
+        return (
+            <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
+                <polygon points="8,1.8 9.9,6 14.4,6 10.8,8.8 12.2,13.1 8,10.5 3.8,13.1 5.2,8.8 1.6,6 6.1,6" {...fillStyle} />
+            </svg>
+        );
+    case "wye":
+        return (
+            <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
+                <path d="M8 8 4 3.2M8 8 12 3.2M8 8v5.2" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+        );
+    default:
+        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
+    }
+};
+
 const renderSeveritiesLegendContent = (
     config: ChartConfig,
+    symbolsBySeries: Record<string, (typeof MARKER_SHAPES)[number]>,
     payload?: LegendItem[],
 ) => {
     if (!payload?.length)
@@ -226,13 +271,12 @@ const renderSeveritiesLegendContent = (
             {payload.map((item, index) => {
                 const key = String(item.dataKey ?? item.value ?? `series-${index}`);
                 const label = String(config[key]?.label ?? item.value ?? key);
+                const symbol = symbolsBySeries[key] ?? "circle";
+                const color = String(item.color ?? config[key]?.color ?? "currentColor");
 
                 return (
                     <div key={`${key}-${index}`} className="flex items-center gap-1.5">
-                        <div
-                            className="h-2 w-2 shrink-0 rounded-[2px]"
-                            style={{ backgroundColor: item.color }}
-                        />
+                        <MarkerShapeIcon shape={symbol} color={color} />
                         <span>{label}</span>
                     </div>
                 );
@@ -498,9 +542,18 @@ export default function SeveritiesPage() {
             if (eventName === EVENT_ANY)
                 return "var(--muted-foreground)";
 
-            const palettePrefix = useHighContrastCharts ? "--chart-hc" : "--chart";
+            if (useHighContrastCharts) {
+                const palettePrefix = "--chart-hc";
+                const index = Math.max(0, eventNamesByColor.indexOf(eventName));
+                return `var(${palettePrefix}-${(index % 12) + 1})`;
+            }
+
             const index = Math.max(0, eventNamesByColor.indexOf(eventName));
-            return `var(${palettePrefix}-${(index % 12) + 1})`;
+            const denominator = Math.max(1, eventNamesByColor.length - 1);
+            const hue = Math.round((index / denominator) * 360);
+
+            // Non-high-contrast mode uses full-hue mapping across event types.
+            return `hsl(${hue} 88% 54%)`;
         };
 
         const airframeSymbolIndex = new Map<string, number>();
@@ -595,6 +648,7 @@ export default function SeveritiesPage() {
         return {
             chartConfig,
             series,
+            symbolsBySeries: Object.fromEntries(series.map((entry) => [entry.seriesKey, entry.symbol])) as Record<string, (typeof MARKER_SHAPES)[number]>,
             hasData: series.length > 0,
             xDomain: [(xMin - xPadding), (xMax + xPadding)] as [number, number],
             yDomain: [(yMin - yPadding), (yMax + yPadding)] as [number, number],
@@ -695,8 +749,7 @@ export default function SeveritiesPage() {
             return;
 
         const primaryFlightId = String(point.flightId);
-        const secondaryFlightId =
-            point.eventDefinitionId === -1 && point.otherFlightId && String(point.otherFlightId).length > 0
+        const secondaryFlightId = (point.eventDefinitionId === -1) && point.otherFlightId && (String(point.otherFlightId).length > 0)
                 ? String(point.otherFlightId)
                 : null;
 
@@ -887,25 +940,47 @@ export default function SeveritiesPage() {
                                                             tickLine={false}
                                                             axisLine={false}
                                                             tickMargin={8}
+                                                            tickFormatter={(value) => formatSeverityTick(Number(value))}
                                                         />
                                                         <ChartTooltip
                                                             content={(
                                                                 <ChartTooltipContent
                                                                     hideLabel
                                                                     formatter={(_, name, item) => {
+                                                                        // Scatter payload includes both x and y rows; only render once for y.
+                                                                        if (item?.dataKey !== "y")
+                                                                            return null;
+
                                                                         const point = item.payload as SeverityPoint;
-                                                                        const label = String(chartModel.chartConfig[String(name)]?.label ?? name);
+                                                                        const seriesMatch = chartModel.series.find(
+                                                                            (series) => series.eventName === point.eventName && series.airframeName === point.airframeName,
+                                                                        );
+
+                                                                        const symbol = seriesMatch?.symbol ?? "circle";
+                                                                        const symbolColor = seriesMatch
+                                                                            ? String(chartModel.chartConfig[seriesMatch.seriesKey]?.color ?? item?.color ?? "currentColor")
+                                                                            : String(item?.color ?? "currentColor");
+
+                                                                        const otherFlightID = (point.otherFlightId?.length ?? 0) > 0 && (point.otherFlightId !== "null")
+                                                                            ? point.otherFlightId
+                                                                            : null;
 
                                                                         return (
-                                                                            <>
-                                                                                <div className="font-medium">{label}</div>
-                                                                                <div className="ml-auto font-mono font-medium tabular-nums">Severity: {point.severity.toFixed(2)}</div>
-                                                                                <div className="w-full text-xs text-muted-foreground">Flight: {point.flightId}{point.otherFlightId ? ` (Other: ${point.otherFlightId})` : ""}</div>
-                                                                                <div className="w-full text-xs text-muted-foreground">System ID: {point.systemId} · Tail: {point.tail}</div>
-                                                                                <div className="w-full text-xs text-muted-foreground">Tag: {point.tagName || "—"}</div>
-                                                                                <div className="w-full text-xs text-muted-foreground">Start: {point.startTime}</div>
-                                                                                <div className="w-full text-xs text-muted-foreground">End: {point.endTime}</div>
-                                                                            </>
+                                                                            <div className="grid w-full gap-2 text-xs text-muted-foreground">
+                                                                                <div className="flex items-center gap-1.5 font-mono font-medium tabular-nums text-foreground">
+                                                                                    <MarkerShapeIcon shape={symbol} color={symbolColor} />
+                                                                                    <span>{`Severity: ${point.severity.toFixed(2)}`}</span>
+                                                                                </div>
+                                                                                <hr />
+                                                                                <div>{`Flight ID: ${point.flightId} ${otherFlightID ? `(Other ID: ${otherFlightID})` : ""}`}</div>
+                                                                                <div>{`System ID: ${point.systemId}`}</div>
+                                                                                <div>{`Tail: ${point.tail?.length > 0 ? point.tail : "N/A"}`}</div>
+                                                                                <hr />
+                                                                                <div>{`Tag: ${point.tagName || "N/A"}`}</div>
+                                                                                <hr />
+                                                                                <div>{`Event Start: ${point.startTime}`}</div>
+                                                                                <div>{`Event End: ${point.endTime}`}</div>
+                                                                            </div>
                                                                         );
                                                                     }}
                                                                 />
@@ -913,7 +988,7 @@ export default function SeveritiesPage() {
                                                         />
                                                         <ChartLegend
                                                             className="flex-col items-start ml-8"
-                                                            content={(props) => renderSeveritiesLegendContent(chartModel.chartConfig, props.payload as LegendItem[])}
+                                                            content={(props) => renderSeveritiesLegendContent(chartModel.chartConfig, chartModel.symbolsBySeries, props.payload as LegendItem[])}
                                                             layout="vertical"
                                                             verticalAlign="top"
                                                             align="right"
@@ -926,9 +1001,9 @@ export default function SeveritiesPage() {
                                                                     name={series.seriesKey}
                                                                     shape={series.symbol as never}
                                                                     fill={`var(--color-${series.seriesKey})`}
-                                                                    stroke={`var(--color-${series.seriesKey})`}
+                                                                    stroke={`rgb(0.0,0.0,0.0)`}
                                                                     fillOpacity={series.isAny ? 0 : 0.92}
-                                                                    strokeOpacity={series.isAny ? 0.9 : 0.95}
+                                                                    strokeOpacity={series.isAny ? 0.9 : 0.5}
                                                                     strokeWidth={series.isAny ? 1.8 : 1.2}
                                                                 />
                                                             ))
